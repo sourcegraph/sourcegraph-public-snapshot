@@ -11,7 +11,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
@@ -24,7 +23,7 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
-func (r *Repository) GitCmdRaw(ctx context.Context, params []string) (string, error) {
+func GitCmdRaw(ctx context.Context, repo gitserver.Repo, params []string) (string, error) {
 	if Mocks.GitCmdRaw != nil {
 		return Mocks.GitCmdRaw(params)
 	}
@@ -40,7 +39,8 @@ func (r *Repository) GitCmdRaw(ctx context.Context, params []string) (string, er
 		return "", fmt.Errorf("command failed: %s is not a whitelisted git command", strings.Join(params, ""))
 	}
 
-	cmd := r.command("git", params...)
+	cmd := gitserver.DefaultClient.Command("git", params...)
+	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return "", fmt.Errorf("exec git failed: %s. Command was:\n\n%s Output was:\n\n%s", err, strings.Join(params, ""), out)
@@ -51,7 +51,7 @@ func (r *Repository) GitCmdRaw(ctx context.Context, params []string) (string, er
 
 // ExecReader executes an arbitrary `git` command (`git [args...]`) and returns a reader connected
 // to its stdout.
-func (r *Repository) ExecReader(ctx context.Context, args []string) (io.ReadCloser, error) {
+func ExecReader(ctx context.Context, repo gitserver.Repo, args []string) (io.ReadCloser, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ExecReader")
 	span.SetTag("args", args)
 	defer span.Finish()
@@ -59,16 +59,9 @@ func (r *Repository) ExecReader(ctx context.Context, args []string) (io.ReadClos
 	if !isWhitelistedGitCmd(args) {
 		return nil, fmt.Errorf("command failed: %v is not a whitelisted git command", args)
 	}
-	cmd := r.command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
 	return gitserver.StdoutReader(ctx, cmd)
-}
-
-// command creates a new gitserver.Cmd for the current repository. command
-// name must be 'git', otherwise it panics.
-func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
-	cmd := gitserver.DefaultClient.Command(name, arg...)
-	cmd.Repo = gitserver.Repo{Name: r.repoURI, URL: r.remoteURL}
-	return cmd
 }
 
 func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, complete bool, err error) {
@@ -131,8 +124,6 @@ var (
 		"--find-renames",
 		"--inter-hunk-context",
 	}
-
-	reposDir = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
 )
 
 // isWhitelistedGitArg checks if the arg is whitelisted.

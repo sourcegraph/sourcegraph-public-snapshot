@@ -54,7 +54,7 @@ func main() {
 
 	service := symbols.Service{
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
-			return git.FetchTar(ctx, repo.Name, commit) // TODO(sqs): use repo.URL if given
+			return git.FetchTar(ctx, repo, commit)
 		},
 		NewParser: func() (ctags.Parser, error) {
 			parser, err := ctags.NewParser(ctagsCommand)

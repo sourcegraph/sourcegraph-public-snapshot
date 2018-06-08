@@ -50,7 +50,7 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 			opt.After = *r.args.After
 		}
 
-		r.results, r.err = backend.CachedGitRepoTmp(r.repo.repo).ShortLog(ctx, opt)
+		r.results, r.err = git.ShortLog(ctx, backend.CachedGitRepo(r.repo.repo), opt)
 	})
 	return r.results, r.err
 }

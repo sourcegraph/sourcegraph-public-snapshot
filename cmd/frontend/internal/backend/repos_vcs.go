@@ -29,16 +29,6 @@ func CachedGitRepo(repo *types.Repo) gitserver.Repo {
 	return gitserver.Repo{Name: repo.URI}
 }
 
-// CachedGitRepoTmp is like CachedGitRepo, but instead of returning a handle to the gitserver repo
-// (the new way), it returns the *git.Repository struct with a bunch of VCS methods (the old
-// way). It will be removed once all *git.Repository methods are unpeeled to funcs in package vcs.
-func CachedGitRepoTmp(repo *types.Repo) *git.Repository {
-	if r := quickGitserverRepo(repo.URI); r != nil {
-		return git.Open(r.Name, r.URL)
-	}
-	return git.Open(repo.URI, "")
-}
-
 // GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
 // remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
 func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
@@ -128,7 +118,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
-	return git.Open(gitserverRepo.Name, gitserverRepo.URL).GetCommit(ctx, commitID)
+	return git.GetCommit(ctx, gitserverRepo, commitID)
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {

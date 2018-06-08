@@ -65,27 +65,11 @@ func makeGitRepositoryBare(t testing.TB, dir string) {
 	}
 }
 
-type gitRepository struct {
-	git.Repository
-	Dir string
-}
-
-// makeGitRepositoryCmd calls initGitRepository to create a new Git
-// (cmd implementation) repository and run cmds in it, and then
-// returns the repository.
-func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitRepository {
-	dir := initGitRepository(t, cmds...)
-	return &gitRepository{
-		Repository: *git.Open(api.RepoURI(dir), ""),
-		Dir:        dir,
-	}
-}
-
 // makeGitRepository calls initGitRepository to create a new Git repository and returns a handle to
 // it.
 func makeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
 	dir := initGitRepository(t, cmds...)
-	return gitserver.Repo{Name: api.RepoURI(dir)}
+	return gitserver.Repo{Name: api.RepoURI(dir), URL: dir}
 }
 
 func commitsEqual(a, b *git.Commit) bool {

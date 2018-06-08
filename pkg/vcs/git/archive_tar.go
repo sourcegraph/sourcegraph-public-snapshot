@@ -13,13 +13,13 @@ import (
 
 // FetchTar returns a reader for running "git archive --format=tar
 // commit".
-func FetchTar(ctx context.Context, repo api.RepoURI, commit api.CommitID) (rc io.ReadCloser, err error) {
+func FetchTar(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (rc io.ReadCloser, err error) {
 	// Archive returns a zip file read into
 	// memory. However, we do not need to read into memory and we want a
 	// tar, so we directly run the gitserver Command.
 	span, ctx := opentracing.StartSpanFromContext(ctx, "OpenTar")
 	ext.Component.Set(span, "git")
-	span.SetTag("URL", repo)
+	span.SetTag("Repo", repo.Name)
 	span.SetTag("Commit", commit)
 	defer func() {
 		if err != nil {
@@ -33,7 +33,8 @@ func FetchTar(ctx context.Context, repo api.RepoURI, commit api.CommitID) (rc io
 		return nil, err
 	}
 
-	cmd := (&Repository{repoURI: repo}).command("git", "archive", "--format=tar", string(commit))
+	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=tar", string(commit))
+	cmd.Repo = repo
 	rc, err = gitserver.StdoutReader(ctx, cmd)
 	if err != nil {
 		if errcode.IsNotFound(err) {

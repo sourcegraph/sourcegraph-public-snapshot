@@ -47,7 +47,7 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	contents, err := backend.CachedGitRepoTmp(r.commit.repo.repo).ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
+	contents, err := git.ReadFile(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return "", err
 	}
@@ -64,7 +64,7 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	stat, err := backend.CachedGitRepoTmp(r.commit.repo.repo).Stat(ctx, api.CommitID(r.commit.oid), r.path)
+	stat, err := git.Stat(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return false, err
 	}
@@ -161,7 +161,7 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	code, err := backend.CachedGitRepoTmp(r.commit.repo.repo).ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
+	code, err := git.ReadFile(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error
 }
 
 func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
-	commits, err := backend.CachedGitRepoTmp(r.commit.repo.repo).Commits(ctx, git.CommitsOptions{
+	commits, err := git.Commits(ctx, backend.CachedGitRepo(r.commit.repo.repo), git.CommitsOptions{
 		Range: string(r.commit.oid),
 		N:     limit,
 		Path:  r.path,

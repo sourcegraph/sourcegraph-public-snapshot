@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 // Repository returns the external links for a repository.
@@ -39,7 +40,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
-		branchName, err := backend.CachedGitRepoTmp(repo).GitCmdRaw(ctx, []string{"symbolic-ref", "--short", "HEAD"})
+		branchName, err := git.GitCmdRaw(ctx, backend.CachedGitRepo(repo), []string{"symbolic-ref", "--short", "HEAD"})
 		if err == nil && branchName != "" {
 			links = append(links, &Resolver{
 				url:         fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, branchName, path, rev),

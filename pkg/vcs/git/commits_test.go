@@ -1,11 +1,11 @@
 package git_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -24,21 +24,19 @@ func TestRepository_GetCommit(t *testing.T) {
 		Parents:   []api.CommitID{"ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"},
 	}
 	tests := map[string]struct {
-		repo interface {
-			GetCommit(context.Context, api.CommitID) (*git.Commit, error)
-		}
+		repo       gitserver.Repo
 		id         api.CommitID
 		wantCommit *git.Commit
 	}{
 		"git cmd": {
-			repo:       makeGitRepositoryCmd(t, gitCommands...),
+			repo:       makeGitRepository(t, gitCommands...),
 			id:         "b266c7e3ca00b1a17ad0b1449825d0854225c007",
 			wantCommit: wantGitCommit,
 		},
 	}
 
 	for label, test := range tests {
-		commit, err := test.repo.GetCommit(ctx, test.id)
+		commit, err := git.GetCommit(ctx, test.repo, test.id)
 		if err != nil {
 			t.Errorf("%s: GetCommit: %s", label, err)
 			continue
@@ -49,7 +47,7 @@ func TestRepository_GetCommit(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := test.repo.GetCommit(ctx, nonexistentCommitID); !git.IsRevisionNotFound(err) {
+		if _, err := git.GetCommit(ctx, test.repo, nonexistentCommitID); !git.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 	}
@@ -81,16 +79,13 @@ func TestRepository_Commits(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo interface {
-			Commits(ctx context.Context, opt git.CommitsOptions) ([]*git.Commit, error)
-			CommitCount(ctx context.Context, opt git.CommitsOptions) (uint, error)
-		}
+		repo        gitserver.Repo
 		id          api.CommitID
 		wantCommits []*git.Commit
 		wantTotal   uint
 	}{
 		"git cmd": {
-			repo:        makeGitRepositoryCmd(t, gitCommands...),
+			repo:        makeGitRepository(t, gitCommands...),
 			id:          "b266c7e3ca00b1a17ad0b1449825d0854225c007",
 			wantCommits: wantGitCommits,
 			wantTotal:   2,
@@ -98,13 +93,13 @@ func TestRepository_Commits(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, err := test.repo.Commits(ctx, git.CommitsOptions{Range: string(test.id)})
+		commits, err := git.Commits(ctx, test.repo, git.CommitsOptions{Range: string(test.id)})
 		if err != nil {
 			t.Errorf("%s: Commits: %s", label, err)
 			continue
 		}
 
-		total, err := test.repo.CommitCount(ctx, git.CommitsOptions{Range: string(test.id)})
+		total, err := git.CommitCount(ctx, test.repo, git.CommitsOptions{Range: string(test.id)})
 		if err != nil {
 			t.Errorf("%s: CommitCount: %s", label, err)
 			continue
@@ -132,7 +127,7 @@ func TestRepository_Commits(t *testing.T) {
 		}
 
 		// Test that trying to get a nonexistent commit returns RevisionNotFoundError.
-		if _, err := test.repo.Commits(ctx, git.CommitsOptions{Range: string(nonexistentCommitID)}); !git.IsRevisionNotFound(err) {
+		if _, err := git.Commits(ctx, test.repo, git.CommitsOptions{Range: string(nonexistentCommitID)}); !git.IsRevisionNotFound(err) {
 			t.Errorf("%s: for nonexistent commit: got err %v, want RevisionNotFoundError", label, err)
 		}
 	}
@@ -165,22 +160,19 @@ func TestRepository_Commits_options(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo interface {
-			Commits(ctx context.Context, opt git.CommitsOptions) ([]*git.Commit, error)
-			CommitCount(ctx context.Context, opt git.CommitsOptions) (uint, error)
-		}
+		repo        gitserver.Repo
 		opt         git.CommitsOptions
 		wantCommits []*git.Commit
 		wantTotal   uint
 	}{
 		"git cmd": {
-			repo:        makeGitRepositoryCmd(t, gitCommands...),
+			repo:        makeGitRepository(t, gitCommands...),
 			opt:         git.CommitsOptions{Range: "ade564eba4cf904492fb56dcd287ac633e6e082c", N: 1, Skip: 1},
 			wantCommits: wantGitCommits,
 			wantTotal:   1,
 		},
 		"git cmd Head": {
-			repo: makeGitRepositoryCmd(t, gitCommands...),
+			repo: makeGitRepository(t, gitCommands...),
 			opt: git.CommitsOptions{
 				Range: "b266c7e3ca00b1a17ad0b1449825d0854225c007...ade564eba4cf904492fb56dcd287ac633e6e082c",
 			},
@@ -190,13 +182,13 @@ func TestRepository_Commits_options(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, err := test.repo.Commits(ctx, test.opt)
+		commits, err := git.Commits(ctx, test.repo, test.opt)
 		if err != nil {
 			t.Errorf("%s: Commits(): %s", label, err)
 			continue
 		}
 
-		total, err := test.repo.CommitCount(ctx, test.opt)
+		total, err := git.CommitCount(ctx, test.repo, test.opt)
 		if err != nil {
 			t.Errorf("%s: CommitCount(): %s", label, err)
 			continue
@@ -246,16 +238,13 @@ func TestRepository_Commits_options_path(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo interface {
-			Commits(ctx context.Context, opt git.CommitsOptions) ([]*git.Commit, error)
-			CommitCount(ctx context.Context, opt git.CommitsOptions) (uint, error)
-		}
+		repo        gitserver.Repo
 		opt         git.CommitsOptions
 		wantCommits []*git.Commit
 		wantTotal   uint
 	}{
 		"git cmd Path 0": {
-			repo: makeGitRepositoryCmd(t, gitCommands...),
+			repo: makeGitRepository(t, gitCommands...),
 			opt: git.CommitsOptions{
 				Range: "master",
 				Path:  "doesnt-exist",
@@ -264,7 +253,7 @@ func TestRepository_Commits_options_path(t *testing.T) {
 			wantTotal:   0,
 		},
 		"git cmd Path 1": {
-			repo: makeGitRepositoryCmd(t, gitCommands...),
+			repo: makeGitRepository(t, gitCommands...),
 			opt: git.CommitsOptions{
 				Range: "master",
 				Path:  "file1",
@@ -275,13 +264,13 @@ func TestRepository_Commits_options_path(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		commits, err := test.repo.Commits(ctx, test.opt)
+		commits, err := git.Commits(ctx, test.repo, test.opt)
 		if err != nil {
 			t.Errorf("%s: Commits(): %s", label, err)
 			continue
 		}
 
-		total, err := test.repo.CommitCount(ctx, test.opt)
+		total, err := git.CommitCount(ctx, test.repo, test.opt)
 		if err != nil {
 			t.Errorf("%s: CommitCount: %s", label, err)
 			continue

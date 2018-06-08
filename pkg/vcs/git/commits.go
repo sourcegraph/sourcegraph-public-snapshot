@@ -11,6 +11,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 type Commit struct {
@@ -48,12 +49,12 @@ type CommitsOptions struct {
 var logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+(.*)$`)
 
 // getCommit returns the commit with the given id.
-func (r *Repository) getCommit(ctx context.Context, id api.CommitID) (*Commit, error) {
+func getCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID) (*Commit, error) {
 	if err := checkSpecArgSafety(string(id)); err != nil {
 		return nil, err
 	}
 
-	commits, err := r.commitLog(ctx, CommitsOptions{Range: string(id), N: 1})
+	commits, err := commitLog(ctx, repo, CommitsOptions{Range: string(id), N: 1})
 	if err != nil {
 		return nil, err
 	}
@@ -67,16 +68,16 @@ func (r *Repository) getCommit(ctx context.Context, id api.CommitID) (*Commit, e
 
 // GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
 // exists.
-func (r *Repository) GetCommit(ctx context.Context, id api.CommitID) (*Commit, error) {
+func GetCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID) (*Commit, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
 
-	return r.getCommit(ctx, id)
+	return getCommit(ctx, repo, id)
 }
 
 // Commits returns all commits matching the options.
-func (r *Repository) Commits(ctx context.Context, opt CommitsOptions) ([]*Commit, error) {
+func Commits(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -85,7 +86,7 @@ func (r *Repository) Commits(ctx context.Context, opt CommitsOptions) ([]*Commit
 		return nil, err
 	}
 
-	return r.commitLog(ctx, opt)
+	return commitLog(ctx, repo, opt)
 }
 
 func isBadObjectErr(output, obj string) bool {
@@ -99,18 +100,19 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func (r *Repository) commitLog(ctx context.Context, opt CommitsOptions) ([]*Commit, error) {
+func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]*Commit, error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := r.command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
 	data, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), string(opt.Range)) {
-			return nil, &RevisionNotFoundError{Repo: r.repoURI, Spec: string(opt.Range)}
+			return nil, &RevisionNotFoundError{Repo: repo.Name, Spec: string(opt.Range)}
 		}
 		return nil, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
 	}
@@ -167,7 +169,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // CommitCount returns the number of commits that would be returned by Commits.
-func (r *Repository) CommitCount(ctx context.Context, opt CommitsOptions) (uint, error) {
+func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (uint, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -177,7 +179,8 @@ func (r *Repository) CommitCount(ctx context.Context, opt CommitsOptions) (uint,
 		return 0, err
 	}
 
-	cmd := r.command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
 	if opt.Path != "" {
 		// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
 		cmd.Args = append(cmd.Args, "--", opt.Path)

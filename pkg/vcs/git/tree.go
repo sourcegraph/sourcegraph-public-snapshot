@@ -14,12 +14,13 @@ import (
 	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
 // Lstat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
 // returned FileInfo describes the symbolic link.  Lstat makes no attempt to follow the link.
-func (r *Repository) Lstat(ctx context.Context, commit api.CommitID, path string) (os.FileInfo, error) {
+func Lstat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string) (os.FileInfo, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Lstat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -36,7 +37,7 @@ func (r *Repository) Lstat(ctx context.Context, commit api.CommitID, path string
 		return &util.FileInfo{Mode_: os.ModeDir}, nil
 	}
 
-	fis, err := r.lsTree(ctx, commit, path, false)
+	fis, err := lsTree(ctx, repo, commit, path, false)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +49,7 @@ func (r *Repository) Lstat(ctx context.Context, commit api.CommitID, path string
 }
 
 // Stat returns a FileInfo describing the named file at commit.
-func (r *Repository) Stat(ctx context.Context, commit api.CommitID, path string) (os.FileInfo, error) {
+func Stat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string) (os.FileInfo, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -60,18 +61,18 @@ func (r *Repository) Stat(ctx context.Context, commit api.CommitID, path string)
 
 	path = util.Rel(path)
 
-	fi, err := r.Lstat(ctx, commit, path)
+	fi, err := Lstat(ctx, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
 
 	if fi.Mode()&os.ModeSymlink != 0 {
 		// Deref symlink.
-		b, err := r.readFileBytes(ctx, commit, path)
+		b, err := readFileBytes(ctx, repo, commit, path)
 		if err != nil {
 			return nil, err
 		}
-		fi2, err := r.Lstat(ctx, commit, string(b))
+		fi2, err := Lstat(ctx, repo, commit, string(b))
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +84,7 @@ func (r *Repository) Stat(ctx context.Context, commit api.CommitID, path string)
 }
 
 // ReadDir reads the contents of the named directory at commit.
-func (r *Repository) ReadDir(ctx context.Context, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+func ReadDir(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	if Mocks.ReadDir != nil {
 		return Mocks.ReadDir(commit, path, recurse)
 	}
@@ -103,7 +104,7 @@ func (r *Repository) ReadDir(ctx context.Context, commit api.CommitID, path stri
 		// to list the dir's tree entry in its parent dir).
 		path = filepath.Clean(util.Rel(path)) + "/"
 	}
-	return r.lsTree(ctx, commit, path, recurse)
+	return lsTree(ctx, repo, commit, path, recurse)
 }
 
 // lsTreeRootCache caches the result of running `git ls-tree ...` on a repository's root path
@@ -117,13 +118,13 @@ var (
 )
 
 // lsTree returns ls of tree at path.
-func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+func lsTree(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
 	if path != "" || !recurse {
 		// Only cache the root recursive ls-tree.
-		return r.lsTreeUncached(ctx, commit, path, recurse)
+		return lsTreeUncached(ctx, repo, commit, path, recurse)
 	}
 
-	key := string(r.repoURI) + ":" + string(commit) + ":" + path
+	key := string(repo.Name) + ":" + string(commit) + ":" + path
 	lsTreeRootCacheMu.Lock()
 	v, ok := lsTreeRootCache.Get(key)
 	lsTreeRootCacheMu.Unlock()
@@ -135,7 +136,7 @@ func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path strin
 		// Cache miss.
 		var err error
 		start := time.Now()
-		entries, err = r.lsTreeUncached(ctx, commit, path, recurse)
+		entries, err = lsTreeUncached(ctx, repo, commit, path, recurse)
 		if err != nil {
 			return nil, err
 		}
@@ -151,8 +152,8 @@ func (r *Repository) lsTree(ctx context.Context, commit api.CommitID, path strin
 	return entries, nil
 }
 
-func (r *Repository) lsTreeUncached(ctx context.Context, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
-	r.ensureAbsCommit(commit)
+func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+	ensureAbsCommit(commit)
 
 	// Don't call filepath.Clean(path) because ReadDir needs to pass
 	// path with a trailing slash.
@@ -174,7 +175,8 @@ func (r *Repository) lsTreeUncached(ctx context.Context, commit api.CommitID, pa
 	if path != "" {
 		args = append(args, "--", filepath.ToSlash(path))
 	}
-	cmd := r.command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
@@ -244,7 +246,8 @@ func (r *Repository) lsTreeUncached(ctx context.Context, commit api.CommitID, pa
 			}
 		case "commit":
 			mode = mode | ModeSubmodule
-			cmd := r.command("git", "config", "--get", "submodule."+name+".url")
+			cmd := gitserver.DefaultClient.Command("git", "config", "--get", "submodule."+name+".url")
+			cmd.Repo = repo
 			url := "" // url is not available if submodules are not initialized
 			if out, err := cmd.Output(ctx); err == nil {
 				url = string(bytes.TrimSpace(out))

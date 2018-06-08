@@ -206,7 +206,7 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, comm
 	ctx, done := trace(ctx, "Repos", "GetInventoryUncached", map[string]interface{}{"repo": repo.URI, "commitID": commitID}, &err)
 	defer done()
 
-	files, err := CachedGitRepoTmp(repo).ReadDir(ctx, commitID, "", true)
+	files, err := git.ReadDir(ctx, CachedGitRepo(repo), commitID, "", true)
 	if err != nil {
 		return nil, err
 	}

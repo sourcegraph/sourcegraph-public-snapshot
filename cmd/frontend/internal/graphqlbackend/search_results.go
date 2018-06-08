@@ -331,16 +331,13 @@ func (sf *searchFilterResolver) Kind() string {
 	return sf.kind
 }
 
-// blameFileMatchCache caches Repos.Get, Repos.ResolveRev, and RepoVCS.Open operations.
+// blameFileMatchCache caches Repos.Get and Repos.ResolveRev operations.
 type blameFileMatchCache struct {
 	cachedReposMu sync.RWMutex
 	cachedRepos   map[api.RepoID]*types.Repo
 
 	cachedRevsMu sync.RWMutex
 	cachedRevs   map[string]api.CommitID
-
-	cachedVCSReposMu sync.RWMutex
-	cachedVCSRepos   map[api.RepoID]*git.Repository
 }
 
 // reposGet is like db.Repos.Get except it is cached by b.
@@ -382,24 +379,6 @@ func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repoID api.Re
 	b.cachedRevs[cacheKey] = rev
 	b.cachedRevsMu.Unlock()
 	return rev, nil
-}
-
-// repoVCSOpen is like localstore.RepoVCS.Open except it is cached by b.
-func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID api.RepoID) (*git.Repository, error) {
-	b.cachedVCSReposMu.RLock()
-	vcsrepo, ok := b.cachedVCSRepos[repoID]
-	b.cachedVCSReposMu.RUnlock()
-	if ok {
-		return vcsrepo, nil
-	}
-	repo, err := b.reposGet(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	b.cachedVCSReposMu.Lock()
-	b.cachedVCSRepos[repoID] = backend.CachedGitRepoTmp(repo)
-	b.cachedVCSReposMu.Unlock()
-	return vcsrepo, nil
 }
 
 // blameFileMatch blames the specified file match to produce the time at which
@@ -444,9 +423,8 @@ func (sr *searchResultsResolver) Sparkline(ctx context.Context) (sparkline []int
 		sparklineMu sync.Mutex
 		blameOps    = 0
 		cache       = &blameFileMatchCache{
-			cachedRepos:    map[api.RepoID]*types.Repo{},
-			cachedRevs:     map[string]api.CommitID{},
-			cachedVCSRepos: map[api.RepoID]*git.Repository{},
+			cachedRepos: map[api.RepoID]*types.Repo{},
+			cachedRevs:  map[string]api.CommitID{},
 		}
 	)
 	sparkline = make([]int32, days)

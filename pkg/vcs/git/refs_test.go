@@ -1,17 +1,17 @@
 package git_test
 
 import (
-	"context"
 	"reflect"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-func TestRepository_Branches(t *testing.T) {
+func TestRepository_ListBranches(t *testing.T) {
 	t.Parallel()
 
 	gitCommands := []string{
@@ -20,19 +20,17 @@ func TestRepository_Branches(t *testing.T) {
 		"git checkout -b b1",
 	}
 	tests := map[string]struct {
-		repo interface {
-			Branches(context.Context, git.BranchesOptions) ([]*git.Branch, error)
-		}
+		repo         gitserver.Repo
 		wantBranches []*git.Branch
 	}{
 		"git cmd": {
-			repo:         makeGitRepositoryCmd(t, gitCommands...),
+			repo:         makeGitRepository(t, gitCommands...),
 			wantBranches: []*git.Branch{{Name: "b0", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "b1", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}, {Name: "master", Head: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8"}},
 		},
 	}
 
 	for label, test := range tests {
-		branches, err := test.repo.Branches(ctx, git.BranchesOptions{})
+		branches, err := git.ListBranches(ctx, test.repo, git.BranchesOptions{})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -76,18 +74,16 @@ func TestRepository_Branches_MergedInto(t *testing.T) {
 	}
 
 	for label, test := range map[string]struct {
-		repo interface {
-			Branches(context.Context, git.BranchesOptions) ([]*git.Branch, error)
-		}
+		repo         gitserver.Repo
 		wantBranches map[string][]*git.Branch
 	}{
 		"git cmd": {
-			repo:         makeGitRepositoryCmd(t, gitCommands...),
+			repo:         makeGitRepository(t, gitCommands...),
 			wantBranches: gitBranches,
 		},
 	} {
 		for branch, mergedInto := range test.wantBranches {
-			branches, err := test.repo.Branches(ctx, git.BranchesOptions{MergedInto: branch})
+			branches, err := git.ListBranches(ctx, test.repo, git.BranchesOptions{MergedInto: branch})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 				continue
@@ -117,20 +113,18 @@ func TestRepository_Branches_ContainsCommit(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo interface {
-			Branches(context.Context, git.BranchesOptions) ([]*git.Branch, error)
-		}
+		repo                 gitserver.Repo
 		commitToWantBranches map[string][]*git.Branch
 	}{
 		"git cmd": {
-			repo:                 makeGitRepositoryCmd(t, gitCommands...),
+			repo:                 makeGitRepository(t, gitCommands...),
 			commitToWantBranches: gitWantBranches,
 		},
 	}
 
 	for label, test := range tests {
 		for commit, wantBranches := range test.commitToWantBranches {
-			branches, err := test.repo.Branches(ctx, git.BranchesOptions{ContainsCommit: commit})
+			branches, err := git.ListBranches(ctx, test.repo, git.BranchesOptions{ContainsCommit: commit})
 			if err != nil {
 				t.Errorf("%s: Branches: %s", label, err)
 				continue
@@ -170,19 +164,17 @@ func TestRepository_Branches_BehindAheadCounts(t *testing.T) {
 	sort.Sort(git.Branches(gitBranches))
 
 	tests := map[string]struct {
-		repo interface {
-			Branches(context.Context, git.BranchesOptions) ([]*git.Branch, error)
-		}
+		repo         gitserver.Repo
 		wantBranches []*git.Branch
 	}{
 		"git cmd": {
-			repo:         makeGitRepositoryCmd(t, gitCommands...),
+			repo:         makeGitRepository(t, gitCommands...),
 			wantBranches: gitBranches,
 		},
 	}
 
 	for label, test := range tests {
-		branches, err := test.repo.Branches(ctx, git.BranchesOptions{BehindAheadBranch: "master"})
+		branches, err := git.ListBranches(ctx, test.repo, git.BranchesOptions{BehindAheadBranch: "master"})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -227,19 +219,17 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		repo interface {
-			Branches(context.Context, git.BranchesOptions) ([]*git.Branch, error)
-		}
+		repo         gitserver.Repo
 		wantBranches []*git.Branch
 	}{
 		"git cmd": {
-			repo:         makeGitRepositoryCmd(t, gitCommands...),
+			repo:         makeGitRepository(t, gitCommands...),
 			wantBranches: wantBranchesGit,
 		},
 	}
 
 	for label, test := range tests {
-		branches, err := test.repo.Branches(ctx, git.BranchesOptions{IncludeCommit: true})
+		branches, err := git.ListBranches(ctx, test.repo, git.BranchesOptions{IncludeCommit: true})
 		if err != nil {
 			t.Errorf("%s: Branches: %s", label, err)
 			continue
@@ -252,7 +242,7 @@ func TestRepository_Branches_IncludeCommit(t *testing.T) {
 	}
 }
 
-func TestRepository_Tags(t *testing.T) {
+func TestRepository_ListTags(t *testing.T) {
 	t.Parallel()
 
 	dateEnv := "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z"
@@ -263,13 +253,11 @@ func TestRepository_Tags(t *testing.T) {
 		dateEnv + " git tag --annotate -m foo t2",
 	}
 	tests := map[string]struct {
-		repo interface {
-			Tags(context.Context) ([]*git.Tag, error)
-		}
+		repo     gitserver.Repo
 		wantTags []*git.Tag
 	}{
 		"git cmd": {
-			repo: makeGitRepositoryCmd(t, gitCommands...),
+			repo: makeGitRepository(t, gitCommands...),
 			wantTags: []*git.Tag{
 				{Name: "t0", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				{Name: "t1", CommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8", CreatorDate: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
@@ -279,9 +267,9 @@ func TestRepository_Tags(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		tags, err := test.repo.Tags(ctx)
+		tags, err := git.ListTags(ctx, test.repo)
 		if err != nil {
-			t.Errorf("%s: Tags: %s", label, err)
+			t.Errorf("%s: ListTags: %s", label, err)
 			continue
 		}
 		sort.Sort(git.Tags(tags))

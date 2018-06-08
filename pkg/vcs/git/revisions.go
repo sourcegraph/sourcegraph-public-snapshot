@@ -30,12 +30,12 @@ func IsAbsoluteRevision(s string) bool {
 	return true
 }
 
-func (r *Repository) ensureAbsCommit(commitID api.CommitID) {
+func ensureAbsCommit(commitID api.CommitID) {
 	// We don't want to even be running commands on non-absolute
 	// commit IDs if we can avoid it, because we can't cache the
 	// expensive part of those computations.
 	if !IsAbsoluteRevision(string(commitID)) {
-		panic(fmt.Errorf("non-absolute commit ID: %q on %s", commitID, r.String()))
+		panic(fmt.Errorf("non-absolute commit ID: %q", commitID))
 	}
 }
 

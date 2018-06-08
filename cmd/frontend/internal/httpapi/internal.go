@@ -509,12 +509,13 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	spec := vars["Commit"]
 
 	// Ensure commit exists. Do not want to trigger a repo-updater lookup since this is a batch job.
-	commit, err := git.ResolveRevision(r.Context(), gitserver.Repo{Name: name}, nil, spec, nil)
+	repo := gitserver.Repo{Name: name}
+	commit, err := git.ResolveRevision(r.Context(), repo, nil, spec, nil)
 	if err != nil {
 		return err
 	}
 
-	src, err := git.FetchTar(r.Context(), name, commit)
+	src, err := git.FetchTar(r.Context(), repo, commit)
 	if err != nil {
 		return err
 	}

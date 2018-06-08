@@ -8,11 +8,12 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
 // ReadFile returns the content of the named file at commit.
-func (r *Repository) ReadFile(ctx context.Context, commit api.CommitID, name string) ([]byte, error) {
+func ReadFile(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) ([]byte, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ReadFile")
 	span.SetTag("Name", name)
 	defer span.Finish()
@@ -22,17 +23,18 @@ func (r *Repository) ReadFile(ctx context.Context, commit api.CommitID, name str
 	}
 
 	name = util.Rel(name)
-	b, err := r.readFileBytes(ctx, commit, name)
+	b, err := readFileBytes(ctx, repo, commit, name)
 	if err != nil {
 		return nil, err
 	}
 	return b, nil
 }
 
-func (r *Repository) readFileBytes(ctx context.Context, commit api.CommitID, name string) ([]byte, error) {
-	r.ensureAbsCommit(commit)
+func readFileBytes(ctx context.Context, repo gitserver.Repo, commit api.CommitID, name string) ([]byte, error) {
+	ensureAbsCommit(commit)
 
-	cmd := r.command("git", "show", string(commit)+":"+name)
+	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
+	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if bytes.Contains(out, []byte("exists on disk, but not in")) || bytes.Contains(out, []byte("does not exist")) {
@@ -40,7 +42,7 @@ func (r *Repository) readFileBytes(ctx context.Context, commit api.CommitID, nam
 		}
 		if bytes.HasPrefix(out, []byte("fatal: bad object ")) {
 			// Could be a git submodule.
-			fi, err := r.Stat(ctx, commit, name)
+			fi, err := Stat(ctx, repo, commit, name)
 			if err != nil {
 				return nil, err
 			}

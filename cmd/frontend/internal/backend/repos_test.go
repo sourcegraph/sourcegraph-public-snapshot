@@ -96,5 +96,3 @@ func TestRepos_Add(t *testing.T) {
 		t.Error("!calledTryInsertNew")
 	}
 }
-
-func strptr(s string) *string { return &s }

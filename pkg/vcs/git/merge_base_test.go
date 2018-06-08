@@ -59,7 +59,7 @@ func TestMerger_MergeBase(t *testing.T) {
 			continue
 		}
 
-		mb, err := git.Open(test.repo.Name, "").MergeBase(ctx, a, b)
+		mb, err := git.MergeBase(ctx, test.repo, a, b)
 		if err != nil {
 			t.Errorf("%s: MergeBase(%s, %s): %s", label, a, b, err)
 			continue

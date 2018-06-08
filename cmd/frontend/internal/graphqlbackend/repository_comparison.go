@@ -129,7 +129,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
 
-		rdr, err := backend.CachedGitRepoTmp(r.repo.repo).ExecReader(ctx, []string{
+		rdr, err := git.ExecReader(ctx, backend.CachedGitRepo(r.repo.repo), []string{
 			"diff",
 			"--find-renames",
 			"--find-copies",

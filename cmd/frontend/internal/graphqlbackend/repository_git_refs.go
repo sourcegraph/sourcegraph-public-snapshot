@@ -43,12 +43,10 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 	Type    *string
 	OrderBy *string
 }) (*gitRefConnectionResolver, error) {
-	vcsrepo := backend.CachedGitRepoTmp(r.repo)
-
 	var branches []*git.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = vcsrepo.Branches(ctx, git.BranchesOptions{IncludeCommit: true})
+		branches, err = git.ListBranches(ctx, backend.CachedGitRepo(r.repo), git.BranchesOptions{IncludeCommit: true})
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +85,7 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 	var tags []*git.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
 		var err error
-		tags, err = vcsrepo.Tags(ctx)
+		tags, err = git.ListTags(ctx, backend.CachedGitRepo(r.repo))
 		if err != nil {
 			return nil, err
 		}

@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 // ShortLogOptions contains options for (Repository).ShortLog.
@@ -25,7 +26,7 @@ type PersonCount struct {
 }
 
 // ShortLog returns the per-author commit statistics of the repo.
-func (r *Repository) ShortLog(ctx context.Context, opt ShortLogOptions) ([]*PersonCount, error) {
+func ShortLog(ctx context.Context, repo gitserver.Repo, opt ShortLogOptions) ([]*PersonCount, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ShortLog")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -45,7 +46,8 @@ func (r *Repository) ShortLog(ctx context.Context, opt ShortLogOptions) ([]*Pers
 	if opt.Path != "" {
 		args = append(args, opt.Path)
 	}
-	cmd := r.command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git shortlog -sne` failed: %v", err)

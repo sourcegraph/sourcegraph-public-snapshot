@@ -131,8 +131,7 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
-	vcsrepo := backend.CachedGitRepoTmp(r.repo)
-	ref, err := vcsrepo.GitCmdRaw(ctx, []string{"symbolic-ref", "HEAD"})
+	ref, err := git.GitCmdRaw(ctx, backend.CachedGitRepo(r.repo), []string{"symbolic-ref", "HEAD"})
 
 	if err == nil {
 		// Check that our repo is not empty

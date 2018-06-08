@@ -12,6 +12,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
@@ -102,29 +103,29 @@ func (f branchFilter) add(list []string) {
 	}
 }
 
-// Branches returns a list of all branches in the repository.
-func (r *Repository) Branches(ctx context.Context, opt BranchesOptions) ([]*Branch, error) {
+// ListBranches returns a list of all branches in the repository.
+func ListBranches(ctx context.Context, repo gitserver.Repo, opt BranchesOptions) ([]*Branch, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
 
 	f := make(branchFilter)
 	if opt.MergedInto != "" {
-		b, err := r.branches(ctx, "--merged", opt.MergedInto)
+		b, err := branches(ctx, repo, "--merged", opt.MergedInto)
 		if err != nil {
 			return nil, err
 		}
 		f.add(b)
 	}
 	if opt.ContainsCommit != "" {
-		b, err := r.branches(ctx, "--contains="+opt.ContainsCommit)
+		b, err := branches(ctx, repo, "--contains="+opt.ContainsCommit)
 		if err != nil {
 			return nil, err
 		}
 		f.add(b)
 	}
 
-	refs, err := r.showRef(ctx, "--heads")
+	refs, err := showRef(ctx, repo, "--heads")
 	if err != nil {
 		return nil, err
 	}
@@ -139,13 +140,13 @@ func (r *Repository) Branches(ctx context.Context, opt BranchesOptions) ([]*Bran
 
 		branch := &Branch{Name: name, Head: id}
 		if opt.IncludeCommit {
-			branch.Commit, err = r.getCommit(ctx, id)
+			branch.Commit, err = getCommit(ctx, repo, id)
 			if err != nil {
 				return nil, err
 			}
 		}
 		if opt.BehindAheadBranch != "" {
-			branch.Counts, err = r.BehindAhead(ctx, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
+			branch.Counts, err = GetBehindAhead(ctx, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
 			if err != nil {
 				return nil, err
 			}
@@ -157,8 +158,9 @@ func (r *Repository) Branches(ctx context.Context, opt BranchesOptions) ([]*Bran
 
 // branches runs the `git branch` command followed by the given arguments and
 // returns the list of branches if successful.
-func (r *Repository) branches(ctx context.Context, args ...string) ([]string, error) {
-	cmd := r.command("git", append([]string{"branch"}, args...)...)
+func branches(ctx context.Context, repo gitserver.Repo, args ...string) ([]string, error) {
+	cmd := gitserver.DefaultClient.Command("git", append([]string{"branch"}, args...)...)
+	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args, cmd.Repo, err, out)
@@ -172,9 +174,9 @@ func (r *Repository) branches(ctx context.Context, args ...string) ([]string, er
 	return branches, nil
 }
 
-// BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func (r *Repository) BehindAhead(ctx context.Context, left, right string) (*BehindAhead, error) {
+func GetBehindAhead(ctx context.Context, repo gitserver.Repo, left, right string) (*BehindAhead, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BehindAhead")
 	defer span.Finish()
 
@@ -185,7 +187,8 @@ func (r *Repository) BehindAhead(ctx context.Context, left, right string) (*Behi
 		return nil, err
 	}
 
-	cmd := r.command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
+	cmd := gitserver.DefaultClient.Command("git", "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
+	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, err
@@ -202,15 +205,16 @@ func (r *Repository) BehindAhead(ctx context.Context, left, right string) (*Behi
 	return &BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
-// Tags returns a list of all tags in the repository.
-func (r *Repository) Tags(ctx context.Context) ([]*Tag, error) {
+// ListTags returns a list of all tags in the repository.
+func ListTags(ctx context.Context, repo gitserver.Repo) ([]*Tag, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
 	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
 	// using committerdate).
-	cmd := r.command("git", "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
+	cmd := gitserver.DefaultClient.Command("git", "tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)")
+	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
@@ -249,8 +253,9 @@ func (p byteSlices) Len() int           { return len(p) }
 func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func (r *Repository) showRef(ctx context.Context, arg string) ([][2]string, error) {
-	cmd := r.command("git", "show-ref", arg)
+func showRef(ctx context.Context, repo gitserver.Repo, arg string) ([][2]string, error) {
+	cmd := gitserver.DefaultClient.Command("git", "show-ref", arg)
+	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
