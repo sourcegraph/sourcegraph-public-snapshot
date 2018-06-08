@@ -171,7 +171,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		// Update gitserver contents for a repo whenever it is visited.
 		go func() {
 			ctx := context.Background()
-			if gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, common.Repo); err == nil {
+			if gitserverRepo, err := backend.GitRepo(ctx, common.Repo); err == nil {
 				gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo)
 			}
 		}()

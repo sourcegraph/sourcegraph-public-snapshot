@@ -276,7 +276,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 
 	// Trigger update when enabling.
 	if args.Enabled {
-		gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo.repo)
+		gitserverRepo, err := backend.GitRepo(ctx, repo.repo)
 		if err != nil {
 			return nil, err
 		}

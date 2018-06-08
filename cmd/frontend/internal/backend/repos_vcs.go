@@ -22,14 +22,16 @@ import (
 // (the new way), it returns the *git.Repository struct with a bunch of VCS methods (the old
 // way). It will be removed once all *git.Repository methods are unpeeled to funcs in package vcs.
 func CachedGitRepoTmp(repo *types.Repo) *git.Repository {
-	if r := quickGitserverRepoInfo(repo.URI); r != nil {
+	if r := quickGitserverRepo(repo.URI); r != nil {
 		return git.Open(r.Name, r.URL)
 	}
 	return git.Open(repo.URI, "")
 }
 
-func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
-	if gitserverRepo := quickGitserverRepoInfo(repo.URI); gitserverRepo != nil {
+// GitRepo returns a handle to the Git repository with the up-to-date (as of the time of this call)
+// remote URL. See CachedGitRepo for when this is necessary vs. unnecessary.
+func GitRepo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
+	if gitserverRepo := quickGitserverRepo(repo.URI); gitserverRepo != nil {
 		return *gitserverRepo, nil
 	}
 
@@ -46,7 +48,7 @@ func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver
 	return gitserver.Repo{Name: result.Repo.URI, URL: result.Repo.VCS.URL}, nil
 }
 
-func quickGitserverRepoInfo(repo api.RepoURI) *gitserver.Repo {
+func quickGitserverRepo(repo api.RepoURI) *gitserver.Repo {
 	// If it is possible to 100% correctly determine it statically, use a fast path. This is
 	// used to avoid a RepoLookup call for public GitHub.com and GitLab.com repositories
 	// (especially on Sourcegraph.com), which reduces rate limit pressure significantly.
@@ -86,7 +88,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	defer done()
 
 	// Try to get latest remote URL, but continue even if that fails.
-	gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
+	gitserverRepo, err := GitRepo(ctx, repo)
 	if err != nil {
 		return "", err
 	}
@@ -111,7 +113,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 	}
 
 	// Try to get latest remote URL, but continue even if that fails.
-	gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
+	gitserverRepo, err := GitRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}

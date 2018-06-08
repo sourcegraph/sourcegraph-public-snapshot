@@ -108,7 +108,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 	inputRev := repoRevs.revspecs()[0]
 	span.SetTag("rev", inputRev)
 	// Do not trigger a repo-updater lookup (e.g.,
-	// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
+	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
 	commitID, err := git.Open(repoRevs.gitserverRepo.Name, repoRevs.gitserverRepo.URL).ResolveRevision(ctx, nil, inputRev, nil)

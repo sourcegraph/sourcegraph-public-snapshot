@@ -101,7 +101,7 @@ func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
 	// Avoid hitting the repoupdater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	if gitserverRepo := quickGitserverRepoInfo(uri); gitserverRepo != nil {
+	if gitserverRepo := quickGitserverRepo(uri); gitserverRepo != nil {
 		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, *gitserverRepo); err != nil {
 			return err
 		}

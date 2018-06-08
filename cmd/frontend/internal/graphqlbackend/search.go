@@ -398,7 +398,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 				// Validate the revspec.
 
 				// Do not trigger a repo-updater lookup (e.g.,
-				// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
+				// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 				// down by a lot (if we're looping over many repos). This means that it'll fail if a
 				// repo is not on gitserver.
 				//

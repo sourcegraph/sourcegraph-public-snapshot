@@ -129,11 +129,11 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 			return nil, err
 		}
 	case args.Name != nil:
-		// GitserverRepoInfo will use just the URI to look up the repository from repo-updater.
+		// GitRepo will use just the URI to look up the repository from repo-updater.
 		repo = &types.Repo{URI: api.RepoURI(*args.Name)}
 	}
 
-	gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo)
+	gitserverRepo, err := backend.GitRepo(ctx, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo.repo)
+	gitserverRepo, err := backend.GitRepo(ctx, repo.repo)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (r *schemaResolver) UpdateAllMirrorRepositories(ctx context.Context) (*Empt
 	}
 
 	for _, repo := range reposList {
-		gitserverRepo, err := backend.Repos.GitserverRepoInfo(ctx, repo)
+		gitserverRepo, err := backend.GitRepo(ctx, repo)
 		if err != nil {
 			return nil, err
 		}
