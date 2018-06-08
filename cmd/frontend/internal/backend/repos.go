@@ -225,7 +225,8 @@ func (s *repos) RefreshIndex(ctx context.Context, repo *types.Repo) (err error) 
 		return nil
 	}
 
-	ctx, done := trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.URI}, &err)
+	var done func()
+	ctx, done = trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.URI}, &err)
 	defer done()
 
 	go func() {
