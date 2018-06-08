@@ -15,6 +15,71 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
+// A Branch is a VCS branch.
+type Branch struct {
+	// Name is the name of this branch.
+	Name string `json:"Name,omitempty"`
+	// Head is the commit ID of this branch's head commit.
+	Head api.CommitID `json:"Head,omitempty"`
+	// Commit optionally contains commit information for this branch's head commit.
+	// It is populated if IncludeCommit option is set.
+	Commit *Commit `json:"Commit,omitempty"`
+	// Counts optionally contains the commit counts relative to specified branch.
+	Counts *BehindAhead `json:"Counts,omitempty"`
+}
+
+// BranchesOptions specifies options for the list of branches returned by
+// (Repository).Branches.
+type BranchesOptions struct {
+	// MergedInto will cause the returned list to be restricted to only
+	// branches that were merged into this branch name.
+	MergedInto string `json:"MergedInto,omitempty" url:",omitempty"`
+	// IncludeCommit controls whether complete commit information is included.
+	IncludeCommit bool `json:"IncludeCommit,omitempty" url:",omitempty"`
+	// BehindAheadBranch specifies a branch name. If set to something other than blank
+	// string, then each returned branch will include a behind/ahead commit counts
+	// information against the specified base branch. If left blank, then branches will
+	// not include that information and their Counts will be nil.
+	BehindAheadBranch string `json:"BehindAheadBranch,omitempty" url:",omitempty"`
+	// ContainsCommit filters the list of branches to only those that
+	// contain a specific commit ID (if set).
+	ContainsCommit string `json:"ContainsCommit,omitempty" url:",omitempty"`
+}
+
+// A Tag is a VCS tag.
+type Tag struct {
+	Name         string `json:"Name,omitempty"`
+	api.CommitID `json:"CommitID,omitempty"`
+	CreatorDate  time.Time
+}
+
+// BehindAhead is a set of behind/ahead counts.
+type BehindAhead struct {
+	Behind uint32 `json:"Behind,omitempty"`
+	Ahead  uint32 `json:"Ahead,omitempty"`
+}
+
+type Branches []*Branch
+
+func (p Branches) Len() int           { return len(p) }
+func (p Branches) Less(i, j int) bool { return p[i].Name < p[j].Name }
+func (p Branches) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
+// ByAuthorDate sorts by author date. Requires full commit information to be included.
+type ByAuthorDate []*Branch
+
+func (p ByAuthorDate) Len() int { return len(p) }
+func (p ByAuthorDate) Less(i, j int) bool {
+	return p[i].Commit.Author.Date.Before(p[j].Commit.Author.Date)
+}
+func (p ByAuthorDate) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+
+type Tags []*Tag
+
+func (p Tags) Len() int           { return len(p) }
+func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
+func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
 // branchFilter is a filter for branch names.
 // If not empty, only contained branch names are allowed. If empty, all names are allowed.
 // The map should be made so it's not nil.
@@ -38,7 +103,7 @@ func (f branchFilter) add(list []string) {
 }
 
 // Branches returns a list of all branches in the repository.
-func (r *Repository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*vcs.Branch, error) {
+func (r *Repository) Branches(ctx context.Context, opt BranchesOptions) ([]*Branch, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Branches")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -64,7 +129,7 @@ func (r *Repository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*
 		return nil, err
 	}
 
-	var branches []*vcs.Branch
+	var branches []*Branch
 	for _, ref := range refs {
 		name := strings.TrimPrefix(ref[1], "refs/heads/")
 		id := api.CommitID(ref[0])
@@ -72,7 +137,7 @@ func (r *Repository) Branches(ctx context.Context, opt vcs.BranchesOptions) ([]*
 			continue
 		}
 
-		branch := &vcs.Branch{Name: name, Head: id}
+		branch := &Branch{Name: name, Head: id}
 		if opt.IncludeCommit {
 			branch.Commit, err = r.getCommit(ctx, id)
 			if err != nil {
@@ -109,7 +174,7 @@ func (r *Repository) branches(ctx context.Context, args ...string) ([]string, er
 
 // BehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func (r *Repository) BehindAhead(ctx context.Context, left, right string) (*vcs.BehindAhead, error) {
+func (r *Repository) BehindAhead(ctx context.Context, left, right string) (*BehindAhead, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BehindAhead")
 	defer span.Finish()
 
@@ -134,11 +199,11 @@ func (r *Repository) BehindAhead(ctx context.Context, left, right string) (*vcs.
 	if err != nil {
 		return nil, err
 	}
-	return &vcs.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+	return &BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
 }
 
 // Tags returns a list of all tags in the repository.
-func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
+func (r *Repository) Tags(ctx context.Context) ([]*Tag, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Tags")
 	defer span.Finish()
 
@@ -159,7 +224,7 @@ func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
 		return nil, nil // no tags
 	}
 	lines := bytes.Split(out, []byte("\n"))
-	tags := make([]*vcs.Tag, len(lines))
+	tags := make([]*Tag, len(lines))
 	for i, line := range lines {
 		parts := bytes.SplitN(line, []byte("\x00"), 3)
 		if len(parts) != 3 {
@@ -169,7 +234,7 @@ func (r *Repository) Tags(ctx context.Context) ([]*vcs.Tag, error) {
 		if err != nil {
 			return nil, err
 		}
-		tags[i] = &vcs.Tag{
+		tags[i] = &Tag{
 			Name:        string(parts[1]),
 			CommitID:    api.CommitID(parts[0]),
 			CreatorDate: time.Unix(date, 0).UTC(),

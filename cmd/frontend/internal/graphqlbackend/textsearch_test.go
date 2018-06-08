@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestQueryToZoektQuery(t *testing.T) {
@@ -150,7 +151,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		case "foo/timedout":
 			return nil, false, context.DeadlineExceeded
 		case "foo/no-rev":
-			return nil, false, &vcs.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
+			return nil, false, &git.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
 		default:
 			return nil, false, errors.New("Unexpected repo")
 		}
@@ -196,7 +197,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		repos: makeRepositoryRevisions("foo/no-rev@dev"),
 	}
 	_, _, err = searchFilesInRepos(context.Background(), args, *query, false)
-	if !vcs.IsRevisionNotFound(errors.Cause(err)) {
+	if !git.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }

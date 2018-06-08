@@ -8,7 +8,6 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
@@ -46,7 +45,7 @@ func (r *Repository) readFileBytes(ctx context.Context, commit api.CommitID, nam
 				return nil, err
 			}
 			// Return empty for a submodule for now.
-			if fi.Mode()&vcs.ModeSubmodule != 0 {
+			if fi.Mode()&ModeSubmodule != 0 {
 				return nil, nil
 			}
 

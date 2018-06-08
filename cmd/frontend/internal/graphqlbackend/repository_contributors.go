@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type repositoryContributorsArgs struct {
@@ -33,13 +33,13 @@ type repositoryContributorConnectionResolver struct {
 
 	// cache result because it is used by multiple fields
 	once    sync.Once
-	results []*vcs.PersonCount
+	results []*git.PersonCount
 	err     error
 }
 
-func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*vcs.PersonCount, error) {
+func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) ([]*git.PersonCount, error) {
 	r.once.Do(func() {
-		var opt vcs.ShortLogOptions
+		var opt git.ShortLogOptions
 		if r.args.RevisionRange != nil {
 			opt.Range = *r.args.RevisionRange
 		}

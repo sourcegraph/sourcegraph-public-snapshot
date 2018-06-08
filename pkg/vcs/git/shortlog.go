@@ -8,11 +8,24 @@ import (
 	"strconv"
 
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
+// ShortLogOptions contains options for (Repository).ShortLog.
+type ShortLogOptions struct {
+	Range string // the range for which stats will be fetched
+	After string // the date after which to collect commits
+	Path  string // compute stats for commits that touch this path
+}
+
+// A PersonCount is a contributor to a repository.
+type PersonCount struct {
+	Name  string
+	Email string
+	Count int32
+}
+
 // ShortLog returns the per-author commit statistics of the repo.
-func (r *Repository) ShortLog(ctx context.Context, opt vcs.ShortLogOptions) ([]*vcs.PersonCount, error) {
+func (r *Repository) ShortLog(ctx context.Context, opt ShortLogOptions) ([]*PersonCount, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ShortLog")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -43,7 +56,7 @@ func (r *Repository) ShortLog(ctx context.Context, opt vcs.ShortLogOptions) ([]*
 		return nil, nil
 	}
 	lines := bytes.Split(out, []byte{'\n'})
-	results := make([]*vcs.PersonCount, len(lines))
+	results := make([]*PersonCount, len(lines))
 	for i, line := range lines {
 		match := logEntryPattern.FindSubmatch(line)
 		if match == nil {
@@ -57,7 +70,7 @@ func (r *Repository) ShortLog(ctx context.Context, opt vcs.ShortLogOptions) ([]*
 		if err != nil || addr == nil {
 			addr = &mail.Address{Name: string(match[2])}
 		}
-		results[i] = &vcs.PersonCount{
+		results[i] = &PersonCount{
 			Count: int32(count),
 			Name:  addr.Name,
 			Email: addr.Address,

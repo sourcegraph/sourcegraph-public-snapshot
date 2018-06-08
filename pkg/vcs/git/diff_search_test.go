@@ -1,4 +1,4 @@
-package vcs_test
+package git_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestRepository_RawLogDiffSearch(t *testing.T) {
@@ -31,52 +31,52 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error)
+			RawLogDiffSearch(ctx context.Context, opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error)
 		}
-		want map[*vcs.RawLogDiffSearchOptions][]*vcs.LogCommitSearchResult
+		want map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult
 	}{
 		"git cmd": {
 			repo: makeGitRepositoryCmd(t, gitCommands...),
-			want: map[*vcs.RawLogDiffSearchOptions][]*vcs.LogCommitSearchResult{
+			want: map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult{
 				{
-					Query: vcs.TextSearchOptions{Pattern: "root"},
+					Query: git.TextSearchOptions{Pattern: "root"},
 					Diff:  true,
 				}: {
 					{
-						Commit: vcs.Commit{
+						Commit: git.Commit{
 							ID:        "b9b2349a02271ca96e82c70f384812f9c62c26ab",
-							Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-							Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 							Message:   "branch1",
 							Parents:   []api.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
 						},
 						Refs:       []string{"refs/heads/branch1"},
 						SourceRefs: []string{"refs/heads/branch2"},
-						Diff:       &vcs.Diff{Raw: "diff --git a/f b/f\nindex d8649da..1193ff4 100644\n--- a/f\n+++ b/f\n@@ -1,1 +1,1 @@\n-root\n+branch1\n"},
+						Diff:       &git.Diff{Raw: "diff --git a/f b/f\nindex d8649da..1193ff4 100644\n--- a/f\n+++ b/f\n@@ -1,1 +1,1 @@\n-root\n+branch1\n"},
 					},
 					{
-						Commit: vcs.Commit{
+						Commit: git.Commit{
 							ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
-							Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-							Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 							Message:   "root",
 						},
 						Refs:       []string{"refs/heads/master", "refs/tags/mytag"},
 						SourceRefs: []string{"refs/heads/branch2"},
-						Diff:       &vcs.Diff{Raw: "diff --git a/f b/f\nnew file mode 100644\nindex 0000000..d8649da\n--- /dev/null\n+++ b/f\n@@ -0,0 +1,1 @@\n+root\n"},
+						Diff:       &git.Diff{Raw: "diff --git a/f b/f\nnew file mode 100644\nindex 0000000..d8649da\n--- /dev/null\n+++ b/f\n@@ -0,0 +1,1 @@\n+root\n"},
 					},
 				},
 
 				// Without query
 				{
-					Query: vcs.TextSearchOptions{Pattern: ""},
+					Query: git.TextSearchOptions{Pattern: ""},
 					Args:  []string{"--grep=branch1|root", "--extended-regexp"},
 				}: {
 					{
-						Commit: vcs.Commit{
+						Commit: git.Commit{
 							ID:        "b9b2349a02271ca96e82c70f384812f9c62c26ab",
-							Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-							Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 							Message:   "branch1",
 							Parents:   []api.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
 						},
@@ -84,10 +84,10 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 						SourceRefs: []string{"refs/heads/branch2"},
 					},
 					{
-						Commit: vcs.Commit{
+						Commit: git.Commit{
 							ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
-							Author:    vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-							Committer: &vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Author:    git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+							Committer: &git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 							Message:   "root",
 						},
 						Refs:       []string{"refs/heads/master", "refs/tags/mytag"},
@@ -97,7 +97,7 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 
 				// With path exclude/include filters
 				{
-					Paths: vcs.PathOptions{
+					Paths: git.PathOptions{
 						IncludePatterns: []string{"g"},
 						ExcludePattern:  "f",
 						IsRegExp:        true,
@@ -135,15 +135,15 @@ func TestRepository_RawLogDiffSearch_emptyCommit(t *testing.T) {
 	}
 	tests := map[string]struct {
 		repo interface {
-			RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error)
+			RawLogDiffSearch(ctx context.Context, opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error)
 		}
-		want map[*vcs.RawLogDiffSearchOptions][]*vcs.LogCommitSearchResult
+		want map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult
 	}{
 		"git cmd": {
 			repo: makeGitRepositoryCmd(t, gitCommands...),
-			want: map[*vcs.RawLogDiffSearchOptions][]*vcs.LogCommitSearchResult{
+			want: map[*git.RawLogDiffSearchOptions][]*git.LogCommitSearchResult{
 				{
-					Paths: vcs.PathOptions{IncludePatterns: []string{"/xyz.txt"}, IsRegExp: true},
+					Paths: git.PathOptions{IncludePatterns: []string{"/xyz.txt"}, IsRegExp: true},
 				}: nil, // want no matches
 			},
 		},

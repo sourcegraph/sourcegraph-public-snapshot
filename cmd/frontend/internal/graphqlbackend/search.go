@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
 	"github.com/felixfbecker/stringscore"
 	"github.com/pkg/errors"
@@ -406,7 +407,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
 				// taking a long time because they all ask gitserver to try to fetch from the remote
 				// repo.
-				if _, err := vcsrepo.ResolveRevision(ctx, rev.revspec, &vcs.ResolveRevisionOptions{NoEnsureRevision: true}); vcs.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
+				if _, err := vcsrepo.ResolveRevision(ctx, rev.revspec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); git.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.revspec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -890,7 +891,7 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 		} else {
 			common.missing = append(common.missing, repoRev.repo.URI)
 		}
-	} else if vcs.IsRevisionNotFound(searchErr) {
+	} else if git.IsRevisionNotFound(searchErr) {
 		if len(repoRev.revs) == 0 || len(repoRev.revs) == 1 && repoRev.revs[0].revspec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {

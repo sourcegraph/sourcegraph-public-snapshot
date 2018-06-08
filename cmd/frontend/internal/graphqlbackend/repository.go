@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/phabricator"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type repositoryResolver struct {
@@ -104,7 +105,7 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
-		if vcs.IsRevisionNotFound(err) {
+		if git.IsRevisionNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -135,12 +136,12 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 
 	if err == nil {
 		// Check that our repo is not empty
-		_, err = vcsrepo.ResolveRevision(ctx, "HEAD", &vcs.ResolveRevisionOptions{NoEnsureRevision: true})
+		_, err = vcsrepo.ResolveRevision(ctx, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
 	}
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
 	if err != nil {
-		if vcs.IsCloneInProgress(err) || vcs.IsRevisionNotFound(err) {
+		if vcs.IsCloneInProgress(err) || git.IsRevisionNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -282,7 +283,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		// NoEnsureRevision. We do this, otherwise repositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err := vcsrepo.ResolveRevision(ctx, targetRef, &vcs.ResolveRevisionOptions{
+		_, err := vcsrepo.ResolveRevision(ctx, targetRef, &git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {
@@ -293,7 +294,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !vcs.IsRevisionNotFound(err)) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !git.IsRevisionNotFound(err)) {
 		return commit, err
 	}
 

@@ -10,6 +10,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
+// ArchiveOptions contains options for (Repository).Archive.
+type ArchiveOptions struct {
+	Treeish string   // the tree or commit to produce an archive for
+	Format  string   // format of the resulting archive (usually "tar" or "zip")
+	Paths   []string // if nonempty, only include these paths
+}
+
 func (r *Repository) Archive(ctx context.Context, commitID api.CommitID) (zipData []byte, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("URL", r.repoURI)

@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 var (
@@ -58,7 +58,7 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, 
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
 
-	textSearchOptions := vcs.TextSearchOptions{
+	textSearchOptions := git.TextSearchOptions{
 		Pattern:         info.Pattern,
 		IsRegExp:        info.IsRegExp,
 		IsCaseSensitive: info.IsCaseSensitive,
@@ -88,7 +88,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 		info:               info,
 		query:              query,
 		diff:               false,
-		textSearchOptions:  vcs.TextSearchOptions{},
+		textSearchOptions:  git.TextSearchOptions{},
 		extraMessageValues: terms,
 	})
 }
@@ -98,7 +98,7 @@ type commitSearchOp struct {
 	info               *patternInfo
 	query              searchquery.Query
 	diff               bool
-	textSearchOptions  vcs.TextSearchOptions
+	textSearchOptions  git.TextSearchOptions
 	extraMessageValues []string
 }
 
@@ -215,9 +215,9 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	}
 
 	vcsrepo := backend.Repos.CachedVCS(repo)
-	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, vcs.RawLogDiffSearchOptions{
+	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, git.RawLogDiffSearchOptions{
 		Query: op.textSearchOptions,
-		Paths: vcs.PathOptions{
+		Paths: git.PathOptions{
 			IncludePatterns: op.info.IncludePatterns,
 			ExcludePattern:  op.info.ExcludePattern,
 			IsCaseSensitive: op.info.PathPatternsAreCaseSensitive,

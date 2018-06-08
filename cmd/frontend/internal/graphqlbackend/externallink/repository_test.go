@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	vcstesting "github.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestRepository(t *testing.T) {
@@ -226,11 +226,11 @@ func TestFileOrDir(t *testing.T) {
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
 		}
-		backend.Mocks.Repos.MockVCS(t, "myrepo", vcstesting.MockRepository{
-			GitCmdRaw_: func(ctx context.Context, params []string) (string, error) {
-				return "mybranch", nil
-			},
-		})
+		backend.Mocks.Repos.MockVCS(t, "myrepo")
+		git.Mocks.GitCmdRaw = func(params []string) (string, error) {
+			return "mybranch", nil
+		}
+		defer git.ResetMocks()
 		links, err := FileOrDir(context.Background(), &types.Repo{URI: "myrepo"}, rev, path, true)
 		if err != nil {
 			t.Fatal(err)

@@ -11,8 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	vcstest "github.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
@@ -25,10 +24,10 @@ func TestTree(t *testing.T) {
 		}
 		return exampleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{ID: exampleCommitSHA1})
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
 
-	mockRepo := vcstest.MockRepository{}
-	mockRepo.ReadDir_ = func(ctx context.Context, commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
+	backend.Mocks.Repos.MockVCS(t, "github.com/gorilla/mux")
+	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
 		if string(commit) != exampleCommitSHA1 || name != "/foo" {
 			t.Error("wrong arguments to RepoTree.Get")
 		}
@@ -37,7 +36,7 @@ func TestTree(t *testing.T) {
 			&util.FileInfo{Name_: "testFile", Mode_: 0},
 		}, nil
 	}
-	backend.Mocks.Repos.MockVCS(t, "github.com/gorilla/mux", mockRepo)
+	defer git.ResetMocks()
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
@@ -511,13 +512,13 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 
 	// Ensure commit exists. Use Repos.VCS since we do not want to trigger a
 	// repo-updater lookup since this is a batch job.
-	vcs := backend.Repos.VCS(gitserver.Repo{Name: name})
-	commit, err := vcs.ResolveRevision(r.Context(), spec, nil)
+	vcsrepo := backend.Repos.VCS(gitserver.Repo{Name: name})
+	commit, err := vcsrepo.ResolveRevision(r.Context(), spec, nil)
 	if err != nil {
 		return err
 	}
 
-	src, err := gitserver.FetchTar(r.Context(), gitserver.DefaultClient, gitserver.Repo{Name: name}, commit)
+	src, err := git.FetchTar(r.Context(), name, commit)
 	if err != nil {
 		return err
 	}

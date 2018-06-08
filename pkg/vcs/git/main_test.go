@@ -1,4 +1,4 @@
-package vcs_test
+package git_test
 
 import (
 	"flag"

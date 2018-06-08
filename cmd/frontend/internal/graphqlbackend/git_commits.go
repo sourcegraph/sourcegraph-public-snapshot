@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type gitCommitConnectionResolver struct {
@@ -21,12 +21,12 @@ type gitCommitConnectionResolver struct {
 
 	// cache results because it is used by multiple fields
 	once    sync.Once
-	commits []*vcs.Commit
+	commits []*git.Commit
 	err     error
 }
 
-func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commit, error) {
-	do := func() ([]*vcs.Commit, error) {
+func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commit, error) {
+	do := func() ([]*git.Commit, error) {
 		vcsrepo := backend.Repos.CachedVCS(r.repo.repo)
 
 		var n int32
@@ -50,7 +50,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*vcs.Commi
 		if r.after != nil {
 			after = *r.after
 		}
-		return vcsrepo.Commits(ctx, vcs.CommitsOptions{
+		return vcsrepo.Commits(ctx, git.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
 			MessageQuery: query,

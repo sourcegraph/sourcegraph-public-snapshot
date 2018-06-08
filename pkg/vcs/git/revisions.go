@@ -12,13 +12,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
+// IsAbsoluteRevision checks if the revision is a git OID SHA string.
+//
+// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
+// isn't a ref. Git allows 40-char hexadecimal strings to be references.
+func IsAbsoluteRevision(s string) bool {
+	if len(s) != 40 {
+		return false
+	}
+	for _, r := range s {
+		if !(('0' <= r && r <= '9') ||
+			('a' <= r && r <= 'f') ||
+			('A' <= r && r <= 'F')) {
+			return false
+		}
+	}
+	return true
+}
+
 func (r *Repository) ensureAbsCommit(commitID api.CommitID) {
 	// We don't want to even be running commands on non-absolute
 	// commit IDs if we can avoid it, because we can't cache the
 	// expensive part of those computations.
-	if !vcs.IsAbsoluteRevision(string(commitID)) {
+	if !IsAbsoluteRevision(string(commitID)) {
 		panic(fmt.Errorf("non-absolute commit ID: %q on %s", commitID, r.String()))
 	}
+}
+
+type ResolveRevisionOptions struct {
+	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
 }
 
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
@@ -29,7 +51,11 @@ func (r *Repository) ensureAbsCommit(commitID api.CommitID) {
 // * Commit does not exist: RevisionNotFoundError
 // * Empty repository: RevisionNotFoundError
 // * Other unexpected errors.
-func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.ResolveRevisionOptions) (api.CommitID, error) {
+func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *ResolveRevisionOptions) (api.CommitID, error) {
+	if Mocks.ResolveRevision != nil {
+		return Mocks.ResolveRevision(spec, opt)
+	}
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)
 	span.SetTag("Opt", fmt.Sprintf("%+v", opt))
@@ -62,7 +88,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.
 		}
 
 		// We need to try again with the remote URL set so we can fetch.
-		if vcs.IsRevisionNotFound(err) {
+		if IsRevisionNotFound(err) {
 			// If we didn't find HEAD, then the repo is empty.
 			if spec == "HEAD" {
 				return false
@@ -82,7 +108,7 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *vcs.
 	if !tryAgain(err) {
 		return "", err
 	}
-	doEnsureRevision := vcs.IsRevisionNotFound(err)
+	doEnsureRevision := IsRevisionNotFound(err)
 
 	r.once.Do(func() {
 		r.remoteURL, r.remoteURLErr = r.remoteURLFunc()
@@ -108,18 +134,18 @@ func (r *Repository) runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec s
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: spec}
+			return "", &RevisionNotFoundError{Repo: r.repoURI, Spec: spec}
 		}
 		return "", errors.WithMessage(err, fmt.Sprintf("exec `git rev-parse` failed with stderr: %s", stderr))
 	}
 	commit := api.CommitID(bytes.TrimSpace(stdout))
-	if !vcs.IsAbsoluteRevision(string(commit)) {
+	if !IsAbsoluteRevision(string(commit)) {
 		if commit == "HEAD" {
 			// We don't verify the existence of HEAD (see above comments), but
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: spec}
+			return "", &RevisionNotFoundError{Repo: r.repoURI, Spec: spec}
 		}
 		return "", fmt.Errorf("ResolveRevision: got bad commit %q for repo %q at revision %q", commit, r.repoURI, spec)
 	}

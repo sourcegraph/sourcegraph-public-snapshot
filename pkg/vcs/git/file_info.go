@@ -1,4 +1,4 @@
-package vcs
+package git
 
 import "github.com/sourcegraph/sourcegraph/pkg/api"
 

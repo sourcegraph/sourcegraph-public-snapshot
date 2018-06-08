@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/highlight"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type fileResolver struct {
@@ -199,7 +199,7 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error
 
 func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
 	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
-	commits, err := vcsrepo.Commits(ctx, vcs.CommitsOptions{
+	commits, err := vcsrepo.Commits(ctx, git.CommitsOptions{
 		Range: string(r.commit.oid),
 		N:     limit,
 		Path:  r.path,
@@ -222,7 +222,7 @@ func (r *fileResolver) Blame(ctx context.Context,
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
 	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
-	hunks, err := vcsrepo.BlameFile(ctx, r.path, &vcs.BlameOptions{
+	hunks, err := vcsrepo.BlameFile(ctx, r.path, &git.BlameOptions{
 		NewestCommit: api.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),

@@ -8,12 +8,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 )
 
 // compilePathMatcher compiles the path options into a PathMatcher.
-func compilePathMatcher(options vcs.PathOptions) (pathmatch.PathMatcher, error) {
+func compilePathMatcher(options PathOptions) (pathmatch.PathMatcher, error) {
 	return pathmatch.CompilePathPatterns(
 		options.IncludePatterns, options.ExcludePattern,
 		pathmatch.CompileOptions{CaseSensitive: options.IsCaseSensitive, RegExp: options.IsRegExp},
@@ -22,7 +21,7 @@ func compilePathMatcher(options vcs.PathOptions) (pathmatch.PathMatcher, error) 
 
 // filterAndHighlightDiff returns the raw diff with query matches highlighted
 // and only hunks that satisfy the query (if onlyMatchingHunks) and path matcher.
-func filterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHunks bool, pathMatcher pathmatch.PathMatcher) ([]byte, []vcs.Highlight, error) {
+func filterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHunks bool, pathMatcher pathmatch.PathMatcher) ([]byte, []Highlight, error) {
 	const (
 		maxFiles          = 5
 		maxHunksPerFile   = 3
@@ -87,7 +86,7 @@ func filterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 	}
 
 	// Highlight query matches in raw diff.
-	var highlights []vcs.Highlight
+	var highlights []Highlight
 	ignoreUntilAfterAtAt := false
 	for i, line := range bytes.Split(rawDiff, []byte("\n")) {
 		// Don't highlight matches that are not in the body (such as "+++ file1" or "--- file1").
@@ -113,7 +112,7 @@ func filterAndHighlightDiff(rawDiff []byte, query *regexp.Regexp, onlyMatchingHu
 		if query != nil {
 			lineWithoutStatus := line[1:] // don't match '-' or '+' line status
 			for _, match := range query.FindAllIndex(lineWithoutStatus, maxMatchesPerLine) {
-				highlights = append(highlights, vcs.Highlight{
+				highlights = append(highlights, Highlight{
 					Line:      i + 1,
 					Character: match[0] + 1,
 					Length:    match[1] - match[0],

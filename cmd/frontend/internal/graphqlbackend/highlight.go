@@ -1,6 +1,6 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/pkg/vcs"
+import "github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
 type highlightedRange struct {
 	line      int32
@@ -20,7 +20,7 @@ type highlightedString struct {
 func (s *highlightedString) Value() string                   { return s.value }
 func (s *highlightedString) Highlights() []*highlightedRange { return s.highlights }
 
-func fromVCSHighlights(vcsHighlights []vcs.Highlight) []*highlightedRange {
+func fromVCSHighlights(vcsHighlights []git.Highlight) []*highlightedRange {
 	highlights := make([]*highlightedRange, len(vcsHighlights))
 	for i, vh := range vcsHighlights {
 		highlights[i] = &highlightedRange{

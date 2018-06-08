@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
@@ -24,7 +24,7 @@ func TestRepository_Commit(t *testing.T) {
 		}
 		return exampleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{ID: exampleCommitSHA1})
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
 
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{

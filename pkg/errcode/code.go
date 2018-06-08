@@ -3,17 +3,14 @@
 package errcode
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
-
-	"context"
-
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-
 	"github.com/gorilla/schema"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // HTTP returns the most appropriate HTTP status code that describes
@@ -36,8 +33,6 @@ func HTTP(err error) int {
 		return http.StatusAccepted
 	} else if vcs.IsRepoNotExist(err) || strings.Contains(err.Error(), (&vcs.RepoNotExistError{}).Error()) {
 		return http.StatusNotFound
-	} else if err == vcs.ErrRepoExist {
-		return http.StatusConflict
 	}
 
 	switch e := err.(type) {

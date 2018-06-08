@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestRepositoryResolver_Packages(t *testing.T) {
@@ -25,7 +25,7 @@ func TestRepositoryResolver_Packages(t *testing.T) {
 		}}, nil
 	}
 	backend.Mocks.Repos.MockResolveRev_NoCheck(t, "cccccccccccccccccccccccccccccccccccccccc")
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &vcs.Commit{})
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{})
 	db.Mocks.Repos.MockGetByURI(t, "r", 1)
 
 	gqltesting.RunTests(t, []*gqltesting.Test{

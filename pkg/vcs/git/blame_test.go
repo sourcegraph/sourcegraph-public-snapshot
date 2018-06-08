@@ -1,11 +1,11 @@
-package vcs_test
+package git_test
 
 import (
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestRepository_BlameFile(t *testing.T) {
@@ -19,27 +19,27 @@ func TestRepository_BlameFile(t *testing.T) {
 		"git add f",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
-	gitWantHunks := []*vcs.Hunk{
+	gitWantHunks := []*git.Hunk{
 		{
 			StartLine: 1, EndLine: 2, StartByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
-			Message: "foo", Author: vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message: "foo", Author: git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		},
 		{
 			StartLine: 2, EndLine: 3, StartByte: 6, EndByte: 12, CommitID: "fad406f4fe02c358a09df0d03ec7a36c2c8a20f1",
-			Message: "foo", Author: vcs.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Message: "foo", Author: git.Signature{Name: "a", Email: "a@a.com", Date: mustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 		},
 	}
 	tests := map[string]struct {
-		repo vcs.Repository
+		repo *gitRepository
 		path string
-		opt  *vcs.BlameOptions
+		opt  *git.BlameOptions
 
-		wantHunks []*vcs.Hunk
+		wantHunks []*git.Hunk
 	}{
 		"git cmd": {
 			repo: makeGitRepositoryCmd(t, gitCommands...),
 			path: "f",
-			opt: &vcs.BlameOptions{
+			opt: &git.BlameOptions{
 				NewestCommit: "master",
 			},
 			wantHunks: gitWantHunks,

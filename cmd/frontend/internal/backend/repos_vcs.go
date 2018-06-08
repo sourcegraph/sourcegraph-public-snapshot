@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"gopkg.in/inconshreveable/log15.v2"
 )
@@ -33,7 +32,7 @@ import (
 // A caller should use CachedVCS if it:
 //  - prefers to fail instead of block (on a Git remote update) if the Git repository is out of date
 //  - doesn't care if the repository still exists on the original code host
-func (repos) RemoteVCS(ctx context.Context, repo *types.Repo) (vcs.Repository, error) {
+func (repos) RemoteVCS(ctx context.Context, repo *types.Repo) (*git.Repository, error) {
 	if Mocks.Repos.VCS != nil {
 		return Mocks.Repos.VCS(repo.URI)
 	}
@@ -50,7 +49,7 @@ func (repos) RemoteVCS(ctx context.Context, repo *types.Repo) (vcs.Repository, e
 // repository exists on its original code host or that gitserver's mirror is up to date.
 //
 // See (repos).RemoteVCS for guidance on when to use CachedVCS vs. RemoteVCS.
-func (repos) CachedVCS(repo *types.Repo) vcs.Repository {
+func (repos) CachedVCS(repo *types.Repo) *git.Repository {
 	if Mocks.Repos.VCS != nil {
 		vcsrepo, err := Mocks.Repos.VCS(repo.URI)
 		if err != nil {
@@ -67,7 +66,7 @@ func (repos) CachedVCS(repo *types.Repo) vcs.Repository {
 
 // VCS returns a handle to the Git repository specified by repo. Callers, unless they already have a gitserver.Repo
 // value, should use either RemoteVCS or CachedVCS instead of this method.
-func (repos) VCS(repo gitserver.Repo) vcs.Repository {
+func (repos) VCS(repo gitserver.Repo) *git.Repository {
 	return git.Open(repo.Name, repo.URL)
 }
 
@@ -116,8 +115,8 @@ func quickGitserverRepoInfo(repo api.RepoURI) *gitserver.Repo {
 // If no rev is specified, HEAD is used.
 // Error cases:
 // * Repo does not exist: vcs.RepoNotExistError
-// * Commit does not exist: vcs.RevisionNotFoundError
-// * Empty repository: vcs.RevisionNotFoundError
+// * Commit does not exist: git.RevisionNotFoundError
+// * Empty repository: git.RevisionNotFoundError
 // * The user does not have permission: errcode.IsNotFound
 // * Other unexpected errors.
 func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
@@ -136,7 +135,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	return vcsrepo.ResolveRevision(ctx, rev, nil)
 }
 
-func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *vcs.Commit, err error) {
+func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {
 	if Mocks.Repos.GetCommit != nil {
 		return Mocks.Repos.GetCommit(ctx, repo, commitID)
 	}
@@ -146,7 +145,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 
 	log15.Debug("svc.local.repos.GetCommit", "repo", repo.URI, "commitID", commitID)
 
-	if !vcs.IsAbsoluteRevision(string(commitID)) {
+	if !git.IsAbsoluteRevision(string(commitID)) {
 		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 

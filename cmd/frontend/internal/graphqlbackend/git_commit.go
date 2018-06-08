@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -41,7 +41,7 @@ type gitCommitResolver struct {
 	parents   []api.CommitID
 }
 
-func toGitCommitResolver(repo *repositoryResolver, commit *vcs.Commit) *gitCommitResolver {
+func toGitCommitResolver(repo *repositoryResolver, commit *git.Commit) *gitCommitResolver {
 	authorResolver := toSignatureResolver(&commit.Author)
 	return &gitCommitResolver{
 		repo:      repo,

@@ -11,8 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	vcstesting "github.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type MockRepos struct {
@@ -20,13 +19,13 @@ type MockRepos struct {
 	GetByURI             func(v0 context.Context, uri api.RepoURI) (*types.Repo, error)
 	Add                  func(uri api.RepoURI) error
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
-	GetCommit            func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*vcs.Commit, error)
+	GetCommit            func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
 	ResolveRev           func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
 	ListDeps             func(v0 context.Context, v1 []api.RepoURI) ([]api.RepoURI, error)
 	GetInventory         func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	RefreshIndex         func(ctx context.Context, repo *types.Repo) (err error)
-	VCS                  func(repo api.RepoURI) (vcs.Repository, error)
+	VCS                  func(repo api.RepoURI) (*git.Repository, error)
 }
 
 var errRepoNotFound = &errcode.Mock{
@@ -108,29 +107,30 @@ func (s *MockRepos) MockResolveRev_NotFound(t *testing.T, wantRepo api.RepoID, w
 		if rev != wantRev {
 			t.Errorf("got rev %v, want %v", rev, wantRev)
 		}
-		return "", &vcs.RevisionNotFoundError{Repo: repo.URI, Spec: rev}
+		return "", &git.RevisionNotFoundError{Repo: repo.URI, Spec: rev}
 	}
 	return
 }
 
-func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *vcs.Commit) (called *bool) {
+func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *git.Commit) (called *bool) {
 	called = new(bool)
-	s.GetCommit = func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*vcs.Commit, error) {
+	s.GetCommit = func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error) {
 		*called = true
 		return commit, nil
 	}
 	return
 }
 
-func (s *MockRepos) MockVCS(t *testing.T, wantRepo api.RepoURI, mockVCSRepo vcstesting.MockRepository) (called *bool) {
+func (s *MockRepos) MockVCS(t *testing.T, wantRepo api.RepoURI) (called *bool) {
 	called = new(bool)
-	s.VCS = func(repo api.RepoURI) (vcs.Repository, error) {
+	s.VCS = func(repo api.RepoURI) (*git.Repository, error) {
 		*called = true
 		if repo != wantRepo {
 			t.Errorf("got repo %q, want %q", repo, wantRepo)
 			return nil, errRepoNotFound
 		}
-		return mockVCSRepo, nil
+		// Must use git.Mocks to mock git.Repository methods.
+		return &git.Repository{}, nil
 	}
 	return
 }

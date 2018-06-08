@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type gitObjectID string
@@ -16,7 +16,7 @@ func (gitObjectID) ImplementsGraphQLType(name string) bool {
 }
 
 func (id *gitObjectID) UnmarshalGraphQL(input interface{}) error {
-	if input, ok := input.(string); ok && vcs.IsAbsoluteRevision(input) {
+	if input, ok := input.(string); ok && git.IsAbsoluteRevision(input) {
 		*id = gitObjectID(input)
 		return nil
 	}

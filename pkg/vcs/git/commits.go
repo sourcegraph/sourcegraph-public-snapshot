@@ -11,20 +11,49 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
+
+type Commit struct {
+	ID        api.CommitID `json:"ID,omitempty"`
+	Author    Signature    `json:"Author"`
+	Committer *Signature   `json:"Committer,omitempty"`
+	Message   string       `json:"Message,omitempty"`
+	// Parents are the commit IDs of this commit's parent commits.
+	Parents []api.CommitID `json:"Parents,omitempty"`
+}
+
+type Signature struct {
+	Name  string    `json:"Name,omitempty"`
+	Email string    `json:"Email,omitempty"`
+	Date  time.Time `json:"Date"`
+}
+
+// CommitsOptions specifies options for (Repository).Commits (Repository).CommitCount.
+type CommitsOptions struct {
+	Range string // commit range (revspec, "A..B", "A...B", etc.)
+
+	N    uint // limit the number of returned commits to this many (0 means no limit)
+	Skip uint // skip this many commits at the beginning
+
+	MessageQuery string // include only commits whose commit message contains this substring
+
+	Author string // include only commits whose author matches this
+	After  string // include only commits after this date
+
+	Path string // only commits modifying the given path are selected (optional)
+}
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
 // -sne` command.
 var logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+(.*)$`)
 
 // getCommit returns the commit with the given id.
-func (r *Repository) getCommit(ctx context.Context, id api.CommitID) (*vcs.Commit, error) {
+func (r *Repository) getCommit(ctx context.Context, id api.CommitID) (*Commit, error) {
 	if err := checkSpecArgSafety(string(id)); err != nil {
 		return nil, err
 	}
 
-	commits, err := r.commitLog(ctx, vcs.CommitsOptions{Range: string(id), N: 1})
+	commits, err := r.commitLog(ctx, CommitsOptions{Range: string(id), N: 1})
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +67,7 @@ func (r *Repository) getCommit(ctx context.Context, id api.CommitID) (*vcs.Commi
 
 // GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
 // exists.
-func (r *Repository) GetCommit(ctx context.Context, id api.CommitID) (*vcs.Commit, error) {
+func (r *Repository) GetCommit(ctx context.Context, id api.CommitID) (*Commit, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: GetCommit")
 	span.SetTag("Commit", id)
 	defer span.Finish()
@@ -47,7 +76,7 @@ func (r *Repository) GetCommit(ctx context.Context, id api.CommitID) (*vcs.Commi
 }
 
 // Commits returns all commits matching the options.
-func (r *Repository) Commits(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error) {
+func (r *Repository) Commits(ctx context.Context, opt CommitsOptions) ([]*Commit, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Commits")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -70,7 +99,7 @@ func isInvalidRevisionRangeError(output, obj string) bool {
 // commitLog returns a list of commits.
 //
 // The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*vcs.Commit, error) {
+func (r *Repository) commitLog(ctx context.Context, opt CommitsOptions) ([]*Commit, error) {
 	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
@@ -81,16 +110,16 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 	if err != nil {
 		data = bytes.TrimSpace(data)
 		if isBadObjectErr(string(stderr), string(opt.Range)) {
-			return nil, &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: string(opt.Range)}
+			return nil, &RevisionNotFoundError{Repo: r.repoURI, Spec: string(opt.Range)}
 		}
 		return nil, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
 	}
 
 	allParts := bytes.Split(data, []byte{'\x00'})
 	numCommits := len(allParts) / partsPerCommit
-	commits := make([]*vcs.Commit, 0, numCommits)
+	commits := make([]*Commit, 0, numCommits)
 	for len(data) > 0 {
-		var commit *vcs.Commit
+		var commit *Commit
 		var err error
 		commit, _, data, err = parseCommitFromLog(data)
 		if err != nil {
@@ -102,7 +131,7 @@ func (r *Repository) commitLog(ctx context.Context, opt vcs.CommitsOptions) ([]*
 	return commits, nil
 }
 
-func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions) (args []string, err error) {
+func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err error) {
 	if err := checkSpecArgSafety(string(opt.Range)); err != nil {
 		return nil, err
 	}
@@ -138,7 +167,7 @@ func commitLogArgs(initialArgs []string, opt vcs.CommitsOptions) (args []string,
 }
 
 // CommitCount returns the number of commits that would be returned by Commits.
-func (r *Repository) CommitCount(ctx context.Context, opt vcs.CommitsOptions) (uint, error) {
+func (r *Repository) CommitCount(ctx context.Context, opt CommitsOptions) (uint, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: CommitCount")
 	span.SetTag("Opt", opt)
 	defer span.Finish()
@@ -175,7 +204,7 @@ const (
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by
 // logFormatFlag.
-func parseCommitFromLog(data []byte) (commit *vcs.Commit, refs []string, patch []byte, err error) {
+func parseCommitFromLog(data []byte) (commit *Commit, refs []string, patch []byte, err error) {
 	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
 	if len(parts) < partsPerCommit {
 		return nil, nil, nil, fmt.Errorf("invalid commit log entry: %q", parts)
@@ -207,10 +236,10 @@ func parseCommitFromLog(data []byte) (commit *vcs.Commit, refs []string, patch [
 		refs = strings.Split(string(parts[1]), ", ")
 	}
 
-	commit = &vcs.Commit{
+	commit = &Commit{
 		ID:        api.CommitID(parts[0]),
-		Author:    vcs.Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
-		Committer: &vcs.Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
+		Author:    Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
+		Committer: &Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
 		Message:   string(bytes.TrimSuffix(parts[8], []byte{'\n'})),
 		Parents:   parents,
 	}

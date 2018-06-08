@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func (r *repositoryResolver) Branches(ctx context.Context, args *struct {
@@ -45,17 +45,17 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 }) (*gitRefConnectionResolver, error) {
 	vcsrepo := backend.Repos.CachedVCS(r.repo)
 
-	var branches []*vcs.Branch
+	var branches []*git.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {
 		var err error
-		branches, err = vcsrepo.Branches(ctx, vcs.BranchesOptions{IncludeCommit: true})
+		branches, err = vcsrepo.Branches(ctx, git.BranchesOptions{IncludeCommit: true})
 		if err != nil {
 			return nil, err
 		}
 
 		// Sort branches by most recently committed.
 		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
-			date := func(c *vcs.Commit) time.Time {
+			date := func(c *git.Commit) time.Time {
 				if c.Committer == nil {
 					return c.Author.Date
 				}
@@ -84,7 +84,7 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 		}
 	}
 
-	var tags []*vcs.Tag
+	var tags []*git.Tag
 	if args.Type == nil || *args.Type == gitRefTypeTag {
 		var err error
 		tags, err = vcsrepo.Tags(ctx)

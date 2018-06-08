@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type signatureResolver struct {
@@ -19,7 +19,7 @@ func (r signatureResolver) Date() string {
 	return r.date.Format(time.RFC3339)
 }
 
-func toSignatureResolver(sig *vcs.Signature) *signatureResolver {
+func toSignatureResolver(sig *git.Signature) *signatureResolver {
 	if sig == nil {
 		return nil
 	}

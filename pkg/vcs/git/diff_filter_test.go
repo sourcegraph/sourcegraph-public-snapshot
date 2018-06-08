@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 )
 
@@ -23,9 +22,9 @@ index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf
 	tests := map[string]struct {
 		rawDiff        string
 		query          string
-		paths          vcs.PathOptions
+		paths          PathOptions
 		want           string
-		wantHighlights []vcs.Highlight
+		wantHighlights []Highlight
 	}{
 		"no matches": {
 			rawDiff:        sampleRawDiff,
@@ -37,7 +36,7 @@ index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf
 			rawDiff: sampleRawDiff,
 			query:   "line",
 			want:    sampleRawDiff,
-			wantHighlights: []vcs.Highlight{
+			wantHighlights: []Highlight{
 				{Line: 6, Character: 1, Length: 4},
 				{Line: 7, Character: 1, Length: 4},
 			},
@@ -52,7 +51,7 @@ index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf
 			rawDiff:        sampleRawDiff,
 			query:          "line2",
 			want:           sampleRawDiff,
-			wantHighlights: []vcs.Highlight{{Line: 7, Character: 1, Length: 5}},
+			wantHighlights: []Highlight{{Line: 7, Character: 1, Length: 5}},
 		},
 	}
 	for label, test := range tests {

@@ -1,9 +1,9 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/pkg/vcs"
+import "github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
 type hunkResolver struct {
-	hunk *vcs.Hunk
+	hunk *git.Hunk
 }
 
 func (r *hunkResolver) Author() signatureResolver {

@@ -39,7 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	nettrace "golang.org/x/net/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -532,7 +532,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	// For searches over large repo sets (> 1k), this leads to too many child process execs, which can lead
 	// to a persistent failure mode where every exec takes > 10s, which is disastrous for gitserver performance.
 	if len(req.Args) == 2 && req.Args[0] == "rev-parse" && req.Args[1] == "HEAD" {
-		if resolved, err := quickRevParseHead(dir); err == nil && vcs.IsAbsoluteRevision(resolved) {
+		if resolved, err := quickRevParseHead(dir); err == nil && git.IsAbsoluteRevision(resolved) {
 			w.Write([]byte(resolved))
 			w.Header().Set("X-Exec-Error", "")
 			w.Header().Set("X-Exec-Exit-Status", "0")
@@ -1049,7 +1049,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev,
 	}
 	// rev-parse on an OID does not check if the commit actually exists, so it
 	// is always works. So we append ^0 to force the check
-	if vcs.IsAbsoluteRevision(rev) {
+	if git.IsAbsoluteRevision(rev) {
 		rev = rev + "^0"
 	}
 	cmd := exec.Command("git", "rev-parse", rev, "--")
@@ -1075,7 +1075,7 @@ func quickRevParseHead(dir string) (string, error) {
 		return "", err
 	}
 	head = bytes.TrimSpace(head)
-	if vcs.IsAbsoluteRevision(string(head)) {
+	if git.IsAbsoluteRevision(string(head)) {
 		return string(head), nil
 	}
 

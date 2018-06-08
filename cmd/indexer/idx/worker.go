@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type Worker struct {
@@ -76,7 +77,7 @@ func (w *Worker) Work() {
 			if isPrimary {
 				log15.Debug("Index postponed (clone in progress)", "repo", repoRev.repo, "rev", repoRev.rev)
 			}
-		} else if !vcs.IsRevisionNotFound(err) {
+		} else if !git.IsRevisionNotFound(err) {
 			log15.Error("Index failed", "repo", repoRev.repo, "rev", repoRev.rev, "isPrimary", isPrimary, "error", err)
 		}
 

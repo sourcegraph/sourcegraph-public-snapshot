@@ -11,8 +11,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
@@ -25,6 +25,10 @@ func checkSpecArgSafety(spec string) error {
 }
 
 func (r *Repository) GitCmdRaw(ctx context.Context, params []string) (string, error) {
+	if Mocks.GitCmdRaw != nil {
+		return Mocks.GitCmdRaw(params)
+	}
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ExtensionGitCmd")
 	defer span.Finish()
 
@@ -85,7 +89,7 @@ func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, com
 		} else if err != nil && err != context.DeadlineExceeded {
 			data = bytes.TrimSpace(data)
 			if isBadObjectErr(string(data), "") || isInvalidRevisionRangeError(string(data), "") {
-				return nil, true, &vcs.RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: "UNKNOWN"}
+				return nil, true, &RevisionNotFoundError{Repo: cmd.Repo.Name, Spec: "UNKNOWN"}
 			}
 			if len(data) > 100 {
 				data = append(data[:100], []byte("... (truncated)")...)
@@ -127,6 +131,8 @@ var (
 		"--find-renames",
 		"--inter-hunk-context",
 	}
+
+	reposDir = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
 )
 
 // isWhitelistedGitArg checks if the arg is whitelisted.

@@ -13,37 +13,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
-	vcstesting "github.com/sourcegraph/sourcegraph/pkg/vcs/testing"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
 
 	var calledVCSRawLogDiffSearch bool
-	calledRepoVCSOpen := backend.Mocks.Repos.MockVCS(t, "repo", vcstesting.MockRepository{
-		RawLogDiffSearch_: func(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error) {
-			calledVCSRawLogDiffSearch = true
-			if want := "p"; opt.Query.Pattern != want {
-				t.Errorf("got %q, want %q", opt.Query.Pattern, want)
-			}
-			if want := []string{
-				"--max-count=" + strconv.Itoa(defaultMaxSearchResults+1),
-				"--unified=0",
-				"--no-prefix",
-				"--regexp-ignore-case",
-				"rev",
-			}; !reflect.DeepEqual(opt.Args, want) {
-				t.Errorf("got %v, want %v", opt.Args, want)
-			}
-			return []*vcs.LogCommitSearchResult{
-				{
-					Commit: vcs.Commit{ID: "c1"},
-					Diff:   &vcs.Diff{Raw: "x"},
-				},
-			}, true, nil
-		},
-	})
+	calledRepoVCSOpen := backend.Mocks.Repos.MockVCS(t, "repo")
+	git.Mocks.RawLogDiffSearch = func(opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error) {
+		calledVCSRawLogDiffSearch = true
+		if want := "p"; opt.Query.Pattern != want {
+			t.Errorf("got %q, want %q", opt.Query.Pattern, want)
+		}
+		if want := []string{
+			"--max-count=" + strconv.Itoa(defaultMaxSearchResults+1),
+			"--unified=0",
+			"--no-prefix",
+			"--regexp-ignore-case",
+			"rev",
+		}; !reflect.DeepEqual(opt.Args, want) {
+			t.Errorf("got %v, want %v", opt.Args, want)
+		}
+		return []*git.LogCommitSearchResult{
+			{
+				Commit: git.Commit{ID: "c1"},
+				Diff:   &git.Diff{Raw: "x"},
+			},
+		}, true, nil
+	}
+	defer git.ResetMocks()
 
 	query, err := searchquery.ParseAndCheck("p")
 	if err != nil {
@@ -59,7 +58,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		info:              &patternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
 		query:             *query,
 		diff:              true,
-		textSearchOptions: vcs.TextSearchOptions{Pattern: "p"},
+		textSearchOptions: git.TextSearchOptions{Pattern: "p"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -69,7 +68,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			commit: &gitCommitResolver{
 				repo:   &repositoryResolver{repo: &types.Repo{ID: 1, URI: "repo"}},
 				oid:    "c1",
-				author: *toSignatureResolver(&vcs.Signature{}),
+				author: *toSignatureResolver(&git.Signature{}),
 			},
 			diffPreview: &highlightedString{value: "x", highlights: []*highlightedRange{}},
 		},

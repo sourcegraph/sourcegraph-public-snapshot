@@ -1,9 +1,7 @@
-package vcs_test
+package git_test
 
 import (
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 func TestMerger_MergeBase(t *testing.T) {
@@ -27,7 +25,7 @@ func TestMerger_MergeBase(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m qux --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo vcs.Repository
+		repo *gitRepository
 		a, b string // can be any revspec; is resolved during the test
 
 		wantMergeBase string // can be any revspec; is resolved during test

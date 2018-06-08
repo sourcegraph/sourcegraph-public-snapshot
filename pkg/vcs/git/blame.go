@@ -10,16 +10,35 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
-func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
+// BlameOptions configures a blame.
+type BlameOptions struct {
+	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
+	OldestCommit api.CommitID `json:",omitempty" url:",omitempty"` // or "" for the root commit
+
+	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start byte (or 0 for beginning of file)
+	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end byte (or 0 for end of file)
+}
+
+// A Hunk is a contiguous portion of a file associated with a commit.
+type Hunk struct {
+	StartLine int // 1-indexed start line number
+	EndLine   int // 1-indexed end line number
+	StartByte int // 0-indexed start byte position (inclusive)
+	EndByte   int // 0-indexed end byte position (exclusive)
+	api.CommitID
+	Author  Signature
+	Message string
+}
+
+func (r *Repository) BlameFile(ctx context.Context, path string, opt *BlameOptions) ([]*Hunk, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag(path, opt)
 	defer span.Finish()
 
 	if opt == nil {
-		opt = &vcs.BlameOptions{}
+		opt = &BlameOptions{}
 	}
 	if opt.OldestCommit != "" {
 		return nil, fmt.Errorf("OldestCommit not implemented")
@@ -46,8 +65,8 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 		return nil, nil
 	}
 
-	commits := make(map[string]vcs.Commit)
-	hunks := make([]*vcs.Hunk, 0)
+	commits := make(map[string]Commit)
+	hunks := make([]*Hunk, 0)
 	remainingLines := strings.Split(string(out[:len(out)-1]), "\n")
 	byteOffset := 0
 	for len(remainingLines) > 0 {
@@ -59,7 +78,7 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 		commitID := hunkHeader[0]
 		lineNoCur, _ := strconv.Atoi(hunkHeader[2])
 		nLines, _ := strconv.Atoi(hunkHeader[3])
-		hunk := &vcs.Hunk{
+		hunk := &Hunk{
 			CommitID:  api.CommitID(commitID),
 			StartLine: int(lineNoCur),
 			EndLine:   int(lineNoCur + nLines),
@@ -82,10 +101,10 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *vcs.BlameO
 				return nil, fmt.Errorf("Failed to parse author-time %q", remainingLines[3])
 			}
 			summary := strings.Join(strings.Split(remainingLines[9], " ")[1:], " ")
-			commit := vcs.Commit{
+			commit := Commit{
 				ID:      api.CommitID(commitID),
 				Message: summary,
-				Author: vcs.Signature{
+				Author: Signature{
 					Name:  author,
 					Email: email,
 					Date:  time.Unix(authorTime, 0).UTC(),

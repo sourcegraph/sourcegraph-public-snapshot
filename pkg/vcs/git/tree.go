@@ -14,7 +14,6 @@ import (
 	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
@@ -85,6 +84,10 @@ func (r *Repository) Stat(ctx context.Context, commit api.CommitID, path string)
 
 // ReadDir reads the contents of the named directory at commit.
 func (r *Repository) ReadDir(ctx context.Context, commit api.CommitID, path string, recurse bool) ([]os.FileInfo, error) {
+	if Mocks.ReadDir != nil {
+		return Mocks.ReadDir(commit, path, recurse)
+	}
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ReadDir")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)
@@ -211,7 +214,7 @@ func (r *Repository) lsTreeUncached(ctx context.Context, commit api.CommitID, pa
 		}
 		typ := info[1]
 		oid := info[2]
-		if !vcs.IsAbsoluteRevision(oid) {
+		if !IsAbsoluteRevision(oid) {
 			return nil, fmt.Errorf("invalid `git ls-tree` oid output: %q", oid)
 		}
 
@@ -240,13 +243,13 @@ func (r *Repository) lsTreeUncached(ctx context.Context, commit api.CommitID, pa
 				mode = mode | 0644
 			}
 		case "commit":
-			mode = mode | vcs.ModeSubmodule
+			mode = mode | ModeSubmodule
 			cmd := r.command("git", "config", "--get", "submodule."+name+".url")
 			url := "" // url is not available if submodules are not initialized
 			if out, err := cmd.Output(ctx); err == nil {
 				url = string(bytes.TrimSpace(out))
 			}
-			sys = vcs.SubmoduleInfo{
+			sys = SubmoduleInfo{
 				URL:      url,
 				CommitID: api.CommitID(oid),
 			}

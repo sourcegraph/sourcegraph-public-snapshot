@@ -30,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 // searchResultsCommon contains fields that should be returned by all funcs
@@ -340,7 +340,7 @@ type blameFileMatchCache struct {
 	cachedRevs   map[string]api.CommitID
 
 	cachedVCSReposMu sync.RWMutex
-	cachedVCSRepos   map[api.RepoID]vcs.Repository
+	cachedVCSRepos   map[api.RepoID]*git.Repository
 }
 
 // reposGet is like db.Repos.Get except it is cached by b.
@@ -385,7 +385,7 @@ func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repoID api.Re
 }
 
 // repoVCSOpen is like localstore.RepoVCS.Open except it is cached by b.
-func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID api.RepoID) (vcs.Repository, error) {
+func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID api.RepoID) (*git.Repository, error) {
 	b.cachedVCSReposMu.RLock()
 	vcsrepo, ok := b.cachedVCSRepos[repoID]
 	b.cachedVCSReposMu.RUnlock()
@@ -422,7 +422,7 @@ func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := backend.Repos.VCS(gitserver.Repo{Name: fm.repo.URI}).BlameFile(ctx, fm.JPath, &vcs.BlameOptions{
+	hunks, err := backend.Repos.VCS(gitserver.Repo{Name: fm.repo.URI}).BlameFile(ctx, fm.JPath, &git.BlameOptions{
 		NewestCommit: fm.commitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),
@@ -447,7 +447,7 @@ func (sr *searchResultsResolver) Sparkline(ctx context.Context) (sparkline []int
 		cache       = &blameFileMatchCache{
 			cachedRepos:    map[api.RepoID]*types.Repo{},
 			cachedRevs:     map[string]api.CommitID{},
-			cachedVCSRepos: map[api.RepoID]vcs.Repository{},
+			cachedVCSRepos: map[api.RepoID]*git.Repository{},
 		}
 	)
 	sparkline = make([]int32, days)

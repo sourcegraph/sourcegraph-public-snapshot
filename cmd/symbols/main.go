@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 var (
@@ -53,7 +54,7 @@ func main() {
 
 	service := symbols.Service{
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
-			return gitserver.FetchTar(ctx, gitserver.DefaultClient, repo, commit)
+			return git.FetchTar(ctx, repo.Name, commit) // TODO(sqs): use repo.URL if given
 		},
 		NewParser: func() (ctags.Parser, error) {
 			parser, err := ctags.NewParser(ctagsCommand)

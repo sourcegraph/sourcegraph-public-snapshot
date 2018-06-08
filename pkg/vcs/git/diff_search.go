@@ -10,9 +10,100 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
+
+// TextSearchOptions contains common options for text search commands.
+type TextSearchOptions struct {
+	Pattern         string // the pattern to look for
+	IsRegExp        bool   // whether the pattern is a regexp (if false, treated as exact string)
+	IsCaseSensitive bool   // whether the pattern should be matched case-sensitively
+}
+
+// PathOptions contains common options for commands that can be limited
+// to only certain paths.
+type PathOptions struct {
+	IncludePatterns []string // include paths matching all of these patterns
+	ExcludePattern  string   // exclude paths matching any of these patterns
+	IsRegExp        bool     // whether the pattern is a regexp (if false, treated as exact string)
+	IsCaseSensitive bool     // whether the pattern should be matched case-sensitively
+}
+
+// CompilePathMatcher compiles the path options into a PathMatcher.
+func CompilePathMatcher(options PathOptions) (pathmatch.PathMatcher, error) {
+	return pathmatch.CompilePathPatterns(
+		options.IncludePatterns, options.ExcludePattern,
+		pathmatch.CompileOptions{CaseSensitive: options.IsCaseSensitive, RegExp: options.IsRegExp},
+	)
+}
+
+// RawLogDiffSearchOptions specifies options to (Repository).RawLogDiffSearch.
+type RawLogDiffSearchOptions struct {
+	// Query specifies the search query to find.
+	Query TextSearchOptions
+
+	// MatchChangedOccurrenceCount makes the operation run `git log -S` not `git log -G`.
+	// See `git log --help` for more information.
+	MatchChangedOccurrenceCount bool
+
+	// Diff is whether the diff should be computed and returned.
+	Diff bool
+
+	// OnlyMatchingHunks makes the diff only include hunks that match the query. If false,
+	// all hunks from files that match the query are included.
+	OnlyMatchingHunks bool
+
+	// Paths specifies the paths to include/exclude.
+	Paths PathOptions
+
+	// FormatArgs is a list of format args that are passed to the `git log` command.
+	// Because the output is parsed, it is expected to be in a known format. If the
+	// FormatArgs does not match one of the server's expected values, the operation
+	// will fail.
+	//
+	// If nil, the default format args are used.
+	FormatArgs []string
+
+	// RawArgs is a list of non-format args that are passed to the `git log` command.
+	// It should not contain any "--" elements; those should be passed using the Paths
+	// field.
+	//
+	// No arguments that affect the format of the output should be present in this
+	// slice.
+	Args []string
+}
+
+// LogCommitSearchResult describes a matching diff from (Repository).RawLogDiffSearch.
+type LogCommitSearchResult struct {
+	Commit         Commit      // the commit whose diff was matched
+	Diff           *Diff       // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
+	DiffHighlights []Highlight // highlighted query matches in the diff
+
+	// Refs is the list of ref names of this commit (from `git log --decorate`).
+	Refs []string
+
+	// SourceRefs is the list of ref names by which this commit was reached. (See
+	// `git log --help` documentation on the `--source` flag.)
+	SourceRefs []string
+
+	// Incomplete indicates that this result may represent a subset of the actual data.
+	// This can occur when the underlying command returns early due to an impending
+	// timeout.
+	Incomplete bool
+}
+
+// A Diff represents changes between two commits.
+type Diff struct {
+	Raw string // the raw diff output
+}
+
+// Highlight represents a highlighted region in a string.
+type Highlight struct {
+	Line      int // the 1-indexed line number
+	Character int // the 1-indexed character on the line
+	Length    int // the length of the highlight, in characters (on the same line)
+}
 
 var (
 	validRawLogDiffSearchFormatArgs = [][]string{
@@ -36,7 +127,11 @@ func isValidRawLogDiffSearchFormatArgs(formatArgs []string) bool {
 // If complete is false, then the results may have been parsed from only partial output from the
 // underlying git command (because, e.g., it timed out during execution and only returned partial
 // output).
-func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) (results []*vcs.LogCommitSearchResult, complete bool, err error) {
+func (r *Repository) RawLogDiffSearch(ctx context.Context, opt RawLogDiffSearchOptions) (results []*LogCommitSearchResult, complete bool, err error) {
+	if Mocks.RawLogDiffSearch != nil {
+		return Mocks.RawLogDiffSearch(opt)
+	}
+
 	deadline, ok := ctx.Deadline()
 	var timeoutLabel string
 	if ok {
@@ -249,7 +344,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 	}
 	complete = complete && complete2
 	for len(data) > 0 {
-		var commit *vcs.Commit
+		var commit *Commit
 		var refs []string
 		var err error
 		commit, refs, data, err = parseCommitFromLog(data)
@@ -263,7 +358,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			return nil, complete, err
 		}
 
-		result := &vcs.LogCommitSearchResult{
+		result := &LogCommitSearchResult{
 			Commit:     *commit,
 			Refs:       refs,
 			SourceRefs: []string{commitSourceRefs[string(commit.ID)]},
@@ -314,7 +409,7 @@ func (r *Repository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSea
 			if rawDiff == nil {
 				continue // it did not match
 			}
-			result.Diff = &vcs.Diff{Raw: string(rawDiff)}
+			result.Diff = &Diff{Raw: string(rawDiff)}
 		}
 
 		results = append(results, result)
