@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// Archive implements vcs.Archiver.
 func (r *Repository) Archive(ctx context.Context, commitID api.CommitID) (zipData []byte, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("URL", r.repoURI)
