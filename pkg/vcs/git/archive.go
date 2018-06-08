@@ -8,6 +8,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 // ArchiveOptions contains options for (Repository).Archive.
@@ -17,9 +18,9 @@ type ArchiveOptions struct {
 	Paths   []string // if nonempty, only include these paths
 }
 
-func (r *Repository) Archive(ctx context.Context, commitID api.CommitID) (zipData []byte, err error) {
+func Archive(ctx context.Context, repo gitserver.Repo, commitID api.CommitID) (zipData []byte, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Archive")
-	span.SetTag("URL", r.repoURI)
+	span.SetTag("Repo", repo.Name)
 	span.SetTag("Commit", commitID)
 	defer func() {
 		if err == nil {
@@ -38,7 +39,8 @@ func (r *Repository) Archive(ctx context.Context, commitID api.CommitID) (zipDat
 	// Compression level of 0 (no compression) seems to perform the
 	// best overall on fast network links, but this has not been tuned
 	// thoroughly.
-	cmd := r.command("git", "archive", "--format=zip", "-0", string(commitID))
+	cmd := gitserver.DefaultClient.Command("git", "archive", "--format=zip", "-0", string(commitID))
+	cmd.Repo = repo
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, stderr)

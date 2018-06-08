@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/go-langserver/langserver/util"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -454,7 +455,7 @@ var NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ct
 	// First check if we can clone from gitserver.
 	cmd := git.Open(api.RepoURI(cloneURL.Host+cloneURL.Path), cloneURL.String())
 	if _, err := cmd.ResolveRevision(ctx, rev, nil); err == nil {
-		return vfsutil.ArchiveFileSystem(cmd, rev), nil
+		return vfsutil.ArchiveFileSystem(gitserver.Repo{Name: api.RepoURI(cloneURL.Host + cloneURL.Path), URL: cloneURL.String()}, rev), nil
 	}
 
 	// Fast-path for GitHub repos, which we can fetch on-demand from

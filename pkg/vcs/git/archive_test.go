@@ -3,12 +3,12 @@ package git_test
 import (
 	"archive/zip"
 	"bytes"
-	"context"
 	"io/ioutil"
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func TestRepository_Archive(t *testing.T) {
@@ -26,13 +26,11 @@ func TestRepository_Archive(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
 	}
 	tests := map[string]struct {
-		repo interface {
-			Archive(ctx context.Context, commitID api.CommitID) ([]byte, error)
-		}
+		repo gitserver.Repo
 		want map[string]string
 	}{
 		"git cmd": {
-			repo: makeGitRepositoryCmd(t, gitCommands...),
+			repo: makeGitRepository(t, gitCommands...),
 			want: map[string]string{
 				"dir1/":      "",
 				"dir1/file1": "infile1",
@@ -42,7 +40,7 @@ func TestRepository_Archive(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		data, err := test.repo.Archive(ctx, "HEAD")
+		data, err := git.Archive(ctx, test.repo, "HEAD")
 		if err != nil {
 			t.Errorf("%s: Archive: %s", label, err)
 			continue

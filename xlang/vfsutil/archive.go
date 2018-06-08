@@ -11,19 +11,14 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
 )
-
-// An Archiver is a repository that can produce a .zip archive of
-// itself at a given commit ID.
-type Archiver interface {
-	// Archive returns a .zip archive of the repo at the given commit ID.
-	Archive(context.Context, api.CommitID) ([]byte, error)
-}
 
 // ArchiveFileSystem returns a virtual file system backed by a .zip
 // archive of a Git tree (in the common case, the root tree of a Git
@@ -34,9 +29,9 @@ type Archiver interface {
 //
 // ArchiveFileSystem fetches the full .zip archive initially and then
 // can satisfy FS operations nearly instantly in memory.
-func ArchiveFileSystem(repo Archiver, treeish string) *ArchiveFS {
+func ArchiveFileSystem(repo gitserver.Repo, treeish string) *ArchiveFS {
 	fetch := func(ctx context.Context) (*archiveReader, error) {
-		data, err := repo.Archive(ctx, api.CommitID(treeish))
+		data, err := git.Archive(ctx, repo, api.CommitID(treeish))
 		if err != nil {
 			return nil, err
 		}

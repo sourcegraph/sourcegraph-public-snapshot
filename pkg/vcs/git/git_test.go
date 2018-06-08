@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -78,6 +79,13 @@ func makeGitRepositoryCmd(t testing.TB, cmds ...string) *gitRepository {
 		Repository: *git.Open(api.RepoURI(dir), ""),
 		Dir:        dir,
 	}
+}
+
+// makeGitRepository calls initGitRepository to create a new Git repository and returns a handle to
+// it.
+func makeGitRepository(t testing.TB, cmds ...string) gitserver.Repo {
+	dir := initGitRepository(t, cmds...)
+	return gitserver.Repo{Name: api.RepoURI(dir)}
 }
 
 func commitsEqual(a, b *git.Commit) bool {
