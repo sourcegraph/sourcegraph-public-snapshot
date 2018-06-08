@@ -14,6 +14,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed an issue where AWS Code Commit would hit the rate limit.
 * Fixed an issue where dismissing the search suggestions dropdown did not unfocus previously highlighted suggestions.
 * Fixed an issue where search suggestions would appear twice.
+* Indexed searches now return partial results if they timeout.
 
 ### Added
 

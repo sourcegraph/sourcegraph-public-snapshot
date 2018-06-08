@@ -462,9 +462,26 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	}
 
 	if searchTimeoutFieldSet {
-		// If the user manually specified a timeout, allow zoekt to use most of that timeout.
+		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
 		deadline, _ := ctx.Deadline()
-		searchOpts.MaxWallTime = time.Duration(0.8 * float64(deadline.Sub(time.Now())))
+		searchOpts.MaxWallTime = time.Until(deadline)
+
+		// We don't want our context's deadline to cut off zoekt so that we can get the results
+		// found before the deadline.
+		//
+		// We'll create a new context that gets cancelled if the other context is cancelled for any
+		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
+		// will be `deadline + time for zoekt to cancel + network latency`.
+		cNew, cancel := context.WithCancel(context.Background())
+		go func(cOld context.Context) {
+			<-cOld.Done()
+			// cancel the new context if the old one is done for some reason other than the deadline passing.
+			if cOld.Err() != context.DeadlineExceeded {
+				cancel()
+			}
+		}(ctx)
+		ctx = cNew
+		defer cancel()
 	}
 
 	tr.LogFields(otlog.String("maxWallTime", searchOpts.MaxWallTime.String()))
