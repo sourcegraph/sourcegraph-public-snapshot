@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -395,9 +396,8 @@ func (b *blameFileMatchCache) repoVCSOpen(ctx context.Context, repoID api.RepoID
 	if err != nil {
 		return nil, err
 	}
-	vcsrepo = backend.Repos.CachedVCS(repo)
 	b.cachedVCSReposMu.Lock()
-	b.cachedVCSRepos[repoID] = vcsrepo
+	b.cachedVCSRepos[repoID] = backend.CachedGitRepoTmp(repo)
 	b.cachedVCSReposMu.Unlock()
 	return vcsrepo, nil
 }
@@ -421,7 +421,7 @@ func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMat
 		return time.Time{}, nil
 	}
 	lm := fm.LineMatches()[0]
-	hunks, err := git.BlameFile(ctx, backend.GitserverRepo(fm.repo), fm.JPath, &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: fm.repo.URI}, fm.JPath, &git.BlameOptions{
 		NewestCommit: fm.commitID,
 		StartLine:    int(lm.LineNumber()),
 		EndLine:      int(lm.LineNumber()),

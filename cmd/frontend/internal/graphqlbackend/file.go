@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/highlight"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -46,8 +47,7 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
-	contents, err := vcsrepo.ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
+	contents, err := backend.CachedGitRepoTmp(r.commit.repo.repo).ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return "", err
 	}
@@ -64,8 +64,7 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
-	stat, err := vcsrepo.Stat(ctx, api.CommitID(r.commit.oid), r.path)
+	stat, err := backend.CachedGitRepoTmp(r.commit.repo.repo).Stat(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return false, err
 	}
@@ -162,8 +161,7 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
-	code, err := vcsrepo.ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
+	code, err := backend.CachedGitRepoTmp(r.commit.repo.repo).ReadFile(ctx, api.CommitID(r.commit.oid), r.path)
 	if err != nil {
 		return nil, err
 	}
@@ -198,8 +196,7 @@ func (r *fileResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error
 }
 
 func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
-	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
-	commits, err := vcsrepo.Commits(ctx, git.CommitsOptions{
+	commits, err := backend.CachedGitRepoTmp(r.commit.repo.repo).Commits(ctx, git.CommitsOptions{
 		Range: string(r.commit.oid),
 		N:     limit,
 		Path:  r.path,
@@ -221,7 +218,7 @@ func (r *fileResolver) Blame(ctx context.Context,
 		StartLine int32
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
-	hunks, err := git.BlameFile(ctx, backend.GitserverRepo(r.commit.repo.repo), r.path, &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, gitserver.Repo{Name: r.commit.repo.repo.URI}, r.path, &git.BlameOptions{
 		NewestCommit: api.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),

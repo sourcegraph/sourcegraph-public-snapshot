@@ -24,7 +24,6 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	zoektrpc "github.com/google/zoekt/rpc"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
@@ -33,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	zoektpkg "github.com/sourcegraph/sourcegraph/pkg/zoekt"
 )
 
@@ -372,7 +372,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, nil, rev, nil)
+	commit, err := git.Open(gitserverRepo.Name, gitserverRepo.URL).ResolveRevision(ctx, nil, rev, nil)
 	if err != nil {
 		return nil, false, err
 	}

@@ -27,8 +27,6 @@ type gitCommitConnectionResolver struct {
 
 func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commit, error) {
 	do := func() ([]*git.Commit, error) {
-		vcsrepo := backend.Repos.CachedVCS(r.repo.repo)
-
 		var n int32
 		if r.first != nil {
 			n = *r.first
@@ -50,7 +48,7 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commi
 		if r.after != nil {
 			after = *r.after
 		}
-		return vcsrepo.Commits(ctx, git.CommitsOptions{
+		return backend.CachedGitRepoTmp(r.repo.repo).Commits(ctx, git.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
 			MessageQuery: query,

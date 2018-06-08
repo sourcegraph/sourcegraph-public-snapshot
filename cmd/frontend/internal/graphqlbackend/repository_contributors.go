@@ -50,8 +50,7 @@ func (r *repositoryContributorConnectionResolver) compute(ctx context.Context) (
 			opt.After = *r.args.After
 		}
 
-		vcsrepo := backend.Repos.CachedVCS(r.repo.repo)
-		r.results, r.err = vcsrepo.ShortLog(ctx, opt)
+		r.results, r.err = backend.CachedGitRepoTmp(r.repo.repo).ShortLog(ctx, opt)
 	})
 	return r.results, r.err
 }

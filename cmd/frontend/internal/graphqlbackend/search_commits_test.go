@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -20,7 +19,6 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	ctx := context.Background()
 
 	var calledVCSRawLogDiffSearch bool
-	calledRepoVCSOpen := backend.Mocks.Repos.MockVCS(t, "repo")
 	git.Mocks.RawLogDiffSearch = func(opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error) {
 		calledVCSRawLogDiffSearch = true
 		if want := "p"; opt.Query.Pattern != want {
@@ -80,9 +78,6 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	if timedOut {
 		t.Error("timedOut")
-	}
-	if !*calledRepoVCSOpen {
-		t.Error("!calledRepoVCSOpen")
 	}
 	if !calledVCSRawLogDiffSearch {
 		t.Error("!calledVCSRawLogDiffSearch")

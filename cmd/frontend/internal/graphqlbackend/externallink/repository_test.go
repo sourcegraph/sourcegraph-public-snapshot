@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -226,7 +225,6 @@ func TestFileOrDir(t *testing.T) {
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
 		}
-		backend.Mocks.Repos.MockVCS(t, "myrepo")
 		git.Mocks.GitCmdRaw = func(params []string) (string, error) {
 			return "mybranch", nil
 		}

@@ -36,7 +36,7 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 		headRevspec = *args.Head
 	}
 
-	vcsrepo := backend.Repos.CachedVCS(r.repo)
+	vcsrepo := backend.CachedGitRepoTmp(r.repo)
 
 	var base api.CommitID
 	if baseRevspec == devNullSHA {
@@ -129,8 +129,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
 
-		vcsrepo := backend.Repos.CachedVCS(r.repo.repo)
-		rdr, err := vcsrepo.ExecReader(ctx, []string{
+		rdr, err := backend.CachedGitRepoTmp(r.repo.repo).ExecReader(ctx, []string{
 			"diff",
 			"--find-renames",
 			"--find-copies",

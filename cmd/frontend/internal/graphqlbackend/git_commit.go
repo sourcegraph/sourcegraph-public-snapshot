@@ -171,8 +171,7 @@ func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
 func (r *gitCommitResolver) BehindAhead(ctx context.Context, args *struct {
 	Revspec string
 }) (*behindAheadCountsResolver, error) {
-	vcsrepo := backend.Repos.CachedVCS(r.repo.repo)
-	counts, err := vcsrepo.BehindAhead(ctx, args.Revspec, string(r.oid))
+	counts, err := backend.CachedGitRepoTmp(r.repo.repo).BehindAhead(ctx, args.Revspec, string(r.oid))
 	if err != nil {
 		return nil, err
 	}

@@ -214,8 +214,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		return nil, false, false, err
 	}
 
-	vcsrepo := backend.Repos.CachedVCS(repo)
-	rawResults, complete, err := vcsrepo.RawLogDiffSearch(ctx, git.RawLogDiffSearchOptions{
+	rawResults, complete, err := backend.CachedGitRepoTmp(repo).RawLogDiffSearch(ctx, git.RawLogDiffSearchOptions{
 		Query: op.textSearchOptions,
 		Paths: git.PathOptions{
 			IncludePatterns: op.info.IncludePatterns,

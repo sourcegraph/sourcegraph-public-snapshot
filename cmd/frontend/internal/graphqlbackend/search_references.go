@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -191,7 +192,7 @@ func searchReferencesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo
 		return mockSearchReferencesInRepo(ctx, repo, gitserverRepo, rev, language, symbol, hints, query)
 	}
 
-	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, nil, rev, nil)
+	commit, err := git.Open(gitserverRepo.Name, gitserverRepo.URL).ResolveRevision(ctx, nil, rev, nil)
 	if err != nil {
 		return nil, false, err
 	}

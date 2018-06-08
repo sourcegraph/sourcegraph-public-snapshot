@@ -43,7 +43,7 @@ func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
 	Type    *string
 	OrderBy *string
 }) (*gitRefConnectionResolver, error) {
-	vcsrepo := backend.Repos.CachedVCS(r.repo)
+	vcsrepo := backend.CachedGitRepoTmp(r.repo)
 
 	var branches []*git.Branch
 	if args.Type == nil || *args.Type == gitRefTypeBranch {

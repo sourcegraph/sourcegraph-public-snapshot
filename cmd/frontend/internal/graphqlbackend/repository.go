@@ -131,7 +131,7 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
-	vcsrepo := backend.Repos.CachedVCS(r.repo)
+	vcsrepo := backend.CachedGitRepoTmp(r.repo)
 	ref, err := vcsrepo.GitCmdRaw(ctx, []string{"symbolic-ref", "HEAD"})
 
 	if err == nil {
@@ -276,14 +276,13 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 	if err != nil {
 		return nil, err
 	}
-	vcsrepo := backend.Repos.CachedVCS(repo)
 	targetRef := fmt.Sprintf("phabricator/diff/%d", args.DiffID)
 	getCommit := func() (*gitCommitResolver, error) {
 		// We first check via the vcsrepo api so that we can toggle
 		// NoEnsureRevision. We do this, otherwise repositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err := vcsrepo.ResolveRevision(ctx, nil, targetRef, &git.ResolveRevisionOptions{
+		_, err := backend.CachedGitRepoTmp(repo).ResolveRevision(ctx, nil, targetRef, &git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {

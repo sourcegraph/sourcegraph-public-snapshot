@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
@@ -19,66 +18,14 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
-// RemoteVCS returns a handle to the underlying Git repository (on gitserver) that is cloned or updated on demand
-// (if needed), after checking with the repository's original code host to obtain the latest Git remote URL for the
-// repository.
-//
-// When to use RemoteVCS vs. CachedVCS?
-//
-// A caller should use RemoteVCS if it:
-//  - prefers to wait (on a Git remote update) instead of fail if the Git repository is out of date
-//  - needs to ensure that the repository still exists on the original code host
-//
-// A caller should use CachedVCS if it:
-//  - prefers to fail instead of block (on a Git remote update) if the Git repository is out of date
-//  - doesn't care if the repository still exists on the original code host
-func (repos) RemoteVCS(ctx context.Context, repo *types.Repo) (*git.Repository, error) {
-	if Mocks.Repos.VCS != nil {
-		return Mocks.Repos.VCS(repo.URI)
-	}
-	remoteURL, err := RemoteURLFunc(ctx, repo)()
-	if err != nil {
-		return nil, err
-	}
-	return git.Open(repo.URI, remoteURL), nil
-}
-
-func RemoteURLFunc(ctx context.Context, repo *types.Repo) func() (string, error) {
-	return func() (string, error) {
-		gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
-		if err != nil {
-			return "", err
-		}
-		return gitserverRepo.URL, nil
-	}
-}
-
-// CachedVCS returns a handle to the underlying Git repository on gitserver, without attempting to check that the
-// repository exists on its original code host or that gitserver's mirror is up to date.
-//
-// See (repos).RemoteVCS for guidance on when to use CachedVCS vs. RemoteVCS.
-func (repos) CachedVCS(repo *types.Repo) *git.Repository {
-	if Mocks.Repos.VCS != nil {
-		vcsrepo, err := Mocks.Repos.VCS(repo.URI)
-		if err != nil {
-			panic(fmt.Sprintf("CachedVCS: Mock.Repos.VCS(%q) returned error: %s", repo.URI, err))
-		}
-		return vcsrepo
-	}
-	return (repos{}).VCS(GitserverRepo(repo))
-}
-
-func GitserverRepo(repo *types.Repo) gitserver.Repo {
+// CachedGitRepoTmp is like CachedGitRepo, but instead of returning a handle to the gitserver repo
+// (the new way), it returns the *git.Repository struct with a bunch of VCS methods (the old
+// way). It will be removed once all *git.Repository methods are unpeeled to funcs in package vcs.
+func CachedGitRepoTmp(repo *types.Repo) *git.Repository {
 	if r := quickGitserverRepoInfo(repo.URI); r != nil {
-		return *r
+		return git.Open(r.Name, r.URL)
 	}
-	return gitserver.Repo{Name: repo.URI}
-}
-
-// VCS returns a handle to the Git repository specified by repo. Callers, unless they already have a gitserver.Repo
-// value, should use either RemoteVCS or CachedVCS instead of this method.
-func (repos) VCS(repo gitserver.Repo) *git.Repository {
-	return git.Open(repo.Name, repo.URL)
+	return git.Open(repo.URI, "")
 }
 
 func (repos) GitserverRepoInfo(ctx context.Context, repo *types.Repo) (gitserver.Repo, error) {
@@ -139,11 +86,14 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	defer done()
 
 	// Try to get latest remote URL, but continue even if that fails.
-	vcsrepo, err := Repos.RemoteVCS(ctx, repo)
+	gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
+	if err != nil {
+		return "", err
+	}
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
-	return vcsrepo.ResolveRevision(ctx, nil, rev, nil)
+	return git.Open(gitserverRepo.Name, gitserverRepo.URL).ResolveRevision(ctx, nil, rev, nil)
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {
@@ -161,11 +111,14 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 	}
 
 	// Try to get latest remote URL, but continue even if that fails.
-	vcsrepo, err := Repos.RemoteVCS(ctx, repo)
+	gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
-	return vcsrepo.GetCommit(ctx, commitID)
+	return git.Open(gitserverRepo.Name, gitserverRepo.URL).GetCommit(ctx, commitID)
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {

@@ -26,7 +26,6 @@ func TestTree(t *testing.T) {
 	}
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
 
-	backend.Mocks.Repos.MockVCS(t, "github.com/gorilla/mux")
 	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
 		if string(commit) != exampleCommitSHA1 || name != "/foo" {
 			t.Error("wrong arguments to RepoTree.Get")

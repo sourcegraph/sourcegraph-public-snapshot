@@ -401,13 +401,12 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 				// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
 				// down by a lot (if we're looping over many repos). This means that it'll fail if a
 				// repo is not on gitserver.
-				vcsrepo := backend.Repos.VCS(repoRev.gitserverRepo)
-
+				//
 				// TODO(sqs): make this NOT send gitserver this revspec in EnsureRevision, to avoid
 				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
 				// taking a long time because they all ask gitserver to try to fetch from the remote
 				// repo.
-				if _, err := vcsrepo.ResolveRevision(ctx, nil, rev.revspec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); git.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
+				if _, err := git.Open(repoRev.gitserverRepo.Name, repoRev.gitserverRepo.URL).ResolveRevision(ctx, nil, rev.revspec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); git.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.revspec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.

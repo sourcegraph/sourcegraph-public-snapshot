@@ -25,7 +25,6 @@ type MockRepos struct {
 	GetInventory         func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	RefreshIndex         func(ctx context.Context, repo *types.Repo) (err error)
-	VCS                  func(repo api.RepoURI) (*git.Repository, error)
 }
 
 var errRepoNotFound = &errcode.Mock{
@@ -117,20 +116,6 @@ func (s *MockRepos) MockGetCommit_Return_NoCheck(t *testing.T, commit *git.Commi
 	s.GetCommit = func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error) {
 		*called = true
 		return commit, nil
-	}
-	return
-}
-
-func (s *MockRepos) MockVCS(t *testing.T, wantRepo api.RepoURI) (called *bool) {
-	called = new(bool)
-	s.VCS = func(repo api.RepoURI) (*git.Repository, error) {
-		*called = true
-		if repo != wantRepo {
-			t.Errorf("got repo %q, want %q", repo, wantRepo)
-			return nil, errRepoNotFound
-		}
-		// Must use git.Mocks to mock git.Repository methods.
-		return &git.Repository{}, nil
 	}
 	return
 }

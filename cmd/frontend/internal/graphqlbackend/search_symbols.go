@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -110,8 +111,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 	// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	vcsrepo := backend.Repos.VCS(repoRevs.gitserverRepo)
-	commitID, err := vcsrepo.ResolveRevision(ctx, nil, inputRev, nil)
+	commitID, err := git.Open(repoRevs.gitserverRepo.Name, repoRevs.gitserverRepo.URL).ResolveRevision(ctx, nil, inputRev, nil)
 	if err != nil {
 		return nil, err
 	}

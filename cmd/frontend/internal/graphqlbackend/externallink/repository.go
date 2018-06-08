@@ -39,8 +39,7 @@ func FileOrDir(ctx context.Context, repo *types.Repo, rev, path string, isDir bo
 	phabRepo, link, serviceType := linksForRepository(ctx, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
-		vcsrepo := backend.Repos.CachedVCS(repo)
-		branchName, err := vcsrepo.GitCmdRaw(ctx, []string{"symbolic-ref", "--short", "HEAD"})
+		branchName, err := backend.CachedGitRepoTmp(repo).GitCmdRaw(ctx, []string{"symbolic-ref", "--short", "HEAD"})
 		if err == nil && branchName != "" {
 			links = append(links, &Resolver{
 				url:         fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, branchName, path, rev),
