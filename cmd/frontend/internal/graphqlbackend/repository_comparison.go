@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 )
 
@@ -36,19 +37,18 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 		headRevspec = *args.Head
 	}
 
-	vcsrepo := backend.CachedGitRepoTmp(r.repo)
-
+	grepo := backend.CachedGitRepo(r.repo)
 	var base api.CommitID
 	if baseRevspec == devNullSHA {
 		base = devNullSHA
 	} else {
 		var err error
-		base, err = vcsrepo.ResolveRevision(ctx, nil, baseRevspec, nil)
+		base, err = git.ResolveRevision(ctx, grepo, nil, baseRevspec, nil)
 		if err != nil {
 			return nil, err
 		}
 	}
-	head, err := vcsrepo.ResolveRevision(ctx, nil, headRevspec, nil)
+	head, err := git.ResolveRevision(ctx, grepo, nil, headRevspec, nil)
 	if err != nil {
 		return nil, err
 	}

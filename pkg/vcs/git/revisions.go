@@ -56,7 +56,7 @@ type ResolveRevisionOptions struct {
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the revision must be fetched from the remote. This only happens when calling
 // ResolveRevision.
-func (r *Repository) ResolveRevision(ctx context.Context, remoteURLFunc func() (string, error), spec string, opt *ResolveRevisionOptions) (api.CommitID, error) {
+func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc func() (string, error), spec string, opt *ResolveRevisionOptions) (api.CommitID, error) {
 	if Mocks.ResolveRevision != nil {
 		return Mocks.ResolveRevision(spec, opt)
 	}
@@ -80,8 +80,9 @@ func (r *Repository) ResolveRevision(ctx context.Context, remoteURLFunc func() (
 		spec = spec + "^0"
 	}
 
-	cmd := r.command("git", "rev-parse", spec)
-	commit, err := r.runRevParse(ctx, cmd, spec)
+	cmd := gitserver.DefaultClient.Command("git", "rev-parse", spec)
+	cmd.Repo = repo
+	commit, err := runRevParse(ctx, cmd, spec)
 	if err == nil {
 		return commit, nil
 	}
@@ -125,24 +126,24 @@ func (r *Repository) ResolveRevision(ctx context.Context, remoteURLFunc func() (
 		return "", err
 	}
 
-	cmd = r.command("git", "rev-parse", spec)
-	cmd.Repo = gitserver.Repo{Name: r.repoURI, URL: remoteURL}
+	cmd = gitserver.DefaultClient.Command("git", "rev-parse", spec)
+	cmd.Repo = gitserver.Repo{Name: repo.Name, URL: remoteURL}
 	if doEnsureRevision {
 		cmd.EnsureRevision = spec
 	}
-	return r.runRevParse(ctx, cmd, spec)
+	return runRevParse(ctx, cmd, spec)
 }
 
 // runRevParse sends the git rev-parse command to gitserver. It interprets
 // missing revision responses and converts them into RevisionNotFoundError.
-func (r *Repository) runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.CommitID, error) {
+func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.CommitID, error) {
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if vcs.IsRepoNotExist(err) {
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &RevisionNotFoundError{Repo: r.repoURI, Spec: spec}
+			return "", &RevisionNotFoundError{Repo: cmd.Name, Spec: spec}
 		}
 		return "", errors.WithMessage(err, fmt.Sprintf("exec `git rev-parse` failed with stderr: %s", stderr))
 	}
@@ -153,9 +154,9 @@ func (r *Repository) runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec s
 			// if HEAD doesn't point to anything git just returns `HEAD` as the
 			// output of rev-parse. An example where this occurs is an empty
 			// repository.
-			return "", &RevisionNotFoundError{Repo: r.repoURI, Spec: spec}
+			return "", &RevisionNotFoundError{Repo: cmd.Name, Spec: spec}
 		}
-		return "", fmt.Errorf("ResolveRevision: got bad commit %q for repo %q at revision %q", commit, r.repoURI, spec)
+		return "", fmt.Errorf("ResolveRevision: got bad commit %q for repo %q at revision %q", commit, cmd.Name, spec)
 	}
 	return commit, nil
 }

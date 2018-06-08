@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -29,19 +30,19 @@ func TestRepository_ResolveBranch(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo         *gitRepository
+		repo         gitserver.Repo
 		branch       string
 		wantCommitID api.CommitID
 	}{
 		"git cmd": {
-			repo:         makeGitRepositoryCmd(t, gitCommands...),
+			repo:         makeGitRepository(t, gitCommands...),
 			branch:       "master",
 			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, nil, test.branch, nil)
+		commitID, err := git.ResolveRevision(ctx, test.repo, nil, test.branch, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -60,19 +61,19 @@ func TestRepository_ResolveBranch_error(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo    *gitRepository
+		repo    gitserver.Repo
 		branch  string
 		wantErr func(error) bool
 	}{
 		"git cmd": {
-			repo:    makeGitRepositoryCmd(t, gitCommands...),
+			repo:    makeGitRepository(t, gitCommands...),
 			branch:  "doesntexist",
 			wantErr: git.IsRevisionNotFound,
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, nil, test.branch, nil)
+		commitID, err := git.ResolveRevision(ctx, test.repo, nil, test.branch, nil)
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -92,19 +93,19 @@ func TestRepository_ResolveTag(t *testing.T) {
 		"git tag t",
 	}
 	tests := map[string]struct {
-		repo         *gitRepository
+		repo         gitserver.Repo
 		tag          string
 		wantCommitID api.CommitID
 	}{
 		"git cmd": {
-			repo:         makeGitRepositoryCmd(t, gitCommands...),
+			repo:         makeGitRepository(t, gitCommands...),
 			tag:          "t",
 			wantCommitID: "ea167fe3d76b1e5fd3ed8ca44cbd2fe3897684f8",
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, nil, test.tag, nil)
+		commitID, err := git.ResolveRevision(ctx, test.repo, nil, test.tag, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue
@@ -123,19 +124,19 @@ func TestRepository_ResolveTag_error(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo    *gitRepository
+		repo    gitserver.Repo
 		tag     string
 		wantErr func(error) bool
 	}{
 		"git cmd": {
-			repo:    makeGitRepositoryCmd(t, gitCommands...),
+			repo:    makeGitRepository(t, gitCommands...),
 			tag:     "doesntexist",
 			wantErr: git.IsRevisionNotFound,
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, nil, test.tag, nil)
+		commitID, err := git.ResolveRevision(ctx, test.repo, nil, test.tag, nil)
 		if !test.wantErr(err) {
 			t.Errorf("%s: ResolveRevision: %s", label, err)
 			continue

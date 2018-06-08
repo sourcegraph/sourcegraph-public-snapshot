@@ -18,6 +18,17 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
+// CachedGitRepo returns a handle to the Git repository that does not know the remote URL. If
+// knowing the remote URL is necessary to perform any operations (from method calls on the return
+// value), those operations will fail. This occurs when the repository isn't cloned on gitserver or
+// when an update is needed (eg in ResolveRevision).
+func CachedGitRepo(repo *types.Repo) gitserver.Repo {
+	if r := quickGitserverRepo(repo.URI); r != nil {
+		return *r
+	}
+	return gitserver.Repo{Name: repo.URI}
+}
+
 // CachedGitRepoTmp is like CachedGitRepo, but instead of returning a handle to the gitserver repo
 // (the new way), it returns the *git.Repository struct with a bunch of VCS methods (the old
 // way). It will be removed once all *git.Repository methods are unpeeled to funcs in package vcs.
@@ -88,14 +99,11 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	defer done()
 
 	// Try to get latest remote URL, but continue even if that fails.
-	gitserverRepo, err := GitRepo(ctx, repo)
-	if err != nil {
-		return "", err
-	}
+	grepo, err := GitRepo(ctx, repo)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
-	return git.Open(gitserverRepo.Name, gitserverRepo.URL).ResolveRevision(ctx, nil, rev, nil)
+	return git.ResolveRevision(ctx, grepo, nil, rev, nil)
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {

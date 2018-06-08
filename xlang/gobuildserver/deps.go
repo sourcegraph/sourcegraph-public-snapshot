@@ -453,9 +453,9 @@ func FetchCommonDeps() {
 // the files in the specified (public) repo at the given commit.
 var NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 	// First check if we can clone from gitserver.
-	cmd := git.Open(api.RepoURI(cloneURL.Host+cloneURL.Path), cloneURL.String())
-	if _, err := cmd.ResolveRevision(ctx, nil, rev, nil); err == nil {
-		return vfsutil.ArchiveFileSystem(gitserver.Repo{Name: api.RepoURI(cloneURL.Host + cloneURL.Path), URL: cloneURL.String()}, rev), nil
+	repo := gitserver.Repo{Name: api.RepoURI(cloneURL.Host + cloneURL.Path), URL: cloneURL.String()}
+	if _, err := git.ResolveRevision(ctx, repo, nil, rev, nil); err == nil {
+		return vfsutil.ArchiveFileSystem(repo, rev), nil
 	}
 
 	// Fast-path for GitHub repos, which we can fetch on-demand from

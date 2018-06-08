@@ -192,7 +192,7 @@ func searchReferencesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo
 		return mockSearchReferencesInRepo(ctx, repo, gitserverRepo, rev, language, symbol, hints, query)
 	}
 
-	commit, err := git.Open(gitserverRepo.Name, gitserverRepo.URL).ResolveRevision(ctx, nil, rev, nil)
+	commit, err := git.ResolveRevision(ctx, gitserverRepo, nil, rev, nil)
 	if err != nil {
 		return nil, false, err
 	}

@@ -111,7 +111,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.Open(repoRevs.gitserverRepo.Name, repoRevs.gitserverRepo.URL).ResolveRevision(ctx, nil, inputRev, nil)
+	commitID, err := git.ResolveRevision(ctx, repoRevs.gitserverRepo, nil, inputRev, nil)
 	if err != nil {
 		return nil, err
 	}

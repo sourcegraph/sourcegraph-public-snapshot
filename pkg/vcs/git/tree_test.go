@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -308,23 +309,23 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo *gitRepository
+		repo gitserver.Repo
 	}{
 		"git cmd (quotepath=on)": {
-			repo: makeGitRepositoryCmd(t, append([]string{"git config core.quotepath on"}, gitCommands...)...),
+			repo: makeGitRepository(t, append([]string{"git config core.quotepath on"}, gitCommands...)...),
 		},
 		"git cmd (quotepath=off)": {
-			repo: makeGitRepositoryCmd(t, append([]string{"git config core.quotepath off"}, gitCommands...)...),
+			repo: makeGitRepository(t, append([]string{"git config core.quotepath off"}, gitCommands...)...),
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, nil, "master", nil)
+		commitID, err := git.ResolveRevision(ctx, test.repo, nil, "master", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		entries, err := test.repo.ReadDir(ctx, commitID, ".", false)
+		entries, err := git.Open(test.repo.Name, "").ReadDir(ctx, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -341,7 +342,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 		}
 
 		for _, name := range wantNames {
-			stat, err := test.repo.Stat(ctx, commitID, name)
+			stat, err := git.Open(test.repo.Name, "").Stat(ctx, commitID, name)
 			if err != nil {
 				t.Errorf("%s: Stat(%q): %s", label, name, err)
 				continue
@@ -369,15 +370,15 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m 'add submodule' --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	tests := map[string]struct {
-		repo *gitRepository
+		repo gitserver.Repo
 	}{
 		"git cmd": {
-			repo: makeGitRepositoryCmd(t, gitCommands...),
+			repo: makeGitRepository(t, gitCommands...),
 		},
 	}
 
 	for label, test := range tests {
-		commitID, err := test.repo.ResolveRevision(ctx, nil, "master", nil)
+		commitID, err := git.ResolveRevision(ctx, test.repo, nil, "master", nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -405,13 +406,13 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 
 		// Check the submodule os.FileInfo both when it's returned by
 		// Stat and when it's returned in a list by ReadDir.
-		submod, err := test.repo.Stat(ctx, commitID, "submod")
+		submod, err := git.Open(test.repo.Name, "").Stat(ctx, commitID, "submod")
 		if err != nil {
 			t.Errorf("%s: fs.Stat(submod): %s", label, err)
 			continue
 		}
 		checkSubmoduleFileInfo(label+" (Stat)", submod)
-		entries, err := test.repo.ReadDir(ctx, commitID, ".", false)
+		entries, err := git.Open(test.repo.Name, "").ReadDir(ctx, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -419,7 +420,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 		// .gitmodules file is entries[0]
 		checkSubmoduleFileInfo(label+" (ReadDir)", entries[1])
 
-		_, err = test.repo.ReadFile(ctx, commitID, "submod")
+		_, err = git.Open(test.repo.Name, "").ReadFile(ctx, commitID, "submod")
 		if err != nil {
 			t.Errorf("%s: fs.Open(submod): %s", label, err)
 			continue
