@@ -7,8 +7,8 @@ import { compileFromFile } from 'json-schema-to-typescript'
 import mkdirp from 'mkdirp-promise'
 import { readFile, writeFile } from 'mz/fs'
 import { format, resolveConfig } from 'prettier'
-import createWebpackCompiler, { Stats } from 'webpack'
-import WebpackDevServer from 'webpack-dev-server'
+import createWebpackCompiler, { Configuration, Stats } from 'webpack'
+import serve from 'webpack-serve'
 import webpackConfig from './webpack.config'
 
 export const build = gulp.series(gulp.parallel(schemaTypes, graphQLTypes), webpack)
@@ -23,8 +23,11 @@ const WEBPACK_STATS_OPTIONS = {
 } as Stats.ToStringOptions
 const logWebpackStats = (stats: Stats) => log(stats.toString(WEBPACK_STATS_OPTIONS))
 
+const webpackConfigWithoutServe: Configuration = { ...webpackConfig, serve: undefined }
+delete webpackConfigWithoutServe.serve
+
 export async function webpack(): Promise<void> {
-    const compiler = createWebpackCompiler(webpackConfig)
+    const compiler = createWebpackCompiler(webpackConfigWithoutServe)
     const stats = await new Promise<Stats>((resolve, reject) => {
         compiler.run((err, stats) => (err ? reject(err) : resolve(stats)))
     })
@@ -32,14 +35,14 @@ export async function webpack(): Promise<void> {
 }
 
 const createWatchWebpackCompiler = () => {
-    const compiler = createWebpackCompiler(webpackConfig)
+    const compiler = createWebpackCompiler(webpackConfigWithoutServe)
     compiler.hooks.watchRun.tap('log', () => log('Starting webpack compilation'))
     return compiler
 }
 
 export async function watchWebpack(): Promise<void> {
-    if (process.env.USE_WEBPACK_DEV_SERVER) {
-        await webpackDevServer()
+    if (process.env.WEBPACK_SERVE) {
+        await webpackServe()
         return
     }
     const compiler = createWatchWebpackCompiler()
@@ -54,12 +57,16 @@ export async function watchWebpack(): Promise<void> {
     })
 }
 
-export async function webpackDevServer(): Promise<void> {
-    const compiler = createWatchWebpackCompiler()
-    const server = new WebpackDevServer(compiler, { ...webpackConfig.devServer, stats: WEBPACK_STATS_OPTIONS })
-    await new Promise<void>((resolve, reject) => {
-        server.listen(webpackConfig.devServer.port, err => (err ? reject(err) : resolve()))
-    })
+export async function webpackServe(): Promise<void> {
+    return serve({
+        config: {
+            ...webpackConfig,
+            serve: {
+                ...webpackConfig.serve,
+                compiler: createWatchWebpackCompiler(),
+            },
+        },
+    }).then(() => void 0)
 }
 
 const GRAPHQL_SCHEMA_PATH = __dirname + '/../cmd/frontend/internal/graphqlbackend/schema.graphql'

@@ -33,6 +33,7 @@ fi
 export LIGHTSTEP_INCLUDE_SENSITIVE=true
 export PGSSLMODE=disable
 
+export APP_URL=http://localhost:3080
 export GITHUB_BASE_URL=http://127.0.0.1:3180
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
 export INSECURE_DEV=1
@@ -57,10 +58,10 @@ export SOURCEGRAPH_EXPAND_CONFIG_VARS=1 # experiment: interpolate ${var} and $va
 export SAML_ONELOGIN_CERT=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.cert.pem)
 export SAML_ONELOGIN_KEY=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.key.pem)
 
-# To use webpack-dev-server for auto-reloading, use:
-#   export USE_WEBPACK_DEV_SERVER=1
-if [ -n "${USE_WEBPACK_DEV_SERVER-}" ]; then
-	export WEBPACK_DEV_SERVER_URL=http://localhost:3088
+# To use webpack-serve:
+#   export WEBPACK_SERVE=1
+if [ -n "${WEBPACK_SERVE-}" ]; then
+    export APP_URL=http://localhost:3088
 fi
 
 export SOURCEGRAPH_CONFIG_FILE=./dev/config.json

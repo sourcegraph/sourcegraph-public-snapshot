@@ -5,6 +5,7 @@ import * as path from 'path'
 // @ts-ignore
 import rxPaths from 'rxjs/_esm5/path-mapping'
 import * as webpack from 'webpack'
+import webpackServeConfig from './webpack-serve.config'
 
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
@@ -27,6 +28,7 @@ const config: webpack.Configuration = {
         globalObject: 'self',
     },
     devtool,
+    serve: webpackServeConfig,
     devServer: {
         contentBase: '../ui/assets',
         publicPath: '/',
