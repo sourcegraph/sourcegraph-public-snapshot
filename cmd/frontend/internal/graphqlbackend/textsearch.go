@@ -372,7 +372,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	// backend.Repos.{GitserverRepoInfo,ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, rev, nil)
+	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, nil, rev, nil)
 	if err != nil {
 		return nil, false, err
 	}

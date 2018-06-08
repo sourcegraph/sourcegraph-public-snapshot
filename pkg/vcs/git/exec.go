@@ -67,7 +67,7 @@ func (r *Repository) ExecReader(ctx context.Context, args []string) (io.ReadClos
 // name must be 'git', otherwise it panics.
 func (r *Repository) command(name string, arg ...string) *gitserver.Cmd {
 	cmd := gitserver.DefaultClient.Command(name, arg...)
-	cmd.Repo = gitserver.Repo{Name: r.repoURI}
+	cmd.Repo = gitserver.Repo{Name: r.repoURI, URL: r.remoteURL}
 	return cmd
 }
 

@@ -407,7 +407,7 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
 				// taking a long time because they all ask gitserver to try to fetch from the remote
 				// repo.
-				if _, err := vcsrepo.ResolveRevision(ctx, rev.revspec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); git.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
+				if _, err := vcsrepo.ResolveRevision(ctx, nil, rev.revspec, &git.ResolveRevisionOptions{NoEnsureRevision: true}); git.IsRevisionNotFound(err) || err == context.DeadlineExceeded {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.revspec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.

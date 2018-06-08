@@ -36,13 +36,21 @@ func (repos) RemoteVCS(ctx context.Context, repo *types.Repo) (*git.Repository, 
 	if Mocks.Repos.VCS != nil {
 		return Mocks.Repos.VCS(repo.URI)
 	}
-	return git.OpenLazy(repo.URI, func() (string, error) {
+	remoteURL, err := RemoteURLFunc(ctx, repo)()
+	if err != nil {
+		return nil, err
+	}
+	return git.Open(repo.URI, remoteURL), nil
+}
+
+func RemoteURLFunc(ctx context.Context, repo *types.Repo) func() (string, error) {
+	return func() (string, error) {
 		gitserverRepo, err := (repos{}).GitserverRepoInfo(ctx, repo)
 		if err != nil {
 			return "", err
 		}
 		return gitserverRepo.URL, nil
-	}), nil
+	}
 }
 
 // CachedVCS returns a handle to the underlying Git repository on gitserver, without attempting to check that the
@@ -135,7 +143,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
-	return vcsrepo.ResolveRevision(ctx, rev, nil)
+	return vcsrepo.ResolveRevision(ctx, nil, rev, nil)
 }
 
 func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *git.Commit, err error) {

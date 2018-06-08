@@ -136,7 +136,7 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 
 	if err == nil {
 		// Check that our repo is not empty
-		_, err = vcsrepo.ResolveRevision(ctx, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
+		_, err = vcsrepo.ResolveRevision(ctx, nil, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
 	}
 
 	// If we fail to get the default branch due to cloning or being empty, we return nothing.
@@ -283,7 +283,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 		// NoEnsureRevision. We do this, otherwise repositoryResolver.Commit
 		// will try and fetch it from the remote host. However, this is not on
 		// the remote host since we created it.
-		_, err := vcsrepo.ResolveRevision(ctx, targetRef, &git.ResolveRevisionOptions{
+		_, err := vcsrepo.ResolveRevision(ctx, nil, targetRef, &git.ResolveRevisionOptions{
 			NoEnsureRevision: true,
 		})
 		if err != nil {

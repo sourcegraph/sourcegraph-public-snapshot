@@ -494,7 +494,7 @@ func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {
 	// Use Repos.VCS since we do not want to trigger a repo-updater lookup
 	// since this is a batch job.
 	vcs := backend.Repos.VCS(gitserver.Repo{Name: name})
-	commitID, err := vcs.ResolveRevision(r.Context(), spec, nil)
+	commitID, err := vcs.ResolveRevision(r.Context(), nil, spec, nil)
 	if err != nil {
 		return err
 	}
@@ -513,7 +513,7 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	// Ensure commit exists. Use Repos.VCS since we do not want to trigger a
 	// repo-updater lookup since this is a batch job.
 	vcsrepo := backend.Repos.VCS(gitserver.Repo{Name: name})
-	commit, err := vcsrepo.ResolveRevision(r.Context(), spec, nil)
+	commit, err := vcsrepo.ResolveRevision(r.Context(), nil, spec, nil)
 	if err != nil {
 		return err
 	}

@@ -17,7 +17,7 @@ func (r *gitRevSpecExpr) Expr() string { return r.expr }
 
 func (r *gitRevSpecExpr) Object(ctx context.Context) (*gitObject, error) {
 	vcsrepo := backend.Repos.CachedVCS(r.repo.repo)
-	oid, err := vcsrepo.ResolveRevision(ctx, r.expr, nil)
+	oid, err := vcsrepo.ResolveRevision(ctx, nil, r.expr, nil)
 	if err != nil {
 		return nil, err
 	}

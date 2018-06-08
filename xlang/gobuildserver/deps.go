@@ -454,7 +454,7 @@ func FetchCommonDeps() {
 var NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 	// First check if we can clone from gitserver.
 	cmd := git.Open(api.RepoURI(cloneURL.Host+cloneURL.Path), cloneURL.String())
-	if _, err := cmd.ResolveRevision(ctx, rev, nil); err == nil {
+	if _, err := cmd.ResolveRevision(ctx, nil, rev, nil); err == nil {
 		return vfsutil.ArchiveFileSystem(gitserver.Repo{Name: api.RepoURI(cloneURL.Host + cloneURL.Path), URL: cloneURL.String()}, rev), nil
 	}
 

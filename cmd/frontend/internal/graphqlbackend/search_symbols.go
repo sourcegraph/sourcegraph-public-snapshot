@@ -111,7 +111,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
 	vcsrepo := backend.Repos.VCS(repoRevs.gitserverRepo)
-	commitID, err := vcsrepo.ResolveRevision(ctx, inputRev, nil)
+	commitID, err := vcsrepo.ResolveRevision(ctx, nil, inputRev, nil)
 	if err != nil {
 		return nil, err
 	}

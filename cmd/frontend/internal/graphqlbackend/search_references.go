@@ -191,7 +191,7 @@ func searchReferencesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo
 		return mockSearchReferencesInRepo(ctx, repo, gitserverRepo, rev, language, symbol, hints, query)
 	}
 
-	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, rev, nil)
+	commit, err := backend.Repos.VCS(gitserverRepo).ResolveRevision(ctx, nil, rev, nil)
 	if err != nil {
 		return nil, false, err
 	}

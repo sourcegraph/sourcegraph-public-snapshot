@@ -43,12 +43,12 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 		base = devNullSHA
 	} else {
 		var err error
-		base, err = vcsrepo.ResolveRevision(ctx, baseRevspec, nil)
+		base, err = vcsrepo.ResolveRevision(ctx, nil, baseRevspec, nil)
 		if err != nil {
 			return nil, err
 		}
 	}
-	head, err := vcsrepo.ResolveRevision(ctx, headRevspec, nil)
+	head, err := vcsrepo.ResolveRevision(ctx, nil, headRevspec, nil)
 	if err != nil {
 		return nil, err
 	}

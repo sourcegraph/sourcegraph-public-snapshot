@@ -38,19 +38,19 @@ func TestMerger_MergeBase(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		a, err := test.repo.ResolveRevision(ctx, test.a, nil)
+		a, err := test.repo.ResolveRevision(ctx, nil, test.a, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on a: %s", label, test.a, err)
 			continue
 		}
 
-		b, err := test.repo.ResolveRevision(ctx, test.b, nil)
+		b, err := test.repo.ResolveRevision(ctx, nil, test.b, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on b: %s", label, test.b, err)
 			continue
 		}
 
-		want, err := test.repo.ResolveRevision(ctx, test.wantMergeBase, nil)
+		want, err := test.repo.ResolveRevision(ctx, nil, test.wantMergeBase, nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on wantMergeBase: %s", label, test.wantMergeBase, err)
 			continue

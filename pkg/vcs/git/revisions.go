@@ -51,7 +51,12 @@ type ResolveRevisionOptions struct {
 // * Commit does not exist: RevisionNotFoundError
 // * Empty repository: RevisionNotFoundError
 // * Other unexpected errors.
-func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *ResolveRevisionOptions) (api.CommitID, error) {
+//
+// The remoteURLFunc is called to get the Git remote URL if it's not set in r and if it is
+// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
+// the repository or if the revision must be fetched from the remote. This only happens when calling
+// ResolveRevision.
+func (r *Repository) ResolveRevision(ctx context.Context, remoteURLFunc func() (string, error), spec string, opt *ResolveRevisionOptions) (api.CommitID, error) {
 	if Mocks.ResolveRevision != nil {
 		return Mocks.ResolveRevision(spec, opt)
 	}
@@ -82,6 +87,11 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *Reso
 	}
 
 	tryAgain := func(err error) bool {
+		// We have no way to determine the remote URL.
+		if remoteURLFunc == nil {
+			return false
+		}
+
 		// We need to try again with remote URL set so we can clone.
 		if vcs.IsRepoNotExist(err) {
 			return true
@@ -110,15 +120,13 @@ func (r *Repository) ResolveRevision(ctx context.Context, spec string, opt *Reso
 	}
 	doEnsureRevision := IsRevisionNotFound(err)
 
-	r.once.Do(func() {
-		r.remoteURL, r.remoteURLErr = r.remoteURLFunc()
-	})
-	if r.remoteURLErr != nil {
-		return "", r.remoteURLErr
+	remoteURL, err := remoteURLFunc()
+	if err != nil {
+		return "", err
 	}
 
 	cmd = r.command("git", "rev-parse", spec)
-	cmd.Repo = gitserver.Repo{Name: r.repoURI, URL: r.remoteURL}
+	cmd.Repo = gitserver.Repo{Name: r.repoURI, URL: remoteURL}
 	if doEnsureRevision {
 		cmd.EnsureRevision = spec
 	}
