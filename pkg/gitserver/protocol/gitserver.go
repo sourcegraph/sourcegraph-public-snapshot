@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
 
 // ExecRequest is a request to execute a command inside a git repository.
@@ -16,9 +15,28 @@ type ExecRequest struct {
 	// cloned on the gitserver, the request will fail.
 	URL string `json:"url,omitempty"`
 
-	EnsureRevision string          `json:"ensureRevision"`
-	Args           []string        `json:"args"`
-	Opt            *vcs.RemoteOpts `json:"opt"`
+	EnsureRevision string      `json:"ensureRevision"`
+	Args           []string    `json:"args"`
+	Opt            *RemoteOpts `json:"opt"`
+}
+
+// RemoteOpts configures interactions with a remote repository.
+type RemoteOpts struct {
+	SSH   *SSHConfig   `json:"ssh"`   // SSH configuration for communication with the remote
+	HTTPS *HTTPSConfig `json:"https"` // HTTPS configuration for communication with the remote
+}
+
+// SSHConfig configures and authenticates SSH for communication with remotes.
+type SSHConfig struct {
+	User       string `json:"user,omitempty"`      // SSH user (if empty, inferred from URL)
+	PublicKey  []byte `json:"publicKey,omitempty"` // SSH public key (if nil, inferred from PrivateKey)
+	PrivateKey []byte `json:"privateKey"`          // SSH private key, usually passed to ssh.ParsePrivateKey (passphrases currently unsupported)
+}
+
+// HTTPSConfig configures and authenticates HTTPS for communication with remotes.
+type HTTPSConfig struct {
+	User string `json:"user"` // the username provided to the remote
+	Pass string `json:"pass"` // the password provided to the remote
 }
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
