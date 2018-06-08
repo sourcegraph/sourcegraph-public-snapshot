@@ -221,8 +221,7 @@ func (r *fileResolver) Blame(ctx context.Context,
 		StartLine int32
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
-	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
-	hunks, err := vcsrepo.BlameFile(ctx, r.path, &git.BlameOptions{
+	hunks, err := git.BlameFile(ctx, backend.GitserverRepo(r.commit.repo.repo), r.path, &git.BlameOptions{
 		NewestCommit: api.CommitID(r.commit.oid),
 		StartLine:    int(args.StartLine),
 		EndLine:      int(args.EndLine),

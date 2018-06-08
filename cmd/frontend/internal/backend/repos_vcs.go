@@ -57,11 +57,14 @@ func (repos) CachedVCS(repo *types.Repo) *git.Repository {
 		}
 		return vcsrepo
 	}
-	gitserverRepo := quickGitserverRepoInfo(repo.URI)
-	if gitserverRepo == nil {
-		gitserverRepo = &gitserver.Repo{Name: repo.URI}
+	return (repos{}).VCS(GitserverRepo(repo))
+}
+
+func GitserverRepo(repo *types.Repo) gitserver.Repo {
+	if r := quickGitserverRepoInfo(repo.URI); r != nil {
+		return *r
 	}
-	return (repos{}).VCS(*gitserverRepo)
+	return gitserver.Repo{Name: repo.URI}
 }
 
 // VCS returns a handle to the Git repository specified by repo. Callers, unless they already have a gitserver.Repo

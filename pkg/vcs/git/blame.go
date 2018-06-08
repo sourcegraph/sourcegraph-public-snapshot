@@ -10,6 +10,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
 
 // BlameOptions configures a blame.
@@ -32,9 +33,11 @@ type Hunk struct {
 	Message string
 }
 
-func (r *Repository) BlameFile(ctx context.Context, path string, opt *BlameOptions) ([]*Hunk, error) {
+func BlameFile(ctx context.Context, repo gitserver.Repo, path string, opt *BlameOptions) ([]*Hunk, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
-	span.SetTag(path, opt)
+	span.SetTag("repo", repo.Name)
+	span.SetTag("path", path)
+	span.SetTag("opt", opt)
 	defer span.Finish()
 
 	if opt == nil {
@@ -56,7 +59,8 @@ func (r *Repository) BlameFile(ctx context.Context, path string, opt *BlameOptio
 	}
 	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
 
-	cmd := r.command("git", args...)
+	cmd := gitserver.DefaultClient.Command("git", args...)
+	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("exec `git blame` failed: %s. Output was:\n\n%s", err, out)

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -30,14 +31,14 @@ func TestRepository_BlameFile(t *testing.T) {
 		},
 	}
 	tests := map[string]struct {
-		repo *gitRepository
+		repo gitserver.Repo
 		path string
 		opt  *git.BlameOptions
 
 		wantHunks []*git.Hunk
 	}{
 		"git cmd": {
-			repo: makeGitRepositoryCmd(t, gitCommands...),
+			repo: makeGitRepository(t, gitCommands...),
 			path: "f",
 			opt: &git.BlameOptions{
 				NewestCommit: "master",
@@ -47,14 +48,15 @@ func TestRepository_BlameFile(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		newestCommitID, err := test.repo.ResolveRevision(ctx, string(test.opt.NewestCommit), nil)
+		testRepo := git.Open(test.repo.Name, "")
+		newestCommitID, err := testRepo.ResolveRevision(ctx, string(test.opt.NewestCommit), nil)
 		if err != nil {
 			t.Errorf("%s: ResolveRevision(%q) on base: %s", label, test.opt.NewestCommit, err)
 			continue
 		}
 
 		test.opt.NewestCommit = newestCommitID
-		hunks, err := test.repo.BlameFile(ctx, test.path, test.opt)
+		hunks, err := git.BlameFile(ctx, test.repo, test.path, test.opt)
 		if err != nil {
 			t.Errorf("%s: BlameFile(%s, %+v): %s", label, test.path, test.opt, err)
 			continue
