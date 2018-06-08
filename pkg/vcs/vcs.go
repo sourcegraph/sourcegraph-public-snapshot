@@ -69,35 +69,6 @@ type Tag struct {
 	CreatorDate  time.Time
 }
 
-// SearchOptions specifies options for a repository search.
-type SearchOptions struct {
-	// the query string
-	Query string `json:"Query,omitempty"`
-	// currently only FixedQuery ("fixed") is supported
-	QueryType string `json:"QueryType,omitempty"`
-	// the number of lines before and after each hit to display
-	ContextLines int32 `json:"ContextLines,omitempty"`
-	// max number of matches to return
-	N int32 `json:"N,omitempty"`
-	// starting offset for matches (use with N for pagination)
-	Offset int32 `json:"Offset,omitempty"`
-}
-
-// A SearchResult is a match returned by a search.
-type SearchResult struct {
-	// File is the file that contains this match.
-	File string `json:"File,omitempty"`
-	// The byte range [start,end) of the match.
-	StartByte uint32 `json:"StartByte,omitempty"`
-	EndByte   uint32 `json:"EndByte,omitempty"`
-	// The line range [start,end] of the match.
-	StartLine uint32 `json:"StartLine,omitempty"`
-	EndLine   uint32 `json:"EndLine,omitempty"`
-	// Match is the matching portion of the file from [StartByte,
-	// EndByte).
-	Match []byte `json:"Match,omitempty"`
-}
-
 // A PersonCount is a contributor to a repository.
 type PersonCount struct {
 	Name  string

@@ -206,14 +206,6 @@ func (p Tags) Len() int           { return len(p) }
 func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
 func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-const (
-	// FixedQuery is a value for SearchOptions.QueryType that
-	// indicates the query is a fixed string, not a regex.
-	FixedQuery = "fixed"
-
-	// TODO(sqs): allow regexp searches, extended regexp searches, etc.
-)
-
 // TextSearchOptions contains common options for text search commands.
 type TextSearchOptions struct {
 	Pattern         string // the pattern to look for

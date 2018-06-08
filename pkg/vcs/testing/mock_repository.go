@@ -34,8 +34,6 @@ type MockRepository struct {
 
 	ShortLog_ func(ctx context.Context, opt vcs.ShortLogOptions) ([]*vcs.PersonCount, error)
 
-	Search_ func(context.Context, api.CommitID, vcs.SearchOptions) ([]*vcs.SearchResult, error)
-
 	RawLogDiffSearch_ func(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error)
 
 	BehindAhead_ func(ctx context.Context, left, right string) (*vcs.BehindAhead, error)
@@ -105,10 +103,6 @@ func (r MockRepository) MergeBase(ctx context.Context, a, b api.CommitID) (api.C
 
 func (r MockRepository) ShortLog(ctx context.Context, opt vcs.ShortLogOptions) ([]*vcs.PersonCount, error) {
 	return r.ShortLog_(ctx, opt)
-}
-
-func (r MockRepository) Search(ctx context.Context, commit api.CommitID, opt vcs.SearchOptions) ([]*vcs.SearchResult, error) {
-	return r.Search_(ctx, commit, opt)
 }
 
 func (r MockRepository) RawLogDiffSearch(ctx context.Context, opt vcs.RawLogDiffSearchOptions) ([]*vcs.LogCommitSearchResult, bool, error) {
