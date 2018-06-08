@@ -24,6 +24,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Removed
 
 * The `secretKey` site configuration value is no longer needed. It was only used for generating tokens for inviting a user to an organization. The invitation is now stored in the database associated with the recipient, so a secret token is no longer needed.
+* The `experimentalFeatures.searchTimeoutParameter` site configuration value has been removed. It defaulted to `enabled` in 2.8 and it is no longer possible to disable.
 
 ## 2.8.9
 

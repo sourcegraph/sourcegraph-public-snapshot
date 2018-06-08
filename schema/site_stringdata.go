@@ -55,12 +55,6 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "searchTimeoutParameter": {
-          "description": "Enables or disables the ` + "`" + `timeout:` + "`" + ` parameter in searches.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "jumpToDefOSSIndex": {
           "description":
             "Enables or disables consulting the OSS package index on Sourcegraph.com for cross repository jump to definition. When enabled Sourcegraph.com will receive Code Intelligence requests when they fail to resolve locally. NOTE: disablePublicRepoRedirects must not be set, or should be set to false.",

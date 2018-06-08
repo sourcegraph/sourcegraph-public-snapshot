@@ -27,13 +27,6 @@ func HTTPStrictTransportSecurity() string {
 	}
 }
 
-// SearchTimeoutParameterEnabled returns true if SearchTimeoutParameter experiment is enabled.
-func SearchTimeoutParameterEnabled() bool {
-	p := Get().ExperimentalFeatures.SearchTimeoutParameter
-	// default is enabled
-	return p != "disabled"
-}
-
 // JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
 func JumpToDefOSSIndexEnabled() bool {
 	p := Get().ExperimentalFeatures.JumpToDefOSSIndex

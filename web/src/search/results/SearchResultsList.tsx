@@ -207,7 +207,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     }
 
     public render(): React.ReactNode {
-        const searchTimeoutParameterEnabled = window.context.searchTimeoutParameterEnabled
         const parsedQuery = parseSearchURLQuery(this.props.location.search)
 
         return (
@@ -324,8 +323,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                 </h3>
                                                 {this.renderRecommendations([
                                                     <>
-                                                        Try narrowing your query{searchTimeoutParameterEnabled &&
-                                                            ', or specifying a longer "timeout:" in your query.'}
+                                                        Try narrowing your query, or specifying a longer "timeout:" in
+                                                        your query.
                                                     </>,
                                                     /* If running Sourcegraph Server, give some smart advice */
                                                     ...(!window.context.sourcegraphDotComMode &&

@@ -66,9 +66,6 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
-	// Experimental features
-	SearchTimeoutParameterEnabled bool `json:"searchTimeoutParameterEnabled"`
-
 	AccessTokensEnabled bool `json:"accessTokensEnabled"`
 
 	AllowSignup bool `json:"allowSignup"`
@@ -155,8 +152,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		// Experiments. We pass these through explicitly so we can
 		// do the default behavior only in Go land.
-		SearchTimeoutParameterEnabled: conf.SearchTimeoutParameterEnabled(),
-
 		AccessTokensEnabled: conf.AccessTokensEnabled(),
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),

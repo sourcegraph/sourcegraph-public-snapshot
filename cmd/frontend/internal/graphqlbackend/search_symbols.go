@@ -6,7 +6,6 @@ import (
 	"log"
 	"strings"
 	"sync"
-	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
@@ -105,13 +103,6 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 		span.Finish()
 	}()
 	span.SetTag("repo", string(repoRevs.repo.URI))
-
-	if !conf.SearchTimeoutParameterEnabled() {
-		// Old behavior doesn't set timeout at top level.
-		tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-		ctx = tctx
-	}
 
 	inputRev := repoRevs.revspecs()[0]
 	span.SetTag("rev", inputRev)

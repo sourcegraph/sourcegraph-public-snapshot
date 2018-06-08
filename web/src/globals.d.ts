@@ -99,11 +99,6 @@ interface SourcegraphContext {
     isRunningDataCenter: boolean
 
     /**
-     * Whether the searchTimeoutParameter feature flag is enabled.
-     */
-    searchTimeoutParameterEnabled: boolean
-
-    /**
      * Whether the hostSurveysLocally feature flag is enabled.
      */
     hostSurveysLocallyEnabled: boolean

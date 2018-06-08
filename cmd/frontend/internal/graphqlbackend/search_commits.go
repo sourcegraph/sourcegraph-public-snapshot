@@ -17,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
@@ -159,12 +158,6 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	for _, s := range afterValues {
 		args = append(args, "--since="+s)
 	}
-	if !conf.SearchTimeoutParameterEnabled() {
-		// Default to searching back 1 month. Don't do this if the timeout: experiment is enabled, because that is a better way of ensuring searches are fast.
-		if len(beforeValues) == 0 && len(afterValues) == 0 {
-			args = append(args, "--since=1 month ago")
-		}
-	}
 
 	// Helper for adding git log flags --grep, --author, and --committer, which all behave similarly.
 	var hasSeenGrepLikeFields, hasSeenInvertedGrepLikeFields bool
@@ -219,15 +212,6 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	}
 	if err := addGrepLikeFlags(&args, "--committer", searchquery.FieldCommitter, nil, true); err != nil {
 		return nil, false, false, err
-	}
-
-	if !conf.SearchTimeoutParameterEnabled() {
-		// Add default deadline if none exists.
-		if _, ok := ctx.Deadline(); !ok {
-			var cancel func()
-			ctx, cancel = context.WithDeadline(ctx, time.Now().Add(gitLogSearchTimeout))
-			defer cancel()
-		}
 	}
 
 	vcsrepo := backend.Repos.CachedVCS(repo)

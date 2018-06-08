@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -378,13 +377,6 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 		return nil, false, err
 	}
 
-	if !conf.SearchTimeoutParameterEnabled() {
-		// Old behavior doesn't set timeout at top level.
-		tctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-		ctx = tctx
-	}
-
 	matches, limitHit, err = textSearch(ctx, gitserverRepo, commit, info, fetchTimeout)
 
 	var workspace string
@@ -469,18 +461,10 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
 	}
 
-	if !conf.SearchTimeoutParameterEnabled() {
-		// Old behavior doesn't set timeout at top level.
-		tctx, cancel := context.WithTimeout(ctx, searchOpts.MaxWallTime+3*time.Second)
-		defer cancel()
-		ctx = tctx
-	} else {
-		// We don't need to set a context timeout at this level because it is already set at the top level.
-		if searchTimeoutFieldSet {
-			// If the user manually specified a timeout, allow zoekt to use most of that timeout.
-			deadline, _ := ctx.Deadline()
-			searchOpts.MaxWallTime = time.Duration(0.8 * float64(deadline.Sub(time.Now())))
-		}
+	if searchTimeoutFieldSet {
+		// If the user manually specified a timeout, allow zoekt to use most of that timeout.
+		deadline, _ := ctx.Deadline()
+		searchOpts.MaxWallTime = time.Duration(0.8 * float64(deadline.Sub(time.Now())))
 	}
 
 	tr.LogFields(otlog.String("maxWallTime", searchOpts.MaxWallTime.String()))
@@ -786,7 +770,8 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		if ok {
 			fetchTimeout = deadline.Sub(time.Now())
 		} else {
-			// Deprecated code path that can be removed when searchTimeoutParameterEnabled feature flag is removed
+			// In practice, this case should not happen because a deadline should always be set
+			// but if it does happen just set a long but finite timeout.
 			fetchTimeout = time.Minute
 		}
 	} else {

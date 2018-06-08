@@ -3,7 +3,6 @@
 package searchquery
 
 import (
-	config "github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery/types"
 )
@@ -59,11 +58,9 @@ var (
 			FieldMessage:   regexpNegatableFieldType,
 
 			// Experimental fields:
-			FieldIndex: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldCount: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldTimeout: {Literal: types.StringType, Quoted: types.StringType, Singular: true, FeatureFlagEnabled: func() bool {
-				return config.SearchTimeoutParameterEnabled()
-			}},
+			FieldIndex:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldCount:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
+			FieldTimeout: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 		},
 		FieldAliases: map[string]string{
 			"r":        FieldRepo,

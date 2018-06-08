@@ -26,11 +26,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 )
@@ -678,11 +676,6 @@ func (r *searchResolver) searchTimeoutFieldSet() bool {
 }
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
-	if !conf.SearchTimeoutParameterEnabled() {
-		// Old behavior is to not set a timeout at the top level.
-		ctx, cancel := context.WithCancel(ctx)
-		return ctx, cancel, nil
-	}
 	d := defaultTimeout
 	timeout, _ := r.query.StringValue(searchquery.FieldTimeout)
 	if timeout != "" {
@@ -786,10 +779,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	)
 
 	waitGroup := func(required bool) *sync.WaitGroup {
-		if !conf.SearchTimeoutParameterEnabled() {
-			// Old behavior is to wait for all searches.
-			return &requiredWg
-		}
 		if r.searchTimeoutFieldSet() {
 			// When a custom timeout is specified, all searches are required and get the full timeout.
 			return &requiredWg
@@ -985,46 +974,22 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// Wait for required searches.
 	requiredWg.Wait()
 
-	if conf.SearchTimeoutParameterEnabled() {
-		// Give optional searches some minimum budget in case required searches return quickly.
-		// Cancel all remaining searches after this minimum budget.
-		budget := 100 * time.Millisecond
-		elapsed := time.Now().Sub(start)
-		timer := time.AfterFunc(budget-elapsed, cancel)
+	// Give optional searches some minimum budget in case required searches return quickly.
+	// Cancel all remaining searches after this minimum budget.
+	budget := 100 * time.Millisecond
+	elapsed := time.Now().Sub(start)
+	timer := time.AfterFunc(budget-elapsed, cancel)
 
-		// Wait for remaining optional searches to finish or get cancelled.
-		optionalWg.Wait()
+	// Wait for remaining optional searches to finish or get cancelled.
+	optionalWg.Wait()
 
-		timer.Stop()
-	}
+	timer.Stop()
 
 	tr.LazyPrintf("results=%d limitHit=%v cloning=%d missing=%d timedout=%d", len(results), common.limitHit, len(common.cloning), len(common.missing), len(common.timedout))
 
 	// alert is a potential alert shown to the user
 	var alert *searchAlert
 
-	if !conf.SearchTimeoutParameterEnabled() {
-		if _, isDiff := seenResultTypes["diff"]; isDiff && alert == nil && !common.limitHit && len(r.query.Values("before")) == 0 && len(r.query.Values("after")) == 0 {
-			alert = &searchAlert{
-				description: "Diff search limited to last month by default. Use after: to search older commits.",
-				proposedQueries: []*searchQueryDescription{
-					{
-						description: "commits in the last 6 months",
-						query:       syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"6 months ago\"",
-					},
-					{
-						description: "commits in the last 2 years",
-						query:       syntax.ExprString(r.query.Query.Syntax.Expr) + " after:\"2 years ago\"",
-					},
-				},
-			}
-			if len(results) == 0 {
-				alert.title = "No results found"
-			} else {
-				alert.title = "Only diff search results from last month are shown"
-			}
-		}
-	}
 	if len(missingRepoRevs) > 0 {
 		alert = r.alertForMissingRepoRevs(missingRepoRevs)
 	}
