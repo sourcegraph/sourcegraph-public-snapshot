@@ -40,6 +40,10 @@ func init() {
 }
 
 func TestProxy(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
 	tests := map[string]struct {
 		rootURI           lsp.DocumentURI
 		mode              string
