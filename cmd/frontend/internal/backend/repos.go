@@ -225,9 +225,13 @@ func (s *repos) RefreshIndex(ctx context.Context, repo *types.Repo) (err error) 
 		return nil
 	}
 
-	var done func()
-	ctx, done = trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.URI}, &err)
+	ctx, done := trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.URI}, &err)
 	defer done()
+
+	// make staticcheck happy about "this value of ctx is never used (SA4006)". Not
+	// using _ in the actual assignment above in case someone forgets to use it
+	// when ctx is used below.
+	_ = ctx
 
 	go func() {
 		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo.URI))
