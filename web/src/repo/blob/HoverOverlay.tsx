@@ -146,10 +146,9 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                                         })
                                         return (
                                             <div
-                                                className="hover-overlay__content hover-overlay__row"
+                                                className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
                                                 key={i}
                                                 dangerouslySetInnerHTML={{ __html: rendered }}
-                                                data-e2e="tooltip.content"
                                             />
                                         )
                                     } catch (err) {
@@ -168,12 +167,11 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                             }
                             return (
                                 <code
-                                    className="hover-overlay__content hover-overlay__row"
+                                    className="hover-overlay__content hover-overlay__row e2e-tooltip-content"
                                     key={i}
                                     dangerouslySetInnerHTML={{
                                         __html: highlightCodeSafe(content.value, content.language),
                                     }}
-                                    data-e2e="tooltip.content"
                                 />
                             )
                         })
@@ -184,9 +182,8 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
         <div className="hover-overlay__actions hover-overlay__row">
             <ButtonOrLink
                 to={isJumpURL(props.definitionURLOrError) ? props.definitionURLOrError.jumpURL : undefined}
-                className="btn btn-secondary hover-overlay__action"
+                className="btn btn-secondary hover-overlay__action e2e-tooltip-j2d"
                 onClick={props.onGoToDefinitionClick}
-                data-e2e="tooltip.j2d"
             >
                 Go to definition {props.definitionURLOrError === LOADING && <Loader className="icon-inline" />}
             </ButtonOrLink>
@@ -204,8 +201,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                         viewState: 'references',
                     })
                 }
-                className="btn btn-secondary hover-overlay__action"
-                data-e2e="tooltip.refs"
+                className="btn btn-secondary hover-overlay__action e2e-tooltip-find-refs"
             >
                 Find references
             </ButtonOrLink>
@@ -223,8 +219,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                         viewState: 'impl',
                     })
                 }
-                className="btn btn-secondary hover-overlay__action"
-                data-e2e="tooltip.impls"
+                className="btn btn-secondary hover-overlay__action e2e-tooltip-find-impl"
             >
                 Find implementations
             </ButtonOrLink>

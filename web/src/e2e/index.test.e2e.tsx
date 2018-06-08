@@ -2,13 +2,11 @@ import { assert } from 'chai'
 import { Browser, connect, launch, Page } from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
 
-const e2eSelector = (key: string, ...subs: string[]) => [`[data-e2e="${key}"]`, ...subs].join(' ')
-
 describe('e2e test suite', () => {
     let authenticate: (page: Page) => Promise<void>
     let baseURL: string
     let overrideAuthSecret: string
-    if (process.env.SOURCEGRAPH_BASE_URL) {
+    if (process.env.SOURCEGRAPH_BASE_URL && process.env.SOURCEGRAPH_BASE_URL !== 'http://localhost:3080') {
         baseURL = process.env.SOURCEGRAPH_BASE_URL
         // Assume that the dogfood (sourcegraph.sgdev.org) override token works.
         overrideAuthSecret = '2qzNBYQmUigCFdVVjDGyFfp'
@@ -17,6 +15,7 @@ describe('e2e test suite', () => {
         // Use OVERRIDE_AUTH_SECRET env var from dev/start.sh.
         overrideAuthSecret = 'sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ'
     }
+    console.log('Using base URL', baseURL)
     authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
 
     const browserWSEndpoint = process.env.BROWSER_WS_ENDPOINT
@@ -69,6 +68,9 @@ describe('e2e test suite', () => {
         }
         // Wait for the repository container or a repository error page to be shown.
         await Promise.race([
+            // Repository is already enabled and added; nothing to do.
+            page.waitForSelector('.repo-rev-container'),
+
             // Add or enable repository.
             (async () => {
                 try {
@@ -82,9 +84,6 @@ describe('e2e test suite', () => {
 
             // Repository is cloning.
             page.waitForSelector('.repository-cloning-in-progress-page'),
-
-            // Repository is already enabled and added; nothing to do.
-            page.waitForSelector('.repo-rev-container'),
         ])
     }
 
@@ -183,25 +182,25 @@ describe('e2e test suite', () => {
     })
 
     describe('Repository component', () => {
-        const blobSelector = e2eSelector('blob', '> table')
+        const blobTableSelector = '.e2e-blob > table'
+        /**
+         * @param line 1-indexed line number
+         * @param spanOffset 1-indexed index of the span that's to be clicked
+         */
         const clickToken = async (line: number, spanOffset: number): Promise<void> => {
-            const selector = `${blobSelector} tr:nth-child(${line}) > td.code > span:nth-child(${spanOffset})`
+            const selector = `${blobTableSelector} tr:nth-child(${line}) > td.code > span:nth-child(${spanOffset})`
             await page.waitForSelector(selector)
             await page.click(selector)
         }
 
-        const tooltipContentSelector = e2eSelector('tooltip.content')
-
         // expectedCount defaults to one because of we haven't specified, we just want to ensure it exists at all
         const getTooltipContents = async (expectedCount = 1): Promise<string[]> => {
             const selector =
-                expectedCount > 1
-                    ? `${tooltipContentSelector}:nth-child(${expectedCount})`
-                    : `${tooltipContentSelector}`
+                expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : `.e2e-tooltip-content`
             await page.waitForSelector(selector)
             return await page.evaluate(() =>
                 // You can't reference tooltipContentSelector in puppeteer's page.evaluate
-                Array.from(document.querySelectorAll('[data-e2e="tooltip.content"]')).map(t => t.textContent)
+                Array.from(document.querySelectorAll('.e2e-tooltip-content')).map(t => t.textContent)
             )
         }
         const assertTooltipContentContains = async (val: string, count?: number) => {
@@ -209,12 +208,12 @@ describe('e2e test suite', () => {
         }
 
         const clickTooltipJ2D = async (): Promise<void> => {
-            const selector = e2eSelector('tooltip.j2d')
+            const selector = '.e2e-tooltip-j2d'
             await page.waitForSelector(selector)
             await page.click(selector)
         }
         const clickTooltipFindRefs = async (): Promise<void> => {
-            const selector = e2eSelector('tooltip.refs')
+            const selector = '.e2e-tooltip-find-refs'
             await page.waitForSelector(selector)
             await page.click(selector)
         }
@@ -413,7 +412,7 @@ describe('e2e test suite', () => {
                     )
                 })
                 // Verify file contents are loaded.
-                await page.waitForSelector(blobSelector)
+                await page.waitForSelector(blobTableSelector)
             })
 
             it('updates rev with switcher', async () => {
@@ -437,7 +436,7 @@ describe('e2e test suite', () => {
                         '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
                 )
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector(blobSelector)
+                await page.waitForSelector(blobTableSelector)
                 await clickToken(23, 2)
                 await assertWindowLocation(
                     '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'

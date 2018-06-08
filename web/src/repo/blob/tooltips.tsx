@@ -84,10 +84,8 @@ export function createTooltips(scrollableElement: HTMLElement): void {
     const j2dAction = document.createElement('A') as HTMLAnchorElement
     j2dAction.appendChild(definitionIcon)
     j2dAction.appendChild(document.createTextNode('Go to definition'))
-    j2dAction.className = `btn btn-sm BtnGroup-item`
-    j2dAction.className = 'tooltip__action'
+    j2dAction.className = 'tooltip__action e2e-tooltip-j2d'
     j2dAction.style.display = 'block'
-    j2dAction.dataset.e2e = 'tooltip.j2d'
 
     const referencesIcon = document.createElement('svg')
     referencesIcon.innerHTML = referencesIconSVG
@@ -96,9 +94,8 @@ export function createTooltips(scrollableElement: HTMLElement): void {
     const findRefsAction = document.createElement('A') as HTMLAnchorElement
     findRefsAction.appendChild(referencesIcon)
     findRefsAction.appendChild(document.createTextNode('Find references'))
-    findRefsAction.className = 'tooltip__action'
+    findRefsAction.className = 'tooltip__action e2e-tooltip-find-refs'
     findRefsAction.style.display = 'block'
-    findRefsAction.dataset.e2e = 'tooltip.refs'
 
     tooltipActions.appendChild(j2dAction)
     tooltipActions.appendChild(findRefsAction)
@@ -225,8 +222,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         }
 
         const container = document.createElement('DIV')
-        container.className = 'tooltip__divider'
-        container.dataset.e2e = 'tooltip.content'
+        container.className = 'tooltip__divider e2e-tooltip-content'
 
         const tooltipText = document.createElement('DIV')
         tooltipText.className = `tooltip__title ${getModeFromPath(ctx.filePath)}`
@@ -250,8 +246,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
 
         if (doc) {
             const tooltipDoc = document.createElement('DIV')
-            tooltipDoc.className = 'tooltip__doc'
-            tooltipDoc.dataset.e2e = 'tooltip.content'
+            tooltipDoc.className = 'tooltip__doc e2e-tooltip-content'
             tooltipDoc.innerHTML = marked(doc, { gfm: true, breaks: true, sanitize: true })
             tooltipElements.tooltip.insertBefore(tooltipDoc, tooltipElements.moreContext)
 

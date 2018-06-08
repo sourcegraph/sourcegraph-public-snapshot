@@ -684,13 +684,12 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         return (
             <div className={`blob2 ${this.props.className}`} ref={this.nextBlobElement}>
                 <code
-                    className={`blob2__code ${this.props.wrapCode ? ' blob2__code--wrapped' : ''} `}
+                    className={`blob2__code ${this.props.wrapCode ? ' blob2__code--wrapped' : ''} e2e-blob`}
                     ref={this.nextCodeElement}
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                     onClick={this.nextCodeClick}
                     onMouseOver={this.nextCodeMouseOver}
                     onMouseMove={this.nextCodeMouseMove}
-                    data-e2e="blob"
                 />
                 {shouldRenderHover(this.state) && (
                     <HoverOverlay
