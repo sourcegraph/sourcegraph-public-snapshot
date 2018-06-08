@@ -16,7 +16,6 @@ export default {
     dev: {
         publicPath: '/.assets/',
     },
-    logLevel: 'trace',
     add: (app, middleware, options) => {
         // Since we're manipulating the order of middleware added, we need to handle
         // adding these two internal middleware functions.
