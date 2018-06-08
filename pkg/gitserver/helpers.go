@@ -8,7 +8,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
 // FetchTar returns a reader for running "git archive --format=tar
@@ -37,7 +37,7 @@ func FetchTar(ctx context.Context, client *Client, repo Repo, commit api.CommitI
 	cmd.Repo = repo
 	r, err = StdoutReader(ctx, cmd)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) || vcs.IsRevisionNotFound(err) {
+		if errcode.IsNotFound(err) {
 			err = badRequestError{err.Error()}
 		}
 		return nil, err

@@ -21,6 +21,8 @@ type RepoNotExistError struct {
 	CloneProgress string
 }
 
+func (RepoNotExistError) NotFound() bool { return true }
+
 func (e *RepoNotExistError) Error() string {
 	if e.CloneInProgress {
 		return "repository does not exist (clone in progress): " + string(e.Repo)
