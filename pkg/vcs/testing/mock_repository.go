@@ -31,7 +31,6 @@ type MockRepository struct {
 	ReadFile_ func(ctx context.Context, commit api.CommitID, name string) ([]byte, error)
 	ReadDir_  func(ctx context.Context, commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error)
 
-	Diff_      func(ctx context.Context, base, head api.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error)
 	MergeBase_ func(ctx context.Context, a, b api.CommitID) (api.CommitID, error)
 
 	ShortLog_ func(ctx context.Context, opt vcs.ShortLogOptions) ([]*vcs.PersonCount, error)
@@ -103,10 +102,6 @@ func (r MockRepository) ReadFile(ctx context.Context, commit api.CommitID, name 
 
 func (r MockRepository) ReadDir(ctx context.Context, commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
 	return r.ReadDir_(ctx, commit, name, recurse)
-}
-
-func (r MockRepository) Diff(ctx context.Context, base, head api.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
-	return r.Diff_(ctx, base, head, opt)
 }
 
 func (r MockRepository) MergeBase(ctx context.Context, a, b api.CommitID) (api.CommitID, error) {

@@ -560,61 +560,6 @@ func parseUint(s string) (uint, error) {
 	return uint(n), err
 }
 
-func (r *Repository) Diff(ctx context.Context, base, head api.CommitID, opt *vcs.DiffOptions) (*vcs.Diff, error) {
-	r.ensureAbsCommit(base)
-	r.ensureAbsCommit(head)
-	if opt == nil {
-		opt = &vcs.DiffOptions{}
-	}
-
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Diff")
-	span.SetTag("Base", base)
-	span.SetTag("Head", head)
-	span.SetTag("Opt", opt)
-	defer span.Finish()
-
-	if strings.HasPrefix(string(base), "-") || strings.HasPrefix(string(head), "-") {
-		// Protect against base or head that is interpreted as command-line option.
-		return nil, errors.New("diff revspecs must not start with '-'")
-	}
-
-	if opt == nil {
-		opt = &vcs.DiffOptions{}
-	}
-	args := []string{"diff", "--full-index"}
-	if opt.DetectRenames {
-		args = append(args, "-M")
-	}
-	args = append(args, "--src-prefix="+opt.OrigPrefix)
-	args = append(args, "--dst-prefix="+opt.NewPrefix)
-
-	rng := string(base)
-	if opt.ExcludeReachableFromBoth {
-		rng += "..." + string(head)
-	} else {
-		rng += ".." + string(head)
-	}
-
-	args = append(args, rng, "--")
-	cmd := r.command("git", args...)
-	if opt != nil {
-		cmd.Args = append(cmd.Args, opt.Paths...)
-	}
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		out = bytes.TrimSpace(out)
-		if isBadObjectErr(string(out), string(base)) || isInvalidRevisionRangeError(string(out), string(base)) {
-			return nil, &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: string(base)}
-		}
-		if isBadObjectErr(string(out), string(head)) || isInvalidRevisionRangeError(string(out), string(head)) {
-			return nil, &vcs.RevisionNotFoundError{Repo: r.repoURI, Spec: string(head)}
-		}
-		return nil, fmt.Errorf("exec `git diff` failed: %s. Output was:\n\n%s", err, out)
-	}
-	diff := &vcs.Diff{Raw: string(out)}
-	return diff, nil
-}
-
 // isWhitelistedGitArg checks if the arg is whitelisted.
 func isWhitelistedGitArg(whitelistedArgs []string, arg string) bool {
 	// Split the arg at the first equal sign and check the LHS against the whitelist args.

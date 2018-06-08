@@ -123,10 +123,6 @@ type Repository interface {
 	// Allows VSCode extensions to execute whitelisted commands from gitserver.
 	GitCmdRaw(ctx context.Context, params []string) (string, error)
 
-	// Diff shows changes between two commits. If base or head do not
-	// exist, an error is returned.
-	Diff(ctx context.Context, base, head api.CommitID, opt *DiffOptions) (*Diff, error)
-
 	// MergeBase returns the merge base commit for the specified
 	// commits.
 	MergeBase(context.Context, api.CommitID, api.CommitID) (api.CommitID, error)
@@ -185,15 +181,6 @@ type ShortLogOptions struct {
 	Range string // the range for which stats will be fetched
 	After string // the date after which to collect commits
 	Path  string // compute stats for commits that touch this path
-}
-
-// DiffOptions configures a diff.
-type DiffOptions struct {
-	Paths                 []string // constrain diff to these pathspecs
-	DetectRenames         bool
-	OrigPrefix, NewPrefix string // prefixes for orig and new filenames (e.g., "a/", "b/")
-
-	ExcludeReachableFromBoth bool // like "<rev1>...<rev2>" (see `git rev-parse --help`)
 }
 
 // A Diff represents changes between two commits.
