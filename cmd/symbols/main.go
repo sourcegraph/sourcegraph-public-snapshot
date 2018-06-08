@@ -54,7 +54,7 @@ func main() {
 
 	service := symbols.Service{
 		FetchTar: func(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (io.ReadCloser, error) {
-			return git.FetchTar(ctx, repo, commit)
+			return git.Archive(ctx, repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 		},
 		NewParser: func() (ctags.Parser, error) {
 			parser, err := ctags.NewParser(ctagsCommand)

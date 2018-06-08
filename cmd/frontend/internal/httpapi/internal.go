@@ -515,7 +515,7 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	src, err := git.FetchTar(r.Context(), repo, commit)
+	src, err := git.Archive(r.Context(), repo, git.ArchiveOptions{Treeish: string(commit), Format: "tar"})
 	if err != nil {
 		return err
 	}

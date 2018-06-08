@@ -40,9 +40,15 @@ func TestRepository_Archive(t *testing.T) {
 	}
 
 	for label, test := range tests {
-		data, err := git.Archive(ctx, test.repo, "HEAD")
+		rc, err := git.Archive(ctx, test.repo, git.ArchiveOptions{Treeish: "HEAD", Format: "zip"})
 		if err != nil {
 			t.Errorf("%s: Archive: %s", label, err)
+			continue
+		}
+		defer rc.Close()
+		data, err := ioutil.ReadAll(rc)
+		if err != nil {
+			t.Errorf("%s: ReadAll: %s", label, err)
 			continue
 		}
 		zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))

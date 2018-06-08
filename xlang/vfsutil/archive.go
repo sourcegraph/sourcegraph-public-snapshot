@@ -6,11 +6,11 @@ import (
 	"context"
 	"errors"
 	"io"
+	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
@@ -31,7 +31,15 @@ import (
 // can satisfy FS operations nearly instantly in memory.
 func ArchiveFileSystem(repo gitserver.Repo, treeish string) *ArchiveFS {
 	fetch := func(ctx context.Context) (*archiveReader, error) {
-		data, err := git.Archive(ctx, repo, api.CommitID(treeish))
+		rc, err := git.Archive(ctx, repo, git.ArchiveOptions{
+			Treeish: treeish,
+			Format:  "zip",
+		})
+		if err != nil {
+			return nil, err
+		}
+		defer rc.Close()
+		data, err := ioutil.ReadAll(rc)
 		if err != nil {
 			return nil, err
 		}
