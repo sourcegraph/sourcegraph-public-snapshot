@@ -1524,8 +1524,6 @@ type File implements TreeEntry {
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Returns dependency references for the file.
     dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
-    # Blame the file and return output in a raw string format.
-    blameRaw(startLine: Int!, endLine: Int!): String!
 
     # Symbols defined in this file.
     symbols(

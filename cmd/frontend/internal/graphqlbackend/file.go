@@ -216,22 +216,6 @@ func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitRes
 	return resolvers, nil
 }
 
-func (r *fileResolver) BlameRaw(ctx context.Context, args *struct {
-	StartLine int32
-	EndLine   int32
-}) (string, error) {
-	vcsrepo := backend.Repos.CachedVCS(r.commit.repo.repo)
-	rawBlame, err := vcsrepo.BlameFileRaw(ctx, r.path, &vcs.BlameOptions{
-		NewestCommit: api.CommitID(r.commit.oid),
-		StartLine:    int(args.StartLine),
-		EndLine:      int(args.EndLine),
-	})
-	if err != nil {
-		return "", err
-	}
-	return rawBlame, nil
-}
-
 func (r *fileResolver) Blame(ctx context.Context,
 	args *struct {
 		StartLine int32

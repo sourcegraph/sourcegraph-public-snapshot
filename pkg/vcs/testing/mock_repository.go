@@ -21,10 +21,9 @@ type MockRepository struct {
 	Commits_     func(context.Context, vcs.CommitsOptions) ([]*vcs.Commit, error)
 	CommitCount_ func(context.Context, vcs.CommitsOptions) (uint, error)
 
-	BlameFile_    func(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error)
-	BlameFileRaw_ func(ctx context.Context, path string, opt *vcs.BlameOptions) (string, error)
-	ExecReader_   func(ctx context.Context, args []string) (io.ReadCloser, error)
-	GitCmdRaw_    func(ctx context.Context, params []string) (string, error)
+	BlameFile_  func(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error)
+	ExecReader_ func(ctx context.Context, args []string) (io.ReadCloser, error)
+	GitCmdRaw_  func(ctx context.Context, params []string) (string, error)
 
 	Lstat_    func(ctx context.Context, commit api.CommitID, name string) (os.FileInfo, error)
 	Stat_     func(ctx context.Context, commit api.CommitID, name string) (os.FileInfo, error)
@@ -82,10 +81,6 @@ func (r MockRepository) GitCmdRaw(ctx context.Context, params []string) (string,
 
 func (r MockRepository) BlameFile(ctx context.Context, path string, opt *vcs.BlameOptions) ([]*vcs.Hunk, error) {
 	return r.BlameFile_(ctx, path, opt)
-}
-
-func (r MockRepository) BlameFileRaw(ctx context.Context, path string, opt *vcs.BlameOptions) (string, error) {
-	return r.BlameFileRaw_(ctx, path, opt)
 }
 
 func (r MockRepository) Lstat(ctx context.Context, commit api.CommitID, name string) (os.FileInfo, error) {
