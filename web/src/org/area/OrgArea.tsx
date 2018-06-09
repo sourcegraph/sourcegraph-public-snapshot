@@ -153,7 +153,9 @@ export class OrgArea extends React.Component<Props> {
         }
 
         return (
-            <div className="org-area area--vertical">
+            <div
+                className="org-area" // OrgsArea applies .area--vertical class, don't apply here or else v-scroll breaks
+            >
                 <OrgHeader className="area--vertical__header" {...this.props} {...transferProps} />
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
