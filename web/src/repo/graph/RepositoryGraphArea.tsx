@@ -52,11 +52,13 @@ export class RepositoryGraphArea extends React.Component<Props> {
         if (this.state.error) {
             return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.error)} />
         }
-        if (!this.props.user) {
-            return null
-        }
 
-        const transferProps: { user: GQL.IUser; repo: GQL.IRepository; rev: string | undefined; commitID: string } = {
+        const transferProps: {
+            user: GQL.IUser | null
+            repo: GQL.IRepository
+            rev: string | undefined
+            commitID: string
+        } = {
             user: this.props.user,
             repo: this.props.repo,
             rev: this.props.rev,
