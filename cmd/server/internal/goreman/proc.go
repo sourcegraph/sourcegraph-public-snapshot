@@ -73,15 +73,6 @@ func startProc(proc string) error {
 	return nil
 }
 
-// restart specified proc.
-func restartProc(proc string) error {
-	if _, ok := procs[proc]; !ok {
-		return errors.New("Unknown proc: " + proc)
-	}
-	stopProc(proc, false)
-	return startProc(proc)
-}
-
 // startProcs starts the processes.
 func startProcs() {
 	for proc := range procs {

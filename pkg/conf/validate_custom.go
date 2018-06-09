@@ -105,14 +105,6 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 	return problems
 }
 
-func sortedKeys(m map[string]int) (keys []string) {
-	keys = make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
-}
-
 // TestValidator is an exported helper function for other packages to test their contributed
 // validators (registered with ContributeValidator). It should only be called by tests.
 func TestValidator(t interface {

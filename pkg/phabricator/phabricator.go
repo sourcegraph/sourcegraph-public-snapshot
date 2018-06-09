@@ -24,12 +24,6 @@ func NewClient(url, token string) *Client {
 	}
 }
 
-type phabricatorResponse struct {
-	Result       interface{} `json:"result"`
-	ErrorCode    *string     `json:"error_code"`
-	ErrorMessage *string     `json:"error_info"`
-}
-
 func (c *Client) post(path string, payload url.Values, target interface{}) error {
 	payload.Add("api.token", c.token)
 

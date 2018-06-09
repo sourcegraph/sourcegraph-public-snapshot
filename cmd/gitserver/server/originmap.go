@@ -63,12 +63,6 @@ func (o *originMapsT) getOriginMap() []prefixAndOrgin {
 	return o.originMap
 }
 
-func (o *originMapsT) getGitoliteHostMap() []prefixAndOrgin {
-	o.mu.RLock()
-	defer o.mu.RUnlock()
-	return o.gitoliteHostMap
-}
-
 func (o *originMapsT) getReposListOriginMap() map[string]string {
 	o.mu.RLock()
 	defer o.mu.RUnlock()

@@ -51,7 +51,6 @@ func (*schemaResolver) Site() *siteResolver {
 
 type siteResolver struct {
 	gqlID string // == singletonSiteGQLID, not the site ID
-	siteFlagsResolver
 }
 
 var singletonSiteResolver = &siteResolver{gqlID: singletonSiteGQLID}

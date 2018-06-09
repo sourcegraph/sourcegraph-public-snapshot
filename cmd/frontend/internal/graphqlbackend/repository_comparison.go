@@ -66,8 +66,6 @@ type repositoryComparisonResolver struct {
 	baseRevspec, headRevspec string
 	base, head               api.CommitID
 	repo                     *repositoryResolver
-
-	rawDiff []byte
 }
 
 func (r *repositoryComparisonResolver) Range() *gitRevisionRange {

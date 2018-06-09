@@ -171,17 +171,6 @@ func (o *orgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func getOrgSlackWebhookURL(ctx context.Context, id int32) (string, error) {
-	settings, err := backend.Configuration.GetForSubject(ctx, api.ConfigurationSubject{Org: &id})
-	if err != nil {
-		return "", err
-	}
-	if settings.NotificationsSlack != nil {
-		return settings.NotificationsSlack.WebhookURL, nil
-	}
-	return "", nil
-}
-
 // DEPRECATED: use createOrganization instead
 func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
 	Name        string

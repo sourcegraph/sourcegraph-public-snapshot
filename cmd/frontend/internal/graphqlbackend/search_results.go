@@ -21,10 +21,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -331,59 +328,9 @@ func (sf *searchFilterResolver) Kind() string {
 	return sf.kind
 }
 
-// blameFileMatchCache caches Repos.Get and Repos.ResolveRev operations.
-type blameFileMatchCache struct {
-	cachedReposMu sync.RWMutex
-	cachedRepos   map[api.RepoID]*types.Repo
-
-	cachedRevsMu sync.RWMutex
-	cachedRevs   map[string]api.CommitID
-}
-
-// reposGet is like db.Repos.Get except it is cached by b.
-func (b *blameFileMatchCache) reposGet(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
-	b.cachedReposMu.RLock()
-	repo, ok := b.cachedRepos[repoID]
-	b.cachedReposMu.RUnlock()
-	if ok {
-		return repo, nil
-	}
-	repo, err := db.Repos.Get(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	b.cachedReposMu.Lock()
-	b.cachedRepos[repoID] = repo
-	b.cachedReposMu.Unlock()
-	return repo, nil
-}
-
-// repoVCSOpen is like localstore.Repos.ResolveRev except it is cached by b.
-func (b *blameFileMatchCache) reposResolveRev(ctx context.Context, repoID api.RepoID, revStr string) (api.CommitID, error) {
-	cacheKey := fmt.Sprint(repoID, revStr)
-	b.cachedRevsMu.RLock()
-	rev, ok := b.cachedRevs[cacheKey]
-	b.cachedRevsMu.RUnlock()
-	if ok {
-		return rev, nil
-	}
-	repo, err := b.reposGet(ctx, repoID)
-	if err != nil {
-		return "", err
-	}
-	rev, err = backend.Repos.ResolveRev(ctx, repo, revStr)
-	if err != nil {
-		return "", err
-	}
-	b.cachedRevsMu.Lock()
-	b.cachedRevs[cacheKey] = rev
-	b.cachedRevsMu.Unlock()
-	return rev, nil
-}
-
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
-func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMatchResolver, cache *blameFileMatchCache) (t time.Time, err error) {
+func (sr *searchResultsResolver) blameFileMatch(ctx context.Context, fm *fileMatchResolver) (t time.Time, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "blameFileMatch")
 	defer func() {
 		if err != nil {
@@ -422,10 +369,6 @@ func (sr *searchResultsResolver) Sparkline(ctx context.Context) (sparkline []int
 	var (
 		sparklineMu sync.Mutex
 		blameOps    = 0
-		cache       = &blameFileMatchCache{
-			cachedRepos: map[api.RepoID]*types.Repo{},
-			cachedRevs:  map[string]api.CommitID{},
-		}
 	)
 	sparkline = make([]int32, days)
 	addPoint := func(t time.Time) {
@@ -476,7 +419,7 @@ loop:
 
 				// Blame the file match in order to retrieve date informatino.
 				var err error
-				t, err := sr.blameFileMatch(ctx, r.fileMatch, cache)
+				t, err := sr.blameFileMatch(ctx, r.fileMatch)
 				if err != nil {
 					log15.Warn("failed to blame fileMatch during sparkline generation", "error", err)
 					return

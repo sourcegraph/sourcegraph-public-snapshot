@@ -79,13 +79,6 @@ func (r *gitCommitResolver) Repository(ctx context.Context) (*repositoryResolver
 	return repositoryByIDInt32(ctx, r.repoID)
 }
 
-func (r *gitCommitResolver) repositoryGraphQLID() graphql.ID {
-	if r.repo != nil {
-		return r.repo.ID()
-	}
-	return marshalRepositoryID(r.repoID)
-}
-
 func (r *gitCommitResolver) repositoryDatabaseID() api.RepoID {
 	if r.repo != nil {
 		return r.repo.repo.ID

@@ -238,21 +238,8 @@ func initConfig(reinitialize bool) error {
 // FilePath is the path to the configuration file, if any.
 func FilePath() string { return configFilePath }
 
-// requireRestart is a list of configuration properties that require restarting
-// the given services to take effect.
-//
-// TODO(slimsag): make use of this list.
-var requireRestart = map[string][]string{
-	// These properties initialize global tracers that cannot be swapped out at
-	// runtime. They affect basically all services.
-	//
-	// TODO(slimsag): We could change this at runtime if we made a patch to
-	// opentracing that made SetGlobalTracer atomic, but it may be hard to get
-	// that accepted.
-	"lightstepAccessToken": []string{"all"},
-	"lightstepProject":     []string{"all"},
-	"useJaeger":            []string{"all"},
-}
+// TODO(slimsag): add back requireRestart and make use of it (it is a list of config properties that
+// require restarting the given services to take effect)
 
 // doNotRequireRestart is a list of options that do not require a service restart.
 //

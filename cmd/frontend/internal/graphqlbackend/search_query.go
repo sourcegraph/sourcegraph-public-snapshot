@@ -1,11 +1,5 @@
 package graphqlbackend
 
-type searchQuery struct {
-	query string
-}
-
-func (q searchQuery) Query() string { return q.query }
-
 type searchQueryDescription struct {
 	description string
 	query       string

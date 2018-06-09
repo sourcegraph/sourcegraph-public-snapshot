@@ -101,8 +101,3 @@ func shutdownOnSIGINT(s *http.Server) {
 		log.Fatal("graceful server shutdown failed, will exit:", err)
 	}
 }
-
-type badRequestError struct{ msg string }
-
-func (e badRequestError) Error() string    { return e.msg }
-func (e badRequestError) BadRequest() bool { return true }

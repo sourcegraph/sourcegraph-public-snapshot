@@ -4,36 +4,21 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
-
-var (
-	gitLogSearchTimeout = mustParseDuration(env.Get("GIT_LOG_SEARCH_TIMEOUT", "15s", "maximum duration for type:commit and type:diff queries before incomplete results are returned"))
-)
-
-func mustParseDuration(s string) time.Duration {
-	d, err := time.ParseDuration(s)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return d
-}
 
 // commitSearchResultResolver is a resolver for the GraphQL type `CommitSearchResult`
 type commitSearchResultResolver struct {

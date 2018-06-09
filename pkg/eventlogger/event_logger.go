@@ -40,8 +40,7 @@ func LogEvent(userEmail string, eventLabel string, eventProperties json.RawMessa
 // eventLogger represents a connection to a remote URL for sending
 // event logs, with environment and user context
 type eventLogger struct {
-	env, url string
-	ctx      context.Context
+	env string
 }
 
 // new returns a new EventLogger client

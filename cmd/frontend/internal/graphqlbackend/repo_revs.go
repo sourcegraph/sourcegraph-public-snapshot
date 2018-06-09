@@ -123,8 +123,4 @@ func (r *repositoryRevisions) revspecs() []string {
 	return revspecs
 }
 
-func (r *repositoryRevisions) hasSingleRevSpec() bool {
-	return len(r.revspecs()) == 1
-}
-
 var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")

@@ -8,12 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws/awserr"
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/pkg/metrics"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-)
-
-var (
-	requestCounter = metrics.NewRequestCounter("awscodecommit", "Total number of requests sent to the AWS CodeCommit API.")
 )
 
 // Client is a AWS CodeCommit API client.
