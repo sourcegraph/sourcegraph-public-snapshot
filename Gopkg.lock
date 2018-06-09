@@ -1215,6 +1215,7 @@
     "callgraph",
     "callgraph/static",
     "cmd/staticcheck",
+    "cmd/unused",
     "deprecated",
     "functions",
     "internal/sharedcheck",
@@ -1224,6 +1225,7 @@
     "ssa/ssautil",
     "staticcheck",
     "staticcheck/vrp",
+    "unused",
     "version"
   ]
   revision = "d73ab98e7c39fdcf9ba65062e43d34310f198353"
@@ -1384,6 +1386,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e35d41875a0cbce622e013c85f056c4e2653be79d336e992629018a7abd5395c"
+  inputs-digest = "90eac4050eb77d0026d1c4a8694a2e58dc327b2b3574e512781c3ec84b7a5413"
   solver-name = "gps-cdcl"
   solver-version = 1
