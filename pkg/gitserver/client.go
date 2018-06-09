@@ -134,7 +134,6 @@ type Cmd struct {
 	client *Client
 
 	Args           []string
-	Env            []string
 	Repo           // the repository to execute the command in
 	EnsureRevision string
 	ExitStatus     int
@@ -160,7 +159,6 @@ func (c *Client) Command(name string, arg ...string) *Cmd {
 	return &Cmd{
 		client: c,
 		Args:   append([]string{"git"}, arg...),
-		Env:    make([]string, 0),
 	}
 }
 
