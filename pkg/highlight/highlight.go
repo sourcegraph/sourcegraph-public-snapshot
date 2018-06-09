@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"path"
 	"strings"
 	"time"
 
@@ -23,13 +24,13 @@ func init() {
 	client = gosyntect.New(syntectServer)
 }
 
-// Code highlights the given code with the given file extension (no
-// leading ".") and returns the properly escaped HTML table representing
-// the highlighted code.
+// Code highlights the given code with the given filepath (must contain at
+// least the file name + extension) and returns the properly escaped HTML table
+// representing the highlighted code.
 //
 // The returned boolean represents whether or not highlighting was aborted due
 // to timeout. In this scenario, a plain text table is returned.
-func Code(ctx context.Context, code, extension string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
+func Code(ctx context.Context, code, filepath string, disableTimeout bool, isLightTheme bool) (template.HTML, bool, error) {
 	if !disableTimeout {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
@@ -39,10 +40,32 @@ func Code(ctx context.Context, code, extension string, disableTimeout bool, isLi
 	if isLightTheme {
 		themechoice = "Solarized (light)"
 	}
+
+	extension := strings.TrimPrefix(path.Ext(filepath), ".")
+	if extension == "" {
+		// When the file does not have an extension, fall back to the basename
+		// (e.g. for Dockerfile).
+		extension = path.Base(filepath)
+	}
+
+	// Trim a single newline from the end of the file. This means that a file
+	// "a\n\n\n\n" will show line numbers 1-4 rather than 1-5, i.e. no blank
+	// line will be shown at the end of the file corresponding to the last
+	// newline.
+	//
+	// This matches other online code reading tools such as e.g. GitHub; see
+	// https://github.com/sourcegraph/sourcegraph/issues/8024 for more
+	// background.
+	code = strings.TrimSuffix(code, "\n")
+
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
-		Code:      code,
+		// Legacy: Passing this in here so that new Sourcegraph versions work
+		// with old syntect_server versions. We will remove this in the future.
 		Extension: extension,
-		Theme:     themechoice,
+
+		Code:     code,
+		Filepath: filepath,
+		Theme:    themechoice,
 	})
 
 	if ctx.Err() == context.DeadlineExceeded {
@@ -53,7 +76,7 @@ func Code(ctx context.Context, code, extension string, disableTimeout bool, isLi
 		postTooLarge := strings.HasSuffix(err.Error(), "EOF")
 		// TODO(slimsag): gosyntect should provide concrete error types here - we have invalid extension here for backward compatibility.
 		// can remove in ~1 month.
-		invalidSyntax := strings.HasSuffix(err.Error(), "invalid extension") || strings.HasSuffix(err.Error(), "invalid syntax")
+		invalidSyntax := strings.Contains(err.Error(), "invalid extension") || strings.Contains(err.Error(), "invalid syntax")
 		if invalidSyntax || postTooLarge {
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
@@ -91,7 +114,13 @@ func Code(ctx context.Context, code, extension string, disableTimeout bool, isLi
 // 	</table>
 //
 func preSpansToTable(h string) (string, error) {
-	doc, err := html.Parse(bytes.NewReader([]byte(h)))
+	// TODO(slimsag): remove conversion once we switch to blob2 frontend component.
+	converted, err := convertNewlinesToNoNewlines([]byte(h))
+	if err != nil {
+		return "", err
+	}
+
+	doc, err := html.Parse(bytes.NewReader(converted))
 	if err != nil {
 		return "", err
 	}
@@ -145,7 +174,30 @@ func preSpansToTable(h string) (string, error) {
 			next.PrevSibling = nil
 			next.NextSibling = nil
 			codeCell.AppendChild(next)
+
+			// Scan the children for text nodes containing new lines so that we
+			// can create new table rows.
+			if next.FirstChild != nil {
+				nextChild := next.FirstChild
+				for nextChild != nil {
+					switch {
+					case nextChild.Type == html.TextNode:
+						// Text node, create a new table row for each newline.
+						newlines := strings.Count(nextChild.Data, "\n")
+						for i := 0; i < newlines; i++ {
+							newRow()
+						}
+					default:
+						return "", fmt.Errorf("unexpected HTML child structure (encountered %+v)", nextChild)
+					}
+					nextChild = nextChild.NextSibling
+				}
+			}
 		case next.Type == html.TextNode:
+			// TODO(slimsag): Remove this case in the near future. For now, it
+			// is kept in case someone tries to run a new Sourcegraph version
+			// with an old syntect_server version.
+
 			// Text node, create a new table row for each newline.
 			newlines := strings.Count(next.Data, "\n")
 			for i := 0; i < newlines; i++ {
@@ -195,4 +247,134 @@ func generatePlainTable(code string) (template.HTML, error) {
 		return "", err
 	}
 	return template.HTML(buf.String()), nil
+}
+
+// The latest version of syntect_server uses Syntect's "newlines" mode, which
+// is more feature-complete than the previously used "no newlines" mode.
+// However, this produces an HTML structure where newlines are in the last span
+// element for a line:
+//
+// 	<pre>
+// 	<span>line</span><span> one
+// 	</span><span>
+// 	</span><span>line</span><span> two
+// 	</span></pre>
+//
+// Rather than where they previously were, as a text node _after_ the last span
+// element for a line:
+//
+// 	<pre><span>line</span><span> one</span>
+// 	<span></span>
+// 	<span>line</span><span> two</span>
+// 	</pre>
+//
+// This function translates the new HTML structure format to the old one, so
+// that it works seamlessly with the old "blob" frontend component.
+//
+// The new "blob2" frontend component handles this seamlessly, and this
+// conversion code can be removed in the near future once "blob2" is no longer
+// feature-flagged. However, for now, as it is uncertain when the new "blob2"
+// frontend component will replace the old one, so using this translation code
+// is neccessary for now.
+//
+// See also https://github.com/sourcegraph/syntect_server/commit/1ff36cf3a77df80a7559e139b386c043438190ca
+func convertNewlinesToNoNewlines(h []byte) ([]byte, error) {
+	doc, err := html.Parse(bytes.NewReader([]byte(h)))
+	if err != nil {
+		return nil, err
+	}
+
+	body := doc.FirstChild.LastChild // html->body
+	oldPre := body.FirstChild
+	if oldPre == nil || oldPre.Type != html.ElementNode || oldPre.DataAtom != atom.Pre {
+		return nil, fmt.Errorf("expected html->body->pre, found %+v", oldPre)
+	}
+
+	// We will walk over all of the <span> elements in the <pre> element and
+	// add them to a new <pre> element, shifting the line endings outside.
+	var (
+		pre = &html.Node{
+			Type:     html.ElementNode,
+			DataAtom: atom.Pre,
+			Data:     oldPre.Data,
+			Attr:     oldPre.Attr,
+		}
+		next = oldPre.FirstChild // span or TextNode
+	)
+
+	newRow := func() {
+		/*
+			// If the previous row did not have any children, then it was a blank
+			// line. Blank lines always need a span with a newline character for
+			// proper whitespace copy+paste support.
+			if codeCell != nil && codeCell.FirstChild == nil {
+				span := &html.Node{Type: html.ElementNode, DataAtom: atom.Span, Data: atom.Span.String()}
+				codeCell.AppendChild(span)
+				spanText := &html.Node{Type: html.TextNode, Data: "\n"}
+				span.AppendChild(spanText)
+			}
+
+			rows++
+			tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
+			table.AppendChild(tr)
+
+			tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+			tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
+			tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(rows)})
+			tr.AppendChild(tdLineNumber)
+
+			codeCell = &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
+			codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
+			tr.AppendChild(codeCell)
+		*/
+	}
+	newRow()
+	for next != nil {
+		nextSibling := next.NextSibling
+		switch {
+		case next.Type == html.ElementNode && next.DataAtom == atom.Span:
+			// Found a span, so add it to our new pre element.
+			next.Parent = nil
+			next.PrevSibling = nil
+			next.NextSibling = nil
+			pre.AppendChild(next)
+
+			// Scan the span for text nodes containing new lines.
+			if next.FirstChild != nil {
+				nextChild := next.FirstChild
+				for nextChild != nil {
+					switch {
+					case nextChild.Type == html.TextNode:
+						// We found a text node, if it contains newlines then
+						// trim it from the span's text node and insert a
+						// newline textnode in the new pre element.
+						if strings.Contains(nextChild.Data, "\n") {
+							nextChild.Data = strings.TrimSuffix(nextChild.Data, "\n")
+							nextChild.Data = strings.TrimSuffix(nextChild.Data, "\r")
+							pre.AppendChild(&html.Node{Type: html.TextNode, Data: "\n"})
+						}
+					default:
+						return nil, fmt.Errorf("unexpected HTML child structure (encountered %+v)", nextChild)
+					}
+					nextChild = nextChild.NextSibling
+				}
+			}
+
+		case next.Type == html.TextNode:
+			next.Parent = nil
+			next.PrevSibling = nil
+			next.NextSibling = nil
+			pre.AppendChild(next)
+
+		default:
+			return nil, fmt.Errorf("unexpected HTML structure (encountered %+v)", next)
+		}
+		next = nextSibling
+	}
+
+	var buf bytes.Buffer
+	if err := html.Render(&buf, pre); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }

@@ -21,11 +21,21 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Sourcegraph Server now emits the most recent log message when redis terminates to make it easier to debug why redis stopped.
 * Organization invites (which allow users to invite other users to join organizations) are significantly improved. A new accept-invitation page was added.
 * The new help popover allows users to easily file issues in the Sourcegraph public issue tracker and view documentation.
+* An issue where Java files would be highlighted incorrectly if they contained JavaDoc blocks with an uneven number of opening/closing `*`s.
 
 ### Removed
 
 * The `secretKey` site configuration value is no longer needed. It was only used for generating tokens for inviting a user to an organization. The invitation is now stored in the database associated with the recipient, so a secret token is no longer needed.
 * The `experimentalFeatures.searchTimeoutParameter` site configuration value has been removed. It defaulted to `enabled` in 2.8 and it is no longer possible to disable.
+
+### Added
+
+* Syntax highlighting for:
+  * TOML files (including Go `Gopkg.lock` and Rust `Cargo.lock` files).
+  * Rust files.
+  * GraphQL files.
+  * Protobuf files.
+  * `.editorconfig` files.
 
 ## 2.8.9
 
