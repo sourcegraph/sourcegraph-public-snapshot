@@ -72,7 +72,7 @@ func (sq *allSavedQueriesCached) fetchInitialListFromFrontend() {
 				Config: config,
 			}
 		}
-		log15.Info("existing saved queries detected", "total_saved_queries", len(sq.allSavedQueries))
+		log15.Debug("existing saved queries detected", "total_saved_queries", len(sq.allSavedQueries))
 		return
 	}
 }
