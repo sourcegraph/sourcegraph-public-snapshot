@@ -38,21 +38,21 @@ func checkSysReqs(ctx context.Context, w io.Writer) error {
 		if st.Failed() {
 			failed = append(failed, st.Name)
 
-			fmt.Fprint(w, redbg(" !!!!! "))
-			fmt.Fprintf(w, bold(red(" %s is required\n")), st.Name)
+			fmt.Fprint(w, " !!!!! ")
+			fmt.Fprintf(w, " %s is required\n", st.Name)
 			if st.Problem != "" {
-				fmt.Fprint(w, bold(red("\tProblem: ")))
-				fmt.Fprintln(w, red(wrap(st.Problem)))
+				fmt.Fprint(w, "\tProblem: ")
+				fmt.Fprintln(w, wrap(st.Problem))
 			}
 			if st.Err != nil {
-				fmt.Fprint(w, bold(red("\tError: ")))
-				fmt.Fprintln(w, red(wrap(st.Err.Error())))
+				fmt.Fprint(w, "\tError: ")
+				fmt.Fprintln(w, wrap(st.Err.Error()))
 			}
 			if st.Fix != "" {
-				fmt.Fprint(w, bold(green("\tPossible fix: ")))
-				fmt.Fprintln(w, green(wrap(st.Fix)))
+				fmt.Fprint(w, "\tPossible fix: ")
+				fmt.Fprintln(w, wrap(st.Fix))
 			}
-			fmt.Fprintln(w, "\t"+cyan(wrap(fmt.Sprintf("Skip this check by setting the env var %s=%q (separate multiple entries with spaces). Note: Sourcegraph may not function properly without %s.", skipSysReqsEnvVar, st.Name, st.Name))))
+			fmt.Fprintln(w, "\t"+wrap(fmt.Sprintf("Skip this check by setting the env var %s=%q (separate multiple entries with spaces). Note: Sourcegraph may not function properly without %s.", skipSysReqsEnvVar, st.Name, st.Name)))
 		}
 	}
 
