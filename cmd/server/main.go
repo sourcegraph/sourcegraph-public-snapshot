@@ -12,7 +12,7 @@ import (
 )
 
 //docker:install curl
-//docker:run curl -o /usr/local/bin/syntect_server https://storage.googleapis.com/sourcegraph-artifacts/syntect_server/15673b8dde7aa4b483ad191648a8848d && chmod +x /usr/local/bin/syntect_server
+//docker:run curl -o /usr/local/bin/syntect_server https://storage.googleapis.com/sourcegraph-artifacts/syntect_server/3cab2cade05c0f18190ac34c565bbd40 && chmod +x /usr/local/bin/syntect_server
 
 //docker:install docker
 
