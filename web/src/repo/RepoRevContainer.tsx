@@ -14,13 +14,11 @@ import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
 import { ResizablePanel } from '../panel/Panel'
 import { getModeFromPath } from '../util'
 import { ErrorLike, isErrorLike } from '../util/errors'
-import { lprToRange, parseHash } from '../util/url'
 import { CodeIntelStatusIndicator } from './actions/CodeIntelStatusIndicator'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
 import { BlobPage } from './blob/BlobPage'
-import { BlobReferencesPanel } from './blob/references/BlobReferencesPanel'
 import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
 import { DirectoryPage } from './DirectoryPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
@@ -47,9 +45,6 @@ interface State {
      */
     resolvedRevOrError?: ResolvedRev | ErrorLike
 }
-
-// Run `localStorage.oldBlobPanel=true;location.reload()` to enable the old blob panel in case of issues.
-export const useNewBlobPanel = localStorage.getItem('oldBlobPanel') === null || window.context.sourcegraphDotComMode
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
@@ -305,35 +300,11 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         onHelpPopoverToggle={this.props.onHelpPopoverToggle}
                                                     />
                                                 )}
-                                                {useNewBlobPanel ? (
-                                                    <ResizablePanel
-                                                        isLightTheme={this.props.isLightTheme}
-                                                        location={this.props.location}
-                                                        history={this.props.history}
-                                                    />
-                                                ) : (
-                                                    this.props.location.hash.includes('$') && (
-                                                        <BlobReferencesPanel
-                                                            repoPath={this.props.repo.uri}
-                                                            commitID={
-                                                                (this.state.resolvedRevOrError as ResolvedRev).commitID
-                                                            }
-                                                            rev={this.props.rev}
-                                                            viewState={
-                                                                parseHash<'references' | 'references:external'>(
-                                                                    this.props.location.hash
-                                                                ).viewState
-                                                            }
-                                                            filePath={routeComponentProps.match.params.filePath || ''}
-                                                            position={
-                                                                lprToRange(parseHash(this.props.location.hash))!.start
-                                                            }
-                                                            location={this.props.location}
-                                                            history={this.props.history}
-                                                            isLightTheme={this.props.isLightTheme}
-                                                        />
-                                                    )
-                                                )}
+                                                <ResizablePanel
+                                                    isLightTheme={this.props.isLightTheme}
+                                                    location={this.props.location}
+                                                    history={this.props.history}
+                                                />
                                             </div>
                                         )}
                                     </>
