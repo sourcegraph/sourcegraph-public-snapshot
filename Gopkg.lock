@@ -120,12 +120,6 @@
   version = "1.0.0"
 
 [[projects]]
-  name = "github.com/dgrijalva/jwt-go"
-  packages = ["."]
-  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
-  version = "v3.2.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/dlclark/regexp2"
   packages = [
@@ -626,12 +620,6 @@
   name = "github.com/neelance/parallel"
   packages = ["."]
   revision = "4de9ce63d14c18517a79efe69e10e99d32c850c3"
-
-[[projects]]
-  name = "github.com/oklog/ulid"
-  packages = ["."]
-  revision = "d311cb43c92434ec4072dfbbda3400741d0a6337"
-  version = "v0.3.0"
 
 [[projects]]
   branch = "master"
@@ -1396,6 +1384,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2b58cde63e22b0e26fe44ac5b2746b854752c4ecd99665afdb32c3dd5c48749b"
+  inputs-digest = "e35d41875a0cbce622e013c85f056c4e2653be79d336e992629018a7abd5395c"
   solver-name = "gps-cdcl"
   solver-version = 1
