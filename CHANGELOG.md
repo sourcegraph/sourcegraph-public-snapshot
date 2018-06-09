@@ -7,6 +7,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Changed
 
 * Search scopes have been consolidated into the "Filters" bar on the search results page.
+* Usernames and organization names of up to 255 characters are allowed. Previously the max length was 38.
 
 ### Fixed
 

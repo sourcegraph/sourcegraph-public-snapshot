@@ -146,8 +146,9 @@ Indexes:
     "orgs_pkey" PRIMARY KEY, btree (id)
     "orgs_name" UNIQUE, btree (name) WHERE deleted_at IS NULL
 Check constraints:
-    "org_display_name_valid" CHECK (char_length(display_name) <= 64)
-    "org_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
+    "orgs_display_name_max_length" CHECK (char_length(display_name) <= 255)
+    "orgs_name_max_length" CHECK (char_length(name::text) <= 255)
+    "orgs_name_valid_chars" CHECK (name ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9]))*$'::citext)
 Referenced by:
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
@@ -384,8 +385,9 @@ Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
 Check constraints:
-    "users_display_name_valid" CHECK (char_length(display_name) <= 64)
-    "users_username_valid" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$'::citext)
+    "users_display_name_max_length" CHECK (char_length(display_name) <= 255)
+    "users_username_max_length" CHECK (char_length(username::text) <= 255)
+    "users_username_valid_chars" CHECK (username ~ '^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9]))*$'::citext)
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)

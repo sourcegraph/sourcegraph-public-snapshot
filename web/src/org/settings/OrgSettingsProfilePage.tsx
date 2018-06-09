@@ -4,6 +4,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of, Subject, Subscription } from 'rxjs'
 import { catchError, concat, delay, distinctUntilChanged, mergeMap, startWith, switchMap, tap } from 'rxjs/operators'
+import { ORG_DISPLAY_NAME_MAX_LENGTH } from '..'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
@@ -96,7 +97,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                             onChange={this.onDisplayNameFieldChange}
                             value={this.state.displayName}
                             spellCheck={false}
-                            size={60}
+                            maxLength={ORG_DISPLAY_NAME_MAX_LENGTH}
                         />
                     </div>
                     <button

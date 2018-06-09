@@ -1,6 +1,32 @@
 package db
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
+
+func TestOrgs_ValidNames(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	ctx := testContext()
+
+	for _, test := range usernamesForTests {
+		t.Run(test.name, func(t *testing.T) {
+			valid := true
+			if _, err := Orgs.Create(ctx, test.name, nil); err != nil {
+				if strings.Contains(err.Error(), "org name invalid") {
+					valid = false
+				} else {
+					t.Fatal(err)
+				}
+			}
+			if valid != test.wantValid {
+				t.Errorf("%q: got valid %v, want %v", test.name, valid, test.wantValid)
+			}
+		})
+	}
+}
 
 func TestOrgs_Count(t *testing.T) {
 	if testing.Short() {

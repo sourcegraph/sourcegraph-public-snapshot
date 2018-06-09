@@ -8,7 +8,7 @@ import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
-import { VALID_ORG_NAME_REGEXP } from '../index'
+import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '../index'
 
 export interface Props {
     history: H.History
@@ -90,9 +90,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                         </a>{' '}
                         for information about configuring organizations.
                     </p>
-                    {this.state.error && (
-                        <p className="form-text text-danger">{upperFirst(this.state.error.message)}</p>
-                    )}
+                    {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                     <div className="form-group">
                         <label htmlFor="new-org-page__form-name">Organization name</label>
                         <input
@@ -101,6 +99,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                             className="form-control"
                             placeholder="acme-corp"
                             pattern={VALID_ORG_NAME_REGEXP.toString().slice(1, -1)}
+                            maxLength={ORG_NAME_MAX_LENGTH}
                             required={true}
                             autoCorrect="off"
                             autoComplete="off"

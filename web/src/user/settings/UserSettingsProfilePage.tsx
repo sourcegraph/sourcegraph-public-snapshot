@@ -16,6 +16,7 @@ import {
     tap,
 } from 'rxjs/operators'
 import { refreshCurrentUser } from '../../auth'
+import { UsernameInput } from '../../auth/SignInSignUpCommon'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
@@ -23,7 +24,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { enableUserArea, UserAreaPageProps } from '../area/UserArea'
-import { userURL, VALID_USERNAME_REGEXP } from '../index'
+import { USER_DISPLAY_NAME_MAX_LENGTH, userURL } from '../index'
 import { UserAvatar } from '../UserAvatar'
 import { updateUser } from './backend'
 
@@ -175,21 +176,16 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                         <Form className="user-settings-profile-page__form" onSubmit={this.handleSubmit}>
                             <div className="form-group">
                                 <label htmlFor="user-settings-profile-page__form-username">Username</label>
-                                <input
+                                <UsernameInput
                                     id="user-settings-profile-page__form-username"
-                                    type="text"
-                                    className="form-control"
                                     value={
                                         this.state.username === undefined
                                             ? this.state.userOrError.username
                                             : this.state.username
                                     }
                                     onChange={this.onUsernameFieldChange}
-                                    pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
                                     required={true}
                                     disabled={this.state.loading}
-                                    spellCheck={false}
-                                    placeholder="Username"
                                     aria-describedby="user-settings-profile-page__form-username-help"
                                 />
                                 <small
@@ -215,6 +211,7 @@ export class UserSettingsProfilePage extends React.Component<Props, State> {
                                     disabled={this.state.loading}
                                     spellCheck={false}
                                     placeholder="Display name"
+                                    maxLength={USER_DISPLAY_NAME_MAX_LENGTH}
                                 />
                             </div>
                             <div className="user-settings-profile-page__avatar-row">

@@ -50,13 +50,6 @@ func (*orgs) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error
 	return orgs, nil
 }
 
-func validateOrg(org types.Org) error {
-	if org.Name == "" {
-		return errors.New("error creating org: name required")
-	}
-	return nil
-}
-
 func (o *orgs) GetByID(ctx context.Context, orgID int32) (*types.Org, error) {
 	if Mocks.Orgs.GetByID != nil {
 		return Mocks.Orgs.GetByID(ctx, orgID)
@@ -162,24 +155,19 @@ func (*orgs) Create(ctx context.Context, name string, displayName *string) (*typ
 	}
 	newOrg.CreatedAt = time.Now()
 	newOrg.UpdatedAt = newOrg.CreatedAt
-	err := validateOrg(newOrg)
-	if err != nil {
-		return nil, err
-	}
-	err = globalDB.QueryRowContext(
+	err := globalDB.QueryRowContext(
 		ctx,
 		"INSERT INTO orgs(name, display_name, created_at, updated_at) VALUES($1, $2, $3, $4) RETURNING id",
 		newOrg.Name, newOrg.DisplayName, newOrg.CreatedAt, newOrg.UpdatedAt).Scan(&newOrg.ID)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
-			if pqErr.Constraint == "org_name_valid_chars" {
-				return nil, errors.New(`org name invalid`)
-			}
-			if pqErr.Constraint == "orgs_name" {
+			switch pqErr.Constraint {
+			case "orgs_name":
 				return nil, errors.New(`org name already exists`)
-			}
-			if pqErr.Constraint == "org_display_name_valid" {
-				return nil, errors.New(`org display name invalid`)
+			case "orgs_name_max_length", "orgs_name_valid_chars":
+				return nil, fmt.Errorf("org name invalid: %s", pqErr.Constraint)
+			case "orgs_display_name_max_length":
+				return nil, fmt.Errorf("org display name invalid: %s", pqErr.Constraint)
 			}
 		}
 

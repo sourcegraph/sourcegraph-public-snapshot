@@ -6,52 +6,68 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-func TestUsers_MatchUsernameRegex(t *testing.T) {
-	tests := []struct {
-		username string
-		isValid  bool
-	}{
-		{"nick", true},
-		{"n1ck", true},
-		{"Nick", true},
-		{"N-S", true},
-		{"nick-s", true},
-		{"renfred-xh", true},
-		{"renfred-x-h", true},
-		{"deadmau5", true},
-		{"deadmau-5", true},
-		{"3blindmice", true},
-		{"777", true},
-		{"7-7", true},
-		{"long-butnotquitelongenoughtoreachlimit", true},
+// usernamesForTests is a list of test cases containing valid and invalid usernames and org names.
+var usernamesForTests = []struct {
+	name      string
+	wantValid bool
+}{
+	{"nick", true},
+	{"n1ck", true},
+	{"Nick2", true},
+	{"N-S", true},
+	{"nick-s", true},
+	{"renfred-xh", true},
+	{"renfred-x-h", true},
+	{"deadmau5", true},
+	{"deadmau-5", true},
+	{"3blindmice", true},
+	{"777", true},
+	{"7-7", true},
+	{"long-butnotquitelongenoughtoreachlimit", true},
 
-		{"nick-", false},
-		{"nick--s", false},
-		{"nick--sny", false},
-		{"nick.com", false},
-		{"nick_s", false},
-		{"_", false},
-		{"_nick", false},
-		{"nick_", false},
-		{"ke$ha", false},
-		{"ni%k", false},
-		{"#nick", false},
-		{"@nick", false},
-		{"", false},
-		{"nick s", false},
-		{" ", false},
-		{"-", false},
-		{"--", false},
-		{"-s", false},
-		{"レンフレッド", false},
-		{"veryveryveryveryveryveryveryveryveryyylong", false},
+	{"nick-", false},
+	{"nick--s", false},
+	{"nick--sny", false},
+	{"nick.com", false},
+	{"nick_s", false},
+	{"_", false},
+	{"_nick", false},
+	{"nick_", false},
+	{"ke$ha", false},
+	{"ni%k", false},
+	{"#nick", false},
+	{"@nick", false},
+	{"", false},
+	{"nick s", false},
+	{" ", false},
+	{"-", false},
+	{"--", false},
+	{"-s", false},
+	{"レンフレッド", false},
+	{"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", false},
+}
+
+func TestUsers_ValidUsernames(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
+	ctx := testContext()
 
-	for _, test := range tests {
-		matched, _ := MatchUsernameString.MatchString(test.username)
-		if matched != test.isValid {
-			t.Errorf("expected '%v' for username '%s'", test.isValid, test.username)
-		}
+	for _, test := range usernamesForTests {
+		t.Run(test.name, func(t *testing.T) {
+			valid := true
+			if _, err := Users.Create(ctx, NewUser{Username: test.name}); err != nil {
+				e, ok := err.(errCannotCreateUser)
+				if ok && (e.Code() == "users_username_max_length" || e.Code() == "users_username_valid_chars") {
+					valid = false
+				} else {
+					t.Fatal(err)
+				}
+			}
+			if valid != test.wantValid {
+				t.Errorf("%q: got valid %v, want %v", test.name, valid, test.wantValid)
+			}
+		})
 	}
 }
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dlclark/regexp2"
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -18,14 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
-
-// UserNamePattern represents the limitations on Sourcegraph usernames. It is
-// based on the limitations GitHub places on their usernames. This pattern is
-// canonical, so any frontend or DB username validation should be based on a
-// pattern equivalent to this one.
-const UsernamePattern = `[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}`
-
-var MatchUsernameString = regexp2.MustCompile("^"+UsernamePattern+"$", 0)
 
 // users provides access to the `users` table.
 //
@@ -193,6 +184,8 @@ func (*users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *ty
 			switch pqErr.Constraint {
 			case "users_username":
 				return nil, errCannotCreateUser{errorCodeUsernameExists}
+			case "users_username_max_length", "users_username_valid_chars", "users_display_name_max_length":
+				return nil, errCannotCreateUser{pqErr.Constraint}
 			}
 		}
 		return nil, err
