@@ -35,10 +35,29 @@ func Archive(ctx context.Context, repo gitserver.Repo, opt ArchiveOptions) (_ io
 		return nil, err
 	}
 
+	// worktreeDir, err := ensureWorktreeAttributesFileToIgnoreDotGitPaths()
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	// Compression level of 0 (no compression) seems to perform the
 	// best overall on fast network links, but this has not been tuned
 	// thoroughly.
-	cmd := gitserver.DefaultClient.Command("git", "archive", "--format="+opt.Format, "-0", string(opt.Treeish), "--")
+	cmd := gitserver.DefaultClient.Command("git",
+		"archive",
+		"--format="+opt.Format,
+		"-0",
+
+		// Suppresses fatal error when the repo contains paths matching **/.git/** and instead
+		// includes those files (to allow archiving invalid such repos). This is unexpected
+		// behavior; the --worktree-attributes flag should merely let us specify a gitattributes
+		// file that contains `**/.git/** export-ignore`, but it actually makes everything work as
+		// desired. Tested by the "repo with .git dir" test case.
+		"--worktree-attributes",
+
+		string(opt.Treeish),
+		"--",
+	)
 	cmd.Args = append(cmd.Args, opt.Paths...)
 	cmd.Repo = repo
 	rc, err := gitserver.StdoutReader(ctx, cmd)
