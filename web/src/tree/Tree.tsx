@@ -217,7 +217,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     }}
                     activeNode={this.state.activeNode}
                     activePath={this.props.activePath}
-                    activePathIsDir={this.props.activePathIsDir}
+                    activePathIsTree={this.props.activePathIsDir}
                     depth={0}
                     history={this.props.history}
                     repoPath={this.props.repoPath}
@@ -229,7 +229,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     // A node with parent null tells us we're at the root of the tree
                     parent={null}
                     parentPath={this.state.parentPath}
-                    expandedDirectories={this.state.resolveTo}
+                    expandedTrees={this.state.resolveTo}
                     onSelect={this.selectNode}
                     onToggleExpand={this.toggleExpandDirectory}
                     selectedNode={this.state.selectedNode}
@@ -283,7 +283,7 @@ export class Tree extends React.PureComponent<Props, State> {
             this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
         const nodeDomElement = getDomElement(selectedNodePath)
         if (nodeDomElement) {
-            const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-directory'))
+            const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-is-directory'))
             if (!this.isExpanded(selectedNodePath) && isDirectory) {
                 // First, show the group (but don't update selection)
                 this.expandDirectoryChanges.next({
@@ -301,7 +301,7 @@ export class Tree extends React.PureComponent<Props, State> {
         const selectedNodePath = this.state.selectedNode.path
         const nodeDomElement = getDomElement(selectedNodePath)
         if (nodeDomElement) {
-            const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-directory'))
+            const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-is-directory'))
             if (isDirectory) {
                 const isOpen = this.isExpanded(selectedNodePath)
                 if (isOpen) {

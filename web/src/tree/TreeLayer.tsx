@@ -27,15 +27,15 @@ interface TreeLayerProps extends Repo {
     history: H.History
     activeNode: TreeNode
     activePath: string
-    activePathIsDir: boolean
+    activePathIsTree: boolean
     depth: number
-    expandedDirectories: string[]
+    expandedTrees: string[]
     parent: TreeNode | null
     parentPath?: string
     index: number
     isExpanded: boolean
     isRoot: boolean
-    fileOrDirectoryInfo?: GQL.IFile | GQL.IDirectory
+    entryInfo?: GQL.IFile | GQL.ITree
     selectedNode: TreeNode
     onHover?: (filePath: string) => void
     onSelect: (node: TreeNode) => void
@@ -49,12 +49,12 @@ interface TreeLayerState {
     treeOrError?: typeof LOADING | GQL.ITree | ErrorLike
 }
 
-const treePadding = (depth: number, directory: boolean) => ({
-    paddingLeft: depth * 12 + (directory ? 0 : 12) + 12 + 'px',
+const treePadding = (depth: number, isTree: boolean) => ({
+    paddingLeft: depth * 12 + (isTree ? 0 : 12) + 12 + 'px',
     paddingRight: '16px',
 })
 
-const maxFilesOrDirs = 2500
+const maxEntries = 2500
 
 export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     public node: TreeNode
@@ -68,7 +68,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             index: this.props.index,
             parent: this.props.parent,
             childNodes: [],
-            path: this.props.fileOrDirectoryInfo ? this.props.fileOrDirectoryInfo.path : '',
+            path: this.props.entryInfo ? this.props.entryInfo.path : '',
         }
 
         this.state = {}
@@ -86,7 +86,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             x.repoPath === y.repoPath &&
                             x.rev === y.rev &&
                             x.parentPath === y.parentPath &&
-                            x.expandedDirectories === y.expandedDirectories
+                            x.expandedTrees === y.expandedTrees
                     ),
                     filter(props => props.isExpanded),
                     switchMap(props => {
@@ -94,7 +94,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             repoPath: props.repoPath,
                             rev: props.rev || '',
                             filePath: props.parentPath || '',
-                            first: maxFilesOrDirs,
+                            first: maxEntries,
                         }).pipe(catchError(err => [asError(err)]), share())
                         return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
                     })
@@ -102,13 +102,13 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))
         )
 
-        // When we're at the root tree layer or the dir is already expanded, fetch the tree contents on mount.
+        // When we're at the root tree layer or the tree is already expanded, fetch the tree contents on mount.
         // For other layers, fetch on hover or on expand.
         if (this.props.isRoot || this.props.isExpanded) {
             this.componentUpdates.next(this.props)
         }
 
-        // If navigating directly to a file or directory, set the correct active node.
+        // If navigating directly to an entry, set the correct active node.
         if (this.props.activePath === this.node.path) {
             this.props.setActiveNode(this.node)
         }
@@ -122,7 +122,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             repoPath: this.props.repoPath,
                             rev: this.props.rev || '',
                             filePath: path || '',
-                            first: maxFilesOrDirs,
+                            first: maxEntries,
                         }).pipe(catchError(err => [asError(err)]))
                     )
                 )
@@ -192,16 +192,16 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             this.node.childNodes = []
         }
 
-        // If the file or directory being viewed changes, set the new active node.
+        // If the entry being viewed changes, set the new active node.
         if (prevProps.activePath !== this.props.activePath && this.node.path === this.props.activePath) {
             this.props.setActiveNode(this.node)
         }
 
         this.componentUpdates.next(this.props)
 
-        const fileOrDir = this.props.fileOrDirectoryInfo && this.props.fileOrDirectoryInfo.isDirectory
-        // When scrolling through the tree with the keyboard, if we scroll over a directory node, prefetch the contents.
-        if (this.node === this.props.selectedNode && fileOrDir && this.props.onHover) {
+        const isDir = this.props.entryInfo && this.props.entryInfo.isDirectory
+        // When scrolling through the tree with the keyboard, if we hover a child tree node, prefetch its children.
+        if (this.node === this.props.selectedNode && isDir && this.props.onHover) {
             this.props.onHover(this.node.path)
         }
     }
@@ -211,7 +211,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     }
 
     public render(): JSX.Element | null {
-        const fileOrDirInfo = this.props.fileOrDirectoryInfo
+        const entryInfo = this.props.entryInfo
         const className = [
             'tree__row',
             this.props.isExpanded && 'tree__row--expanded',
@@ -221,8 +221,8 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             .filter(c => !!c)
             .join(' ')
 
-        // If isRoot or there's no file or directory info, we are at the root layer, so simply load all top-level directories and files.
-        if (this.props.isRoot || !fileOrDirInfo) {
+        // If isRoot or there's no entry info, we are at the root layer, so simply load all top-level entries.
+        if (this.props.isRoot || !entryInfo) {
             return (
                 <table className="tree-layer" tabIndex={0}>
                     <tbody>
@@ -230,8 +230,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             <td className="tree__cell">
                                 {this.state.treeOrError === LOADING ? (
                                     <div className="tree__row-loader">
-                                        <Loader className="icon-inline tree-page__entries-loader" />Loading files and
-                                        directories
+                                        <Loader className="icon-inline tree-page__entries-loader" />Loading tree
                                     </div>
                                 ) : isErrorLike(this.state.treeOrError) ? (
                                     <div
@@ -239,7 +238,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                         // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                         style={treePadding(this.props.depth, true)}
                                     >
-                                        Error loading file tree: {this.state.treeOrError.message}
+                                        Error loading tree: {this.state.treeOrError.message}
                                     </div>
                                 ) : (
                                     this.state.treeOrError &&
@@ -249,15 +248,15 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                             activeNode={this.props.activeNode}
                                             history={this.props.history}
                                             activePath={this.props.activePath}
-                                            activePathIsDir={this.props.activePathIsDir}
+                                            activePathIsTree={this.props.activePathIsTree}
                                             depth={0}
                                             index={i}
-                                            isExpanded={this.props.expandedDirectories.includes(item.path)}
+                                            isExpanded={this.props.expandedTrees.includes(item.path)}
                                             isRoot={false}
-                                            expandedDirectories={this.props.expandedDirectories}
+                                            expandedTrees={this.props.expandedTrees}
                                             repoPath={this.props.repoPath}
                                             rev={this.props.rev}
-                                            fileOrDirectoryInfo={item}
+                                            entryInfo={item}
                                             parent={this.node}
                                             parentPath={item.path}
                                             onSelect={this.props.onSelect}
@@ -279,16 +278,16 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         // Every other layer is a row in the file tree, and will fetch and render its children (if any) when expanded.
         return (
             <div>
-                <table className="tree-layer" onMouseOver={fileOrDirInfo.isDirectory ? this.invokeOnHover : undefined}>
+                <table className="tree-layer" onMouseOver={entryInfo.isDirectory ? this.invokeOnHover : undefined}>
                     <tbody>
-                        {fileOrDirInfo.isDirectory ? (
+                        {entryInfo.isDirectory ? (
                             <>
-                                <tr key={fileOrDirInfo.path} className={className} onClick={this.handleDirClick}>
+                                <tr key={entryInfo.path} className={className} onClick={this.handleTreeClick}>
                                     <td className="tree__cell">
                                         <div
                                             className="tree__row-contents tree__row-contents-new"
-                                            data-tree-directory="true"
-                                            data-tree-path={fileOrDirInfo.path}
+                                            data-tree-is-directory="true"
+                                            data-tree-path={entryInfo.path}
                                         >
                                             <div className="tree__row-contents-text">
                                                 <a
@@ -296,7 +295,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     href={toTreeURL({
                                                         repoPath: this.props.repoPath,
                                                         rev: this.props.rev,
-                                                        filePath: fileOrDirInfo.path,
+                                                        filePath: entryInfo.path,
                                                     })}
                                                     onClick={this.noopRowClick}
                                                     // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
@@ -313,15 +312,15 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     to={toTreeURL({
                                                         repoPath: this.props.repoPath,
                                                         rev: this.props.rev,
-                                                        filePath: fileOrDirInfo.path,
+                                                        filePath: entryInfo.path,
                                                     })}
                                                     onClick={this.linkRowClick}
                                                     className="tree__row-label"
                                                     draggable={false}
-                                                    title={fileOrDirInfo.path}
+                                                    title={entryInfo.path}
                                                     tabIndex={-1}
                                                 >
-                                                    {fileOrDirInfo.name}
+                                                    {entryInfo.name}
                                                 </Link>
                                             </div>
                                             {this.state.treeOrError === LOADING && (
@@ -330,13 +329,13 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                 </div>
                                             )}
                                         </div>
-                                        {this.props.index === maxFilesOrDirs - 1 && (
+                                        {this.props.index === maxEntries - 1 && (
                                             <div
                                                 className="tree__row-alert alert alert-warning"
                                                 // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                                 style={treePadding(this.props.depth, true)}
                                             >
-                                                Too many entries in this directory. Use search to find a specific file.
+                                                Too many entries. Use search to find a specific file.
                                             </div>
                                         )}
                                     </td>
@@ -360,20 +359,18 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                             key={item.path}
                                                             history={this.props.history}
                                                             activePath={this.props.activePath}
-                                                            activePathIsDir={this.props.activePathIsDir}
+                                                            activePathIsTree={this.props.activePathIsTree}
                                                             activeNode={this.props.activeNode}
                                                             depth={this.props.depth + 1}
-                                                            expandedDirectories={this.props.expandedDirectories}
+                                                            expandedTrees={this.props.expandedTrees}
                                                             index={i}
-                                                            isExpanded={this.props.expandedDirectories.includes(
-                                                                item.path
-                                                            )}
+                                                            isExpanded={this.props.expandedTrees.includes(item.path)}
                                                             isRoot={false}
                                                             parent={this.node}
                                                             parentPath={item.path}
                                                             repoPath={this.props.repoPath}
                                                             rev={this.props.rev}
-                                                            fileOrDirectoryInfo={item}
+                                                            entryInfo={item}
                                                             onSelect={this.props.onSelect}
                                                             onToggleExpand={this.props.onToggleExpand}
                                                             onHover={this.props.onHover}
@@ -388,32 +385,32 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                     )}
                             </>
                         ) : (
-                            <tr key={fileOrDirInfo.path} className={className}>
+                            <tr key={entryInfo.path} className={className}>
                                 <td className="tree__cell">
                                     <Link
                                         className="tree__row-contents"
                                         to={toBlobURL({
                                             repoPath: this.props.repoPath,
                                             rev: this.props.rev,
-                                            filePath: fileOrDirInfo.path,
+                                            filePath: entryInfo.path,
                                         })}
                                         onClick={this.linkRowClick}
-                                        data-tree-path={fileOrDirInfo.path}
+                                        data-tree-path={entryInfo.path}
                                         draggable={false}
-                                        title={fileOrDirInfo.path}
+                                        title={entryInfo.path}
                                         // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                         style={treePadding(this.props.depth, false)}
                                         tabIndex={-1}
                                     >
-                                        {fileOrDirInfo.name}
+                                        {entryInfo.name}
                                     </Link>
-                                    {this.props.index === maxFilesOrDirs - 1 && (
+                                    {this.props.index === maxEntries - 1 && (
                                         <div
                                             className="tree__row-alert alert alert-warning"
                                             // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                             style={treePadding(this.props.depth, true)}
                                         >
-                                            Too many entries in this directory. Use search to find a specific file.
+                                            Too many entries. Use search to find a specific file.
                                         </div>
                                     )}
                                 </td>
@@ -426,9 +423,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     }
 
     /**
-     * Prefetches the directory contents of hovered tree rows. Gets passed from the root tree layer to child tree layers
-     * through the onHover prop. This method only gets called on the root tree layer component
-     * so we can debounce the hover prefetch requests.
+     * Prefetches the children of hovered tree rows. Gets passed from the root tree layer to child tree layers
+     * through the onHover prop. This method only gets called on the root tree layer component so we can debounce
+     * the hover prefetch requests.
      */
     private fetchChildContents = (path: string): void => {
         if (this.props.isRoot) {
@@ -448,9 +445,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         }
     }
 
-    private handleDirClick = () => {
+    private handleTreeClick = () => {
         this.props.onSelect(this.node)
-        const path = this.props.fileOrDirectoryInfo ? this.props.fileOrDirectoryInfo.path : ''
+        const path = this.props.entryInfo ? this.props.entryInfo.path : ''
         this.props.onToggleExpand(path, !this.props.isExpanded, this.node)
     }
 
@@ -465,7 +462,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             e.stopPropagation()
         }
         this.props.onSelect(this.node)
-        const path = this.props.fileOrDirectoryInfo ? this.props.fileOrDirectoryInfo.path : ''
+        const path = this.props.entryInfo ? this.props.entryInfo.path : ''
         this.props.onToggleExpand(path, !this.props.isExpanded, this.node)
     }
 

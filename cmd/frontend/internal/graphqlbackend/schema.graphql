@@ -1349,7 +1349,7 @@ type GitCommit implements Node {
     url: String!
     # The URLs to this commit on its repository's external services.
     externalURLs: [ExternalLink!]!
-    # Lists the Git tree as of this commit.
+    # The Git tree in this commit at the given path.
     tree(path: String = "", recursive: Boolean = false): Tree
     # Retrieves a Git blob (file) as of this commit.
     file(path: String!): File
@@ -1421,25 +1421,6 @@ type Person {
     user: User
 }
 
-# A tree.
-type Tree {
-    # The directories.
-    directories(
-        # Returns the first n files from the tree
-        first: Int
-    ): [Directory]!
-    # The files
-    files(
-        # Returns the first n files from the tree
-        first: Int
-    ): [File]!
-    # Consists of directories plus files.
-    entries(
-        # Returns the first n files from the tree
-        first: Int
-    ): [TreeEntry!]!
-}
-
 # A file, directory, or other tree entry.
 interface TreeEntry {
     # The full path (relative to the repository root) of this tree entry.
@@ -1461,22 +1442,43 @@ interface TreeEntry {
     ): SymbolConnection!
 }
 
-# A directory.
-type Directory implements TreeEntry {
-    # The full path (relative to the repository root) of this directory.
+# A tree.
+type Tree implements TreeEntry {
+    # The full path (relative to the root) of this tree.
     path: String!
-    # The base name (i.e., file name only) of this directory.
+    # The base name (i.e., last path component only) of this tree.
     name: String!
     # True because this is a directory. (The value differs for other TreeEntry interface implementations, such as
     # File.)
     isDirectory: Boolean!
-    # The repository containing this directory.
+    # The Git commit containing this tree.
+    commit: GitCommit!
+    # The repository containing this tree.
     repository: Repository!
-    # The URL to this directory.
+    # Whether this tree's contents were fetched recursively.
+    #
+    # TODO(sqs): Other fields that return a GitTree have a recursive parameter. That parameter should be removed
+    # from those fields and moved to GitTree's own fields that depend on its value, because "recursive" is a
+    # property of those fields' values, not the Git tree per se.
+    isRecursive: Boolean!
+    # The URL to this tree.
     url: String!
-    # The tree.
-    tree: Tree!
-    # Symbols defined in this directory.
+    # A list of directories in this tree.
+    directories(
+        # Returns the first n files in the tree.
+        first: Int
+    ): [Tree]!
+    # A list of files in this tree.
+    files(
+        # Returns the first n files in the tree.
+        first: Int
+    ): [File]!
+    # A list of entries in this tree.
+    entries(
+        # Returns the first n files in the tree.
+        first: Int
+    ): [TreeEntry!]!
+    # Symbols defined in this tree.
     symbols(
         # Returns the first n symbols from the list.
         first: Int
