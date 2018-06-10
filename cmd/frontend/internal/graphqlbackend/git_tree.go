@@ -13,14 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-type treeResolver struct {
+type gitTreeResolver struct {
 	commit *gitCommitResolver
 
 	path    string
 	entries []os.FileInfo
 }
 
-func makeTreeResolver(ctx context.Context, commit *gitCommitResolver, path string, recursive bool) (*treeResolver, error) {
+func makeGitTreeResolver(ctx context.Context, commit *gitCommitResolver, path string, recursive bool) (*gitTreeResolver, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -37,14 +37,14 @@ func makeTreeResolver(ctx context.Context, commit *gitCommitResolver, path strin
 		}
 	}
 
-	return &treeResolver{
+	return &gitTreeResolver{
 		commit:  commit,
 		path:    path,
 		entries: entries,
 	}, nil
 }
 
-func (r *treeResolver) toFileResolvers(filter func(fi os.FileInfo) bool, alloc int) []*gitTreeEntryResolver {
+func (r *gitTreeResolver) toFileResolvers(filter func(fi os.FileInfo) bool, alloc int) []*gitTreeEntryResolver {
 	var prefix string
 	if r.path != "" {
 		prefix = r.path + "/"
@@ -85,7 +85,7 @@ func (s byDirectory) Less(i, j int) bool {
 	return s[i].Name() < s[j].Name()
 }
 
-func (r *treeResolver) Entries(args *connectionArgs) []*gitTreeEntryResolver {
+func (r *gitTreeResolver) Entries(args *connectionArgs) []*gitTreeEntryResolver {
 	sort.Sort(byDirectory(r.entries))
 	resolvers := r.toFileResolvers(nil, len(r.entries))
 	if args.First != nil && len(r.entries) > int(*args.First) {
@@ -94,7 +94,7 @@ func (r *treeResolver) Entries(args *connectionArgs) []*gitTreeEntryResolver {
 	return resolvers
 }
 
-func (r *treeResolver) Directories(args *connectionArgs) []*gitTreeEntryResolver {
+func (r *gitTreeResolver) Directories(args *connectionArgs) []*gitTreeEntryResolver {
 	resolvers := r.toFileResolvers(func(fi os.FileInfo) bool {
 		return fi.Mode().IsDir()
 	}, len(r.entries)/8) // heuristic: 1/8 of the entries in a repo are dirs
@@ -105,7 +105,7 @@ func (r *treeResolver) Directories(args *connectionArgs) []*gitTreeEntryResolver
 	return resolvers
 }
 
-func (r *treeResolver) Files(args *connectionArgs) []*gitTreeEntryResolver {
+func (r *gitTreeResolver) Files(args *connectionArgs) []*gitTreeEntryResolver {
 	resolvers := r.toFileResolvers(func(fi os.FileInfo) bool {
 		return !fi.Mode().IsDir()
 	}, len(r.entries))
@@ -116,6 +116,6 @@ func (r *treeResolver) Files(args *connectionArgs) []*gitTreeEntryResolver {
 	return resolvers
 }
 
-func (r *gitTreeEntryResolver) Tree(ctx context.Context) (*treeResolver, error) {
-	return makeTreeResolver(ctx, r.commit, r.path, false)
+func (r *gitTreeEntryResolver) Tree(ctx context.Context) (*gitTreeResolver, error) {
+	return makeGitTreeResolver(ctx, r.commit, r.path, false)
 }

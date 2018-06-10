@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
 )
 
-func TestTree(t *testing.T) {
+func TestGitTree(t *testing.T) {
 	resetMocks()
 	db.Mocks.Repos.MockGetByURI(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {

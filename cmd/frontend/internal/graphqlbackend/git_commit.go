@@ -121,8 +121,8 @@ func (r *gitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
-}) (*treeResolver, error) {
-	return makeTreeResolver(ctx, r, args.Path, args.Recursive)
+}) (*gitTreeResolver, error) {
+	return makeGitTreeResolver(ctx, r, args.Path, args.Recursive)
 }
 
 func (r *gitCommitResolver) File(ctx context.Context, args *struct {
