@@ -1211,7 +1211,7 @@ type GitRef implements Node {
     url: String!
 }
 
-# ALl possible types of Git refs.
+# All possible types of Git refs.
 enum GitRefType {
     # A Git branch (in refs/heads/).
     GIT_BRANCH
