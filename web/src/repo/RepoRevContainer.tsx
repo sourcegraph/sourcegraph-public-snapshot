@@ -20,13 +20,13 @@ import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { CloneInProgressError, ECLONEINPROGESS, EREPONOTFOUND, EREVNOTFOUND, ResolvedRev, resolveRev } from './backend'
 import { BlobPage } from './blob/BlobPage'
 import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
-import { DirectoryPage } from './DirectoryPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
 import { RepositoryGraphArea } from './graph/RepositoryGraphArea'
 import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevSidebar } from './RepoRevSidebar'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
+import { DirectoryPage } from './TreePage'
 
 interface RepoRevContainerProps extends RouteComponentProps<{}> {
     repo: GQL.IRepository
