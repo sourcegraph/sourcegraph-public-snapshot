@@ -381,13 +381,14 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 			return nil, false, err
 		}
 
+		hasMatch := true
 		if len(data) == 0 || (len(data) >= 1 && data[0] == '\x00') {
 			// No diff patch.
-			if hasPathFilters {
-				continue // patch was empty for the filtered paths
-			}
 			if len(data) >= 1 {
 				data = data[1:]
+			}
+			if hasPathFilters {
+				hasMatch = false // patch was empty for the filtered paths, don't add to results
 			}
 		} else if len(data) >= 1 && data[0] == '\n' {
 			data = data[1:]
@@ -410,12 +411,15 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 				return nil, false, err
 			}
 			if rawDiff == nil {
-				continue // it did not match
+				hasMatch = false // patch was empty (after applying filters), don't add to results
+			} else {
+				result.Diff = &Diff{Raw: string(rawDiff)}
 			}
-			result.Diff = &Diff{Raw: string(rawDiff)}
 		}
 
-		results = append(results, result)
+		if hasMatch {
+			results = append(results, result)
+		}
 	}
 
 	if !complete && len(results) > 0 {

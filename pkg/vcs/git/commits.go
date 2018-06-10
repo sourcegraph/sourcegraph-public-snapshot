@@ -207,7 +207,7 @@ const (
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by
 // logFormatFlag.
-func parseCommitFromLog(data []byte) (commit *Commit, refs []string, patch []byte, err error) {
+func parseCommitFromLog(data []byte) (commit *Commit, refs []string, rest []byte, err error) {
 	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
 	if len(parts) < partsPerCommit {
 		return nil, nil, nil, fmt.Errorf("invalid commit log entry: %q", parts)
@@ -216,6 +216,7 @@ func parseCommitFromLog(data []byte) (commit *Commit, refs []string, patch []byt
 	// log outputs are newline separated, so all but the 1st commit ID part
 	// has an erroneous leading newline.
 	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
+	commitID := api.CommitID(parts[0])
 
 	authorTime, err := strconv.ParseInt(string(parts[4]), 10, 64)
 	if err != nil {
@@ -240,7 +241,7 @@ func parseCommitFromLog(data []byte) (commit *Commit, refs []string, patch []byt
 	}
 
 	commit = &Commit{
-		ID:        api.CommitID(parts[0]),
+		ID:        commitID,
 		Author:    Signature{Name: string(parts[2]), Email: string(parts[3]), Date: time.Unix(authorTime, 0).UTC()},
 		Committer: &Signature{Name: string(parts[5]), Email: string(parts[6]), Date: time.Unix(committerTime, 0).UTC()},
 		Message:   string(bytes.TrimSuffix(parts[8], []byte{'\n'})),
@@ -248,10 +249,10 @@ func parseCommitFromLog(data []byte) (commit *Commit, refs []string, patch []byt
 	}
 
 	if len(parts) == partsPerCommit+1 {
-		patch = parts[10]
+		rest = parts[10]
 	}
 
-	return commit, refs, patch, nil
+	return commit, refs, rest, nil
 }
 
 // onelineCommit contains (a subset of the) information about a commit returned
