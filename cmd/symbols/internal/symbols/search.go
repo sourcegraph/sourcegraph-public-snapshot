@@ -30,6 +30,9 @@ func (s *Service) handleSearch(w http.ResponseWriter, r *http.Request) {
 
 	result, err := s.search(r.Context(), args)
 	if err != nil {
+		if err == context.Canceled && r.Context().Err() == context.Canceled {
+			return // client went away
+		}
 		log15.Error("Symbol search failed", "args", args, "error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
