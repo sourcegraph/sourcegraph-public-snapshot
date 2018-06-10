@@ -11,6 +11,8 @@ func TestRegexpToGlobBestEffort(t *testing.T) {
 		"foo":       {"*foo*", true},
 		"^foo":      {"foo*", true},
 		`foo\.js`:   {"*foo.js*", true},
+		"foo.js":    {"*foo?js*", true},
+		"foo.*js":   {"*foo*js*", true},
 		"^fo.o":     {"", false},
 		"foo$":      {"*foo", true},
 		"fo.o$":     {"", false},

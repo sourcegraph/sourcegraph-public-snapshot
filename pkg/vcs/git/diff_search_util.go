@@ -30,6 +30,17 @@ func regexpToGlobBestEffort(p string) (glob string, equiv bool) {
 			}
 			return globQuoteMeta(re.Sub[1].Rune), true
 		}
+		if len(re.Sub) == 3 && re.Sub[0].Op == regexpsyntax.OpLiteral && re.Sub[2].Op == regexpsyntax.OpLiteral {
+			var wildcard string
+			if re.Sub[1].Op == regexpsyntax.OpAnyCharNotNL {
+				wildcard = "?"
+			} else if re.Sub[1].Op == regexpsyntax.OpStar && re.Sub[1].Sub0[0].Op == regexpsyntax.OpAnyCharNotNL {
+				wildcard = "*"
+			} else {
+				return "", false
+			}
+			return "*" + globQuoteMeta(re.Sub[0].Rune) + wildcard + globQuoteMeta(re.Sub[2].Rune) + "*", true
+		}
 		if len(re.Sub) == 2 && re.Sub[0].Op == regexpsyntax.OpBeginText && re.Sub[1].Op == regexpsyntax.OpLiteral {
 			if len(re.Sub[1].Rune) > 0 && re.Sub[1].Rune[0] == ':' { // leading : has special meaning
 				return "", false
