@@ -1,594 +1,382 @@
-// tslint:disable:no-use-before-declare
-
-import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
-import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import * as H from 'history'
-import { flatten, groupBy, sortBy } from 'lodash'
+import { isEqual } from 'lodash'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
-import { BehaviorSubject, Subscription } from 'rxjs'
+import { Subscription } from 'rxjs'
+import { Subject } from 'rxjs'
+import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { Repo } from '../repo/index'
+import { dirname } from '../util/path'
 import { toBlobURL, toTreeURL } from '../util/url'
-import { getParentDir, scrollIntoView } from './util'
+import { TreeLayer } from './TreeLayer'
+import { getDomElement, scrollIntoView } from './util'
 
 interface Props extends Repo {
     history: H.History
-    paths: string[]
     scrollRootSelector?: string
-    selectedPath: string
-}
 
-interface TreeNodeState {
-    collapsed: boolean
-    selected: boolean
-}
+    /** The tree entry that is currently active, or '' if none (which means the root). */
+    activePath: string
 
-interface TreeNode {
-    filePath: string
-    children: TreeNode[]
-    state: BehaviorSubject<TreeNodeState>
-}
-
-interface Store {
-    nodes: TreeNode[]
-    nodeMap: Map<string, TreeNode>
-    selectedPath: string
+    /** Whether the active path is a directory (including the root directory). False if it is a file. */
+    activePathIsDir: boolean
 }
 
 interface State {
-    store: Store
-    relativeDir?: string
+    /**
+     * The root of the tree to show, or undefined for the root.
+     *
+     * This is initially the directory containing the first file viewed, but it can be changed to be an ancestor of
+     * itself if the user browses to higher levels in the tree.
+     */
+    parentPath?: string
+    /** Directories (including descendents multiple levels below this dir) that are expanded. */
+    resolveTo: string[]
+    /** The tree node currently in focus */
+    selectedNode: TreeNode
+    /** The tree node of the file or directory currently being viewed */
+    activeNode: TreeNode
 }
 
-const treePadding = (depth: number, directory: boolean) => ({
-    paddingLeft: depth * 12 + (directory ? 0 : 12) + 12 + 'px',
-    paddingRight: '16px',
-})
-
-function selectRow(store: Store, path: string): void {
-    const currSelectedNode = store.nodeMap.get(store.selectedPath)
-    if (currSelectedNode) {
-        currSelectedNode.state.next({ ...currSelectedNode.state.getValue(), selected: false })
-    }
-    store.selectedPath = path
-    const nextSelectedNode = store.nodeMap.get(path)
-    if (nextSelectedNode) {
-        nextSelectedNode.state.next({ ...nextSelectedNode.state.getValue(), selected: true })
-    }
+export interface TreeNode {
+    index: number
+    parent: TreeNode | null
+    childNodes: TreeNode[]
+    path: string
 }
 
-function closeDirectory(store: Store, dir: string): void {
-    selectRow(store, dir)
-    const node = store.nodeMap.get(dir)
-    if (node) {
-        node.state.next({ ...node.state.getValue(), collapsed: true })
-    } else {
-        console.error('could not locate node', dir)
+/**
+ *  Gets the next child in the file tree given a node and index.
+ *  index represents the number of children of node that we have already traversed.
+ *  If node does not have any children or any more children or to traverse, we call
+ *  nextChild recursively, passing in node's parent to get any siblings of the current node.
+ */
+const nextChild = (node: TreeNode, index: number): TreeNode => {
+    const nextChildNode = node.childNodes[index]
+    if (!nextChildNode) {
+        if (node.parent === null) {
+            return node.childNodes[0]
+        }
+        /** This case gets called whenever we are going _up_ the tree */
+        return nextChild(node.parent, node.index + 1)
     }
+    return nextChildNode
+}
+
+/**
+ *  Helper for prevChild, this gets the deepest avialable descendant of a given node.
+ *  For a given node, a sibling node can have an arbitrary number of expanded directories.
+ *  In order to get the previous item in the tree, we need the absolute last
+ *  available descendent of a the previous sibling node.
+ */
+const getDeepestDescendant = (node: TreeNode) => {
+    while (node && node.childNodes.length > 0) {
+        node = node.childNodes[node.childNodes.length - 1]
+    }
+    return node
+}
+
+/**
+ *  Gets the previous child in the file tree given a node and index.
+ *  To get the previous child, we check node's parent's child nodes, and get the
+ *  child node at index - 1. If we are at index 0, return the parent.
+ */
+const prevChild = (node: TreeNode, index: number): TreeNode => {
+    // Only occurs on initial load of Tree, when there is no selected or active node.
+    if (!node.parent) {
+        return node
+    }
+
+    const validChildNodes = node.parent.childNodes.slice(0, node.index)
+
+    // If we are at the first child in a tree layer (index 0), return the parent node.
+    // Check if the dom node exists so if we're at the top-most layer,
+    // we don't return the top-level Tree component node, which doesn't exist in the DOM.
+    if (validChildNodes.length === 0 && getDomElement(node.parent.path)) {
+        return node.parent
+    }
+
+    const prev = validChildNodes[index - 1]
+    if (prev) {
+        if (prev.childNodes && prev.childNodes.length) {
+            return getDeepestDescendant(prev)
+        }
+
+        return prev
+    }
+
+    // At top of tree, circle back down.
+    return getDeepestDescendant(node.parent)
 }
 
 export class Tree extends React.PureComponent<Props, State> {
+    private componentUpdates = new Subject<Props>()
+    // This fires whenever a directory is expanded or collapsed.
+    private expandDirectoryChanges = new Subject<{ path: string; expanded: boolean; node: TreeNode }>()
+    private subscriptions = new Subscription()
+
+    public node: TreeNode
+    private treeElement: HTMLElement | null
+
+    private handlers: { [index: string]: () => void } = {
+        // tslint:disable-next-line:no-unbound-method
+        ArrowDown: this.onArrowDown,
+        // tslint:disable-next-line:no-unbound-method
+        ArrowUp: this.onArrowUp,
+        // tslint:disable-next-line:no-unbound-method
+        ArrowLeft: this.onArrowLeft,
+        // tslint:disable-next-line:no-unbound-method
+        ArrowRight: this.onArrowRight,
+        // tslint:disable-next-line:no-unbound-method
+        Enter: this.onEnter,
+    }
+
     constructor(props: Props) {
         super(props)
-        const { nodes, nodeMap } = this.parseNodes(props.paths, props.selectedPath)
-        this.state = {
-            store: { nodes, nodeMap, selectedPath: props.selectedPath },
-            relativeDir: nodes.length > 0 ? getParentDir(nodes[0].filePath) : undefined,
+
+        const parentPath = dotPathAsUndefined(props.activePathIsDir ? props.activePath : dirname(props.activePath))
+        this.node = {
+            index: 0,
+            parent: null,
+            childNodes: [],
+            path: '',
         }
+
+        this.state = {
+            parentPath,
+            resolveTo: [],
+            selectedNode: this.node,
+            activeNode: this.node,
+        }
+
+        this.treeElement = null
     }
 
     public componentDidMount(): void {
-        if (this.props.selectedPath) {
-            setTimeout(() => {
-                const el = this.locateDomNode(this.props.selectedPath!)
-                if (el) {
-                    el.scrollIntoView({ behavior: 'instant', inline: 'nearest' })
+        this.subscriptions.add(
+            this.expandDirectoryChanges.subscribe(({ path, expanded, node }) => {
+                this.setState((prevState, props) => ({
+                    resolveTo: expanded ? [...prevState.resolveTo, path] : prevState.resolveTo.filter(p => p !== path),
+                }))
+                if (!expanded) {
+                    // For directory nodes that are collapsed, unset the childNodes so we don't traverse them.
+                    if (this.treeElement) {
+                        this.treeElement.focus()
+                    }
+                    node.childNodes = []
                 }
             })
-        }
+        )
+
+        this.subscriptions.add(
+            this.componentUpdates
+                .pipe(startWith(this.props), distinctUntilChanged(isEqual))
+                .subscribe((props: Props) => {
+                    const newParentPath = props.activePathIsDir ? props.activePath : dirname(props.activePath)
+                    const queryParams = new URLSearchParams(this.props.history.location.search)
+                    // If we're updating due to a file or directory suggestion, load the relevant partial tree and jump to the file.
+                    // This case is only used when going from an ancestor to a child file/directory, or equal.
+                    if (queryParams.has('suggestion') && dotPathAsUndefined(newParentPath)) {
+                        this.setState({
+                            parentPath: dotPathAsUndefined(newParentPath),
+                            resolveTo: [newParentPath],
+                        })
+                    }
+
+                    // Recompute with new paths and parent path. But if the new active path is below where we are now,
+                    // preserve the current parent path, so that it's easy for the user to go back up. Also resets the selectedNode
+                    // to the top-level Tree component and resets resolveTo so no directories are expanded.
+                    if (!pathEqualToOrAncestor(this.state.parentPath || '', newParentPath)) {
+                        this.setState({
+                            parentPath: dotPathAsUndefined(
+                                props.activePathIsDir ? props.activePath : dirname(props.activePath)
+                            ),
+                            selectedNode: this.node,
+                            resolveTo: [],
+                        })
+                    }
+                })
+        )
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        const selectedPath = nextProps.selectedPath
-        if (this.props.paths !== nextProps.paths) {
-            const { nodes, nodeMap } = this.parseNodes(nextProps.paths, selectedPath)
-            this.setState({
-                store: { nodes, nodeMap, selectedPath },
-                relativeDir: nodes.length > 0 ? getParentDir(nodes[0].filePath) : undefined,
-            })
-        } else {
-            // If we are trying to show a path not available on the tree, recreate the nodes.
-            const loc = this.locateDomNodeInCollection(selectedPath)
-            if (!loc) {
-                const { nodes, nodeMap } = this.parseNodes(nextProps.paths, selectedPath)
-                this.setState({
-                    store: { nodes, nodeMap, selectedPath },
-                    relativeDir: nodes.length > 0 ? getParentDir(nodes[0].filePath) : undefined,
-                })
-            } else {
-                selectRow(this.state.store, selectedPath)
-            }
-        }
-        if (this.props.selectedPath !== selectedPath) {
-            setTimeout(() => {
-                if (selectedPath) {
-                    const el = this.locateDomNode(selectedPath)
-                    if (el && !this.elementInViewport(el)) {
-                        el.scrollIntoView({ behavior: 'instant', inline: 'nearest' })
-                    }
-                }
-            })
-        }
+    public componentDidUpdate(nextProps: Props): void {
+        this.componentUpdates.next(this.props)
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
-            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown}>
+            <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
                 <TreeLayer
+                    ref={ref => {
+                        if (ref) {
+                            this.node = ref.node
+                        }
+                    }}
+                    activeNode={this.state.activeNode}
+                    activePath={this.props.activePath}
+                    activePathIsDir={this.props.activePathIsDir}
+                    depth={0}
                     history={this.props.history}
                     repoPath={this.props.repoPath}
                     rev={this.props.rev}
-                    store={this.state.store}
-                    currSubpath=""
-                    relativeDir={this.state.relativeDir}
+                    isRoot={true}
+                    index={0}
+                    // The root is always expanded so it loads the top level
+                    isExpanded={true}
+                    // A node with parent null tells us we're at the root of the tree
+                    parent={null}
+                    parentPath={this.state.parentPath}
+                    expandedDirectories={this.state.resolveTo}
+                    onSelect={this.selectNode}
+                    onToggleExpand={this.toggleExpandDirectory}
+                    selectedNode={this.state.selectedNode}
+                    setChildNodes={this.setChildNode}
+                    setActiveNode={this.setActiveNode}
                 />
             </div>
         )
     }
 
-    public ArrowDown = () => {
-        const loc = this.locateDomNodeInCollection(this.state.store.selectedPath)
-        if (loc) {
-            const { items, i } = loc
-            if (i < items.length - 1) {
-                // select next
-                this.selectElement(items[i + 1])
-            } else {
-                // select first
-                this.selectElement(items[0])
-            }
+    private setChildNode = (node: TreeNode, index: number) => {
+        this.node.childNodes[index] = node
+    }
+
+    private onArrowDown(): void {
+        // This case gets called whenever we are going _down_ the tree
+        if (this.state.selectedNode) {
+            this.selectNode(nextChild(this.state.selectedNode, 0))
         }
     }
 
-    public ArrowUp = () => {
-        const loc = this.locateDomNodeInCollection(this.state.store.selectedPath)
-        if (loc) {
-            const { items, i } = loc
-            if (i > 0) {
-                // select previous
-                this.selectElement(items[i - 1])
-            } else {
-                // select last
-                this.selectElement(items[items.length - 1])
-            }
+    private onArrowUp(): void {
+        if (this.state.selectedNode) {
+            this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
         }
     }
 
-    public ArrowLeft = () => {
-        const selectedPath = this.state.store.selectedPath
-        const node = this.state.store.nodeMap.get(selectedPath)
-        if (!node) {
-            console.error('could not locate node (arrow down)', selectedPath)
-            return
-        }
-        const isOpenDir = !node.state.getValue().collapsed
+    private isExpanded(path: string): boolean {
+        return this.state.resolveTo.includes(path)
+    }
+
+    private onArrowLeft(): void {
+        const selectedNodePath =
+            this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
+        const isOpenDir = this.isExpanded(selectedNodePath)
         if (isOpenDir) {
-            closeDirectory(this.state.store, selectedPath)
+            this.expandDirectoryChanges.next({ path: selectedNodePath, expanded: false, node: this.state.selectedNode })
             return
         }
-        const loc = this.locateDomNodeInCollection(selectedPath)
-        if (loc) {
-            const { items, i } = loc
-            const pathSplit = selectedPath.split('/')
-            const dir = pathSplit.splice(0, pathSplit.length - 1).join('/')
-            const parentDir = dir ? this.locateDomNode(dir) : undefined
-            if (parentDir) {
-                this.selectElement(parentDir)
-                return
-            }
-
-            if (i > 0) {
-                // select previous
-                this.selectElement(items[i - 1])
-            } else {
-                // select last
-                this.selectElement(items[items.length - 1])
-            }
+        const parent = this.state.selectedNode.parent
+        if (parent !== null && parent.parent !== null) {
+            this.selectNode(parent)
+            return
         }
+
+        this.selectNode(prevChild(this.state.selectedNode, this.state.selectedNode.index))
     }
 
-    public ArrowRight = () => {
-        const selectedPath = this.state.store.selectedPath
-        const node = this.state.store.nodeMap.get(selectedPath)
-        if (!node) {
-            console.error('could not locate node (arrow right)', selectedPath)
-            return
-        }
-        const loc = this.locateDomNodeInCollection(selectedPath)
-        if (loc) {
-            const { items, i } = loc
-            const isDirectory = Boolean(items[i].getAttribute('data-tree-directory'))
-            if (node.state.getValue().collapsed && isDirectory) {
+    private onArrowRight(): void {
+        const selectedNodePath =
+            this.state.selectedNode.path !== '' ? this.state.selectedNode.path : this.props.activePath
+        const nodeDomElement = getDomElement(selectedNodePath)
+        if (nodeDomElement) {
+            const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-directory'))
+            if (!this.isExpanded(selectedNodePath) && isDirectory) {
                 // First, show the group (but don't update selection)
-                node.state.next({ collapsed: false, selected: true })
+                this.expandDirectoryChanges.next({
+                    path: selectedNodePath,
+                    expanded: true,
+                    node: this.state.selectedNode,
+                })
             } else {
-                if (i < items.length - 1) {
-                    // select next
-                    this.selectElement(items[i + 1])
-                } else {
-                    // select first
-                    this.selectElement(items[0])
-                }
+                this.selectNode(nextChild(this.state.selectedNode, 0))
             }
         }
     }
 
-    public Enter = () => {
-        const selectedPath = this.state.store.selectedPath
-        const node = this.state.store.nodeMap.get(selectedPath)
-        if (!node) {
-            console.error('could not locate node (enter)', selectedPath)
-            return
-        }
-        const loc = this.locateDomNodeInCollection(selectedPath)
-        if (loc) {
-            const { items, i } = loc
-            const isDir = Boolean(items[i].getAttribute('data-tree-directory'))
-            if (isDir) {
-                const isOpen = !node.state.getValue().collapsed
+    private onEnter(): void {
+        const selectedNodePath = this.state.selectedNode.path
+        const nodeDomElement = getDomElement(selectedNodePath)
+        if (nodeDomElement) {
+            const isDirectory = Boolean(nodeDomElement.getAttribute('data-tree-directory'))
+            if (isDirectory) {
+                const isOpen = this.isExpanded(selectedNodePath)
                 if (isOpen) {
-                    closeDirectory(this.state.store, selectedPath)
+                    this.expandDirectoryChanges.next({
+                        path: selectedNodePath,
+                        expanded: false,
+                        node: this.state.selectedNode,
+                    })
+                    this.selectNode(this.state.selectedNode)
                     return
                 }
+                this.expandDirectoryChanges.next({
+                    path: selectedNodePath,
+                    expanded: true,
+                    node: this.state.selectedNode,
+                })
             }
-            node.state.next({ collapsed: false, selected: true })
+            this.selectNode(this.state.selectedNode)
+            this.setActiveNode(this.state.selectedNode)
             const urlProps = {
                 repoPath: this.props.repoPath,
                 rev: this.props.rev,
-                filePath: selectedPath,
+                filePath: selectedNodePath,
             }
-            this.props.history.push(isDir ? toTreeURL(urlProps) : toBlobURL(urlProps))
+            this.props.history.push(isDirectory ? toTreeURL(urlProps) : toBlobURL(urlProps))
         }
     }
 
-    private elementInViewport(el: any): boolean {
-        const rect = el.getBoundingClientRect()
-        return (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) /*or $(window).height() */ &&
-            rect.right <= (window.innerWidth || document.documentElement.clientWidth) /*or $(window).width() */
-        )
-    }
-
-    private selectElement(el: HTMLElement): void {
-        const root = (this.props.scrollRootSelector
-            ? document.querySelector(this.props.scrollRootSelector)
-            : document.querySelector('.tree-container')) as HTMLElement
-        scrollIntoView(el, root)
-        const path = el.getAttribute('data-tree-path')!
-        selectRow(this.state.store, path)
-    }
-
-    private locateDomNode(path: string): HTMLElement | undefined {
-        return document.querySelector(`[data-tree-path="${path}"]`) as any
-    }
-
-    private locateDomNodeInCollection(path: string): { items: HTMLElement[]; i: number } | undefined {
-        const items = document.querySelectorAll('.tree__row-contents') as any
-        let i = 0
-        for (i; i < items.length; ++i) {
-            if (items[i].getAttribute('data-tree-path') === path) {
-                return { items, i }
+    private selectNode = (node: TreeNode): void => {
+        if (node) {
+            const root = (this.props.scrollRootSelector
+                ? document.querySelector(this.props.scrollRootSelector)
+                : document.querySelector('.tree-container')) as HTMLElement
+            const el = getDomElement(node.path)
+            if (el) {
+                scrollIntoView(el, root)
             }
+            this.setState({ selectedNode: node })
         }
-        return undefined
+    }
+
+    /** Set active node sets the active node when a directory or file is selected. It also sets the selected node in this case. */
+    private setActiveNode = (node: TreeNode): void => {
+        this.setState({ activeNode: node })
+        this.selectNode(node)
+    }
+
+    /** Called when a tree entry is expanded or collapsed. */
+    private toggleExpandDirectory = (path: string, expanded: boolean, node: TreeNode): void => {
+        this.expandDirectoryChanges.next({ path, expanded, node })
     }
 
     private onKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
-        const handler = (this as any)[event.key]
+        const handler = this.handlers[event.key]
         if (handler) {
             event.preventDefault()
             handler.call(this, event)
         }
     }
 
-    private parseNodes = (paths: string[], selectedPath: string) => {
-        const getFilePath = (prefix: string, restParts: string[]) => {
-            if (prefix === '') {
-                return restParts.join('/')
-            }
-            return prefix + '/' + restParts.join('/')
+    private setTreeElement = (el: HTMLElement | null): void => {
+        if (el) {
+            this.treeElement = el
         }
-
-        const parseHelper = (
-            splits: string[][],
-            subpath = '',
-            nodeMap = new Map<string, TreeNode>()
-        ): { nodes: TreeNode[]; nodeMap: Map<string, TreeNode> } => {
-            const splitsByDir = groupBy(splits, split => {
-                if (split.length === 1) {
-                    return ''
-                }
-                return split[0]
-            })
-
-            const entries = flatten<TreeNode>(
-                Object.entries(splitsByDir).map(([dir, pathSplits]) => {
-                    if (dir === '') {
-                        return pathSplits.map(split => {
-                            const filePath = getFilePath(subpath, split)
-                            const node: TreeNode = {
-                                children: [],
-                                filePath,
-                                state: new BehaviorSubject<TreeNodeState>({
-                                    selected: filePath === selectedPath,
-                                    collapsed: true,
-                                }),
-                            }
-                            nodeMap.set(filePath, node)
-                            return node
-                        })
-                    }
-
-                    const dirPath = getFilePath(subpath, [dir])
-                    const dirNode: TreeNode = {
-                        children: parseHelper(
-                            pathSplits.map(split => split.slice(1)),
-                            subpath ? subpath + '/' + dir : dir,
-                            nodeMap
-                        ).nodes,
-                        filePath: dirPath,
-                        state: new BehaviorSubject<TreeNodeState>({
-                            selected: dirPath === selectedPath,
-                            collapsed: true,
-                        }),
-                    }
-                    nodeMap.set(dirPath, dirNode)
-                    return [dirNode]
-                })
-            )
-
-            // directories first (nodes w/ children), then sort lexicographically
-            return { nodes: sortBy(entries, [(e: TreeNode) => (e.children.length > 0 ? 0 : 1), 'text']), nodeMap }
-        }
-
-        const fullTree = parseHelper(paths.map(path => path.split('/')))
-
-        const selectedTree = fullTree.nodeMap.get(selectedPath)
-        if (selectedTree && selectedTree.children.length) {
-            // When a directory is selected, the tree shows that directory's children.
-            return { nodes: selectedTree.children, nodeMap: fullTree.nodeMap }
-        }
-
-        const siblingPath = selectedPath
-            .split('/')
-            .slice(0, -1)
-            .join('/')
-        const siblingTree = fullTree.nodeMap.get(siblingPath)
-        if (siblingTree && siblingTree.children.length) {
-            // When a file is selected, the tree shows the file's siblings.
-            return { nodes: siblingTree.children, nodeMap: fullTree.nodeMap }
-        }
-
-        // Root folder.
-        return fullTree
     }
 }
 
-interface TreeLayerProps extends Repo {
-    history: H.History
-    currSubpath: string
-    relativeDir?: string
-    store: Store
+function dotPathAsUndefined(path: string | undefined): string | undefined {
+    if (path === undefined || path === '.') {
+        return undefined
+    }
+    return path
 }
 
-class TreeLayer extends React.PureComponent<TreeLayerProps, {}> {
-    public getDepth(): number {
-        if (this.props.currSubpath === '') {
-            return 0
-        }
-        const subpathDepth = this.props.currSubpath.split('/').length
-        if (this.props.relativeDir) {
-            const relativeDirDepth = this.props.relativeDir.split('/').length
-            return Math.max(0, subpathDepth - relativeDirDepth)
-        }
-        return subpathDepth
-    }
-
-    public render(): JSX.Element | null {
-        const { currSubpath, store } = this.props
-        const nodes = currSubpath === '' ? store.nodes : store.nodeMap.get(currSubpath)!.children
-        return (
-            <table className="tree-layer">
-                <tbody>
-                    <tr>
-                        <td>
-                            {nodes.map((node, i) => (
-                                <TreeRow key={i} {...this.props} depth={this.getDepth()} node={node} />
-                            ))}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        )
-    }
-}
-
-interface TreeRowProps extends TreeLayerProps {
-    depth: number
-    node: TreeNode
-}
-
-class TreeRow extends React.PureComponent<TreeRowProps, TreeNodeState> {
-    private subscriptions = new Subscription()
-
-    constructor(props: TreeRowProps) {
-        super(props)
-        this.state = props.node.state.getValue()
-    }
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.props.node.state.subscribe(state => {
-                this.setState(state)
-            })
-        )
-    }
-
-    public componentWillReceiveProps(nextProps: TreeRowProps): void {
-        if (this.props.node !== nextProps.node) {
-            if (this.subscriptions) {
-                this.subscriptions.unsubscribe()
-                this.subscriptions = new Subscription()
-            }
-            this.subscriptions.add(
-                nextProps.node.state.subscribe(state => {
-                    this.setState(state)
-                })
-            )
-        }
-    }
-
-    public componentWillUnmount(): void {
-        if (this.subscriptions) {
-            this.subscriptions.unsubscribe()
-        }
-    }
-
-    public render(): JSX.Element | null {
-        const { node, store } = this.props
-        return (
-            <table className="tree-row">
-                <tbody>
-                    {node.children.length > 0 && [
-                        <tr
-                            key={node.filePath}
-                            className={[
-                                'tree__row',
-                                this.showSubpath(node.filePath) && 'tree__row--expanded',
-                                node.filePath === store.selectedPath && 'tree__row--active',
-                            ]
-                                .filter(c => !!c)
-                                .join(' ')}
-                        >
-                            <td onClick={this.handleDirClick}>
-                                <div
-                                    className="tree__row-contents"
-                                    data-tree-directory="true"
-                                    data-tree-path={node.filePath}
-                                >
-                                    <a
-                                        className="tree__row-icon"
-                                        onClick={this.noopRowClick}
-                                        href={toTreeURL({
-                                            repoPath: this.props.repoPath,
-                                            rev: this.props.rev,
-                                            filePath: node.filePath,
-                                        })}
-                                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                        style={treePadding(this.props.depth, true)}
-                                    >
-                                        {this.showSubpath(node.filePath) ? (
-                                            <ChevronDownIcon className="icon-inline" />
-                                        ) : (
-                                            <ChevronRightIcon className="icon-inline" />
-                                        )}
-                                    </a>
-                                    <Link
-                                        to={toTreeURL({
-                                            repoPath: this.props.repoPath,
-                                            rev: this.props.rev,
-                                            filePath: node.filePath,
-                                        })}
-                                        className="tree__row-label"
-                                        draggable={false}
-                                        title={node.filePath}
-                                    >
-                                        {node.filePath.split('/').pop()}
-                                    </Link>
-                                </div>
-                            </td>
-                        </tr>,
-                        this.showSubpath(node.filePath) && (
-                            <tr key={'layer-' + node.filePath}>
-                                <td>
-                                    <TreeLayer
-                                        history={this.props.history}
-                                        repoPath={this.props.repoPath}
-                                        rev={this.props.rev}
-                                        store={this.props.store}
-                                        currSubpath={node.filePath}
-                                        relativeDir={this.props.relativeDir}
-                                    />
-                                </td>
-                            </tr>
-                        ),
-                    ]}
-                    {node.children.length === 0 && (
-                        <tr
-                            key={node.filePath}
-                            className={'tree__row' + (node.filePath === store.selectedPath ? '--active' : '')}
-                        >
-                            <td>
-                                <Link
-                                    className="tree__row-contents"
-                                    onClick={this.linkRowClick}
-                                    to={toBlobURL({
-                                        repoPath: this.props.repoPath,
-                                        rev: this.props.rev,
-                                        filePath: node.filePath,
-                                    })}
-                                    data-tree-path={node.filePath}
-                                    draggable={false}
-                                    title={node.filePath}
-                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                    style={treePadding(this.props.depth, false)}
-                                >
-                                    {node.filePath.split('/').pop()}
-                                </Link>
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        )
-    }
-
-    private handleDirClick = () => {
-        const state = this.props.node.state.getValue()
-        selectRow(this.props.store, this.props.node.filePath)
-        if (!state.collapsed) {
-            closeDirectory(this.props.store, this.props.node.filePath)
-        } else {
-            this.props.node.state.next({ collapsed: false, selected: true })
-        }
-    }
-
-    private showSubpath(dir: string): boolean {
-        const node = this.props.store.nodeMap.get(dir)
-        if (!node) {
-            return false
-        }
-        return !node.state.getValue().collapsed
-    }
-
-    /**
-     * noopRowClick is the click handler for <a> rows of the tree element
-     * that shouldn't update URL on click w/o modifier key (but should retain
-     * anchor element properties, like right click "Copy link address").
-     */
-    private noopRowClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        if (!e.altKey && !e.metaKey && !e.shiftKey && !e.ctrlKey) {
-            e.preventDefault()
-        }
-        selectRow(this.props.store, this.props.node.filePath)
-    }
-
-    /**
-     * linkRowClick is the click handler for <Link>
-     */
-    private linkRowClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        selectRow(this.props.store, this.props.node.filePath)
-    }
+/** Returns whether path is an ancestor of (or equal to) candidate. */
+function pathEqualToOrAncestor(path: string, candidate: string): boolean {
+    return path === candidate || path === '' || candidate.startsWith(path + '/')
 }

@@ -2,54 +2,16 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
 import * as React from 'react'
-import { fromEvent, Observable, Subject, Subscription } from 'rxjs'
-import { filter, map, switchMap } from 'rxjs/operators'
-import { makeRepoURI } from '.'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { fromEvent, Subscription } from 'rxjs'
+import { filter } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
-import { Tree2 } from '../tree/Tree2'
-import { Tree3 } from '../tree/Tree3'
-import { createAggregateError } from '../util/errors'
-import { memoizeObservable } from '../util/memoize'
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
-const fetchTree = memoizeObservable(
-    (args: { repoPath: string; commitID: string }): Observable<string[]> =>
-        queryGraphQL(
-            gql`
-                query FileTree($repoPath: String!, $commitID: String!) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            tree(recursive: true) {
-                                internalRaw
-                            }
-                        }
-                    }
-                }
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.tree ||
-                    typeof data.repository.commit.tree.internalRaw !== 'string'
-                ) {
-                    throw createAggregateError(errors)
-                }
-                return data.repository.commit.tree.internalRaw.split('\0')
-            })
-        ),
-    makeRepoURI
-)
-
-type SidebarTabID = 'files' | 'symbols' | 'commits'
+type SidebarTabID = 'files' | 'symbols'
 
 interface Props {
     repoID: GQL.ID
@@ -65,18 +27,8 @@ interface Props {
 }
 
 interface State {
-    loading: boolean
-    error?: string
-
     showSidebar: boolean
-    /**
-     * All file paths in the repository.
-     */
-    files?: string[]
 }
-// Run localStorage.treeVersion=3;location.reload() to get the newest file tree,
-// or run `localStorage.treeVersion=1;location.reload()` to get the oldest file tree in case of issues.
-const treeVersion = localStorage.getItem('treeVersion') || '3'
 
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
@@ -88,24 +40,12 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     private static TABS: Tab<SidebarTabID>[] = [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }]
 
     public state: State = {
-        loading: true,
         showSidebar: localStorage.getItem(RepoRevSidebar.HIDDEN_STORAGE_KEY) === null,
     }
 
-    private specChanges = new Subject<{ repoPath: string; commitID: string }>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        // Fetch repository revision.
-        if (treeVersion !== '3') {
-            this.subscriptions.add(
-                this.specChanges
-                    .pipe(switchMap(({ repoPath, commitID }) => fetchTree({ repoPath, commitID })))
-                    .subscribe(files => this.setState({ files }), err => this.setState({ error: err.message }))
-            )
-            this.specChanges.next({ repoPath: this.props.repoPath, commitID: this.props.commitID })
-        }
-
         // Toggle sidebar visibility when the user presses 'alt+s'.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
@@ -115,12 +55,6 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                     this.setState(prevState => ({ showSidebar: !prevState.showSidebar }))
                 })
         )
-    }
-
-    public componentWillReceiveProps(props: Props): void {
-        if (props.repoPath !== this.props.repoPath || props.commitID !== this.props.commitID) {
-            this.specChanges.next({ repoPath: props.repoPath, commitID: props.commitID })
-        }
     }
 
     public componentWillUnmount(): void {
@@ -170,42 +104,15 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                         tabClassName="tab-bar__tab--h5like"
                         onSelectTab={this.onSelectTab}
                     >
-                        {treeVersion === '3' ? (
-                            <Tree3
-                                key="files"
-                                repoPath={this.props.repoPath}
-                                rev={this.props.rev}
-                                history={this.props.history}
-                                scrollRootSelector="#explorer"
-                                activePath={this.props.filePath}
-                                activePathIsDir={this.props.isDir}
-                            />
-                        ) : (
-                            undefined
-                        )}
-                        {this.state.files &&
-                            (treeVersion === '1' ? (
-                                <Tree
-                                    key="files"
-                                    repoPath={this.props.repoPath}
-                                    rev={this.props.rev}
-                                    history={this.props.history}
-                                    scrollRootSelector="#explorer"
-                                    selectedPath={this.props.filePath}
-                                    paths={this.state.files}
-                                />
-                            ) : (
-                                <Tree2
-                                    key="files"
-                                    repoPath={this.props.repoPath}
-                                    rev={this.props.rev}
-                                    history={this.props.history}
-                                    activePath={this.props.filePath}
-                                    activePathIsDir={this.props.isDir}
-                                    scrollRootSelector="#explorer"
-                                    paths={this.state.files}
-                                />
-                            ))}
+                        <Tree
+                            key="files"
+                            repoPath={this.props.repoPath}
+                            rev={this.props.rev}
+                            history={this.props.history}
+                            scrollRootSelector="#explorer"
+                            activePath={this.props.filePath}
+                            activePathIsDir={this.props.isDir}
+                        />
                         <RepoRevSidebarSymbols
                             key="symbols"
                             repoID={this.props.repoID}
@@ -233,8 +140,6 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             eventLogger.log('SidebarSymbolsTabSelected')
         } else if (tab === 'files') {
             eventLogger.log('SidebarFilesTabSelected')
-        } else if (tab === 'commits') {
-            eventLogger.log('SidebarCommitsTabSelected')
         }
     }
 }

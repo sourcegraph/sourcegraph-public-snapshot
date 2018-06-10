@@ -21,7 +21,7 @@ import { fetchTreeEntries } from '../repo/backend'
 import { Repo } from '../repo/index'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { toBlobURL, toTreeURL } from '../util/url'
-import { TreeNode } from './Tree3'
+import { TreeNode } from './Tree'
 
 interface TreeLayerProps extends Repo {
     history: H.History

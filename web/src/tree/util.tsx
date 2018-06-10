@@ -1,11 +1,3 @@
-export function getParentDir(path: string): string {
-    const split = path.split('/')
-    if (split.length === 1) {
-        return ''
-    }
-    return split.splice(0, split.length - 1).join('/')
-}
-
 export function scrollIntoView(el: Element, scrollRoot: Element): void {
     if (!scrollRoot.getBoundingClientRect) {
         return el.scrollIntoView()
