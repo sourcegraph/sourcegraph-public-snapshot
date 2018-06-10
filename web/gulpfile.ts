@@ -1,16 +1,19 @@
 import { generateNamespace } from '@gql2ts/from-schema'
 import { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } from '@gql2ts/language-typescript'
 import log from 'fancy-log'
+import globby from 'globby'
 import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'graphql'
 import * as gulp from 'gulp'
 import { compileFromFile } from 'json-schema-to-typescript'
 import mkdirp from 'mkdirp-promise'
 import { readFile, writeFile } from 'mz/fs'
+import PluginError from 'plugin-error'
 import { format, resolveConfig } from 'prettier'
 import createWebpackCompiler, { Stats } from 'webpack'
 import serve from 'webpack-serve'
 import webpackServeConfig from './webpack-serve.config'
 import webpackConfig from './webpack.config'
+const tsUnusedExports = require('ts-unused-exports').default // ironically, has no published typings (but will soon)
 
 export const build = gulp.series(gulp.parallel(schemaTypes, graphQLTypes), webpack)
 export const watch = gulp.parallel(watchSchemaTypes, watchGraphQLTypes, watchWebpack)
@@ -133,4 +136,22 @@ export async function watchSchemaTypes(): Promise<void> {
     await new Promise<never>((resolve, reject) => {
         gulp.watch(__dirname + '/../schema/*.schema.json', schemaTypes).on('error', reject)
     })
+}
+
+export async function unusedExports(): Promise<void> {
+    // TODO(sqs): Improve our usage of ts-unused-exports when its API improves (see
+    // https://github.com/pzavolinsky/ts-unused-exports/pull/17 for one possible improvement).
+    const analysis: { [file: string]: string[] } = tsUnusedExports(
+        'tsconfig.json',
+        await globby('src/**/*.{ts?(x),js?(x),json}')
+    )
+    const filesWithUnusedExports = Object.keys(analysis).sort()
+    if (filesWithUnusedExports.length > 0) {
+        throw new PluginError(
+            'ts-unused-exports',
+            `Unused exports found (must unexport or remove):\n\t${filesWithUnusedExports
+                .map(f => `${f}: ${analysis[f].join(' ')}`)
+                .join('\n\t')}`
+        )
+    }
 }
