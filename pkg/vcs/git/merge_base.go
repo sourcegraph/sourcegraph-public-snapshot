@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
@@ -21,7 +22,7 @@ func MergeBase(ctx context.Context, repo gitserver.Repo, a, b api.CommitID) (api
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return "", fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
+		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 	return api.CommitID(bytes.TrimSpace(out)), nil
 }

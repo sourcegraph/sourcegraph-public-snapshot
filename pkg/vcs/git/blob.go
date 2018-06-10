@@ -7,6 +7,7 @@ import (
 	"os"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
@@ -50,9 +51,8 @@ func readFileBytes(ctx context.Context, repo gitserver.Repo, commit api.CommitID
 			if fi.Mode()&ModeSubmodule != 0 {
 				return nil, nil
 			}
-
 		}
-		return nil, fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 	return out, nil
 }

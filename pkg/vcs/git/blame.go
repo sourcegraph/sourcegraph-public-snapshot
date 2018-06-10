@@ -9,6 +9,7 @@ import (
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
@@ -63,7 +64,7 @@ func BlameFile(ctx context.Context, repo gitserver.Repo, path string, opt *Blame
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("exec `git blame` failed: %s. Output was:\n\n%s", err, out)
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 	if len(out) == 0 {
 		return nil, nil

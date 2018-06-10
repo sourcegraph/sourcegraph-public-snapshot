@@ -10,6 +10,7 @@ import (
 	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
@@ -114,7 +115,7 @@ func commitLog(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) ([]
 		if isBadObjectErr(string(stderr), string(opt.Range)) {
 			return nil, &RevisionNotFoundError{Repo: repo.Name, Spec: string(opt.Range)}
 		}
-		return nil, fmt.Errorf("exec `git log` failed: %s. Output was:\n\n%s", err, data)
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 	}
 
 	allParts := bytes.Split(data, []byte{'\x00'})
@@ -187,7 +188,7 @@ func CommitCount(ctx context.Context, repo gitserver.Repo, opt CommitsOptions) (
 	}
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("exec `git rev-list --count` failed: %s. Output was:\n\n%s", err, out)
+		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 	out = bytes.TrimSpace(out)
 	n, err := strconv.ParseUint(string(out), 10, 64)

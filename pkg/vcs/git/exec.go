@@ -43,7 +43,7 @@ func GitCmdRaw(ctx context.Context, repo gitserver.Repo, params []string) (strin
 	cmd.Repo = repo
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return "", fmt.Errorf("exec git failed: %s. Command was:\n\n%s Output was:\n\n%s", err, strings.Join(params, ""), out)
+		return "", errors.WithMessage(err, fmt.Sprintf("git raw command %q failed (output: %q)", params, out))
 	}
 
 	return string(out), nil
@@ -87,7 +87,7 @@ func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, com
 			if len(data) > 100 {
 				data = append(data[:100], []byte("... (truncated)")...)
 			}
-			return nil, true, fmt.Errorf("exec git %v command failed: %s. Output was:\n\n%s", cmd.Args, err, data)
+			return nil, true, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, data))
 		}
 	}
 

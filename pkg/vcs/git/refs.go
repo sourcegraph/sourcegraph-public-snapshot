@@ -220,7 +220,7 @@ func ListTags(ctx context.Context, repo gitserver.Repo) ([]*Tag, error) {
 		if vcs.IsRepoNotExist(err) {
 			return nil, err
 		}
-		return nil, fmt.Errorf("listing git tags in %s failed: %s. Output was:\n\n%s", cmd.Repo, err, out)
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 
 	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
@@ -266,7 +266,7 @@ func showRef(ctx context.Context, repo gitserver.Repo, arg string) ([][2]string,
 		if cmd.ExitStatus == 1 && len(out) == 0 {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("exec `git show-ref %s` in %s failed: %s. Output was:\n\n%s", arg, cmd.Repo, err, out)
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 
 	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline

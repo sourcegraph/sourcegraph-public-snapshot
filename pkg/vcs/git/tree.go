@@ -13,6 +13,7 @@ import (
 
 	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/util"
@@ -182,7 +183,7 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 		if bytes.Contains(out, []byte("exists on disk, but not in")) {
 			return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
 		}
-		return nil, fmt.Errorf("exec %v failed: %s. Output was:\n\n%s", cmd.Args, err, out)
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 
 	if len(out) == 0 {
