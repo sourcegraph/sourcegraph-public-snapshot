@@ -19,7 +19,7 @@ export const fetchBlameFile = memoizeObservable(
                 ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            file(path: $filePath) {
+                            blob(path: $filePath) {
                                 blame(startLine: $startLine, endLine: $endLine) {
                                     startLine
                                     endLine
@@ -53,12 +53,12 @@ export const fetchBlameFile = memoizeObservable(
                     !result.data ||
                     !result.data.repository ||
                     !result.data.repository.commit ||
-                    !result.data.repository.commit.file ||
-                    !result.data.repository.commit.file.blame
+                    !result.data.repository.commit.blob ||
+                    !result.data.repository.commit.blob.blame
                 ) {
                     throw createAggregateError(result.errors)
                 }
-                return result.data.repository.commit.file.blame
+                return result.data.repository.commit.blob.blame
             })
         ),
     makeRepoURI
@@ -84,7 +84,7 @@ export const fetchBlameFile2 = memoizeObservable(
                 ) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
-                            file(path: $filePath) {
+                            blob(path: $filePath) {
                                 blame(startLine: $startLine, endLine: $endLine) {
                                     startLine
                                     endLine
@@ -118,12 +118,12 @@ export const fetchBlameFile2 = memoizeObservable(
                     !result.data ||
                     !result.data.repository ||
                     !result.data.repository.commit ||
-                    !result.data.repository.commit.file ||
-                    !result.data.repository.commit.file.blame
+                    !result.data.repository.commit.blob ||
+                    !result.data.repository.commit.blob.blame
                 ) {
                     throw createAggregateError(result.errors)
                 }
-                return result.data.repository.commit.file.blame
+                return result.data.repository.commit.blob.blame
             })
         ),
     ({ line }) => line.toString()

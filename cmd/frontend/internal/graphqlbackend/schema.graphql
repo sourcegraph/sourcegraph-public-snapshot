@@ -596,7 +596,7 @@ type SearchFilter {
 }
 
 # A search suggestion.
-union SearchSuggestion = Repository | File | Symbol
+union SearchSuggestion = Repository | GitBlob | Tree | Symbol
 
 # A search scope.
 type SearchScope {
@@ -1359,7 +1359,11 @@ type GitCommit implements Node {
         # DEPRECATED: Use the "recursive" parameter on Tree's fields instead.
         recursive: Boolean = false
     ): Tree
-    # Retrieves a Git blob (file) as of this commit.
+    # The Git blob in this commit at the given path.
+    blob(path: String!): GitBlob
+    # The file at the given path for this commit.
+    #
+    # See "File" documentation for the difference between this field and the "blob" field.
     file(path: String!): File
     # Lists the programming languages present in the tree at this commit.
     languages: [String!]!
@@ -1478,7 +1482,7 @@ type Tree implements TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
-    ): [File]!
+    ): [File!]!
     # A list of entries in this tree.
     entries(
         # Returns the first n files in the tree.
@@ -1496,35 +1500,76 @@ type Tree implements TreeEntry {
 }
 
 # A file.
-type File implements TreeEntry {
-    # The full path (relative to the repository root) of this file.
+#
+# In a future version of Sourcegraph, a repository's files may be distinct from a repository's blobs (for example,
+# to support searching/browsing generated files that aren't committed and don't exist as Git blobs). Clients should
+# generally use the GitBlob concrete type and GitCommit.blobs (not GitCommit.files), unless they explicitly want to
+# opt-in to different behavior in the future.
+interface File {
+    # The full path (relative to the root) of this file.
     path: String!
     # The base name (i.e., file name only) of this file.
     name: String!
     # False because this is a file, not a directory.
     isDirectory: Boolean!
-    # The repository containing this file.
-    repository: Repository!
-    # The URL to this file.
-    url: String!
     # The content of this file.
     content: String!
+    # Whether or not it is binary.
+    binary: Boolean!
     # The file rendered as rich HTML, or an empty string if it is not a supported
     # rich file type.
     #
     # This HTML string is already escaped and thus is always safe to render.
     richHTML: String!
-    # The URLs to this file on its repository's external services.
+    # The URL to this file.
+    url: String!
+    # The URLs to this file on external services.
     externalURLs: [ExternalLink!]!
-    # Whether or not it is binary.
-    binary: Boolean!
     # Highlight the file.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Blame the file.
-    blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Returns dependency references for the file.
     dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     # Symbols defined in this file.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
+}
+
+# A Git blob in a repository.
+type GitBlob implements TreeEntry, File {
+    # The full path (relative to the repository root) of this blob.
+    path: String!
+    # The base name (i.e., file name only) of this blob's path.
+    name: String!
+    # False because this is a blob (file), not a directory.
+    isDirectory: Boolean!
+    # The content of this blob.
+    content: String!
+    # Whether or not it is binary.
+    binary: Boolean!
+    # The blob contents rendered as rich HTML, or an empty string if it is not a supported
+    # rich file type.
+    #
+    # This HTML string is already escaped and thus is always safe to render.
+    richHTML: String!
+    # The Git commit containing this blob.
+    commit: GitCommit!
+    # The repository containing this Git blob.
+    repository: Repository!
+    # The URL to this blob.
+    url: String!
+    # The URLs to this blob on its repository's external services.
+    externalURLs: [ExternalLink!]!
+    # Blame the blob.
+    blame(startLine: Int!, endLine: Int!): [Hunk!]!
+    # Highlight the blob contents.
+    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    # Returns dependency references for the blob.
+    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
+    # Symbols defined in this blob.
     symbols(
         # Returns the first n symbols from the list.
         first: Int

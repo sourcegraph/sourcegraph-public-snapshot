@@ -157,12 +157,20 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
             query SearchSuggestions($query: String!) {
                 search(query: $query) {
                     suggestions {
+                        __typename
                         ... on Repository {
-                            __typename
                             uri
                         }
-                        ... on File {
-                            __typename
+                        ... on GitBlob {
+                            path
+                            name
+                            isDirectory
+                            url
+                            repository {
+                                uri
+                            }
+                        }
+                        ... on Tree {
                             path
                             name
                             isDirectory
@@ -172,7 +180,6 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                             }
                         }
                         ... on Symbol {
-                            __typename
                             name
                             containerName
                             url

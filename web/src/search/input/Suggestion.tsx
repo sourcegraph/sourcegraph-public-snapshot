@@ -51,7 +51,8 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
                 urlLabel: 'go to repository',
             }
         }
-        case 'File': {
+        case 'GitBlob':
+        case 'Tree': {
             const descriptionParts = []
             const dir = dirname(item.path)
             if (dir !== undefined && dir !== '.') {

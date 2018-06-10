@@ -32,7 +32,7 @@ const fetchBlob = memoizeObservable(
         filePath: string
         isLightTheme: boolean
         disableTimeout: boolean
-    }): Observable<GQL.IFile> =>
+    }): Observable<GQL.IGitBlob> =>
         queryGraphQL(
             gql`
                 query Blob(
@@ -91,7 +91,7 @@ interface State {
      * The blob data or error that happened.
      * undefined while loading.
      */
-    blobOrError?: GQL.IFile | ErrorLike
+    blobOrError?: GQL.IGitBlob | ErrorLike
 }
 
 const useNewBlob = window.context.sourcegraphDotComMode || localStorage.getItem('blobVersion') === '2'

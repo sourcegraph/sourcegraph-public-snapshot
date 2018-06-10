@@ -138,13 +138,27 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	}, nil
 }
 
-func (r *gitCommitResolver) File(ctx context.Context, args *struct {
+func (r *gitCommitResolver) Blob(ctx context.Context, args *struct {
 	Path string
 }) (*gitTreeEntryResolver, error) {
+	stat, err := git.Stat(ctx, backend.CachedGitRepo(r.repo.repo), api.CommitID(r.oid), args.Path)
+	if err != nil {
+		return nil, err
+	}
+	if !stat.Mode().IsRegular() {
+		return nil, fmt.Errorf("not a blob: %q", args.Path)
+	}
 	return &gitTreeEntryResolver{
 		commit: r,
 		path:   args.Path,
+		stat:   stat,
 	}, nil
+}
+
+func (r *gitCommitResolver) File(ctx context.Context, args *struct {
+	Path string
+}) (*gitTreeEntryResolver, error) {
+	return r.Blob(ctx, args)
 }
 
 func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {

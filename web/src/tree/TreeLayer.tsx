@@ -35,7 +35,7 @@ interface TreeLayerProps extends Repo {
     index: number
     isExpanded: boolean
     isRoot: boolean
-    entryInfo?: GQL.IFile | GQL.ITree
+    entryInfo?: GQL.IGitBlob | GQL.ITree
     selectedNode: TreeNode
     onHover?: (filePath: string) => void
     onSelect: (node: TreeNode) => void
