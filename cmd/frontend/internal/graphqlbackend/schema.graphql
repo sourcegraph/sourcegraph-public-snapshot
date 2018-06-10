@@ -1242,6 +1242,22 @@ type GitObject {
     abbreviatedOID: String!
     # The commit object, if it is a commit and it exists; otherwise null.
     commit: GitCommit
+    # The Git object's type.
+    type: GitObjectType!
+}
+
+# All possible types of Git objects.
+enum GitObjectType {
+    # A Git commit object.
+    GIT_COMMIT
+    # A Git tag object.
+    GIT_TAG
+    # A Git tree object.
+    GIT_TREE
+    # A Git blob object.
+    GIT_BLOB
+    # A Git object of unknown type.
+    GIT_UNKNOWN
 }
 
 # A Git revspec expression that (possibly) resolves to a Git revision.
