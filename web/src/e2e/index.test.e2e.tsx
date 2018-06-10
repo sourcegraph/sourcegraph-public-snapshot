@@ -55,8 +55,14 @@ describe('e2e test suite', () => {
         await authenticate(page)
         await disableDefaultFeatureFlags(page)
     })
-    afterEach('Close page', async () => {
-        await page.close()
+    afterEach('Close page', async function(): Promise<void> {
+        if (page) {
+            if (this.currentTest.state === 'failed') {
+                const path = __dirname + '/../../puppeteer/' + this.currentTest.fullTitle().replace(/ /g, '_') + '.png'
+                await page.screenshot({ path })
+            }
+            await page.close()
+        }
     })
 
     const enableOrAddRepositoryIfNeeded = async (): Promise<any> => {
