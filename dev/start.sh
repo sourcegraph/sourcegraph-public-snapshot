@@ -18,7 +18,7 @@ if [ -n "$DELVE" ]; then
 fi
 
 set -euf -o pipefail
-
+unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 # Temporary failure until everyone has
