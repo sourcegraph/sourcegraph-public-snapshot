@@ -232,7 +232,6 @@ type Mutation {
         # The URL to the phabricator instance (e.g. http://phabricator.sgdev.org).
         url: String!
     ): EmptyResponse
-
     # Resolves a revision for a given diff from Phabricator.
     resolvePhabricatorDiff(
         # The name of the repository that the diff is based on.
@@ -253,7 +252,6 @@ type Mutation {
         # When the diff was created.
         date: String
     ): GitCommit
-
     # Logs a user event.
     logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
     # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
@@ -287,19 +285,16 @@ type LangServersMutation {
     # Any user can perform this mutation, unless the language has been
     # explicitly disabled.
     enable(language: String!): EmptyResponse
-
     # Disables the language server for the given language.
     #
     # Only admins can perform this action. After disabling, it is impossible
     # for plain users to enable the language server for this language (until an
     # admin re-enables it).
     disable(language: String!): EmptyResponse
-
     # Restarts the language server for the given language.
     #
     # Only admins can perform this action.
     restart(language: String!): EmptyResponse
-
     # Updates the language server for the given language.
     #
     # Only admins can perform this action.
@@ -525,7 +520,6 @@ type Search {
     results: SearchResults!
     # The suggestions.
     suggestions(first: Int): [SearchSuggestion!]!
-
     # A subset of results (excluding actual search results) which are heavily
     # cached and thus quicker to query. Useful for e.g. querying sparkline
     # data.
@@ -930,12 +924,10 @@ type ExternalRepository {
     #
     # Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
     id: String!
-
     # The type of external service where this repository resides.
     #
     # Example: "github", "gitlab", etc.
     serviceType: String!
-
     # The particular instance of the external service where this repository resides. Its value is
     # opaque but typically consists of the canonical base URL to the service.
     #
@@ -1402,7 +1394,6 @@ type Person {
     displayName: String!
     # The avatar URL.
     avatarURL: String!
-
     # The corresponding user account for this person, if one exists.
     user: User
 }
@@ -1424,7 +1415,6 @@ type Tree {
         # Returns the first n files from the tree
         first: Int
     ): [TreeEntry!]!
-
     # FOR INTERNAL USE ONLY.
     #
     # An optimized, raw encoding of this tree, used by the Sourcegraph frontend web application's file tree
@@ -1503,19 +1493,15 @@ type File implements TreeEntry {
     commits: [GitCommit!]!
     # The URL to this file.
     url: String!
-
     # The content of this file.
     content: String!
-
     # The file rendered as rich HTML, or an empty string if it is not a supported
     # rich file type.
     #
     # This HTML string is already escaped and thus is always safe to render.
     richHTML: String!
-
     # The URLs to this file on its repository's external services.
     externalURLs: [ExternalLink!]!
-
     # Whether or not it is binary.
     binary: Boolean!
     # Highlight the file.
@@ -1524,7 +1510,6 @@ type File implements TreeEntry {
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Returns dependency references for the file.
     dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
-
     # Symbols defined in this file.
     symbols(
         # Returns the first n symbols from the list.
@@ -1924,10 +1909,8 @@ enum LangServerState {
     # The language server is neither enabled nor disabled. When a repo for this
     # language is visited by any user, it will be enabled.
     LANG_SERVER_STATE_NONE
-
     # The language server was enabled by a plain user or admin user.
     LANG_SERVER_STATE_ENABLED
-
     # The language server was disabled by an admin user.
     LANG_SERVER_STATE_DISABLED
 }
@@ -1936,61 +1919,47 @@ enum LangServerState {
 type LangServer {
     # "go", "java", "typescript", etc.
     language: String!
-
     # "Go", "Java", "TypeScript", "PHP", etc.
     displayName: String!
-
     # Whether or not this language server should be considered experimental.
     #
     # Has no effect on behavior, only effects how the language server is presented e.g. in the UI.
     experimental: Boolean!
-
     # URL to the language server's homepage, if available.
     homepageURL: String
-
     # URL to the language server's open/known issues, if available.
     issuesURL: String
-
     # URL to the language server's documentation, if available.
     docsURL: String
-
     # Whether or not we are running in Data Center mode.
     dataCenter: Boolean!
-
     # Whether or not this is a custom language server (i.e. one that does not
     # come built in with Sourcegraph).
     custom: Boolean!
-
     # The current configuration state of the language server.
     #
     # For custom language servers, this field is never LANG_SERVER_STATE_NONE.
     state: LangServerState!
-
     # Whether or not the language server is being downloaded, starting, restarting.
     #
     # Always false in Data Center and for custom language servers.
     pending: Boolean!
-
     # Whether or not the current user can enable the language server or not.
     #
     # Always false in Data Center.
     canEnable: Boolean!
-
     # Whether or not the current user can disable the language server or not.
     #
     # Always false in Data Center.
     canDisable: Boolean!
-
     # Whether or not the current user can restart the language server or not.
     #
     # Always false in Data Center and for custom language servers.
     canRestart: Boolean!
-
     # Whether or not the current user can update the language server or not.
     #
     # Always false in Data Center and for custom language servers.
     canUpdate: Boolean!
-
     # Indicates whether or not the language server is healthy or
     # unhealthy. Examples include:
     #
