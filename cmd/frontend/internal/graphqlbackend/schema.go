@@ -1462,14 +1462,6 @@ type Directory implements TreeEntry {
     ): SymbolConnection!
 }
 
-# A highlighted file.
-type HighlightedFile {
-    # Whether or not it was aborted.
-    aborted: Boolean!
-    # The HTML.
-    html: String!
-}
-
 # A file.
 type File implements TreeEntry {
     # The full path (relative to the repository root) of this file.
@@ -1506,6 +1498,14 @@ type File implements TreeEntry {
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
+}
+
+# A highlighted file.
+type HighlightedFile {
+    # Whether or not it was aborted.
+    aborted: Boolean!
+    # The HTML.
+    html: String!
 }
 
 # A file match.
