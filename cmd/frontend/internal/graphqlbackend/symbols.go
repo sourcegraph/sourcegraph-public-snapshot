@@ -35,7 +35,7 @@ func (r *repositoryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*s
 	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
 }
 
-func (r *fileResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
+func (r *gitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
 	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
@@ -111,7 +111,7 @@ func toSymbolResolver(symbol lsp.SymbolInformation, lang string, commitResolver 
 	}
 	symbolRange := symbol.Location.Range // copy
 	resolver.location = &locationResolver{
-		resource: &fileResolver{
+		resource: &gitTreeEntryResolver{
 			commit: commitResolver,
 			path:   uri.Fragment,
 			stat:   createFileInfo(uri.Fragment, false), // assume the path refers to a file (not dir)

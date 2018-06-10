@@ -529,7 +529,7 @@ func (e *badRequestError) Cause() error {
 
 // searchSuggestionResolver is a resolver for the GraphQL union type `SearchSuggestion`
 type searchSuggestionResolver struct {
-	// result is either a repositoryResolver or a fileResolver
+	// result is either a repositoryResolver or a gitTreeEntryResolver
 	result interface{}
 	// score defines how well this item matches the query for sorting purposes
 	score int
@@ -544,8 +544,8 @@ func (r *searchSuggestionResolver) ToRepository() (*repositoryResolver, bool) {
 	return res, ok
 }
 
-func (r *searchSuggestionResolver) ToFile() (*fileResolver, bool) {
-	res, ok := r.result.(*fileResolver)
+func (r *searchSuggestionResolver) ToFile() (*gitTreeEntryResolver, bool) {
+	res, ok := r.result.(*gitTreeEntryResolver)
 	return res, ok
 }
 
@@ -646,9 +646,9 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 	}
 
 	scorer := newScorer(scorerQuery)
-	for _, fileResolver := range treeResolver.Entries(&connectionArgs{First: nil}) {
+	for _, entryResolver := range treeResolver.Entries(&connectionArgs{First: nil}) {
 		if !includeDirs {
-			isDir, err := fileResolver.IsDirectory(ctx)
+			isDir, err := entryResolver.IsDirectory(ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -657,12 +657,12 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 			}
 		}
 
-		score := scorer.calcScore(fileResolver)
-		if score <= 0 && matcher.scorerQuery != "" && matcher.match(fileResolver.path) {
+		score := scorer.calcScore(entryResolver)
+		if score <= 0 && matcher.scorerQuery != "" && matcher.match(entryResolver.path) {
 			score = 1 // minimum to ensure everything included by match.match is included
 		}
 		if score > 0 {
-			res = append(res, newSearchResultResolver(fileResolver, score))
+			res = append(res, newSearchResultResolver(entryResolver, score))
 		}
 	}
 
@@ -678,13 +678,13 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 // given result.
 //
 // A panic occurs if the type of result is not a *repositoryResolver or
-// *fileResolver.
+// *gitTreeEntryResolver.
 func newSearchResultResolver(result interface{}, score int) *searchSuggestionResolver {
 	switch r := result.(type) {
 	case *repositoryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.repo.URI), label: string(r.repo.URI)}
 
-	case *fileResolver:
+	case *gitTreeEntryResolver:
 		return &searchSuggestionResolver{result: r, score: score, length: len(r.path), label: r.path}
 
 	case *symbolResolver:
@@ -747,7 +747,7 @@ func (s *scorer) calcScore(result interface{}) int {
 		}
 		return score
 
-	case *fileResolver:
+	case *gitTreeEntryResolver:
 		if !s.queryEmpty {
 			pathParts := splitNoEmpty(r.path, "/")
 			score = postfixFuzzyAlignScore(pathParts, s.queryParts)

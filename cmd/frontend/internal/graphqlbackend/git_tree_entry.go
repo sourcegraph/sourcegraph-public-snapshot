@@ -25,25 +25,27 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-type fileResolver struct {
+// gitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
+// object type that is valid in a tree.
+type gitTreeEntryResolver struct {
 	commit *gitCommitResolver
 
 	path string
 
-	// stat is populated by the creator of this fileResolver if it has this
+	// stat is populated by the creator of this gitTreeEntryResolver if it has this
 	// information available. Not all creators will have the stat info; in
-	// that case, some fileResolver methods have to look up the information
+	// that case, some gitTreeEntryResolver methods have to look up the information
 	// on their own.
 	stat os.FileInfo
 }
 
-func (r *fileResolver) Path() string { return r.path }
-func (r *fileResolver) Name() string { return path.Base(r.path) }
+func (r *gitTreeEntryResolver) Path() string { return r.path }
+func (r *gitTreeEntryResolver) Name() string { return path.Base(r.path) }
 
-func (r *fileResolver) ToDirectory() (*fileResolver, bool) { return r, true }
-func (r *fileResolver) ToFile() (*fileResolver, bool)      { return r, true }
+func (r *gitTreeEntryResolver) ToDirectory() (*gitTreeEntryResolver, bool) { return r, true }
+func (r *gitTreeEntryResolver) ToFile() (*gitTreeEntryResolver, bool)      { return r, true }
 
-func (r *fileResolver) Content(ctx context.Context) (string, error) {
+func (r *gitTreeEntryResolver) Content(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
@@ -55,7 +57,7 @@ func (r *fileResolver) Content(ctx context.Context) (string, error) {
 	return string(contents), nil
 }
 
-func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
+func (r *gitTreeEntryResolver) IsDirectory(ctx context.Context) (bool, error) {
 	// Return immediately if we know our stat.
 	if r.stat != nil {
 		return r.stat.Mode().IsDir(), nil
@@ -72,11 +74,11 @@ func (r *fileResolver) IsDirectory(ctx context.Context) (bool, error) {
 	return stat.IsDir(), nil
 }
 
-func (r *fileResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
+func (r *gitTreeEntryResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
 	return r.commit.Repository(ctx)
 }
 
-func (r *fileResolver) URL(ctx context.Context) (string, error) {
+func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 	url := r.commit.repoRevURL() + "/-/"
 
 	isDir, err := r.IsDirectory(ctx)
@@ -91,7 +93,7 @@ func (r *fileResolver) URL(ctx context.Context) (string, error) {
 	return url + "/" + r.path, nil
 }
 
-func (r *fileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	isDir, err := r.IsDirectory(ctx)
 	if err != nil {
 		return nil, nil
@@ -99,7 +101,7 @@ func (r *fileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolv
 	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.revForURL(), r.path, isDir)
 }
 
-func (r *fileResolver) RichHTML(ctx context.Context) (string, error) {
+func (r *gitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 	switch path.Ext(r.path) {
 	case ".md", ".mdown", ".markdown", ".markdn":
 		break
@@ -127,7 +129,7 @@ func renderMarkdown(content string) string {
 	return string(p.SanitizeBytes(unsafeHTML))
 }
 
-func (r *fileResolver) Binary(ctx context.Context) (bool, error) {
+func (r *gitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
 	content, err := r.Content(ctx)
 	if err != nil {
 		return false, err
@@ -154,7 +156,7 @@ type highlightedFileResolver struct {
 func (h *highlightedFileResolver) Aborted() bool { return h.aborted }
 func (h *highlightedFileResolver) HTML() string  { return h.html }
 
-func (r *fileResolver) Highlight(ctx context.Context, args *struct {
+func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	DisableTimeout bool
 	IsLightTheme   bool
 }) (*highlightedFileResolver, error) {
@@ -184,11 +186,11 @@ func (r *fileResolver) Highlight(ctx context.Context, args *struct {
 	return result, nil
 }
 
-func (r *fileResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error) {
+func (r *gitTreeEntryResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error) {
 	return r.commits(ctx, 10)
 }
 
-func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
+func (r *gitTreeEntryResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
 	commits, err := git.Commits(ctx, backend.CachedGitRepo(r.commit.repo.repo), git.CommitsOptions{
 		Range: string(r.commit.oid),
 		N:     limit,
@@ -206,7 +208,7 @@ func (r *fileResolver) commits(ctx context.Context, limit uint) ([]*gitCommitRes
 	return resolvers, nil
 }
 
-func (r *fileResolver) Blame(ctx context.Context,
+func (r *gitTreeEntryResolver) Blame(ctx context.Context,
 	args *struct {
 		StartLine int32
 		EndLine   int32
@@ -230,7 +232,7 @@ func (r *fileResolver) Blame(ctx context.Context,
 	return hunksResolver, nil
 }
 
-func (r *fileResolver) DependencyReferences(ctx context.Context, args *struct {
+func (r *gitTreeEntryResolver) DependencyReferences(ctx context.Context, args *struct {
 	Language  string
 	Line      int32
 	Character int32

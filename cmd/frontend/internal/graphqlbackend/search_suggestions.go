@@ -167,7 +167,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 					results.results = results.results[:*args.First]
 				}
 				for i, res := range results.results {
-					fileResolver := &fileResolver{
+					entryResolver := &gitTreeEntryResolver{
 						path: res.fileMatch.JPath,
 						commit: &gitCommitResolver{
 							oid:      gitObjectID(res.fileMatch.commitID),
@@ -179,7 +179,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 						},
 						stat: createFileInfo(res.fileMatch.JPath, false),
 					}
-					suggestions = append(suggestions, newSearchResultResolver(fileResolver, len(results.results)-i))
+					suggestions = append(suggestions, newSearchResultResolver(entryResolver, len(results.results)-i))
 				}
 			}
 			return suggestions, err
@@ -242,7 +242,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		switch s := s.result.(type) {
 		case *repositoryResolver:
 			k.repoURI = s.repo.URI
-		case *fileResolver:
+		case *gitTreeEntryResolver:
 			k.repoID = s.commit.repositoryDatabaseID()
 			k.repoRev = string(s.commit.oid)
 			// Zoekt only searches the default branch and sets commit ID to an empty string.

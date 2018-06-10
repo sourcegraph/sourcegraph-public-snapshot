@@ -127,8 +127,8 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 
 func (r *gitCommitResolver) File(ctx context.Context, args *struct {
 	Path string
-}) (*fileResolver, error) {
-	return &fileResolver{
+}) (*gitTreeEntryResolver, error) {
+	return &gitTreeEntryResolver{
 		commit: r,
 		path:   args.Path,
 	}, nil

@@ -9,11 +9,11 @@ import (
 )
 
 type locationResolver struct {
-	resource *fileResolver
+	resource *gitTreeEntryResolver
 	lspRange *lsp.Range
 }
 
-func (r *locationResolver) Resource() *fileResolver { return r.resource }
+func (r *locationResolver) Resource() *gitTreeEntryResolver { return r.resource }
 
 func (r *locationResolver) Range() *rangeResolver {
 	if r.lspRange == nil {
