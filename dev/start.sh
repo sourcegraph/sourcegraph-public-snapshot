@@ -54,12 +54,11 @@ export SOURCEGRAPH_EXPAND_CONFIG_VARS=1 # experiment: interpolate ${var} and $va
 export SAML_ONELOGIN_CERT=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.cert.pem)
 export SAML_ONELOGIN_KEY=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.key.pem)
 
-# To use webpack-serve:
-#   export WEBPACK_SERVE=1
-if [ -n "${WEBPACK_SERVE-}" ]; then
-    # Corresponds to the http-proxy-middleware target URL in webpack-serve.config.ts.
-    export SRC_HTTP_ADDR=":3081"
-fi
+# webpack-serve is a proxy running on port 3080 that (1) serves assets, waiting to respond until
+# they are (re)built and (2) otherwise passes through to Sourcegraph running on port 3081. That is
+# why Sourcegraph listens on 3081 despite the appURL having port 3080.
+export WEBPACK_SERVE=1
+export SRC_HTTP_ADDR=":3081"
 
 # we want to keep config.json, but allow local config.
 export SOURCEGRAPH_CONFIG_FILE=./dev/config.json

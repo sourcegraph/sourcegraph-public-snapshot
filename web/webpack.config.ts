@@ -10,7 +10,7 @@ const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-modul
 
 const monacoEditorPaths = [path.resolve(__dirname, 'node_modules', 'monaco-editor')]
 
-const watching = Boolean(process.env.WEBPACK_SERVE)
+const watching = Boolean(process.env.NODE_ENV !== 'production')
 const workerPool = {
     poolTimeout: watching ? Infinity : 2000,
 }

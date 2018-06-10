@@ -22,7 +22,7 @@ import serve from 'webpack-serve'
 import webpackConfig from './webpack.config'
 
 export const build = gulp.series(gulp.parallel(schemaTypes, graphQLTypes), webpack)
-export const watch = gulp.parallel(watchSchemaTypes, watchGraphQLTypes, watchWebpack)
+export const watch = gulp.parallel(watchSchemaTypes, watchGraphQLTypes, webpackServe)
 
 const WEBPACK_STATS_OPTIONS = {
     all: false,
@@ -45,24 +45,6 @@ export async function webpack(): Promise<void> {
     if (stats.hasErrors()) {
         throw Object.assign(new Error('Failed to compile'), { showStack: false })
     }
-}
-
-export async function watchWebpack(): Promise<void> {
-    if (process.env.WEBPACK_SERVE) {
-        await webpackServe()
-        return
-    }
-    const compiler = createWebpackCompiler(webpackConfig)
-    compiler.hooks.watchRun.tap('log', () => log('Starting webpack compilation'))
-    await new Promise<never>((resolve, reject) => {
-        compiler.watch({}, (err, stats) => {
-            if (err) {
-                reject(err)
-                return
-            }
-            logWebpackStats(stats)
-        })
-    })
 }
 
 export async function webpackServe(): Promise<void> {
