@@ -1443,6 +1443,8 @@ interface TreeEntry {
     isDirectory: Boolean!
     # The URL to this tree entry.
     url: String!
+    # The URLs to this tree entry on external services.
+    externalURLs: [ExternalLink!]!
     # Symbols defined in this file or directory.
     symbols(
         # Returns the first n symbols from the list.
@@ -1467,6 +1469,8 @@ type GitTree implements TreeEntry {
     repository: Repository!
     # The URL to this tree.
     url: String!
+    # The URLs to this tree on external services.
+    externalURLs: [ExternalLink!]!
     # A list of directories in this tree.
     directories(
         # Returns the first n files in the tree.
