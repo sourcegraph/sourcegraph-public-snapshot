@@ -232,7 +232,7 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKEnum
 	case "interface":
 		return lsp.SKInterface
-	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command":
+	case "function", "func", "subroutine", "macro", "subprogram", "procedure", "command", "singletonMethod":
 		return lsp.SKFunction
 	case "variable", "var", "functionVar", "define", "alias":
 		return lsp.SKVariable
@@ -260,7 +260,7 @@ func ctagsKindToLSPSymbolKind(kind string) lsp.SymbolKind {
 		return lsp.SKEvent
 	case "operator":
 		return lsp.SKOperator
-	case "type parameter":
+	case "type parameter", "annotation":
 		return lsp.SKTypeParameter
 	}
 	log.Printf("Unknown ctags kind: %q", kind)
