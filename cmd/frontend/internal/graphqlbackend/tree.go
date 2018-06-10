@@ -1,7 +1,6 @@
 package graphqlbackend
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"os"
@@ -115,29 +114,6 @@ func (r *treeResolver) Files(args *connectionArgs) []*gitTreeEntryResolver {
 	}
 
 	return resolvers
-}
-
-// InternalRaw returns the raw tree encoded for consumption by the frontend tree component.
-//
-// The structure is tightly coupled to the frontend tree component's implementation, for maximum
-// speed.
-func (r *treeResolver) InternalRaw() string {
-	var prefix string
-	if r.path != "" {
-		prefix = r.path + "/"
-	}
-
-	buf := bytes.NewBuffer(make([]byte, 0, len(r.entries)*20))
-	for i, entry := range r.entries {
-		if entry.IsDir() {
-			continue
-		}
-		buf.WriteString(prefix + entry.Name())
-		if i != len(r.entries)-1 {
-			buf.WriteByte('\x00')
-		}
-	}
-	return buf.String()
 }
 
 func (r *gitTreeEntryResolver) Tree(ctx context.Context) (*treeResolver, error) {

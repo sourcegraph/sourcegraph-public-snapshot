@@ -1415,11 +1415,6 @@ type Tree {
         # Returns the first n files from the tree
         first: Int
     ): [TreeEntry!]!
-    # FOR INTERNAL USE ONLY.
-    #
-    # An optimized, raw encoding of this tree, used by the Sourcegraph frontend web application's file tree
-    # component.
-    internalRaw: String!
 }
 
 # A file, directory, or other tree entry.
