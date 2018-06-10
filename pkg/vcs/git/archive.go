@@ -35,11 +35,6 @@ func Archive(ctx context.Context, repo gitserver.Repo, opt ArchiveOptions) (_ io
 		return nil, err
 	}
 
-	// worktreeDir, err := ensureWorktreeAttributesFileToIgnoreDotGitPaths()
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	// Compression level of 0 (no compression) seems to perform the
 	// best overall on fast network links, but this has not been tuned
 	// thoroughly.
