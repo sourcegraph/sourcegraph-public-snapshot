@@ -15,6 +15,7 @@ var Mocks, emptyMocks struct {
 	RawLogDiffSearch func(opt RawLogDiffSearchOptions) ([]*LogCommitSearchResult, bool, error)
 	ReadDir          func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error)
 	ResolveRevision  func(spec string, opt *ResolveRevisionOptions) (api.CommitID, error)
+	Stat             func(commit api.CommitID, name string) (os.FileInfo, error)
 }
 
 // ResetMocks clears the mock functions set on Mocks (so that subsequent tests don't inadvertently

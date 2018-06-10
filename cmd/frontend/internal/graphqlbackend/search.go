@@ -633,7 +633,14 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 	treeResolver, err := commitResolver.Tree(ctx, &struct {
 		Path      string
 		Recursive bool
-	}{Path: "", Recursive: true})
+	}{Path: ""})
+	if err != nil {
+		return nil, err
+	}
+	entries, err := treeResolver.Entries(ctx, &gitTreeEntryConnectionArgs{
+		connectionArgs: connectionArgs{First: nil},
+		Recursive:      true,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -646,7 +653,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 	}
 
 	scorer := newScorer(scorerQuery)
-	for _, entryResolver := range treeResolver.Entries(&connectionArgs{First: nil}) {
+	for _, entryResolver := range entries {
 		if !includeDirs {
 			isDir, err := entryResolver.IsDirectory(ctx)
 			if err != nil {

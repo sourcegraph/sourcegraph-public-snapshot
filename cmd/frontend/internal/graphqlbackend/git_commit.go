@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
@@ -122,7 +123,19 @@ func (r *gitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*gitTreeEntryResolver, error) {
-	return makeGitTreeResolver(ctx, r, args.Path, args.Recursive)
+	stat, err := git.Stat(ctx, backend.CachedGitRepo(r.repo.repo), api.CommitID(r.oid), args.Path)
+	if err != nil {
+		return nil, err
+	}
+	if !stat.Mode().IsDir() {
+		return nil, fmt.Errorf("not a directory: %q", args.Path)
+	}
+	return &gitTreeEntryResolver{
+		commit:      r,
+		path:        args.Path,
+		stat:        stat,
+		isRecursive: args.Recursive,
+	}, nil
 }
 
 func (r *gitCommitResolver) File(ctx context.Context, args *struct {

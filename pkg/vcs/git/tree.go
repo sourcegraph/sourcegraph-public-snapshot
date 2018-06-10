@@ -51,6 +51,10 @@ func Lstat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path s
 
 // Stat returns a FileInfo describing the named file at commit.
 func Stat(ctx context.Context, repo gitserver.Repo, commit api.CommitID, path string) (os.FileInfo, error) {
+	if Mocks.Stat != nil {
+		return Mocks.Stat(commit, path)
+	}
+
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: Stat")
 	span.SetTag("Commit", commit)
 	span.SetTag("Path", path)

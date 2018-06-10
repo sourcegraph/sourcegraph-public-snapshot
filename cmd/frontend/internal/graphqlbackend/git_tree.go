@@ -2,26 +2,34 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"os"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-func makeGitTreeResolver(ctx context.Context, commit *gitCommitResolver, path string, recursive bool) (*gitTreeEntryResolver, error) {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+type gitTreeEntryConnectionArgs struct {
+	connectionArgs
+	Recursive bool
+}
 
-	if recursive && path != "" {
-		return nil, errors.New("not implemented")
-	}
+func (r *gitTreeEntryResolver) Entries(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
+	return r.entries(ctx, args, nil)
+}
 
-	entries, err := git.ReadDir(ctx, backend.CachedGitRepo(commit.repo.repo), api.CommitID(commit.oid), path, recursive)
+func (r *gitTreeEntryResolver) Directories(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
+	return r.entries(ctx, args, func(fi os.FileInfo) bool { return fi.Mode().IsDir() })
+}
+
+func (r *gitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
+	return r.entries(ctx, args, func(fi os.FileInfo) bool { return !fi.Mode().IsDir() })
+}
+
+func (r *gitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi os.FileInfo) bool) ([]*gitTreeEntryResolver, error) {
+	entries, err := git.ReadDir(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), r.path, r.isRecursive || args.Recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error
@@ -30,22 +38,19 @@ func makeGitTreeResolver(ctx context.Context, commit *gitCommitResolver, path st
 		}
 	}
 
-	return &gitTreeEntryResolver{
-		commit:      commit,
-		path:        path,
-		entries:     entries,
-		isRecursive: recursive,
-	}, nil
-}
+	sort.Sort(byDirectory(entries))
 
-func (r *gitTreeEntryResolver) toFileResolvers(filter func(fi os.FileInfo) bool, alloc int) []*gitTreeEntryResolver {
+	if args.First != nil && len(entries) > int(*args.First) {
+		entries = entries[:int(*args.First)]
+	}
+
 	var prefix string
 	if r.path != "" {
 		prefix = r.path + "/"
 	}
 
-	l := make([]*gitTreeEntryResolver, 0, alloc)
-	for _, entry := range r.entries {
+	var l []*gitTreeEntryResolver
+	for _, entry := range entries {
 		if filter == nil || filter(entry) {
 			l = append(l, &gitTreeEntryResolver{
 				commit: r.commit,
@@ -54,7 +59,7 @@ func (r *gitTreeEntryResolver) toFileResolvers(filter func(fi os.FileInfo) bool,
 			})
 		}
 	}
-	return l
+	return l, nil
 }
 
 type byDirectory []os.FileInfo
@@ -77,35 +82,4 @@ func (s byDirectory) Less(i, j int) bool {
 	}
 
 	return s[i].Name() < s[j].Name()
-}
-
-func (r *gitTreeEntryResolver) Entries(args *connectionArgs) []*gitTreeEntryResolver {
-	sort.Sort(byDirectory(r.entries))
-	resolvers := r.toFileResolvers(nil, len(r.entries))
-	if args.First != nil && len(r.entries) > int(*args.First) {
-		return resolvers[:int(*args.First)]
-	}
-	return resolvers
-}
-
-func (r *gitTreeEntryResolver) Directories(args *connectionArgs) []*gitTreeEntryResolver {
-	resolvers := r.toFileResolvers(func(fi os.FileInfo) bool {
-		return fi.Mode().IsDir()
-	}, len(r.entries)/8) // heuristic: 1/8 of the entries in a repo are dirs
-	if args.First != nil && len(resolvers) > int(*args.First) {
-		return resolvers[:int(*args.First)]
-	}
-
-	return resolvers
-}
-
-func (r *gitTreeEntryResolver) Files(args *connectionArgs) []*gitTreeEntryResolver {
-	resolvers := r.toFileResolvers(func(fi os.FileInfo) bool {
-		return !fi.Mode().IsDir()
-	}, len(r.entries))
-	if args.First != nil && len(resolvers) > int(*args.First) {
-		return resolvers[:int(*args.First)]
-	}
-
-	return resolvers
 }

@@ -26,6 +26,12 @@ func TestGitTree(t *testing.T) {
 	}
 	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
 
+	git.Mocks.Stat = func(commit api.CommitID, path string) (os.FileInfo, error) {
+		if string(commit) != exampleCommitSHA1 || path != "/foo" {
+			t.Error("wrong arguments to Stat")
+		}
+		return &util.FileInfo{Name_: "", Mode_: os.ModeDir}, nil
+	}
 	git.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error) {
 		if string(commit) != exampleCommitSHA1 || name != "/foo" {
 			t.Error("wrong arguments to RepoTree.Get")

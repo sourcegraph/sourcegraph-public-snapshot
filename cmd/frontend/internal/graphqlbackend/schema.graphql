@@ -1350,7 +1350,15 @@ type GitCommit implements Node {
     # The URLs to this commit on its repository's external services.
     externalURLs: [ExternalLink!]!
     # The Git tree in this commit at the given path.
-    tree(path: String = "", recursive: Boolean = false): Tree
+    tree(
+        # The path of the tree.
+        path: String = ""
+        # Whether to recurse into sub-trees. If true, it overrides the value of the "recursive" parameter on all of
+        # Tree's fields.
+        #
+        # DEPRECATED: Use the "recursive" parameter on Tree's fields instead.
+        recursive: Boolean = false
+    ): Tree
     # Retrieves a Git blob (file) as of this commit.
     file(path: String!): File
     # Lists the programming languages present in the tree at this commit.
@@ -1455,28 +1463,28 @@ type Tree implements TreeEntry {
     commit: GitCommit!
     # The repository containing this tree.
     repository: Repository!
-    # Whether this tree's contents were fetched recursively.
-    #
-    # TODO(sqs): Other fields that return a GitTree have a recursive parameter. That parameter should be removed
-    # from those fields and moved to GitTree's own fields that depend on its value, because "recursive" is a
-    # property of those fields' values, not the Git tree per se.
-    isRecursive: Boolean!
     # The URL to this tree.
     url: String!
     # A list of directories in this tree.
     directories(
         # Returns the first n files in the tree.
         first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
     ): [Tree]!
     # A list of files in this tree.
     files(
         # Returns the first n files in the tree.
         first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
     ): [File]!
     # A list of entries in this tree.
     entries(
         # Returns the first n files in the tree.
         first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
     ): [TreeEntry!]!
     # Symbols defined in this tree.
     symbols(

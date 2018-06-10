@@ -38,8 +38,7 @@ type gitTreeEntryResolver struct {
 	// on their own.
 	stat os.FileInfo
 
-	entries     []os.FileInfo // tree's children (only set for if this entry is itself a tree)
-	isRecursive bool          // whether entries is populated recursively (otherwise just current level of hierarchy)
+	isRecursive bool // whether entries is populated recursively (otherwise just current level of hierarchy)
 }
 
 func (r *gitTreeEntryResolver) Path() string { return r.path }
