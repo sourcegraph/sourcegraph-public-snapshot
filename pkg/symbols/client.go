@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 var symbolsURL = env.Get("SYMBOLS_URL", "http://symbols:3184", "symbols service URL")
@@ -143,8 +144,5 @@ func (c *Client) httpPost(ctx context.Context, method string, key key, payload i
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if c.HTTPClient != nil {
-		return c.HTTPClient.Do(req)
-	}
-	return http.DefaultClient.Do(req)
+	return ctxhttp.Do(ctx, c.HTTPClient, req)
 }

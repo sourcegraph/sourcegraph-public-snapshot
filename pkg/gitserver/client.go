@@ -431,11 +431,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoURI, method string, 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	if c.HTTPClient != nil {
-		return c.HTTPClient.Do(req)
-	} else {
-		return http.DefaultClient.Do(req)
-	}
+	return ctxhttp.Do(ctx, c.HTTPClient, req)
 }
 
 func (c *Client) UploadPack(repoURI api.RepoURI, w http.ResponseWriter, r *http.Request) {
