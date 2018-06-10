@@ -3,7 +3,7 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { currentUser } from '../auth'
 
-export interface Avatarable {
+interface Avatarable {
     avatarURL: string | null
 }
 

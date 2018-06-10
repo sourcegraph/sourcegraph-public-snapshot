@@ -97,7 +97,7 @@ interface GitCommitNodeProps {
     location: H.Location
 }
 
-export const GitCommitNode: React.SFC<GitCommitNodeProps> = ({ node, currentCommitID, location }) => {
+const GitCommitNode: React.SFC<GitCommitNodeProps> = ({ node, currentCommitID, location }) => {
     const isCurrent = currentCommitID === (node.oid as string)
     return (
         <li key={node.oid} className="popover__node revisions-popover-git-commit-node">

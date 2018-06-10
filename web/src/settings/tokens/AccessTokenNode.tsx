@@ -61,7 +61,7 @@ export interface AccessTokenNodeProps {
     onDidUpdate: () => void
 }
 
-export interface AccessTokenNodeState {
+interface AccessTokenNodeState {
     /** Undefined means in progress, null means done or not started. */
     deletionOrError?: null | ErrorLike
 }

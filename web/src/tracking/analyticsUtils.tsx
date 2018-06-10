@@ -2,7 +2,7 @@ import { fromEvent, of } from 'rxjs'
 import { catchError, mapTo, publishReplay, refCount, take, timeout } from 'rxjs/operators'
 import { eventLogger } from './eventLogger'
 
-export interface EventQueryParameters {
+interface EventQueryParameters {
     utm_campaign?: string
     utm_source?: string
     utm_product_name?: string

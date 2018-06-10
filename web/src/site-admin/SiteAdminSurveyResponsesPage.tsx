@@ -266,7 +266,7 @@ interface Props extends RouteComponentProps<any> {}
 
 type surveyResultsDisplays = 'chronological' | 'by-user'
 
-export interface State {
+interface State {
     tab: surveyResultsDisplays
 }
 

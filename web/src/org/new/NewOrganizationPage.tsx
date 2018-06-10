@@ -10,11 +10,11 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
 import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '../index'
 
-export interface Props {
+interface Props {
     history: H.History
 }
 
-export interface State {
+interface State {
     /**
      * Current value of the organization name input
      */

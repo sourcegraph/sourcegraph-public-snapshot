@@ -8,7 +8,7 @@ import ora from 'ora'
 // @ts-ignore
 import tsify from 'tsify'
 
-export interface DOMModuleSandbox {
+interface DOMModuleSandbox {
     /**
      * The JSDOM window the module was loaded into
      */

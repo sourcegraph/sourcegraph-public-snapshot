@@ -9,7 +9,7 @@ import { GitCommitNode } from '../commits/GitCommitNode'
 import { FilteredGitCommitConnection, gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
-export function queryRepositoryComparisonCommits(args: {
+function queryRepositoryComparisonCommits(args: {
     repo: GQL.ID
     base: string | null
     head: string | null

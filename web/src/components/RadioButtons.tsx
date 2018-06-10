@@ -3,7 +3,7 @@ import * as React from 'react'
 /**
  * Descriptor of a radio button element.
  */
-export interface RadioButtonNode {
+interface RadioButtonNode {
     /**
      * Radio button value.
      */

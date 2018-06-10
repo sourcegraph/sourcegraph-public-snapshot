@@ -144,7 +144,7 @@ export function updateUserSettings(
     )
 }
 
-export interface UpdateUserOptions {
+interface UpdateUserOptions {
     username: string | null
     /** The user's display name */
     displayName: string | null

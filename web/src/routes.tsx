@@ -21,7 +21,7 @@ import { UserArea } from './user/area/UserArea'
 import { RedirectToUserSettings } from './user/settings/RedirectToUserSettings'
 import { canListAllRepositories } from './util/features'
 
-export interface LayoutRouteProps extends RouteProps {
+interface LayoutRouteProps extends RouteProps {
     component?: React.ComponentType<any>
     render?: (props: any) => React.ReactNode
 

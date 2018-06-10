@@ -13,7 +13,7 @@ import { RepositoriesPopover } from './RepositoriesPopover'
 /**
  * An action link that is added to and displayed in the repository header.
  */
-export interface RepoHeaderAction {
+interface RepoHeaderAction {
     position: 'nav' | 'left' | 'right'
 
     /**

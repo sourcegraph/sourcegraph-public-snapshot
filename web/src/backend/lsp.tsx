@@ -28,7 +28,7 @@ interface LSPRequest {
 }
 
 /** Returns true if the given value conforms to the LSP MarkedString type, false otherwise */
-export const isMarkedString = (val: any): val is MarkedString =>
+const isMarkedString = (val: any): val is MarkedString =>
     typeof val === 'string' ||
     (typeof val === 'object' && val !== null && typeof val.language === 'string' && typeof val.value === 'string')
 

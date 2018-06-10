@@ -22,20 +22,20 @@ interface BaseSuggestion {
     urlLabel: string
 }
 
-export interface SymbolSuggestion extends BaseSuggestion {
+interface SymbolSuggestion extends BaseSuggestion {
     type: 'symbol'
     kind: GQL.SymbolKind
 }
 
-export interface RepoSuggestion extends BaseSuggestion {
+interface RepoSuggestion extends BaseSuggestion {
     type: 'repo'
 }
 
-export interface FileSuggestion extends BaseSuggestion {
+interface FileSuggestion extends BaseSuggestion {
     type: 'file'
 }
 
-export interface DirSuggestion extends BaseSuggestion {
+interface DirSuggestion extends BaseSuggestion {
     type: 'dir'
 }
 
@@ -108,7 +108,7 @@ const SuggestionIcon: React.StatelessComponent<SuggestionIconProps> = ({ suggest
     }
 }
 
-export interface SuggestionProps {
+interface SuggestionProps {
     suggestion: Suggestion
 
     isSelected?: boolean

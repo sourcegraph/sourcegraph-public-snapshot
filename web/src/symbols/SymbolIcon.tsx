@@ -90,7 +90,7 @@ const getSymbolIconComponent = (kind: GQL.SymbolKind): MdiReactIconComponentType
     }
 }
 
-export interface SymbolIconProps {
+interface SymbolIconProps {
     kind: GQL.SymbolKind
     className?: string
 }

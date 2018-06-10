@@ -11,7 +11,7 @@ import { createUser } from './backend'
 
 interface Props extends RouteComponentProps<any> {}
 
-export interface State {
+interface State {
     errorDescription?: string
     loading: boolean
 

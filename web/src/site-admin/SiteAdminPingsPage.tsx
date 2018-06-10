@@ -6,7 +6,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite } from './backend'
 import { getDisableTelemetryUsed, getUpdateChannel } from './configHelpers'
 
-export interface State {
+interface State {
     channel?: string | null
     disableTelemetryUsed?: boolean
     error?: string

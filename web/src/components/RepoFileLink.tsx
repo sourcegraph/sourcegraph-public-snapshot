@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { RepoLink } from '../repo/RepoLink'
 import { toPrettyBlobURL, toPrettyRepoURL, toTreeURL } from '../util/url'
 
-export interface RepoBreadcrumbProps {
+interface RepoBreadcrumbProps {
     repoPath: string
     rev?: string
     filePath?: string

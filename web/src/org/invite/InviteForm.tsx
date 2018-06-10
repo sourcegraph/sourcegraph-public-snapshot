@@ -13,7 +13,7 @@ import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 
-export function inviteUserToOrganization(
+function inviteUserToOrganization(
     username: string,
     organization: GQL.ID
 ): Observable<GQL.IInviteUserToOrganizationResult> {
@@ -50,7 +50,7 @@ export function inviteUserToOrganization(
     )
 }
 
-export function addUserToOrganization(username: string, organization: GQL.ID): Observable<void> {
+function addUserToOrganization(username: string, organization: GQL.ID): Observable<void> {
     return mutateGraphQL(
         gql`
             mutation AddUserToOrganization($organization: ID!, $username: String!) {
@@ -100,7 +100,7 @@ const InvitedNotification: React.SFC<{
     </div>
 )
 
-export interface Props {
+interface Props {
     orgID: string
     authenticatedUser: GQL.IUser | null
 

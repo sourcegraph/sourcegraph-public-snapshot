@@ -1,68 +1,9 @@
 import { Observable } from 'rxjs'
 import { map, mergeMap, take } from 'rxjs/operators'
-import { gql, GraphQLDocument, mutateGraphQL, MutationResult } from '../backend/graphql'
+import { GraphQLDocument, mutateGraphQL, MutationResult } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { configurationCascade } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
-import { createAggregateError } from '../util/errors'
-
-/**
- * Updates the configuration for a subject to the value produced by the given update function.
- *
- * @param subject The subject whose configuration to update.
- * @param update Called on a copy of the old (current) config to produce the new config
- */
-export function updateConfiguration(
-    subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
-    input: GQL.IUpdateConfigurationInput
-): Observable<void> {
-    const subjectID = subject.id
-    if (!subjectID) {
-        throw new Error('subject has no id')
-    }
-    return configurationCascade.pipe(
-        take(1),
-        mergeMap(config => {
-            const subjectConfig = config.subjects.find(s => s.id === subjectID)
-            if (!subjectConfig) {
-                throw new Error(`no configuration subject: ${subjectID}`)
-            }
-            const lastID = subjectConfig.latestSettings ? subjectConfig.latestSettings.id : null
-            return doUpdateConfiguration({ subject: subjectID, lastID }, input)
-        })
-    )
-}
-
-/**
- * Sends a GraphQL mutation to update configuration.
- */
-function doUpdateConfiguration(
-    configuration: GQL.IConfigurationMutationGroupInput,
-    input: GQL.IUpdateConfigurationInput
-): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation UpdateConfiguration(
-                $configurationInput: ConfigurationMutationGroupInput!
-                $updateInput: UpdateConfigurationInput
-            ) {
-                configurationMutation(input: $configurationInput) {
-                    updateConfiguration(input: $updateInput) {
-                        alwaysNil
-                    }
-                }
-            }
-        `,
-        { configurationInput: configuration, updateInput: input }
-    ).pipe(
-        mergeMap(({ data, errors }) => {
-            if (!data || !data.configurationMutation || data.configurationMutation.updateConfiguration) {
-                throw createAggregateError(errors)
-            }
-            return refreshConfiguration()
-        })
-    )
-}
 
 /**
  * Runs a GraphQL mutation that includes configuration mutations, populating the variables object

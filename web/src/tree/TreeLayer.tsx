@@ -45,7 +45,7 @@ interface TreeLayerProps extends Repo {
 }
 
 const LOADING: 'loading' = 'loading'
-export interface TreeLayerState {
+interface TreeLayerState {
     treeOrError?: typeof LOADING | GQL.ITree | ErrorLike
 }
 

@@ -11,7 +11,7 @@ import { Repo } from '../repo/index'
 import { toBlobURL, toTreeURL } from '../util/url'
 import { getParentDir, scrollIntoView } from './util'
 
-export interface Props extends Repo {
+interface Props extends Repo {
     history: H.History
     paths: string[]
     scrollRootSelector?: string

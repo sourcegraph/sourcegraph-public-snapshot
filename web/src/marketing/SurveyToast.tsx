@@ -10,7 +10,7 @@ import { daysActiveCount } from './util'
 
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-survey-toast'
 
-export interface SurveyCTAProps {
+interface SurveyCTAProps {
     className?: string
     score?: number
     onClick?: (score: number) => void

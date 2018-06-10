@@ -10,7 +10,7 @@ import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { numberWithCommas } from '../util/strings'
 
-export interface GitRefNodeProps {
+interface GitRefNodeProps {
     node: GQL.IGitRef
 
     /** Link URL; if undefined, node.url is used. */

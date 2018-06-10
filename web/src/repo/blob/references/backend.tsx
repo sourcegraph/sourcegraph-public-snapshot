@@ -8,7 +8,7 @@ import * as util from '../../../util'
 import { memoizeObservable } from '../../../util/memoize'
 import { AbsoluteRepoFilePosition, makeRepoURI } from '../../index'
 
-export const fetchDependencyReferences = memoizeObservable(
+const fetchDependencyReferences = memoizeObservable(
     (ctx: AbsoluteRepoFilePosition): Observable<GQL.IDependencyReferences | null> => {
         const mode = util.getModeFromPath(ctx.filePath)
         return queryGraphQL(

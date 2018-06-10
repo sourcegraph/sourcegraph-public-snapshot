@@ -10,7 +10,7 @@ import { toBlobURL, toTreeURL } from '../util/url'
 import { TreeLayer } from './TreeLayer'
 import { getDomElement, scrollIntoView } from './util'
 
-export interface Props extends Repo {
+interface Props extends Repo {
     history: H.History
     scrollRootSelector?: string
 
@@ -21,7 +21,7 @@ export interface Props extends Repo {
     activePathIsDir: boolean
 }
 
-export interface State {
+interface State {
     /**
      * The root of the tree to show, or undefined for the root.
      *

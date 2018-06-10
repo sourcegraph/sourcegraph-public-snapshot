@@ -16,7 +16,7 @@ import { getUpdateChannel } from './configHelpers'
 
 interface Props extends RouteComponentProps<any> {}
 
-export interface State {
+interface State {
     channel?: string | null
     buildVersion?: string
     productVersion?: string

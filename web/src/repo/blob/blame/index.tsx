@@ -17,7 +17,7 @@ export interface BlameData {
  * @param text the literal text to measure.
  * @param font the font string, e.g. '12px Menlo'
  */
-export function measureTextWidth(text: string, font: string): number {
+function measureTextWidth(text: string, font: string): number {
     const tmp = document.createElement('canvas').getContext('2d')
     tmp!.font = font
     return tmp!.measureText(text).width

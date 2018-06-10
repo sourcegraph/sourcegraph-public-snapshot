@@ -111,7 +111,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
 
 interface Props extends RouteComponentProps<any> {}
 
-export interface State {
+interface State {
     orgs?: GQL.IOrg[]
     totalCount?: number
 }

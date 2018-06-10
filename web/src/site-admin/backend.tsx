@@ -113,7 +113,7 @@ interface RepositoryArgs {
  *
  * @return Observable that emits the list of repositories
  */
-export function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
+function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryConnection> {
     args = {
         enabled: true,
         disabled: false,

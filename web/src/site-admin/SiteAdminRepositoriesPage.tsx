@@ -40,7 +40,7 @@ interface RepositoryNodeState {
     errorDescription?: string
 }
 
-export class RepositoryNode extends React.PureComponent<RepositoryNodeProps, RepositoryNodeState> {
+class RepositoryNode extends React.PureComponent<RepositoryNodeProps, RepositoryNodeState> {
     public state: RepositoryNodeState = {
         loading: false,
     }
@@ -157,10 +157,7 @@ interface AddPublicRepositoryFormState {
 /**
  * A form for adding a public repository (for now just from https://github.com)
  */
-export class AddPublicRepositoryForm extends React.PureComponent<
-    AddPublicRepositoryFormProps,
-    AddPublicRepositoryFormState
-> {
+class AddPublicRepositoryForm extends React.PureComponent<AddPublicRepositoryFormProps, AddPublicRepositoryFormState> {
     public state = {
         repoName: '',
         error: undefined,

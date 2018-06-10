@@ -22,7 +22,7 @@ export const asError = (err: any): Error => {
 /**
  * An Error that aggregates multiple errors
  */
-export interface AggregateError extends Error {
+interface AggregateError extends Error {
     name: 'AggregateError'
     errors: Error[]
 }

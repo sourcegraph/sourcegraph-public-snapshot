@@ -245,7 +245,7 @@ interface Props extends RouteComponentProps<any> {
     user: GQL.IUser
 }
 
-export interface State {
+interface State {
     users?: GQL.IUser[]
     totalCount?: number
 }

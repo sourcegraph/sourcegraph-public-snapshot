@@ -11,7 +11,7 @@ export interface FileStat {
 /**
  * ICustomResolveFileOptions is based on vscode.ResolveFileOptions. It is only used when calling toFileStat.
  */
-export interface ICustomResolveFileOptions {
+interface ICustomResolveFileOptions {
     /**
      * If specified, return only the subtree rooted at parentPath.
      */
@@ -32,25 +32,6 @@ export interface ICustomResolveFileOptions {
      * Resolve all nodes in the tree.
      */
     resolveAllDescendants?: boolean
-}
-
-/**
- * Converts from IResolveFileOptions to our slightly custom and optimized ICustomResolveFileOptions.
- *
- * It precomputes/transforms the input parameters for toFileStat. For example, instead of passing toFileStat a full
- * URI for each resolveTo entry, it only passes the relative paths. This lets toFileStat avoid URI operations in
- * its tight loop.
- */
-export function toICustomResolveFileOptions(
-    parentPath?: string,
-    options?: ICustomResolveFileOptions
-): ICustomResolveFileOptions {
-    return {
-        parentPath,
-        resolveSingleChildDescendants: options ? options.resolveSingleChildDescendants : undefined,
-        resolveTo: options && options.resolveTo,
-        resolveAllDescendants: options && options.resolveAllDescendants,
-    }
 }
 
 /**

@@ -156,7 +156,7 @@ interface HighlightedFileResult {
     highlightedFile: GQL.IHighlightedFile
 }
 
-export const fetchHighlightedFile = memoizeObservable(
+const fetchHighlightedFile = memoizeObservable(
     (ctx: FetchFileCtx): Observable<HighlightedFileResult> =>
         queryGraphQL(
             gql`
@@ -223,39 +223,6 @@ export const fetchHighlightedFileLines = memoizeObservable(
             })
         ),
     ctx => makeRepoURI(ctx) + `?isLightTheme=${ctx.isLightTheme}`
-)
-
-interface BlobContent {
-    isDirectory: boolean
-    content: string
-}
-
-export const fetchBlobContent = memoizeObservable(
-    (ctx: FetchFileCtx): Observable<BlobContent> =>
-        queryGraphQL(
-            gql`
-                query BlobContent($repoPath: String!, $commitID: String!, $filePath: String!) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            file(path: $filePath) {
-                                isDirectory
-                                content
-                            }
-                        }
-                    }
-                }
-            `,
-            ctx
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.repository || !data.repository.commit || !data.repository.commit.file) {
-                    throw createAggregateError(errors)
-                }
-                const file = data.repository.commit.file
-                return { isDirectory: file.isDirectory, content: file.content }
-            })
-        ),
-    makeRepoURI
 )
 
 interface FetchFileMetadataCtx {

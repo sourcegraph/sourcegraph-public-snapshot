@@ -18,7 +18,7 @@ interface RepositoryNodeProps {
     node: GQL.IRepository
 }
 
-export const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
+const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
     <li key={repo.id} className="list-group-item py-2">
         <RepoLink repoPath={repo.uri} className="explore-page__item-path" />
         {repo.mirrorInfo.cloneInProgress && (

@@ -147,7 +147,7 @@ interface SiteAdminAnalyticsPageProps extends RouteComponentProps<any> {
     isLightTheme: boolean
 }
 
-export interface SiteAdminAnalyticsPageState {
+interface SiteAdminAnalyticsPageState {
     users?: GQL.IUserConnection
     siteActivity?: GQL.ISiteActivity
     error?: Error

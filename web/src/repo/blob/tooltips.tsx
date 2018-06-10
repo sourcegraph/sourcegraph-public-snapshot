@@ -452,11 +452,11 @@ export function findElementWithOffset(cell: HTMLElement, offset: number): HTMLEl
  *
  * 1-indexed
  */
-export interface Line {
+interface Line {
     line: number
 }
 
-export interface HoveredToken {
+interface HoveredToken {
     /** 1-indexed */
     line: number
     /** 1-indexed */

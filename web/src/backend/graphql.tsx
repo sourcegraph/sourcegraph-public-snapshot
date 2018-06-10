@@ -19,7 +19,7 @@ export const gql = (template: TemplateStringsArray, ...substitutions: any[]): Gr
 /**
  * Interface for the response result of a GraphQL query
  */
-export interface QueryResult {
+interface QueryResult {
     data?: GQL.IQuery
     errors?: GQL.IGraphQLResponseError[]
 }
