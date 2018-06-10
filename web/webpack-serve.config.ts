@@ -31,8 +31,6 @@ export default {
                 // more magic in injecting scripts that use WebSockets into proxied requests).
                 httpProxyMiddleware({
                     target: 'http://localhost:3081',
-                    logLevel: 'debug',
-                    // ... see: https://github.com/chimurai/http-proxy-middleware#options
                 })
             )
         )
