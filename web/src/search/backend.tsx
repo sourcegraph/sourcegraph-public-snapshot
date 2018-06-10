@@ -170,7 +170,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                                 uri
                             }
                         }
-                        ... on Tree {
+                        ... on GitTree {
                             path
                             name
                             isDirectory

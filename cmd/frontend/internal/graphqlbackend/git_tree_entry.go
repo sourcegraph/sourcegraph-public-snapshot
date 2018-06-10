@@ -25,7 +25,7 @@ type gitTreeEntryResolver struct {
 func (r *gitTreeEntryResolver) Path() string { return r.path }
 func (r *gitTreeEntryResolver) Name() string { return path.Base(r.path) }
 
-func (r *gitTreeEntryResolver) ToTree() (*gitTreeEntryResolver, bool)    { return r, true }
+func (r *gitTreeEntryResolver) ToGitTree() (*gitTreeEntryResolver, bool) { return r, true }
 func (r *gitTreeEntryResolver) ToGitBlob() (*gitTreeEntryResolver, bool) { return r, true }
 
 func (r *gitTreeEntryResolver) Commit() *gitCommitResolver { return r.commit }

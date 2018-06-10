@@ -549,7 +549,7 @@ func (r *searchSuggestionResolver) ToGitBlob() (*gitTreeEntryResolver, bool) {
 	return res, ok && res.stat.Mode().IsRegular()
 }
 
-func (r *searchSuggestionResolver) ToTree() (*gitTreeEntryResolver, bool) {
+func (r *searchSuggestionResolver) ToGitTree() (*gitTreeEntryResolver, bool) {
 	res, ok := r.result.(*gitTreeEntryResolver)
 	return res, ok && res.stat.Mode().IsDir()
 }

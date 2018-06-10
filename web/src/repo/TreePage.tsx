@@ -115,7 +115,7 @@ interface Props {
 
 interface State {
     /** This tree, or an error. Undefined while loading. */
-    treeOrError?: GQL.ITree | ErrorLike
+    treeOrError?: GQL.IGitTree | ErrorLike
 
     /**
      * The value of the search query input field.

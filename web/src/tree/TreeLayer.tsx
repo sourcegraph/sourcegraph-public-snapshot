@@ -35,7 +35,7 @@ interface TreeLayerProps extends Repo {
     index: number
     isExpanded: boolean
     isRoot: boolean
-    entryInfo?: GQL.IGitBlob | GQL.ITree
+    entryInfo?: GQL.IGitBlob | GQL.IGitTree
     selectedNode: TreeNode
     onHover?: (filePath: string) => void
     onSelect: (node: TreeNode) => void
@@ -46,7 +46,7 @@ interface TreeLayerProps extends Repo {
 
 const LOADING: 'loading' = 'loading'
 interface TreeLayerState {
-    treeOrError?: typeof LOADING | GQL.ITree | ErrorLike
+    treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
 }
 
 const treePadding = (depth: number, isTree: boolean) => ({

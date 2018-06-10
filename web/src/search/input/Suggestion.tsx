@@ -52,7 +52,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
             }
         }
         case 'GitBlob':
-        case 'Tree': {
+        case 'GitTree': {
             const descriptionParts = []
             const dir = dirname(item.path)
             if (dir !== undefined && dir !== '.') {

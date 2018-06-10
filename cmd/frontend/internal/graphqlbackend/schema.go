@@ -589,7 +589,7 @@ type SearchFilter {
 }
 
 # A search suggestion.
-union SearchSuggestion = Repository | GitBlob | Tree | Symbol
+union SearchSuggestion = Repository | GitBlob | GitTree | Symbol
 
 # A search scope.
 type SearchScope {
@@ -1347,11 +1347,11 @@ type GitCommit implements Node {
         # The path of the tree.
         path: String = ""
         # Whether to recurse into sub-trees. If true, it overrides the value of the "recursive" parameter on all of
-        # Tree's fields.
+        # GitTree's fields.
         #
-        # DEPRECATED: Use the "recursive" parameter on Tree's fields instead.
+        # DEPRECATED: Use the "recursive" parameter on GitTree's fields instead.
         recursive: Boolean = false
-    ): Tree
+    ): GitTree
     # The Git blob in this commit at the given path.
     blob(path: String!): GitBlob
     # The file at the given path for this commit.
@@ -1445,8 +1445,8 @@ interface TreeEntry {
     ): SymbolConnection!
 }
 
-# A tree.
-type Tree implements TreeEntry {
+# A Git tree in a repository.
+type GitTree implements TreeEntry {
     # The full path (relative to the root) of this tree.
     path: String!
     # The base name (i.e., last path component only) of this tree.
@@ -1466,7 +1466,7 @@ type Tree implements TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
-    ): [Tree]!
+    ): [GitTree]!
     # A list of files in this tree.
     files(
         # Returns the first n files in the tree.

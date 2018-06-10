@@ -267,7 +267,7 @@ export const fetchFileExternalLinks = memoizeObservable(
 )
 
 export const fetchTree = memoizeObservable(
-    (args: FetchFileMetadataCtx & { first?: number }): Observable<GQL.ITree> =>
+    (args: FetchFileMetadataCtx & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(
             gql`
                 query Tree($repoPath: String!, $rev: String!, $filePath: String!, $first: Int) {
@@ -302,7 +302,7 @@ export const fetchTree = memoizeObservable(
 )
 
 export const fetchTreeEntries = memoizeObservable(
-    (args: FetchFileMetadataCtx & { first?: number }): Observable<GQL.ITree> =>
+    (args: FetchFileMetadataCtx & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(
             gql`
                 query Tree($repoPath: String!, $rev: String!, $filePath: String!, $first: Int) {
