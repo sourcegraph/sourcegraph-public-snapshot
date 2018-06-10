@@ -1427,8 +1427,6 @@ interface TreeEntry {
     isDirectory: Boolean!
     # The repository containing this tree entry.
     repository: Repository!
-    # The list of Git commits that touched this tree entry.
-    commits: [GitCommit!]!
     # The URL to this tree entry.
     url: String!
     # Symbols defined in this file or directory.
@@ -1451,8 +1449,6 @@ type Directory implements TreeEntry {
     isDirectory: Boolean!
     # The repository containing this directory.
     repository: Repository!
-    # The list of Git commits that touched this directory.
-    commits: [GitCommit!]!
     # The URL to this directory.
     url: String!
     # The tree.
@@ -1484,8 +1480,6 @@ type File implements TreeEntry {
     isDirectory: Boolean!
     # The repository containing this file.
     repository: Repository!
-    # The list of Git commits that touched this file.
-    commits: [GitCommit!]!
     # The URL to this file.
     url: String!
     # The content of this file.

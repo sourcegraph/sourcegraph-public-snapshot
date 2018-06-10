@@ -186,28 +186,6 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	return result, nil
 }
 
-func (r *gitTreeEntryResolver) Commits(ctx context.Context) ([]*gitCommitResolver, error) {
-	return r.commits(ctx, 10)
-}
-
-func (r *gitTreeEntryResolver) commits(ctx context.Context, limit uint) ([]*gitCommitResolver, error) {
-	commits, err := git.Commits(ctx, backend.CachedGitRepo(r.commit.repo.repo), git.CommitsOptions{
-		Range: string(r.commit.oid),
-		N:     limit,
-		Path:  r.path,
-	})
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]*gitCommitResolver, len(commits))
-	for i, commit := range commits {
-		resolvers[i] = toGitCommitResolver(nil, commit)
-		resolvers[i].repo = r.commit.repo
-	}
-
-	return resolvers, nil
-}
-
 func (r *gitTreeEntryResolver) Blame(ctx context.Context,
 	args *struct {
 		StartLine int32
