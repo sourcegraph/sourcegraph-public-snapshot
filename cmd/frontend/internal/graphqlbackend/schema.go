@@ -1118,7 +1118,7 @@ type Symbol {
 # A location inside a resource (in a repository at a specific commit).
 type Location {
     # The file that this location refers to.
-    resource: TreeEntry!
+    resource: GitBlob!
     # The range inside the file that this location refers to.
     range: Range
     # The URL to this location.
@@ -1434,8 +1434,6 @@ interface TreeEntry {
     name: String!
     # Whether this tree entry is a directory.
     isDirectory: Boolean!
-    # The repository containing this tree entry.
-    repository: Repository!
     # The URL to this tree entry.
     url: String!
     # Symbols defined in this file or directory.
