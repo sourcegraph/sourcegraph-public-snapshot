@@ -35,13 +35,8 @@ func Archive(ctx context.Context, repo gitserver.Repo, opt ArchiveOptions) (_ io
 		return nil, err
 	}
 
-	// Compression level of 0 (no compression) seems to perform the
-	// best overall on fast network links, but this has not been tuned
-	// thoroughly.
 	cmd := gitserver.DefaultClient.Command("git",
 		"archive",
-		"--format="+opt.Format,
-		"-0",
 
 		// Suppresses fatal error when the repo contains paths matching **/.git/** and instead
 		// includes those files (to allow archiving invalid such repos). This is unexpected
@@ -50,9 +45,15 @@ func Archive(ctx context.Context, repo gitserver.Repo, opt ArchiveOptions) (_ io
 		// desired. Tested by the "repo with .git dir" test case.
 		"--worktree-attributes",
 
-		string(opt.Treeish),
-		"--",
+		"--format="+opt.Format,
 	)
+	if opt.Format == "zip" {
+		// Compression level of 0 (no compression) seems to perform the
+		// best overall on fast network links, but this has not been tuned
+		// thoroughly.
+		cmd.Args = append(cmd.Args, "-0")
+	}
+	cmd.Args = append(cmd.Args, string(opt.Treeish), "--")
 	cmd.Args = append(cmd.Args, opt.Paths...)
 	cmd.Repo = repo
 	rc, err := gitserver.StdoutReader(ctx, cmd)
