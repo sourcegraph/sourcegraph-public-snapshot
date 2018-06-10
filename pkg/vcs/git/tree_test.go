@@ -386,6 +386,12 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			}
 			// A submodule should have a special file mode and should
 			// store information about its origin.
+			if submod.Mode().IsRegular() {
+				t.Errorf("%s: IsRegular", label)
+			}
+			if submod.Mode().IsDir() {
+				t.Errorf("%s: IsDir", label)
+			}
 			if mode := submod.Mode(); mode&git.ModeSubmodule == 0 {
 				t.Errorf("%s: submod.Mode(): got %o, want & git.ModeSubmodule (%o) != 0", label, mode, git.ModeSubmodule)
 			}

@@ -236,15 +236,16 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 		}
 
 		var sys interface{}
-		mode, err := strconv.ParseInt(info[0], 8, 32)
+		modeVal, err := strconv.ParseInt(info[0], 8, 32)
 		if err != nil {
 			return nil, err
 		}
+		mode := os.FileMode(modeVal)
 		switch typ {
 		case "blob":
 			const gitModeSymlink = 020000
 			if mode&gitModeSymlink != 0 {
-				mode = int64(os.ModeSymlink)
+				mode = os.ModeSymlink
 			} else {
 				// Regular file.
 				mode = mode | 0644
@@ -262,7 +263,7 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 				CommitID: api.CommitID(oid),
 			}
 		case "tree":
-			mode = mode | int64(os.ModeDir)
+			mode = mode | os.ModeDir
 		}
 
 		fis[i] = &util.FileInfo{
