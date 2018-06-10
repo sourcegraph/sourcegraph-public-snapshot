@@ -25,12 +25,13 @@ import { SearchButton } from '../search/input/SearchButton'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
+import { basename } from '../util/path'
 import { toPrettyBlobURL, toRepoURL, toTreeURL } from '../util/url'
 import { fetchTree } from './backend'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { FilteredGitCommitConnection, gitCommitFragment } from './commits/RepositoryCommitsPage'
 
-const DirectoryEntry: React.SFC<{
+const TreeEntry: React.SFC<{
     isDir: boolean
     name: string
     parentPath: string
@@ -45,7 +46,7 @@ const DirectoryEntry: React.SFC<{
                 rev,
                 filePath,
             })}
-            className="directory-entry"
+            className="tree-entry"
             title={filePath}
         >
             {name}
@@ -101,7 +102,7 @@ interface Props {
     repoPath: string
     repoID: GQL.ID
     repoDescription: string
-    // filePath is a directory path in DirectoryPage. We call it filePath for consistency elsewhere.
+    // filePath is the tree's path in TreePage. We call it filePath for consistency elsewhere.
     filePath: string
     commitID: string
     rev?: string
@@ -113,7 +114,7 @@ interface Props {
 }
 
 interface State {
-    /** This directory's tree, or an error. Undefined while loading. */
+    /** This tree, or an error. Undefined while loading. */
     treeOrError?: GQL.ITree | ErrorLike
 
     /**
@@ -122,7 +123,7 @@ interface State {
     query: string
 }
 
-export class DirectoryPage extends React.PureComponent<Props, State> {
+export class TreePage extends React.PureComponent<Props, State> {
     public state: State = { query: '' }
 
     private componentUpdates = new Subject<Props>()
@@ -132,7 +133,7 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
         if (props.filePath === '') {
             eventLogger.logViewEvent('Repository')
         } else {
-            eventLogger.logViewEvent('Directory')
+            eventLogger.logViewEvent('Tree')
         }
     }
 
@@ -185,17 +186,17 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="directory-page">
+            <div className="tree-page">
                 <PageTitle key="page-title" title={this.getPageTitle()} />
                 {this.props.filePath ? (
                     <header>
-                        <h2 className="directory-page__title">
+                        <h2 className="tree-page__title">
                             <FolderIcon className="icon-inline" /> {this.props.filePath}
                         </h2>
                     </header>
                 ) : (
                     <header>
-                        <h2 className="directory-page__title">
+                        <h2 className="tree-page__title">
                             <RepositoryIcon className="icon-inline" /> {displayRepoPath(this.props.repoPath)}
                         </h2>
                         {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
@@ -229,11 +230,11 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                     </header>
                 )}
 
-                <section className="directory-page__section">
-                    <h3 className="directory-page__section-header">
-                        Search in this {this.props.filePath ? 'directory' : 'repository'}
+                <section className="tree-page__section">
+                    <h3 className="tree-page__section-header">
+                        Search in this {this.props.filePath ? 'tree' : 'repository'}
                     </h3>
-                    <Form className="directory-page__section-search" onSubmit={this.onSubmit}>
+                    <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
                         <QueryInput
                             value={this.state.query}
                             onChange={this.onQueryChange}
@@ -249,13 +250,13 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                 </section>
                 {this.state.treeOrError === undefined && (
                     <div>
-                        <Loader className="icon-inline directory-page__entries-loader" /> Loading files and directories
+                        <Loader className="icon-inline tree-page__entries-loader" /> Loading files and directories
                     </div>
                 )}
                 {this.state.treeOrError !== undefined &&
                     (isErrorLike(this.state.treeOrError) ? (
                         <div className="alert alert-danger">
-                            <p>Unable to list directory contents</p>
+                            <p>Unable to list tree contents</p>
                             {this.state.treeOrError.message && (
                                 <div>
                                     <pre>{this.state.treeOrError.message.slice(0, 100)}</pre>
@@ -265,11 +266,11 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                     ) : (
                         <>
                             {this.state.treeOrError.directories.length > 0 && (
-                                <section className="directory-page__section">
-                                    <h3 className="directory-page__section-header">Directories</h3>
-                                    <div className="directory-page__entries directory-page__entries-directories">
+                                <section className="tree-page__section">
+                                    <h3 className="tree-page__section-header">Directories</h3>
+                                    <div className="tree-page__entries tree-page__entries-directories">
                                         {this.state.treeOrError.directories.map((e, i) => (
-                                            <DirectoryEntry
+                                            <TreeEntry
                                                 key={i}
                                                 isDir={true}
                                                 name={e.name}
@@ -282,11 +283,11 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                                 </section>
                             )}
                             {this.state.treeOrError.files.length > 0 && (
-                                <section className="directory-page__section">
-                                    <h3 className="directory-page__section-header">Files</h3>
-                                    <div className="directory-page__entries directory-page__entries-files">
+                                <section className="tree-page__section">
+                                    <h3 className="tree-page__section-header">Files</h3>
+                                    <div className="tree-page__entries tree-page__entries-files">
                                         {this.state.treeOrError.files.map((e, i) => (
-                                            <DirectoryEntry
+                                            <TreeEntry
                                                 key={i}
                                                 isDir={false}
                                                 name={e.name}
@@ -300,10 +301,10 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
                             )}
                         </>
                     ))}
-                <div className="directory-page__section">
-                    <h3 className="directory-page__section-header">Changes</h3>
+                <div className="tree-page__section">
+                    <h3 className="tree-page__section-header">Changes</h3>
                     <FilteredGitCommitConnection
-                        className="mt-2 directory-page__section--commits"
+                        className="mt-2 tree-page__section--commits"
                         listClassName="list-group list-group-flush"
                         noun="commit in this tree"
                         pluralNoun="commits in this tree"
@@ -338,11 +339,9 @@ export class DirectoryPage extends React.PureComponent<Props, State> {
     }
 
     private getPageTitle(): string {
-        const repoPathSplit = this.props.repoPath.split('/')
-        const repoStr = repoPathSplit.length > 2 ? repoPathSplit.slice(1).join('/') : this.props.repoPath
+        const repoStr = displayRepoPath(this.props.repoPath)
         if (this.props.filePath) {
-            const fileOrDir = this.props.filePath.split('/').pop()
-            return `${fileOrDir} - ${repoStr}`
+            return `${basename(this.props.filePath)} - ${repoStr}`
         }
         return `${repoStr}`
     }

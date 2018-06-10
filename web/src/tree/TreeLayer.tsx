@@ -230,8 +230,8 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             <td className="tree__cell">
                                 {this.state.treeOrError === LOADING ? (
                                     <div className="tree__row-loader">
-                                        <Loader className="icon-inline directory-page__entries-loader" />Loading files
-                                        and directories
+                                        <Loader className="icon-inline tree-page__entries-loader" />Loading files and
+                                        directories
                                     </div>
                                 ) : isErrorLike(this.state.treeOrError) ? (
                                     <div
@@ -326,7 +326,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                             </div>
                                             {this.state.treeOrError === LOADING && (
                                                 <div className="tree__row-loader">
-                                                    <Loader className="icon-inline directory-page__entries-loader" />
+                                                    <Loader className="icon-inline tree-page__entries-loader" />
                                                 </div>
                                             )}
                                         </div>

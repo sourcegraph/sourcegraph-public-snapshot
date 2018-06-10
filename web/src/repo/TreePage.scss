@@ -1,7 +1,7 @@
 @import '../search/input/SearchButton';
 @import '../search/input/QueryInput';
 
-.directory-page {
+.tree-page {
     overflow-y: auto;
     padding: 1rem 2rem;
     flex: 1;
@@ -61,7 +61,7 @@
     }
 }
 
-.directory-entry {
+.tree-entry {
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -75,7 +75,7 @@
 }
 
 .theme-light {
-    .directory-entry {
+    .tree-entry {
         &:hover {
             background-color: $color-light-bg-2;
         }

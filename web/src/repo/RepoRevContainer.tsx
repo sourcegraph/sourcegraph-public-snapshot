@@ -26,7 +26,7 @@ import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevSidebar } from './RepoRevSidebar'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
-import { DirectoryPage } from './TreePage'
+import { TreePage } from './TreePage'
 
 interface RepoRevContainerProps extends RouteComponentProps<{}> {
     repo: GQL.IRepository
@@ -285,7 +285,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         isLightTheme={this.props.isLightTheme}
                                                     />
                                                 ) : (
-                                                    <DirectoryPage
+                                                    <TreePage
                                                         repoPath={this.props.repo.uri}
                                                         repoID={this.props.repo.id}
                                                         repoDescription={this.props.repo.description}

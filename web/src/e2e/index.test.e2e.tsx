@@ -333,13 +333,11 @@ describe('e2e test suite', () => {
             it('shows a row for each file in the directory', async () => {
                 await page.goto(baseURL + '/github.com/gorilla/securecookie@e59506cc896acb7f7bf732d4fdf5e25f7ccd8983')
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.directory-page__entries-directories')
+                await page.waitForSelector('.tree-page__entries-directories')
                 await retry(async () =>
                     assert.equal(
                         await page.evaluate(
-                            () =>
-                                document.querySelectorAll('.directory-page__entries-directories .directory-entry')
-                                    .length
+                            () => document.querySelectorAll('.tree-page__entries-directories .directory-entry').length
                         ),
                         1
                     )
@@ -347,7 +345,7 @@ describe('e2e test suite', () => {
                 await retry(async () =>
                     assert.equal(
                         await page.evaluate(
-                            () => document.querySelectorAll('.directory-page__entries-files .directory-entry').length
+                            () => document.querySelectorAll('.tree-page__entries-files .directory-entry').length
                         ),
                         7
                     )
