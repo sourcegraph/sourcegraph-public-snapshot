@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"golang.org/x/net/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/pkg/searcher/protocol"
 
@@ -36,9 +37,6 @@ import (
 // Service is the search service. It is an http.Handler.
 type Service struct {
 	Store *Store
-
-	// RequestLog if non-nil will log info per valid search request.
-	RequestLog *log.Logger
 }
 
 var decoder = schema.NewDecoder()
@@ -167,13 +165,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request) (matches []pr
 		span.SetTag("limitHit", limitHit)
 		span.SetTag("deadlineHit", deadlineHit)
 		span.Finish()
-		if s.RequestLog != nil {
-			errS := ""
-			if err != nil {
-				errS = " error=" + strconv.Quote(err.Error())
-			}
-			s.RequestLog.Printf("search request repo=%v commit=%v pattern=%q isRegExp=%v isWordMatch=%v isCaseSensitive=%v patternMatchesContent=%v patternMatchesPath=%v matches=%d code=%s duration=%v%s", p.Repo, p.Commit, p.Pattern, p.IsRegExp, p.IsWordMatch, p.IsCaseSensitive, p.PatternMatchesContent, p.PatternMatchesPath, len(matches), code, time.Since(start), errS)
-		}
+		log15.Debug("search request", "repo", p.Repo, "commit", p.Commit, "pattern", p.Pattern, "isRegExp", p.IsRegExp, "isWordMatch", p.IsWordMatch, "isCaseSensitive", p.IsCaseSensitive, "patternMatchesContent", p.PatternMatchesContent, "patternMatchesPath", p.PatternMatchesPath, "matches", len(matches), "code", code, "duration", time.Since(start), "err", err)
 	}(time.Now())
 
 	rg, err := compile(&p.PatternInfo)

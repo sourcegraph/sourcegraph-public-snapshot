@@ -64,9 +64,6 @@ func main() {
 			MaxConcurrentFetchTar: 10 * len(gitserver.DefaultClient.Addrs),
 		},
 	}
-	if lvl >= log15.LvlInfo {
-		service.RequestLog = log.New(os.Stderr, "", 0)
-	}
 	service.Store.Start()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
 
