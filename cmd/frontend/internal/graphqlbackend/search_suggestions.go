@@ -9,13 +9,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/neelance/parallel"
+	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
 	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"github.com/neelance/parallel"
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
 )
 
 const (
@@ -206,7 +206,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 				allSuggestions = append(allSuggestions, suggestions...)
 				mu.Unlock()
 			} else {
-				if err == context.DeadlineExceeded || err == context.Canceled {
+				if errors.Cause(err) == context.DeadlineExceeded || errors.Cause(err) == context.Canceled {
 					log15.Warn("search suggestions exceeded deadline (skipping)", "query", r.rawQuery())
 				} else if !errcode.IsBadRequest(err) {
 					// We exclude bad user input. Note that this means that we

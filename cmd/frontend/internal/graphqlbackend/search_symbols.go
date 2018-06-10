@@ -8,12 +8,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/neelance/parallel"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-
-	"github.com/neelance/parallel"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -74,7 +74,10 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 			limitHit := len(res) > limit
 			repoErr = handleRepoSearchResult(common, *repoRevs, limitHit, false, repoErr)
 			if repoErr != nil {
-				run.Error(repoErr)
+				if ctx.Err() == nil || errors.Cause(repoErr) != ctx.Err() {
+					// Only record error if it's not directly caused by a context error.
+					run.Error(repoErr)
+				}
 			} else {
 				common.searched = append(common.searched, repoRevs.repo.URI)
 			}
