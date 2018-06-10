@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
@@ -346,6 +347,7 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		return nil, complete, err
 	}
 	complete = complete && complete2
+	var cache refResolveCache
 	for len(data) > 0 {
 		var commit *Commit
 		var refs []string
@@ -366,9 +368,9 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 			Refs:       refs,
 			SourceRefs: []string{commitSourceRefs[string(commit.ID)]},
 		}
-		result.Refs, err = filterAndResolveRefs(ctx, repo, result.Refs)
+		result.Refs, err = filterAndResolveRefs(ctx, repo, result.Refs, &cache)
 		if err == nil {
-			result.SourceRefs, err = filterAndResolveRefs(ctx, repo, result.SourceRefs)
+			result.SourceRefs, err = filterAndResolveRefs(ctx, repo, result.SourceRefs, &cache)
 		}
 		sort.Strings(result.Refs)
 		sort.Strings(result.SourceRefs)
@@ -431,27 +433,56 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 	return results, complete, nil
 }
 
+// cachedRefResolver is a short-lived cache for ref resolutions. Only use it for the lifetime of a
+// single request and for a single repo.
+type refResolveCache struct {
+	mu      sync.Mutex
+	results map[string]struct {
+		target string
+		err    error
+	}
+}
+
+func (r *refResolveCache) resolveHEADSymbolicRef(ctx context.Context, repo gitserver.Repo) (target string, err error) {
+	resolve := func() (string, error) {
+		cmd := gitserver.DefaultClient.Command("git", "rev-parse", "--symbolic-full-name", "HEAD")
+		cmd.Repo = repo
+		stdout, err := cmd.Output(ctx)
+		return string(bytes.TrimSpace(stdout)), err
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if r.results == nil {
+		r.results = map[string]struct {
+			target string
+			err    error
+		}{}
+	}
+	const name = "HEAD" // only needed for HEAD right now
+	e, ok := r.results[name]
+	if !ok {
+		e.target, e.err = resolve()
+		r.results[name] = e
+	}
+	return e.target, e.err
+}
+
 // filterAndResolveRefs replaces "HEAD" entries with the names of the ref they refer to,
 // and it omits "HEAD -> ..." entries.
-func filterAndResolveRefs(ctx context.Context, repo gitserver.Repo, refs []string) ([]string, error) {
-	var headRefTarget string
-
+func filterAndResolveRefs(ctx context.Context, repo gitserver.Repo, refs []string, cache *refResolveCache) ([]string, error) {
 	filtered := refs[:0]
 	for _, ref := range refs {
 		if strings.HasPrefix(ref, "HEAD -> ") {
 			continue
 		}
 		if ref == "HEAD" {
-			if headRefTarget == "" {
-				cmd := gitserver.DefaultClient.Command("git", "rev-parse", "--symbolic-full-name", "HEAD")
-				cmd.Repo = repo
-				stdout, err := cmd.Output(ctx)
-				if err != nil {
-					return nil, err
-				}
-				headRefTarget = string(bytes.TrimSpace(stdout))
+			var err error
+			ref, err = cache.resolveHEADSymbolicRef(ctx, repo)
+			if err != nil {
+				return nil, err
 			}
-			ref = headRefTarget
 		} else if strings.HasPrefix(ref, "tag: ") {
 			ref = strings.TrimPrefix(ref, "tag: ")
 		}
