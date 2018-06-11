@@ -5,6 +5,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ## Unreleased changes
 
 ### Fixed
+
 * Configuring Bitbucket Server now correctly suppresses the the toast message "Configure repositories and code hosts to add to Sourcegraph Server."
 
 ## 2.9.0-pre0
