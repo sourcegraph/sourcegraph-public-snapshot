@@ -30,7 +30,7 @@ import { TreePage } from './TreePage'
 
 interface RepoRevContainerProps extends RouteComponentProps<{}> {
     repo: GQL.IRepository
-    rev: string | undefined
+    rev: string
     user: GQL.IUser | null
     isLightTheme: boolean
     onHelpPopoverToggle: () => void
@@ -246,6 +246,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                                         !!this.props.user && this.props.user.siteAdmin
                                                                     }
                                                                     repoPath={this.props.repo.uri}
+                                                                    rev={this.props.rev}
                                                                     commitID={resolvedRev.commitID}
                                                                     filePath={filePath}
                                                                     language={getModeFromPath(filePath)}

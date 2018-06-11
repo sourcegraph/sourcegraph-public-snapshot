@@ -30,7 +30,7 @@ func (r *repositoryResolver) Packages(ctx context.Context, args *packagesArgs) (
 	if r.repo.IndexedRevision != nil {
 		rev = string(*r.repo.IndexedRevision)
 	}
-	commit, err := r.Commit(ctx, &struct{ Rev string }{Rev: rev})
+	commit, err := r.Commit(ctx, &repositoryCommitArgs{Rev: rev})
 	if err != nil {
 		return nil, err
 	}

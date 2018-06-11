@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { RepoRev } from '.'
 import { toPrettyBlobURL, toTreeURL } from '../util/url'
 
 interface Props {
@@ -53,12 +54,12 @@ class Breadcrumb extends React.Component<Props, {}> {
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
  */
-export const FilePathBreadcrumb: React.SFC<{
-    repoPath: string
-    rev: string | undefined
-    filePath: string
-    isDir: boolean
-}> = ({ repoPath, rev, filePath, isDir }) => {
+export const FilePathBreadcrumb: React.SFC<
+    RepoRev & {
+        filePath: string
+        isDir: boolean
+    }
+> = ({ repoPath, rev, filePath, isDir }) => {
     const parts = filePath.split('/')
     // tslint:disable-next-line:jsx-no-lambda
     return (

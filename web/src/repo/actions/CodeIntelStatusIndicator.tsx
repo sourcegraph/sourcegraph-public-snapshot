@@ -41,13 +41,13 @@ const CapabilityStatus: React.StatelessComponent<{ label: string; provided: bool
 const propsToStateUpdate = (obs: Observable<CodeIntelStatusIndicatorProps>) =>
     obs.pipe(
         distinctUntilChanged((a, b) => a.language === b.language),
-        switchMap(({ repoPath, commitID, filePath, language }) => {
+        switchMap(({ repoPath, rev, commitID, filePath, language }) => {
             if (!language) {
                 return [null]
             }
             return forkJoin(
                 fetchLangServer(language),
-                fetchServerCapabilities({ repoPath, commitID, filePath, language })
+                fetchServerCapabilities({ repoPath, rev, commitID, filePath, language })
             ).pipe(
                 map(([langServer, capabilities]): LangServer => ({
                     displayName: (langServer && langServer.displayName) || undefined,

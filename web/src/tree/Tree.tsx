@@ -4,13 +4,13 @@ import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { Subject } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
-import { Repo } from '../repo/index'
+import { AbsoluteRepo } from '../repo/index'
 import { dirname } from '../util/path'
 import { toBlobURL, toTreeURL } from '../util/url'
 import { TreeLayer } from './TreeLayer'
 import { getDomElement, scrollIntoView } from './util'
 
-interface Props extends Repo {
+interface Props extends AbsoluteRepo {
     history: H.History
     scrollRootSelector?: string
 
@@ -222,6 +222,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     history={this.props.history}
                     repoPath={this.props.repoPath}
                     rev={this.props.rev}
+                    commitID={this.props.commitID}
                     isRoot={true}
                     index={0}
                     // The root is always expanded so it loads the top level

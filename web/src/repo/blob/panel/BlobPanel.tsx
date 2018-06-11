@@ -131,6 +131,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         return fetchServerCapabilities({
                             filePath: subject.filePath,
                             repoPath: subject.repoPath,
+                            rev: subject.rev,
                             commitID: subject.commitID,
                             language,
                         }).pipe(

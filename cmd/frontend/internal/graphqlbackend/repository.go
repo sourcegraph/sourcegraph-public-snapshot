@@ -102,7 +102,12 @@ func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
-func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev string }) (*gitCommitResolver, error) {
+type repositoryCommitArgs struct {
+	Rev          string
+	InputRevspec *string
+}
+
+func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*gitCommitResolver, error) {
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
 		if git.IsRevisionNotFound(err) {
@@ -117,7 +122,11 @@ func (r *repositoryResolver) Commit(ctx context.Context, args *struct{ Rev strin
 	}
 
 	resolver := toGitCommitResolver(r, commit)
-	resolver.inputRev = &args.Rev
+	if args.InputRevspec != nil {
+		resolver.inputRev = args.InputRevspec
+	} else {
+		resolver.inputRev = &args.Rev
+	}
 	return resolver, nil
 }
 
@@ -125,9 +134,9 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 	// This method is a stopgap until we no longer require git:// URIs on the client which include rev data.
 	// THIS RESOLVER WILL BE REMOVED SOON, DO NOT USE IT!!!
 	if r.repo.IndexedRevision != nil && *r.repo.IndexedRevision != "" {
-		return r.Commit(ctx, &struct{ Rev string }{Rev: string(*r.repo.IndexedRevision)})
+		return r.Commit(ctx, &repositoryCommitArgs{Rev: string(*r.repo.IndexedRevision)})
 	}
-	return r.Commit(ctx, &struct{ Rev string }{Rev: "HEAD"})
+	return r.Commit(ctx, &repositoryCommitArgs{Rev: "HEAD"})
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
@@ -288,7 +297,7 @@ func (*schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struct 
 			return nil, err
 		}
 		r := &repositoryResolver{repo: repo}
-		return r.Commit(ctx, &struct{ Rev string }{Rev: targetRef})
+		return r.Commit(ctx, &repositoryCommitArgs{Rev: targetRef})
 	}
 
 	// If we already created the commit

@@ -4,6 +4,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+import { AbsoluteRepoFile } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
@@ -13,12 +14,8 @@ import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
 type SidebarTabID = 'files' | 'symbols'
 
-interface Props {
+interface Props extends AbsoluteRepoFile {
     repoID: GQL.ID
-    repoPath: string
-    rev: string | undefined
-    commitID: string
-    filePath: string
     isDir: boolean
     defaultBranch: string
     className: string
@@ -108,6 +105,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             key="files"
                             repoPath={this.props.repoPath}
                             rev={this.props.rev}
+                            commitID={this.props.commitID}
                             history={this.props.history}
                             scrollRootSelector="#explorer"
                             activePath={this.props.filePath}

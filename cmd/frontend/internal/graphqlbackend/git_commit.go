@@ -23,7 +23,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*gitCommitResolver, erro
 	if err != nil {
 		return nil, err
 	}
-	return repo.Commit(ctx, &struct{ Rev string }{Rev: string(commitID)})
+	return repo.Commit(ctx, &repositoryCommitArgs{Rev: string(commitID)})
 }
 
 type gitCommitResolver struct {
@@ -91,7 +91,7 @@ func (r *gitCommitResolver) Parents(ctx context.Context) ([]*gitCommitResolver, 
 	resolvers := make([]*gitCommitResolver, len(r.parents))
 	for i, parent := range r.parents {
 		var err error
-		resolvers[i], err = r.repo.Commit(ctx, &struct{ Rev string }{Rev: string(parent)})
+		resolvers[i], err = r.repo.Commit(ctx, &repositoryCommitArgs{Rev: string(parent)})
 		if err != nil {
 			return nil, err
 		}

@@ -38,7 +38,7 @@ const NotALink: React.SFC<{ to: any; children: React.ReactElement<any> }> = ({ c
  */
 export const RepoFileLink: React.SFC<RepoBreadcrumbProps> = ({
     repoPath,
-    rev,
+    rev = '',
     filePath,
     disableLinks,
     isDirectory,

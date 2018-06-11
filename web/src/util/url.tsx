@@ -7,6 +7,7 @@ import {
     Repo,
     RepoFile,
     ResolvedRevSpec,
+    RevSpec,
     ViewStateSpec,
 } from '../repo'
 
@@ -167,12 +168,12 @@ export function toViewStateHashComponent(viewState: string | undefined): string 
     return viewState ? `$${viewState}` : ''
 }
 
-export function toRepoURL(ctx: Repo & Partial<ResolvedRevSpec>): string {
+export function toRepoURL(ctx: Repo & Partial<RevSpec> & Partial<ResolvedRevSpec>): string {
     const rev = ctx.commitID || ctx.rev || ''
     return `/${encodeRepoRev(ctx.repoPath, rev)}`
 }
 
-export function toPrettyRepoURL(ctx: Repo): string {
+export function toPrettyRepoURL(ctx: Repo & Partial<RevSpec>): string {
     return `/${encodeRepoRev(ctx.repoPath, ctx.rev)}`
 }
 

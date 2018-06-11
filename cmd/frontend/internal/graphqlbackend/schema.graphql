@@ -785,7 +785,14 @@ type Repository implements Node {
     # The date when this repository's metadata was last updated on Sourcegraph.
     updatedAt: String
     # Returns information about the given commit in the repository.
-    commit(rev: String!): GitCommit
+    commit(
+        # The Git revision specifier (revspec) for the commit.
+        rev: String!
+        # Optional input revspec used to construct non-canonical URLs and other "friendly" field values. Used by
+        # clients that must ensure consistency of revision resolution within a session/request (so they use full
+        # SHAs) but also preserve the user input rev (for user friendliness).
+        inputRevspec: String
+    ): GitCommit
     # Information and status related to mirroring, if this repository is a mirror of another repository (e.g., on
     # some code host). In this case, the remote source repository is external to Sourcegraph and the mirror is
     # maintained by the Sourcegraph site (not the other way around).

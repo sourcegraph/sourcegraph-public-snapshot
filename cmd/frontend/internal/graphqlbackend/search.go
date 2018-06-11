@@ -620,9 +620,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 	}
 
 	repoResolver := &repositoryResolver{repo: repoRevs.repo}
-	commitResolver, err := repoResolver.Commit(ctx, &struct {
-		Rev string
-	}{Rev: repoRevs.revspecs()[0]}) // TODO(sqs): search all revspecs
+	commitResolver, err := repoResolver.Commit(ctx, &repositoryCommitArgs{Rev: repoRevs.revspecs()[0]}) // TODO(sqs): search all revspecs
 	if err != nil {
 		return nil, err
 	}

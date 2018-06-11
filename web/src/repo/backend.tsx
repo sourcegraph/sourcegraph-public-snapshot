@@ -4,7 +4,7 @@ import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
-import { makeRepoURI } from './index'
+import { AbsoluteRepoFile, makeRepoURI, RepoRev } from './index'
 
 // We don't subclass Error because Error is not subclassable in ES5.
 // Use the internal factory functions and check for the error code on callsites.
@@ -225,14 +225,8 @@ export const fetchHighlightedFileLines = memoizeObservable(
     ctx => makeRepoURI(ctx) + `?isLightTheme=${ctx.isLightTheme}`
 )
 
-interface FetchFileMetadataCtx {
-    repoPath: string
-    rev: string
-    filePath: string
-}
-
 export const fetchFileExternalLinks = memoizeObservable(
-    (ctx: FetchFileMetadataCtx): Observable<GQL.IExternalLink[]> =>
+    (ctx: RepoRev & { filePath: string }): Observable<GQL.IExternalLink[]> =>
         queryGraphQL(
             gql`
                 query FileExternalLinks($repoPath: String!, $rev: String!, $filePath: String!) {
@@ -267,12 +261,12 @@ export const fetchFileExternalLinks = memoizeObservable(
 )
 
 export const fetchTree = memoizeObservable(
-    (args: FetchFileMetadataCtx & { first?: number }): Observable<GQL.IGitTree> =>
+    (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(
             gql`
-                query Tree($repoPath: String!, $rev: String!, $filePath: String!, $first: Int) {
+                query Tree($repoPath: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
                     repository(uri: $repoPath) {
-                        commit(rev: $rev) {
+                        commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
                                 isRoot
                                 directories(first: $first) {
@@ -303,12 +297,12 @@ export const fetchTree = memoizeObservable(
 )
 
 export const fetchTreeEntries = memoizeObservable(
-    (args: FetchFileMetadataCtx & { first?: number }): Observable<GQL.IGitTree> =>
+    (args: AbsoluteRepoFile & { first?: number }): Observable<GQL.IGitTree> =>
         queryGraphQL(
             gql`
-                query Tree($repoPath: String!, $rev: String!, $filePath: String!, $first: Int) {
+                query Tree($repoPath: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
                     repository(uri: $repoPath) {
-                        commit(rev: $rev) {
+                        commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
                                 entries(first: $first) {
                                     name

@@ -13,6 +13,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { RepoRev } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { Form } from '../components/Form'
@@ -32,13 +33,13 @@ import { fetchTree } from './backend'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { FilteredGitCommitConnection, gitCommitFragment } from './commits/RepositoryCommitsPage'
 
-const TreeEntry: React.SFC<{
-    isDir: boolean
-    name: string
-    parentPath: string
-    repoPath: string
-    rev?: string
-}> = ({ isDir, name, parentPath, repoPath, rev }) => {
+const TreeEntry: React.SFC<
+    RepoRev & {
+        isDir: boolean
+        name: string
+        parentPath: string
+    }
+> = ({ isDir, name, parentPath, repoPath, rev }) => {
     const filePath = parentPath ? parentPath + '/' + name : name
     return (
         <Link
@@ -106,7 +107,7 @@ interface Props {
     // filePath is the tree's path in TreePage. We call it filePath for consistency elsewhere.
     filePath: string
     commitID: string
-    rev?: string
+    rev: string
     isLightTheme: boolean
     onHelpPopoverToggle: () => void
 
@@ -153,7 +154,8 @@ export class TreePage extends React.PureComponent<Props, State> {
                     switchMap(props =>
                         fetchTree({
                             repoPath: props.repoPath,
-                            rev: props.commitID,
+                            commitID: props.commitID,
+                            rev: props.rev,
                             filePath: props.filePath,
                             first: 2500,
                         }).pipe(

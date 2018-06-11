@@ -204,6 +204,7 @@ export class FileMatch extends React.PureComponent<Props> {
                         >
                             <CodeExcerpt
                                 repoPath={info.repoPath}
+                                rev={info.rev}
                                 commitID={info.rev}
                                 filePath={info.filePath}
                                 previewWindowExtraLines={1}

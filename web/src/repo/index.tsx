@@ -91,22 +91,27 @@ export interface ParsedRepoURI
 /**
  * A repo
  */
-export interface Repo extends RepoSpec, Partial<RevSpec> {}
+export interface Repo extends RepoSpec {}
+
+/**
+ * A repo with a (possibly unresolved) revspec.
+ */
+export interface RepoRev extends RepoSpec, RevSpec {}
 
 /**
  * A repo resolved to an exact commit
  */
-export interface AbsoluteRepo extends RepoSpec, Partial<RevSpec>, ResolvedRevSpec {}
+export interface AbsoluteRepo extends RepoSpec, RevSpec, ResolvedRevSpec {}
 
 /**
  * A file in a repo
  */
-export interface RepoFile extends RepoSpec, Partial<RevSpec>, Partial<ResolvedRevSpec>, FileSpec {}
+export interface RepoFile extends RepoSpec, RevSpec, Partial<ResolvedRevSpec>, FileSpec {}
 
 /**
  * A file at an exact commit
  */
-export interface AbsoluteRepoFile extends RepoSpec, Partial<RevSpec>, ResolvedRevSpec, FileSpec {}
+export interface AbsoluteRepoFile extends RepoSpec, RevSpec, ResolvedRevSpec, FileSpec {}
 
 /**
  * A file at an exact commit of a known programming language
@@ -120,7 +125,7 @@ export interface AbsoluteRepoLanguageFile extends AbsoluteRepoFile {
  */
 export interface RepoFilePosition
     extends RepoSpec,
-        Partial<RevSpec>,
+        RevSpec,
         Partial<ResolvedRevSpec>,
         FileSpec,
         PositionSpec,
@@ -132,7 +137,7 @@ export interface RepoFilePosition
  */
 export interface AbsoluteRepoFilePosition
     extends RepoSpec,
-        Partial<RevSpec>,
+        RevSpec,
         ResolvedRevSpec,
         FileSpec,
         PositionSpec,
@@ -144,7 +149,7 @@ export interface AbsoluteRepoFilePosition
  */
 export interface AbsoluteRepoFileRange
     extends RepoSpec,
-        Partial<RevSpec>,
+        RevSpec,
         ResolvedRevSpec,
         FileSpec,
         RangeSpec,

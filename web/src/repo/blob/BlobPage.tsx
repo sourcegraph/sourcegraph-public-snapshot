@@ -12,7 +12,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { lprToRange, parseHash } from '../../util/url'
-import { makeRepoURI, ParsedRepoURI } from '../index'
+import { AbsoluteRepoFile, makeRepoURI, ParsedRepoURI } from '../index'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
@@ -73,15 +73,11 @@ const fetchBlob = memoizeObservable(
     fetchBlobCacheKey
 )
 
-interface Props {
+interface Props extends AbsoluteRepoFile {
     location: H.Location
     history: H.History
     isLightTheme: boolean
-    repoPath: string
     repoID: GQL.ID
-    rev: string | undefined
-    commitID: string
-    filePath: string
 }
 
 interface State {

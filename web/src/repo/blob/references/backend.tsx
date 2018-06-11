@@ -104,7 +104,11 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                                 const repo = idToRepo(ref.repoId)
                                 const commit = repo.lastIndexedRevOrLatest
                                 return {
-                                    workspace: commit && { repoPath: repo.uri, commitID: commit.oid },
+                                    workspace: commit && {
+                                        repoPath: repo.uri,
+                                        rev: commit.oid, // TODO(sqs): use short ref when possible for nicer URLs
+                                        commitID: commit.oid,
+                                    },
                                     hints: ref.hints ? JSON.parse(ref.hints) : {},
                                 }
                             })

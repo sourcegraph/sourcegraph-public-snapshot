@@ -340,7 +340,11 @@ export const fetchXreferences = memoizeObservable(
                     limit: options.limit,
                 },
             },
-            { repoPath: options.repoPath, commitID: options.commitID },
+            {
+                repoPath: options.repoPath,
+                rev: options.rev,
+                commitID: options.commitID,
+            },
             options.filePath
         ).pipe(map((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference))),
     options => makeRepoURI(options) + ':' + JSON.stringify([options.query, options.hints, options.limit])

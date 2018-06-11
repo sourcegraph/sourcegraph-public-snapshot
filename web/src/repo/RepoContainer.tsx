@@ -239,7 +239,7 @@ export class RepoContainer extends React.Component<Props, State> {
                                     <RepoRevContainer
                                         {...routeComponentProps}
                                         {...transferProps}
-                                        rev={this.state.rev}
+                                        rev={this.state.rev || ''}
                                         // must exactly match how the rev was encoded in the URL
                                         routePrefix={`${repoMatchURL}${
                                             this.state.rawRev ? `@${this.state.rawRev}` : ''

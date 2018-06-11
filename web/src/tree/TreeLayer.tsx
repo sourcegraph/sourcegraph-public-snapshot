@@ -18,12 +18,12 @@ import {
 } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { fetchTreeEntries } from '../repo/backend'
-import { Repo } from '../repo/index'
+import { AbsoluteRepo } from '../repo/index'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { toBlobURL, toTreeURL } from '../util/url'
 import { TreeNode } from './Tree'
 
-interface TreeLayerProps extends Repo {
+interface TreeLayerProps extends AbsoluteRepo {
     history: H.History
     activeNode: TreeNode
     activePath: string
@@ -92,7 +92,8 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     switchMap(props => {
                         const treeFetch = fetchTreeEntries({
                             repoPath: props.repoPath,
-                            rev: props.rev || '',
+                            rev: props.rev,
+                            commitID: props.commitID,
                             filePath: props.parentPath || '',
                             first: maxEntries,
                         }).pipe(catchError(err => [asError(err)]), share())
@@ -120,7 +121,8 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     mergeMap(path =>
                         fetchTreeEntries({
                             repoPath: this.props.repoPath,
-                            rev: this.props.rev || '',
+                            rev: this.props.rev,
+                            commitID: this.props.commitID,
                             filePath: path || '',
                             first: maxEntries,
                         }).pipe(catchError(err => [asError(err)]))
@@ -256,6 +258,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                             expandedTrees={this.props.expandedTrees}
                                             repoPath={this.props.repoPath}
                                             rev={this.props.rev}
+                                            commitID={this.props.commitID}
                                             entryInfo={item}
                                             parent={this.node}
                                             parentPath={item.path}
@@ -370,6 +373,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                             parentPath={item.path}
                                                             repoPath={this.props.repoPath}
                                                             rev={this.props.rev}
+                                                            commitID={this.props.commitID}
                                                             entryInfo={item}
                                                             onSelect={this.props.onSelect}
                                                             onToggleExpand={this.props.onToggleExpand}
