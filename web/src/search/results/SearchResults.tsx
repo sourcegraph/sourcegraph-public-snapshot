@@ -41,6 +41,7 @@ interface SearchResultsState {
     scopes?: SearchScope[]
 }
 
+const newRepoFilters = localStorage.getItem('newRepoFilters') !== 'false'
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
         didSaveQuery: false,
@@ -159,7 +160,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             </div>
                         </div>
                     )}
-                {isSearchResults(this.state.resultsOrError) &&
+                {newRepoFilters &&
+                    isSearchResults(this.state.resultsOrError) &&
                     this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind === 'repo').length > 0 && (
                         <div className="search-results__filters-bar">
                             Repositories:
@@ -216,7 +218,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         const filters = new Map<string, SearchScope>()
 
         if (isSearchResults(this.state.resultsOrError) && this.state.resultsOrError.dynamicFilters) {
-            const dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
+            let dynamicFilters = this.state.resultsOrError.dynamicFilters
+            if (newRepoFilters) {
+                dynamicFilters = this.state.resultsOrError.dynamicFilters.filter(filter => filter.kind !== 'repo')
+            }
             for (const d of dynamicFilters) {
                 filters.set(d.value, d)
             }
