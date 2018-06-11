@@ -710,9 +710,9 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		err = nil
 	}
 
-	common.repos = make([]api.RepoURI, len(args.repos))
+	common.repos = make([]*types.Repo, len(args.repos))
 	for i, repo := range args.repos {
-		common.repos[i] = repo.repo.URI
+		common.repos[i] = repo.repo
 	}
 
 	if args.query.isEmpty() {
@@ -734,9 +734,9 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 			if zoektCache == nil {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
-			common.missing = make([]api.RepoURI, len(searcherRepos))
+			common.missing = make([]*types.Repo, len(searcherRepos))
 			for i, r := range searcherRepos {
-				common.missing[i] = r.repo.URI
+				common.missing[i] = r.repo
 			}
 			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
 			searcherRepos = nil
@@ -815,7 +815,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {
-				common.searched = append(common.searched, repoRev.repo.URI)
+				common.searched = append(common.searched, repoRev.repo)
 			}
 			if repoLimitHit {
 				// We did not return all results in this repository.
@@ -848,8 +848,8 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 		defer mu.Unlock()
 		if ctx.Err() == nil {
 			for _, repo := range zoektRepos {
-				common.searched = append(common.searched, repo.repo.URI)
-				common.indexed = append(common.indexed, repo.repo.URI)
+				common.searched = append(common.searched, repo.repo)
+				common.indexed = append(common.indexed, repo.repo)
 			}
 			for repo := range reposLimitHit {
 				// Repos that aren't included in the result set due to exceeded limits are partially searched

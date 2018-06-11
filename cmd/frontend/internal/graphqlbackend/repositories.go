@@ -358,6 +358,22 @@ func repoURIsToStrings(repoURIs []api.RepoURI) []string {
 	return strings
 }
 
+func toRepositoryResolvers(repos []*types.Repo) []*repositoryResolver {
+	resolvers := make([]*repositoryResolver, len(repos))
+	for i, repo := range repos {
+		resolvers[i] = &repositoryResolver{repo: repo}
+	}
+	return resolvers
+}
+
+func toRepoURIs(repos []*types.Repo) []api.RepoURI {
+	uris := make([]api.RepoURI, len(repos))
+	for i, repo := range repos {
+		uris[i] = repo.URI
+	}
+	return uris
+}
+
 func toDBRepoListColumn(ob string) db.RepoListColumn {
 	switch ob {
 	case "REPO_URI":

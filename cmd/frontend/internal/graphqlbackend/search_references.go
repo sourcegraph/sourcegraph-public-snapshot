@@ -157,7 +157,7 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, query se
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {
-				common.searched = append(common.searched, repoRev.repo.URI)
+				common.searched = append(common.searched, repoRev.repo)
 			}
 			// non-diff search reports timeout through searchErr, so pass false for timedOut
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, searchErr); fatalErr != nil {

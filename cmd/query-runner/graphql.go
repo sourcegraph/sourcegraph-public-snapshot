@@ -29,9 +29,8 @@ const gqlSearchQuery = `query Search(
 		results {
 			approximateResultCount
 			limitHit
-			missing
-			cloning
-			timedout
+			cloning { uri }
+			timedout { uri }
 			results {
 				__typename
 				... on FileMatch {
@@ -116,8 +115,8 @@ type gqlSearchResponse struct {
 		Search struct {
 			Results struct {
 				ApproximateResultCount string
-				Cloning                []string
-				Timedout               []string
+				Cloning                []*api.Repo
+				Timedout               []*api.Repo
 				Results                []interface{}
 			}
 		}

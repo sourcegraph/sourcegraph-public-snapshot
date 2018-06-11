@@ -102,9 +102,9 @@ const gqlSearch = `query Search(
 	search(query: $query) {
 		results {
 			limitHit
-			missing
-			cloning
-			timedout
+			missing { uri }
+			cloning { uri }
+			timedout { uri }
 			results {
 				__typename
 				... on FileMatch {

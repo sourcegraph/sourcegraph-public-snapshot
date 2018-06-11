@@ -39,7 +39,7 @@ interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }> {}
 
 interface State {
     query: string
-    repoList?: string[]
+    repositories?: { name: string; url: string }[]
     searchScopes?: SearchScope[]
     id?: string
     name?: string
@@ -57,7 +57,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
 
     public state: State = {
         query: '',
-        repoList: [],
+        repositories: [],
         value: '',
         first: 50,
     }
@@ -89,10 +89,10 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                 }).pipe(
                                     concat(
                                         fetchReposByQuery(matchedScope.value).pipe(
-                                            map(repoList => ({ repoList, errorMessage: undefined })),
+                                            map(repositories => ({ repositories, errorMessage: undefined })),
                                             catchError(err => {
                                                 console.error(err)
-                                                return [{ errorMessage: err.message, repoList: [], first: 0 }]
+                                                return [{ errorMessage: err.message, repositories: [], first: 0 }]
                                             })
                                         )
                                     )
@@ -103,7 +103,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                 {
                                     ...matchedScope,
                                     markdownDescription,
-                                    repoList: [],
+                                    repositories: [],
                                     errorMessage: undefined,
                                     first: 0,
                                 },
@@ -115,7 +115,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                 name: undefined,
                                 value: '',
                                 markdownDescription: '',
-                                repoList: [],
+                                repositories: [],
                                 errorMessage: undefined,
                                 first: 0,
                             },
@@ -185,27 +185,28 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                     <p className="alert alert-danger">{this.state.errorMessage}</p>
                                 )}
                                 {!this.state.errorMessage &&
-                                    (this.state.repoList && this.state.repoList.length > 0 ? (
+                                    (this.state.repositories && this.state.repositories.length > 0 ? (
                                         <div>
                                             <p>Repositories included in this scope:</p>
                                             <div>
-                                                {this.state.repoList.slice(0, this.state.first).map((repo, i) => (
+                                                {this.state.repositories.slice(0, this.state.first).map((repo, i) => (
                                                     <div key={i} className="scope-page__row">
-                                                        <Link to={`/${repo}`} className="scope-page__link">
+                                                        <Link to={repo.url} className="scope-page__link">
                                                             <RepositoryIcon className="icon-inline scope-page__link-icon" />
-                                                            <RepoFileLink repoPath={repo} disableLinks={true} />
+                                                            <RepoFileLink repoPath={repo.name} disableLinks={true} />
                                                         </Link>
                                                     </div>
                                                 ))}
                                             </div>
                                             <p className="scope-page__count">
-                                                {this.state.repoList.length}{' '}
-                                                {this.state.repoList.length > 1 ? 'repositories ' : 'repository '} total{' '}
-                                                {this.state.repoList.length > this.state.first
+                                                {this.state.repositories.length}{' '}
+                                                {this.state.repositories.length > 1 ? 'repositories ' : 'repository '}{' '}
+                                                total{' '}
+                                                {this.state.repositories.length > this.state.first
                                                     ? `(showing first ${this.state.first})`
                                                     : ''}{' '}
                                             </p>
-                                            {this.state.first < this.state.repoList.length && (
+                                            {this.state.first < this.state.repositories.length && (
                                                 <button
                                                     className="btn btn-secondary btn-sm scope-page__show-more"
                                                     onClick={this.onShowMore}

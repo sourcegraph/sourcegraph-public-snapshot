@@ -176,15 +176,15 @@ func TestSearchFilesInRepos(t *testing.T) {
 	if len(results) != 2 {
 		t.Errorf("expected two results, got %d", len(results))
 	}
-	if !reflect.DeepEqual(common.cloning, []api.RepoURI{"foo/cloning"}) {
-		t.Errorf("unexpected cloning: %v", common.cloning)
+	if v := toRepoURIs(common.cloning); !reflect.DeepEqual(v, []api.RepoURI{"foo/cloning"}) {
+		t.Errorf("unexpected cloning: %v", v)
 	}
-	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i] < common.missing[j] }) // to make deterministic
-	if !reflect.DeepEqual(common.missing, []api.RepoURI{"foo/missing", "foo/missing-db"}) {
-		t.Errorf("unexpected missing: %v", common.missing)
+	sort.Slice(common.missing, func(i, j int) bool { return common.missing[i].URI < common.missing[j].URI }) // to make deterministic
+	if v := toRepoURIs(common.missing); !reflect.DeepEqual(v, []api.RepoURI{"foo/missing", "foo/missing-db"}) {
+		t.Errorf("unexpected missing: %v", v)
 	}
-	if !reflect.DeepEqual(common.timedout, []api.RepoURI{"foo/timedout"}) {
-		t.Errorf("unexpected timedout: %v", common.timedout)
+	if v := toRepoURIs(common.timedout); !reflect.DeepEqual(v, []api.RepoURI{"foo/timedout"}) {
+		t.Errorf("unexpected timedout: %v", v)
 	}
 
 	// If we specify a rev and it isn't found, we fail the whole search since

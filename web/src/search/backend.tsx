@@ -18,9 +18,15 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                         limitHit
                         resultCount
                         approximateResultCount
-                        missing
-                        cloning
-                        timedout
+                        missing {
+                            uri
+                        }
+                        cloning {
+                            uri
+                        }
+                        timedout {
+                            uri
+                        }
                         indexUnavailable
                         dynamicFilters {
                             value
@@ -231,13 +237,16 @@ export function fetchSearchScopes(): Observable<GQL.ISearchScope[]> {
     )
 }
 
-export function fetchReposByQuery(query: string): Observable<string[]> {
+export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
     return queryGraphQL(
         gql`
             query ReposByQuery($query: String!) {
                 search(query: $query) {
                     results {
-                        repositories
+                        repositories {
+                            name
+                            url
+                        }
                     }
                 }
             }

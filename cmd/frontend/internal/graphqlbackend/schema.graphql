@@ -549,20 +549,20 @@ type SearchResults {
     # Integers representing the sparkline for the search results.
     sparkline: [Int!]!
     # Repositories that were eligible to be searched.
-    repositories: [String!]!
+    repositories: [Repository!]!
     # Repositories that were actually searched. Excludes repositories that would have been searched but were not
     # because a timeout or error occurred while performing the search, or because the result limit was already
     # reached.
-    repositoriesSearched: [String!]!
+    repositoriesSearched: [Repository!]!
     # Indexed repositories searched. This is a subset of repositoriesSearched.
-    indexedRepositoriesSearched: [String!]!
+    indexedRepositoriesSearched: [Repository!]!
     # Repositories that are busy cloning onto gitserver.
-    cloning: [String!]!
+    cloning: [Repository!]!
     # Repositories or commits that do not exist.
-    missing: [String!]!
+    missing: [Repository!]!
     # Repositories or commits which we did not manage to search in time. Trying
     # again usually will work.
-    timedout: [String!]!
+    timedout: [Repository!]!
     # True if indexed search is enabled but was not available during this search.
     indexUnavailable: Boolean!
     # An alert message that should be displayed before any results.

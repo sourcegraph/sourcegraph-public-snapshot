@@ -892,9 +892,9 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 	common.limitHit = common.limitHit || limitHit
 	if vcs.IsRepoNotExist(searchErr) {
 		if vcs.IsCloneInProgress(searchErr) {
-			common.cloning = append(common.cloning, repoRev.repo.URI)
+			common.cloning = append(common.cloning, repoRev.repo)
 		} else {
-			common.missing = append(common.missing, repoRev.repo.URI)
+			common.missing = append(common.missing, repoRev.repo)
 		}
 	} else if git.IsRevisionNotFound(searchErr) {
 		if len(repoRev.revs) == 0 || len(repoRev.revs) == 1 && repoRev.revs[0].revspec == "" {
@@ -903,9 +903,9 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev repositoryRevis
 			return searchErr
 		}
 	} else if errcode.IsNotFound(searchErr) {
-		common.missing = append(common.missing, repoRev.repo.URI)
+		common.missing = append(common.missing, repoRev.repo)
 	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		common.timedout = append(common.timedout, repoRev.repo.URI)
+		common.timedout = append(common.timedout, repoRev.repo)
 	} else if searchErr != nil {
 		return searchErr
 	}

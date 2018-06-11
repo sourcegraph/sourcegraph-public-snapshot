@@ -22,6 +22,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -34,11 +35,11 @@ import (
 // that contribute to the overall search result set.
 type searchResultsCommon struct {
 	limitHit bool                     // whether the limit on results was hit
-	repos    []api.RepoURI            // repos that were matched by the repo-related filters
-	searched []api.RepoURI            // repos that were searched
-	indexed  []api.RepoURI            // repos that were searched using an index
-	cloning  []api.RepoURI            // repos that could not be searched because they were still being cloned
-	missing  []api.RepoURI            // repos that could not be searched because they do not exist
+	repos    []*types.Repo            // repos that were matched by the repo-related filters
+	searched []*types.Repo            // repos that were searched
+	indexed  []*types.Repo            // repos that were searched using an index
+	cloning  []*types.Repo            // repos that could not be searched because they were still being cloned
+	missing  []*types.Repo            // repos that could not be searched because they do not exist
 	partial  map[api.RepoURI]struct{} // repos that were searched, but have results that were not returned due to exceeded limits
 
 	maxResultsCount, resultCount int32
@@ -46,7 +47,7 @@ type searchResultsCommon struct {
 	// timedout usually contains repos that haven't finished being fetched yet.
 	// This should only happen for large repos and the searcher caches are
 	// purged.
-	timedout []api.RepoURI
+	timedout []*types.Repo
 
 	indexUnavailable bool // True if indexed search is enabled but was not available during this search.
 }
@@ -55,46 +56,46 @@ func (c *searchResultsCommon) LimitHit() bool {
 	return c.limitHit || c.resultCount > c.maxResultsCount
 }
 
-func (c *searchResultsCommon) Repositories() []string {
+func (c *searchResultsCommon) Repositories() []*repositoryResolver {
 	if c.repos == nil {
-		return []string{}
+		return []*repositoryResolver{}
 	}
-	return repoURIsToStrings(c.repos)
+	return toRepositoryResolvers(c.repos)
 }
 
-func (c *searchResultsCommon) RepositoriesSearched() []string {
+func (c *searchResultsCommon) RepositoriesSearched() []*repositoryResolver {
 	if c.searched == nil {
-		return []string{}
+		return nil
 	}
-	return repoURIsToStrings(c.searched)
+	return toRepositoryResolvers(c.searched)
 }
 
-func (c *searchResultsCommon) IndexedRepositoriesSearched() []string {
+func (c *searchResultsCommon) IndexedRepositoriesSearched() []*repositoryResolver {
 	if c.indexed == nil {
-		return []string{}
+		return nil
 	}
-	return repoURIsToStrings(c.indexed)
+	return toRepositoryResolvers(c.indexed)
 }
 
-func (c *searchResultsCommon) Cloning() []string {
+func (c *searchResultsCommon) Cloning() []*repositoryResolver {
 	if c.cloning == nil {
-		return []string{}
+		return nil
 	}
-	return repoURIsToStrings(c.cloning)
+	return toRepositoryResolvers(c.cloning)
 }
 
-func (c *searchResultsCommon) Missing() []string {
+func (c *searchResultsCommon) Missing() []*repositoryResolver {
 	if c.missing == nil {
-		return []string{}
+		return nil
 	}
-	return repoURIsToStrings(c.missing)
+	return toRepositoryResolvers(c.missing)
 }
 
-func (c *searchResultsCommon) Timedout() []string {
+func (c *searchResultsCommon) Timedout() []*repositoryResolver {
 	if c.timedout == nil {
-		return []string{}
+		return nil
 	}
-	return repoURIsToStrings(c.timedout)
+	return toRepositoryResolvers(c.timedout)
 }
 
 func (c *searchResultsCommon) IndexUnavailable() bool {
@@ -107,12 +108,12 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 	c.limitHit = c.limitHit || other.limitHit
 	c.indexUnavailable = c.indexUnavailable || other.indexUnavailable
 
-	appendUnique := func(dstp *[]api.RepoURI, src []api.RepoURI) {
+	appendUnique := func(dstp *[]*types.Repo, src []*types.Repo) {
 		dst := *dstp
-		sort.Slice(dst, func(i, j int) bool { return dst[i] < dst[j] })
-		sort.Slice(src, func(i, j int) bool { return src[i] < src[j] })
+		sort.Slice(dst, func(i, j int) bool { return dst[i].ID < dst[j].ID })
+		sort.Slice(src, func(i, j int) bool { return src[i].ID < src[j].ID })
 		for _, r := range dst {
-			for len(src) > 0 && src[0] <= r {
+			for len(src) > 0 && src[0].ID <= r.ID {
 				if r != src[0] {
 					dst = append(dst, src[0])
 				}
@@ -120,7 +121,7 @@ func (c *searchResultsCommon) update(other searchResultsCommon) {
 			}
 		}
 		dst = append(dst, src...)
-		sort.Slice(dst, func(i, j int) bool { return dst[i] < dst[j] })
+		sort.Slice(dst, func(i, j int) bool { return dst[i].ID < dst[j].ID })
 		*dstp = dst
 	}
 	appendUnique(&c.repos, other.repos)
