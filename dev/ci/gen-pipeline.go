@@ -235,6 +235,9 @@ func main() {
 		Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
 		Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
 
+	pipeline.AddStep(":go:",
+		Cmd("dev/check/go-dep.sh"))
+
 	for _, path := range pkgs() {
 		coverageFile := path + "/coverage.txt"
 		stepOpts := []StepOpt{
