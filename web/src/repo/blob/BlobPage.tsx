@@ -90,7 +90,7 @@ interface State {
     blobOrError?: GQL.IGitBlob | ErrorLike
 }
 
-const useNewBlob = window.context.sourcegraphDotComMode || localStorage.getItem('blobVersion') === '2'
+const blobVersion = parseInt(localStorage.getItem('blobVersion') || '2', 10)
 
 export class BlobPage extends React.PureComponent<Props, State> {
     private propsUpdates = new Subject<Props>()
@@ -208,7 +208,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 {renderAs === 'code' &&
                     !this.state.blobOrError.highlight.aborted && (
                         <>
-                            {useNewBlob ? (
+                            {blobVersion === 2 ? (
                                 <Blob2
                                     className="blob-page__blob"
                                     repoPath={this.props.repoPath}
