@@ -7,9 +7,9 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 const (
@@ -62,7 +62,11 @@ func (r *Cache) Set(key string, b []byte) {
 	defer c.Close()
 
 	if !utf8.Valid([]byte(key)) {
-		panic(fmt.Sprintf("rcache: keys must be valid utf8 %v", []byte(key)))
+		if conf.IsDev(conf.DeployType()) {
+			panic(fmt.Sprintf("rcache: keys must be valid utf8 %v", []byte(key)))
+		} else {
+			log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
+		}
 	}
 
 	if r.ttlSeconds == 0 {
