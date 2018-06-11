@@ -3,6 +3,7 @@ import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, mergeMap, tap } from 'rxjs/operators'
 import { EmailInput, UsernameInput } from '../auth/SignInSignUpCommon'
+import * as GQL from '../backend/graphqlschema'
 import { CopyableText } from '../components/CopyableText'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
@@ -16,9 +17,9 @@ interface State {
     loading: boolean
 
     /**
-     * The password reset URL generated for the new user account.
+     * The result of creating the user.
      */
-    newUserPasswordResetURL?: string | null
+    createUserResult?: GQL.ICreateUserResult
 
     // Form
     username: string
@@ -46,6 +47,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                 .pipe(
                     tap(() =>
                         this.setState({
+                            createUserResult: undefined,
                             loading: true,
                             errorDescription: undefined,
                         })
@@ -54,18 +56,22 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                         createUser(username, email).pipe(
                             catchError(error => {
                                 console.error(error)
-                                this.setState({ loading: false, errorDescription: error.message })
+                                this.setState({
+                                    createUserResult: undefined,
+                                    loading: false,
+                                    errorDescription: error.message,
+                                })
                                 return []
                             })
                         )
                     )
                 )
                 .subscribe(
-                    ({ resetPasswordURL }) =>
+                    createUserResult =>
                         this.setState({
                             loading: false,
                             errorDescription: undefined,
-                            newUserPasswordResetURL: resetPasswordURL,
+                            createUserResult,
                         }),
                     error => console.error(error)
                 )
@@ -91,15 +97,15 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                     <a href="https://about.sourcegraph.com/docs/config/authentication">User authentication</a> in the
                     Sourcegraph documentation.
                 </p>
-                {this.state.newUserPasswordResetURL ? (
+                {this.state.createUserResult ? (
                     <div className="alert alert-success">
                         <p>
                             Account created for <strong>{this.state.username}</strong>.
                         </p>
-                        {this.state.newUserPasswordResetURL !== null ? (
+                        {this.state.createUserResult.resetPasswordURL !== null ? (
                             <>
                                 <p>You must manually send this password reset link to the new user:</p>
-                                <CopyableText text={this.state.newUserPasswordResetURL} size={40} />
+                                <CopyableText text={this.state.createUserResult.resetPasswordURL} size={40} />
                             </>
                         ) : (
                             <p>The user must authenticate using a configured authentication provider.</p>
@@ -164,7 +170,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
 
     private dismissAlert = () =>
         this.setState({
-            newUserPasswordResetURL: undefined,
+            createUserResult: undefined,
             errorDescription: undefined,
             username: '',
             email: '',
