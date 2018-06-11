@@ -7,7 +7,7 @@
 ## Core docs
 
 * [Dev](./docs/dev.md): set up your development environment, build, test, etc.
-* [Deploy](./docs/deploy.md): deploy and release instructions
+* [Deploy](./docs/deployment.md): deploy and release instructions
 * [Architecture](./docs/architecture.md): high-level architecture
 * [Analytics](./docs/analytics.md): user analytics pipeline
 * [Glossary](./docs/glossary.md): glossary of common terms
