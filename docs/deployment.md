@@ -11,9 +11,10 @@ There are two ways customers deploy Sourcegraph: Server and Data Center.
   run on a single node with a simple command that is documented on our home page. It is the free and
   easy way for a customer to start using Sourcegraph.
 
-* **Data Center** ([code and
-  docs](https://sourcegraph.sgdev.org/github.com/sourcegraph/deploy-sourcegraph)): The Data Center
-  deployment is a paid upgrade and allows customers to deploy Sourcegraph onto a Kubernetes cluster.
+* **Data Center** ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/deploy-sourcegraph) |
+  [docs](https://sourcegraph.sgdev.org/github.com/sourcegraph/deploy-sourcegraph/-/blob/README.md)):
+  The Data Center deployment is a paid upgrade and allows customers to deploy Sourcegraph onto a
+  Kubernetes cluster.
 
 
 ## Deployment locations
