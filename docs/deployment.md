@@ -50,7 +50,7 @@ E.g., to deploy gitserver,
   ```
 
 If you need to update more than just the Docker images (i.e., if you need to update the
-Kubernetes configuration), refer to the appropriate doc below:
+Kubernetes configuration), refer to the appropriate link below:
 
 * [Production](https://github.com/sourcegraph/infrastructure/blob/master/kubernetes/README.prod.md)
 * [Dogfood](https://github.com/sourcegraph/infrastructure/blob/master/datacenter/README.md#updating-a-live-cluster-including-dogfood)
