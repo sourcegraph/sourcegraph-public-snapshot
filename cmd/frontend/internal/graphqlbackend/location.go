@@ -1,7 +1,6 @@
 package graphqlbackend
 
 import (
-	"context"
 	"fmt"
 	"strconv"
 
@@ -22,15 +21,16 @@ func (r *locationResolver) Range() *rangeResolver {
 	return &rangeResolver{*r.lspRange}
 }
 
-func (r *locationResolver) URL(ctx context.Context) (string, error) {
-	url, err := r.resource.URL(ctx)
-	if err != nil {
-		return "", err
-	}
+func (r *locationResolver) URL() string { return r.urlPath(r.resource.URL()) }
+
+func (r *locationResolver) CanonicalURL() string { return r.urlPath(r.resource.CanonicalURL()) }
+
+func (r *locationResolver) urlPath(prefix string) string {
+	url := prefix
 	if r.lspRange != nil {
 		url += "#L" + r.Range().urlFragment()
 	}
-	return url, nil
+	return url
 }
 
 type rangeResolver struct{ lspRange lsp.Range }

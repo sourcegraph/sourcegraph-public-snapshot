@@ -1118,8 +1118,10 @@ type Symbol {
     language: String!
     # The location where this symbol is defined.
     location: Location!
-    # The URL of this symbol.
+    # The URL to this symbol (using the input revision specifier, which may not be immutable).
     url: String!
+    # The canonical URL to this symbol (using an immutable revision specifier).
+    canonicalURL: String!
 }
 
 # A location inside a resource (in a repository at a specific commit).
@@ -1128,8 +1130,10 @@ type Location {
     resource: GitBlob!
     # The range inside the file that this location refers to.
     range: Range
-    # The URL to this location.
+    # The URL to this location (using the input revision specifier, which may not be immutable).
     url: String!
+    # The canonical URL to this location (using an immutable revision specifier).
+    canonicalURL: String!
 }
 
 # A range inside a file. The start position is inclusive, and the end position is exclusive.
@@ -1345,8 +1349,10 @@ type GitCommit implements Node {
     body: String
     # Parent commits of this commit.
     parents: [GitCommit!]!
-    # The URL to this commit.
+    # The URL to this commit (using the input revision specifier, which may not be immutable).
     url: String!
+    # The canonical URL to this commit (using an immutable revision specifier).
+    canonicalURL: String!
     # The URLs to this commit on its repository's external services.
     externalURLs: [ExternalLink!]!
     # The Git tree in this commit at the given path.
@@ -1441,8 +1447,10 @@ interface TreeEntry {
     name: String!
     # Whether this tree entry is a directory.
     isDirectory: Boolean!
-    # The URL to this tree entry.
+    # The URL to this tree entry (using the input revision specifier, which may not be immutable).
     url: String!
+    # The canonical URL to this tree entry (using an immutable revision specifier).
+    canonicalURL: String!
     # The URLs to this tree entry on external services.
     externalURLs: [ExternalLink!]!
     # Symbols defined in this file or directory.
@@ -1467,8 +1475,10 @@ type GitTree implements TreeEntry {
     commit: GitCommit!
     # The repository containing this tree.
     repository: Repository!
-    # The URL to this tree.
+    # The URL to this tree (using the input revision specifier, which may not be immutable).
     url: String!
+    # The canonical URL to this tree (using an immutable revision specifier).
+    canonicalURL: String!
     # The URLs to this tree on external services.
     externalURLs: [ExternalLink!]!
     # A list of directories in this tree.
@@ -1523,8 +1533,10 @@ interface File {
     #
     # This HTML string is already escaped and thus is always safe to render.
     richHTML: String!
-    # The URL to this file.
+    # The URL to this file (using the input revision specifier, which may not be immutable).
     url: String!
+    # The canonical URL to this file (using an immutable revision specifier).
+    canonicalURL: String!
     # The URLs to this file on external services.
     externalURLs: [ExternalLink!]!
     # Highlight the file.
@@ -1561,8 +1573,10 @@ type GitBlob implements TreeEntry, File {
     commit: GitCommit!
     # The repository containing this Git blob.
     repository: Repository!
-    # The URL to this blob.
+    # The URL to this blob (using the input revision specifier, which may not be immutable).
     url: String!
+    # The canonical URL to this blob (using an immutable revision specifier).
+    canonicalURL: String!
     # The URLs to this blob on its repository's external services.
     externalURLs: [ExternalLink!]!
     # Blame the blob.

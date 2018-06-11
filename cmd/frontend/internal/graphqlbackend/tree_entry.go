@@ -11,7 +11,7 @@ import (
 func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.revForURL(), r.path, r.stat.Mode().IsDir())
+	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.path, r.stat.Mode().IsDir())
 }
 
 func createFileInfo(path string, isDir bool) os.FileInfo {

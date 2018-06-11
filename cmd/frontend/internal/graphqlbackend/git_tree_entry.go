@@ -31,12 +31,18 @@ func (r *gitTreeEntryResolver) Repository(ctx context.Context) (*repositoryResol
 
 func (r *gitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
-func (r *gitTreeEntryResolver) URL(ctx context.Context) (string, error) {
-	url := r.commit.repoRevURL() + "/-/"
+func (r *gitTreeEntryResolver) URL() string { return r.urlPath(r.commit.repoRevURL()) }
+
+func (r *gitTreeEntryResolver) CanonicalURL() string {
+	return r.urlPath(r.commit.canonicalRepoRevURL())
+}
+
+func (r *gitTreeEntryResolver) urlPath(prefix string) string {
+	url := prefix + "/-/"
 	if r.IsDirectory() {
 		url += "tree"
 	} else {
 		url += "blob"
 	}
-	return url + "/" + r.path, nil
+	return url + "/" + r.path
 }

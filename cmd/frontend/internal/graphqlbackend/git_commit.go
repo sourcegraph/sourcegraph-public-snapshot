@@ -113,7 +113,11 @@ func (r *gitCommitResolver) Parents(ctx context.Context) ([]*gitCommitResolver, 
 	return resolvers, nil
 }
 
-func (r *gitCommitResolver) URL() string { return r.repo.URL() + "/-/commit/" + string(r.oid) }
+func (r *gitCommitResolver) URL() string {
+	return r.repo.URL() + "/-/commit/" + string(r.inputRevOrImmutableRev())
+}
+
+func (r *gitCommitResolver) CanonicalURL() string { return r.repo.URL() + "/-/commit/" + string(r.oid) }
 
 func (r *gitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Commit(ctx, r.repo.repo, api.CommitID(r.oid))
@@ -206,13 +210,20 @@ type behindAheadCountsResolver struct{ behind, ahead int32 }
 func (r *behindAheadCountsResolver) Behind() int32 { return r.behind }
 func (r *behindAheadCountsResolver) Ahead() int32  { return r.ahead }
 
-func (r *gitCommitResolver) revForURL() string {
+// inputRevOrImmutableRev returns the input revspec, if it is provided and nonempty. Otherwise it returns the
+// canonical OID for the revision.
+func (r *gitCommitResolver) inputRevOrImmutableRev() string {
 	if r.inputRev != nil && *r.inputRev != "" {
 		return escapeRevspecForURL(*r.inputRev)
 	}
 	return string(r.oid)
 }
 
+// repoRevURL returns the URL path prefix to use when constructing URLs to resources at this
+// revision. Unlike inputRevOrImmutableRev, it does NOT use the OID if no input revspec is
+// given. This is because the convention in the frontend is for repo-rev URLs to omit the "@rev"
+// portion (unlike for commit page URLs, which must include some revspec in
+// "/REPO/-/commit/REVSPEC").
 func (r *gitCommitResolver) repoRevURL() string {
 	url := r.repo.URL()
 	var rev string
@@ -225,6 +236,10 @@ func (r *gitCommitResolver) repoRevURL() string {
 		return url + "@" + escapeRevspecForURL(rev)
 	}
 	return url
+}
+
+func (r *gitCommitResolver) canonicalRepoRevURL() string {
+	return r.repo.URL() + "@" + string(r.oid)
 }
 
 // gitCommitBody returns the first line of the Git commit message.
