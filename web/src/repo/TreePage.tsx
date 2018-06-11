@@ -187,7 +187,7 @@ export class TreePage extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="tree-page">
-                <PageTitle key="page-title" title={this.getPageTitle()} />
+                <PageTitle title={this.getPageTitle()} />
                 {this.props.filePath ? (
                     <header>
                         <h2 className="tree-page__title">
