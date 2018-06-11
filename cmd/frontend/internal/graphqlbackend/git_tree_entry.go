@@ -35,6 +35,10 @@ func (r *gitTreeEntryResolver) CanonicalURL() string {
 }
 
 func (r *gitTreeEntryResolver) urlPath(prefix string) string {
+	if r.IsRoot() {
+		return prefix
+	}
+
 	url := prefix + "/-/"
 	if r.IsDirectory() {
 		url += "tree"

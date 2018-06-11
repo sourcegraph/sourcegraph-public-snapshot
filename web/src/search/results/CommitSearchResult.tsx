@@ -5,10 +5,10 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
 import { DecoratedTextLines } from '../../components/DecoratedTextLines'
-import { RepoFileLink } from '../../components/RepoFileLink'
 import { ResultContainer } from '../../components/ResultContainer'
 import { GitRefTag } from '../../repo/GitRefTag'
 import { AbsoluteRepoFilePosition, RepoSpec } from '../../repo/index'
+import { RepoLink } from '../../repo/RepoLink'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { toPrettyBlobURL } from '../../util/url'
@@ -63,7 +63,14 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
 
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
-            <RepoFileLink repoPath={props.result.commit.repository.uri} rev={props.result.commit.oid} filePath={''} />
+            <RepoLink
+                repoPath={props.result.commit.repository.uri}
+                to={
+                    props.result.commit.tree
+                        ? props.result.commit.tree.canonicalURL
+                        : props.result.commit.repository.url
+                }
+            />
             <Link
                 to={props.result.commit.url}
                 className="commit-search-result__title-person"

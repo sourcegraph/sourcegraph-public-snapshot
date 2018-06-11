@@ -89,6 +89,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                     id
                                     repository {
                                         uri
+                                        url
                                     }
                                     oid
                                     abbreviatedOID
@@ -101,6 +102,9 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                     }
                                     message
                                     url
+                                    tree(path: "") {
+                                        canonicalURL
+                                    }
                                 }
                             }
                         }
