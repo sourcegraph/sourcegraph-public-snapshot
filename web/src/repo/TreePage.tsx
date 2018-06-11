@@ -8,6 +8,7 @@ import TagIcon from '@sourcegraph/icons/lib/Tag'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -188,66 +189,6 @@ export class TreePage extends React.PureComponent<Props, State> {
         return (
             <div className="tree-page">
                 <PageTitle title={this.getPageTitle()} />
-                {this.props.filePath ? (
-                    <header>
-                        <h2 className="tree-page__title">
-                            <FolderIcon className="icon-inline" /> {this.props.filePath}
-                        </h2>
-                    </header>
-                ) : (
-                    <header>
-                        <h2 className="tree-page__title">
-                            <RepositoryIcon className="icon-inline" /> {displayRepoPath(this.props.repoPath)}
-                        </h2>
-                        {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
-                        <div className="btn-group mb-3">
-                            <Link
-                                className="btn btn-secondary"
-                                to={`${toRepoURL({ repoPath: this.props.repoPath, rev: this.props.rev })}/-/commits`}
-                            >
-                                <CommitIcon className="icon-inline" /> Commits
-                            </Link>
-                            <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/branches`}>
-                                <BranchIcon className="icon-inline" /> Branches
-                            </Link>
-                            <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/tags`}>
-                                <TagIcon className="icon-inline" /> Tags
-                            </Link>
-                            <Link
-                                className="btn btn-secondary"
-                                to={
-                                    this.props.rev
-                                        ? `/${this.props.repoPath}/-/compare/...${encodeURIComponent(this.props.rev)}`
-                                        : `/${this.props.repoPath}/-/compare`
-                                }
-                            >
-                                <HistoryIcon className="icon-inline" /> Compare
-                            </Link>
-                            <Link className={`btn btn-secondary`} to={`/${this.props.repoPath}/-/stats/contributors`}>
-                                <UserIcon className="icon-inline" /> Contributors
-                            </Link>
-                        </div>
-                    </header>
-                )}
-
-                <section className="tree-page__section">
-                    <h3 className="tree-page__section-header">
-                        Search in this {this.props.filePath ? 'tree' : 'repository'}
-                    </h3>
-                    <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
-                        <QueryInput
-                            value={this.state.query}
-                            onChange={this.onQueryChange}
-                            prependQueryForSuggestions={this.getQueryPrefix()}
-                            autoFocus={true}
-                            location={this.props.location}
-                            history={this.props.history}
-                            placeholder=""
-                        />
-                        <SearchButton />
-                        <OpenHelpPopoverButton onHelpPopoverToggle={this.props.onHelpPopoverToggle} />
-                    </Form>
-                </section>
                 {this.state.treeOrError === undefined && (
                     <div>
                         <Loader className="icon-inline tree-page__entries-loader" /> Loading files and directories
@@ -255,16 +196,77 @@ export class TreePage extends React.PureComponent<Props, State> {
                 )}
                 {this.state.treeOrError !== undefined &&
                     (isErrorLike(this.state.treeOrError) ? (
-                        <div className="alert alert-danger">
-                            <p>Unable to list tree contents</p>
-                            {this.state.treeOrError.message && (
-                                <div>
-                                    <pre>{this.state.treeOrError.message.slice(0, 100)}</pre>
-                                </div>
-                            )}
-                        </div>
+                        <div className="alert alert-danger">{upperFirst(this.state.treeOrError.message)}</div>
                     ) : (
                         <>
+                            {this.state.treeOrError.isRoot ? (
+                                <header>
+                                    <h2 className="tree-page__title">
+                                        <RepositoryIcon className="icon-inline" />{' '}
+                                        {displayRepoPath(this.props.repoPath)}
+                                    </h2>
+                                    {this.props.repoDescription && <p>{this.props.repoDescription}</p>}
+                                    <div className="btn-group mb-3">
+                                        <Link
+                                            className="btn btn-secondary"
+                                            to={`${toRepoURL({
+                                                repoPath: this.props.repoPath,
+                                                rev: this.props.rev,
+                                            })}/-/commits`}
+                                        >
+                                            <CommitIcon className="icon-inline" /> Commits
+                                        </Link>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/branches`}>
+                                            <BranchIcon className="icon-inline" /> Branches
+                                        </Link>
+                                        <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/tags`}>
+                                            <TagIcon className="icon-inline" /> Tags
+                                        </Link>
+                                        <Link
+                                            className="btn btn-secondary"
+                                            to={
+                                                this.props.rev
+                                                    ? `/${this.props.repoPath}/-/compare/...${encodeURIComponent(
+                                                          this.props.rev
+                                                      )}`
+                                                    : `/${this.props.repoPath}/-/compare`
+                                            }
+                                        >
+                                            <HistoryIcon className="icon-inline" /> Compare
+                                        </Link>
+                                        <Link
+                                            className={`btn btn-secondary`}
+                                            to={`/${this.props.repoPath}/-/stats/contributors`}
+                                        >
+                                            <UserIcon className="icon-inline" /> Contributors
+                                        </Link>
+                                    </div>
+                                </header>
+                            ) : (
+                                <header>
+                                    <h2 className="tree-page__title">
+                                        <FolderIcon className="icon-inline" /> {this.props.filePath}
+                                    </h2>
+                                </header>
+                            )}
+                            <section className="tree-page__section">
+                                <h3 className="tree-page__section-header">
+                                    Search in this {this.props.filePath ? 'tree' : 'repository'}
+                                </h3>
+                                <Form className="tree-page__section-search" onSubmit={this.onSubmit}>
+                                    <QueryInput
+                                        value={this.state.query}
+                                        onChange={this.onQueryChange}
+                                        prependQueryForSuggestions={this.getQueryPrefix()}
+                                        autoFocus={true}
+                                        location={this.props.location}
+                                        history={this.props.history}
+                                        placeholder=""
+                                    />
+                                    <SearchButton />
+                                    <OpenHelpPopoverButton onHelpPopoverToggle={this.props.onHelpPopoverToggle} />
+                                </Form>
+                            </section>
                             {this.state.treeOrError.directories.length > 0 && (
                                 <section className="tree-page__section">
                                     <h3 className="tree-page__section-header">Directories</h3>
@@ -299,30 +301,30 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     </div>
                                 </section>
                             )}
+                            <div className="tree-page__section">
+                                <h3 className="tree-page__section-header">Changes</h3>
+                                <FilteredGitCommitConnection
+                                    className="mt-2 tree-page__section--commits"
+                                    listClassName="list-group list-group-flush"
+                                    noun="commit in this tree"
+                                    pluralNoun="commits in this tree"
+                                    queryConnection={this.queryCommits}
+                                    nodeComponent={GitCommitNode}
+                                    nodeComponentProps={{
+                                        repoName: this.props.repoPath,
+                                        className: 'list-group-item',
+                                        compact: true,
+                                    }}
+                                    updateOnChange={`${this.props.repoPath}:${this.props.rev}:${this.props.filePath}`}
+                                    defaultFirst={7}
+                                    history={this.props.history}
+                                    shouldUpdateURLQuery={false}
+                                    hideFilter={true}
+                                    location={this.props.location}
+                                />
+                            </div>
                         </>
                     ))}
-                <div className="tree-page__section">
-                    <h3 className="tree-page__section-header">Changes</h3>
-                    <FilteredGitCommitConnection
-                        className="mt-2 tree-page__section--commits"
-                        listClassName="list-group list-group-flush"
-                        noun="commit in this tree"
-                        pluralNoun="commits in this tree"
-                        queryConnection={this.queryCommits}
-                        nodeComponent={GitCommitNode}
-                        nodeComponentProps={{
-                            repoName: this.props.repoPath,
-                            className: 'list-group-item',
-                            compact: true,
-                        }}
-                        updateOnChange={`${this.props.repoPath}:${this.props.rev}:${this.props.filePath}`}
-                        defaultFirst={7}
-                        history={this.props.history}
-                        shouldUpdateURLQuery={false}
-                        hideFilter={true}
-                        location={this.props.location}
-                    />
-                </div>
             </div>
         )
     }

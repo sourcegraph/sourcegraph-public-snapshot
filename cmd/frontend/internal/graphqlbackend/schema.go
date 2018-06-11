@@ -1459,6 +1459,8 @@ interface TreeEntry {
 type GitTree implements TreeEntry {
     # The full path (relative to the root) of this tree.
     path: String!
+    # Whether this tree is the root (top-level) tree.
+    isRoot: Boolean!
     # The base name (i.e., last path component only) of this tree.
     name: String!
     # True because this is a directory. (The value differs for other TreeEntry interface implementations, such as

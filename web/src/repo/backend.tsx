@@ -274,6 +274,7 @@ export const fetchTree = memoizeObservable(
                     repository(uri: $repoPath) {
                         commit(rev: $rev) {
                             tree(path: $filePath) {
+                                isRoot
                                 directories(first: $first) {
                                     name
                                     path

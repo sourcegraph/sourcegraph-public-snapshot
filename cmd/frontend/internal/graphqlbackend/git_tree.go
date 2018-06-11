@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"os"
+	"path"
 	"sort"
 	"strings"
 
@@ -10,6 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
+
+func (r *gitTreeEntryResolver) IsRoot() bool {
+	path := path.Clean(r.path)
+	return path == "/" || path == "." || path == ""
+}
 
 type gitTreeEntryConnectionArgs struct {
 	connectionArgs
