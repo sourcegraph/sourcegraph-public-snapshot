@@ -21,6 +21,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Git repositories with files whose paths contain `.git` path components are now usable (via indexed and non-indexed search and code intelligence). These corrupt repositories are rare and generally were created by converting some other VCS repository to Git (the Git CLI will forbid creation of such paths).
 * Various diff search performance improvements and bug fixes.
 * New Phabricator extension versions would used cached stylesheets instead of the upgraded version.
+* Configuring Bitbucket Server now correctly suppresses the the toast message "Configure repositories and code hosts to add to Sourcegraph Server."
 
 ### Added
 
