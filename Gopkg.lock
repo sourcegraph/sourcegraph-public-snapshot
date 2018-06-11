@@ -120,15 +120,6 @@
   version = "1.0.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/dlclark/regexp2"
-  packages = [
-    ".",
-    "syntax"
-  ]
-  revision = "7632a260cbaf5e7594fc1544a503456ecd0827f1"
-
-[[projects]]
   name = "github.com/emicklei/go-restful"
   packages = [
     ".",
@@ -1386,6 +1377,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "90eac4050eb77d0026d1c4a8694a2e58dc327b2b3574e512781c3ec84b7a5413"
+  inputs-digest = "abedbdacd95ff711884b769179521125fd526d7a6173b20240970af1b71f114c"
   solver-name = "gps-cdcl"
   solver-version = 1
