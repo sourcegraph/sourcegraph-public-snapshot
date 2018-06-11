@@ -125,7 +125,7 @@ func (r *gitTreeEntryResolver) DependencyReferences(ctx context.Context, args *s
 	Character int32
 }) (*dependencyReferencesResolver, error) {
 	depRefs, err := backend.Defs.DependencyReferences(ctx, types.DependencyReferencesOptions{
-		RepoID:    r.commit.repositoryDatabaseID(),
+		RepoID:    r.commit.repo.repo.ID,
 		CommitID:  api.CommitID(r.commit.oid),
 		Language:  args.Language,
 		File:      r.path,
@@ -141,7 +141,7 @@ func (r *gitTreeEntryResolver) DependencyReferences(ctx context.Context, args *s
 	var repos []*repositoryResolver
 	var repoIDs []api.RepoID
 	for _, ref := range depRefs.References {
-		if ref.RepoID == r.commit.repositoryDatabaseID() {
+		if ref.RepoID == r.commit.repo.repo.ID {
 			continue
 		}
 

@@ -1,7 +1,6 @@
 package graphqlbackend
 
 import (
-	"context"
 	"os"
 	"path"
 )
@@ -25,9 +24,7 @@ func (r *gitTreeEntryResolver) ToGitBlob() (*gitTreeEntryResolver, bool) { retur
 
 func (r *gitTreeEntryResolver) Commit() *gitCommitResolver { return r.commit }
 
-func (r *gitTreeEntryResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
-	return r.commit.Repository(ctx)
-}
+func (r *gitTreeEntryResolver) Repository() *repositoryResolver { return r.commit.repo }
 
 func (r *gitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 

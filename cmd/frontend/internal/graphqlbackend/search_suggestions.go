@@ -230,7 +230,6 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	// Eliminate duplicates.
 	type key struct {
 		repoURI api.RepoURI
-		repoID  api.RepoID
 		repoRev string
 		file    string
 		symbol  string
@@ -243,7 +242,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		case *repositoryResolver:
 			k.repoURI = s.repo.URI
 		case *gitTreeEntryResolver:
-			k.repoID = s.commit.repositoryDatabaseID()
+			k.repoURI = s.commit.repo.repo.URI
 			k.repoRev = string(s.commit.oid)
 			// Zoekt only searches the default branch and sets commit ID to an empty string.
 			// Set repoRev to the latest indexed revision so we can properly ensure deduplication.
@@ -252,7 +251,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 			k.file = s.path
 		case *symbolResolver:
-			k.repoID = s.location.resource.commit.repoID
+			k.repoURI = s.location.resource.commit.repo.repo.URI
 			k.symbol = s.symbol.Name + s.symbol.ContainerName
 		default:
 			panic(fmt.Sprintf("unhandled: %#v", s))

@@ -27,9 +27,7 @@ func gitCommitByID(ctx context.Context, id graphql.ID) (*gitCommitResolver, erro
 }
 
 type gitCommitResolver struct {
-	// Either repoID or repo must be set.
-	repoID api.RepoID // TODO!(sqs): can remove?
-	repo   *repositoryResolver
+	repo *repositoryResolver
 
 	// inputRev is the Git revspec that the user originally requested that resolved to this Git commit. It is used
 	// to avoid redirecting a user browsing a revision "mybranch" to the absolute commit ID as they follow links in the UI.
@@ -73,19 +71,7 @@ func unmarshalGitCommitID(id graphql.ID) (repoID graphql.ID, commitID gitObjectI
 
 func (r *gitCommitResolver) ID() graphql.ID { return marshalGitCommitID(r.repo.ID(), r.oid) }
 
-func (r *gitCommitResolver) Repository(ctx context.Context) (*repositoryResolver, error) {
-	if r.repo != nil {
-		return r.repo, nil
-	}
-	return repositoryByIDInt32(ctx, r.repoID)
-}
-
-func (r *gitCommitResolver) repositoryDatabaseID() api.RepoID {
-	if r.repo != nil {
-		return r.repo.repo.ID
-	}
-	return r.repoID
-}
+func (r *gitCommitResolver) Repository() *repositoryResolver { return r.repo }
 
 func (r *gitCommitResolver) OID() gitObjectID              { return r.oid }
 func (r *gitCommitResolver) AbbreviatedOID() string        { return string(r.oid)[:7] }
