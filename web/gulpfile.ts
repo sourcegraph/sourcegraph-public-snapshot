@@ -7,6 +7,7 @@ import * as gulp from 'gulp'
 import { compileFromFile } from 'json-schema-to-typescript'
 import mkdirp from 'mkdirp-promise'
 import { readFile, writeFile } from 'mz/fs'
+import * as path from 'path'
 import PluginError from 'plugin-error'
 import { format, resolveConfig } from 'prettier'
 import createWebpackCompiler, { Stats } from 'webpack'
@@ -142,8 +143,8 @@ export async function unusedExports(): Promise<void> {
     // TODO(sqs): Improve our usage of ts-unused-exports when its API improves (see
     // https://github.com/pzavolinsky/ts-unused-exports/pull/17 for one possible improvement).
     const analysis: { [file: string]: string[] } = tsUnusedExports(
-        'tsconfig.json',
-        await globby('src/**/*.{ts?(x),js?(x),json}')
+        path.join(__dirname, 'tsconfig.json'),
+        await globby('src/**/*.{ts?(x),js?(x),json}') // paths are relative to tsconfig.json
     )
     const filesWithUnusedExports = Object.keys(analysis).sort()
     if (filesWithUnusedExports.length > 0) {
