@@ -5,35 +5,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-func (r *gitTreeEntryResolver) IsDirectory(ctx context.Context) (bool, error) {
-	// Return immediately if we know our stat.
-	if r.stat != nil {
-		return r.stat.Mode().IsDir(), nil
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-
-	stat, err := git.Stat(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), r.path)
-	if err != nil {
-		return false, err
-	}
-
-	return stat.IsDir(), nil
-}
+func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
 
 func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	isDir, err := r.IsDirectory(ctx)
-	if err != nil {
-		return nil, nil
-	}
-	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.revForURL(), r.path, isDir)
+	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.revForURL(), r.path, r.stat.Mode().IsDir())
 }
 
 func createFileInfo(path string, isDir bool) os.FileInfo {

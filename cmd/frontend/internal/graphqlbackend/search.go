@@ -660,11 +660,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs repository
 	scorer := newScorer(scorerQuery)
 	for _, entryResolver := range entries {
 		if !includeDirs {
-			isDir, err := entryResolver.IsDirectory(ctx)
-			if err != nil {
-				return nil, err
-			}
-			if isDir {
+			if entryResolver.IsDirectory() {
 				continue
 			}
 		}
