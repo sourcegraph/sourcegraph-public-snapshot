@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { parseHash, toBlobURL, toPrettyBlobURL, toTreeURL } from './url'
+import { parseHash, toPrettyBlobURL, toTreeURL } from './url'
 
 describe('util/url', () => {
     const linePosition = { line: 1 }
@@ -86,34 +86,6 @@ describe('util/url', () => {
                 '/github.com/gorilla/mux/-/blob/mux.go#L1:1$references:external'
             )
         })
-    })
-
-    describe('toBlobURL', () => {
-        it('formats url if commitID is specified', () => {
-            assert.strictEqual(
-                toBlobURL(ctx),
-                '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go'
-            )
-        })
-
-        it('formats url if commitID is ommitted', () => {
-            assert.strictEqual(toBlobURL({ ...ctx, commitID: undefined }), '/github.com/gorilla/mux/-/blob/mux.go')
-            assert.strictEqual(
-                toBlobURL({ ...ctx, commitID: undefined, rev: 'branch' }),
-                '/github.com/gorilla/mux@branch/-/blob/mux.go'
-            )
-        })
-    })
-
-    describe('toAbsoluteBlobURL', () => {
-        it('formats url', () => {
-            assert.strictEqual(
-                toBlobURL(ctx),
-                '/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go'
-            )
-        })
-
-        // other cases are gratuitous given tests for other URL functions
     })
 
     describe('toTreeURL', () => {

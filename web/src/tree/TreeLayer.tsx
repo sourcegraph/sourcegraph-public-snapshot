@@ -20,7 +20,6 @@ import * as GQL from '../backend/graphqlschema'
 import { fetchTreeEntries } from '../repo/backend'
 import { AbsoluteRepo } from '../repo/index'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
-import { toBlobURL, toTreeURL } from '../util/url'
 import { TreeNode } from './Tree'
 
 interface TreeLayerProps extends AbsoluteRepo {
@@ -69,6 +68,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             parent: this.props.parent,
             childNodes: [],
             path: this.props.entryInfo ? this.props.entryInfo.path : '',
+            url: this.props.entryInfo ? this.props.entryInfo.url : '',
         }
 
         this.state = {}
@@ -295,11 +295,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                             <div className="tree__row-contents-text">
                                                 <a
                                                     className="tree__row-icon"
-                                                    href={toTreeURL({
-                                                        repoPath: this.props.repoPath,
-                                                        rev: this.props.rev,
-                                                        filePath: entryInfo.path,
-                                                    })}
+                                                    href={entryInfo.url}
                                                     onClick={this.noopRowClick}
                                                     // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                                     style={treePadding(this.props.depth, true)}
@@ -312,11 +308,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     )}
                                                 </a>
                                                 <Link
-                                                    to={toTreeURL({
-                                                        repoPath: this.props.repoPath,
-                                                        rev: this.props.rev,
-                                                        filePath: entryInfo.path,
-                                                    })}
+                                                    to={entryInfo.url}
                                                     onClick={this.linkRowClick}
                                                     className="tree__row-label"
                                                     draggable={false}
@@ -393,11 +385,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                 <td className="tree__cell">
                                     <Link
                                         className="tree__row-contents"
-                                        to={toBlobURL({
-                                            repoPath: this.props.repoPath,
-                                            rev: this.props.rev,
-                                            filePath: entryInfo.path,
-                                        })}
+                                        to={entryInfo.url}
                                         onClick={this.linkRowClick}
                                         data-tree-path={entryInfo.path}
                                         draggable={false}

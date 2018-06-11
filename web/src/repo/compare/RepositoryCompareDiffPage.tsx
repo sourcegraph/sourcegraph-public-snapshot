@@ -41,6 +41,9 @@ export function queryRepositoryComparisonFileDiffs(args: {
             fragment FileDiffFields on FileDiff {
                 oldPath
                 newPath
+                mostRelevantFile {
+                    url
+                }
                 hunks {
                     oldRange {
                         ...FileDiffHunkRangeFields

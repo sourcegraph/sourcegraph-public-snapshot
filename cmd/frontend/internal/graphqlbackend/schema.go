@@ -1027,12 +1027,17 @@ type FileDiffConnection {
 
 # A diff for a single file.
 type FileDiff {
-    # The repository containing this file.
-    repository: Repository!
     # The old (original) path of the file, or null if the file was added.
     oldPath: String
+    # The old file, or null if the file was created (oldFile.path == oldPath).
+    oldFile: File
     # The new (changed) path of the file, or null if the file was deleted.
     newPath: String
+    # The new file, or null if the file was deleted (newFile.path == newPath).
+    newFile: File
+    # The old file (if the file was deleted) and otherwise the new file. This file field is typically used by
+    # clients that want to show a "View" link to the file.
+    mostRelevantFile: File!
     # Hunks that were changed from old to new.
     hunks: [FileDiffHunk!]!
     # The diff stat for the whole file.

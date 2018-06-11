@@ -6,7 +6,6 @@ import { Subject } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { AbsoluteRepo } from '../repo/index'
 import { dirname } from '../util/path'
-import { toBlobURL, toTreeURL } from '../util/url'
 import { TreeLayer } from './TreeLayer'
 import { getDomElement, scrollIntoView } from './util'
 
@@ -42,6 +41,7 @@ export interface TreeNode {
     parent: TreeNode | null
     childNodes: TreeNode[]
     path: string
+    url: string
 }
 
 /**
@@ -139,6 +139,7 @@ export class Tree extends React.PureComponent<Props, State> {
             parent: null,
             childNodes: [],
             path: '',
+            url: '',
         }
 
         this.state = {
@@ -322,12 +323,7 @@ export class Tree extends React.PureComponent<Props, State> {
             }
             this.selectNode(this.state.selectedNode)
             this.setActiveNode(this.state.selectedNode)
-            const urlProps = {
-                repoPath: this.props.repoPath,
-                rev: this.props.rev,
-                filePath: selectedNodePath,
-            }
-            this.props.history.push(isDirectory ? toTreeURL(urlProps) : toBlobURL(urlProps))
+            this.props.history.push(this.state.selectedNode.url)
         }
     }
 

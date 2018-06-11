@@ -31,9 +31,13 @@ export const gitCommitFragment = gql`
             abbreviatedOID
         }
         url
+        canonicalURL
         externalURLs {
             url
             serviceType
+        }
+        tree(path: "") {
+            canonicalURL
         }
     }
 

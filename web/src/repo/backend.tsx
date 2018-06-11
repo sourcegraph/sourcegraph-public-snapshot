@@ -50,6 +50,7 @@ export const fetchRepository = memoizeObservable(
                     repository(uri: $repoPath) {
                         id
                         uri
+                        url
                         externalURLs {
                             url
                             serviceType
@@ -269,15 +270,18 @@ export const fetchTree = memoizeObservable(
                         commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
                                 isRoot
+                                url
                                 directories(first: $first) {
                                     name
                                     path
                                     isDirectory
+                                    url
                                 }
                                 files(first: $first) {
                                     name
                                     path
                                     isDirectory
+                                    url
                                 }
                             }
                         }
@@ -308,6 +312,7 @@ export const fetchTreeEntries = memoizeObservable(
                                     name
                                     path
                                     isDirectory
+                                    url
                                 }
                             }
                         }

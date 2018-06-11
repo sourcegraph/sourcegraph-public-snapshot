@@ -4,7 +4,6 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
-import { toBlobURL } from '../../util/url'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 
@@ -33,11 +32,6 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
 
     public render(): JSX.Element | null {
         const node = this.props.node
-
-        const url =
-            node.newPath !== null
-                ? toBlobURL({ repoPath: this.props.head.repoPath, rev: this.props.head.rev, filePath: node.newPath })
-                : toBlobURL({ repoPath: this.props.base.repoPath, rev: this.props.base.rev, filePath: node.oldPath! })
 
         let path: React.ReactFragment
         if (node.newPath && (node.newPath === node.oldPath || !node.oldPath)) {
@@ -74,7 +68,11 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             </Link>
                         </div>
                         <div className="file-diff-node__header-actions">
-                            <Link to={url} className="btn btn-sm" data-tooltip="View file at revision">
+                            <Link
+                                to={node.mostRelevantFile.url}
+                                className="btn btn-sm"
+                                data-tooltip="View file at revision"
+                            >
                                 View
                             </Link>
                             <button type="button" className="btn btn-sm btn-icon ml-2" onClick={this.toggleExpand}>

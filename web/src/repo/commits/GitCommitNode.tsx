@@ -10,7 +10,6 @@ import { Tooltip } from '../../components/tooltip/Tooltip'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 import { pluralize } from '../../util/strings'
-import { toRepoURL } from '../../util/url'
 
 const GitCommitNodeByline: React.SFC<{
     author: GQL.ISignature
@@ -103,7 +102,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
         const messageElement = (
             <div className="git-commit-node__message">
                 <Link
-                    to={this.props.node.url}
+                    to={this.props.node.canonicalURL}
                     className="git-commit-node__message-subject"
                     title={this.props.node.message}
                 >
@@ -151,7 +150,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                     <div className="btn-group btn-group-sm mr-2" role="group">
                                         <Link
                                             className="btn btn-secondary"
-                                            to={this.props.node.url}
+                                            to={this.props.node.canonicalURL}
                                             data-tooltip="View this commit"
                                         >
                                             <strong>{oidElement}</strong>
@@ -168,20 +167,22 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                         </button>
                                     </div>
                                 )}
-                                <Link
-                                    className="btn btn-secondary btn-sm"
-                                    to={toRepoURL({ repoPath: this.props.repoName, rev: this.props.node.oid })}
-                                    data-tooltip="View files at this commit"
-                                >
-                                    <FileDocumentIcon className="icon-inline" />
-                                </Link>
+                                {this.props.node.tree && (
+                                    <Link
+                                        className="btn btn-secondary btn-sm"
+                                        to={this.props.node.tree.canonicalURL}
+                                        data-tooltip="View files at this commit"
+                                    >
+                                        <FileDocumentIcon className="icon-inline" />
+                                    </Link>
+                                )}
                             </div>
                         </>
                     ) : (
                         <>
                             {bylineElement}
                             {messageElement}
-                            <Link to={this.props.node.url}>{oidElement}</Link>
+                            <Link to={this.props.node.canonicalURL}>{oidElement}</Link>
                         </>
                     )}
                 </div>

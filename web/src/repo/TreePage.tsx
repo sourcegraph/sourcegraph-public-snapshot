@@ -13,7 +13,6 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { RepoRev } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { Form } from '../components/Form'
@@ -28,29 +27,19 @@ import { eventLogger } from '../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { basename } from '../util/path'
-import { toPrettyBlobURL, toRepoURL, toTreeURL } from '../util/url'
 import { fetchTree } from './backend'
 import { GitCommitNode } from './commits/GitCommitNode'
 import { FilteredGitCommitConnection, gitCommitFragment } from './commits/RepositoryCommitsPage'
 
-const TreeEntry: React.SFC<
-    RepoRev & {
-        isDir: boolean
-        name: string
-        parentPath: string
-    }
-> = ({ isDir, name, parentPath, repoPath, rev }) => {
+const TreeEntry: React.SFC<{
+    isDir: boolean
+    name: string
+    parentPath: string
+    url: string
+}> = ({ isDir, name, parentPath, url }) => {
     const filePath = parentPath ? parentPath + '/' + name : name
     return (
-        <Link
-            to={(isDir ? toTreeURL : toPrettyBlobURL)({
-                repoPath,
-                rev,
-                filePath,
-            })}
-            className="tree-entry"
-            title={filePath}
-        >
+        <Link to={url} className="tree-entry" title={filePath}>
             {name}
             {isDir && '/'}
         </Link>
@@ -211,10 +200,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     <div className="btn-group mb-3">
                                         <Link
                                             className="btn btn-secondary"
-                                            to={`${toRepoURL({
-                                                repoPath: this.props.repoPath,
-                                                rev: this.props.rev,
-                                            })}/-/commits`}
+                                            to={`${this.state.treeOrError.url}/-/commits`}
                                         >
                                             <CommitIcon className="icon-inline" /> Commits
                                         </Link>
@@ -279,8 +265,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                                 isDir={true}
                                                 name={e.name}
                                                 parentPath={this.props.filePath}
-                                                repoPath={this.props.repoPath}
-                                                rev={this.props.rev}
+                                                url={e.url}
                                             />
                                         ))}
                                     </div>
@@ -296,8 +281,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                                 isDir={false}
                                                 name={e.name}
                                                 parentPath={this.props.filePath}
-                                                repoPath={this.props.repoPath}
-                                                rev={this.props.rev}
+                                                url={e.url}
                                             />
                                         ))}
                                     </div>
@@ -354,7 +338,7 @@ export class TreePage extends React.PureComponent<Props, State> {
         fetchTreeCommits({
             ...args,
             repo: this.props.repoID,
-            revspec: this.props.commitID,
+            revspec: this.props.rev || '',
             filePath: this.props.filePath,
         })
 }

@@ -13,7 +13,6 @@ import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
 import { pluralize } from '../../util/strings'
-import { toRepoURL } from '../../util/url'
 
 /**
  * Fetches a repository's text search index information.
@@ -35,12 +34,16 @@ function fetchRepositoryTextSearchIndex(id: GQL.ID): Observable<GQL.IRepositoryT
                             refs {
                                 ref {
                                     displayName
+                                    url
                                 }
                                 indexed
                                 current
                                 indexedCommit {
                                     oid
                                     abbreviatedOID
+                                    commit {
+                                        url
+                                    }
                                 }
                             }
                         }
@@ -78,12 +81,7 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
             <Icon
                 className={`icon-inline repo-settings-index-page__ref-icon repo-settings-index-page__ref-icon--${iconClassName}`}
             />
-            <Link
-                to={toRepoURL({
-                    repoPath: repo.uri,
-                    rev: indexedRef.ref.abbrevName,
-                })}
-            >
+            <Link to={indexedRef.ref.url}>
                 <strong>
                     <code>{indexedRef.ref.displayName}</code>
                 </strong>
@@ -93,10 +91,11 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
                     &nbsp;&mdash; indexed at{' '}
                     <code>
                         <Link
-                            to={toRepoURL({
-                                repoPath: repo.uri,
-                                rev: indexedRef.indexedCommit ? indexedRef.indexedCommit.oid : null,
-                            })}
+                            to={
+                                indexedRef.indexedCommit && indexedRef.indexedCommit.commit
+                                    ? indexedRef.indexedCommit.commit.url
+                                    : repo.url
+                            }
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
                         </Link>

@@ -10,7 +10,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
 )
@@ -37,34 +37,45 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 		headRevspec = *args.Head
 	}
 
-	grepo := backend.CachedGitRepo(r.repo)
-	var base api.CommitID
-	if baseRevspec == devNullSHA {
-		base = devNullSHA
-	} else {
-		var err error
-		base, err = git.ResolveRevision(ctx, grepo, nil, baseRevspec, nil)
+	getCommit := func(ctx context.Context, repo gitserver.Repo, revspec string) (*gitCommitResolver, error) {
+		if revspec == devNullSHA {
+			return nil, nil
+		}
+
+		// Call ResolveRevision to trigger fetches from remote (in case base/head commits don't
+		// exist).
+		commitID, err := git.ResolveRevision(ctx, repo, nil, revspec, nil)
 		if err != nil {
 			return nil, err
 		}
+
+		commit, err := git.GetCommit(ctx, repo, commitID)
+		if err != nil {
+			return nil, err
+		}
+		return toGitCommitResolver(r, commit), nil
 	}
-	head, err := git.ResolveRevision(ctx, grepo, nil, headRevspec, nil)
+
+	grepo := backend.CachedGitRepo(r.repo)
+	base, err := getCommit(ctx, grepo, baseRevspec)
+	if err != nil {
+		return nil, err
+	}
+	head, err := getCommit(ctx, grepo, headRevspec)
 	if err != nil {
 		return nil, err
 	}
 
 	return &repositoryComparisonResolver{
-		baseRevspec: baseRevspec,
-		base:        base,
-		headRevspec: headRevspec,
-		head:        head,
-		repo:        r,
+		base: base,
+		head: head,
+		repo: r,
 	}, nil
 }
 
 type repositoryComparisonResolver struct {
 	baseRevspec, headRevspec string
-	base, head               api.CommitID
+	base, head               *gitCommitResolver
 	repo                     *repositoryResolver
 }
 
@@ -81,7 +92,7 @@ func (r *repositoryComparisonResolver) Commits(args *struct {
 	First *int32
 }) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
-		revisionRange: string(r.base) + ".." + string(r.head),
+		revisionRange: string(r.baseRevspec) + ".." + string(r.headRevspec),
 		first:         args.First,
 		repo:          r.repo,
 	}
@@ -91,18 +102,14 @@ func (r *repositoryComparisonResolver) FileDiffs(args *struct {
 	First *int32
 }) *fileDiffConnectionResolver {
 	return &fileDiffConnectionResolver{
-		head:  r.head,
-		base:  r.base,
+		cmp:   r,
 		first: args.First,
-		repo:  r.repo,
 	}
 }
 
 type fileDiffConnectionResolver struct {
-	head, base api.CommitID
-	first      *int32
-
-	repo *repositoryResolver
+	cmp   *repositoryComparisonResolver // {base,head}{,RevSpec} and repo
+	first *int32
 
 	// cache result because it is used by multiple fields
 	once        sync.Once
@@ -114,11 +121,11 @@ type fileDiffConnectionResolver struct {
 func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileDiff, error) {
 	do := func() ([]*diff.FileDiff, error) {
 		var rangeSpec string
-		if r.base == devNullSHA {
+		if r.cmp.base == nil {
 			// Rare case: the base is the empty tree, in which case we need ".." not "..." because the latter only works for commits.
-			rangeSpec = string(r.base) + ".." + string(r.head)
+			rangeSpec = string(r.cmp.baseRevspec) + ".." + string(r.cmp.head.oid)
 		} else {
-			rangeSpec = string(r.base) + "..." + string(r.head)
+			rangeSpec = string(r.cmp.base.oid) + "..." + string(r.cmp.head.oid)
 		}
 		if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
 			// This should not be possible since r.head is a SHA returned by ResolveRevision, but be
@@ -127,7 +134,7 @@ func (r *fileDiffConnectionResolver) compute(ctx context.Context) ([]*diff.FileD
 			return nil, fmt.Errorf("invalid diff range argument: %q", rangeSpec)
 		}
 
-		rdr, err := git.ExecReader(ctx, backend.CachedGitRepo(r.repo.repo), []string{
+		rdr, err := git.ExecReader(ctx, backend.CachedGitRepo(r.cmp.repo.repo), []string{
 			"diff",
 			"--find-renames",
 			"--find-copies",
@@ -188,7 +195,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]*fileDiffReso
 	for i, fileDiff := range fileDiffs {
 		resolvers[i] = &fileDiffResolver{
 			fileDiff: fileDiff,
-			repo:     r.repo,
+			cmp:      r.cmp,
 		}
 	}
 	return resolvers, nil
@@ -240,12 +247,11 @@ func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error
 
 type fileDiffResolver struct {
 	fileDiff *diff.FileDiff
-	repo     *repositoryResolver
+	cmp      *repositoryComparisonResolver // {base,head}{,RevSpec} and repo
 }
 
-func (r *fileDiffResolver) Repository() *repositoryResolver { return r.repo }
-func (r *fileDiffResolver) OldPath() *string                { return diffPathOrNull(r.fileDiff.OrigName) }
-func (r *fileDiffResolver) NewPath() *string                { return diffPathOrNull(r.fileDiff.NewName) }
+func (r *fileDiffResolver) OldPath() *string { return diffPathOrNull(r.fileDiff.OrigName) }
+func (r *fileDiffResolver) NewPath() *string { return diffPathOrNull(r.fileDiff.NewName) }
 func (r *fileDiffResolver) Hunks() []*diffHunk {
 	hunks := make([]*diffHunk, len(r.fileDiff.Hunks))
 	for i, hunk := range r.fileDiff.Hunks {
@@ -261,6 +267,36 @@ func (r *fileDiffResolver) Stat() *diffStat {
 		deleted: stat.Deleted,
 	}
 }
+
+func (r *fileDiffResolver) OldFile() *gitTreeEntryResolver {
+	if diffPathOrNull(r.fileDiff.OrigName) == nil {
+		return nil
+	}
+	return &gitTreeEntryResolver{
+		commit: r.cmp.base,
+		path:   r.fileDiff.OrigName,
+		stat:   createFileInfo(r.fileDiff.OrigName, false),
+	}
+}
+
+func (r *fileDiffResolver) NewFile() *gitTreeEntryResolver {
+	if diffPathOrNull(r.fileDiff.NewName) == nil {
+		return nil
+	}
+	return &gitTreeEntryResolver{
+		commit: r.cmp.head,
+		path:   r.fileDiff.NewName,
+		stat:   createFileInfo(r.fileDiff.NewName, false),
+	}
+}
+
+func (r *fileDiffResolver) MostRelevantFile() *gitTreeEntryResolver {
+	if newFile := r.NewFile(); newFile != nil {
+		return newFile
+	}
+	return r.OldFile()
+}
+
 func (r *fileDiffResolver) InternalID() string {
 	b := sha256.Sum256([]byte(fmt.Sprintf("%d:%s:%s", len(r.fileDiff.OrigName), r.fileDiff.OrigName, r.fileDiff.NewName)))
 	return hex.EncodeToString(b[:])[:32]

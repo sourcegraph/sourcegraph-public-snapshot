@@ -177,11 +177,6 @@ export function toPrettyRepoURL(ctx: Repo & Partial<RevSpec>): string {
     return `/${encodeRepoRev(ctx.repoPath, ctx.rev)}`
 }
 
-export function toBlobURL(ctx: RepoFile & Partial<PositionSpec>): string {
-    const rev = ctx.commitID || ctx.rev || ''
-    return `/${encodeRepoRev(ctx.repoPath, rev)}/-/blob/${ctx.filePath}`
-}
-
 export function toPrettyBlobURL(
     ctx: RepoFile & Partial<PositionSpec> & Partial<ViewStateSpec> & Partial<RangeSpec> & Partial<RenderModeSpec>
 ): string {
