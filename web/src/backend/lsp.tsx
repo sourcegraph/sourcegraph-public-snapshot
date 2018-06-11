@@ -26,29 +26,11 @@ interface LSPRequest {
     method: string
     params?: any
 }
-
-/** Returns true if the given value conforms to the LSP MarkedString type, false otherwise */
-const isMarkedString = (val: any): val is MarkedString =>
-    typeof val === 'string' ||
-    (typeof val === 'object' && val !== null && typeof val.language === 'string' && typeof val.value === 'string')
-
-/** Returns true if the given value conforms to the LSP MarkupContent interface, false otherwise */
-export const isMarkupContent = (val: any): val is MarkupContent =>
-    typeof val === 'object' && val !== null && typeof val.kind === 'string' && typeof val.value === 'string'
-
-/** Returns true if the given value conforms to the LSP Hover interface, false otherwise */
-export const isHover = (val: any): val is Hover =>
-    typeof val === 'object' &&
-    val !== null &&
-    (isMarkupContent(val.contents) ||
-        isMarkedString(val.contents) ||
-        (Array.isArray(val.contents) && val.contents.every(isMarkedString)))
-
 export const isEmptyHover = (hover: Hover | null): boolean =>
     !hover ||
     !hover.contents ||
     (Array.isArray(hover.contents) && hover.contents.length === 0) ||
-    (isMarkupContent(hover.contents) && !hover.contents.value)
+    (MarkupContent.is(hover.contents) && !hover.contents.value)
 
 /** Returns the first MarkedString element from the hover, or undefined if it has none. */
 export function firstMarkedString(hover: Hover): MarkedString | undefined {
@@ -201,7 +183,7 @@ export const fetchHover = memoizeObservable(
         ).pipe(
             tap(hover => {
                 // Do some shallow validation on response, e.g. to catch https://github.com/sourcegraph/sourcegraph/issues/11711
-                if (hover !== null && !isHover(hover)) {
+                if (hover !== null && !Hover.is(hover)) {
                     throw Object.assign(new Error('Invalid hover response from language server'), { hover })
                 }
             })

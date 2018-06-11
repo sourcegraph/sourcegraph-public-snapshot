@@ -17,7 +17,7 @@ import {
 } from 'rxjs/operators'
 import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover, isHover } from '../../backend/lsp'
+import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
@@ -202,7 +202,7 @@ interface BlobState {
  */
 const shouldRenderHover = (state: BlobState): boolean =>
     !(!state.hoverOverlayIsFixed && state.mouseIsMoving) &&
-    ((state.hoverOrError && !(isHover(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
+    ((state.hoverOrError && !(Hover.is(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
         isJumpURL(state.definitionURLOrError))
 
 /** The time in ms after which to show a loader if the result has not returned yet */
@@ -479,7 +479,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     hoverOverlayPosition: undefined,
                     // After the hover is fetched, if the overlay was pinned, unpin it if the hover is empty
                     hoverOverlayIsFixed: state.hoverOverlayIsFixed
-                        ? !!hoverOrError || !isHover(hoverOrError) || !isEmptyHover(hoverOrError)
+                        ? !!hoverOrError || !Hover.is(hoverOrError) || !isEmptyHover(hoverOrError)
                         : false,
                 }))
                 // Telemetry
@@ -495,7 +495,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 if (currentHighlighted) {
                     currentHighlighted.classList.remove('selection-highlight')
                 }
-                if (!isHover(hoverOrError) || !hoverOrError.range) {
+                if (!Hover.is(hoverOrError) || !hoverOrError.range) {
                     return
                 }
                 // LSP is 0-indexed, the code in the webapp currently is 1-indexed

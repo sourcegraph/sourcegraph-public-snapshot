@@ -9,7 +9,6 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Hover, MarkedString, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types'
 import { PositionSpec, RangeSpec, RepoFile, ViewStateSpec } from '..'
-import { isMarkupContent } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toPrettyBlobURL } from '../../util/url'
@@ -134,7 +133,7 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
                     castArray<MarkedString | MarkupContent>(props.hoverOrError.contents)
                         .map(value => (typeof value === 'string' ? { kind: MarkupKind.Markdown, value } : value))
                         .map((content, i) => {
-                            if (isMarkupContent(content)) {
+                            if (MarkupContent.is(content)) {
                                 if (content.kind === MarkupKind.Markdown) {
                                     try {
                                         const rendered = marked(content.value, {

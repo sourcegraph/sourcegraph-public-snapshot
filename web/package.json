@@ -173,7 +173,7 @@
     "string-score": "^1.0.1",
     "uuid": "^3.2.1",
     "vscode-languageserver-protocol": "^3.7.1",
-    "vscode-languageserver-types": "^3.7.1",
+    "vscode-languageserver-types": "^3.8.2",
     "whatwg-url": "^6.4.0"
   }
 }
