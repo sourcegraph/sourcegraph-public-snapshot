@@ -1,4 +1,4 @@
-# Sourcegraph release process
+# Sourcegraph Server release process
 
 The user-facing documentation lives in
 [sourcegraph/website](https://github.com/sourcegraph/website). Quick links:
