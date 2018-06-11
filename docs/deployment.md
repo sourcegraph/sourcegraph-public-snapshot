@@ -61,5 +61,6 @@ Kubernetes configuration), refer to the appropriate doc below:
 We ship to our customers minor feature releases monthly (e.g. 2.7, 2.8, 2.9), and patch releases on an as-needed basis (e.g. 2.8.1).
 
 * [Server release process](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/blob/cmd/server/README.md)
+  * Before a Server release is published ot customers, it should first be tested via `docker run ...` on your machine.
 * [Data Center release process](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph/-/blob/README.dev.md)
-
+  * Before a Data Center release is published to customers, it should first be deployed to and tested on dogfood.
