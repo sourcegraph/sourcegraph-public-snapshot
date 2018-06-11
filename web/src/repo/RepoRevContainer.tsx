@@ -35,15 +35,19 @@ interface RepoRevContainerProps extends RouteComponentProps<{}> {
     isLightTheme: boolean
     onHelpPopoverToggle: () => void
     routePrefix: string
+
+    /**
+     * The resolved rev or an error if it could not be resolved. This value lives in RepoContainer (this
+     * component's parent) but originates from this component.
+     */
+    resolvedRevOrError?: ResolvedRev | ErrorLike
+
+    /** Called when the resolvedRevOrError state in this component's parent should be updated. */
+    onResolvedRevOrError: (v: ResolvedRev | ErrorLike | undefined) => void
 }
 
 interface State {
     showSidebar: boolean
-    /**
-     * The resolved rev or an error if it could not be resolved.
-     * `undefined` while loading.
-     */
-    resolvedRevOrError?: ResolvedRev | ErrorLike
 }
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
@@ -69,10 +73,10 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             this.propsUpdates
                 .pipe(
                     // Pick repoPath and rev out of the props
-                    map(props => ({ repoPath: props.repo.uri, rev: props.rev || 'HEAD' })),
+                    map(props => ({ repoPath: props.repo.uri, rev: props.rev })),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     // Reset resolved rev / error state
-                    tap(() => this.setState({ resolvedRevOrError: undefined })),
+                    tap(() => this.props.onResolvedRevOrError(undefined)),
                     switchMap(({ repoPath, rev }) =>
                         defer(() => resolveRev({ repoPath, rev })).pipe(
                             // On a CloneInProgress error, retry after 1s
@@ -82,7 +86,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                         switch (error.code) {
                                             case ECLONEINPROGESS:
                                                 // Display cloning screen to the user and retry
-                                                this.setState({ resolvedRevOrError: error })
+                                                this.props.onResolvedRevOrError(error)
                                                 return
                                             default:
                                                 // Display error to the user and do not retry
@@ -94,7 +98,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             ),
                             // Save any error in the sate to display to the user
                             catchError(error => {
-                                this.setState({ resolvedRevOrError: error })
+                                this.props.onResolvedRevOrError(error)
                                 return []
                             })
                         )
@@ -102,7 +106,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 )
                 .subscribe(
                     resolvedRev => {
-                        this.setState({ resolvedRevOrError: resolvedRev })
+                        this.props.onResolvedRevOrError(resolvedRev)
                     },
                     error => {
                         // Should never be reached because errors are caught above
@@ -122,19 +126,19 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
     }
 
     public render(): JSX.Element | null {
-        if (!this.state.resolvedRevOrError) {
+        if (!this.props.resolvedRevOrError) {
             // Render nothing while loading
             return null
         }
 
-        if (isErrorLike(this.state.resolvedRevOrError)) {
+        if (isErrorLike(this.props.resolvedRevOrError)) {
             // Show error page
-            switch (this.state.resolvedRevOrError.code) {
+            switch (this.props.resolvedRevOrError.code) {
                 case ECLONEINPROGESS:
                     return (
                         <RepositoryCloningInProgressPage
                             repoName={this.props.repo.uri}
-                            progress={(this.state.resolvedRevOrError as CloneInProgressError).progress}
+                            progress={(this.props.resolvedRevOrError as CloneInProgressError).progress}
                         />
                     )
                 case EREPONOTFOUND:
@@ -162,13 +166,13 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         <HeroPage
                             icon={ErrorIcon}
                             title="Error"
-                            subtitle={upperFirst(this.state.resolvedRevOrError.message)}
+                            subtitle={upperFirst(this.props.resolvedRevOrError.message)}
                         />
                     )
             }
         }
 
-        const resolvedRev = this.state.resolvedRevOrError
+        const resolvedRev = this.props.resolvedRevOrError
         return (
             <div className="repo-rev-container">
                 {IS_CHROME && <ChromeExtensionToast />}
@@ -184,9 +188,9 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 <RevisionsPopover
                                     repo={this.props.repo.id}
                                     repoPath={this.props.repo.uri}
-                                    defaultBranch={this.state.resolvedRevOrError.defaultBranch}
+                                    defaultBranch={this.props.resolvedRevOrError.defaultBranch}
                                     currentRev={this.props.rev}
-                                    currentCommitID={this.state.resolvedRevOrError.commitID}
+                                    currentCommitID={this.props.resolvedRevOrError.commitID}
                                     history={this.props.history}
                                     location={this.props.location}
                                 />
@@ -194,10 +198,10 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             popoverKey="repo-rev"
                             hideOnChange={`${this.props.repo.id}:${this.props.rev || ''}`}
                         >
-                            {(this.props.rev && this.props.rev === this.state.resolvedRevOrError.commitID
-                                ? this.state.resolvedRevOrError.commitID.slice(0, 7)
+                            {(this.props.rev && this.props.rev === this.props.resolvedRevOrError.commitID
+                                ? this.props.resolvedRevOrError.commitID.slice(0, 7)
                                 : this.props.rev) ||
-                                this.state.resolvedRevOrError.defaultBranch ||
+                                this.props.resolvedRevOrError.defaultBranch ||
                                 'HEAD'}
                         </PopoverButton>
                     }
@@ -261,11 +265,11 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                             repoID={this.props.repo.id}
                                             repoPath={this.props.repo.uri}
                                             rev={this.props.rev}
-                                            commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
+                                            commitID={(this.props.resolvedRevOrError as ResolvedRev).commitID}
                                             filePath={routeComponentProps.match.params.filePath || ''}
                                             isDir={objectType === 'tree'}
                                             defaultBranch={
-                                                (this.state.resolvedRevOrError as ResolvedRev).defaultBranch || 'HEAD'
+                                                (this.props.resolvedRevOrError as ResolvedRev).defaultBranch || 'HEAD'
                                             }
                                             history={this.props.history}
                                             location={this.props.location}
@@ -277,7 +281,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         repoPath={this.props.repo.uri}
                                                         repoID={this.props.repo.id}
                                                         commitID={
-                                                            (this.state.resolvedRevOrError as ResolvedRev).commitID
+                                                            (this.props.resolvedRevOrError as ResolvedRev).commitID
                                                         }
                                                         rev={this.props.rev}
                                                         filePath={routeComponentProps.match.params.filePath || ''}
@@ -291,7 +295,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         repoID={this.props.repo.id}
                                                         repoDescription={this.props.repo.description}
                                                         commitID={
-                                                            (this.state.resolvedRevOrError as ResolvedRev).commitID
+                                                            (this.props.resolvedRevOrError as ResolvedRev).commitID
                                                         }
                                                         rev={this.props.rev}
                                                         filePath={routeComponentProps.match.params.filePath || ''}
@@ -323,8 +327,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 repo={this.props.repo}
                                 user={this.props.user}
                                 rev={this.props.rev}
-                                defaultBranch={(this.state.resolvedRevOrError as ResolvedRev).defaultBranch}
-                                commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
+                                defaultBranch={(this.props.resolvedRevOrError as ResolvedRev).defaultBranch}
+                                commitID={(this.props.resolvedRevOrError as ResolvedRev).commitID}
                                 routePrefix={this.props.routePrefix}
                             />
                         )}
@@ -338,7 +342,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 {...routeComponentProps}
                                 repo={this.props.repo}
                                 rev={this.props.rev}
-                                commitID={(this.state.resolvedRevOrError as ResolvedRev).commitID}
+                                commitID={(this.props.resolvedRevOrError as ResolvedRev).commitID}
                                 location={this.props.location}
                                 history={this.props.history}
                             />
@@ -355,7 +359,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         <GoToPermalinkAction
                             key="go-to-permalink"
                             rev={this.props.rev}
-                            commitID={this.state.resolvedRevOrError.commitID}
+                            commitID={this.props.resolvedRevOrError.commitID}
                             location={this.props.location}
                             history={this.props.history}
                         />

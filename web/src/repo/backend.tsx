@@ -83,6 +83,9 @@ export const fetchRepository = memoizeObservable(
 export interface ResolvedRev {
     commitID: string
     defaultBranch: string
+
+    /** The URL to the repository root tree at the revision. */
+    rootTreeURL: string
 }
 
 /**
@@ -102,6 +105,9 @@ export const resolveRev = memoizeObservable(
                         }
                         commit(rev: $rev) {
                             oid
+                            tree(path: "") {
+                                url
+                            }
                         }
                         defaultBranch {
                             abbrevName
@@ -131,12 +137,13 @@ export const resolveRev = memoizeObservable(
                 if (!data.repository.commit) {
                     throw createRevNotFoundError(ctx.rev)
                 }
-                if (!data.repository.defaultBranch) {
+                if (!data.repository.defaultBranch || !data.repository.commit.tree) {
                     throw createRevNotFoundError('HEAD')
                 }
                 return {
                     commitID: data.repository.commit.oid,
                     defaultBranch: data.repository.defaultBranch.abbrevName,
+                    rootTreeURL: data.repository.commit.tree.url,
                 }
             })
         ),

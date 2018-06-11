@@ -7,7 +7,8 @@ import { Subject, Subscription, Unsubscribable } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
-import { toRepoURL } from '../util/url'
+import { ErrorLike, isErrorLike } from '../util/errors'
+import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
 
 /**
@@ -37,19 +38,18 @@ interface Props {
               id?: GQL.ID
 
               uri: string
+              url: string
               enabled: boolean
               viewerCanAdminister: boolean
           }
+
+    /** Information about the revision of the repository. */
+    resolvedRev: ResolvedRev | ErrorLike | undefined
 
     /**
      * An optional class name to add to the element.
      */
     className?: string
-
-    // These two props (rev and filePath) technically violate separation of concerns because they
-    // are for "repo revs" not just "repos". But it's much simpler and just requires lexicographic
-    // operations to compute them even outside of the RepoRevContainer.
-    rev: string | undefined
 
     location: H.Location
     history: H.History
@@ -172,10 +172,11 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 <div className="navbar-nav">
                     <PopoverButton
                         className="repo-header__section-btn repo-header__repo"
-                        link={toRepoURL({
-                            repoPath: this.props.repo.uri,
-                            rev: this.props.rev,
-                        })}
+                        link={
+                            this.props.resolvedRev && !isErrorLike(this.props.resolvedRev)
+                                ? this.props.resolvedRev.rootTreeURL
+                                : this.props.repo.url
+                        }
                         popoverElement={
                             <RepositoriesPopover
                                 currentRepo={this.props.repo.id}

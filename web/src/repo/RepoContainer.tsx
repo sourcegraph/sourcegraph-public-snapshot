@@ -12,7 +12,7 @@ import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError } from './backend'
+import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError, ResolvedRev } from './backend'
 import { RepositoryBranchesArea } from './branches/RepositoryBranchesArea'
 import { RepositoryCommitPage } from './commit/RepositoryCommitPage'
 import { RepositoryCompareArea } from './compare/RepositoryCompareArea'
@@ -48,6 +48,13 @@ interface State extends ParsedRepoRev {
      * `undefined` while loading.
      */
     repoOrError?: GQL.IRepository | ErrorLike
+
+    /**
+     * The resolved rev or an error if it could not be resolved. `undefined` while loading. This value comes from
+     * this component's child RepoRevContainer, but it lives here because it's used by other children than just
+     * RepoRevContainer.
+     */
+    resolvedRevOrError?: ResolvedRev | ErrorLike
 
     /** The external links to show in the repository header, if any. */
     externalLinks?: GQL.IExternalLink[]
@@ -186,7 +193,7 @@ export class RepoContainer extends React.Component<Props, State> {
             <div className="repo-composite-container composite-container">
                 <RepoHeader
                     repo={this.state.repoOrError}
-                    rev={this.state.rev}
+                    resolvedRev={this.state.resolvedRevOrError}
                     className="repo-composite-container__header"
                     location={this.props.location}
                     history={this.props.history}
@@ -240,6 +247,8 @@ export class RepoContainer extends React.Component<Props, State> {
                                         {...routeComponentProps}
                                         {...transferProps}
                                         rev={this.state.rev || ''}
+                                        resolvedRevOrError={this.state.resolvedRevOrError}
+                                        onResolvedRevOrError={this.onResolvedRevOrError}
                                         // must exactly match how the rev was encoded in the URL
                                         routePrefix={`${repoMatchURL}${
                                             this.state.rawRev ? `@${this.state.rawRev}` : ''
@@ -334,6 +343,9 @@ export class RepoContainer extends React.Component<Props, State> {
 
     private onDidUpdateExternalLinks = (externalLinks: GQL.IExternalLink[] | undefined): void =>
         this.setState({ externalLinks })
+
+    private onResolvedRevOrError = (v: ResolvedRev | ErrorLike | undefined): void =>
+        this.setState({ resolvedRevOrError: v })
 }
 
 /**
