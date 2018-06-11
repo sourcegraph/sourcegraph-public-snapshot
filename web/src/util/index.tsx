@@ -303,6 +303,7 @@ function getModeFromExtension(ext: string): string | undefined {
         case 'mli':
         case 'mll':
         case 'mly':
+        case 're': // reason has the same language server as ocaml
             return 'ocaml'
 
         // Perl
