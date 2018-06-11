@@ -1,6 +1,10 @@
 import { assert } from 'chai'
+import mkdirp from 'mkdirp-promise'
+import * as path from 'path'
 import { Browser, connect, launch, Page } from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
+
+const SCREENSHOT_DIRECTORY = __dirname + '/../../puppeteer'
 
 describe('e2e test suite', () => {
     let authenticate: (page: Page) => Promise<void>
@@ -58,8 +62,12 @@ describe('e2e test suite', () => {
     afterEach('Close page', async function(): Promise<void> {
         if (page) {
             if (this.currentTest.state === 'failed') {
-                const path = __dirname + '/../../puppeteer/' + this.currentTest.fullTitle().replace(/ /g, '_') + '.png'
-                await page.screenshot({ path })
+                await mkdirp(SCREENSHOT_DIRECTORY)
+                const filePath = path.join(
+                    SCREENSHOT_DIRECTORY,
+                    this.currentTest.fullTitle().replace(/ /g, '_') + '.png'
+                )
+                await page.screenshot({ path: filePath })
             }
             await page.close()
         }
