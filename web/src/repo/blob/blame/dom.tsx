@@ -5,7 +5,7 @@ import { BlameData } from './index'
 /**
  * setLineBlameContent sets the given line's blame content.
  */
-function setLineBlameContent(line: number, blameContent: string, rev?: string): void {
+function setLineBlameContent(line: number, blameContent: string, url?: string): void {
     // Remove blame class from all other lines.
     const currentlyBlamed = document.querySelectorAll('.blob td.code>.blame')
     for (const blame of currentlyBlamed) {
@@ -23,8 +23,8 @@ function setLineBlameContent(line: number, blameContent: string, rev?: string): 
         const blame = document.createElement('span')
         blame.classList.add('blame')
         blame.setAttribute('data-blame', blameContent)
-        if (rev) {
-            blame.setAttribute('data-blame-rev', rev)
+        if (url) {
+            blame.setAttribute('data-blame-url', url)
         }
         if (cell.textContent === '\n') {
             /*
@@ -64,5 +64,5 @@ export function setLineBlame(data: BlameData): void {
         true
     )} ${limitString(hunk.rev, 6, false)}`
 
-    setLineBlameContent(data.ctx.range.start.line, blameContent, hunk.rev)
+    setLineBlameContent(data.ctx.range.start.line, blameContent, hunk.commit.url)
 }

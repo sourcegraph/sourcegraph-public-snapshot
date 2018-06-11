@@ -7,7 +7,6 @@ import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, switchMap, takeUntil } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
-import { toCommitURL } from '../../../util/url'
 import { AbsoluteRepoFile } from '../../index'
 import { fetchBlameFile2 } from './backend'
 
@@ -72,8 +71,7 @@ export class BlameLine extends React.Component<BlameLineProps, BlameLineState> {
                         const message = truncate(hunk.message, { length: 80, omission: '…' })
                         const timeSince = formatDistance(hunk.author.date, new Date(), { addSuffix: true })
                         content = `${hunk.author.person.name}, ${timeSince} • ${message} ${commitID}`
-
-                        href = toCommitURL({ repoPath: this.props.repoPath, commitID: hunk.rev })
+                        href = hunk.commit.url
                     }
 
                     this.setState({ content, href })

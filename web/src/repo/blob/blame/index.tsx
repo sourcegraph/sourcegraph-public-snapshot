@@ -1,7 +1,7 @@
 import { BehaviorSubject, interval, merge, Observable } from 'rxjs'
 import { catchError, map, switchMap, take, takeUntil } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
-import { openFromJS, toCommitURL } from '../../../util/url'
+import { openFromJS } from '../../../util/url'
 import { AbsoluteRepoFilePosition, AbsoluteRepoFileRange } from '../../index'
 import { fetchBlameFile } from './backend'
 import { clearLineBlameContent, setLineBlame } from './dom'
@@ -74,8 +74,8 @@ function maybeOpenCommit(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): v
     if (!prevCtx || prevCtx.range.start.line !== ctx.range.start.line || !currentlyBlamed) {
         return // Not clicking on a line with blame info already showing.
     }
-    const rev = currentlyBlamed.getAttribute('data-blame-rev')
-    if (!rev) {
+    const url = currentlyBlamed.getAttribute('data-blame-url')
+    if (!url) {
         return // e.g. if blame info failed to load or is currently loading
     }
 
@@ -100,7 +100,7 @@ function maybeOpenCommit(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): v
         return // Not clicking on blame text
     }
 
-    openFromJS(toCommitURL({ repoPath: ctx.repoPath, commitID: rev }), clickEvent)
+    openFromJS(url, clickEvent)
 }
 
 export function triggerBlame(ctx: AbsoluteRepoFileRange, clickEvent?: MouseEvent): void {

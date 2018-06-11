@@ -1,8 +1,14 @@
 package graphqlbackend
 
-import "github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+import (
+	"context"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+)
 
 type hunkResolver struct {
+	repo *repositoryResolver
 	hunk *git.Hunk
 }
 
@@ -38,4 +44,12 @@ func (r *hunkResolver) Rev() string {
 
 func (r *hunkResolver) Message() string {
 	return r.hunk.Message
+}
+
+func (r *hunkResolver) Commit(ctx context.Context) (*gitCommitResolver, error) {
+	commit, err := git.GetCommit(ctx, backend.CachedGitRepo(r.repo.repo), r.hunk.CommitID)
+	if err != nil {
+		return nil, err
+	}
+	return toGitCommitResolver(r.repo, commit), nil
 }

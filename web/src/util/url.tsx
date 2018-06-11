@@ -193,10 +193,6 @@ export function toTreeURL(ctx: RepoFile): string {
     return `/${encodeRepoRev(ctx.repoPath, rev)}/-/tree/${ctx.filePath}`
 }
 
-export function toCommitURL(ctx: Repo & { commitID: string }): string {
-    return `/${ctx.repoPath}/-/commit/${ctx.commitID}`
-}
-
 /**
  * Correctly handle use of meta/ctrl/alt keys during onClick events that open new pages
  */

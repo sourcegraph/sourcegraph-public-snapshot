@@ -1691,6 +1691,8 @@ type Hunk {
     author: Signature!
     # The message.
     message: String!
+    # The commit that contains the hunk.
+    commit: GitCommit!
 }
 
 # A list of users.

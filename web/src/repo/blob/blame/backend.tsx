@@ -34,6 +34,9 @@ export const fetchBlameFile = memoizeObservable(
                                         date
                                     }
                                     message
+                                    commit {
+                                        url
+                                    }
                                 }
                             }
                         }
@@ -99,6 +102,9 @@ export const fetchBlameFile2 = memoizeObservable(
                                         date
                                     }
                                     message
+                                    commit {
+                                        url
+                                    }
                                 }
                             }
                         }
