@@ -187,7 +187,6 @@ export class RepoContainer extends React.Component<Props, State> {
                 <RepoHeader
                     repo={this.state.repoOrError}
                     rev={this.state.rev}
-                    filePath={filePath}
                     className="repo-composite-container__header"
                     location={this.props.location}
                     history={this.props.history}

@@ -46,17 +46,10 @@ interface Props {
      */
     className?: string
 
-    /**
-     * Do not include links in breadcrumb. Intended when the repository is not available on the
-     * server.
-     */
-    disableLinks?: boolean
-
     // These two props (rev and filePath) technically violate separation of concerns because they
     // are for "repo revs" not just "repos". But it's much simpler and just requires lexicographic
     // operations to compute them even outside of the RepoRevContainer.
     rev: string | undefined
-    filePath: string | undefined
 
     location: H.Location
     history: H.History
