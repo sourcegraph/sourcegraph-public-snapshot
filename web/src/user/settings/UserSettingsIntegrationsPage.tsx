@@ -89,7 +89,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                         <a
                             className={`btn btn-primary mr-2 ${this.state.browserExtensionInstalled ? 'disabled' : ''}`}
                             target="_blank"
-                            href="https://chrome.google.com/webstore/detail/sourcegraph-for-github/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
+                            href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en"
                             onClick={this.installChromeExtension}
                         >
                             Install Chrome extension
@@ -99,7 +99,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
                         <a
                             className={`btn btn-primary ${this.state.browserExtensionInstalled ? 'disabled' : ''}`}
                             target="_blank"
-                            href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-addon-for-github/"
+                            href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/"
                             onClick={this.installFirefoxExtension}
                         >
                             Install Firefox add-on

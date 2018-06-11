@@ -7,7 +7,7 @@ import { Toast } from './Toast'
 import { daysActiveCount } from './util'
 
 const CHROME_EXTENSION_STORE_LINK = 'https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack'
-const FIREFOX_EXTENSION_STORE_LINK = 'https://addons.mozilla.org/en-us/firefox/addon/sourcegraph-addon-for-github/'
+const FIREFOX_EXTENSION_STORE_LINK = 'https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/'
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-browser-ext-toast'
 
 declare global {
