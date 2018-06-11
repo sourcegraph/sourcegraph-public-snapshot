@@ -2,6 +2,7 @@ package git
 
 import (
 	regexpsyntax "regexp/syntax"
+	"strings"
 )
 
 // regexpToGlobBestEffort performs a best-effort conversion of the regexp p to an equivalent glob
@@ -24,32 +25,38 @@ func regexpToGlobBestEffort(p string) (glob string, equiv bool) {
 	case regexpsyntax.OpLiteral:
 		return "*" + globQuoteMeta(re.Rune) + "*", true
 	case regexpsyntax.OpConcat:
-		if len(re.Sub) == 3 && re.Sub[0].Op == regexpsyntax.OpBeginText && re.Sub[1].Op == regexpsyntax.OpLiteral && re.Sub[2].Op == regexpsyntax.OpEndText {
-			if len(re.Sub[1].Rune) > 0 && re.Sub[1].Rune[0] == ':' { // leading : has special meaning
+		if len(re.Sub) < 2 {
+			return "", false
+		}
+		var b strings.Builder
+		if op := re.Sub[0].Op; op != regexpsyntax.OpBeginText && op != regexpsyntax.OpStar {
+			b.WriteByte('*')
+		}
+		for _, sub := range re.Sub {
+			switch sub.Op {
+			case regexpsyntax.OpBeginText, regexpsyntax.OpEndText:
+				// ignore
+			case regexpsyntax.OpLiteral:
+				b.WriteString(globQuoteMeta(sub.Rune))
+			case regexpsyntax.OpAnyCharNotNL:
+				b.WriteByte('?')
+			case regexpsyntax.OpStar:
+				if sub.Sub[0].Op != regexpsyntax.OpAnyCharNotNL { // only support .*
+					return "", false
+				}
+				b.WriteByte('*')
+			default:
 				return "", false
 			}
-			return globQuoteMeta(re.Sub[1].Rune), true
 		}
-		if len(re.Sub) == 3 && re.Sub[0].Op == regexpsyntax.OpLiteral && re.Sub[2].Op == regexpsyntax.OpLiteral {
-			var wildcard string
-			if re.Sub[1].Op == regexpsyntax.OpAnyCharNotNL {
-				wildcard = "?"
-			} else if re.Sub[1].Op == regexpsyntax.OpStar && re.Sub[1].Sub0[0].Op == regexpsyntax.OpAnyCharNotNL {
-				wildcard = "*"
-			} else {
-				return "", false
-			}
-			return "*" + globQuoteMeta(re.Sub[0].Rune) + wildcard + globQuoteMeta(re.Sub[2].Rune) + "*", true
+		if op := re.Sub[len(re.Sub)-1].Op; op != regexpsyntax.OpEndText && op != regexpsyntax.OpStar {
+			b.WriteByte('*')
 		}
-		if len(re.Sub) == 2 && re.Sub[0].Op == regexpsyntax.OpBeginText && re.Sub[1].Op == regexpsyntax.OpLiteral {
-			if len(re.Sub[1].Rune) > 0 && re.Sub[1].Rune[0] == ':' { // leading : has special meaning
-				return "", false
-			}
-			return globQuoteMeta(re.Sub[1].Rune) + "*", true
+		glob := b.String()
+		if strings.HasPrefix(glob, ":") { // leading : has special meaning
+			return "", false
 		}
-		if len(re.Sub) == 2 && re.Sub[1].Op == regexpsyntax.OpEndText && re.Sub[0].Op == regexpsyntax.OpLiteral {
-			return "*" + globQuoteMeta(re.Sub[0].Rune), true
-		}
+		return glob, true
 	}
 	return "", false
 }
