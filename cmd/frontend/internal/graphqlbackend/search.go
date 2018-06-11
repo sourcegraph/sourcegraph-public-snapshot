@@ -544,6 +544,11 @@ func (r *searchSuggestionResolver) ToRepository() (*repositoryResolver, bool) {
 	return res, ok
 }
 
+func (r *searchSuggestionResolver) ToFile() (*gitTreeEntryResolver, bool) {
+	res, ok := r.result.(*gitTreeEntryResolver)
+	return res, ok
+}
+
 func (r *searchSuggestionResolver) ToGitBlob() (*gitTreeEntryResolver, bool) {
 	res, ok := r.result.(*gitTreeEntryResolver)
 	return res, ok && res.stat.Mode().IsRegular()

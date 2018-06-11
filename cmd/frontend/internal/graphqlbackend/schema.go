@@ -589,7 +589,7 @@ type SearchFilter {
 }
 
 # A search suggestion.
-union SearchSuggestion = Repository | GitBlob | GitTree | Symbol
+union SearchSuggestion = Repository | File | Symbol
 
 # A search scope.
 type SearchScope {
@@ -1030,14 +1030,14 @@ type FileDiff {
     # The old (original) path of the file, or null if the file was added.
     oldPath: String
     # The old file, or null if the file was created (oldFile.path == oldPath).
-    oldFile: File
+    oldFile: File2
     # The new (changed) path of the file, or null if the file was deleted.
     newPath: String
     # The new file, or null if the file was deleted (newFile.path == newPath).
-    newFile: File
+    newFile: File2
     # The old file (if the file was deleted) and otherwise the new file. This file field is typically used by
     # clients that want to show a "View" link to the file.
-    mostRelevantFile: File!
+    mostRelevantFile: File2!
     # Hunks that were changed from old to new.
     hunks: [FileDiffHunk!]!
     # The diff stat for the whole file.
@@ -1375,7 +1375,7 @@ type GitCommit implements Node {
     # The file at the given path for this commit.
     #
     # See "File" documentation for the difference between this field and the "blob" field.
-    file(path: String!): File
+    file(path: String!): File2
     # Lists the programming languages present in the tree at this commit.
     languages: [String!]!
     # The log of commits consisting of this commit and its ancestors.
@@ -1520,11 +1520,14 @@ type GitTree implements TreeEntry {
 
 # A file.
 #
-# In a future version of Sourcegraph, a repository's files may be distinct from a repository's blobs (for example,
-# to support searching/browsing generated files that aren't committed and don't exist as Git blobs). Clients should
-# generally use the GitBlob concrete type and GitCommit.blobs (not GitCommit.files), unless they explicitly want to
-# opt-in to different behavior in the future.
-interface File {
+# In a future version of Sourcegraph, a repository's files may be distinct from a repository's blobs
+# (for example, to support searching/browsing generated files that aren't committed and don't exist
+# as Git blobs). Clients should generally use the GitBlob concrete type and GitCommit.blobs (not
+# GitCommit.files), unless they explicitly want to opt-in to different behavior in the future.
+#
+# INTERNAL: This is temporarily named File2 during a migration. Do not refer to the name File2 in
+# any API clients as the name will change soon.
+interface File2 {
     # The full path (relative to the root) of this file.
     path: String!
     # The base name (i.e., file name only) of this file.
@@ -1559,8 +1562,22 @@ interface File {
     ): SymbolConnection!
 }
 
+# File is temporarily preserved for backcompat with browser extension search API client code.
+type File {
+    # The full path (relative to the repository root) of this file.
+    path: String!
+    # The base name (i.e., file name only) of this file's path.
+    name: String!
+    # Whether this is a directory.
+    isDirectory: Boolean!
+    # The URL to this file on Sourcegraph.
+    url: String!
+    # The repository that contains this file.
+    repository: Repository!
+}
+
 # A Git blob in a repository.
-type GitBlob implements TreeEntry, File {
+type GitBlob implements TreeEntry, File2 {
     # The full path (relative to the repository root) of this blob.
     path: String!
     # The base name (i.e., file name only) of this blob's path.

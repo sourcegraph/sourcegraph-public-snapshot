@@ -182,16 +182,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                         ... on Repository {
                             uri
                         }
-                        ... on GitBlob {
-                            path
-                            name
-                            isDirectory
-                            url
-                            repository {
-                                uri
-                            }
-                        }
-                        ... on GitTree {
+                        ... on File {
                             path
                             name
                             isDirectory
