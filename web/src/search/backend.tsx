@@ -40,10 +40,21 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                 __typename
                                 id
                                 uri
+                                url
                             }
                             ... on FileMatch {
                                 __typename
-                                resource
+                                file {
+                                    path
+                                    url
+                                    commit {
+                                        oid
+                                    }
+                                }
+                                repository {
+                                    name
+                                    url
+                                }
                                 limitHit
                                 symbols {
                                     name

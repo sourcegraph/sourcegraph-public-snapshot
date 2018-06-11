@@ -1,14 +1,5 @@
 import { Range } from 'vscode-languageserver-types'
-import {
-    AbsoluteRepoFile,
-    PositionSpec,
-    RangeSpec,
-    RenderModeSpec,
-    Repo,
-    RepoFile,
-    RevSpec,
-    ViewStateSpec,
-} from '../repo'
+import { AbsoluteRepoFile, PositionSpec, RangeSpec, RenderModeSpec, RepoFile, ViewStateSpec } from '../repo'
 
 function toRenderModeQuery(ctx: Partial<RenderModeSpec>): string {
     if (ctx.renderMode === 'code') {
@@ -167,8 +158,13 @@ export function toViewStateHashComponent(viewState: string | undefined): string 
     return viewState ? `$${viewState}` : ''
 }
 
-export function toPrettyRepoURL(ctx: Repo & Partial<RevSpec>): string {
-    return `/${encodeRepoRev(ctx.repoPath, ctx.rev)}`
+/**
+ * Returns the URL path for the given repository name.
+ *
+ * @deprecated Obtain the repository's URL from the GraphQL Repository.url field instead.
+ */
+export function toRepoURL(repoName: string): string {
+    return `/${repoName}`
 }
 
 export function toPrettyBlobURL(

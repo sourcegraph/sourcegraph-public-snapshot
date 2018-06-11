@@ -154,6 +154,7 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
                         enabled
                         createdAt
                         viewerCanAdminister
+                        url
                         mirrorInfo {
                             cloned
                             cloneInProgress

@@ -128,6 +128,22 @@ func (fm *fileMatchResolver) Key() string {
 	return fm.uri
 }
 
+func (fm *fileMatchResolver) File() *gitTreeEntryResolver {
+	return &gitTreeEntryResolver{
+		commit: &gitCommitResolver{
+			repo:     &repositoryResolver{repo: fm.repo},
+			oid:      gitObjectID(fm.commitID),
+			inputRev: fm.inputRev,
+		},
+		path: fm.JPath,
+		stat: createFileInfo(fm.JPath, false),
+	}
+}
+
+func (fm *fileMatchResolver) Repository() *repositoryResolver {
+	return &repositoryResolver{repo: fm.repo}
+}
+
 func (fm *fileMatchResolver) Resource() string {
 	return fm.uri
 }

@@ -3,25 +3,19 @@ import { Link } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'
 import { SymbolIcon } from '../symbols/SymbolIcon'
 import { pluralize } from '../util/strings'
-import { toPrettyBlobURL } from '../util/url'
+import { toPositionOrRangeHash } from '../util/url'
 import { CodeExcerpt } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
-export interface IFileMatch {
-    resource: string
-    symbols?: GQL.ISymbol[]
+export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'symbols' | 'limitHit'>> & {
+    file: Pick<GQL.IFile, 'path' | 'url'> & { commit: Pick<GQL.IGitCommit, 'oid'> }
+    repository: Pick<GQL.IRepository, 'name' | 'url'>
     lineMatches: ILineMatch[]
-    limitHit?: boolean
 }
 
-export interface ILineMatch {
-    preview: string
-    lineNumber: number
-    offsetAndLengths: number[][]
-    limitHit?: boolean
-}
+export type ILineMatch = Pick<GQL.ILineMatch, 'preview' | 'lineNumber' | 'offsetAndLengths' | 'limitHit'>
 
 interface IMatchItem {
     highlightRanges: {
@@ -30,36 +24,11 @@ interface IMatchItem {
     }[]
     preview: string
     line: number
-    uri: string
-    repoURI: string
-}
-
-const buildMatchItems = (lines: ILineMatch[], uri: string, repoURI: string): IMatchItem[] =>
-    lines.map(match => ({
-        highlightRanges: match.offsetAndLengths.map(offsetAndLength => ({
-            start: offsetAndLength[0],
-            highlightLength: offsetAndLength[1],
-        })),
-        preview: match.preview,
-        line: match.lineNumber,
-        uri,
-        repoURI,
-    }))
-
-interface IFileInfo {
-    repoPath: string
-    rev: string
+    repoName: string
+    repoURL: string
     filePath: string
-}
-
-const getFileInfo = (uri: string): IFileInfo => {
-    const parsed = new URL(uri)
-
-    return {
-        repoPath: parsed.hostname + decodeURIComponent(parsed.pathname),
-        rev: decodeURIComponent(parsed.search.substr('?'.length)),
-        filePath: decodeURIComponent(parsed.hash.substr('#'.length)),
-    }
+    fileURL: string
+    commitID: string
 }
 
 interface Props {
@@ -100,14 +69,33 @@ const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== 
 
 export class FileMatch extends React.PureComponent<Props> {
     public render(): React.ReactNode {
-        const info = getFileInfo(this.props.result.resource)
-        const items = buildMatchItems(this.props.result.lineMatches, this.props.result.resource, info.repoPath)
+        const result = this.props.result
+        const items: IMatchItem[] = this.props.result.lineMatches.map(m => ({
+            highlightRanges: m.offsetAndLengths.map(offsetAndLength => ({
+                start: offsetAndLength[0],
+                highlightLength: offsetAndLength[1],
+            })),
+            preview: m.preview,
+            line: m.lineNumber,
+            repoName: result.repository.name,
+            repoURL: result.repository.url,
+            filePath: result.file.path,
+            fileURL: result.file.url,
+            commitID: result.file.commit.oid,
+        }))
 
-        const title = <RepoFileLink repoPath={info.repoPath} rev={info.rev} filePath={info.filePath} />
+        const title = (
+            <RepoFileLink
+                repoPath={result.repository.name}
+                repoURL={result.repository.url}
+                filePath={result.file.path}
+                fileURL={result.file.url}
+            />
+        )
 
         let containerProps: ResultContainerProps
 
-        const expandedChildren = this.getChildren(items, info, true)
+        const expandedChildren = this.getChildren(items, result.file.url, true)
         if (this.props.showAllMatches) {
             containerProps = {
                 collapsible: true,
@@ -124,7 +112,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 defaultExpanded: this.props.expanded,
                 icon: this.props.icon,
                 title,
-                collapsedChildren: this.getChildren(items, info, false),
+                collapsedChildren: this.getChildren(items, result.file.url, false),
                 expandedChildren,
                 collapseLabel: `Hide ${len} matches`,
                 expandLabel: `Show ${len} more ${pluralize('match', len, 'matches')}`,
@@ -136,7 +124,7 @@ export class FileMatch extends React.PureComponent<Props> {
     }
 
     // If this grows any larger, it needs to be factored out into it's own component
-    private getChildren = (items: IMatchItem[], info: IFileInfo, allMatches: boolean) => {
+    private getChildren = (items: IMatchItem[], fileURL: string, allMatches: boolean) => {
         const showItems = items
             .sort((a, b) => {
                 if (a.line < b.line) {
@@ -156,17 +144,7 @@ export class FileMatch extends React.PureComponent<Props> {
             .filter((item, i) => allMatches || i < subsetMatches)
 
         if (NO_SEARCH_HIGHLIGHTING) {
-            return (
-                <CodeExcerpt2
-                    urlWithoutPosition={toPrettyBlobURL({
-                        repoPath: info.repoPath,
-                        rev: info.rev,
-                        filePath: info.filePath,
-                    })}
-                    items={showItems}
-                    onSelect={this.props.onSelect}
-                />
-            )
+            return <CodeExcerpt2 urlWithoutPosition={fileURL} items={showItems} onSelect={this.props.onSelect} />
         }
 
         return (
@@ -186,27 +164,18 @@ export class FileMatch extends React.PureComponent<Props> {
                     </Link>
                 ))}
                 {showItems.map((item, i) => {
-                    const uri = new URL(item.uri)
                     const position = { line: item.line + 1, character: item.highlightRanges[0].start + 1 }
                     return (
                         <Link
-                            to={toPrettyBlobURL({
-                                repoPath: uri.hostname + uri.pathname,
-                                rev: info.rev,
-                                filePath: uri.hash.substr('#'.length),
-                                position,
-                            })}
-                            key={`linematch:${info.repoPath}:${info.rev}:${info.filePath}${position.line}:${
-                                position.character
-                            }`}
+                            to={`${item.fileURL}${toPositionOrRangeHash({ position })}`}
+                            key={`linematch:${item.fileURL}${position.line}:${position.character}`}
                             className="file-match__item file-match__item-clickable"
                             onClick={this.props.onSelect}
                         >
                             <CodeExcerpt
-                                repoPath={info.repoPath}
-                                rev={info.rev}
-                                commitID={info.rev}
-                                filePath={info.filePath}
+                                repoPath={item.repoName}
+                                commitID={item.commitID}
+                                filePath={item.filePath}
                                 previewWindowExtraLines={1}
                                 highlightRanges={item.highlightRanges}
                                 line={item.line}

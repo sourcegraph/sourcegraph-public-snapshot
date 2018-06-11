@@ -27,6 +27,7 @@ export const RepositorySearchResult: React.StatelessComponent<Props> = (props: P
             <>
                 <RepoLink
                     repoPath={props.result.uri}
+                    to={props.result.url}
                     // tslint:disable-next-line:jsx-no-lambda
                     onClick={() => {
                         logClickOnText()

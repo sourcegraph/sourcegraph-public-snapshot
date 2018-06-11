@@ -11,7 +11,7 @@ import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { RepoFileLink } from '../../components/RepoFileLink'
+import { RepoLink } from '../../repo/RepoLink'
 import { SearchScope } from '../../schema/settings.schema'
 import { currentConfiguration } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -193,7 +193,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                                     <div key={i} className="scope-page__row">
                                                         <Link to={repo.url} className="scope-page__link">
                                                             <RepositoryIcon className="icon-inline scope-page__link-icon" />
-                                                            <RepoFileLink repoPath={repo.name} disableLinks={true} />
+                                                            <RepoLink repoPath={repo.name} to={null} />
                                                         </Link>
                                                     </div>
                                                 ))}

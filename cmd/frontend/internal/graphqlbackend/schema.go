@@ -1611,8 +1611,16 @@ type HighlightedFile {
 
 # A file match.
 type FileMatch {
+    # The file containing the match.
+    #
+    # KNOWN ISSUE: This file's "commit" field contains incomplete data.
+    #
+    # KNOWN ISSUE: This field's type should be File! not GitBlob!.
+    file: GitBlob!
+    # The repository containing the file match.
+    repository: Repository!
     # The resource.
-    resource: String!
+    resource: String! @deprecated(reason: "use the file field instead")
     # The symbols found in this file that match the query.
     symbols: [Symbol!]!
     # The line matches.

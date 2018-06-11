@@ -2,11 +2,13 @@ import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, Subject, Subscription } from 'rxjs'
 import { filter, switchMap } from 'rxjs/operators'
-import { AbsoluteRepoFile } from '../repo'
+import { Repo } from '../repo'
 import { fetchHighlightedFileLines } from '../repo/backend'
 import { highlightNode } from '../util/dom'
 
-interface Props extends AbsoluteRepoFile {
+interface Props extends Repo {
+    commitID: string
+    filePath: string
     // How many extra lines to show in the excerpt before/after the ref.
     previewWindowExtraLines?: number
     line: number

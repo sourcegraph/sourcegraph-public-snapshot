@@ -11,6 +11,7 @@ import { FileMatch, IFileMatch, ILineMatch } from '../../../components/FileMatch
 import { VirtualList } from '../../../components/VirtualList'
 import { asError } from '../../../util/errors'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
+import { toPrettyBlobURL, toRepoURL } from '../../../util/url'
 import { parseRepoURI } from '../../index'
 
 export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
@@ -199,12 +200,19 @@ export class FileLocations extends React.PureComponent<Props, State> {
 }
 
 function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[]): IFileMatch {
-    const resource = new URL(uri)
-    if (rev) {
-        resource.search = rev
-    }
+    const p = parseRepoURI(uri)
     return {
-        resource: resource.toString(),
+        file: {
+            path: p.filePath || '',
+            url: toPrettyBlobURL({ repoPath: p.repoPath, filePath: p.filePath!, rev: rev || p.commitID || '' }),
+            commit: {
+                oid: p.commitID || p.rev || rev,
+            },
+        },
+        repository: {
+            name: p.repoPath,
+            url: toRepoURL(p.repoPath),
+        },
         limitHit: false,
         lineMatches: refs.map((ref): ILineMatch => ({
             preview: '',
