@@ -337,7 +337,7 @@ describe('e2e test suite', () => {
                 await retry(async () =>
                     assert.equal(
                         await page.evaluate(
-                            () => document.querySelectorAll('.tree-page__entries-directories .directory-entry').length
+                            () => document.querySelectorAll('.tree-page__entries-directories .tree-entry').length
                         ),
                         1
                     )
@@ -345,7 +345,7 @@ describe('e2e test suite', () => {
                 await retry(async () =>
                     assert.equal(
                         await page.evaluate(
-                            () => document.querySelectorAll('.tree-page__entries-files .directory-entry').length
+                            () => document.querySelectorAll('.tree-page__entries-files .tree-entry').length
                         ),
                         7
                     )
@@ -386,8 +386,8 @@ describe('e2e test suite', () => {
                 await page.goto(baseURL + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d')
                 await enableOrAddRepositoryIfNeeded()
                 // click on directory
-                await page.waitForSelector('.directory-entry')
-                await page.click('.directory-entry')
+                await page.waitForSelector('.tree-entry')
+                await page.click('.tree-entry')
                 await assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )
