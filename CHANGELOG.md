@@ -4,6 +4,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes
 
+## 2.9.0-pre0
+
 ### Changed
 
 * Search scopes have been consolidated into the "Filters" bar on the search results page.
