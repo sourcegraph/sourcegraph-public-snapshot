@@ -6,7 +6,7 @@
     "node": ">=8.0.0 <11.0.0"
   },
   "scripts": {
-    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
+    "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/internal/graphqlbackend/schema.graphql"
   },
   "devDependencies": {
