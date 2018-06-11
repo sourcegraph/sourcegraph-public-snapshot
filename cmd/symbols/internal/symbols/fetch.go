@@ -70,6 +70,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoURI, 
 	// code please ensure we still always call done once.
 
 	go func() {
+		defer r.Close()
 		buf := make([]byte, 32*1024) // 32*1024 is the same size used by io.Copy
 		tr := tar.NewReader(r)
 		for {
