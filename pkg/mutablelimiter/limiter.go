@@ -18,6 +18,7 @@ import (
 type Limiter struct {
 	adjustLimit chan int
 	acquire     chan acquireRequest
+	getLimit    chan struct{ cap, len int }
 }
 
 type acquireResponse struct {
@@ -34,6 +35,7 @@ type acquireRequest struct {
 func New(limit int) *Limiter {
 	l := &Limiter{
 		adjustLimit: make(chan int),
+		getLimit:    make(chan struct{ cap, len int }),
 		acquire:     make(chan acquireRequest),
 	}
 	go l.do(limit)
@@ -45,6 +47,13 @@ func New(limit int) *Limiter {
 // are canceled such that the older contexts are canceled.
 func (l *Limiter) SetLimit(limit int) {
 	l.adjustLimit <- limit
+}
+
+// GetLimit reports the current state of the limiter, returning the
+// capacity and length (maximum and currently-in-use).
+func (l Limiter) GetLimit() (cap, len int) {
+	s := <-l.getLimit
+	return s.cap, s.len
 }
 
 // Acquire tries to acquire a context. On success a child context of ctx is
@@ -102,6 +111,8 @@ func (l *Limiter) do(limit int) {
 			cancelFuncs.Remove(el)
 			el.Value.(context.CancelFunc)()
 
+		case l.getLimit <- struct{ cap, len int }{cap: limit, len: cancelFuncs.Len()}:
+			// nothing to do, this is just so GetLimit() works
 		case req := <-acquire:
 			ctx, cancel := context.WithCancel(req.ctx)
 			el := cancelFuncs.PushBack(cancel)

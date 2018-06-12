@@ -43,6 +43,15 @@ func TestLimiter(t *testing.T) {
 
 	l.SetLimit(3)
 
+	// verify cap/len
+	cap, len := l.GetLimit()
+	if cap != 3 {
+		t.Fatal("capacity not 3 as expected")
+	}
+	if len != 2 {
+		t.Fatal("len not 2 as expected")
+	}
+
 	// Now should work. Still use context with a deadline to ensure acquire
 	// wins over deadline
 	ctx3, cancel3, err := l.Acquire(timeoutContext())
