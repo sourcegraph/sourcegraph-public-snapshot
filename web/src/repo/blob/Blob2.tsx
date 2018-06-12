@@ -477,10 +477,12 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     hoverOrError,
                     // Reset the hover position, it's gonna be repositioned after the hover was rendered
                     hoverOverlayPosition: undefined,
-                    // After the hover is fetched, if the overlay was pinned, unpin it if the hover is empty
-                    hoverOverlayIsFixed: state.hoverOverlayIsFixed
-                        ? !!hoverOrError || !Hover.is(hoverOrError) || !isEmptyHover(hoverOrError)
-                        : false,
+                    hoverOverlayIsFixed:
+                        // If result is unknown/loading or errored, keep pinned state as-is
+                        hoverOrError === undefined || hoverOrError === LOADING || isErrorLike(hoverOrError)
+                            ? state.hoverOverlayIsFixed
+                            : // Else only keep it pinned if it was pinned before and the new hover is not empty
+                              state.hoverOverlayIsFixed && Hover.is(hoverOrError) && !isEmptyHover(hoverOrError),
                 }))
                 // Telemetry
                 if (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)) {
