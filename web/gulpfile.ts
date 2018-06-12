@@ -4,17 +4,21 @@ import log from 'fancy-log'
 import globby from 'globby'
 import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'graphql'
 import * as gulp from 'gulp'
+import httpProxyMiddleware from 'http-proxy-middleware'
 import { compileFromFile } from 'json-schema-to-typescript'
+// @ts-ignore
+import convert from 'koa-connect'
 import mkdirp from 'mkdirp-promise'
 import { readFile, writeFile } from 'mz/fs'
 import * as path from 'path'
 import PluginError from 'plugin-error'
 import { format, resolveConfig } from 'prettier'
+// ironically, has no published typings (but will soon)
+// @ts-ignore
+import tsUnusedExports from 'ts-unused-exports'
 import createWebpackCompiler, { Stats } from 'webpack'
 import serve from 'webpack-serve'
-import webpackServeConfig from './webpack-serve.config'
 import webpackConfig from './webpack.config'
-const tsUnusedExports = require('ts-unused-exports').default // ironically, has no published typings (but will soon)
 
 export const build = gulp.series(gulp.parallel(schemaTypes, graphQLTypes), webpack)
 export const watch = gulp.parallel(watchSchemaTypes, watchGraphQLTypes, watchWebpack)
@@ -39,18 +43,13 @@ export async function webpack(): Promise<void> {
     logWebpackStats(stats)
 }
 
-const createWatchWebpackCompiler = () => {
-    const compiler = createWebpackCompiler(webpackConfig)
-    compiler.hooks.watchRun.tap('log', () => log('Starting webpack compilation'))
-    return compiler
-}
-
 export async function watchWebpack(): Promise<void> {
     if (process.env.WEBPACK_SERVE) {
         await webpackServe()
         return
     }
-    const compiler = createWatchWebpackCompiler()
+    const compiler = createWebpackCompiler(webpackConfig)
+    compiler.hooks.watchRun.tap('log', () => log('Starting webpack compilation'))
     await new Promise<never>((resolve, reject) => {
         compiler.watch({}, (err, stats) => {
             if (err) {
@@ -67,8 +66,32 @@ export async function webpackServe(): Promise<void> {
         config: {
             ...webpackConfig,
             serve: {
-                ...webpackServeConfig,
-                compiler: createWatchWebpackCompiler(),
+                clipboard: false,
+                content: '../ui/assets',
+                port: 3080,
+                hot: false,
+                dev: {
+                    publicPath: '/.assets/',
+                    stats: WEBPACK_STATS_OPTIONS,
+                },
+                add: (app, middleware, options) => {
+                    // Since we're manipulating the order of middleware added, we need to handle
+                    // adding these two internal middleware functions.
+                    middleware.webpack()
+                    middleware.content()
+
+                    // Proxy *must* be the last middleware added.
+                    app.use(
+                        convert(
+                            // Proxy all requests (that are not for webpack-built assets) to the Sourcegraph
+                            // frontend server, and we make the Sourcegraph appURL equal to the URL of
+                            // webpack-serve. This is how webpack-serve needs to work (because it does a bit
+                            // more magic in injecting scripts that use WebSockets into proxied requests).
+                            httpProxyMiddleware({ target: 'http://localhost:3081' })
+                        )
+                    )
+                },
+                compiler: createWebpackCompiler(webpackConfig),
             },
         },
     })
