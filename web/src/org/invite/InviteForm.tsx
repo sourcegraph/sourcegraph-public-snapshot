@@ -236,8 +236,10 @@ export class InviteForm extends React.PureComponent<Props, State> {
             <div className="invite-form">
                 <div className="card invite-form__container">
                     <div className="card-body">
-                        <h4 className="card-title">Invite member</h4>
-                        <Form className="form-inline" onSubmit={this.onSubmit}>
+                        <h4 className="card-title">
+                            {this.viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
+                        </h4>
+                        <Form className="form-inline align-items-start" onSubmit={this.onSubmit}>
                             <label className="sr-only" htmlFor="invite-form__username">
                                 Username
                             </label>
@@ -260,36 +262,44 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                     type="submit"
                                     disabled={!!this.state.loading}
                                     className="btn btn-primary mb-2 mr-sm-2"
-                                    data-tooltip="Add existing user without sending invitation (site admins only)"
+                                    data-tooltip="Add immediately without sending invitation (site admins only)"
                                 >
                                     {this.state.loading === 'addUserToOrganization' ? (
                                         <LoaderIcon className="icon-inline" />
                                     ) : (
                                         <AddIcon className="icon-inline" />
                                     )}{' '}
-                                    Add
+                                    Add member
                                 </button>
                             )}
-                            <button
-                                type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
-                                disabled={!!this.state.loading}
-                                className={`btn mb-2  ${
-                                    viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'
-                                }`}
-                                data-tooltip={
-                                    emailInvitesEnabled
-                                        ? 'Send invitation email with link to join this organization'
-                                        : 'Generate invitation link to manually send to user'
-                                }
-                                onClick={viewerCanAddUserToOrganization ? this.onInviteClick : undefined}
-                            >
-                                {this.state.loading === 'inviteUserToOrganization' ? (
-                                    <LoaderIcon className="icon-inline" />
-                                ) : (
-                                    <InvitationIcon className="icon-inline" />
-                                )}{' '}
-                                {emailInvitesEnabled ? 'Invite' : 'Make invite link'}
-                            </button>
+                            {(emailInvitesEnabled || !this.viewerCanAddUserToOrganization) && (
+                                <div className="form-group flex-column mb-2 mr-sm-2">
+                                    <button
+                                        type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
+                                        disabled={!!this.state.loading}
+                                        className={`btn ${
+                                            viewerCanAddUserToOrganization ? 'btn-secondary' : 'btn-primary'
+                                        }`}
+                                        data-tooltip={
+                                            emailInvitesEnabled
+                                                ? 'Send invitation email with link to join this organization'
+                                                : 'Generate invitation link to manually send to user'
+                                        }
+                                        onClick={viewerCanAddUserToOrganization ? this.onInviteClick : undefined}
+                                    >
+                                        {this.state.loading === 'inviteUserToOrganization' ? (
+                                            <LoaderIcon className="icon-inline" />
+                                        ) : (
+                                            <InvitationIcon className="icon-inline" />
+                                        )}{' '}
+                                        {emailInvitesEnabled
+                                            ? this.viewerCanAddUserToOrganization
+                                                ? 'Send invitation to join'
+                                                : 'Send invitation'
+                                            : 'Generate invitation link'}
+                                    </button>
+                                </div>
+                            )}
                         </Form>
                     </div>
                 </div>
