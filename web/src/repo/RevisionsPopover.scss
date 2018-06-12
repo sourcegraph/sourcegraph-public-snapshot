@@ -18,6 +18,9 @@
         &__link:not(:hover) &__message {
             color: $color-text;
         }
+        &__oid {
+            margin-bottom: -0.125rem;
+        }
         &__oid,
         &__icon {
             flex: 0 0 auto;
