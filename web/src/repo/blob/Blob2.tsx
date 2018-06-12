@@ -235,7 +235,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     private codeMouseMoves = new Subject<React.MouseEvent<HTMLElement>>()
     private nextCodeMouseMove = (event: React.MouseEvent<HTMLElement>) => this.codeMouseMoves.next(event)
 
-    /** Emits whenever something is clicked in the code */
+    /**
+     * Emits whenever something is clicked in the code.
+     * Note that this also fires when the user selects text, see `codeClicksWithoutSelection` further down.
+     */
     private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
     private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => {
         event.persist()
@@ -261,6 +264,12 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             blameLineIDs: {},
             mouseIsMoving: false,
         }
+
+        /**
+         * click events on the code element, ignoring click events caused by the user selecting text.
+         * Selecting text should not mess with the hover, hover pinning nor the URL.
+         */
+        const codeClicksWithoutSelections = this.codeClicks.pipe(filter(() => window.getSelection().toString() === ''))
 
         // Mouse is moving, don't show the tooltip
         this.subscriptions.add(
@@ -309,7 +318,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
         // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
         this.subscriptions.add(
-            this.codeClicks
+            codeClicksWithoutSelections
                 .pipe(
                     withLatestFrom(this.codeElements),
                     map(([event, codeElement]) => ({
@@ -347,7 +356,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
         )
 
-        const codeClickTargets = this.codeClicks.pipe(
+        const codeClickTargets = codeClicksWithoutSelections.pipe(
             map(event => event.target as HTMLElement),
             withLatestFrom(this.codeElements),
             // If there was a click, there _must_ have been a blob element
