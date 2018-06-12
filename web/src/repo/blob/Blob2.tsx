@@ -555,13 +555,14 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 // Telemetry
                 eventLogger.log('GoToDefClicked')
 
-                // This causes an error/loader/not found UI to get shown if needed
-                // Remember if ctrl/cmd was pressed to determine whether the definition should be opened in a new tab once loaded
-                this.setState({ clickedGoToDefinition: event.ctrlKey || event.metaKey ? 'new-tab' : 'same-tab' })
-
-                // If we don't have a result yet, prevent default link behaviour (jump will occur dynamically once finished)
+                // If we don't have a result yet that would be jumped to by the native <a> tag...
                 if (!isJumpURL(this.state.definitionURLOrError)) {
+                    // Prevent default link behaviour (jump will be done programmatically once finished)
                     event.preventDefault()
+
+                    // Remember if ctrl/cmd was pressed to determine whether the definition should be opened in a new tab once loaded
+                    // Also causes an error/loader/not found UI to get shown if needed
+                    this.setState({ clickedGoToDefinition: event.ctrlKey || event.metaKey ? 'new-tab' : 'same-tab' })
                 }
             })
         )
