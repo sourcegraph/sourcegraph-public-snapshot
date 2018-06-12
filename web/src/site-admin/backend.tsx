@@ -665,6 +665,7 @@ export function deleteOrganization(organization: GQL.ID): Observable<void> {
 }
 
 export function fetchSiteUpdateCheck(): Observable<{
+    productName: string
     buildVersion: string
     productVersion: string
     updateCheck: GQL.IUpdateCheck
@@ -673,6 +674,7 @@ export function fetchSiteUpdateCheck(): Observable<{
         gql`
             query SiteUpdateCheck {
                 site {
+                    productName
                     buildVersion
                     productVersion
                     updateCheck {
@@ -690,6 +692,7 @@ export function fetchSiteUpdateCheck(): Observable<{
                 throw createAggregateError(errors)
             }
             return {
+                productName: data.site.productName,
                 buildVersion: data.site.buildVersion,
                 productVersion: data.site.productVersion,
                 updateCheck: data.site.updateCheck,

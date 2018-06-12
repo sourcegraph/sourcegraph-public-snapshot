@@ -92,6 +92,8 @@ func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
 	return canReloadSite && err == nil
 }
 
+func (r *siteResolver) ProductName() string { return conf.ProductName() }
+
 func (r *siteResolver) BuildVersion() string { return env.Version }
 
 func (r *siteResolver) ProductVersion() string { return updatecheck.ProductVersion }

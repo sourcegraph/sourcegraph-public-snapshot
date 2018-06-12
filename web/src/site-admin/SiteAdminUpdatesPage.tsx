@@ -18,6 +18,7 @@ interface Props extends RouteComponentProps<any> {}
 
 interface State {
     channel?: string | null
+    productName?: string
     buildVersion?: string
     productVersion?: string
     updateCheck?: GQL.IUpdateCheck
@@ -39,9 +40,10 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
             fetchSite()
                 .pipe(withLatestFrom(fetchSiteUpdateCheck()))
                 .subscribe(
-                    ([site, { buildVersion, productVersion, updateCheck }]) =>
+                    ([site, { productName, buildVersion, productVersion, updateCheck }]) =>
                         this.setState({
                             channel: getUpdateChannel(site.configuration.effectiveContents),
+                            productName,
                             buildVersion,
                             productVersion,
                             updateCheck,
@@ -79,12 +81,13 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                                     <div className="site-admin-updates-page__alert alert alert-success">
                                         <DownloadIcon className="icon-inline" /> Update available:{' '}
                                         <a href="https://about.sourcegraph.com">
-                                            Sourcegraph Server {this.state.updateCheck.updateVersionAvailable}
+                                            {this.state.productName} {this.state.updateCheck.updateVersionAvailable}
                                         </a>
                                     </div>
                                 ) : (
                                     <div className="site-admin-updates-page__alert alert alert-success">
-                                        <CheckmarkIcon className="icon-inline" /> Sourcegraph Server is up to date.
+                                        <CheckmarkIcon className="icon-inline" /> {this.state.productName} is up to
+                                        date.
                                     </div>
                                 ))}
                             {this.state.updateCheck.errorMessage && (
@@ -102,7 +105,9 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
 
                 <p className="site-admin-updates_page__info">
                     <small>
-                        <strong>Current product version:</strong> {this.state.productVersion} ({this.state.buildVersion})
+                        <strong>Current product version:</strong> {this.state.productName} {this.state.productVersion} ({
+                            this.state.buildVersion
+                        })
                     </small>
                     <br />
                     <small>

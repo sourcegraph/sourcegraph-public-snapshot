@@ -2151,6 +2151,9 @@ type Site implements ConfigurationSubject {
         # Include only external accounts with this client ID.
         clientID: String
     ): ExternalAccountConnection!
+    # The name of the Sourcegraph product that is used on this site ("Sourcegraph Server" or "Sourcegraph Data
+    # Center" when running in production).
+    productName: String!
     # The build version of the Sourcegraph software that is running on this site (of the form
     # NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
     buildVersion: String!

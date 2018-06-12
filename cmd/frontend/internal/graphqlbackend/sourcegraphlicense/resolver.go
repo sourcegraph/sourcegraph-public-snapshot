@@ -29,19 +29,7 @@ func (SourcegraphLicense) UserCount(ctx context.Context) (int32, error) {
 }
 
 // ProductName implements the GraphQL type SourcegraphLicense.
-func (SourcegraphLicense) ProductName() string {
-	switch conf.DeployType() {
-	case "dev":
-		return "Sourcegraph Dev"
-	case "datacenter":
-		return "Sourcegraph Data Center"
-	case "server":
-		return "Sourcegraph Server"
-	default:
-		// Should not reach here, but return a reasonable value just in case.
-		return "Sourcegraph"
-	}
-}
+func (SourcegraphLicense) ProductName() string { return conf.ProductName() }
 
 // PremiumFeatures implements the GraphQL type SourcegraphLicense.
 func (SourcegraphLicense) PremiumFeatures(ctx context.Context) ([]*featureResolver, error) {

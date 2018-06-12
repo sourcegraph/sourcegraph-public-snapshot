@@ -133,6 +133,23 @@ func IsDev(deployType string) bool {
 	return deployType == "dev"
 }
 
+// ProductName reports the name of the Sourcegraph product that is currently running ("Sourcegraph
+// Server", "Sourcegraph Data Center", etc.).
+func ProductName() string {
+	deployType := DeployType()
+	switch {
+	case IsDataCenter(deployType):
+		return "Sourcegraph Data Center"
+	case IsServer(deployType):
+		return "Sourcegraph Server"
+	case IsDev(deployType):
+		return "Sourcegraph Dev"
+	default:
+		// Should not reach here, but return a reasonable value just in case.
+		return "Sourcegraph"
+	}
+}
+
 // DebugManageDocker tells if Docker language servers should be managed or not.
 //
 // This only exists for dev mode / debugging purposes, and should never be used
