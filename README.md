@@ -12,6 +12,7 @@
 * [Web app](./web/README.md): web app docs
 * [Analytics](./docs/analytics.md): user analytics pipeline
 * [Glossary](./docs/glossary.md): glossary of common terms
+* [Infrastructure](https://github.com/sourcegraph/infrastructure): configuration, scripts, resource descriptions and secrets for running and managing sourcegraph.com and other internal/developer services.
 * [Style guide](./docs/style.md)
 
 ## Other docs
