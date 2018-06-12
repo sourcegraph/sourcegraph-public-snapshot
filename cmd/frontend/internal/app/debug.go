@@ -40,7 +40,7 @@ func addDebugHandlers(r *mux.Router) {
 
 		// We do not support data center yet
 		if len(debugserver.Services) == 0 {
-			fmt.Fprintf(w, `Instrumentation endpoint proxying for Sourcegraph Data-Center coming soon...<br>`)
+			fmt.Fprintf(w, `Instrumentation endpoint proxying for Sourcegraph Data Center is not yet available<br>`)
 		}
 	})
 	r.Handle("/", adminOnly(index))
