@@ -3,6 +3,7 @@ $navbar-top-row-height: 2.75rem;
 
 .global-navbar {
     width: 100%;
+    z-index: 2;
 
     &__right {
         display: flex;
