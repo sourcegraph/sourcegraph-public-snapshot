@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"go/build"
+	"log"
 	"net/url"
 	"path"
 	"runtime"
@@ -193,7 +194,31 @@ func (h *BuildHandler) findPackage(ctx context.Context, bctx *build.Context, pat
 	return h.doFindPackage(ctx, bctx, path, srcDir, mode, newDepCache())
 }
 
+// isUnderCanonicalImportPath tells if the given path is under the given root import path.
+func isUnderRootImportPath(rootImportPath, path string) bool {
+	return rootImportPath != "" && util.PathHasPrefix(path, rootImportPath)
+}
+
 func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, path, srcDir string, mode build.ImportMode, dc *depCache) (*build.Package, error) {
+	bpkg, err := h.doFindPackage2(ctx, bctx, path, srcDir, mode, dc)
+
+	// We couldn't find the package. If the package path is under the root when
+	// both strings are lowercase, that is a good indicator the user may have
+	// typo'd the case of their canonical import path. Their code would also
+	// not compile in this case under Linux, but it would on a case-insensitive
+	// filesystem like what Mac users typically have.
+	if err != nil && isUnderRootImportPath(strings.ToLower(h.rootImportPath), strings.ToLower(path)) {
+		err = fmt.Errorf("error importing %q: %s. This may be due to a case-sensitivity typo in your canonical import path comment. Found a similar root import path %q", path, err, h.rootImportPath)
+
+		// TODO(slimsag): Users do not have a way to see diagnostics, so if we
+		// did not log this error here they would not be able to see it because
+		// errors returned from this function go into diagnostics ultimately.
+		log.Println(err)
+	}
+	return bpkg, err
+}
+
+func (h *BuildHandler) doFindPackage2(ctx context.Context, bctx *build.Context, path, srcDir string, mode build.ImportMode, dc *depCache) (*build.Package, error) {
 	// If the package exists in the repo, or is vendored, or has
 	// already been fetched, this will succeed.
 	pkg, err := bctx.Import(path, srcDir, mode)
@@ -212,7 +237,7 @@ func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, p
 	// example.com/a/b and example.com/a/b lives in a separate
 	// repo, then this will break. This is the case for some
 	// azul3d packages, but it's rare.
-	if h.rootImportPath != "" && util.PathHasPrefix(path, h.rootImportPath) {
+	if isUnderRootImportPath(h.rootImportPath, path) {
 		if pkg != nil {
 			return pkg, nil
 		}
