@@ -1,4 +1,5 @@
 import format from 'date-fns/format'
+import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
@@ -194,7 +195,7 @@ export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPa
             <div className="site-admin-analytics-page">
                 <PageTitle title="Analytics - Admin" />
                 <h2>Analytics</h2>
-                {this.state.error && <p className="site-admin-analytics-page__error">{this.state.error.message}</p>}
+                {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                 {this.state.siteActivity && (
                     <>
                         <RadioButtons
@@ -230,21 +231,23 @@ export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPa
                     </>
                 )}
                 <h3 className="mt-4">All registered users</h3>
-                <FilteredUserConnection
-                    listComponent="table"
-                    className="table"
-                    hideFilter={false}
-                    filters={USER_ACTIVITY_FILTERS}
-                    noShowMore={false}
-                    noun="user"
-                    pluralNoun="users"
-                    queryConnection={fetchUserAnalytics}
-                    nodeComponent={UserActivityNode}
-                    headComponent={UserActivityHeader}
-                    footComponent={UserActivityFooter}
-                    history={this.props.history}
-                    location={this.props.location}
-                />
+                {!this.state.error && (
+                    <FilteredUserConnection
+                        listComponent="table"
+                        className="table"
+                        hideFilter={false}
+                        filters={USER_ACTIVITY_FILTERS}
+                        noShowMore={false}
+                        noun="user"
+                        pluralNoun="users"
+                        queryConnection={fetchUserAnalytics}
+                        nodeComponent={UserActivityNode}
+                        headComponent={UserActivityHeader}
+                        footComponent={UserActivityFooter}
+                        history={this.props.history}
+                        location={this.props.location}
+                    />
+                )}
             </div>
         )
     }

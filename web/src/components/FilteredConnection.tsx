@@ -1,6 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
+import { uniq, upperFirst } from 'lodash'
 import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
@@ -597,7 +597,12 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 )}
                 {isErrorLike(this.state.connectionOrError) ? (
                     <div className="alert alert-danger filtered-connection__error">
-                        {upperFirst(this.state.connectionOrError.message)}
+                        {uniq(this.state.connectionOrError.message.split('\n')).map(m => (
+                            <>
+                                {upperFirst(m)}
+                                <br />
+                            </>
+                        ))}
                     </div>
                 ) : (
                     this.state.connectionOrError && (
