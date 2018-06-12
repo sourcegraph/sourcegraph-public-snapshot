@@ -179,7 +179,7 @@ func main() {
 		pipeline.AddStep(":docker:", cmds...)
 	}
 
-	if strings.HasPrefix(branch, "docker-images-patch/") {
+	if strings.HasPrefix(branch, "docker-images-patch-notest/") {
 		version = version + "_patch"
 		addDockerImageStep(branch[19:], false)
 		_, err := pipeline.WriteTo(os.Stdout)
