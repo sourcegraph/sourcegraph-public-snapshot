@@ -158,3 +158,12 @@ func DebugManageDocker() bool {
 	}
 	return v
 }
+
+// UpdateChannel tells the update channel. Default is "release".
+func UpdateChannel() string {
+	channel := GetTODO().UpdateChannel
+	if channel == "" {
+		return "release"
+	}
+	return channel
+}

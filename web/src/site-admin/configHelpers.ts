@@ -165,8 +165,9 @@ export function getDisableTelemetryUsed(text: string): boolean {
     return getProperty(text, 'disableTelemetry')
 }
 
-export function getUpdateChannel(text: string): string | null {
-    return getProperty(text, 'update.channel')
+export function getUpdateChannel(text: string): string {
+    const channel = getProperty(text, 'update.channel')
+    return channel || 'release'
 }
 
 function getProperty(text: string, property: keyof SiteConfiguration): any | null {
