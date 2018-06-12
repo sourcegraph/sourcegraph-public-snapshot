@@ -64,3 +64,11 @@ We ship to our customers minor feature releases monthly (e.g. 2.7, 2.8, 2.9), an
   * Before a Server release is published ot customers, it should first be tested via `docker run ...` on your machine.
 * [Data Center release process](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph/-/blob/README.dev.md)
   * Before a Data Center release is published to customers, it should first be deployed to and tested on dogfood.
+
+Important notes:
+
+* The Server and Data Center release processes are completely independent. Either one can be done
+  without the other.
+* Versioning: the major and minor version of Server and Data Center are updated on the same monthly
+  release schedule, **but the patch version of one has no relation to that of the other.** That is
+  to say, the patch versions are completely independent.
