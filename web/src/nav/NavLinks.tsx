@@ -77,9 +77,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     </Link>
                 )}
                 <OpenHelpPopoverButton className="nav-links__help" onHelpPopoverToggle={this.onHelpPopoverToggle} />
-                {this.props.showHelpPopover && (
-                    <HelpPopover onDismiss={this.onHelpPopoverToggle} user={this.props.user} />
-                )}
+                {this.props.showHelpPopover && <HelpPopover onDismiss={this.onHelpPopoverToggle} />}
                 {!this.props.user &&
                     this.props.location.pathname !== '/sign-in' && (
                         <Link className="nav-links__link btn btn-primary" to="/sign-in">

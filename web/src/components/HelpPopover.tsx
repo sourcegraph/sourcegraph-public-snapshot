@@ -7,10 +7,8 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import * as GQL from '../backend/graphqlschema'
 
 interface Props {
-    user: GQL.IUser | null
     onDismiss: () => void
 }
 
