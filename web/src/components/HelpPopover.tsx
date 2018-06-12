@@ -5,7 +5,7 @@ import LinkIcon from '@sourcegraph/icons/lib/Link'
 import StarIcon from '@sourcegraph/icons/lib/Star'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { fromEvent, Subscription } from 'rxjs'
+import { fromEvent, merge, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 interface Props {
@@ -21,13 +21,17 @@ export class HelpPopover extends React.Component<Props> {
 
     private subscriptions = new Subscription()
 
+    private ref: HTMLElement | null = null
+    private setRef = (e: HTMLElement | null) => (this.ref = e)
+
     public componentDidMount(): void {
-        // ESC hides component.
-        this.subscriptions.add(
-            fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.key === 'Escape'))
-                .subscribe(() => this.props.onDismiss())
+        const escKeypress = fromEvent<KeyboardEvent>(window, 'keydown').pipe(filter(event => event.key === 'Escape'))
+
+        const outsideClick = fromEvent<MouseEvent>(window, 'mousedown').pipe(
+            filter(event => !!this.ref && !this.ref.contains(event.target as HTMLElement))
         )
+
+        this.subscriptions.add(merge(escKeypress, outsideClick).subscribe(() => this.props.onDismiss()))
     }
 
     public componentWillUnmount(): void {
@@ -36,7 +40,7 @@ export class HelpPopover extends React.Component<Props> {
 
     public render(): JSX.Element {
         return (
-            <div className="help-popover card">
+            <div className="help-popover card" ref={this.setRef}>
                 <h4 className="card-header d-flex justify-content-between pl-3">
                     Help
                     <button
