@@ -209,11 +209,12 @@ func (h *BuildHandler) doFindPackage(ctx context.Context, bctx *build.Context, p
 	// filesystem like what Mac users typically have.
 	if err != nil && isUnderRootImportPath(strings.ToLower(h.rootImportPath), strings.ToLower(path)) {
 		err = fmt.Errorf("error importing %q: %s. This may be due to a case-sensitivity typo in your canonical import path comment. Found a similar root import path %q", path, err, h.rootImportPath)
-
+	}
+	if err != nil {
 		// TODO(slimsag): Users do not have a way to see diagnostics, so if we
 		// did not log this error here they would not be able to see it because
 		// errors returned from this function go into diagnostics ultimately.
-		log.Println(err)
+		log.Printf("error finding package %q: %s", path, err)
 	}
 	return bpkg, err
 }
