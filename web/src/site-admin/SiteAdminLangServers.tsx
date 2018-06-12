@@ -206,7 +206,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                     <div className="site-admin-lang-servers__header-icon">
                         <GlobeIcon className="icon-inline" />
                     </div>
-                    <h5 className="site-admin-lang-servers__header-title">Language Servers</h5>
+                    <h5 className="site-admin-lang-servers__header-title">Language servers</h5>
                 </div>
                 {!this.state.error &&
                     this.state.langServers.length === 0 && (
