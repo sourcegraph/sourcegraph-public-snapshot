@@ -452,7 +452,8 @@ describe('e2e test suite', () => {
                             blobVersion
                         )
                     })
-                    it('gets displayed and updates URL when clicking on a token', async () => {
+                    // Temporarely skipped because of flakiness. TODO find cause
+                    it.skip('gets displayed and updates URL when clicking on a token', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
@@ -630,7 +631,8 @@ describe('e2e test suite', () => {
         })
 
         describe('external code host links', () => {
-            it('on line blame', async () => {
+            // Temporarely skipped because of flakiness. TODO find cause
+            it.skip('on line blame', async () => {
                 await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19'
