@@ -9,6 +9,7 @@
 * [Dev](./docs/dev.md): set up your development environment, build, test, etc.
 * [Deploy](./docs/deployment.md): deploy and release instructions
 * [Architecture](./docs/architecture.md): high-level architecture
+* [Web app](./web/README.md): web app docs
 * [Analytics](./docs/analytics.md): user analytics pipeline
 * [Glossary](./docs/glossary.md): glossary of common terms
 * [Style guide](./docs/style.md)
