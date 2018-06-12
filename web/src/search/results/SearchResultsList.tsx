@@ -25,6 +25,8 @@ import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 
+const isSearchResults = (val: any): val is GQL.ISearchResults => val && val.__typename === 'SearchResults'
+
 interface SearchResultsListProps {
     isLightTheme: boolean
     location: H.Location
@@ -448,6 +450,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
     /** setCheckpoint sets the `at` query param in the URL. It will be used to scroll to the result on page load of the given URL. */
     private setCheckpoint = (checkpoint: number): void => {
+        if (!isSearchResults(this.props.resultsOrError) || this.props.resultsOrError.limitHit) {
+            return
+        }
+
         const params = new URLSearchParams(this.props.location.search)
         if (checkpoint === 0) {
             params.delete('at')
