@@ -353,7 +353,7 @@ func (e *RepoNotCloneableErr) NotFound() bool {
 }
 
 func (e *RepoNotCloneableErr) Error() string {
-	return fmt.Sprintf("repo not found (name=%s url=%s) because %s", e.repo.Name, e.repo.URL, e.reason)
+	return fmt.Sprintf("repo not found (name=%s url=%s notfound=%v) because %s", e.repo.Name, e.repo.URL, e.notFound, e.reason)
 }
 
 func (c *Client) IsRepoCloned(ctx context.Context, repo api.RepoURI) (bool, error) {
