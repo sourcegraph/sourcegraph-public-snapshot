@@ -425,12 +425,10 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
         }))
 
     /**
-     * getCheckpoint gets the `at` query param from the URL. It is used to scroll to the result on page load of the given URL.
-     * This function will set `at` to 0 if it is not already set.
+     * getCheckpoint gets the location from the hash in the URL. It is used to scroll to the result on page load of the given URL.
      */
     private getCheckpoint(): number {
-        const params = new URLSearchParams(this.props.location.search)
-        const at = params.get('at')
+        const at = this.props.location.hash.replace(/^#/, '')
 
         let checkpoint: number
 
@@ -440,30 +438,30 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             checkpoint = parseInt(at, 10)
         }
 
-        // If `at=0`, remove it
+        // If checkpoint is `0`, remove it.
         if (checkpoint === 0) {
-            this.setCheckpoint(0) // `setCheckpoint` removes the query param when it is 0
+            this.setCheckpoint(0) // `setCheckpoint` removes the hash when it is 0
         }
 
         return checkpoint
     }
 
-    /** setCheckpoint sets the `at` query param in the URL. It will be used to scroll to the result on page load of the given URL. */
+    /** setCheckpoint sets the hash in the URL. It will be used to scroll to the result on page load of the given URL. */
     private setCheckpoint = (checkpoint: number): void => {
         if (!isSearchResults(this.props.resultsOrError) || this.props.resultsOrError.limitHit) {
             return
         }
 
-        const params = new URLSearchParams(this.props.location.search)
-        if (checkpoint === 0) {
-            params.delete('at')
-        } else {
-            params.set('at', checkpoint.toString())
+        const { hash, ...loc } = this.props.location
+
+        let newHash = ''
+        if (checkpoint > 0) {
+            newHash = `#${checkpoint}`
         }
 
         this.props.history.replace({
-            ...this.props.location,
-            search: `?${params.toString()}`,
+            ...loc,
+            hash: newHash,
         })
     }
 
