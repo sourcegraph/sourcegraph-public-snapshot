@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -23,6 +24,7 @@ type Server struct{}
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
+	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	return mux
 }
 
@@ -48,6 +50,20 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewEncoder(w).Encode(result); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoUpdateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := gitserver.DefaultClient.EnqueueRepoUpdate(r.Context(), gitserver.Repo{Name: req.Repo, URL: req.URL})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 }

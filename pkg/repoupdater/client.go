@@ -11,7 +11,9 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 )
 
@@ -99,6 +101,32 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		}
 	}
 	return result, err
+}
+
+// Repo represents a repository on gitserver. It contains the information necessary to identify and
+// create/clone it.
+type Repo struct {
+	Name api.RepoURI // the repository's URI
+
+	// URL is the repository's Git remote URL. If the gitserver already has cloned the repository,
+	// this field is optional (it will use the last-used Git remote URL). If the repository is not
+	// cloned on the gitserver, the request will fail.
+	URL string
+}
+
+// EnqueueRepoUpdate requests that the named repository be updated in the near
+// future. It does not wait for the update.
+func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) error {
+	req := &protocol.RepoUpdateRequest{
+		Repo: repo.Name,
+		URL:  repo.URL,
+	}
+	resp, err := c.httpPost(ctx, "enqueue-repo-update", req)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+	return nil
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, payload interface{}) (resp *http.Response, err error) {

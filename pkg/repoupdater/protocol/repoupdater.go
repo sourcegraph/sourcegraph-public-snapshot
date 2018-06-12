@@ -86,3 +86,11 @@ type RepoLinks struct {
 	Blob   string // the URL to a blob, with {rev} and {path} substitution variables
 	Commit string // the URL to a commit, with {commit} substitution variable
 }
+
+// RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
+type RepoUpdateRequest struct {
+	Repo api.RepoURI `json:"repo"`
+
+	// URL is the repository's Git remote URL (from which to clone or update).
+	URL string `json:"url"`
+}
