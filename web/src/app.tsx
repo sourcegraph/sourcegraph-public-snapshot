@@ -72,6 +72,11 @@ const Layout: React.SFC<LayoutProps> = props => {
         props.onThemeChange()
     }
 
+    // Remove trailing slash (which is never valid in any of our URLs).
+    if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
+        return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
+    }
+
     return (
         <div className="layout">
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
