@@ -1,5 +1,8 @@
 package main
 
+// We require git to clone dependencies not on github or gitserver.
+//docker:install git@edge
+
 import (
 	"context"
 	"flag"
