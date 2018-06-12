@@ -185,8 +185,8 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             name="Show more"
                                             query={this.props.navbarSearchQuery}
                                             onFilterChosen={this.showMoreResults}
-                                            key={`count:${this.calculateCount}`}
-                                            value={`count:${this.calculateCount}`}
+                                            key={`count:${this.calculateCount()}`}
+                                            value={`count:${this.calculateCount()}`}
                                             showMore={true}
                                         />
                                     )}
