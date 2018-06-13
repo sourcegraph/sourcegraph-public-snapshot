@@ -95,13 +95,15 @@ var repoLastFetched = func(dir string) (time.Time, error) {
 }
 
 // repoLastChanged returns the mtime of the repo's sg_refhash, which is the
-// date of the last successful `git remote update` or `git fetch` which
-// fetched objects. As a special case when sg_refhash is missing we return
-// repoLastFetched(dir).
+// cached timestamp of the most recent commit we could find in the tree. As a
+// special case when sg_refhash is missing we return repoLastFetched(dir).
 //
 // This breaks on file systems that do not record mtime. This is a Sourcegraph
 // extension to track last time a repo changed. The file is updated by
-// updateRefHash via doRepoUpdate2.
+// setLastChanged via doRepoUpdate2.
+//
+// As a special case, tries both the directory given, and the .git subdirectory,
+// because we're a bit inconsistent about which name to use.
 var repoLastChanged = func(dir string) (time.Time, error) {
 	fi, err := os.Stat(filepath.Join(dir, "sg_refhash"))
 	if os.IsNotExist(err) {
@@ -333,7 +335,7 @@ func mapToLog15Ctx(m map[string]interface{}) []interface{} {
 
 // updateFileIfDifferent will atomically update the file if the contents are
 // different. If it does an update ok is true.
-func updateFileIfDifferent(path string, content []byte) (ok bool, err error) {
+func updateFileIfDifferent(path string, content []byte) (bool, error) {
 	current, err := ioutil.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
 		// If the file doesn't exist we write a new file.
@@ -370,6 +372,5 @@ func updateFileIfDifferent(path string, content []byte) (ok bool, err error) {
 	if err := f.Close(); err != nil {
 		return false, err
 	}
-
 	return true, os.Rename(f.Name(), path)
 }

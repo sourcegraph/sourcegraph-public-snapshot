@@ -654,6 +654,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 			return
 		}
 		log15.Debug("repo cloned", "repo", repo)
+
+		// Update the last-changed stamp.
+		if err := setLastChanged(dir); err != nil {
+			log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
+		}
 	}()
 
 	return "", nil
@@ -889,7 +894,30 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 	}
 }
 
-func updateRefHash(dir string, hash []byte) error {
+// setLastChanged discerns an approximate last-changed timestamp for a
+// repository. This can be approximate; it's used to determine how often we
+// should run `git fetch`, but is not relied on strongly. The basic plan
+// is as follows: If a repository has never had a timestamp before, we
+// guess that the right stamp is *probably* the timestamp of the most
+// chronologically-recent commit. If there are no commits, we just use the
+// current time because that's probably usually a temporary state.
+//
+// If a timestamp already exists, we want to update it if and only if
+// the set of references (as determined by `git show-ref`) has changed.
+//
+// To accomplish this, we assert that the file `sg_refhash` in the git
+// directory should, if it exists, contain a hash of the output of
+// `git show-ref`, and have a timestamp of "the last time this changed",
+// except that if we're creating that file for the first time, we set
+// it to the timestamp of the top commit. We then compute the hash of
+// the show-ref output, and store it in the file if and only if it's
+// different from the current contents.
+//
+// If show-ref fails, we use rev-list to determine whether that's just
+// an empty repository (not an error) or some kind of actual error
+// that is possibly causing our data to be incorrect, which should
+// be reported.
+func setLastChanged(dir string) error {
 	// Handle two different locations for GIT_DIR :'(
 	_, err := os.Stat(filepath.Join(dir, "HEAD"))
 	if os.IsNotExist(err) {
@@ -899,9 +927,101 @@ func updateRefHash(dir string, hash []byte) error {
 	if err != nil {
 		return err
 	}
+	hashFile := filepath.Join(dir, "sg_refhash")
 
-	_, err = updateFileIfDifferent(filepath.Join(dir, "sg_refhash"), hash)
-	return err
+	hash, err := computeRefHash(dir)
+	if err != nil {
+		return errors.Wrapf(err, "computeRefHash failed for %s", dir)
+	}
+
+	var stamp time.Time
+	if _, err := os.Stat(hashFile); os.IsNotExist(err) {
+		// This is the first time we are calculating the hash. Give a more
+		// approriate timestamp for sg_refhash than the current time.
+		stamp, err = computeLatestCommitTimestamp(dir)
+		if err != nil {
+			return errors.Wrapf(err, "computeLatestCommitTimestamp failed for %s", dir)
+		}
+	}
+
+	_, err = updateFileIfDifferent(hashFile, hash)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update %s", hashFile)
+	}
+
+	// If stamp is non-zero we have a more approriate mtime.
+	if !stamp.IsZero() {
+		err = os.Chtimes(hashFile, stamp, stamp)
+		if err != nil {
+			return errors.Wrapf(err, "failed to set mtime to the lastest commit timestamp for %s", dir)
+		}
+	}
+
+	return nil
+}
+
+// computeLatestCommitTimestamp returns the timestamp of the most recent
+// commit if any. If there are no commits or the latest commit is in the
+// future, time.Now is returned.
+func computeLatestCommitTimestamp(dir string) (time.Time, error) {
+	now := time.Now() // return current time if we don't find a more accurate time
+	cmd := exec.Command("git", "rev-list", "--all", "--timestamp", "-n", "1")
+	cmd.Dir = dir
+	output, err := cmd.Output()
+
+	// If we don't have a more specific stamp, we'll return the current time,
+	// and possibly an error.
+	if err != nil {
+		return now, err
+	}
+
+	words := bytes.Split(output, []byte(" "))
+	// An empty rev-list output, without an error, is okay.
+	if len(words) < 2 {
+		return now, nil
+	}
+
+	// We should have a timestamp and a commit hash; format is
+	// 1521316105 ff03fac223b7f16627b301e03bf604e7808989be
+	epoch, err := strconv.ParseInt(string(words[0]), 10, 64)
+	if err != nil {
+		return now, errors.Wrap(err, "invalid timestamp in rev-list output")
+	}
+	stamp := time.Unix(epoch, 0)
+	if stamp.After(now) {
+		return now, nil
+	}
+	return stamp, nil
+}
+
+// computeRefHash returns a hash of the refs for dir. The hash should only
+// change if the set of refs and the commits they point to change.
+func computeRefHash(dir string) ([]byte, error) {
+	// Do not use CommandContext since this is a fast operation we do not want
+	// to interrupt.
+	cmd := exec.Command("git", "show-ref")
+	cmd.Dir = dir
+	output, err := cmd.Output()
+	if err != nil {
+		// Ignore the failure for an empty repository: show-ref fails with
+		// empty output and an exit code of 1
+		if e, ok := err.(*exec.ExitError); !ok || len(output) != 0 || len(e.Stderr) != 0 || e.Sys().(syscall.WaitStatus).ExitStatus() != 1 {
+			return nil, err
+		}
+	}
+
+	lines := bytes.Split(output, []byte("\n"))
+	sort.Slice(lines, func(i, j int) bool {
+		return bytes.Compare(lines[i], lines[j]) < 0
+	})
+	hasher := sha256.New()
+	for _, b := range lines {
+		hasher.Write(b)
+		hasher.Write([]byte("\n"))
+	}
+	hash := make([]byte, hex.EncodedLen(hasher.Size()))
+	hex.Encode(hash, hasher.Sum(nil))
+	return hash, nil
 }
 
 func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
@@ -973,36 +1093,17 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
 		return
 	}
 
-	// after each successful fetch, update a hash of known revs
-	cmd = exec.CommandContext(ctx, "git", "show-ref")
-	cmd.Dir = dir
-	output, err := s.runWithRemoteOpts(ctx, cmd, nil)
-	if err != nil {
-		log15.Error("show-ref failed", "repo", repo, "error", err, "output", string(output))
-		// but we don't return, because the rest of the processing still needs to happen
-	} else {
-		lines := bytes.Split(output, []byte("\n"))
-		sort.Slice(lines, func(i, j int) bool {
-			return bytes.Compare(lines[i], lines[j]) < 0
-		})
-		hasher := sha256.New()
-		for _, b := range lines {
-			hasher.Write(b)
-			hasher.Write([]byte("\n"))
-		}
-		hash := make([]byte, hex.EncodedLen(hasher.Size()))
-		hex.Encode(hash, hasher.Sum(nil))
-		err := updateRefHash(dir, hash)
-		if err != nil {
-			log15.Warn("saveRefHash failed", "hash", string(hash), "error", err)
-		}
+	// Update the last-changed stamp.
+	if err := setLastChanged(dir); err != nil {
+		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
 	}
+
 	headBranch := "master"
 
 	// try to fetch HEAD from origin
 	cmd = exec.CommandContext(ctx, "git", "remote", "show", url)
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
-	output, err = s.runWithRemoteOpts(ctx, cmd, nil)
+	output, err := s.runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "url", url, "error", err, "output", string(output))
 		return
