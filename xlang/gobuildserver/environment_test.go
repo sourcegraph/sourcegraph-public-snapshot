@@ -47,6 +47,15 @@ func TestDetermineEnvironment(t *testing.T) {
 			},
 		},
 		{
+			Name:           "customer-cmd-path",
+			RootURI:        "git://github.com/alice/code",
+			WantImportPath: "alice.org/code",
+			WantGoPath:     gopath,
+			FS: map[string]string{
+				"cmd/alice/alice.go": `package http // import "alice.org/code/cmd/alice"`,
+			},
+		},
+		{
 			Name:           "fallback",
 			RootURI:        "git://github.com/alice/pkg",
 			WantImportPath: "github.com/alice/pkg",
