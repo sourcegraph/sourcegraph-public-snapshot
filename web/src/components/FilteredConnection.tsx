@@ -597,11 +597,11 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                 )}
                 {isErrorLike(this.state.connectionOrError) ? (
                     <div className="alert alert-danger filtered-connection__error">
-                        {uniq(this.state.connectionOrError.message.split('\n')).map(m => (
-                            <>
+                        {uniq(this.state.connectionOrError.message.split('\n')).map((m, i) => (
+                            <React.Fragment key={i}>
                                 {upperFirst(m)}
                                 <br />
-                            </>
+                            </React.Fragment>
                         ))}
                     </div>
                 ) : (
