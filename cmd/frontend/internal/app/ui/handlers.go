@@ -172,7 +172,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		go func() {
 			ctx := context.Background()
 			if gitserverRepo, err := backend.GitRepo(ctx, common.Repo); err == nil {
-				gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo)
+				repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo)
 			}
 		}()
 	}

@@ -61,7 +61,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err := gitserver.DefaultClient.EnqueueRepoUpdate(r.Context(), gitserver.Repo{Name: req.Repo, URL: req.URL})
+	err := gitserver.DefaultClient.EnqueueRepoUpdateDeprecated(r.Context(), gitserver.Repo{Name: req.Repo, URL: req.URL})
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

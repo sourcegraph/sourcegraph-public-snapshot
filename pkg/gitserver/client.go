@@ -282,7 +282,9 @@ func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, er
 	return list, err
 }
 
-func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo Repo) error {
+// EnqueueRepoUpdateDeprecated is deprecated. Please use
+// repoupdater.DefaultClient.EnqueueRepoUpdate instead.
+func (c *Client) EnqueueRepoUpdateDeprecated(ctx context.Context, repo Repo) error {
 	req := &protocol.RepoUpdateRequest{
 		Repo: repo.Name,
 		URL:  repo.URL,

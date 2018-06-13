@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -77,7 +78,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 			if !conf.Get().DisableAutoGitUpdates || !cloned {
 				log15.Info("fetching Gitolite repo", "repo", uri, "cloned", cloned, "i", i, "total", len(rlist))
 				// TODO!(sqs): derive gitolite clone URL
-				err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: repo.URI})
+				err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: repo.URI})
 				if err != nil {
 					log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
 					continue

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 )
 
 func (r *schemaResolver) Repositories(args *struct {
@@ -280,7 +281,7 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		if err != nil {
 			return nil, err
 		}
-		if err := gitserver.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
+		if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 			return nil, err
 		}
 		if err := backend.Repos.RefreshIndex(ctx, repo.repo); err != nil {
