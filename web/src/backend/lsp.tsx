@@ -161,6 +161,25 @@ export const fetchServerCapabilities = memoizeObservable(
 )
 
 /**
+ * Fixes a response to textDocument/hover that contains `range: null`, which is
+ * not valid LSP (`range` should instead be omitted entirely). rls is one such
+ * language server that responds in this way:
+ *
+ * https://github.com/sourcegraph/sourcegraph/issues/11880
+ *
+ * See the spec:
+ *
+ * https://microsoft.github.io/language-server-protocol/specification#textDocument_hover
+ *
+ * @param response The LSP response to fix (will be mutated)
+ */
+export const setFalsyRangeToUndefined = (response: any): void => {
+    if (response && !response.range) {
+        response.range = undefined
+    }
+}
+
+/**
  * @param pos Repo, commit, rev, file and 1-indexed position to request definition for
  */
 export const fetchHover = memoizeObservable(
@@ -182,6 +201,7 @@ export const fetchHover = memoizeObservable(
             pos.filePath
         ).pipe(
             tap(hover => {
+                setFalsyRangeToUndefined(hover)
                 // Do some shallow validation on response, e.g. to catch https://github.com/sourcegraph/sourcegraph/issues/11711
                 if (hover !== null && !Hover.is(hover)) {
                     throw Object.assign(new Error('Invalid hover response from language server'), { hover })
