@@ -10,6 +10,7 @@ import { compileFromFile } from 'json-schema-to-typescript'
 import convert from 'koa-connect'
 import mkdirp from 'mkdirp-promise'
 import { readFile, writeFile } from 'mz/fs'
+import { stat } from 'mz/fs'
 import * as path from 'path'
 import PluginError from 'plugin-error'
 import { format, resolveConfig } from 'prettier'
@@ -171,11 +172,27 @@ export async function unusedExports(): Promise<void> {
     )
     const filesWithUnusedExports = Object.keys(analysis).sort()
     if (filesWithUnusedExports.length > 0) {
+        // Convert to absolute file paths with extensions to enable clickable file paths in VS Code console
+        const filesWithExtensions = await Promise.all(
+            filesWithUnusedExports.map(async file => {
+                for (const ext of ['ts', 'tsx']) {
+                    try {
+                        const fullPath = path.resolve(__dirname, `${file}.${ext}`)
+                        await stat(fullPath)
+                        return fullPath
+                    } catch (err) {
+                        continue
+                    }
+                }
+                return file
+            })
+        )
         throw new PluginError(
             'ts-unused-exports',
-            `Unused exports found (must unexport or remove):\n\t${filesWithUnusedExports
-                .map(f => `${f}: ${analysis[f].join(' ')}`)
-                .join('\n\t')}`
+            [
+                'Unused exports found (must unexport or remove):',
+                ...filesWithExtensions.map((f, i) => `${f}: ${analysis[filesWithUnusedExports[i]].join(' ')}`),
+            ].join('\n\t')
         )
     }
 }
