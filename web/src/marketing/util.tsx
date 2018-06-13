@@ -1,3 +1,9 @@
+declare global {
+    interface Window {
+        chrome?: {}
+    }
+}
+
 export const IS_CHROME = !!window.chrome
 export const IS_FIREFOX = window.navigator.userAgent.indexOf('Firefox') >= 0
 

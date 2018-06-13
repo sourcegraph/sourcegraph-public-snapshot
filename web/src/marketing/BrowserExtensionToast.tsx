@@ -10,19 +10,10 @@ const CHROME_EXTENSION_STORE_LINK = 'https://chrome.google.com/webstore/detail/d
 const FIREFOX_EXTENSION_STORE_LINK = 'https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/'
 const HAS_DISMISSED_TOAST_KEY = 'has-dismissed-browser-ext-toast'
 
-declare global {
-    interface Window {
-        chrome?: {
-            webstore: {
-                install: (link: string, success: () => void, error: (reason: string) => void) => void
-            }
-        }
-    }
-}
-
 interface Props {
     browserLogoAsset: string
     browserName: string
+    link: string
     onClickInstall: () => void
 }
 
@@ -75,9 +66,15 @@ abstract class BrowserExtensionToast extends React.Component<Props, State> {
                     this.props.browserName
                 } extension`}
                 cta={
-                    <button type="button" className="btn btn-primary" onClick={this.onClickInstall}>
+                    <a
+                        target="_blank"
+                        rel="noopener"
+                        className="btn btn-primary"
+                        href={this.props.link}
+                        onClick={this.onClickInstall}
+                    >
                         Install
-                    </button>
+                    </a>
                 }
                 onDismiss={this.onDismiss}
             />
@@ -102,40 +99,12 @@ export class ChromeExtensionToast extends React.Component {
                 browserName="Chrome"
                 browserLogoAsset="/.assets/img/logo-chrome.svg"
                 onClickInstall={this.onClickInstall}
+                link={CHROME_EXTENSION_STORE_LINK}
             />
         )
     }
 
-    private onClickInstall = (): void => {
-        eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Chrome' } })
-
-        if (window.chrome) {
-            window.chrome.webstore.install(
-                CHROME_EXTENSION_STORE_LINK,
-                () => this.onInstallExtensionSuccess(),
-                () => this.onInstallExtensionFail()
-            )
-        } else {
-            window.open(CHROME_EXTENSION_STORE_LINK, '_blank')
-        }
-    }
-
-    /**
-     * This function is invoked when inline installation successfully completes.
-     * After the dialog is shown and the user agrees to add the item to Chrome.
-     */
-    private onInstallExtensionSuccess(): void {
-        eventLogger.log('BrowserExtInstallSuccess')
-    }
-
-    /**
-     * This function is invoked when inline installation does not successfully complete.
-     * Possible reasons for this include the user canceling the dialog,
-     * the linked item not being found in the store, or the install being initiated from a non-verified site.
-     */
-    private onInstallExtensionFail(): void {
-        eventLogger.log('BrowserExtInstallFailed')
-    }
+    private onClickInstall = () => eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Chrome' } })
 }
 
 export class FirefoxExtensionToast extends React.Component {
@@ -145,12 +114,10 @@ export class FirefoxExtensionToast extends React.Component {
                 browserName="Firefox"
                 browserLogoAsset="/.assets/img/logo-firefox.svg"
                 onClickInstall={this.onClickInstall}
+                link={FIREFOX_EXTENSION_STORE_LINK}
             />
         )
     }
 
-    private onClickInstall = (): void => {
-        eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Firefox' } })
-        window.open(FIREFOX_EXTENSION_STORE_LINK, '_blank')
-    }
+    private onClickInstall = () => eventLogger.log('BrowserExtInstallClicked', { marketing: { browser: 'Firefox' } })
 }
