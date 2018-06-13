@@ -241,10 +241,7 @@ func unquote(s, quote string) string {
 }
 
 // detectSourcegraphGOPATH tries to detect monorepos which require their own custom
-// GOPATH. We want to support monorepos as described in
-// https://blog.gopheracademy.com/advent-2015/go-in-a-monorepo/
-//
-// Here we detect a .sourcegraph/config.json file with the following
+// GOPATH. We detect a .sourcegraph/config.json file with the following
 // contents:
 //
 // 	{
@@ -253,22 +250,13 @@ func unquote(s, quote string) string {
 // 	  }
 // 	}
 //
-// It is assumed each GOPATH string value is a path relative to the repository
-// root. This is best-effort. If any errors occur or we do not detect a custom
+// See the sourcegraphConfig struct documentation for more info.
+//
+// This is best-effort. If any errors occur or we do not detect a custom
 // gopath, an empty result is returned.
 func detectSourcegraphGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths []string) {
-	b, err := ctxvfs.ReadFile(ctx, fs, "/.sourcegraph/config.json")
-	if err != nil {
-		return nil
-	}
-	config := struct {
-		Go struct {
-			GOPATH []string
-		} `json:"go"`
-	}{}
-	_ = json.Unmarshal(b, &config)
-
-	for _, p := range config.Go.GOPATH {
+	cfg := readSourcegraphConfig(ctx, fs)
+	for _, p := range cfg.Go.GOPATH {
 		if !strings.HasPrefix(p, "/") {
 			// Assume all paths are relative to repo root.
 			p = "/" + p
@@ -276,6 +264,35 @@ func detectSourcegraphGOPATH(ctx context.Context, fs ctxvfs.FileSystem) (gopaths
 		gopaths = append(gopaths, p)
 	}
 	return
+}
+
+// sourcegraphConfig is a struct representing the Go portion of the
+// .sourcegraph/config.json file that may be placed in the repo root.
+type sourcegraphConfig struct {
+	// Go is the go portion of the configuration. Any language server can
+	// define their own schema for their language, hence the namespacing here.
+	Go struct {
+		// GOPATH is a list of GOPATHs to use for the repository. It is assumed
+		// each GOPATH string value is a path relative to the repository root.
+		//
+		// This is to support monorepos such as the ones described in
+		// https://blog.gopheracademy.com/advent-2015/go-in-a-monorepo/
+		//
+		// See https://about.sourcegraph.com/docs/code-intelligence/go#custom-gopaths--go-monorepos
+		GOPATH []string
+	} `json:"go"`
+}
+
+// readSourcegraphConfig reads the .sourcegraph/config.json file from the
+// repository root if it exists, otherwise an empty struct value (not nil).
+func readSourcegraphConfig(ctx context.Context, fs ctxvfs.FileSystem) *sourcegraphConfig {
+	config := sourcegraphConfig{}
+	b, err := ctxvfs.ReadFile(ctx, fs, "/.sourcegraph/config.json")
+	if err != nil {
+		return &config
+	}
+	_ = json.Unmarshal(b, &config)
+	return &config
 }
 
 // determineRootImportPath determines the root import path for the Go
