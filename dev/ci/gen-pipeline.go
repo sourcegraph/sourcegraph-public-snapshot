@@ -238,6 +238,9 @@ func main() {
 	pipeline.AddStep(":go:",
 		Cmd("dev/check/go-dep.sh"))
 
+	pipeline.AddStep(":postgres:",
+		Cmd("./dev/ci/ci-db-backcompat.sh"))
+
 	for _, path := range pkgs() {
 		coverageFile := path + "/coverage.txt"
 		stepOpts := []StepOpt{
@@ -251,10 +254,6 @@ func main() {
 		pipeline.AddStep(":go:", stepOpts...)
 	}
 
-	pipeline.AddWait()
-
-	// DB backcompat checks out a different version of the repository, so it's run in serial.
-	pipeline.AddStep(":postgres:", Cmd("./dev/ci/ci-db-backcompat.sh"))
 	pipeline.AddWait()
 
 	pipeline.AddStep(":codecov:",
