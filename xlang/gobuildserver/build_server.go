@@ -205,6 +205,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 		if err != nil {
 			return nil, err
 		}
+		log.Printf("Detected root import path %q for %q", langInitParams.RootImportPath, params.OriginalRootURI)
 		h.rootImportPath = langInitParams.RootImportPath
 		if err := h.reset(&params, conn, langInitParams.Root()); err != nil {
 			return nil, err
