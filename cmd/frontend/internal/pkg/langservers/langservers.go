@@ -601,12 +601,8 @@ func validate(language string) error {
 		return err
 	}
 
-	// We do not support Data Center mode.
-	if conf.IsDataCenter(conf.DeployType()) {
-		return errors.New("data center is not supported")
-	}
-	if conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker() {
-		return errors.New("DEPLOY_TYPE=dev managed docker disabled by default (set DEBUG_MANAGE_DOCKER=t to enable)")
+	if reason, ok := conf.SupportsManagingLanguageServers(); !ok {
+		return errors.New(reason)
 	}
 
 	// Check if Docker socket is present.
@@ -694,26 +690,30 @@ func containerName(language string) string {
 	}
 }
 
-var canManage bool
+var (
+	canManage       bool
+	canManageReason string
+)
 
-// CanManage tells if language server Docker containers can be managed, or if
-// they cannot be due due to some reason that has already been logged (e.g.
-// running in Data Center, or a user has not exposed the docker socket to our
-// container intentionally).
-func CanManage() bool {
-	return canManage
+// CanManage reports whether language servers can be managed (enabled/disabled/restarted/updated) if
+// language server Docker containers can be managed by Sourcegraph without requiring users to take
+// manual steps. The most common reasons for lacking this capability are that Data Center is in use
+// or the admin intentionally did not expose the Docker socket to the Sourcegraph container (for
+// security reasons).
+//
+// If no, the boolean is false and the reason (which is always non-empty in this case) describes why
+// not. Otherwise the boolean is true and the reason is empty.
+func CanManage() (reason string, ok bool) {
+	return canManageReason, canManage
 }
 
 func init() {
-	if conf.IsDataCenter(conf.DeployType()) {
-		// Do not run in Data Center, or else we would print log messages below
-		// about not finding the docker socket.
+	reason, ok := conf.SupportsManagingLanguageServers()
+	if !ok {
+		canManageReason, canManage = reason, ok
 		return
 	}
-	if conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker() {
-		// Running in dev mode with managed docker disabled.
-		return
-	}
+
 	// Check if we have a docker socket or not. Situations where we may not
 	// have this include:
 	//
@@ -724,11 +724,15 @@ func init() {
 	//
 	haveSocket, err := haveDockerSocket()
 	if err != nil {
-		log15.Error("langservers: error looking up /var/run/docker.sock", "error", err)
+		const msg = "Language server management capabilities disabled due to an error looking up /var/run/docker.sock"
+		canManageReason = fmt.Sprintf("%s: %s.", msg, err)
+		log15.Error(msg+".", "error", err)
 		return
 	}
 	if !haveSocket {
-		log15.Error("langservers: /var/run/docker.sock not found, managing langservers disabled.\nSee https://about.sourcegraph.com/docs/code-intelligence/install")
+		const msg = "Language server management capabilities disabled because /var/run/docker.sock was not found. See https://about.sourcegraph.com/docs/code-intelligence/install for help."
+		canManageReason = msg
+		log15.Error(msg)
 		return
 	}
 	canManage = true

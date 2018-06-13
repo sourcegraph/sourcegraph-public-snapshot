@@ -2028,6 +2028,19 @@ enum OrganizationInvitationResponseType {
     REJECT
 }
 
+# Status about management capabilities for language servers.
+type LanguageServerManagementStatus {
+    # Whether this site can manage (enable/disable/restart/update) language servers on its own.
+    #
+    # Even if this field's value is true, individual language servers may not be manageable. Clients must check the
+    # LangServer.canXyz fields.
+    #
+    # Always false on Data Center.
+    siteCanManage: Boolean!
+    # The reason why the site can't manage language servers, if siteCanManage == false.
+    reason: String
+}
+
 # The possible configuration states of a language server.
 enum LangServerState {
     # The language server is neither enabled nor disabled. When a repo for this
@@ -2131,6 +2144,10 @@ type Site implements ConfigurationSubject {
     langServers: [LangServer!]!
     # The language server for a given language (if exists, otherwise null)
     langServer(language: String!): LangServer
+    # The status of language server management capabilities.
+    #
+    # Only site admins may view this field.
+    languageServerManagementStatus: LanguageServerManagementStatus
     # A list of all access tokens on this site.
     accessTokens(
         # Returns the first n access tokens from the list.

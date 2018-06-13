@@ -271,3 +271,34 @@ func nullString(s string) *string {
 	}
 	return &s
 }
+
+func (r *siteResolver) LanguageServerManagementStatus(ctx context.Context) (*languageServerManagementStatusResolver, error) {
+	// 🚨 SECURITY: Only admins may see this information because it's unnecessary for other users to
+	// see it, and the reason may contain sensitive data.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	return &languageServerManagementStatusResolver{}, nil
+}
+
+type languageServerManagementStatusResolver struct{}
+
+func (r *languageServerManagementStatusResolver) SiteCanManage() bool {
+	_, ok := langservers.CanManage()
+	return ok
+}
+
+func (r *languageServerManagementStatusResolver) Reason(ctx context.Context) (*string, error) {
+	// 🚨 SECURITY: Only admins may see this information because it's unnecessary for other users to
+	// see it, and the reason may contain sensitive data.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	reason, ok := langservers.CanManage()
+	if ok {
+		return nil, nil
+	}
+	return &reason, nil
+}

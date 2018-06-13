@@ -12,7 +12,7 @@ import (
 // StartLangServers should be invoked on startup, after DB initialization, in
 // order to start up language servers, etc.
 func StartLangServers(ctx context.Context) {
-	if !langservers.CanManage() {
+	if _, ok := langservers.CanManage(); !ok {
 		return
 	}
 

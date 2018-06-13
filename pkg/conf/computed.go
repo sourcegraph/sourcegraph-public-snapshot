@@ -184,3 +184,26 @@ func UpdateChannel() string {
 	}
 	return channel
 }
+
+// SupportsManagingLanguageServers reports, by consulting *only* the site configuration and deploy
+// type, whether language servers can be managed (enabled/disabled/restarted/updated) from the
+// Sourcegraph API without requiring users to take manual steps.
+//
+// Callers needing to know whether the capability is actually present in the current environment
+// must use langservers.CanManage instead.
+//
+// If no, the boolean is false and the reason (which is always non-empty in this case) describes why
+// not. Otherwise the boolean is true and the reason is empty.
+func SupportsManagingLanguageServers() (reason string, ok bool) {
+	deployType := DeployType()
+	if IsDataCenter(deployType) {
+		// Do not run in Data Center, or else we would print log messages below
+		// about not finding the docker socket.
+		return "Managing language servers automatically is not supported in Sourcegraph Data Center. See https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/install.md#add-language-servers-for-code-intelligence for help.", false
+	}
+	if IsDev(deployType) && !DebugManageDocker() {
+		// Running in dev mode with managed docker disabled.
+		return "Managing language servers automatically is disabled by default in local dev. Set DEBUG_MANAGE_DOCKER=t to enable.", false
+	}
+	return "", true
+}
