@@ -90,6 +90,12 @@ type RepoInfoRequest struct {
 	Repo api.RepoURI
 }
 
+// RepoDeleteRequest is a request to delete a repository clone on gitserver
+type RepoDeleteRequest struct {
+	// Repo is the repository to delete.
+	Repo api.RepoURI
+}
+
 // RepoInfoResponse is the response to a repository information request (RepoInfoRequest).
 type RepoInfoResponse struct {
 	URL             string     // this repository's Git remote URL
