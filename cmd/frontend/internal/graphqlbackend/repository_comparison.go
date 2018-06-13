@@ -67,9 +67,11 @@ func (r *repositoryResolver) Comparison(ctx context.Context, args *repositoryCom
 	}
 
 	return &repositoryComparisonResolver{
-		base: base,
-		head: head,
-		repo: r,
+		baseRevspec: baseRevspec,
+		headRevspec: headRevspec,
+		base:        base,
+		head:        head,
+		repo:        r,
 	}, nil
 }
 
