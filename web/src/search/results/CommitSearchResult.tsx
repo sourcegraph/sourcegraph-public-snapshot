@@ -121,7 +121,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
             <DecoratedTextLines
                 key="messagePreview"
                 className="file-match__item commit-search-result__item commit-search-result__item-message-preview"
-                value={props.result.messagePreview.value.trim().split('\n')}
+                value={props.result.messagePreview.value.split('\n')}
                 highlights={props.result.messagePreview.highlights}
                 lineClasses={[{ line: 1, className: 'strong' }]}
                 onMouseDown={logClickOnText}
