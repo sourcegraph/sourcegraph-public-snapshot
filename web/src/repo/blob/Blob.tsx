@@ -14,8 +14,8 @@ import {
     AbsoluteRepoFilePosition,
     AbsoluteRepoFileRange,
     BlobViewState,
-    getCodeCell,
-    getCodeCells,
+    getBlobTableRow,
+    getBlobTableRows,
     RenderMode,
 } from '../index'
 import { triggerBlame } from './blame'
@@ -35,26 +35,26 @@ import {
  * Highlights a <td> element and updates the page URL if necessary.
  */
 function updateLine(
-    cells: HTMLElement | HTMLElement[],
+    rows: HTMLElement | HTMLElement[],
     history: H.History,
     ctx: AbsoluteRepoFileRange,
     clickEvent?: MouseEvent
 ): void {
-    if (!Array.isArray(cells)) {
-        cells = [cells]
+    if (!Array.isArray(rows)) {
+        rows = [rows]
     }
 
     triggerBlame(ctx, clickEvent)
 
     const currentlyHighlighted = document.querySelectorAll('.sg-highlighted') as NodeListOf<HTMLElement>
-    for (const cellElem of currentlyHighlighted) {
-        cellElem.classList.remove('sg-highlighted')
-        cellElem.style.backgroundColor = 'inherit'
+    for (const rowElem of currentlyHighlighted) {
+        rowElem.classList.remove('sg-highlighted')
+        rowElem.style.backgroundColor = 'inherit'
     }
 
-    for (const cell of cells) {
-        cell.style.backgroundColor = 'rgb(34, 44, 58)'
-        cell.classList.add('sg-highlighted')
+    for (const row of rows) {
+        row.style.backgroundColor = 'rgb(34, 44, 58)'
+        row.classList.add('sg-highlighted')
     }
 
     // Check URL change first, since this function can be called in response to
@@ -72,29 +72,29 @@ function updateLine(
  * The same as updateLine, but also scrolls the blob.
  */
 function updateAndScrollToLine(
-    cell: HTMLElement | HTMLElement[],
+    rows: HTMLTableRowElement | HTMLTableRowElement[],
     history: H.History,
     ctx: AbsoluteRepoFileRange,
     clickEvent?: MouseEvent,
     scrollIfNeeded?: boolean
 ): void {
-    if (!cell) {
+    if (!rows) {
         return
     }
-    if (!Array.isArray(cell)) {
-        cell = [cell]
+    if (!Array.isArray(rows)) {
+        rows = [rows]
     }
-    if (cell.length === 0) {
+    if (rows.length === 0) {
         return
     }
 
-    updateLine(cell, history, ctx, clickEvent)
+    updateLine(rows, history, ctx, clickEvent)
     // Scroll to the line if outside viewport.
     if (scrollIfNeeded) {
         const scrollingElement = document.querySelector('.blob')! as HTMLElement
-        scrollIntoView(scrollingElement, cell[0])
+        scrollIntoView(scrollingElement, rows[0])
     } else {
-        scrollToCell(cell[0])
+        scrollToCell(rows[0])
     }
 }
 
@@ -159,7 +159,7 @@ export class Blob extends React.Component<Props, State> {
                 this.setFixedTooltip()
                 if (nextHash.line) {
                     this.addSelectionHighlightSticky(nextHash.line, nextHash.character)
-                    if (getCodeCell(nextHash.line)) {
+                    if (getBlobTableRow(nextHash.line)) {
                         this.scrollToLine(nextProps)
                     }
                 }
@@ -241,9 +241,9 @@ export class Blob extends React.Component<Props, State> {
     }
 
     private addSelectionHighlightSticky(line: number, character?: number): void {
-        const cell = getCodeCell(line)
-        if (cell) {
-            const el = findElementWithOffset(cell.childNodes[1]! as HTMLElement, character || 0)
+        const row = getBlobTableRow(line)
+        if (row) {
+            const el = findElementWithOffset(row.cells[1]!, character || 0)
             if (el) {
                 el.classList.add('selection-highlight-sticky')
             }
@@ -281,9 +281,9 @@ export class Blob extends React.Component<Props, State> {
                     filter(props => {
                         const parsed = parseHash(props.location.hash)
                         if (parsed.line && parsed.character) {
-                            const cell = getCodeCell(parsed.line)
-                            if (cell) {
-                                const td = cell.childNodes[1] as HTMLTableDataCellElement
+                            const row = getBlobTableRow(parsed.line)
+                            if (row) {
+                                const td = row.cells[1]
                                 if (td && !td.classList.contains('annotated')) {
                                     td.classList.add('annotated')
                                     convertNode(td)
@@ -294,8 +294,8 @@ export class Blob extends React.Component<Props, State> {
                             }
                             // Don't show a tooltip when there is a panel (but do highlight the token)
                             // TODO(john): this can probably be simplified.
-                            if (cell) {
-                                const el = findElementWithOffset(cell.childNodes[1]! as HTMLElement, parsed.character!)
+                            if (row) {
+                                const el = findElementWithOffset(row.cells[1]!, parsed.character!)
                                 if (el) {
                                     el.classList.add('selection-highlight-sticky')
                                     return false
@@ -306,9 +306,7 @@ export class Blob extends React.Component<Props, State> {
                         return false
                     }),
                     map(props => parseHash(props.location.hash)),
-                    map(pos =>
-                        findElementWithOffset(getCodeCell(pos.line!).childNodes[1]! as HTMLElement, pos.character!)
-                    ),
+                    map(pos => findElementWithOffset(getBlobTableRow(pos.line!).cells[1], pos.character!)),
                     filter((el: HTMLElement | undefined): el is HTMLElement => !!el),
                     map((target: HTMLElement) => {
                         const data = { target, loc: getTargetLineAndOffset(target!, this.blobElement!, false) }
@@ -490,7 +488,7 @@ export class Blob extends React.Component<Props, State> {
                         newRange = { start: targetPos, end: targetPos }
                     }
 
-                    const rows = getCodeCells(newRange.start.line, newRange.end.line)
+                    const rows = getBlobTableRows(newRange.start.line, newRange.end.line)
                     if (!data.loc) {
                         return updateLine(
                             rows,
@@ -545,9 +543,9 @@ export class Blob extends React.Component<Props, State> {
         const parsed = parseHash<BlobViewState>(props.location.hash)
         const { line, character, endLine, endCharacter, viewState } = parsed
         if (line) {
-            const cells = getCodeCells(line, endLine)
+            const rows = getBlobTableRows(line, endLine)
             updateAndScrollToLine(
-                cells,
+                rows,
                 props.history,
                 {
                     repoPath: props.repoPath,
@@ -636,7 +634,7 @@ export class Blob extends React.Component<Props, State> {
                     end: { line: defCtx.position.line, character: defCtx.position.character || 0 },
                 },
             } as AbsoluteRepoFileRange
-            updateAndScrollToLine(getCodeCell(ctx.range.start.line), this.props.history, ctx)
+            updateAndScrollToLine(getBlobTableRow(ctx.range.start.line), this.props.history, ctx)
         } else {
             this.setFixedTooltip()
             this.props.history.push(toAbsoluteBlobURL(defCtx))
@@ -651,7 +649,7 @@ export class Blob extends React.Component<Props, State> {
         e.preventDefault()
         this.props.history.push(toPrettyBlobURL({ ...ctx, rev: this.props.rev, viewState: 'references' }))
         hideTooltip()
-        scrollToCell(getCodeCell(ctx.position.line))
+        scrollToCell(getBlobTableRow(ctx.position.line))
     }
 
     private handleDismiss = () => {

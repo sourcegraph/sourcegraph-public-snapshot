@@ -12,7 +12,6 @@ import {
     share,
     switchMap,
     takeUntil,
-    tap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { Hover, Position } from 'vscode-languageserver-types'
@@ -24,7 +23,7 @@ import { isDefined, propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
-import { convertNode, findElementWithOffset, getTableDataCell, locateTarget } from './tooltips'
+import { findElementWithOffset, locateTarget } from './tooltips'
 
 /**
  * @param codeElement The `<code>` element
@@ -76,7 +75,8 @@ const getTokenAtPosition = (codeElement: HTMLElement, position: Position): HTMLE
     if (!row) {
         return undefined
     }
-    return findElementWithOffset(row, position.character)
+    const [, codeCell] = row.cells
+    return findElementWithOffset(codeCell, position.character)
 }
 
 /**
@@ -301,16 +301,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             // If there was a mouseover, there _must_ have been a blob element
             map(([target, codeElement]) => ({ target, codeElement: codeElement! })),
             debounceTime(50),
-            // SIDE EFFECT (but idempotent)
-            // If not done for this cell, wrap the tokens in this cell to enable finding the precise positioning.
-            // This may be possible in other ways (looking at mouse position and rendering characters), but it works
-            tap(({ target, codeElement }) => {
-                const td = getTableDataCell(target, codeElement)
-                if (td && !td.classList.contains('annotated')) {
-                    convertNode(td)
-                    td.classList.add('annotated')
-                }
-            }),
             // Do not consider mouseovers while overlay is pinned
             filter(() => !this.state.hoverOverlayIsFixed),
             share()
@@ -637,7 +627,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     }
                     for (const { line, element } of rows) {
                         const codeCell = element.cells[1]!
-                        convertNode(codeCell)
                         this.createBlameDomNode(line, codeCell)
                         // Highlight row
                         element.classList.add('selected')

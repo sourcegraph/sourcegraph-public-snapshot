@@ -291,6 +291,19 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
 }
 
 /**
+ * Like `convertNode`, but idempotent.
+ * The CSS class `annotated` is used to check if the cell is already converted.
+ *
+ * @param cell The code `<td>` to convert.
+ */
+function convertCodeCellIdempotent(cell: HTMLTableCellElement): void {
+    if (cell && !cell.classList.contains('annotated')) {
+        convertNode(cell)
+        cell.classList.add('annotated')
+    }
+}
+
+/**
  * convertNode modifies a DOM node so that we can identify precisely token a user has clicked or hovered over.
  * On a code view, source code is typically wrapped in a HTML table cell. It may look like this:
  *
@@ -416,11 +429,16 @@ export function getTableDataCell(target: HTMLElement, boundary: HTMLElement): HT
 
 /**
  * Returns the <span> (descendent of a <td> containing code) which contains text beginning
- * at the specified character offset (1-indexed)
+ * at the specified character offset (1-indexed).
+ * Will convert tokens in the code cell if needed.
+ *
  * @param cell the <td> containing syntax highlighted code
  * @param offset character offset
  */
-export function findElementWithOffset(cell: HTMLElement, offset: number): HTMLElement | undefined {
+export function findElementWithOffset(cell: HTMLTableCellElement, offset: number): HTMLElement | undefined {
+    // Without being converted first, finding the position is inaccurate
+    convertCodeCellIdempotent(cell)
+
     let currOffset = 0
     const walkNode = (currNode: HTMLElement): HTMLElement | undefined => {
         const numChildNodes = currNode.childNodes.length

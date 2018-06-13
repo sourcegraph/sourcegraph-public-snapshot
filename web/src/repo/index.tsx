@@ -328,7 +328,7 @@ export function makeRepoURI(parsed: ParsedRepoURI): RepoURI {
 /**
  * Retrieves the <td> element at the specified line on the current document.
  */
-export function getCodeCell(line: number): HTMLElement {
+export function getBlobTableRow(line: number): HTMLTableRowElement {
     const table = document.querySelector('.blob > table') as HTMLTableElement
     return table.rows[line - 1]
 }
@@ -337,9 +337,9 @@ export function getCodeCell(line: number): HTMLElement {
  * Retrieves the <td> elements for the specified line range (inclusive) on
  * the current document.
  */
-export function getCodeCells(line: number, endLine: number = line): HTMLElement[] {
+export function getBlobTableRows(line: number, endLine: number = line): HTMLTableRowElement[] {
     const table = document.querySelector('.blob > table') as HTMLTableElement
-    const rows: HTMLElement[] = []
+    const rows: HTMLTableRowElement[] = []
     for (let i = line; i <= endLine; i++) {
         const cell = table.rows[i - 1]
         if (cell) {
