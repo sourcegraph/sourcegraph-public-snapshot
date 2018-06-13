@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, fromEvent, merge, Observable, ObservableInput, of, Subject, Subscription } from 'rxjs'
+import { concat, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -414,26 +414,44 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
         )
 
-        /**
-         * Emits with the 1-indexed position at which a new tooltip is to be shown from a mouseover, click or location change.
-         * Emits `undefined` when a target was hovered/clicked that does not correspond to a position (e.g. after the end of the line).
-         */
-        const filteredTargetPositions: Observable<{ position?: Position; target: HTMLElement }> = merge(
+        /** Emits new positions at which a tooltip needs to be shown. */
+        const filteredPositions: Observable<{
+            /**
+             * The 1-indexed position at which a new tooltip is to be shown,
+             * or undefined when a target was hovered/clicked that does not correspond to a position (e.g. after the end of the line)
+             */
+            position?: Position
+            /**
+             * True if the tooltip should be pinned once the hover came back and is non-empty.
+             * This depends on what triggered the new position.
+             * We remember it because the pinning is deferred to when we have a result,
+             * so we don't pin empty (i.e. invisible) hovers.
+             */
+            pinIfNonEmpty: boolean
+        }> = merge(
             merge(
-                // When the location changes and and includes a line/column pair, use that target
-                targetsFromLocationHash,
-                // Already filtered
-                codeMouseOverTargets,
-                // clicks should trigger a new hover when the overlay is fixed
-                codeClickTargets.pipe(filter(() => this.state.hoverOverlayIsFixed))
+                // Already filtered by !hoverOverlayIsFixed
+                codeMouseOverTargets.pipe(
+                    // Should unpin the tooltip even if hover cames back non-empty
+                    map(data => ({ ...data, pinIfNonEmpty: false }))
+                ),
+                // When the location changes and includes a line/column pair, use that target
+                targetsFromLocationHash.pipe(
+                    // Should pin the tooltip if hover cames back non-empty
+                    map(data => ({ ...data, pinIfNonEmpty: true }))
+                ),
+                codeClickTargets.pipe(
+                    // Clicks should trigger a new hover when the overlay is fixed
+                    filter(() => this.state.hoverOverlayIsFixed),
+                    // Should pin the tooltip if hover cames back non-empty
+                    map(data => ({ ...data, pinIfNonEmpty: true }))
+                )
             ).pipe(
                 // Find out the position that was hovered over
-                map(({ target, codeElement }) => {
+                map(({ target, codeElement, pinIfNonEmpty }) => {
                     const hoveredToken = locateTarget(target, codeElement, false)
-                    return {
-                        target,
-                        position: Position.is(hoveredToken) ? hoveredToken : undefined,
-                    }
+                    const position = Position.is(hoveredToken) ? hoveredToken : undefined
+                    return { position, pinIfNonEmpty }
                 }),
                 distinctUntilChanged((a, b) => isEqual(a.position, b.position))
             )
@@ -441,10 +459,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
         // HOVER FETCH
         // On every new hover position, fetch new hover contents
-        const hovers = filteredTargetPositions.pipe(
-            switchMap(({ position }): ObservableInput<undefined | Hover | null | ErrorLike | typeof LOADING> => {
+        const hovers = filteredPositions.pipe(
+            switchMap(({ position, pinIfNonEmpty }) => {
                 if (!position) {
-                    return [undefined]
+                    return [{ hoverOrError: undefined, pinIfNonEmpty }]
                 }
                 // Fetch the hover for that position
                 const hoverFetch = fetchHover({
@@ -465,24 +483,25 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 // 1. Reset the hover content, so no old hover content is displayed at the new position while fetching
                 // 2. Show a loader if the hover fetch hasn't returned after 100ms
                 // 3. Show the hover once it returned
-                return merge([undefined], of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)), hoverFetch)
+                return merge(
+                    [undefined],
+                    of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)),
+                    hoverFetch
+                ).pipe(map(hoverOrError => ({ hoverOrError, pinIfNonEmpty })))
             }),
             share()
         )
         // Update the state
         this.subscriptions.add(
-            hovers.subscribe(hoverOrError => {
-                this.setState(state => ({
+            hovers.subscribe(({ hoverOrError, pinIfNonEmpty }) => {
+                this.setState({
                     hoverOrError,
                     // Reset the hover position, it's gonna be repositioned after the hover was rendered
                     hoverOverlayPosition: undefined,
+                    // This pins the overlay if the trigger was a click or location and LOADING, an Error or non-empty hover
                     hoverOverlayIsFixed:
-                        // If result is unknown/loading or errored, keep pinned state as-is
-                        hoverOrError === undefined || hoverOrError === LOADING || isErrorLike(hoverOrError)
-                            ? state.hoverOverlayIsFixed
-                            : // Else only keep it pinned if it was pinned before and the new hover is not empty
-                              state.hoverOverlayIsFixed && Hover.is(hoverOrError) && !isEmptyHover(hoverOrError),
-                }))
+                        pinIfNonEmpty && !!hoverOrError && !(Hover.is(hoverOrError) && isEmptyHover(hoverOrError)),
+                })
                 // Telemetry
                 if (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)) {
                     eventLogger.log('SymbolHovered')
@@ -512,7 +531,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         // GO TO DEFINITION FETCH
         // On every new hover position, (pre)fetch definition and update the state
         this.subscriptions.add(
-            filteredTargetPositions
+            filteredPositions
                 .pipe(
                     // Fetch the definition location for that position
                     switchMap(({ position }) => {
@@ -568,22 +587,11 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
         this.subscriptions.add(
-            filteredTargetPositions.subscribe(({ position }) => {
+            filteredPositions.subscribe(({ position }) => {
                 this.setState({
                     hoveredTokenPosition: position,
                     // On every new target (from mouseover or click) hide the j2d loader/error/not found UI again
                     clickedGoToDefinition: false,
-                })
-            })
-        )
-
-        // HOVER OVERLAY PINNING ON CLICK
-        this.subscriptions.add(
-            codeClickTargets.subscribe(({ target }) => {
-                this.setState({
-                    // If a token inside a code cell was clicked, pin the hover
-                    // Otherwise if empty space (the cell itself or the <code> element) was clicked, unpin it
-                    hoverOverlayIsFixed: !!target.closest('td'),
                 })
             })
         )
