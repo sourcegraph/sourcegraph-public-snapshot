@@ -321,7 +321,10 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo Repo) error {
 		if resp.Cloneable {
 			return nil
 		}
-		notFound := strings.Contains(resp.Reason, "not found")
+		// Treat all 4xx errors as not found, since we have more relaxed
+		// requirements on what a valid URL is we should treat bad requests,
+		// etc as not found.
+		notFound := strings.Contains(resp.Reason, "not found") || strings.Contains(resp.Reason, "The requested URL returned error: 4")
 		return &RepoNotCloneableErr{repo: repo, reason: resp.Reason, notFound: notFound}
 	}
 
