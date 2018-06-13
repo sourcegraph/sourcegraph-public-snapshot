@@ -324,7 +324,7 @@ func determineRootImportPath(ctx context.Context, originalRootURI lsp.DocumentUR
 	//
 	// Since we have not yet set h.FS, we need to use the passed in fs.
 	w := ctxvfs.Walk(ctx, "/", fs)
-	const maxSlashes = 3 // heuristic, shouldn't need to traverse too deep to find this out
+	const maxSlashes = 4 // heuristic, shouldn't need to traverse too deep to find this out
 	const maxFiles = 25  // heuristic, shouldn't need to read too many files to find this out
 	numFiles := 0
 	for w.Step() {

@@ -52,7 +52,7 @@ func TestDetermineEnvironment(t *testing.T) {
 			WantImportPath: "alice.org/code",
 			WantGoPath:     gopath,
 			FS: map[string]string{
-				"cmd/alice/alice.go": `package http // import "alice.org/code/cmd/alice"`,
+				"kode/cmd/alice/alice.go": `package http // import "alice.org/code/kode/cmd/alice"`,
 			},
 		},
 		{
