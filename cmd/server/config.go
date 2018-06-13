@@ -65,7 +65,6 @@ func generateConfigFile(path string) (configJSON string, err error) {
 		AuthProviders: []schema.AuthProviders{
 			{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 		},
-		UpdateChannel:    "release",
 		MaxReposToSearch: 50,
 
 		DisablePublicRepoRedirects: true,
