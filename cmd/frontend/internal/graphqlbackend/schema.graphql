@@ -784,7 +784,7 @@ type Repository implements Node {
     createdAt: String!
     # The date when this repository's metadata was last updated on Sourcegraph.
     updatedAt: String
-    # Returns information about the given commit in the repository.
+    # Returns information about the given commit in the repository, or null if no commit exists with the given rev.
     commit(
         # The Git revision specifier (revspec) for the commit.
         rev: String!

@@ -40,7 +40,7 @@ const queryCommit = memoizeObservable(
                 }
                 const repo = data.node as GQL.IRepository
                 if (!repo.commit) {
-                    throw createAggregateError(errors)
+                    throw createAggregateError(errors || [new Error('Commit not found')])
                 }
                 return repo.commit
             })
