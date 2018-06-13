@@ -97,21 +97,25 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 		s = types.TypeString(t, qf)
 	}
 
-	findComments := func(o types.Object) string {
+	findComments := func(o types.Object) (string, error) {
 		if o == nil {
-			return ""
+			return "", nil
 		}
 
 		// Package names must be resolved specially, so do this now to avoid
 		// additional overhead.
 		if v, ok := o.(*types.PkgName); ok {
-			return packageDoc(prog.Package(v.Imported().Path()).Files, node.Name)
+			pkg := prog.Package(v.Imported().Path())
+			if pkg == nil {
+				return "", fmt.Errorf("failed to import package %q", v.Imported().Path())
+			}
+			return packageDoc(pkg.Files, node.Name), nil
 		}
 
 		// Resolve the object o into its respective ast.Node
 		_, path, _ := prog.PathEnclosingInterval(o.Pos(), o.Pos())
 		if path == nil {
-			return ""
+			return "", nil
 		}
 
 		// Pull the comment out of the comment map for the file. Do
@@ -132,12 +136,16 @@ func (h *LangHandler) handleHover(ctx context.Context, conn jsonrpc2.JSONRPC2, r
 			}
 		}
 		if doc == nil {
-			return ""
+			return "", nil
 		}
-		return doc.Text()
+		return doc.Text(), nil
 	}
 
-	contents := maybeAddComments(findComments(o), []lsp.MarkedString{{Language: "go", Value: s}})
+	comments, err := findComments(o)
+	if err != nil {
+		return nil, err
+	}
+	contents := maybeAddComments(comments, []lsp.MarkedString{{Language: "go", Value: s}})
 	if extra != "" {
 		// If we have extra info, ensure it comes after the usually
 		// more useful documentation

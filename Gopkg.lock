@@ -862,7 +862,7 @@
     "pkg/lspext",
     "pkg/tools"
   ]
-  revision = "e526744fd766a8f42e55bd92a3843c2afcdbf08c"
+  revision = "9d81582bcfb51278bf4f755f86421633af640067"
 
 [[projects]]
   branch = "master"
