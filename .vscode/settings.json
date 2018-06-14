@@ -14,5 +14,6 @@
       "fileMatch": ["dev/config.json"],
       "url": "/schema/site.schema.json"
     }
-  ]
+  ],
+  "editor.formatOnSave": true
 }
