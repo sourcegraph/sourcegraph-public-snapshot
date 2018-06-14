@@ -548,8 +548,11 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	}
 	matches := make([]*fileMatchResolver, len(resp.Files))
 	for i, file := range resp.Files {
+		fileLimitHit := false
 		if len(file.LineMatches) > maxLineMatches {
 			file.LineMatches = file.LineMatches[:maxLineMatches]
+			fileLimitHit = true
+			limitHit = true
 		}
 		lines := make([]*lineMatch, 0, len(file.LineMatches))
 		for _, l := range file.LineMatches {
@@ -573,6 +576,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 		matches[i] = &fileMatchResolver{
 			JPath:        file.FileName,
 			JLineMatches: lines,
+			JLimitHit:    fileLimitHit,
 			uri:          fmt.Sprintf("git://%s#%s", file.Repository, file.FileName),
 			repo:         repoMap[api.RepoURI(strings.ToLower(string(file.Repository)))],
 			commitID:     "", // zoekt only searches default branch
