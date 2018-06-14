@@ -10,7 +10,7 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
-import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil, withLatestFrom } from 'rxjs/operators'
+import { debounceTime, distinctUntilChanged, filter, first, map, skip, skipUntil } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { FileMatch } from '../../components/FileMatch'
 import { ModalContainer } from '../../components/ModalContainer'
@@ -66,9 +66,9 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
     /** Emits with the index of the first visible result on the page */
     private firstVisibleItems = new Subject<number>()
 
-    /** Emits with the scrollable list element */
-    private scrollableElements = new Subject<HTMLElement | null>()
-    private nextScrollableElement = (ref: HTMLElement | null) => this.scrollableElements.next(ref)
+    /** Refrence to the current scrollable list element */
+    private scrollableElementRef: HTMLElement | null = null
+    private setScrollableElementRef = (ref: HTMLElement | null) => (this.scrollableElementRef = ref)
 
     /** Emits with the <VirtualList> elements */
     private virtualListContainerElements = new Subject<HTMLElement | null>()
@@ -87,8 +87,6 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
             visibleItems: new Set<number>(),
             didScrollToItem: false,
         }
-
-        const scrollableElements = this.scrollableElements.pipe(filter(isDefined))
 
         // Handle items that have become visible
         this.subscriptions.add(
@@ -163,12 +161,11 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     filter(isDefined),
                     // Only on page load
                     first(),
-                    withLatestFrom(scrollableElements),
-                    map(([container, scrollable]) => ({ container, scrollable, checkpoint: this.getCheckpoint() })),
+                    map(container => ({ container, checkpoint: this.getCheckpoint() })),
                     // Don't scroll to the first item
                     filter(({ checkpoint }) => checkpoint > 0)
                 )
-                .subscribe(({ container, scrollable, checkpoint }) => {
+                .subscribe(({ container, checkpoint }) => {
                     let itemToScrollTo = container.children.item(checkpoint)
 
                     // Handle edge case where user manually sets the checkpoint to greater than the number of results
@@ -180,6 +177,22 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                         this.setCheckpoint(lastIndex)
                     }
 
+                    // It seems unlikely, but still possbile for 'scrollableElementRef' to be null here.
+                    // It might be possible for the 'onRef' callback of 'VirtualList' to be triggered
+                    // (which would kick off this pipeline) BEFORE the 'ref' callback for the
+                    // 'search-results-list' div is executed (which would cause this conditional to be met).
+                    // We'll log the error and gracefully exit for now, but we might need to re-evaluate our strategy
+                    // if we see this error in production.
+                    //
+                    // If this case occurs, the page will not automatically scroll to the list item
+                    // on page load.
+                    if (this.scrollableElementRef === null) {
+                        console.error('scrollableElement ref was null when trying to scroll to a list item')
+                        return
+                    }
+
+                    const scrollable = this.scrollableElementRef
+
                     const scrollTo = itemToScrollTo.getBoundingClientRect().top - scrollable.getBoundingClientRect().top
 
                     scrollable.scrollTop = scrollTo
@@ -190,9 +203,14 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
         // Scroll to the top when "Jump to top" is clicked
         this.subscriptions.add(
-            this.jumpToTopClicks.pipe(withLatestFrom(scrollableElements)).subscribe(([, scrollable]) => {
+            this.jumpToTopClicks.subscribe(() => {
+                // this.scrollableElementRef will never be null here. 'jumpToTopClicks'
+                // only emits events when the "Jump to Top" anchor tag is clicked, which can
+                // never occur before that element is rendered (the 'ref' callback for
+                // 'search-results-list' would have already been called at this point).
+                const scrollable = this.scrollableElementRef!
+
                 scrollable.scrollTop = 0
-                console.log(1)
                 this.setState({ didScrollToItem: false })
             })
         )
@@ -222,7 +240,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     </div>
                 )}
 
-                <div className="search-results-list" ref={this.nextScrollableElement}>
+                <div className="search-results-list" ref={this.setScrollableElementRef}>
                     {/* Saved Queries Form */}
                     {this.props.showSavedQueryModal && (
                         <ModalContainer
@@ -273,6 +291,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                         items={results.results
                                             .map((result, i) => this.renderResult(result, i <= 15))
                                             .filter(isDefined)}
+                                        containment={this.scrollableElementRef || undefined}
                                         onRef={this.nextVirtualListContainerElement}
                                     />
 

@@ -18,6 +18,12 @@ interface Props {
 
     onRef?: (ref: HTMLElement | null) => void
 
+    /**
+     * Element to use as a viewport when checking visibility. If undefined,
+     * the browser window will be used as a viewport.
+     */
+    containment?: HTMLElement
+
     className?: string
 }
 
@@ -42,6 +48,7 @@ export class VirtualList extends React.PureComponent<Props, State> {
                         key={item.key}
                         // tslint:disable-next-line:jsx-no-lambda
                         onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible, i)}
+                        containment={this.props.containment}
                         partialVisibility={true}
                     >
                         {item}
