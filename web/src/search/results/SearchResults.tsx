@@ -236,7 +236,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         uiLimit={this.state.uiLimit}
                     />
                 )}
-                }
             </div>
         )
     }
