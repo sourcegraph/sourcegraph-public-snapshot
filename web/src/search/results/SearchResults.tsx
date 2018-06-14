@@ -13,8 +13,10 @@ import { isSearchResults, submitSearch, toggleSearchFilter } from './../helpers'
 import { parseSearchURLQuery, SearchOptions } from './../index'
 import { queryTelemetryData } from './../queryTelemetry'
 import { SearchResultsList } from './SearchResultsList'
+import { SearchResultsListOld } from './SearchResultsListOld'
 
 const ALL_EXPANDED_LOCAL_STORAGE_KEY = 'allExpanded'
+const UI_PAGE_SIZE = 75
 
 interface SearchResultsProps {
     user: GQL.IUser | null
@@ -34,6 +36,9 @@ interface SearchResultsState {
     resultsOrError?: GQL.ISearchResults
     allExpanded: boolean
 
+    // TODO: Remove when newSearchResultsList is removed
+    uiLimit: number
+
     // Saved Queries
     showSavedQueryModal: boolean
     didSaveQuery: boolean
@@ -42,11 +47,14 @@ interface SearchResultsState {
 }
 
 const newRepoFilters = localStorage.getItem('newRepoFilters') !== 'false'
+const newSearchResultsList = localStorage.getItem('newSearchResultsList') !== 'false'
+
 export class SearchResults extends React.Component<SearchResultsProps, SearchResultsState> {
     public state: SearchResultsState = {
         didSaveQuery: false,
         showSavedQueryModal: false,
         allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
+        uiLimit: UI_PAGE_SIZE,
     }
 
     /** Emits on componentDidUpdate with the new props */
@@ -193,22 +201,42 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             </div>
                         </div>
                     )}
-                <SearchResultsList
-                    resultsOrError={this.state.resultsOrError}
-                    onShowMoreResultsClick={this.showMoreResults}
-                    onExpandAllResultsToggle={this.onExpandAllResultsToggle}
-                    allExpanded={this.state.allExpanded}
-                    showSavedQueryModal={this.state.showSavedQueryModal}
-                    onSaveQueryClick={this.showSaveQueryModal}
-                    onSavedQueryModalClose={this.onModalClose}
-                    onDidCreateSavedQuery={this.onDidCreateSavedQuery}
-                    didSave={this.state.didSaveQuery}
-                    location={this.props.location}
-                    history={this.props.history}
-                    user={this.props.user}
-                    isLightTheme={this.props.isLightTheme}
-                    onHelpPopoverToggle={this.props.onHelpPopoverToggle}
-                />
+                {newSearchResultsList ? (
+                    <SearchResultsList
+                        resultsOrError={this.state.resultsOrError}
+                        onShowMoreResultsClick={this.showMoreResults}
+                        onExpandAllResultsToggle={this.onExpandAllResultsToggle}
+                        allExpanded={this.state.allExpanded}
+                        showSavedQueryModal={this.state.showSavedQueryModal}
+                        onSaveQueryClick={this.showSaveQueryModal}
+                        onSavedQueryModalClose={this.onModalClose}
+                        onDidCreateSavedQuery={this.onDidCreateSavedQuery}
+                        didSave={this.state.didSaveQuery}
+                        location={this.props.location}
+                        history={this.props.history}
+                        user={this.props.user}
+                        isLightTheme={this.props.isLightTheme}
+                        onHelpPopoverToggle={this.props.onHelpPopoverToggle}
+                    />
+                ) : (
+                    <SearchResultsListOld
+                        resultsOrError={this.state.resultsOrError}
+                        onShowMoreResultsClick={this.showMoreResults}
+                        onExpandAllResultsToggle={this.onExpandAllResultsToggle}
+                        allExpanded={this.state.allExpanded}
+                        showSavedQueryModal={this.state.showSavedQueryModal}
+                        onSaveQueryClick={this.showSaveQueryModal}
+                        onSavedQueryModalClose={this.onModalClose}
+                        onDidCreateSavedQuery={this.onDidCreateSavedQuery}
+                        didSave={this.state.didSaveQuery}
+                        location={this.props.location}
+                        user={this.props.user}
+                        isLightTheme={this.props.isLightTheme}
+                        onHelpPopoverToggle={this.props.onHelpPopoverToggle}
+                        uiLimit={this.state.uiLimit}
+                    />
+                )}
+                }
             </div>
         )
     }
