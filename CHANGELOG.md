@@ -7,10 +7,12 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * The site admin code intelligence page now displays an error or reason whenever language servers are unable to be managed from the UI or Sourcegraph API.
+* The ability to directly specify the root import path of a repository via `.sourcegraph/config.json` in the repo root, instead of relying on the heuristics of the Go language server to detect it.
 
 ### Fixed
 
 * Configuring Bitbucket Server now correctly suppresses the the toast message "Configure repositories and code hosts to add to Sourcegraph Server."
+* A bug where canonical import path comments would not be detected by the Go language server's heuristics under `cmd/` folders.
 
 ## 2.9.0-pre0
 
