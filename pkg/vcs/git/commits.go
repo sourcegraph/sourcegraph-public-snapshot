@@ -51,6 +51,10 @@ var logEntryPattern = regexp.MustCompile(`^\s*([0-9]+)\s+(.*)$`)
 
 // getCommit returns the commit with the given id.
 func getCommit(ctx context.Context, repo gitserver.Repo, id api.CommitID) (*Commit, error) {
+	if Mocks.GetCommit != nil {
+		return Mocks.GetCommit(id)
+	}
+
 	if err := checkSpecArgSafety(string(id)); err != nil {
 		return nil, err
 	}

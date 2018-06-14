@@ -112,9 +112,6 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 
 	// Try to get latest remote URL, but continue even if that fails.
 	gitserverRepo, err := GitRepo(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
