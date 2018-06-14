@@ -263,6 +263,14 @@ func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
+	names, err := db.Repos.ListEnabledNames(r.Context())
+	if err != nil {
+		return err
+	}
+	return json.NewEncoder(w).Encode(names)
+}
+
 func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	// List settings for all users, orgs, etc.
 	settings, err := db.Settings.ListAll(r.Context())

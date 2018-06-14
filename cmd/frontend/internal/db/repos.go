@@ -238,6 +238,33 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 	return rawRepos, nil
 }
 
+// ListEnabledNames returns a list of all enabled repo names. This is commonly
+// requested information by other services (repo-updater and
+// indexed-search). We special case just returning enabled names so that we
+// read much less data into memory.
+func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
+	q := sqlf.Sprintf("SELECT uri FROM repo WHERE enabled = true")
+	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return names, nil
+}
+
 func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
