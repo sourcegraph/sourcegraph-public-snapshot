@@ -79,9 +79,6 @@ You are done! Sourcegraph Server version `VERSION` has been released!
     * JS/TS: Automatically build and uploaded in CI when you commit to master in `sourcegraph/javascript-typescript-buildserver`
     * PHP: Automatically build and uploaded in CI when you commit to master in `sourcegraph/php-buildserver`
     * Python: `git push origin master:docker-images/xlang-python`
+    * Go: `git push origin master:docker-images/xlang-go`
 
-1.  `docker pull us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION`
-1.  `docker tag us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION sourcegraph/codeintel-$LANG:$VERSION`
-1.  `docker tag us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION sourcegraph/codeintel-$LANG:latest`
-1.  `docker push sourcegraph/codeintel-$LANG:$VERSION`
-1.  `docker push sourcegraph/codeintel-$LANG:latest`
+1. `./cmd/server/release-codeintel.sh $LANG $VERSION` e.g. `./cmd/server/release-codeintel.sh go 16903_2018-06-13_060942e`
