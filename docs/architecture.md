@@ -64,7 +64,7 @@ Proxies all requests to github.com to keep track of rate limits and prevent trig
 
 ### gitserver ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/gitserver))
 
-Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git.
+Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, should go through repo-updater.
 
 ### indexer ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/indexer))
 
@@ -92,7 +92,7 @@ Periodically runs saved searches and sends notification emails.
 
 ### repo-updater ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater))
 
-TODO
+Repo-updater (which may get renamed since it does more than that) tracks the state of repos, and is responsible for automatically scheduling updates ("git fetch" runs) using gitserver. Other apps which desire updates or fetches should be telling repo-updater, rather than using gitserver directly, so repo-updater can take their changes into account.
 
 ### searcher ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/searcher))
 

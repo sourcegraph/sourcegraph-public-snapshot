@@ -7,6 +7,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Changed
 
 * A once-off migration will run changing the layout of cloned repos on disk. This should only affect installations created January 2018 or before. There should be no user visible changes.
+* Experimental feature flag "updateScheduler" enables a smarter and less spammy algorithm for automatic repository updates.
 
 ### Added
 
