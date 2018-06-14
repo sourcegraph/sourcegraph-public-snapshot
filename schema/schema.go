@@ -99,6 +99,7 @@ type ExperimentalFeatures struct {
 	JumpToDefOSSIndex     string `json:"jumpToDefOSSIndex,omitempty"`
 	MultipleAuthProviders string `json:"multipleAuthProviders,omitempty"`
 	Platform              *bool  `json:"platform,omitempty"`
+	UpdateScheduler       string `json:"updateScheduler,omitempty"`
 }
 
 // ExtensionPlatform description: The platform targeted by this extension.

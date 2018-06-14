@@ -14,6 +14,11 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+// placeholder for the feature flag test.
+func NewScheduler() bool {
+	return false
+}
+
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
 func RunRepositorySyncWorker(ctx context.Context) {
 	var shutdown chan struct{}
@@ -84,6 +89,18 @@ func updateRepo(ctx context.Context, repoConf *schema.Repository) error {
 		}
 	}
 	return nil
+}
+
+func UpdateOnce (ctx context.Context, name api.RepoURI, url string) {
+	log15.Error("updateonce called before feature flag implemented")
+}
+
+func Queue(ctx context.Context, name api.RepoURI, url string) {
+	log15.Error("queue called before feature flag implemented")
+}
+
+func Dequeue(ctx context.Context, name api.RepoURI, url string) {
+	log15.Error("dequeue called before feature flag implemented")
 }
 
 // GetExplicitlyConfiguredRepository reports information about a repository configured explicitly with "repos.list".

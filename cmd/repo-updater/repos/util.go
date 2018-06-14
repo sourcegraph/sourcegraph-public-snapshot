@@ -68,6 +68,16 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 			return
 		}
 
+		// if newScheduler is set (controlled by feature flag), do this instead of running
+		// the old code.
+		if NewScheduler() {
+			if createdRepo.Enabled {
+				Queue(ctx, createdRepo.URI, op.URL)
+			} else {
+				Dequeue(ctx, createdRepo.URI, op.URL)
+			}
+			return
+		}
 		if createdRepo.Enabled {
 			// If newly added, the repository will have been set to enabled upon creation above. Explicitly enqueue a
 			// clone/update now so that those occur in order of most recently pushed.
