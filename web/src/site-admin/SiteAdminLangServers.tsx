@@ -330,12 +330,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
     }
 
     private renderActions = (langServer: GQL.ILangServer) => {
-        // Disable the action buttons while any of these conditions hold:
-        //
-        // - The state is expected to change (e.g. after clicking one of the
-        //   action buttons)
-        // - The state is pending (e.g. when downloading an image)
-        const disabled = this.state.pendingStateByLanguage.has(langServer.language) || langServer.pending
+        const disabled = this.state.pendingStateByLanguage.has(langServer.language)
         const updating =
             this.state.pendingStateByLanguage.has(langServer.language) &&
             this.state.pendingStateByLanguage.get(langServer.language) === 'updating'
