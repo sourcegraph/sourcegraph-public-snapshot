@@ -48,12 +48,13 @@ import (
 // logs to stderr
 var traceLogs bool
 
-// The lastCheckAt map is used to debounce requests. This is a safety
-// feature intended to offer additional insurance that algorithm errors
-// elsewhere don't cause us to flood something.
 var lastCheckAt = make(map[api.RepoURI]time.Time)
 var lastCheckMutex sync.Mutex
 
+// debounce() provides some filtering to prevent spammy requests for the same
+// repository. If the last fetch of the repository was within the given
+// duration, returns false, otherwise returns true and updates the last
+// fetch stamp.
 func debounce(uri api.RepoURI, since time.Duration) bool {
 	lastCheckMutex.Lock()
 	defer lastCheckMutex.Unlock()
@@ -222,7 +223,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo", s.handleRepoInfo)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
-	mux.HandleFunc("/request-repo-update", s.handleRequestRepoUpdate)
+	mux.HandleFunc("/repo-update", s.handleRepoUpdate)
 	mux.HandleFunc("/upload-pack", s.handleUploadPack)
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
@@ -416,12 +417,11 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// handleRequestRepoUpdate is a synchronous (waits for update to complete or
+// handleRepoUpdate() is a synchronous (waits for update to complete or
 // time out) method so it can yield errors.
-func (s *Server) handleRequestRepoUpdate(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoUpdateRequest
-	var err error
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -440,9 +440,10 @@ func (s *Server) handleRequestRepoUpdate(w http.ResponseWriter, r *http.Request)
 		// optimistically, we assume that our cloning attempt might
 		// succeed.
 		resp.CloneInProgress = true
-		_, err = s.cloneRepo(ctx, req.Repo, req.URL, dir)
+		_, err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
+			resp.Error = err.Error()
 		}
 	} else {
 		resp.Cloned = true
@@ -462,8 +463,8 @@ func (s *Server) handleRequestRepoUpdate(w http.ResponseWriter, r *http.Request)
 		} else {
 			resp.LastFetched = &lastFetched
 		}
-		lastChanged, statusErr := repoLastChanged(dir)
-		if statusErr != nil {
+		lastChanged, err := repoLastChanged(dir)
+		if err != nil {
 			statusErr = err
 		} else {
 			resp.LastChanged = &lastChanged
@@ -975,7 +976,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 	// close when its done. We can return when either done is closed or our
 	// deadline has passed.
 	done := make(chan struct{})
-	var err error
+	err := errors.New("another operation is already in progress")
 	go func() {
 		defer close(done)
 		once.Do(func() {
@@ -992,10 +993,10 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 
 	select {
 	case <-done:
-		return err
+		return errors.Wrap(err, "repo "+string(repo)+":")
 	case <-ctx.Done():
 		span.LogFields(otlog.String("event", "context canceled"))
-		return errors.New("context cancelled")
+		return ctx.Err()
 	}
 }
 

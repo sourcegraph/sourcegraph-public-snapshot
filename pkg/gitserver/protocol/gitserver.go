@@ -43,7 +43,7 @@ type HTTPSConfig struct {
 type RepoUpdateRequest struct {
 	Repo  api.RepoURI   `json:"repo"`  // identifying URL for repo
 	URL   string        `json:"url"`   // repo's remote URL
-	Since time.Duration `json:"since"` // debounce interval for queries
+	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
 }
 
 // RepoUpdateResponse returns meta information of the repo enqueued for

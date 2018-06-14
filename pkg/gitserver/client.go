@@ -341,13 +341,14 @@ func (c *Client) RequestRepoUpdate(ctx context.Context, repo Repo, since time.Du
 		URL:   repo.URL,
 		Since: since,
 	}
-	resp, err := c.httpPost(ctx, repo.Name, "request-repo-update", req)
+	resp, err := c.httpPost(ctx, repo.Name, "repo-update", req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d", resp.StatusCode)}
+		body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, body)}
 	}
 
 	var info *protocol.RepoUpdateResponse
