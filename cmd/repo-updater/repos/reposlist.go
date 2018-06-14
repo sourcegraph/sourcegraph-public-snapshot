@@ -66,6 +66,11 @@ func updateRepo(ctx context.Context, repoConf *schema.Repository) error {
 		return err
 	}
 
+	if !repo.Enabled {
+		// The repo is not enabled.
+		return nil
+	}
+
 	// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
 	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, uri)
 	if err != nil {
