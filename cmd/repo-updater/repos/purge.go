@@ -86,7 +86,12 @@ func purge(ctx context.Context) error {
 		purgeSuccess.Inc()
 	}
 
-	log15.Debug("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed)
+	// If we did something we log with a higher level.
+	logger := log15.Root().Debug
+	if success > 0 || failed > 0 {
+		logger = log15.Root().Info
+	}
+	logger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed)
 
 	return nil
 }
