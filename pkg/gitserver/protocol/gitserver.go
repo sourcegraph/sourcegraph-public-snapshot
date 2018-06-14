@@ -41,8 +41,9 @@ type HTTPSConfig struct {
 
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
-	Repo api.RepoURI `json:"repo"` // identifying URL for repo
-	URL  string      `json:"url"`  // repo's remote URL
+	Repo  api.RepoURI   `json:"repo"`  // identifying URL for repo
+	URL   string        `json:"url"`   // repo's remote URL
+	Since time.Duration `json:"since"` // debounce interval for queries
 }
 
 // RepoUpdateResponse returns meta information of the repo enqueued for
@@ -54,6 +55,13 @@ type RepoUpdateResponse struct {
 	CloneInProgress bool
 	LastFetched     *time.Time
 	LastChanged     *time.Time
+	Error           string // an error reported by the update, as opposed to a protocol error
+	QueueCap        int    // size of the clone queue
+	QueueLen        int    // current clone operations
+	// Following items likely provided only if the request specified waiting.
+	Received *time.Time // time request was received by handler function
+	Started  *time.Time // time request actually started processing
+	Finished *time.Time // time request completed
 }
 
 type NotFoundPayload struct {

@@ -48,6 +48,22 @@ import (
 // logs to stderr
 var traceLogs bool
 
+// The lastCheckAt map is used to debounce requests. This is a safety
+// feature intended to offer additional insurance that algorithm errors
+// elsewhere don't cause us to flood something.
+var lastCheckAt = make(map[api.RepoURI]time.Time)
+var lastCheckMutex sync.Mutex
+
+func debounce(uri api.RepoURI, since time.Duration) bool {
+	lastCheckMutex.Lock()
+	defer lastCheckMutex.Unlock()
+	if t, ok := lastCheckAt[uri]; ok && time.Now().Before(t.Add(since)) {
+		return false
+	}
+	lastCheckAt[uri] = time.Now()
+	return true
+}
+
 func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
@@ -206,6 +222,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/repo", s.handleRepoInfo)
 	mux.HandleFunc("/delete", s.handleRepoDelete)
 	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
+	mux.HandleFunc("/request-repo-update", s.handleRequestRepoUpdate)
 	mux.HandleFunc("/upload-pack", s.handleUploadPack)
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
@@ -250,10 +267,17 @@ func (s *Server) serverContext() (context.Context, context.CancelFunc) {
 	}
 }
 
+// acquireCloneLimiter() acquires a cancellable context associated with the
+// clone limiter.
 func (s *Server) acquireCloneLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	cloneQueue.Inc()
 	defer cloneQueue.Dec()
 	return s.cloneLimiter.Acquire(ctx)
+}
+
+// queryCloneLimiter reports the capacity and length of the clone limiter's queue
+func (s *Server) queryCloneLimiter() (cap, len int) {
+	return s.cloneLimiter.GetLimit()
 }
 
 func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, context.CancelFunc, error) {
@@ -335,6 +359,8 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleEnqueueRepoUpdate: This is the old implementation, which is being
+// deprecated.
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -383,6 +409,77 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		resp.Cloned = true
 		resp.LastFetched = &lastFetched
 		resp.LastChanged = &lastChanged
+	}
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// handleRequestRepoUpdate is a synchronous (waits for update to complete or
+// time out) method so it can yield errors.
+func (s *Server) handleRequestRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoUpdateRequest
+	var err error
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var resp protocol.RepoUpdateResponse
+	req.Repo = protocol.NormalizeRepo(req.Repo)
+	dir := path.Join(s.ReposDir, string(req.Repo))
+
+	// despite the existence of a context on the request, we don't want to
+	// cancel the git commands partway through if the request terminates.
+	ctx, cancel1 := s.serverContext()
+	defer cancel1()
+	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	defer cancel2()
+	resp.QueueCap, resp.QueueLen = s.queryCloneLimiter()
+	if !repoCloned(dir) && !skipCloneForTests {
+		// optimistically, we assume that our cloning attempt might
+		// succeed.
+		resp.CloneInProgress = true
+		_, err = s.cloneRepo(ctx, req.Repo, req.URL, dir)
+		if err != nil {
+			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
+		}
+	} else {
+		resp.Cloned = true
+		var statusErr, updateErr error
+
+		if debounce(req.Repo, req.Since) {
+			updateErr = s.doRepoUpdate(ctx, req.Repo, req.URL)
+		} else {
+			updateErr = errors.New("repo recently fetched, skipping")
+		}
+
+		// attempts to acquire these values are not contingent on the success of
+		// the update.
+		lastFetched, err := repoLastFetched(dir)
+		if err != nil {
+			statusErr = err
+		} else {
+			resp.LastFetched = &lastFetched
+		}
+		lastChanged, statusErr := repoLastChanged(dir)
+		if statusErr != nil {
+			statusErr = err
+		} else {
+			resp.LastChanged = &lastChanged
+		}
+		if statusErr != nil {
+			log15.Error("failed to get status of repo", "repo", req.Repo, "error", statusErr)
+			// report this error in-band, but still produce a valid response with the
+			// other information.
+			resp.Error = statusErr.Error()
+		}
+		// If an error occurred during update, report it but don't actually make
+		// it into an http error; we want the client to get the information cleanly.
+		// An update error "wins" over a status error.
+		if updateErr != nil {
+			resp.Error = updateErr.Error()
+		}
 	}
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -830,16 +927,14 @@ func init() {
 
 func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 	updateRepo := make(chan updateRepoRequest, 10)
-	lastCheckAt := make(map[api.RepoURI]time.Time)
 
 	go func() {
 		for req := range updateRepo {
 			updateQueue.Dec()
 
-			if t, ok := lastCheckAt[req.repo]; ok && time.Now().Before(t.Add(10*time.Second)) {
-				continue // git data still fresh
+			if !debounce(req.repo, 10*time.Second) {
+				continue
 			}
-			lastCheckAt[req.repo] = time.Now()
 			go func(req updateRepoRequest) {
 				// Create a new context with a new timeout (instead of passing one through updateRepoRequest)
 				// because the ctx of the updateRepoRequest sender will get cancelled before this goroutine runs.
@@ -857,7 +952,7 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 
 var headBranchPattern = regexp.MustCompile("HEAD branch: (.+?)\\n")
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string) {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	span.SetTag("url", url)
@@ -880,6 +975,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 	// close when its done. We can return when either done is closed or our
 	// deadline has passed.
 	done := make(chan struct{})
+	var err error
 	go func() {
 		defer close(done)
 		once.Do(func() {
@@ -890,14 +986,16 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 			l.once = new(sync.Once) // Make new requests wait for next update.
 			s.repoUpdateLocksMu.Unlock()
 
-			s.doRepoUpdate2(repo, url)
+			err = s.doRepoUpdate2(repo, url)
 		})
 	}()
 
 	select {
 	case <-done:
+		return err
 	case <-ctx.Done():
 		span.LogFields(otlog.String("event", "context canceled"))
+		return errors.New("context cancelled")
 	}
 }
 
@@ -1031,16 +1129,14 @@ func computeRefHash(dir string) ([]byte, error) {
 	return hash, nil
 }
 
-func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
-	// We do not want user request to interrupt updates, so we use a
+func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) error {
 	// background context.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
 
 	ctx, cancel2, err := s.acquireCloneLimiter(ctx)
 	if err != nil {
-		log15.Error("error acquiring clone lock for update", "err", err, "repo", repo)
-		return
+		return err
 	}
 	defer cancel2()
 
@@ -1060,7 +1156,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
 		url, err = repoRemoteURL(ctx, dir)
 		if err != nil || url == "" {
 			log15.Error("Failed to determine Git remote URL", "repo", repo, "error", err, "url", url)
-			return
+			return errors.Wrap(err, "failed to determine Git remote URL")
 		}
 		urlIsGitRemote = true
 	}
@@ -1097,7 +1193,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
 
 	if output, err := s.runWithRemoteOpts(ctx, cmd, nil); err != nil {
 		log15.Error("Failed to update", "repo", repo, "error", err, "output", string(output))
-		return
+		return errors.Wrap(err, "failed to update")
 	}
 
 	// Update the last-changed stamp.
@@ -1113,7 +1209,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
 	output, err := s.runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
 		log15.Error("Failed to fetch remote info", "repo", repo, "url", url, "error", err, "output", string(output))
-		return
+		return errors.Wrap(err, "failed to fetch remote info")
 	}
 	submatches := headBranchPattern.FindSubmatch(output)
 	if len(submatches) == 2 {
@@ -1133,7 +1229,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
 		list, err := cmd.Output()
 		if err != nil {
 			log15.Error("Failed to list branches", "repo", repo, "error", err, "output", string(output))
-			return
+			return errors.Wrap(err, "failed to list branches")
 		}
 		lines := strings.Split(string(list), "\n")
 		branch := strings.TrimPrefix(strings.TrimPrefix(lines[0], "* "), "  ")
@@ -1147,8 +1243,9 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) {
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	if output, err := cmd.CombinedOutput(); err != nil {
 		log15.Error("Failed to set HEAD", "repo", repo, "error", err, "output", string(output))
-		return
+		return errors.Wrap(err, "Failed to set HEAD")
 	}
+	return nil
 }
 
 func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev, repoDir string) bool {

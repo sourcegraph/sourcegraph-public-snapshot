@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -330,6 +331,28 @@ func (c *Client) EnqueueRepoUpdateDeprecated(ctx context.Context, repo Repo) err
 	resp, err := c.httpPost(ctx, repo.Name, "enqueue-repo-update", req)
 	resp.Body.Close()
 	return err
+}
+
+// RequestRepoUpdate is the new protocol endpoint for synchronous requests
+// with more detailed responses. Do not use this if you are not repo-updater.
+func (c *Client) RequestRepoUpdate(ctx context.Context, repo Repo, since time.Duration) (*protocol.RepoUpdateResponse, error) {
+	req := &protocol.RepoUpdateRequest{
+		Repo:  repo.Name,
+		URL:   repo.URL,
+		Since: since,
+	}
+	resp, err := c.httpPost(ctx, repo.Name, "request-repo-update", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d", resp.StatusCode)}
+	}
+
+	var info *protocol.RepoUpdateResponse
+	err = json.NewDecoder(resp.Body).Decode(&info)
+	return info, err
 }
 
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
