@@ -31,8 +31,9 @@ type RepoLookupResult struct {
 	// Repo contains information about the repository, if it is found. If an error occurred, it is nil.
 	Repo *RepoInfo
 
-	// Known types of errors.
-	ErrorNotFound, ErrorUnauthorized bool
+	ErrorNotFound               bool // the repository host reported that the repository was not found
+	ErrorUnauthorized           bool // the repository host rejected the client's authorization
+	ErrorTemporarilyUnavailable bool // the repository host was temporarily unavailable (e.g., rate limit exceeded)
 }
 
 func (r *RepoLookupResult) String() string {

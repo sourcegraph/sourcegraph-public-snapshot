@@ -25,6 +25,10 @@ var (
 
 	// ErrUnauthorized is when an authorization error occurred.
 	ErrUnauthorized = errors.New("not authorized")
+
+	// ErrTemporarilyUnavailable is when the repository was reported as being temporarily
+	// unavailable.
+	ErrTemporarilyUnavailable = errors.New("repository temporarily unavailable")
 )
 
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
@@ -98,6 +102,8 @@ func (c *Client) RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 			err = ErrNotFound
 		case result.ErrorUnauthorized:
 			err = ErrUnauthorized
+		case result.ErrorTemporarilyUnavailable:
+			err = ErrTemporarilyUnavailable
 		}
 	}
 	return result, err

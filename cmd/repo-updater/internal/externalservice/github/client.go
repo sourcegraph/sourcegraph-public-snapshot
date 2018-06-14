@@ -224,6 +224,23 @@ func IsNotFound(err error) bool {
 	return false
 }
 
+// IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate
+// limit was exceeded.
+func IsRateLimitExceeded(err error) bool {
+	errs, ok := err.(graphqlErrors)
+	if !ok {
+		return false
+	}
+	for _, err := range errs {
+		// This error is not documented, so be lenient here (instead of just checking for exact
+		// error type match.)
+		if err.Type == "RATE_LIMITED" || strings.Contains(err.Message, "API rate limit exceeded") {
+			return true
+		}
+	}
+	return false
+}
+
 // graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
 // requestGraphQL. See https://facebook.github.io/graphql/#sec-Errors.
 type graphqlErrors []struct {

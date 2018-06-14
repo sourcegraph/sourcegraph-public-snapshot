@@ -90,6 +90,7 @@ func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (c
 
 	// Try to get latest remote URL, but continue even if that fails.
 	grepo, err := GitRepo(ctx, repo)
+	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return "", err
 	}
@@ -112,6 +113,7 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 
 	// Try to get latest remote URL, but continue even if that fails.
 	gitserverRepo, err := GitRepo(ctx, repo)
+	maybeLogRepoUpdaterError(repo, err)
 	if err != nil && !isIgnorableRepoUpdaterError(err) {
 		return nil, err
 	}
@@ -119,5 +121,21 @@ func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.Co
 }
 
 func isIgnorableRepoUpdaterError(err error) bool {
-	return errors.Cause(err) == repoupdater.ErrNotFound || errors.Cause(err) == repoupdater.ErrUnauthorized
+	err = errors.Cause(err)
+	return err == repoupdater.ErrNotFound || err == repoupdater.ErrUnauthorized || err == repoupdater.ErrTemporarilyUnavailable
+}
+
+func maybeLogRepoUpdaterError(repo *types.Repo, err error) {
+	var msg string
+	switch c := errors.Cause(err); c {
+	case repoupdater.ErrNotFound:
+		msg = "Repository host reported a repository as not found. If this repository was deleted on its origin, the site admin must explicitly delete it on Sourcegraph."
+	case repoupdater.ErrUnauthorized:
+		msg = "Repository host rejected as unauthorized an attempt to retrieve a repository's metadata. Check the repository host credentials in site configuration."
+	case repoupdater.ErrTemporarilyUnavailable:
+		msg = "Repository host was temporarily unavailable while retrieving repository information."
+	}
+	if msg != "" {
+		log15.Warn(msg+" Consult repo-updater logs for more information.", "repo", repo.URI)
+	}
 }

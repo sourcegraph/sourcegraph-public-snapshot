@@ -116,6 +116,10 @@ var GetGitHubRepositoryMock func(args protocol.RepoLookupArgs) (repo *protocol.R
 var (
 	bypassGitHubAPI, _       = strconv.ParseBool(os.Getenv("BYPASS_GITHUB_API"))
 	minGitHubAPIRateLimit, _ = strconv.Atoi(os.Getenv("GITHUB_API_MIN_RATE_LIMIT"))
+
+	// ErrGitHubAPITemporarilyUnavailable is returned by GetGitHubRepository when the GitHub API is
+	// unavailable.
+	ErrGitHubAPITemporarilyUnavailable = errors.New("the GitHub API is temporarily unavailable")
 )
 
 // GetGitHubRepository queries a configured GitHub connection endpoint for information about the
@@ -155,22 +159,35 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 	}
 
 	// Support bypassing GitHub API, for rate limit evasion.
+	var bypassReason string
 	bypass := bypassGitHubAPI
+	if bypass {
+		bypassReason = "manual bypass env var BYPASS_GITHUB_API=1 is set"
+	}
 	if !bypass && minGitHubAPIRateLimit > 0 {
 		remaining, reset, known := conn.client.RateLimit.Get()
 		// If we're below the min rate limit, bypass the GitHub API. But if the rate limit has reset, then we need
 		// to perform an API request to check the new rate limit. (Give 30s of buffer for clock unsync.)
 		if known && remaining < minGitHubAPIRateLimit && reset > -30*time.Second {
 			bypass = true
+			bypassReason = "GitHub API rate limit is exhausted"
 		}
 	}
 	if bypass {
-		if args.Repo != "" && conn.config.Token == "" {
-			if remaining, reset, known := conn.client.RateLimit.Get(); known {
-				log15.Debug("GetGitHubRepository: bypassing GitHub API", "repo", args.Repo, "rateLimitRemaining", remaining, "rateLimitReset", reset)
-			} else {
-				log15.Debug("GetGitHubRepository: bypassing GitHub API", "repo", args.Repo)
-			}
+		remaining, reset, known := conn.client.RateLimit.Get()
+
+		logArgs := []interface{}{"reason", bypassReason, "repo", args.Repo, "baseURL", conn.config.Url}
+		if known {
+			logArgs = append(logArgs, "rateLimitRemaining", remaining, "rateLimitReset", reset)
+		} else {
+			logArgs = append(logArgs, "rateLimitKnown", false)
+		}
+
+		// For public repositories, we can bypass the GitHub API and still get almost everything we
+		// need (except for the repository's ID, description, and fork status).
+		isPublicRepo := args.Repo != "" && conn.config.Token == ""
+		if isPublicRepo {
+			log15.Debug("Bypassing GitHub API when getting public repository. Some repository metadata fields will be blank.", logArgs...)
 
 			// It's important to still check cloneability, so we don't add a bunch of junk GitHub repos that don't
 			// exist (like github.com/settings/profile) or that are private and not on Sourcegraph.com.
@@ -193,7 +210,9 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 				VCS: protocol.VCSInfo{URL: remoteURL},
 			}, true, nil
 		}
-		return nil, false, nil
+
+		log15.Warn("Unable to get repository metadata from GitHub API for a (possibly) private repository.", logArgs...)
+		return nil, true, ErrGitHubAPITemporarilyUnavailable
 	}
 
 	log15.Debug("GetGitHubRepository", "repo", args.Repo, "externalRepo", args.ExternalRepo)

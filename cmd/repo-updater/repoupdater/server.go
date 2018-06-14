@@ -105,6 +105,9 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 		} else if isUnauthorized(err) {
 			result.ErrorUnauthorized = true
 			err = nil
+		} else if isTemporarilyUnavailable(err) {
+			result.ErrorTemporarilyUnavailable = true
+			err = nil
 		}
 		if err != nil {
 			return nil, err
@@ -133,4 +136,8 @@ func isUnauthorized(err error) bool {
 		code = gitlab.HTTPErrorCode(err)
 	}
 	return code == http.StatusUnauthorized || code == http.StatusForbidden
+}
+
+func isTemporarilyUnavailable(err error) bool {
+	return err == repos.ErrGitHubAPITemporarilyUnavailable || github.IsRateLimitExceeded(err)
 }
