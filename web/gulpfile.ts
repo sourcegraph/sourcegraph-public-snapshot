@@ -42,6 +42,9 @@ export async function webpack(): Promise<void> {
         compiler.run((err, stats) => (err ? reject(err) : resolve(stats)))
     })
     logWebpackStats(stats)
+    if (stats.hasErrors()) {
+        throw Object.assign(new Error('Failed to compile'), { showStack: false })
+    }
 }
 
 export async function watchWebpack(): Promise<void> {
