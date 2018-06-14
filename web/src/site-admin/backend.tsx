@@ -720,6 +720,7 @@ export function fetchLangServers(): Observable<GQL.ILangServer[]> {
                     custom
                     state
                     pending
+                    downloading
                     canEnable
                     canDisable
                     canRestart

@@ -19,6 +19,7 @@ type langServerResolver struct {
 	experimental                                 bool
 	state                                        langservers.ConfigState
 	pending                                      bool
+	downloading                                  bool
 	canEnable, canDisable, canRestart, canUpdate bool
 	healthy                                      bool
 }
@@ -47,12 +48,13 @@ func (c *langServerResolver) State(ctx context.Context) string {
 		panic("invalid state")
 	}
 }
-func (c *langServerResolver) Pending(ctx context.Context) bool    { return c.pending }
-func (c *langServerResolver) CanEnable(ctx context.Context) bool  { return c.canEnable }
-func (c *langServerResolver) CanDisable(ctx context.Context) bool { return c.canDisable }
-func (c *langServerResolver) CanRestart(ctx context.Context) bool { return c.canRestart }
-func (c *langServerResolver) CanUpdate(ctx context.Context) bool  { return c.canUpdate }
-func (c *langServerResolver) Healthy(ctx context.Context) bool    { return c.healthy }
+func (c *langServerResolver) Pending(ctx context.Context) bool     { return c.pending }
+func (c *langServerResolver) Downloading(ctx context.Context) bool { return c.downloading }
+func (c *langServerResolver) CanEnable(ctx context.Context) bool   { return c.canEnable }
+func (c *langServerResolver) CanDisable(ctx context.Context) bool  { return c.canDisable }
+func (c *langServerResolver) CanRestart(ctx context.Context) bool  { return c.canRestart }
+func (c *langServerResolver) CanUpdate(ctx context.Context) bool   { return c.canUpdate }
+func (c *langServerResolver) Healthy(ctx context.Context) bool     { return c.healthy }
 
 func (s *siteResolver) LangServer(ctx context.Context, args struct{ Language string }) (*langServerResolver, error) {
 	langServers, err := s.LangServers(ctx)
@@ -92,6 +94,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			experimental: langservers.StaticInfo[language].Experimental,
 			state:        state,
 			pending:      infoErr == nil && (info.Pulling || info.Status == langservers.StatusStarting),
+			downloading:  infoErr == nil && info.Pulling,
 			canEnable:    infoErr == nil && (isSiteAdmin || state == langservers.StateNone),
 			canDisable:   infoErr == nil && isSiteAdmin,
 			canRestart:   infoErr == nil && isSiteAdmin && state == langservers.StateEnabled,

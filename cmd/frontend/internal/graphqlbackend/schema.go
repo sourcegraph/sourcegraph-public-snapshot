@@ -2074,6 +2074,10 @@ type LangServer {
     #
     # Always false in Data Center and for custom language servers.
     pending: Boolean!
+    # Whether or not the language server is being downloaded.
+    #
+    # Always false in Data Center and for custom language servers.
+    downloading: Boolean!
     # Whether or not the current user can enable the language server or not.
     #
     # Always false in Data Center.
