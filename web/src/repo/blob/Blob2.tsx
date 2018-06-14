@@ -1,7 +1,7 @@
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { concat, fromEvent, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { combineLatest, concat, fromEvent, merge, Observable, of, Subject, Subscription, zip } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -197,13 +197,17 @@ interface BlobState {
 }
 
 /**
- * Returns true if the HoverOverlay component should be rendered according to the given state.
- * The HoverOverlay is rendered when there is either a non-empty hover result or a non-empty definition result.
+ * Returns true if the HoverOverlay would have anything to show according to the given hover and definition states.
  */
-const shouldRenderHover = (state: BlobState): boolean =>
-    !(!state.hoverOverlayIsFixed && state.mouseIsMoving) &&
-    ((state.hoverOrError && !(Hover.is(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
-        isJumpURL(state.definitionURLOrError))
+const overlayUIHasContent = (state: Pick<BlobState, 'hoverOrError' | 'definitionURLOrError'>): boolean =>
+    (state.hoverOrError && !(Hover.is(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
+    isJumpURL(state.definitionURLOrError)
+
+/**
+ * Returns true if the HoverOverlay component should be rendered according to the given state.
+ */
+const shouldRenderOverlay = (state: BlobState): boolean =>
+    !(!state.hoverOverlayIsFixed && state.mouseIsMoving) && overlayUIHasContent(state)
 
 /** The time in ms after which to show a loader if the result has not returned yet */
 const LOADER_DELAY = 300
@@ -414,8 +418,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
         )
 
-        /** Emits new positions at which a tooltip needs to be shown. */
-        const filteredPositions: Observable<{
+        /** Emits new positions at which a tooltip needs to be shown from clicks, mouseovers and URL changes. */
+        const positions: Observable<{
             /**
              * The 1-indexed position at which a new tooltip is to be shown,
              * or undefined when a target was hovered/clicked that does not correspond to a position (e.g. after the end of the line)
@@ -430,39 +434,31 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             pinIfNonEmpty: boolean
         }> = merge(
             merge(
-                // Already filtered by !hoverOverlayIsFixed
-                codeMouseOverTargets.pipe(
-                    // Should unpin the tooltip even if hover cames back non-empty
-                    map(data => ({ ...data, pinIfNonEmpty: false }))
-                ),
+                // Should unpin the tooltip even if hover cames back non-empty
+                codeMouseOverTargets.pipe(map(data => ({ ...data, pinIfNonEmpty: false }))),
                 // When the location changes and includes a line/column pair, use that target
-                targetsFromLocationHash.pipe(
-                    // Should pin the tooltip if hover cames back non-empty
-                    map(data => ({ ...data, pinIfNonEmpty: true }))
-                ),
-                codeClickTargets.pipe(
-                    // Clicks should trigger a new hover when the overlay is fixed
-                    filter(() => this.state.hoverOverlayIsFixed),
-                    // Should pin the tooltip if hover cames back non-empty
-                    map(data => ({ ...data, pinIfNonEmpty: true }))
-                )
+                // Should pin the tooltip if hover cames back non-empty
+                targetsFromLocationHash.pipe(map(data => ({ ...data, pinIfNonEmpty: true }))),
+                // Should pin the tooltip if hover cames back non-empty
+                codeClickTargets.pipe(map(data => ({ ...data, pinIfNonEmpty: true })))
             ).pipe(
                 // Find out the position that was hovered over
                 map(({ target, codeElement, pinIfNonEmpty }) => {
                     const hoveredToken = locateTarget(target, codeElement, false)
                     const position = Position.is(hoveredToken) ? hoveredToken : undefined
                     return { position, pinIfNonEmpty }
-                }),
-                distinctUntilChanged((a, b) => isEqual(a.position, b.position))
+                })
             )
         ).pipe(share())
 
-        // HOVER FETCH
-        // On every new hover position, fetch new hover contents
-        const hovers = filteredPositions.pipe(
-            switchMap(({ position, pinIfNonEmpty }) => {
+        /**
+         * For every position, emits an Observable with new values for the `hoverOrError` state.
+         * This is a higher-order Observable (Observable that emits Observables).
+         */
+        const hoverObservables = positions.pipe(
+            map(({ position }) => {
                 if (!position) {
-                    return [{ hoverOrError: undefined, pinIfNonEmpty }]
+                    return of(undefined)
                 }
                 // Fetch the hover for that position
                 const hoverFetch = fetchHover({
@@ -483,29 +479,21 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 // 1. Reset the hover content, so no old hover content is displayed at the new position while fetching
                 // 2. Show a loader if the hover fetch hasn't returned after 100ms
                 // 3. Show the hover once it returned
-                return merge(
-                    [undefined],
-                    of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)),
-                    hoverFetch
-                ).pipe(map(hoverOrError => ({ hoverOrError, pinIfNonEmpty })))
+                return merge([undefined], of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)), hoverFetch)
             }),
             share()
         )
-        // Update the state
+        /** Flattened `hoverObservables` */
+        const hovers = hoverObservables.pipe(switchMap(hoverObservable => hoverObservable), share())
+
         this.subscriptions.add(
-            hovers.subscribe(({ hoverOrError, pinIfNonEmpty }) => {
+            hovers.subscribe(hoverOrError => {
+                // Update the state
                 this.setState({
                     hoverOrError,
                     // Reset the hover position, it's gonna be repositioned after the hover was rendered
                     hoverOverlayPosition: undefined,
-                    // This pins the overlay if the trigger was a click or location and LOADING, an Error or non-empty hover
-                    hoverOverlayIsFixed:
-                        pinIfNonEmpty && !!hoverOrError && !(Hover.is(hoverOrError) && isEmptyHover(hoverOrError)),
                 })
-                // Telemetry
-                if (hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)) {
-                    eventLogger.log('SymbolHovered')
-                }
             })
         )
         // Highlight the hover range returned by the language server
@@ -527,32 +515,48 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 token.classList.add('selection-highlight')
             })
         )
+        // Telemetry for hovers
+        this.subscriptions.add(
+            zip(positions, hoverObservables)
+                .pipe(
+                    distinctUntilChanged(([positionA], [positionB]) => isEqual(positionA, positionB)),
+                    switchMap(([position, hoverObservable]) => hoverObservable),
+                    filter(Hover.is)
+                )
+                .subscribe(() => {
+                    eventLogger.log('SymbolHovered')
+                })
+        )
+
+        /**
+         * For every position, emits an Observable that emits new values for the `definitionURLOrError` state.
+         * This is a higher-order Observable (Observable that emits Observables).
+         */
+        const definitionObservables = positions.pipe(
+            // Fetch the definition location for that position
+            map(({ position }) => {
+                if (!position) {
+                    return of(undefined)
+                }
+                return concat(
+                    [LOADING],
+                    fetchJumpURL({
+                        repoPath: this.props.repoPath,
+                        commitID: this.props.commitID,
+                        filePath: this.props.filePath,
+                        rev: this.props.rev,
+                        position,
+                    }).pipe(map(url => (url !== null ? { jumpURL: url } : null)), catchError(error => [asError(error)]))
+                )
+            })
+        )
 
         // GO TO DEFINITION FETCH
         // On every new hover position, (pre)fetch definition and update the state
         this.subscriptions.add(
-            filteredPositions
-                .pipe(
-                    // Fetch the definition location for that position
-                    switchMap(({ position }) => {
-                        if (!position) {
-                            return [undefined]
-                        }
-                        return concat(
-                            [LOADING],
-                            fetchJumpURL({
-                                repoPath: this.props.repoPath,
-                                commitID: this.props.commitID,
-                                filePath: this.props.filePath,
-                                rev: this.props.rev,
-                                position,
-                            }).pipe(
-                                map(url => (url !== null ? { jumpURL: url } : null)),
-                                catchError(error => [asError(error)])
-                            )
-                        )
-                    })
-                )
+            definitionObservables
+                // flatten inner Observables
+                .pipe(switchMap(definitionObservable => definitionObservable))
                 .subscribe(definitionURLOrError => {
                     this.setState({ definitionURLOrError })
                     // If the j2d button was already clicked and we now have the result, jump to it
@@ -568,6 +572,33 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     }
                 })
         )
+
+        // DEFERRED HOVER OVERLAY PINNING
+        // If the new position came from a click or the URL,
+        // if either the hover or the definition turn out non-empty, pin the tooltip.
+        // If they both turn out empty, unpin it so we don't end up with an invisible tooltip.
+        //
+        // zip together a position and the hover and definition fetches it triggered
+        zip(positions, hoverObservables, definitionObservables)
+            .pipe(
+                switchMap(([{ pinIfNonEmpty }, hoverObservable, definitionObservable]) => {
+                    // If the position was triggered by a mouseover, never pin
+                    if (!pinIfNonEmpty) {
+                        return [false]
+                    }
+                    // combine the latest values for them, so we have access to both values
+                    // and can reevaluate our pinning decision whenever one of the two updates,
+                    // independent of the order in which they emit
+                    return combineLatest(hoverObservable, definitionObservable).pipe(
+                        map(([hoverOrError, definitionURLOrError]) =>
+                            overlayUIHasContent({ hoverOrError, definitionURLOrError })
+                        )
+                    )
+                })
+            )
+            .subscribe(hoverOverlayIsFixed => {
+                this.setState({ hoverOverlayIsFixed })
+            })
 
         // On every click on a go to definition button, reveal loader/error/not found UI
         this.subscriptions.add(
@@ -587,7 +618,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             })
         )
         this.subscriptions.add(
-            filteredPositions.subscribe(({ position }) => {
+            positions.subscribe(({ position }) => {
                 this.setState({
                     hoveredTokenPosition: position,
                     // On every new target (from mouseover or click) hide the j2d loader/error/not found UI again
@@ -625,8 +656,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     this.setState({
                         // Remember active position in state for blame and range expansion
                         selectedPosition: position,
-                        // Pin overlay if a concrete position or range is given
-                        hoverOverlayIsFixed: position.character !== undefined,
                     })
                     const rows = getRowsInRange(codeElement, position)
                     // Remove existing highlighting
@@ -700,7 +729,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     onMouseOver={this.nextCodeMouseOver}
                     onMouseMove={this.nextCodeMouseMove}
                 />
-                {shouldRenderHover(this.state) && (
+                {shouldRenderOverlay(this.state) && (
                     <HoverOverlay
                         hoverRef={this.nextOverlayElement}
                         definitionURLOrError={
