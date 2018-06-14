@@ -61,7 +61,6 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 		panic("unexpected args")
 	}
 
-	cloned := 0
 	do := func(op repoCreateOrUpdateRequest) {
 		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op.RepoCreateOrUpdateRequest)
 		if err != nil {
@@ -76,9 +75,6 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 			if err != nil {
 				log15.Warn("Error creating/checking local mirror repository for remote source repository", "repo", createdRepo.URI, "error", err)
 				return
-			}
-			if !isCloned {
-				cloned++
 			}
 			log15.Debug("fetching repo", "repo", createdRepo.URI, "url", op.URL, "cloned", isCloned)
 			err = gitserver.DefaultClient.EnqueueRepoUpdateDeprecated(ctx, gitserver.Repo{Name: createdRepo.URI, URL: op.URL})
