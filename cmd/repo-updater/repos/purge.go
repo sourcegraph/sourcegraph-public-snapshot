@@ -23,6 +23,13 @@ func RunRepositoryPurgeWorker(ctx context.Context) {
 		return
 	}
 
+	// Explicitly must enable while we are testing this out on dogfood and
+	// sourcegraph.com.
+	if enabled, _ := strconv.ParseBool(os.Getenv("ENABLE_REPO_PURGE")); !enabled {
+		log15.Info("repository purger is not enabled via env ENABLE_REPO_PURGE")
+		return
+	}
+
 	for {
 		err := purge(ctx)
 		if err != nil {

@@ -7,7 +7,6 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * The site admin code intelligence page now displays an error or reason whenever language servers are unable to be managed from the UI or Sourcegraph API.
-* We reclaim diskspace when a repository is disabled.
 * The ability to directly specify the root import path of a repository via `.sourcegraph/config.json` in the repo root, instead of relying on the heuristics of the Go language server to detect it.
 
 ### Fixed
