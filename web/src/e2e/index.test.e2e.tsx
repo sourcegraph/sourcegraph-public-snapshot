@@ -5,6 +5,8 @@ import { Browser, connect, launch, Page } from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
 
 const SCREENSHOT_DIRECTORY = __dirname + '/../../puppeteer'
+/** Will skip the test if run in CI */
+const ifNotCIit: Mocha.ITestDefinition = process.env.CI ? it.skip.bind(it) : it
 
 describe('e2e test suite', () => {
     let authenticate: (page: Page) => Promise<void>
@@ -452,8 +454,8 @@ describe('e2e test suite', () => {
                             blobVersion
                         )
                     })
-                    // Temporarely skipped because of flakiness. TODO find cause
-                    it.skip('gets displayed and updates URL when clicking on a token', async () => {
+                    // Temporarely skipped in CI because of flakiness. TODO find cause
+                    ifNotCIit('gets displayed and updates URL when clicking on a token', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
@@ -467,7 +469,8 @@ describe('e2e test suite', () => {
                         await getTooltipContents() // verify there is a tooltip
                     })
 
-                    it('gets displayed when navigating to a URL with a token position', async () => {
+                    // Temporarely skipped in CI because of flakiness. TODO find cause
+                    ifNotCIit('gets displayed when navigating to a URL with a token position', async () => {
                         await page.goto(
                             baseURL +
                                 '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
@@ -632,7 +635,7 @@ describe('e2e test suite', () => {
 
         describe('external code host links', () => {
             // Temporarely skipped because of flakiness. TODO find cause
-            it.skip('on line blame', async () => {
+            ifNotCIit('on line blame', async () => {
                 await page.goto(
                     baseURL +
                         '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19'
