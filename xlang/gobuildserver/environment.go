@@ -280,6 +280,17 @@ type sourcegraphConfig struct {
 		//
 		// See https://about.sourcegraph.com/docs/code-intelligence/go#custom-gopaths--go-monorepos
 		GOPATH []string
+
+		// RootImportPath defines what Go import path corresponds to the
+		// repository root. Effectively, the Go language server will clone the
+		// repository into $GOPATH/src/$ROOT_IMPORT_PATH when set.
+		//
+		// This overrides the heuristic-based approach to locate this
+		// information (from glide.yml or canonical import path comments) and
+		// gives you an opportunity to specify it directly.
+		//
+		// See https://about.sourcegraph.com/docs/code-intelligence/go#vanity-import-paths
+		RootImportPath string
 	} `json:"go"`
 }
 
@@ -315,6 +326,13 @@ func determineRootImportPath(ctx context.Context, originalRootURI lsp.DocumentUR
 		rootImportPath = path.Join(u.Host, strings.TrimSuffix(u.Path, ".git"), u.FilePath())
 	default:
 		return "", fmt.Errorf("unrecognized originalRootPath: %q", u)
+	}
+
+	// If .sourcegraph/config.json specifies a root import path to use, then
+	// use that one above all else.
+	cfg := readSourcegraphConfig(ctx, fs)
+	if v := cfg.Go.RootImportPath; v != "" {
+		return v, nil
 	}
 
 	// Glide provides a canonical import path for us, try that first if it

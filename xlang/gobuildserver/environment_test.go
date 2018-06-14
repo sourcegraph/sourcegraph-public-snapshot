@@ -56,6 +56,35 @@ func TestDetermineEnvironment(t *testing.T) {
 			},
 		},
 		{
+			Name:           "cfg-too-long",
+			RootURI:        "git://github.com/alice/code",
+			WantImportPath: "good.org/code",
+			WantGoPath:     gopath,
+			FS: map[string]string{
+				// Not picked up because it is one level too deep.
+				"a/b/c/d/alice.go": `package http // import "alice.org/code/a/b/c/d"`,
+
+				// But users can manually specify it via the config:
+				".sourcegraph/config.json": `{"go": {"RootImportPath": "good.org/code"}}`,
+			},
+		},
+		{
+			Name:           "cfg-invalid-detection",
+			RootURI:        "git://github.com/alice/code",
+			WantImportPath: "alice.org/code",
+			WantGoPath:     gopath,
+			FS: map[string]string{
+				// Pretend this code is *not* their actual code, they just have
+				// someone else's code copied into their project (e.g. very poor
+				// vendoring solution). They do *not* want us to use this
+				// canonical import path.
+				"kode/cmd/alice/alice.go": `package http // import "bad.org/code/kode/cmd/alice"`,
+
+				// They can override it via the config:
+				".sourcegraph/config.json": `{"go": {"RootImportPath": "alice.org/code"}}`,
+			},
+		},
+		{
 			Name:           "fallback",
 			RootURI:        "git://github.com/alice/pkg",
 			WantImportPath: "github.com/alice/pkg",
