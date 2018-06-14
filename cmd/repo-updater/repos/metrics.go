@@ -52,6 +52,19 @@ var (
 		Name:      "time_last_repolist_sync",
 		Help:      "The time the last repository sync loop completed",
 	})
+
+	purgeSuccess = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "purge_success",
+		Help:      "Incremented each time we remove a repository clone.",
+	})
+	purgeFailed = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "purge_failed",
+		Help:      "Incremented each time we try and fail to remove a repository clone.",
+	})
 )
 
 func init() {
@@ -62,4 +75,6 @@ func init() {
 	prometheus.MustRegister(bitbucketServerUpdateTime)
 	prometheus.MustRegister(gitoliteUpdateTime)
 	prometheus.MustRegister(repoListUpdateTime)
+	prometheus.MustRegister(purgeSuccess)
+	prometheus.MustRegister(purgeFailed)
 }

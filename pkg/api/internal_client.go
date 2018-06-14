@@ -266,6 +266,13 @@ func (c *internalClient) ReposCreateIfNotExists(ctx context.Context, op RepoCrea
 	return &repo, nil
 }
 
+// ReposListEnabled returns a list of all enabled repository names.
+func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoURI, error) {
+	var names []RepoURI
+	err := c.postInternal(ctx, "repos/list-enabled", nil, &names)
+	return names, err
+}
+
 func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo RepoID, lang string) ([]*DependencyReference, error) {
 	var unfetchedDeps []*DependencyReference
 	err := c.postInternal(ctx, "repos/unindexed-dependencies", RepoUnindexedDependenciesRequest{

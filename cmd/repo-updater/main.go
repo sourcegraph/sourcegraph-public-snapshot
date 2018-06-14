@@ -48,6 +48,9 @@ func main() {
 	// Repos List syncing thread
 	go repos.RunRepositorySyncWorker(ctx)
 
+	// Repos purging thread
+	go repos.RunRepositoryPurgeWorker(ctx)
+
 	// GitHub Repository syncing thread
 	go repos.RunGitHubRepositorySyncWorker(ctx)
 

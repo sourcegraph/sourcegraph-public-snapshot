@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
@@ -255,6 +256,31 @@ func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) ([]strin
 	return doListOne(ctx, "?gitolite="+url.QueryEscape(gitoliteHost), c.Addrs[0])
 }
 
+// ListCloned lists all cloned repositories
+func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
+	var (
+		wg    sync.WaitGroup
+		mu    sync.Mutex
+		err   error
+		repos []string
+	)
+	for _, addr := range c.Addrs {
+		wg.Add(1)
+		go func(addr string) {
+			defer wg.Done()
+			r, e := doListOne(ctx, "?cloned", addr)
+			mu.Lock()
+			if e != nil {
+				err = e
+			}
+			repos = append(repos, r...)
+			mu.Unlock()
+		}(addr)
+	}
+	wg.Wait()
+	return repos, err
+}
+
 // GetGitolitePhabricatorMetadata returns Phabricator metadata for a
 // Gitolite repository fetched via a user-provided command.
 func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repo string) (*protocol.GitolitePhabricatorMetadataResponse, error) {
@@ -398,6 +424,24 @@ func (c *Client) RepoInfo(ctx context.Context, repo api.RepoURI) (*protocol.Repo
 	var info *protocol.RepoInfoResponse
 	err = json.NewDecoder(resp.Body).Decode(&info)
 	return info, err
+}
+
+// Remove removes the repository clone from gitserver.
+func (c *Client) Remove(ctx context.Context, repo api.RepoURI) error {
+	req := &protocol.RepoDeleteRequest{
+		Repo: repo,
+	}
+	resp, err := c.httpPost(ctx, repo, "delete", req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		// best-effort inclusion of body in error message
+		body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
+		return &url.Error{URL: resp.Request.URL.String(), Op: "RepoRemove", Err: fmt.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, string(body))}
+	}
+	return nil
 }
 
 func (c *Client) httpPost(ctx context.Context, repo api.RepoURI, method string, payload interface{}) (resp *http.Response, err error) {
