@@ -13,6 +13,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * Configuring Bitbucket Server now correctly suppresses the the toast message "Configure repositories and code hosts to add to Sourcegraph Server."
 * A bug where canonical import path comments would not be detected by the Go language server's heuristics under `cmd/` folders.
+* Fixed an issue where a repository would only be refreshed on demand by certain user actions (such as a page reload) and would otherwise not be updated when expected.
 * If a code host returned a repository-not-found or unauthorized error (to `repo-updater`) for a repository that previously was known to Sourcegraph, then in some cases a misleading "Empty repository" screen was shown. Now the repository is displayed as though it still existed, using cached data; site admins must explicitly delete repositories on Sourcegraph after they have been deleted on the code host.
 
 ## 2.9.0-pre0

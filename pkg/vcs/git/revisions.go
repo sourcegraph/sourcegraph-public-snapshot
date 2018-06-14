@@ -88,11 +88,6 @@ func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc fun
 	}
 
 	tryAgain := func(err error) bool {
-		// We have no way to determine the remote URL.
-		if remoteURLFunc == nil {
-			return false
-		}
-
 		// We need to try again with remote URL set so we can clone.
 		if vcs.IsRepoNotExist(err) {
 			return true
@@ -121,9 +116,12 @@ func ResolveRevision(ctx context.Context, repo gitserver.Repo, remoteURLFunc fun
 	}
 	doEnsureRevision := IsRevisionNotFound(err)
 
-	remoteURL, err := remoteURLFunc()
-	if err != nil {
-		return "", err
+	var remoteURL string
+	if remoteURLFunc != nil {
+		remoteURL, err = remoteURLFunc()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	cmd = gitserver.DefaultClient.Command("git", "rev-parse", spec)
