@@ -56,7 +56,6 @@
 
     &__status {
         float: right;
-        margin-top: 0.5rem;
 
         &--running {
             color: #37b24d;
@@ -102,7 +101,10 @@
 
     &__actions {
         display: flex;
-        height: 2rem;
+
+        .btn {
+            margin-bottom: 0.5rem;
+        }
 
         &-updating {
             line-height: 2rem;
