@@ -6,6 +6,14 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+### Added
+
+### Fixed
+
+## 2.9.0
+
+### Changed
+
 * Hover tooltips were rewritten to fix a couple of issues and are now much more robust, received a new design and show more information.
 
 ### Added
