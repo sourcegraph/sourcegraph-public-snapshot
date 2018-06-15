@@ -5,7 +5,7 @@ import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import RefreshIcon from '@sourcegraph/icons/lib/Refresh'
-import _ from 'lodash'
+import { sortBy } from 'lodash'
 import * as React from 'react'
 import { concat, merge, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, filter, map, repeatWhen, switchMap, tap } from 'rxjs/operators'
@@ -215,40 +215,36 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                 )}
                 {// Sort the language servers in a stable fashion such that
                 // experimental ones are at the bottom of the list.
-                _.sortBy(this.state.langServers, langServer => (langServer.experimental ? 1 : 0)).map(
-                    (langServer, i) => (
-                        <div className="site-admin-lang-servers__list-item" key={i}>
-                            <div className="site-admin-lang-servers__left-area">
-                                <div className="site-admin-lang-servers__language">
-                                    <div className="site-admin-lang-servers__language-name">
-                                        {langServer.displayName}
-                                    </div>
-                                    {langServer.experimental && (
-                                        <span
-                                            className="badge badge-warning"
-                                            data-tooltip="This language server is experimental. Beware it may run arbitrary code and might have limited functionality."
-                                        >
-                                            experimental
-                                        </span>
-                                    )}
-                                    {langServer.custom && (
-                                        <span
-                                            className="site-admin-lang-servers__language-custom"
-                                            data-tooltip="This language server is custom / does not come built in with Sourcegraph. It was added via the site configuration."
-                                        >
-                                            (custom)
-                                        </span>
-                                    )}
-                                </div>
-                                {this.renderRepo(langServer)}
+                sortBy(this.state.langServers, langServer => (langServer.experimental ? 1 : 0)).map((langServer, i) => (
+                    <div className="site-admin-lang-servers__list-item" key={i}>
+                        <div className="site-admin-lang-servers__left-area">
+                            <div className="site-admin-lang-servers__language">
+                                <div className="site-admin-lang-servers__language-name">{langServer.displayName}</div>
+                                {langServer.experimental && (
+                                    <span
+                                        className="badge badge-warning"
+                                        data-tooltip="This language server is experimental. Beware it may run arbitrary code and might have limited functionality."
+                                    >
+                                        experimental
+                                    </span>
+                                )}
+                                {langServer.custom && (
+                                    <span
+                                        className="site-admin-lang-servers__language-custom"
+                                        data-tooltip="This language server is custom / does not come built in with Sourcegraph. It was added via the site configuration."
+                                    >
+                                        (custom)
+                                    </span>
+                                )}
                             </div>
-                            <div>
-                                {this.renderActions(langServer)}
-                                {this.renderStatus(langServer)}
-                            </div>
+                            {this.renderRepo(langServer)}
                         </div>
-                    )
-                )}
+                        <div>
+                            {this.renderActions(langServer)}
+                            {this.renderStatus(langServer)}
+                        </div>
+                    </div>
+                ))}
             </div>
         )
     }
