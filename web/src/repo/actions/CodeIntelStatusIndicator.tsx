@@ -19,8 +19,9 @@ interface LangServer {
     homepageURL?: string
     issuesURL?: string
     /** defaults to `false` */
-    experimental?: boolean
-    capabilities: ServerCapabilities
+    experimental: boolean
+    /** `capabilities` is undefined when no language server is connected. */
+    capabilities?: ServerCapabilities
 }
 
 function hasCrossRepositoryCodeIntelligence(capabilities: ServerCapabilities): boolean {
@@ -47,16 +48,27 @@ const propsToStateUpdate = (obs: Observable<CodeIntelStatusIndicatorProps>) =>
             }
             return forkJoin(
                 fetchLangServer(language),
-                fetchServerCapabilities({ repoPath, rev, commitID, filePath, language })
+                fetchServerCapabilities({ repoPath, rev, commitID, filePath, language }).pipe(
+                    catchError(err => {
+                        if (err.code === EMODENOTFOUND) {
+                            return [undefined]
+                        } else {
+                            throw err
+                        }
+                    })
+                )
             ).pipe(
-                map(([langServer, capabilities]): LangServer => ({
-                    displayName: (langServer && langServer.displayName) || undefined,
-                    homepageURL: (langServer && langServer.homepageURL) || undefined,
-                    issuesURL: (langServer && langServer.issuesURL) || undefined,
-                    experimental: (langServer && langServer.experimental) || undefined,
-                    capabilities,
-                })),
-                catchError(err => (err.code === EMODENOTFOUND ? [null] : [asError(err)]))
+                map(
+                    ([langServer, capabilities]): LangServer | null =>
+                        langServer && {
+                            displayName: langServer.displayName,
+                            homepageURL: langServer.homepageURL || undefined,
+                            issuesURL: langServer.issuesURL || undefined,
+                            experimental: langServer.experimental,
+                            capabilities,
+                        }
+                ),
+                catchError(err => [asError(err)])
             )
         }),
         map(langServerOrError => ({ langServerOrError }))
@@ -108,7 +120,11 @@ export class CodeIntelStatusIndicator extends React.Component<
         if (this.state.langServerOrError === undefined) {
             return ''
         }
-        if (this.state.langServerOrError === null || isErrorLike(this.state.langServerOrError)) {
+        if (
+            this.state.langServerOrError === null ||
+            isErrorLike(this.state.langServerOrError) ||
+            !this.state.langServerOrError.capabilities
+        ) {
             return 'text-danger'
         }
         if (
@@ -147,7 +163,28 @@ export class CodeIntelStatusIndicator extends React.Component<
                                 <a href="http://langserver.org/" target="_blank">
                                     langserver.org
                                 </a>{' '}
-                                for {language} language servers
+                                for {language} language servers.
+                            </>
+                        ) : !this.state.langServerOrError.capabilities ? (
+                            <>
+                                <h3>
+                                    The {this.state.langServerOrError.displayName || language} language server is
+                                    disabled
+                                </h3>
+                                {this.props.userIsSiteAdmin ? (
+                                    <>
+                                        You can enable the {this.state.langServerOrError.displayName || language}{' '}
+                                        language server on the{' '}
+                                        <Link to="/site-admin/code-intelligence">
+                                            code intelligence administration page
+                                        </Link>.
+                                    </>
+                                ) : (
+                                    <>
+                                        Ask your site admin to enable the{' '}
+                                        {this.state.langServerOrError.displayName || language} language server.
+                                    </>
+                                )}
                             </>
                         ) : (
                             <>
