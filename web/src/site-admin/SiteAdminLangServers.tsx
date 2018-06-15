@@ -7,8 +7,8 @@ import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import RefreshIcon from '@sourcegraph/icons/lib/Refresh'
 import _ from 'lodash'
 import * as React from 'react'
-import { interval, merge, Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, filter, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { concat, merge, Subject, Subscription } from 'rxjs'
+import { catchError, concatMap, delay, filter, map, repeatWhen, switchMap, tap } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
 import { disableLangServer, enableLangServer, fetchLangServers, restartLangServer, updateLangServer } from './backend'
@@ -163,35 +163,30 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
         )
 
         this.subscriptions.add(
-            // TODO(chris): Investigate slow API calls to langServers. 2.5s is
-            // not enough (the call keeps getting canceled). 10s seems to be
-            // enough.
-            merge(this.refreshLangServers, interval(10000))
+            // Trigger poll sequences initially and on every button click
+            concat([undefined], this.refreshLangServers)
                 .pipe(
-                    startWith<void | number>(0),
+                    // When we forced a refresh, cancel the previous
+                    // in-flight request and start a new poll sequence
                     switchMap(() =>
                         fetchLangServers().pipe(
-                            map(langServers => ({
-                                langServers,
-                                error: undefined,
-                                loading: false,
-                            })),
+                            // Map to state update
+                            map(langServers => ({ langServers, error: undefined, loading: false })),
                             catchError(error => {
                                 eventLogger.log('LangServersFetchFailed', {
                                     langServers: { error_message: error.message },
                                 })
                                 console.error(error)
                                 return [{ langServers: [], error, loading: false }]
-                            })
+                            }),
+                            // After the request completed, resubscribe after 5s to trigger another request
+                            repeatWhen(delay(2500))
                         )
                     )
                 )
-                .subscribe(
-                    newState => {
-                        this.setState(newState)
-                    },
-                    err => console.error(err)
-                )
+                .subscribe(newState => {
+                    this.setState(newState)
+                })
         )
     }
 

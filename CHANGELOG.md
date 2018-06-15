@@ -31,6 +31,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * If a code host returned a repository-not-found or unauthorized error (to `repo-updater`) for a repository that previously was known to Sourcegraph, then in some cases a misleading "Empty repository" screen was shown. Now the repository is displayed as though it still existed, using cached data; site admins must explicitly delete repositories on Sourcegraph after they have been deleted on the code host.
 * Improved handling of GitHub API rate limit exhaustion cases. Cached repository metadata and Git data will be used to provide full functionality during this time, and log messages are more informative. Previously, in some cases, repositories would become inaccessible.
 * Fixed an issue where indexed search would sometimes not indicate that there were more results to show for a given file.
+* Fixed an issue where the code intelligence admin page would never finish loading language servers.
 
 ## 2.9.0-pre0
 
