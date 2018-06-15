@@ -69,6 +69,10 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 				continue
 			}
 
+			if !repo.Enabled {
+				continue
+			}
+
 			// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
 			cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, uri)
 			if err != nil {
