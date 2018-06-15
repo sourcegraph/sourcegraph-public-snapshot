@@ -454,6 +454,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 				ev.AddField("args", args)
 				ev.AddField("ensure_revision", req.EnsureRevision)
 				ev.AddField("ensure_revision_status", ensureRevisionStatus)
+				ev.AddField("client", r.UserAgent())
 				ev.AddField("duration_ms", duration.Seconds()*1000)
 				ev.AddField("stdout_size", stdoutN)
 				ev.AddField("stderr_size", stderrN)

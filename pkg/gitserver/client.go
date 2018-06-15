@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -46,6 +48,10 @@ var DefaultClient = &Client{
 		},
 	},
 	HTTPLimiter: parallel.NewRun(500),
+	// Use the binary name for UserAgent. This should effectively identify
+	// which service is making the request (excluding requests proxied via the
+	// frontend internal API)
+	UserAgent: filepath.Base(os.Args[0]),
 }
 
 // Client is a gitserver client.
@@ -57,6 +63,10 @@ type Client struct {
 	HTTPLimiter *parallel.Run
 
 	Addrs []string
+
+	// UserAgent is a string identifing who the client is. It will be logged in
+	// the telemetry in gitserver.
+	UserAgent string
 }
 
 // addrForRepo returns the gitserver address to use for the given repo URI.
@@ -466,6 +476,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoURI, method string, 
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", c.UserAgent)
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
