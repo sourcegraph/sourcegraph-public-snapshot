@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 type parseRequest struct {
@@ -60,7 +59,7 @@ func (s *Service) fetchRepositoryArchive(ctx context.Context, repo api.RepoURI, 
 		span.Finish()
 	}
 
-	r, err := git.Archive(ctx, gitserver.Repo{Name: repo}, git.ArchiveOptions{Treeish: string(commitID), Format: "tar"})
+	r, err := s.FetchTar(ctx, gitserver.Repo{Name: repo}, commitID)
 	if err != nil {
 		return nil, nil, err
 	}
