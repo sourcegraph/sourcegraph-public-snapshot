@@ -25,6 +25,7 @@ func searchRepositories(ctx context.Context, args *repoSearchArgs, query searchq
 		searchquery.FieldDefault:   struct{}{},
 		searchquery.FieldIndex:     struct{}{},
 		searchquery.FieldCount:     struct{}{},
+		searchquery.FieldMax:       struct{}{},
 		searchquery.FieldTimeout:   struct{}{},
 	}
 	// Don't return repo results if the search contains fields that aren't on the whitelist.

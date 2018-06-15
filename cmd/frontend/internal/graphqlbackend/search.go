@@ -92,16 +92,24 @@ func (r *searchResolver) rawQuery() string {
 }
 
 func (r *searchResolver) countIsSet() bool {
-	values, _ := r.query.StringValues(searchquery.FieldCount)
-	return len(values) > 0
+	count, _ := r.query.StringValues(searchquery.FieldCount)
+	max, _ := r.query.StringValues(searchquery.FieldMax)
+	return len(count) > 0 || len(max) > 0
 }
 
 const defaultMaxSearchResults = 30
 
 func (r *searchResolver) maxResults() int32 {
-	values, _ := r.query.StringValues(searchquery.FieldCount)
-	if len(values) > 0 {
-		n, _ := strconv.Atoi(values[0])
+	count, _ := r.query.StringValues(searchquery.FieldCount)
+	if len(count) > 0 {
+		n, _ := strconv.Atoi(count[0])
+		if n > 0 {
+			return int32(n)
+		}
+	}
+	max, _ := r.query.StringValues(searchquery.FieldMax)
+	if len(max) > 0 {
+		n, _ := strconv.Atoi(max[0])
 		if n > 0 {
 			return int32(n)
 		}
