@@ -48,6 +48,15 @@
             vertical-align: middle;
         }
     }
+
+    &__loader {
+        display: flex;
+        justify-content: center;
+    }
+
+    &__show-more {
+        flex: 0 0 auto;
+    }
 }
 
 .theme-light {

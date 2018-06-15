@@ -7,5 +7,7 @@
         margin: 0 auto;
         max-width: 54rem;
         padding: 1rem 0.5rem;
+        display: flex;
+        flex-direction: column;
     }
 }
