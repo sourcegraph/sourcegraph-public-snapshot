@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
@@ -494,9 +495,59 @@ func (i *LangInfo) Running() bool {
 	return i.Installed && i.Status != StatusNone
 }
 
+type cacheEntry struct {
+	info *LangInfo
+	err  error
+}
+
+var latestInfo = struct {
+	sync.RWMutex
+	byLanguage map[string]cacheEntry
+}{
+	byLanguage: map[string]cacheEntry{},
+}
+
+func queryContainerInfoWorker() {
+	for {
+		// Prevent running _too_ quickly, but still run quickly enough that
+		// this info is always up-to-date and just as accurate as e.g. going
+		// to a terminal and checking yourself.
+		time.Sleep(1 * time.Second)
+
+		for _, language := range Languages {
+			updateInfoCache(language)
+		}
+	}
+}
+
 // Info tells the current information of a language server Docker
 // container/image.
 func Info(language string) (*LangInfo, error) {
+	// Check if info exists in the cache already and use it if so.
+	latestInfo.RLock()
+	e, ok := latestInfo.byLanguage[language]
+	latestInfo.RUnlock()
+	if ok {
+		return e.info, e.err
+	}
+
+	// No info in the cache yet (e.g. maybe the queryContainerInfoWorker has
+	// not had a chance to run yet), query the info directly.
+	return updateInfoCache(language)
+}
+
+// updateInfoCache calls infoUncached and caches the result for future use.
+func updateInfoCache(language string) (*LangInfo, error) {
+	info, err := infoUncached(language)
+	latestInfo.Lock()
+	latestInfo.byLanguage[language] = cacheEntry{info: info, err: err}
+	latestInfo.Unlock()
+	return info, err
+}
+
+// infoUncached queries the current information of a language server directly
+// from Docker.
+func infoUncached(language string) (*LangInfo, error) {
 	language = mapLanguage(language)
 
 	if err := validate(language); err != nil {
@@ -739,6 +790,7 @@ func init() {
 
 	setupNetworking()
 
+	goroutine.Go(queryContainerInfoWorker)
 	goroutine.Go(func() {
 		// Wait for our process to shutdown.
 		c := make(chan os.Signal, 1)

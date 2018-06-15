@@ -16,6 +16,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * Hover tooltips were rewritten to fix a couple of issues and are now much more robust, received a new design and show more information.
 * The `max:` search flag was renamed to `count:` in 2.8.8, but for backward compatibility `max:` has been added back as a deprecated alias for `count:`.
+* Drastically improved the performance / load time of the Code Intelligence site admin page.
 
 ### Added
 
