@@ -73,7 +73,7 @@ func (p *Pipeline) AddWait() {
 }
 
 var golangPlugin = map[string]interface{}{
-	"golang#v0.3": map[string]string{
+	"gopath-checkout#v1.0.1": map[string]string{
 		"import": "github.com/sourcegraph/sourcegraph",
 	},
 }
