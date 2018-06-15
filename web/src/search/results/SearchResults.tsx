@@ -15,7 +15,6 @@ import { queryTelemetryData } from './../queryTelemetry'
 import { SearchResultsList } from './SearchResultsList'
 import { SearchResultsListOld } from './SearchResultsListOld'
 
-const ALL_EXPANDED_LOCAL_STORAGE_KEY = 'allExpanded'
 const UI_PAGE_SIZE = 75
 
 interface SearchResultsProps {
@@ -53,7 +52,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
     public state: SearchResultsState = {
         didSaveQuery: false,
         showSavedQueryModal: false,
-        allExpanded: localStorage.getItem(ALL_EXPANDED_LOCAL_STORAGE_KEY) === 'true',
+        allExpanded: false,
         uiLimit: UI_PAGE_SIZE,
     }
 
@@ -302,7 +301,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         this.setState(
             state => ({ allExpanded: !state.allExpanded }),
             () => {
-                localStorage.setItem(ALL_EXPANDED_LOCAL_STORAGE_KEY, this.state.allExpanded + '')
                 eventLogger.log(this.state.allExpanded ? 'allResultsExpanded' : 'allResultsCollapsed')
             }
         )

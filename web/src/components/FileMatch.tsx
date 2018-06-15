@@ -9,6 +9,8 @@ import { CodeExcerpt2 } from './CodeExcerpt2'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
+const SUBSET_COUNT_KEY = 'fileMatchSubsetCount'
+
 export type IFileMatch = Partial<Pick<GQL.IFileMatch, 'symbols' | 'limitHit'>> & {
     file: Pick<GQL.IFile, 'path' | 'url'> & { commit: Pick<GQL.IGitCommit, 'oid'> }
     repository: Pick<GQL.IRepository, 'name' | 'url'>
@@ -62,12 +64,21 @@ interface Props {
     allExpanded?: boolean
 }
 
-const subsetMatches = 2
-
 // Dev flag for disabling syntax highlighting on search results pages.
 const NO_SEARCH_HIGHLIGHTING = localStorage.getItem('noSearchHighlighting') !== null
 
 export class FileMatch extends React.PureComponent<Props> {
+    private subsetMatches = 10
+
+    constructor(props: Props) {
+        super(props)
+
+        const subsetMatches = parseInt(localStorage.getItem(SUBSET_COUNT_KEY) || '', 10)
+        if (!isNaN(subsetMatches)) {
+            this.subsetMatches = subsetMatches
+        }
+    }
+
     public render(): React.ReactNode {
         const result = this.props.result
         const items: IMatchItem[] = this.props.result.lineMatches.map(m => ({
@@ -106,9 +117,9 @@ export class FileMatch extends React.PureComponent<Props> {
                 allExpanded: this.props.allExpanded,
             }
         } else {
-            const len = items.length - subsetMatches
+            const len = items.length - this.subsetMatches
             containerProps = {
-                collapsible: items.length > subsetMatches,
+                collapsible: items.length > this.subsetMatches,
                 defaultExpanded: this.props.expanded,
                 icon: this.props.icon,
                 title,
@@ -141,7 +152,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 }
                 return 1
             })
-            .filter((item, i) => allMatches || i < subsetMatches)
+            .filter((item, i) => allMatches || i < this.subsetMatches)
 
         if (NO_SEARCH_HIGHLIGHTING) {
             return <CodeExcerpt2 urlWithoutPosition={fileURL} items={showItems} onSelect={this.props.onSelect} />
