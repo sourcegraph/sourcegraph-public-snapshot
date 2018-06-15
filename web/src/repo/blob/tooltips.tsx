@@ -296,7 +296,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
  *
  * @param cell The code `<td>` to convert.
  */
-function convertCodeCellIdempotent(cell: HTMLTableCellElement): void {
+export function convertCodeCellIdempotent(cell: HTMLTableCellElement): void {
     if (cell && !cell.classList.contains('annotated')) {
         convertNode(cell)
         cell.classList.add('annotated')
@@ -416,6 +416,10 @@ function consumeNextToken(txt: string): string {
     return txt[0]
 }
 
+/**
+ * getTableDataCell attempts to find the <td> element nearest in ancestry to
+ * target that is a parent of target and a child of boundary.
+ */
 export function getTableDataCell(target: HTMLElement, boundary: HTMLElement): HTMLTableDataCellElement | undefined {
     while (target && target.tagName !== 'TD' && target.tagName !== 'BODY' && target !== boundary) {
         // Find ancestor which wraps the whole line of code, not just the target token.

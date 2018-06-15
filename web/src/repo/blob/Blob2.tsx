@@ -12,6 +12,7 @@ import {
     share,
     switchMap,
     takeUntil,
+    tap,
     withLatestFrom,
 } from 'rxjs/operators'
 import { Hover, Position } from 'vscode-languageserver-types'
@@ -23,7 +24,7 @@ import { isDefined, propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
-import { findElementWithOffset, locateTarget } from './tooltips'
+import { convertCodeCellIdempotent, findElementWithOffset, getTableDataCell, locateTarget } from './tooltips'
 
 /**
  * @param codeElement The `<code>` element
@@ -304,6 +305,15 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             withLatestFrom(this.codeElements),
             // If there was a mouseover, there _must_ have been a blob element
             map(([target, codeElement]) => ({ target, codeElement: codeElement! })),
+            // SIDE EFFECT (but idempotent)
+            // If not done for this cell, wrap the tokens in this cell to enable finding the precise positioning.
+            // This may be possible in other ways (looking at mouse position and rendering characters), but it works
+            tap(({ target, codeElement }) => {
+                const td = getTableDataCell(target, codeElement)
+                if (td !== undefined) {
+                    convertCodeCellIdempotent(td)
+                }
+            }),
             debounceTime(50),
             // Do not consider mouseovers while overlay is pinned
             filter(() => !this.state.hoverOverlayIsFixed),
