@@ -4,6 +4,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes
 
+### Changed
+
+* Hover tooltips were rewritten to fix a couple of issues and are now much more robust, received a new design and show more information.
+
 ### Added
 
 * The site admin code intelligence page now displays an error or reason whenever language servers are unable to be managed from the UI or Sourcegraph API.
