@@ -32,11 +32,11 @@ Examples:
 
 		query := `mutation AddUserToOrganization(
   $organization: ID!,
-  $usernameOrEmail: String!,
+  $username: String!,
 ) {
   addUserToOrganization(
     organization: $organization,
-    usernameOrEmail: $usernameOrEmail,
+    username: $username,
   ) {
     alwaysNil
   }
@@ -48,8 +48,8 @@ Examples:
 		return (&apiRequest{
 			query: query,
 			vars: map[string]interface{}{
-				"organization":    *orgIDFlag,
-				"usernameOrEmail": *usernameFlag,
+				"organization": *orgIDFlag,
+				"username":     *usernameFlag,
 			},
 			result: &result,
 			done: func() error {
