@@ -4,11 +4,13 @@ import InvitationIcon from '@sourcegraph/icons/lib/Invitation'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
 import { gql, mutateGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { CopyableText } from '../../components/CopyableText'
+import { DismissibleAlert } from '../../components/DismissibleAlert'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
@@ -303,6 +305,17 @@ export class InviteForm extends React.PureComponent<Props, State> {
                         </Form>
                     </div>
                 </div>
+                {this.props.authenticatedUser &&
+                    this.props.authenticatedUser.siteAdmin &&
+                    !window.context.emailEnabled && (
+                        <DismissibleAlert className="alert-info" partialStorageKey="org-invite-email-config">
+                            <p className=" mb-0">
+                                Set <code>email.smtp</code> in{' '}
+                                <Link to="/site-admin/configuration">site configuration</Link> to send email
+                                notfications about invitations.
+                            </p>
+                        </DismissibleAlert>
+                    )}
                 {this.state.invited &&
                     this.state.invited.map(({ username, sentInvitationEmail, invitationURL }, i) => (
                         <InvitedNotification
