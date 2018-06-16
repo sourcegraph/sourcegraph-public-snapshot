@@ -207,3 +207,8 @@ func SupportsManagingLanguageServers() (reason string, ok bool) {
 	}
 	return "", true
 }
+
+// PlatformEnabled whether the platform hackfortnight experiment is enabled.
+func PlatformEnabled() bool { return platformEnabled }
+
+var platformEnabled, _ = strconv.ParseBool(os.Getenv("EXP_PLATFORM"))

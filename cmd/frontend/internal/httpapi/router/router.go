@@ -9,6 +9,7 @@ import (
 const (
 	GraphQL = "graphql"
 	XLang   = "xlang"
+	LSP     = "lsp"
 
 	RepoShield = "repo.shield"
 	Telemetry  = "telemetry"
@@ -53,6 +54,7 @@ func New(base *mux.Router) *mux.Router {
 	base.StrictSlash(true)
 
 	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
+	base.Path("/lsp").Methods("GET").Name(LSP)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)
 

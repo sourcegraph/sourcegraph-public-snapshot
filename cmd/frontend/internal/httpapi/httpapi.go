@@ -42,6 +42,8 @@ func NewHandler(m *mux.Router) http.Handler {
 		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
 
+	m.Get(apirouter.LSP).Handler(trace.TraceRoute(http.HandlerFunc(serveLSP)))
+
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

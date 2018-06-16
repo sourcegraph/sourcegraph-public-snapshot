@@ -23,6 +23,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
+// DefaultAddr is the TCP address (host:port) of the default LSP proxy service.
+var DefaultAddr = os.Getenv("LSP_PROXY")
+
 // UnsafeNewDefaultClient returns a new one-shot connection to the LSP proxy server at
 // $LSP_PROXY. This is quick (except TCP connection time) because the LSP proxy
 // server retains the same underlying connection.
@@ -31,11 +34,10 @@ import (
 // of any operation done on the Client. Please ensure the user has access to
 // the repo.
 func UnsafeNewDefaultClient() (*Client, error) {
-	addr := os.Getenv("LSP_PROXY")
-	if addr == "" {
+	if DefaultAddr == "" {
 		return nil, errors.New("no LSP_PROXY env var set (need address to LSP proxy)")
 	}
-	return dialClient(addr)
+	return dialClient(DefaultAddr)
 }
 
 func dialClient(addr string) (*Client, error) {

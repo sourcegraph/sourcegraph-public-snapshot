@@ -91,7 +91,7 @@ export async function webpackServe(): Promise<void> {
                             // frontend server, and we make the Sourcegraph appURL equal to the URL of
                             // webpack-serve. This is how webpack-serve needs to work (because it does a bit
                             // more magic in injecting scripts that use WebSockets into proxied requests).
-                            httpProxyMiddleware({ target: 'http://localhost:3081' })
+                            httpProxyMiddleware({ target: 'http://localhost:3081', ws: true })
                         )
                     )
                 },
