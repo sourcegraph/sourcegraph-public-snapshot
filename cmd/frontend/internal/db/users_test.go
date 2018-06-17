@@ -229,11 +229,21 @@ func TestUsers_ListCount(t *testing.T) {
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
 	}
-
 	if users, err := Users.List(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
 		t.Errorf("got %+v, want %+v", users, want)
+	}
+
+	if count, err := Users.Count(ctx, UsersListOptions{UserIDs: []int32{}}); err != nil {
+		t.Fatal(err)
+	} else if want := 0; count != want {
+		t.Errorf("got %d, want %d", count, want)
+	}
+	if users, err := Users.List(ctx, &UsersListOptions{UserIDs: []int32{}}); err != nil {
+		t.Fatal(err)
+	} else if len(users) > 0 {
+		t.Errorf("got %d, want empty", len(users))
 	}
 
 	if err := Users.Delete(ctx, user.ID); err != nil {

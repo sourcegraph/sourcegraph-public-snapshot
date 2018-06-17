@@ -474,12 +474,17 @@ func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 		query := "%" + opt.Query + "%"
 		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
 	}
-	if len(opt.UserIDs) > 0 {
-		items := []*sqlf.Query{}
-		for _, id := range opt.UserIDs {
-			items = append(items, sqlf.Sprintf("%d", id))
+	if opt.UserIDs != nil {
+		if len(opt.UserIDs) == 0 {
+			// Must return empty result set.
+			conds = append(conds, sqlf.Sprintf("FALSE"))
+		} else {
+			items := []*sqlf.Query{}
+			for _, id := range opt.UserIDs {
+				items = append(items, sqlf.Sprintf("%d", id))
+			}
+			conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 		}
-		conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 	}
 	return conds
 }
