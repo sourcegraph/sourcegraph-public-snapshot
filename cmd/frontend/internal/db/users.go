@@ -427,13 +427,6 @@ func (u *users) Count(ctx context.Context, opt UsersListOptions) (int, error) {
 	}
 
 	conds := u.listSQL(opt)
-	if len(opt.UserIDs) > 0 {
-		items := []*sqlf.Query{}
-		for _, id := range opt.UserIDs {
-			items = append(items, sqlf.Sprintf("%d", id))
-		}
-		conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
-	}
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM users u WHERE %s", sqlf.Join(conds, "AND"))
 
 	var count int

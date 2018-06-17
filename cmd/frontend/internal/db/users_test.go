@@ -246,6 +246,12 @@ func TestUsers_ListCount(t *testing.T) {
 		t.Errorf("got %d, want empty", len(users))
 	}
 
+	if users, err := Users.List(ctx, &UsersListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
+		t.Errorf("got %+v, want %+v", users, want)
+	}
+
 	if err := Users.Delete(ctx, user.ID); err != nil {
 		t.Fatal(err)
 	}
