@@ -1,8 +1,11 @@
 package db
 
 import (
+	"reflect"
 	"testing"
+	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -205,7 +208,7 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	}
 }
 
-func TestUsers_Count(t *testing.T) {
+func TestUsers_ListCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -225,6 +228,12 @@ func TestUsers_Count(t *testing.T) {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
+	}
+
+	if users, err := Users.List(ctx, &UsersListOptions{}); err != nil {
+		t.Fatal(err)
+	} else if users, want := normalizeUsers(users), normalizeUsers([]*types.User{user}); !reflect.DeepEqual(users, want) {
+		t.Errorf("got %+v, want %+v", users, want)
 	}
 
 	if err := Users.Delete(ctx, user.ID); err != nil {
@@ -386,4 +395,12 @@ func TestUsers_Delete(t *testing.T) {
 	if !errcode.IsNotFound(err) {
 		t.Errorf("got error %v, want ErrUserNotFound", err)
 	}
+}
+
+func normalizeUsers(users []*types.User) []*types.User {
+	for _, u := range users {
+		u.CreatedAt = u.CreatedAt.Local().Round(time.Second)
+		u.UpdatedAt = u.UpdatedAt.Local().Round(time.Second)
+	}
+	return users
 }

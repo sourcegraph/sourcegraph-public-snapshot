@@ -432,9 +432,9 @@ func (u *users) Count(ctx context.Context, opt UsersListOptions) (int, error) {
 		for _, id := range opt.UserIDs {
 			items = append(items, sqlf.Sprintf("%d", id))
 		}
-		conds = append(conds, sqlf.Sprintf("users.id IN (%s)", sqlf.Join(items, ",")))
+		conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 	}
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM users WHERE %s", sqlf.Join(conds, "AND"))
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM users u WHERE %s", sqlf.Join(conds, "AND"))
 
 	var count int
 	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
@@ -463,14 +463,6 @@ func (u *users) List(ctx context.Context, opt *UsersListOptions) ([]*types.User,
 	}
 	conds := u.listSQL(*opt)
 
-	if len(opt.UserIDs) > 0 {
-		items := []*sqlf.Query{}
-		for _, id := range opt.UserIDs {
-			items = append(items, sqlf.Sprintf("%d", id))
-		}
-		conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
-	}
-
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL())
 	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
@@ -481,6 +473,13 @@ func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
 		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s)", query, query))
+	}
+	if len(opt.UserIDs) > 0 {
+		items := []*sqlf.Query{}
+		for _, id := range opt.UserIDs {
+			items = append(items, sqlf.Sprintf("%d", id))
+		}
+		conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 	}
 	return conds
 }
