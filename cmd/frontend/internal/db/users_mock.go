@@ -16,7 +16,6 @@ type MockUsers struct {
 	GetByCurrentAuthUser func(ctx context.Context) (*types.User, error)
 	Count                func(ctx context.Context, opt UsersListOptions) (int, error)
 	List                 func(ctx context.Context, opt *UsersListOptions) ([]*types.User, error)
-	ListByOrg            func(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*types.User, error)
 }
 
 func (s *MockUsers) MockGetByID_Return(t *testing.T, returns *types.User, returnsErr error) (called *bool) {

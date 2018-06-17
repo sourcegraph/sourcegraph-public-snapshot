@@ -443,36 +443,6 @@ func (u *users) Count(ctx context.Context, opt UsersListOptions) (int, error) {
 	return count, nil
 }
 
-// ListByOrg returns users for a given org. It can also query a list of specific
-// users by either user IDs or usernames.
-func (u *users) ListByOrg(ctx context.Context, orgID int32, userIDs []int32, usernames []string) ([]*types.User, error) {
-	if Mocks.Users.ListByOrg != nil {
-		return Mocks.Users.ListByOrg(ctx, orgID, userIDs, usernames)
-	}
-	conds := []*sqlf.Query{}
-	filters := []*sqlf.Query{}
-	if len(userIDs) > 0 {
-		items := []*sqlf.Query{}
-		for _, id := range userIDs {
-			items = append(items, sqlf.Sprintf("%d", id))
-		}
-		filters = append(filters, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
-	}
-	if len(usernames) > 0 {
-		items := []*sqlf.Query{}
-		for _, u := range usernames {
-			items = append(items, sqlf.Sprintf("%s", u))
-		}
-		filters = append(filters, sqlf.Sprintf("u.username IN (%s)", sqlf.Join(items, ",")))
-	}
-	if len(filters) > 0 {
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(filters, "OR")))
-	}
-	conds = append(conds, sqlf.Sprintf("org_members.org_id=%d", orgID), sqlf.Sprintf("u.deleted_at IS NULL"))
-	q := sqlf.Sprintf("JOIN org_members ON (org_members.user_id = u.id) WHERE %s", sqlf.Join(conds, "AND"))
-	return u.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-}
-
 // UsersListOptions specifies the options for listing users.
 type UsersListOptions struct {
 	// Query specifies a search query for users.
