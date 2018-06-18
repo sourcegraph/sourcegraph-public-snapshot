@@ -139,6 +139,19 @@ func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsRes
 	}
 }
 
+func (s *configurationSubject) SettingsURL() (string, error) {
+	switch {
+	case s.site != nil:
+		return s.site.SettingsURL(), nil
+	case s.org != nil:
+		return s.org.SettingsURL(), nil
+	case s.user != nil:
+		return s.user.SettingsURL(), nil
+	default:
+		return "", errors.New("unknown configuration subject")
+	}
+}
+
 // readConfiguration unmarshals s's latest settings into v.
 func (s *configurationSubject) readConfiguration(ctx context.Context, v interface{}) error {
 	settings, err := s.LatestSettings(ctx)

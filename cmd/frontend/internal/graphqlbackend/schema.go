@@ -1730,6 +1730,8 @@ type User implements Node, ConfigurationSubject {
     avatarURL: String
     # The URL to the user's profile on Sourcegraph.
     url: String!
+    # The URL to the user's settings.
+    settingsURL: String!
     # The date when the user account was created on Sourcegraph.
     createdAt: String!
     # The date when the user account was last updated on Sourcegraph.
@@ -1959,6 +1961,10 @@ type Org implements Node, ConfigurationSubject {
     viewerCanAdminister: Boolean!
     # Whether the viewer is a member of this organization.
     viewerIsMember: Boolean!
+    # The URL to the organization.
+    url: String!
+    # The URL to the organization's settings.
+    settingsURL: String!
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -2116,6 +2122,8 @@ type Site implements ConfigurationSubject {
     # The site's latest site-wide settings (which are the lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
+    # The URL to the site's settings.
+    settingsURL: String!
     # Whether the viewer can reload the site (with the reloadSite mutation).
     canReloadSite: Boolean!
     # Lists all language servers.
@@ -2231,6 +2239,8 @@ interface ConfigurationSubject {
     id: ID!
     # The latest settings.
     latestSettings: Settings
+    # The URL to the settings.
+    settingsURL: String!
 }
 
 # The configurations for all of the relevant configuration subjects, plus the merged

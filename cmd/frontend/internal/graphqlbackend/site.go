@@ -87,6 +87,8 @@ func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
 	}, nil
 }
 
+func (r *siteResolver) SettingsURL() string { return "/site-admin/global-settings" }
+
 func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
 	err := backend.CheckCurrentUserIsSiteAdmin(ctx)
 	return canReloadSite && err == nil

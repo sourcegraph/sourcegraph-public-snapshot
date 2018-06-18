@@ -74,6 +74,10 @@ func (o *orgResolver) DisplayName() *string {
 	return o.org.DisplayName
 }
 
+func (r *orgResolver) URL() string { return "/organizations/" + r.org.Name }
+
+func (r *orgResolver) SettingsURL() string { return r.URL() + "/settings/configuration" }
+
 func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 
 func (o *orgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
