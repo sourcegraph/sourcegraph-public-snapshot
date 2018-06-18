@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"html"
 	"net/http"
 	"net/url"
 	"path"
@@ -100,9 +99,8 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	if repoURI == "" {
 		// Any error here is a problem with the user's configured git remote
 		// URL. We want them to actually read this error message.
-		msg := fmt.Sprintf("Git remote URL %q not supported", remoteURL)
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprintln(w, html.EscapeString(msg))
+		fmt.Fprintf(w, "Git remote URL %q not supported", remoteURL)
 		return nil
 	}
 	branch, err := editorBranch(r.Context(), repoURI, branch)
