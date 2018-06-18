@@ -10,6 +10,12 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+## 2.9.1
+
+### Fixed
+
+* Fixed an issue where saving an organization's configuration would hang indefinitely.
+
 ## 2.9.0
 
 ### Changed
