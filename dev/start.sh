@@ -30,6 +30,13 @@ if [[ $PWD = *"src/sourcegraph.com/"* ]]; then
     exit 1
 fi
 
+# Verify postgresql config.
+if ! psql -wc '\x' >/dev/null; then
+    echo "FAIL: postgreSQL config invalid or missing."
+    echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
+    exit 1
+fi
+
 export LIGHTSTEP_INCLUDE_SENSITIVE=true
 export PGSSLMODE=disable
 
