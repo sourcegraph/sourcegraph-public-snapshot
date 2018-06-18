@@ -2133,6 +2133,8 @@ type Site implements ConfigurationSubject {
     settingsURL: String!
     # Whether the viewer can reload the site (with the reloadSite mutation).
     canReloadSite: Boolean!
+    # Whether the viewer can modify the subject's configuration.
+    viewerCanAdminister: Boolean!
     # Lists all language servers.
     langServers: [LangServer!]!
     # The language server for a given language (if exists, otherwise null)
@@ -2248,6 +2250,8 @@ interface ConfigurationSubject {
     latestSettings: Settings
     # The URL to the settings.
     settingsURL: String!
+    # Whether the viewer can modify the subject's configuration.
+    viewerCanAdminister: Boolean!
 }
 
 # The configurations for all of the relevant configuration subjects, plus the merged

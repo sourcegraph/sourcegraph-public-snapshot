@@ -152,6 +152,19 @@ func (s *configurationSubject) SettingsURL() (string, error) {
 	}
 }
 
+func (s *configurationSubject) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	switch {
+	case s.site != nil:
+		return s.site.ViewerCanAdminister(ctx)
+	case s.org != nil:
+		return s.org.ViewerCanAdminister(ctx)
+	case s.user != nil:
+		return s.user.ViewerCanAdminister(ctx)
+	default:
+		return false, errors.New("unknown configuration subject")
+	}
+}
+
 // readConfiguration unmarshals s's latest settings into v.
 func (s *configurationSubject) readConfiguration(ctx context.Context, v interface{}) error {
 	settings, err := s.LatestSettings(ctx)

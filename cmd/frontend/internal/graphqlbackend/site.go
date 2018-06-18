@@ -68,6 +68,13 @@ func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationRes
 	return &siteConfigurationResolver{}, nil
 }
 
+func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
 	// The site configuration (which is only visible to admins) contains a field "settings"
 	// that is visible to all users. So, this does not need a permissions check.
