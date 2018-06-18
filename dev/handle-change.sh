@@ -1,26 +1,48 @@
 #!/bin/bash
-set -e
-
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-if [ "$1" == "cmd/frontend/internal/graphqlbackend/schema.graphql" ]; then
-    go generate github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend
-    exit
-fi
+generate_graphql=false
+generate_schema=false
+cmdlist=""
+all_cmds=false
+failed=false
 
-if [[ $1 =~ schema/.*\.json ]]; then
-    go generate github.com/sourcegraph/sourcegraph/schema
-    exit
-fi
+for i; do
+	case $i in
+	"cmd/frontend/internal/graphqlbackend/schema.graphql")
+		generate_graphql=true
+		;;
+	schema/*.json)
+		generate_schema=true
+		;;
+	cmd/*)
+		cmd=${i#cmd/}
+		cmd=${cmd%%/*}
+		case " $cmdlist " in
+		" $cmd ")
+			;;
+		*)
+			cmdlist="$cmdlist $cmd"
+			;;
+		esac
+		;;
+	*)
+		all_cmds=true
+		;;
+	esac
+done
 
-case $1 in
-cmd/*)	cmd=${1#cmd/}
-			cmd=${cmd%%/*}
-			rebuilt=$(./dev/go-install.sh -v $cmd)
-			;;
-*)			rebuilt=$(./dev/go-install.sh -v)
-			;;
-esac
+$generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend || failed=true; }
+$generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
+if $all_cmds; then
+	rebuilt=$(./dev/go-install.sh -v | tr '\012' ' ')
+	[ $? == 0 ] || failed=true
+elif [ -n "$cmdlist" ]; then
+	rebuilt=$(./dev/go-install.sh -v $cmdlist | tr '\012' ' ')
+	[ $? == 0 ] || failed=true
+fi
 
 echo >&2 "Rebuilt: $rebuilt"
-[ -n "$rebuilt" ] && $GOREMAN run restart $rebuilt
+[ -n "$rebuilt" ] && [ -n "$GOREMAN" ] && $GOREMAN run restart $rebuilt
+
+! $failed

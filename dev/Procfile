@@ -8,7 +8,7 @@ github-proxy: github-proxy
 lsp-proxy: lsp-proxy
 xlang-go: xlang-go -mode=tcp -addr=:4389
 frontend: $EXEC_FRONTEND .bin/frontend
-watch: chokidar --silent "**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" "schema/*.json" --ignore node_modules --ignore web -c "./dev/handle-change.sh {path}"
+watch: ./dev/changewatch.sh
 web: sh -c "cd web && npm install && ./node_modules/.bin/gulp --color watch"
 syntect_server: ./dev/syntect_server
 zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
