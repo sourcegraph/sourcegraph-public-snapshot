@@ -1,5 +1,5 @@
 import { Observable, ReplaySubject } from 'rxjs'
-import { filter, mergeMap, tap } from 'rxjs/operators'
+import { filter, mergeMap, take, tap } from 'rxjs/operators'
 import { SiteFlags } from '.'
 import { authRequired } from '../auth'
 import { gql, queryGraphQL } from '../backend/graphql'
@@ -16,6 +16,7 @@ export const siteFlags = new ReplaySubject<SiteFlags>(1)
  */
 export function refreshSiteFlags(): Observable<never> {
     return authRequired.pipe(
+        take(1),
         filter(authRequired => !authRequired),
         mergeMap(() =>
             queryGraphQL(gql`
