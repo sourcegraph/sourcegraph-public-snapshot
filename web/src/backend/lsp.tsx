@@ -161,11 +161,8 @@ export const fetchServerCapabilities = memoizeObservable(
 )
 
 /**
- * Fixes a response to textDocument/hover that contains `range: null`, which is
- * not valid LSP (`range` should instead be omitted entirely). rls is one such
- * language server that responds in this way:
- *
- * https://github.com/sourcegraph/sourcegraph/issues/11880
+ * Fixes a response to textDocument/hover that is invalid because either
+ * `range` or `contents` are `null`.
  *
  * See the spec:
  *
@@ -173,9 +170,17 @@ export const fetchServerCapabilities = memoizeObservable(
  *
  * @param response The LSP response to fix (will be mutated)
  */
-export const setFalsyRangeToUndefined = (response: any): void => {
-    if (response && !response.range) {
-        response.range = undefined
+export const normalizeHoverResponse = (hoverResponse: any): void => {
+    // rls for Rust sometimes responds with `range: null`.
+    // https://github.com/sourcegraph/sourcegraph/issues/11880
+    if (hoverResponse && !hoverResponse.range) {
+        hoverResponse.range = undefined
+    }
+
+    // clangd for C/C++ sometimes responds with `contents: null`.
+    // https://github.com/sourcegraph/sourcegraph/issues/11880#issuecomment-396650342
+    if (hoverResponse && !hoverResponse.contents) {
+        hoverResponse.contents = []
     }
 }
 
@@ -201,7 +206,7 @@ export const fetchHover = memoizeObservable(
             pos.filePath
         ).pipe(
             tap(hover => {
-                setFalsyRangeToUndefined(hover)
+                normalizeHoverResponse(hover)
                 // Do some shallow validation on response, e.g. to catch https://github.com/sourcegraph/sourcegraph/issues/11711
                 if (hover !== null && !Hover.is(hover)) {
                     throw Object.assign(new Error('Invalid hover response from language server'), { hover })
