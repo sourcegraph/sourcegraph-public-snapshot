@@ -36,7 +36,7 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 		return &configurationSubject{site: s}, nil
 
 	case *userResolver:
-		// 🚨 SECURITY: Only the user and site admins are allowed to update the user's settings.
+		// 🚨 SECURITY: Only the user and site admins are allowed to view the user's settings.
 		if err := backend.CheckSiteAdminOrSameUser(ctx, s.user.ID); err != nil {
 			return nil, err
 		}
