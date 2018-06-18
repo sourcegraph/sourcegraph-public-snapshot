@@ -18,7 +18,7 @@ interface State {
 }
 
 /**
- * A page displaying Sourcegraph Server integrations.
+ * A page displaying Sourcegraph integrations.
  */
 export class UserSettingsIntegrationsPage extends React.Component<Props, State> {
     public state: State = {

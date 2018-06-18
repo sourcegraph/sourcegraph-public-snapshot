@@ -12,8 +12,7 @@ interface Props {
 }
 
 /**
- * Returns the URL used to link the browser extension to a
- * Sourcegraph Server instance.
+ * Returns the URL used to link the browser extension to a Sourcegraph instance.
  *
  * @param email the email address of the authenticated user.
  */
@@ -25,8 +24,8 @@ const getExtensionLinkURL = (email: string): string => {
 }
 
 /**
- * Embeds an iframe responsible for passing the current user
- * and Sourcegraph Server URL to the browser extension.
+ * Embeds an iframe responsible for passing the current user and Sourcegraph URL to the browser
+ * extension.
  */
 export const LinkExtension: React.SFC<Props> = props => (
     <iframe className="link-extension" src={getExtensionLinkURL(props.user.email)} />

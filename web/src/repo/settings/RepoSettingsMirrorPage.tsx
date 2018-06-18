@@ -340,7 +340,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
                                 <li className="repo-settings-mirror-page__step">
                                     Consult{' '}
                                     <a href="https://about.sourcegraph.com/docs/server/config/repositories">
-                                        Sourcegraph Server repositories documentation
+                                        Sourcegraph repositories documentation
                                     </a>{' '}
                                     for resolving other authentication issues (such as HTTPS certificates and SSH keys).
                                 </li>

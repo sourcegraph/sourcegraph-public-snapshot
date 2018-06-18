@@ -17,6 +17,6 @@ export const NeedsRepositoryConfigurationAlert: React.SFC<{ className?: string }
             <Icon className="icon-inline site-alert__link-icon" />{' '}
             <span className="underline">Configure repositories and code hosts</span>
         </Link>
-        &nbsp;to add to Sourcegraph Server.
+        &nbsp;to add to Sourcegraph.
     </div>
 )

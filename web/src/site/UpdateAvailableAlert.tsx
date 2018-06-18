@@ -24,7 +24,7 @@ export const UpdateAvailableAlert: React.SFC<{
     >
         <Icon className="icon-inline site-alert__link-icon mr-2" />An update is available:&nbsp;
         <a className="site-alert__link" href="https://about.sourcegraph.com" target="_blank" onClick={onClickCTA}>
-            <span className="underline">Sourcegraph Server {updateVersionAvailable}</span>
+            <span className="underline">Sourcegraph {updateVersionAvailable}</span>
         </a>&nbsp;-&nbsp;
         <a
             className="site-alert__link"

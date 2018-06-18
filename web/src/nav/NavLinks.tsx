@@ -44,9 +44,9 @@ export class NavLinks extends React.PureComponent<Props> {
                         href="https://about.sourcegraph.com"
                         className="nav-links__border-link nav-links__ad"
                         onClick={this.onClickInstall}
-                        title="Install self-hosted Sourcegraph Server to search your own code"
+                        title="Install self-hosted Sourcegraph to search your own code"
                     >
-                        Install <span className="nav-links__widescreen-only">Sourcegraph Server</span>
+                        Install <span className="nav-links__widescreen-only">Sourcegraph</span>
                     </a>
                 )}
                 {this.props.user && (

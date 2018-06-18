@@ -9,7 +9,7 @@ export const ServerBanner = () => (
     <div className="alert alert-secondary">
         Search your private and internal code.{' '}
         <a href="https://about.sourcegraph.com" onClick={onClickInstall}>
-            Install Sourcegraph Server
-        </a>.
+            Set up a self-hosted Sourcegraph instance.
+        </a>
     </div>
 )
