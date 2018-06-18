@@ -110,7 +110,7 @@ export class SiteAdminCreateUserPage extends React.Component<Props, State> {
                         ) : (
                             <p>The user must authenticate using a configured authentication provider.</p>
                         )}
-                        <button className="btn btn-primary mt-2" onClick={this.dismissAlert}>
+                        <button className="btn btn-primary mt-2" onClick={this.dismissAlert} autoFocus={true}>
                             Create another user
                         </button>
                     </div>
