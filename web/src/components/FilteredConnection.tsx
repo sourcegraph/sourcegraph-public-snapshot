@@ -61,9 +61,9 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
  */
 interface ConnectionPropsCommon<N, NP = {}> {
     /** list HTML element type. Default is <ul>. */
-    listComponent?: 'ul' | 'table'
+    listComponent?: 'ul' | 'table' | 'div'
 
-    /** CSS class name for the list element (<ul> or <table>). */
+    /** CSS class name for the list element (<ul>, <table>, or <div>). */
     listClassName?: string
 
     /** Header row to appear above all nodes. */
