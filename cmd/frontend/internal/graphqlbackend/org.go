@@ -104,6 +104,10 @@ func (o *orgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 	return &staticUserConnectionResolver{users: users}, nil
 }
 
+func (o *orgResolver) configurationSubject() api.ConfigurationSubject {
+	return api.ConfigurationSubject{Org: &o.org.ID}
+}
+
 func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins may access the settings, because they
 	// may contains secrets or other sensitive data.
@@ -111,7 +115,7 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 		return nil, err
 	}
 
-	settings, err := db.Settings.GetLatest(ctx, api.ConfigurationSubject{Org: &o.org.ID})
+	settings, err := db.Settings.GetLatest(ctx, o.configurationSubject())
 	if err != nil {
 		return nil, err
 	}

@@ -100,6 +100,10 @@ func (r *userResolver) UpdatedAt() *string {
 	return &t
 }
 
+func (r *userResolver) configurationSubject() api.ConfigurationSubject {
+	return api.ConfigurationSubject{User: &r.user.ID}
+}
+
 func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's settings, because they
 	// may contain secrets or other sensitive data.
@@ -107,7 +111,7 @@ func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 		return nil, err
 	}
 
-	settings, err := db.Settings.GetLatest(ctx, api.ConfigurationSubject{User: &r.user.ID})
+	settings, err := db.Settings.GetLatest(ctx, r.configurationSubject())
 	if err != nil {
 		return nil, err
 	}
