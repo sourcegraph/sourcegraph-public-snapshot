@@ -118,7 +118,7 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
             <div className="settings-file-container">
                 <PageTitle title="Organization configuration" />
                 <h2>Configuration</h2>
-                <p>View and edit your organization's search scopes and saved queries.</p>
+                <p>Organization settings apply to all members. User settings override organization settings.</p>
                 <SettingsFile
                     settings={this.state.settingsOrError}
                     commitError={this.state.commitError}

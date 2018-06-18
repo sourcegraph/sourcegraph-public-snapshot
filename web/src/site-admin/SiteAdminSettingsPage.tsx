@@ -45,7 +45,10 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
                 <PageTitle title="Site settings - Admin" />
                 <h2>Configuration</h2>
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
-                <p>View and edit global settings for search scopes and saved queries.</p>
+                <p>
+                    Global settings apply to all organizations and users. Settings for a user or organization override
+                    global settings.
+                </p>
                 {this.state.settings !== undefined && (
                     <SettingsFile
                         settings={this.state.settings}

@@ -74,7 +74,7 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
                 {isErrorLike(this.state.settingsOrError) && (
                     <p className="alert alert-danger">Error: {upperFirst(this.state.settingsOrError.message)}</p>
                 )}
-                <p>View and edit user search scopes and saved queries.</p>
+                <p>User settings override global and organization settings.</p>
                 {this.state.settingsOrError !== undefined &&
                     !isErrorLike(this.state.settingsOrError) && (
                         <SettingsFile
