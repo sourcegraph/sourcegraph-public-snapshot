@@ -66,7 +66,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     this.props.onDidUpdate()
                                 }
                             }),
-                            startWith<Pick<UserNodeState, 'removalOrError'>>({ removalOrError: null })
+                            startWith<Pick<UserNodeState, 'removalOrError'>>({ removalOrError: undefined })
                         )
                     )
                 )

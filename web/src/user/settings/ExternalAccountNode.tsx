@@ -85,7 +85,7 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                                     this.props.onDidUpdate()
                                 }
                             }),
-                            startWith<Pick<ExternalAccountNodeState, 'deletionOrError'>>({ deletionOrError: null })
+                            startWith<Pick<ExternalAccountNodeState, 'deletionOrError'>>({ deletionOrError: undefined })
                         )
                     )
                 )

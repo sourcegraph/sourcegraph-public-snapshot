@@ -91,7 +91,7 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                                     this.props.onDidUpdate()
                                 }
                             }),
-                            startWith<Pick<AccessTokenNodeState, 'deletionOrError'>>({ deletionOrError: null })
+                            startWith<Pick<AccessTokenNodeState, 'deletionOrError'>>({ deletionOrError: undefined })
                         )
                     )
                 )
