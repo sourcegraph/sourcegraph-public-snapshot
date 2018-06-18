@@ -384,6 +384,10 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 
+		if params.InitializationOptions.RootURI != nil {
+			params.RootURI = *params.InitializationOptions.RootURI
+		}
+
 		// DEPRECATED: Handle clients that send initialization params with the old Mode field.
 		if params.InitializationOptions.Mode == "" {
 			params.InitializationOptions.Mode = params.Mode

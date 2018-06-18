@@ -159,6 +159,12 @@ type ClientProxyInitializeParams struct {
 type ClientProxyInitializationOptions struct {
 	Mode string `json:"mode"`
 
+	// Same as, but takes precedence over, InitializeParams.rootUri.
+	// vscode-languageserver-node's LanguageClient doesn't allow overriding
+	// InitializeParams.rootUri, so clients that use vscode-languageserver-node
+	// instead set InitializeParams.initializationOptions.rootUri.
+	RootURI *lsp.DocumentURI `json:"rootUri,omitempty"`
+
 	// Session, if set, causes this session to be isolated from other
 	// LSP sessions using the same workspace and mode. See
 	// (contextID).session for more information.
