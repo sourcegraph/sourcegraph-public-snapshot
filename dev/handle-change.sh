@@ -13,12 +13,14 @@ if [[ $1 =~ schema/.*\.json ]]; then
     exit
 fi
 
-./dev/go-install.sh
+case $1 in
+cmd/*)	cmd=${1#cmd/}
+			cmd=${cmd%%/*}
+			rebuilt=$(./dev/go-install.sh -v $cmd)
+			;;
+*)			rebuilt=$(./dev/go-install.sh -v)
+			;;
+esac
 
-cmd=$(echo $1 | sed -E 's/cmd\/([^/]+)\/.*/\1/g')
-if [ "$cmd" == "$1" ]; then
-    # Changed file was not in a cmd subdirectory, so we need to pessimistically restart everything.
-    $GOREMAN run restart gitserver indexer query-runner github-proxy xlang-go lsp-proxy searcher frontend repo-updater symbols
-elif [ "$cmd" != "server" ]; then
-    $GOREMAN run restart $cmd
-fi
+echo >&2 "Rebuilt: $rebuilt"
+[ -n "$rebuilt" ] && $GOREMAN run restart $rebuilt
