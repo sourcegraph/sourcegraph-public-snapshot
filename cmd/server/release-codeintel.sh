@@ -1,3 +1,5 @@
+#!/bin/bash
+
 if [ "$#" -ne 2 ]; then
     echo "Illegal number of parameters. Please read ./dev/server/README.md"
     exit -1
