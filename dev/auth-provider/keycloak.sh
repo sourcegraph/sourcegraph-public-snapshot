@@ -51,4 +51,4 @@ echo Configuring Keycloak...
 RESET=1 scripts/configure-keycloak.sh
 
 echo Keycloak is ready: $KEYCLOAK
-exec docker attach --no-stdin $CONTAINER
+exec docker attach --no-stdin $CONTAINER | (trap '' 2; sed -u -e 's/\[[0-9;]*m//g')
