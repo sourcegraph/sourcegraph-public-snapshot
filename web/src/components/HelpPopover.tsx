@@ -7,6 +7,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { fromEvent, merge, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+import { Key } from 'ts-key-enum'
 
 interface Props {
     onDismiss: () => void
@@ -25,7 +26,7 @@ export class HelpPopover extends React.Component<Props> {
     private setRef = (e: HTMLElement | null) => (this.ref = e)
 
     public componentDidMount(): void {
-        const escKeypress = fromEvent<KeyboardEvent>(window, 'keydown').pipe(filter(event => event.key === 'Escape'))
+        const escKeypress = fromEvent<KeyboardEvent>(window, 'keydown').pipe(filter(event => event.key === Key.Escape))
 
         const outsideClick = fromEvent<MouseEvent>(window, 'mousedown').pipe(
             filter(event => !!this.ref && !this.ref.contains(event.target as HTMLElement))

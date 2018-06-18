@@ -2,6 +2,7 @@ import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
+import { Key } from 'ts-key-enum'
 
 interface Props {
     /**
@@ -167,7 +168,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
 
     private onGlobalKeyDown = (event: KeyboardEvent) => {
         switch (event.key) {
-            case 'Escape': {
+            case Key.Escape: {
                 event.preventDefault()
                 this.hides.next()
                 break

@@ -18,6 +18,7 @@ import {
     tap,
     toArray,
 } from 'rxjs/operators'
+import { Key } from 'ts-key-enum'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
@@ -371,22 +372,22 @@ export class QueryInput extends React.Component<Props, State> {
         event.persist()
         this.inputKeyDowns.next(event)
         switch (event.key) {
-            case 'Escape': {
+            case Key.Escape: {
                 this.suggestionsHidden.next()
                 this.setState({ loading: false, hideSuggestions: true, selectedSuggestion: -1 })
                 break
             }
-            case 'ArrowDown': {
+            case Key.ArrowDown: {
                 event.preventDefault()
                 this.moveSelection(1)
                 break
             }
-            case 'ArrowUp': {
+            case Key.ArrowUp: {
                 event.preventDefault()
                 this.moveSelection(-1)
                 break
             }
-            case 'Enter': {
+            case Key.Enter: {
                 if (this.state.selectedSuggestion === -1) {
                     // Submit form and hide suggestions
                     this.suggestionsHidden.next()

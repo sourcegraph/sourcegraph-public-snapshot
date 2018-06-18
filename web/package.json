@@ -176,6 +176,7 @@
     "rx-component": "^0.1.0",
     "rxjs": "^6.2.0",
     "string-score": "^1.0.1",
+    "ts-key-enum": "^2.0.0",
     "uuid": "^3.2.1",
     "vscode-languageserver-protocol": "^3.7.1",
     "vscode-languageserver-types": "^3.8.2",

@@ -2,6 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime, filter, map, startWith, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
+import { Key } from 'ts-key-enum'
 import { AbsoluteRepoFilePosition } from '..'
 import * as GQL from '../../backend/graphqlschema'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
@@ -293,7 +294,7 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
         // When the user presses 'esc', dismiss tooltip.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.keyCode === 27))
+                .pipe(filter(event => event.key === Key.Escape))
                 .subscribe(event => {
                     event.preventDefault()
                     this.handleDismiss()

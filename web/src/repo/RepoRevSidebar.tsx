@@ -46,7 +46,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
         // Toggle sidebar visibility when the user presses 'alt+s'.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.altKey && event.keyCode === 83))
+                .pipe(filter(event => event.altKey && event.key === 's'))
                 .subscribe(event => {
                     event.preventDefault()
                     this.setState(prevState => ({ showSidebar: !prevState.showSidebar }))

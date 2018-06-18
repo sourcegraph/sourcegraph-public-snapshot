@@ -3,6 +3,7 @@ import { isEqual, omit } from 'lodash'
 import * as React from 'react'
 import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime, filter, map, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
+import { Key } from 'ts-key-enum'
 import { Position, Range } from 'vscode-languageserver-types'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -423,7 +424,7 @@ export class Blob extends React.Component<Props, State> {
         // When the user presses 'esc', dismiss tooltip.
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.keyCode === 27))
+                .pipe(filter(event => event.key === Key.Escape))
                 .subscribe(event => {
                     event.preventDefault()
                     this.handleDismiss()

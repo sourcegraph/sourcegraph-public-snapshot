@@ -15,6 +15,7 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
+import { Key } from 'ts-key-enum'
 import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
@@ -641,7 +642,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         this.subscriptions.add(
             merge(
                 this.closeButtonClicks,
-                fromEvent<KeyboardEvent>(window, 'keydown').pipe(filter(event => event.key === 'Escape'))
+                fromEvent<KeyboardEvent>(window, 'keydown').pipe(filter(event => event.key === Key.Escape))
             ).subscribe(event => {
                 event.preventDefault()
                 this.setState({

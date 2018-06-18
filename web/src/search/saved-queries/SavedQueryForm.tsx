@@ -3,6 +3,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { fromEvent, Observable, Subscription } from 'rxjs'
 import { catchError, filter, map } from 'rxjs/operators'
+import { Key } from 'ts-key-enum'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { Settings } from '../../schema/settings.schema'
@@ -104,7 +105,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
 
         this.subscriptions.add(
             fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => !this.state.isFocused && event.key === 'Escape' && !this.state.isSubmitting))
+                .pipe(filter(event => !this.state.isFocused && event.key === Key.Escape && !this.state.isSubmitting))
                 .subscribe(() => this.props.onDidCancel())
         )
     }
