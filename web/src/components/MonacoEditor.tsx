@@ -10,6 +10,9 @@ interface Props {
     /** The language of the document. */
     language?: string
 
+    /** The DOM element ID to use when rendering the component. Use for a11y, not DOM manipulation. */
+    id?: string
+
     /** The height (in px) of the Monaco editor. */
     height: number
 
@@ -68,6 +71,7 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                     // tslint:disable-next-line:jsx-ban-props
                     style={{ height: `${this.props.height}px`, position: 'relative' }}
                     ref={this.setRef}
+                    id={this.props.id}
                     className="monaco-editor-container"
                 />
             </>
