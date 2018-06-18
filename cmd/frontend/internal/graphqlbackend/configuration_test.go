@@ -100,14 +100,30 @@ func TestMergeConfigs(t *testing.T) {
 			},
 			want: `{"a":1,"b":2}`,
 		},
-		"deeply merged fields of strings": {
+		"deeply merged fields of arrays": {
 			configs: []string{
 				`{"testDeeplyMergedField":[0,1]}`,
 				`{"testDeeplyMergedField":[2,3]}`,
 			},
 			want: `{"testDeeplyMergedField":[0,1,2,3]}`,
 		},
-		"deeply merged fields of strings with null": {
+		"deeply merged fields of objects": {
+			configs: []string{
+				`{"testDeeplyMergedField":{"a":1,"b":2}}`,
+				`{"testDeeplyMergedField":{"a":3,"c":4}}`,
+			},
+			want: `{"testDeeplyMergedField":{"a":3,"b":2,"c":4}}`,
+		},
+		"deeply merged fields of nested objects": {
+			configs: []string{
+				`{"testDeeplyMergedField":{"a":{"x":1,"y":2}}}`,
+				`{"testDeeplyMergedField":{"a":{"x":3,"z":4}}}`,
+			},
+			// NOTE: It is expected that this does not include the "y":2 property. Recursive merging
+			// may be desirable in the future, but it is not implemented now.
+			want: `{"testDeeplyMergedField":{"a":{"x":3,"z":4}}}`,
+		},
+		"deeply merged fields of arrays and null": {
 			configs: []string{
 				`{"testDeeplyMergedField":[0,1]}`,
 				`{"testDeeplyMergedField":null}`,
@@ -115,21 +131,21 @@ func TestMergeConfigs(t *testing.T) {
 			},
 			want: `{"testDeeplyMergedField":[0,1,2,3]}`,
 		},
-		"deeply merged fields of strings with unset 1nd": {
+		"deeply merged fields with unset 1nd": {
 			configs: []string{
 				`{}`,
 				`{"testDeeplyMergedField":[0,1]}`,
 			},
 			want: `{"testDeeplyMergedField":[0,1]}`,
 		},
-		"deeply merged fields of strings with unset 2nd": {
+		"deeply merged fields with unset 2nd": {
 			configs: []string{
 				`{"testDeeplyMergedField":[0,1]}`,
 				`{}`,
 			},
 			want: `{"testDeeplyMergedField":[0,1]}`,
 		},
-		"deeply merged fields of heterogenous objects": {
+		"deeply merged fields of arrays of heterogenous objects": {
 			configs: []string{
 				`{"testDeeplyMergedField":[{"a":0},1]}`,
 				`{"testDeeplyMergedField":[2,{"b":3}]}`,
