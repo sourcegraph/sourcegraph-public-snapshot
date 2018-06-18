@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -127,10 +128,13 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+// protocolRegExp is a regular expression that matches any URL that looks like it has a protocol
+var protocolRegExp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9+.-]*:")
+
 // guessRepoURIFromRemoteURL return a guess at the repo URI for the given remote URL. For example, given
 // "https://github.com/foo/bar.git" it returns "github.com/foo/bar".
 func guessRepoURIFromRemoteURL(urlStr string) api.RepoURI {
-	if strings.HasPrefix(urlStr, "git@") {
+	if !protocolRegExp.MatchString(urlStr) {
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
 	urlStr = strings.TrimSuffix(urlStr, ".git")
