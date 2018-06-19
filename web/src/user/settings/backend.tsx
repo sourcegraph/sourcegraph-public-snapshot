@@ -119,21 +119,17 @@ export function fetchUserSettings(user: GQL.ID): Observable<GQL.ISettings | null
  *
  * @return Observable that emits the newly updated settings
  */
-export function updateUserSettings(
-    user: GQL.ID,
-    lastKnownSettingsID: number | null,
-    contents: string
-): Observable<GQL.ISettings> {
+export function updateUserSettings(user: GQL.ID, lastID: number | null, contents: string): Observable<GQL.ISettings> {
     return mutateGraphQL(
         gql`
-            mutation UpdateUserSettings($user: ID!, $lastKnownSettingsID: Int, $contents: String!) {
-                updateUserSettings(user: $user, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
+            mutation UpdateUserSettings($user: ID!, $lastID: Int, $contents: String!) {
+                updateUserSettings(user: $user, lastID: $lastID, contents: $contents) {
                     ...SettingsFields
                 }
             }
             ${settingsFragment}
         `,
-        { user, lastKnownSettingsID, contents }
+        { user, lastID, contents }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0) || !data.updateUserSettings) {

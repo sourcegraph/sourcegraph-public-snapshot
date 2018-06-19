@@ -34,9 +34,9 @@ type Mutation {
     # Updates the user settings for the user with the given ID.
     #
     # Only the user and site admins may perform this mutation.
-    updateUserSettings(user: ID!, lastKnownSettingsID: Int, contents: String!): Settings!
+    updateUserSettings(user: ID!, lastID: Int, contents: String!): Settings!
     # Update the global settings for all users.
-    updateSiteSettings(lastKnownSettingsID: Int, contents: String!): Settings!
+    updateSiteSettings(lastID: Int, contents: String!): Settings!
     # Creates an organization. The caller is added as a member of the newly created organization.
     #
     # Only authenticated users may perform this mutation.
@@ -54,7 +54,7 @@ type Mutation {
         # The ID of the organization whose settings should be updated.
         id: ID!
         # The last known settings ID.
-        lastKnownSettingsID: Int
+        lastID: Int
         # The contents of the settings.
         contents: String!
     ): Settings!

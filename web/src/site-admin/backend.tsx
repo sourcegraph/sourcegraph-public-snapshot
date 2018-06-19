@@ -500,17 +500,17 @@ export function fetchSiteSettings(): Observable<GQL.ISettings | null> {
  *
  * @return Observable that emits the newly updated settings
  */
-export function updateSiteSettings(lastKnownSettingsID: number | null, contents: string): Observable<GQL.ISettings> {
+export function updateSiteSettings(lastID: number | null, contents: string): Observable<GQL.ISettings> {
     return mutateGraphQL(
         gql`
-            mutation UpdateSiteSettings($lastKnownSettingsID: Int, $contents: String!) {
-                updateSiteSettings(lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
+            mutation UpdateSiteSettings($lastID: Int, $contents: String!) {
+                updateSiteSettings(lastID: $lastID, contents: $contents) {
                     ...SettingsFields
                 }
             }
             ${settingsFragment}
         `,
-        { lastKnownSettingsID, contents }
+        { lastID, contents }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0) || !data.updateSiteSettings) {

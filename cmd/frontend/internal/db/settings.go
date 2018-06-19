@@ -13,9 +13,9 @@ import (
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
-		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorUserID, contents)
+		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
 	}
 
 	// Validate JSON syntax before saving.
@@ -50,7 +50,7 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.Configurati
 		return nil, err
 	}
 
-	creatorIsUpToDate := latestSetting != nil && lastKnownSettingsID != nil && latestSetting.ID == *lastKnownSettingsID
+	creatorIsUpToDate := latestSetting != nil && lastID != nil && latestSetting.ID == *lastID
 	if latestSetting == nil || creatorIsUpToDate {
 		err := tx.QueryRow(
 			"INSERT INTO settings(org_id, user_id, author_user_id, contents) VALUES($1, $2, $3, $4) RETURNING id, created_at",

@@ -49,9 +49,9 @@ func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
 }
 
 func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
-	User                graphql.ID
-	LastKnownSettingsID *int32
-	Contents            string
+	User     graphql.ID
+	LastID   *int32
+	Contents string
 }) (*settingsResolver, error) {
 	userID, err := unmarshalUserID(args.User)
 	if err != nil {
@@ -63,7 +63,7 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{User: &userID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{User: &userID}, args.LastID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -79,9 +79,9 @@ func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
 }
 
 func (*schemaResolver) UpdateOrganizationSettings(ctx context.Context, args *struct {
-	ID                  graphql.ID
-	LastKnownSettingsID *int32
-	Contents            string
+	ID       graphql.ID
+	LastID   *int32
+	Contents string
 }) (*settingsResolver, error) {
 	orgID, err := unmarshalOrgID(args.ID)
 	if err != nil {
@@ -98,7 +98,7 @@ func (*schemaResolver) UpdateOrganizationSettings(ctx context.Context, args *str
 		return nil, err
 	}
 
-	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{Org: &orgID}, args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{Org: &orgID}, args.LastID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +124,8 @@ func (r *schemaResolver) CurrentSiteSettings(ctx context.Context) (*settingsReso
 }
 
 func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
-	LastKnownSettingsID *int32
-	Contents            string
+	LastID   *int32
+	Contents string
 }) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only admins should be authorized to set global settings.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -134,7 +134,7 @@ func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
 
 	settings, err := settingsCreateIfUpToDate(ctx,
 		api.ConfigurationSubject{Site: &singletonSiteResolver.gqlID},
-		args.LastKnownSettingsID, actor.FromContext(ctx).UID, args.Contents)
+		args.LastID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +146,7 @@ func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
 
 // like db.Settings.CreateIfUpToDate, except it handles notifying the
 // query-runner if any saved queries have changed.
-func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastKnownSettingsID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
+func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 	subjectID, err := configurationSubjectID(subject)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubj
 	}
 
 	// Update settings.
-	latestSettings, err := db.Settings.CreateIfUpToDate(ctx, subject, lastKnownSettingsID, authorUserID, contents)
+	latestSettings, err := db.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
 	if err != nil {
 		return nil, err
 	}

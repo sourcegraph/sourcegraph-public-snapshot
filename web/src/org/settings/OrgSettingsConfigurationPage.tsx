@@ -131,8 +131,8 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
         )
     }
 
-    private onDidCommit = (lastKnownSettingsID: number | null, contents: string) =>
-        updateOrganizationSettings(this.props.org.id, lastKnownSettingsID, contents)
+    private onDidCommit = (lastID: number | null, contents: string) =>
+        updateOrganizationSettings(this.props.org.id, lastID, contents)
             .pipe(mergeMap(() => refreshConfiguration().pipe(concat([null]))))
             .subscribe(
                 () => {

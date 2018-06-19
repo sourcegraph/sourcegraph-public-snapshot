@@ -90,9 +90,9 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
         )
     }
 
-    private onDidCommit = (lastKnownSettingsID: number | null, contents: string): void => {
+    private onDidCommit = (lastID: number | null, contents: string): void => {
         this.setState({ commitError: undefined })
-        updateUserSettings(this.props.user.id, lastKnownSettingsID, contents).subscribe(
+        updateUserSettings(this.props.user.id, lastID, contents).subscribe(
             settings =>
                 this.setState({
                     commitError: undefined,

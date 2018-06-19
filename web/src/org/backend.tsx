@@ -125,21 +125,17 @@ export function updateOrganization(id: GQL.ID, displayName: string): Observable<
     )
 }
 
-export function updateOrganizationSettings(
-    id: GQL.ID,
-    lastKnownSettingsID: number | null,
-    contents: string
-): Observable<void> {
+export function updateOrganizationSettings(id: GQL.ID, lastID: number | null, contents: string): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation UpdateOrganizationSettings($id: ID!, $lastKnownSettingsID: Int, $contents: String!) {
-                updateOrganizationSettings(id: $id, lastKnownSettingsID: $lastKnownSettingsID, contents: $contents) {
+            mutation UpdateOrganizationSettings($id: ID!, $lastID: Int, $contents: String!) {
+                updateOrganizationSettings(id: $id, lastID: $lastID, contents: $contents) {
                     ...SettingsFields
                 }
             }
             ${settingsFragment}
         `,
-        { id, lastKnownSettingsID, contents }
+        { id, lastID, contents }
     ).pipe(
         map(({ data, errors }) => {
             if (!data || (errors && errors.length > 0)) {

@@ -63,12 +63,12 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
         )
     }
 
-    private onDidCommit = (lastKnownSettingsID: number | null, contents: string): void => {
+    private onDidCommit = (lastID: number | null, contents: string): void => {
         this.setState({
             error: undefined,
             commitError: undefined,
         })
-        updateSiteSettings(lastKnownSettingsID, contents).subscribe(
+        updateSiteSettings(lastID, contents).subscribe(
             settings =>
                 this.setState({
                     error: undefined,

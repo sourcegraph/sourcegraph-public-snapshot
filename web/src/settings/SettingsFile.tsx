@@ -20,7 +20,7 @@ interface Props {
     /**
      * Called when the user saves changes to the settings file's contents.
      */
-    onDidCommit: (lastKnownSettingsID: number | null, contents: string) => void
+    onDidCommit: (lastID: number | null, contents: string) => void
 
     /**
      * Called when the user discards changes to the settings file's contents.
@@ -41,11 +41,11 @@ interface State {
     saving: boolean
 
     /**
-     * The lastKnownSettingsID that we started editing from. If null, then no
+     * The lastID that we started editing from. If null, then no
      * previous versions of the settings exist, and we're creating them from
      * scratch.
      */
-    editingLastKnownSettingsID?: number | null
+    editingLastID?: number | null
 
     /** The dynamically imported MonacoSettingsEditor module, error or undefined while loading. */
     monacoSettingsEditorOrError?: typeof _monacoSettingsEditorModule | ErrorLike
@@ -103,16 +103,15 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                 ({ settings, commitError }) =>
                     !!settings &&
                     !commitError &&
-                    ((typeof this.state.editingLastKnownSettingsID === 'number' &&
-                        settings.id > this.state.editingLastKnownSettingsID) ||
-                        (typeof settings.id === 'number' && this.state.editingLastKnownSettingsID === null))
+                    ((typeof this.state.editingLastID === 'number' && settings.id > this.state.editingLastID) ||
+                        (typeof settings.id === 'number' && this.state.editingLastID === null))
             )
         )
         this.subscriptions.add(
             refreshedAfterSave.subscribe(({ settings }) =>
                 this.setState({
                     saving: false,
-                    editingLastKnownSettingsID: undefined,
+                    editingLastID: undefined,
                     contents: settings ? settings.configuration.contents : undefined,
                 })
             )
@@ -270,7 +269,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             eventLogger.log('SettingsFileDiscard')
             this.setState({
                 contents: undefined,
-                editingLastKnownSettingsID: undefined,
+                editingLastID: undefined,
             })
             this.props.onDidDiscard()
         } else {
@@ -280,7 +279,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
     private onEditorChange = (newValue: string) => {
         if (newValue !== this.getPropsSettingsContentsOrEmpty()) {
-            this.setState({ editingLastKnownSettingsID: this.getPropsSettingsID() })
+            this.setState({ editingLastID: this.getPropsSettingsID() })
         }
         this.setState({ contents: newValue })
     }
