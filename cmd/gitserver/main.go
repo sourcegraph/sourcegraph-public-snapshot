@@ -36,13 +36,7 @@ var (
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	tracer.Init("gitserver")
-
-	// Filter log output by level.
-	lvl, err := log15.LvlFromString(env.LogLevel)
-	if err == nil {
-		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
-	}
+	tracer.Init()
 
 	if reposDir == "" {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")

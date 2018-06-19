@@ -42,13 +42,7 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	log.SetFlags(0)
-	tracer.Init("symbols")
-
-	// Filter log output by level.
-	lvl, err := log15.LvlFromString(env.LogLevel)
-	if err == nil {
-		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
-	}
+	tracer.Init()
 
 	go debugserver.Start()
 
@@ -70,6 +64,7 @@ func main() {
 	} else {
 		service.MaxCacheSizeBytes = mb * 1000 * 1000
 	}
+	var err error
 	service.NumParserProcesses, err = strconv.Atoi(ctagsProcesses)
 	if err != nil {
 		log.Fatalf("Invalid CTAGS_PROCESSES: %s", err)

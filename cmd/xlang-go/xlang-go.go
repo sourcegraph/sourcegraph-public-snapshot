@@ -56,7 +56,7 @@ func main() {
 }
 
 func run() error {
-	tracer.Init("xlang-go")
+	tracer.Init()
 
 	go debugserver.Start()
 

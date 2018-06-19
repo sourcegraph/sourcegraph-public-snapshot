@@ -35,13 +35,7 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	log.SetFlags(0)
-	tracer.Init("searcher")
-
-	// Filter log output by level.
-	lvl, err := log15.LvlFromString(env.LogLevel)
-	if err == nil {
-		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
-	}
+	tracer.Init()
 
 	go debugserver.Start()
 
@@ -84,7 +78,7 @@ func main() {
 	go shutdownOnSIGINT(server)
 
 	log15.Info("searcher: listening", "addr", ":3181")
-	err = server.ListenAndServe()
+	err := server.ListenAndServe()
 	if err != http.ErrServerClosed {
 		log.Fatal(err)
 	}

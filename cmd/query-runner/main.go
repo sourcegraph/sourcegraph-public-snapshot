@@ -34,13 +34,7 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 
-	// Filter log output by level.
-	lvl, err := log15.LvlFromString(env.LogLevel)
-	if err == nil {
-		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
-	}
-
-	tracer.Init("query-runner")
+	tracer.Init()
 
 	go func() {
 		c := make(chan os.Signal, 1)

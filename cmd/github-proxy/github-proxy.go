@@ -45,12 +45,7 @@ func init() {
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
-	tracer.Init("github-proxy")
-
-	// Filter log output by level.
-	if lvl, err := log15.LvlFromString(env.LogLevel); err == nil {
-		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
-	}
+	tracer.Init()
 
 	go func() {
 		c := make(chan os.Signal, 1)

@@ -1,11 +1,10 @@
 package cli
 
 import (
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func printConfigValidation() {
@@ -16,11 +15,11 @@ func printConfigValidation() {
 	}
 
 	if len(messages) > 0 {
-		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-		fmt.Fprintln(os.Stderr, "⚠️ Warnings related to the Sourcegraph site configuration:")
+		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		log15.Warn("⚠️ Warnings related to the Sourcegraph site configuration:")
 		for _, verr := range messages {
-			fmt.Fprintf(os.Stderr, " - %s\n", verr)
+			log15.Warn(verr)
 		}
-		fmt.Fprintln(os.Stderr, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	}
 }

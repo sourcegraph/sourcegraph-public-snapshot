@@ -83,6 +83,10 @@ func Main() error {
 	log.SetFlags(0)
 	log.SetPrefix("")
 
+	// Filter trace logs
+	d, _ := time.ParseDuration(traceThreshold)
+	tracer.Init(tracer.Filter(loghandlers.Trace(strings.Fields(trace), d)))
+
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
 		case "help", "-h", "--help":
@@ -124,21 +128,6 @@ func Main() error {
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
 
-	logHandler := log15.StderrHandler
-
-	// Filter trace logs
-	d, _ := time.ParseDuration(traceThreshold)
-	logHandler = log15.FilterHandler(loghandlers.Trace(strings.Fields(trace), d), logHandler)
-
-	// Filter log output by level.
-	lvl, err := log15.LvlFromString(env.LogLevel)
-	if err != nil {
-		return err
-	}
-	log15.Root().SetHandler(log15.LvlFilterHandler(lvl, logHandler))
-
-	tracer.Init("frontend")
-
 	// Don't proceed if system requirements are missing, to avoid
 	// presenting users with a half-working experience.
 	if err := checkSysReqs(context.Background(), os.Stderr); err != nil {
@@ -151,6 +140,7 @@ func Main() error {
 
 	siteid.Init()
 
+	var err error
 	globals.AppURL, err = configureAppURL()
 	if err != nil {
 		return err

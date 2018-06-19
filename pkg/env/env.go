@@ -18,8 +18,9 @@ var locked = false
 var env = expvar.NewMap("env")
 
 var (
-	Version  = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
-	LogLevel = Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
+	Version   = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
+	LogLevel  = Get("SRC_LOG_LEVEL", "info", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
+	LogFormat = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed)")
 )
 
 var (

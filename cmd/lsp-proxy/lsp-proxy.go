@@ -45,12 +45,7 @@ func main() {
 }
 
 func run() error {
-	tracer.Init("lsp-proxy")
-
-	// Filter log output by level.
-	if lvl, err := log15.LvlFromString(env.LogLevel); err == nil {
-		log15.Root().SetHandler(log15.LvlFilterHandler(lvl, log15.StderrHandler))
-	}
+	tracer.Init()
 
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
