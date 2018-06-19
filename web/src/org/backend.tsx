@@ -4,7 +4,6 @@ import { refreshCurrentUser } from '../auth'
 import { gql, mutateGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
-import { settingsFragment } from '../user/settings/backend'
 import { createAggregateError } from '../util/errors'
 
 /**
@@ -120,27 +119,6 @@ export function updateOrganization(id: GQL.ID, displayName: string): Observable<
                 throw createAggregateError(errors)
             }
             eventLogger.log('OrgSettingsUpdated', eventData)
-            return
-        })
-    )
-}
-
-export function updateOrganizationSettings(id: GQL.ID, lastID: number | null, contents: string): Observable<void> {
-    return mutateGraphQL(
-        gql`
-            mutation UpdateOrganizationSettings($id: ID!, $lastID: Int, $contents: String!) {
-                updateOrganizationSettings(id: $id, lastID: $lastID, contents: $contents) {
-                    ...SettingsFields
-                }
-            }
-            ${settingsFragment}
-        `,
-        { id, lastID, contents }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
             return
         })
     )

@@ -1,9 +1,73 @@
 import { Observable } from 'rxjs'
 import { map, mergeMap, take } from 'rxjs/operators'
-import { GraphQLDocument, mutateGraphQL, MutationResult } from '../backend/graphql'
+import { gql, GraphQLDocument, mutateGraphQL, MutationResult, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { configurationCascade } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
+import { createAggregateError } from '../util/errors'
+
+export const settingsFragment = gql`
+    fragment SettingsFields on Settings {
+        id
+        configuration {
+            contents
+        }
+    }
+`
+
+/**
+ * Fetches the settings for the subject.
+ *
+ * @return Observable that emits the settings or `null` if no settings exist yet for the subject.
+ */
+export function fetchSettings(subject: GQL.ID): Observable<GQL.ISettings | null> {
+    return queryGraphQL(
+        gql`
+            query Settings($subject: ID!) {
+                configurationSubject(id: $subject) {
+                    latestSettings {
+                        ...SettingsFields
+                    }
+                }
+            }
+            ${settingsFragment}
+        `,
+        { subject }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.configurationSubject) {
+                throw createAggregateError(errors)
+            }
+            return data.configurationSubject.latestSettings
+        })
+    )
+}
+
+/**
+ * Overwrites the settings for the subject.
+ */
+export function overwriteSettings(subject: GQL.ID, lastID: number | null, contents: string): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
+                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                    overwriteConfiguration(contents: $contents) {
+                        empty {
+                            alwaysNil
+                        }
+                    }
+                }
+            }
+        `,
+        { subject, lastID, contents }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+        })
+    )
+}
 
 /**
  * Runs a GraphQL mutation that includes configuration mutations, populating the variables object

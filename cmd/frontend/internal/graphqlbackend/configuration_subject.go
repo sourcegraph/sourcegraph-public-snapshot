@@ -11,6 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
+func (r *schemaResolver) ConfigurationSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*configurationSubject, error) {
+	return configurationSubjectByID(ctx, args.ID)
+}
+
 type configurationSubject struct {
 	site *siteResolver
 	org  *orgResolver

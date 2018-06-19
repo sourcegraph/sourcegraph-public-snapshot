@@ -3,19 +3,22 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
-import { catchError, concat, distinctUntilChanged, map, mergeMap, switchMap, tap } from 'rxjs/operators'
-import * as GQL from '../../backend/graphqlschema'
-import { HeroPage } from '../../components/HeroPage'
-import { PageTitle } from '../../components/PageTitle'
-import { updateSettings } from '../../configuration/backend'
-import { fetchSettings } from '../../configuration/backend'
-import { SettingsFile } from '../../settings/SettingsFile'
-import { eventLogger } from '../../tracking/eventLogger'
-import { refreshConfiguration } from '../../user/settings/backend'
-import { ErrorLike, isErrorLike } from '../../util/errors'
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { catchError, concat, distinctUntilChanged, map, mergeMap, switchMap } from 'rxjs/operators'
+import * as GQL from '../backend/graphqlschema'
+import { HeroPage } from '../components/HeroPage'
+import { overwriteSettings } from '../configuration/backend'
+import { fetchSettings } from '../configuration/backend'
+import { SettingsFile } from '../settings/SettingsFile'
+import { refreshConfiguration } from '../user/settings/backend'
+import { ErrorLike, isErrorLike } from '../util/errors'
 
-interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
+interface Props extends Pick<RouteComponentProps<{}>, 'history' | 'location'> {
+    /** The subject whose configuration to edit. */
+    subject: Pick<GQL.IConfigurationSubject, 'id'>
+
+    /** Optional description to render above the editor. */
+    description?: React.ReactNode
+
     isLightTheme: boolean
 }
 
@@ -24,16 +27,19 @@ interface State {
     commitError?: Error
 }
 
-export class OrgSettingsConfigurationPage extends React.PureComponent<Props, State> {
+/**
+ * Displays a page where the configuration for a subject can be edited.
+ */
+export class SettingsConfigurationPage extends React.PureComponent<Props, State> {
     public state: State = {}
 
-    private orgChanges = new Subject<{ id: GQL.ID /* org ID */ }>()
+    private subjectChanges = new Subject<Pick<GQL.IConfigurationSubject, 'id'>>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         // Load settings.
         this.subscriptions.add(
-            this.orgChanges
+            this.subjectChanges
                 .pipe(
                     distinctUntilChanged(),
                     switchMap(({ id }) =>
@@ -43,22 +49,12 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
-        // Log view event.
-        this.subscriptions.add(
-            this.orgChanges
-                .pipe(
-                    distinctUntilChanged((a, b) => a.id === b.id),
-                    tap(() => eventLogger.logViewEvent('OrgSettingsConfiguration'))
-                )
-                .subscribe()
-        )
-
-        this.orgChanges.next(this.props.org)
+        this.subjectChanges.next(this.props.subject)
     }
 
     public componentWillReceiveProps(props: Props): void {
-        if (props.org !== this.props.org) {
-            this.orgChanges.next(props.org)
+        if (props.subject !== this.props.subject) {
+            this.subjectChanges.next(props.subject)
         }
     }
 
@@ -71,15 +67,13 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
             return null // loading
         }
         if (isErrorLike(this.state.settingsOrError)) {
-            // TODO!(sqs): show a 404 if org not found, instead of a generic error
             return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.settingsOrError.message)} />
         }
 
         return (
-            <div className="settings-file-container">
-                <PageTitle title="Organization configuration" />
+            <div>
                 <h2>Configuration</h2>
-                <p>Organization settings apply to all members. User settings override organization settings.</p>
+                {this.props.description}
                 <SettingsFile
                     settings={this.state.settingsOrError}
                     commitError={this.state.commitError}
@@ -94,12 +88,12 @@ export class OrgSettingsConfigurationPage extends React.PureComponent<Props, Sta
 
     private onDidCommit = (lastID: number | null, contents: string) => {
         this.setState({ commitError: undefined })
-        updateSettings(this.props.org.id, lastID, contents)
+        overwriteSettings(this.props.subject.id, lastID, contents)
             .pipe(mergeMap(() => refreshConfiguration().pipe(concat([null]))))
             .subscribe(
                 () => {
                     this.setState({ commitError: undefined })
-                    this.orgChanges.next({ id: this.props.org.id })
+                    this.subjectChanges.next({ id: this.props.subject.id }) // refresh
                 },
                 err => {
                     this.setState({ commitError: err })

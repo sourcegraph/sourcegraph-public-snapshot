@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-func TestConfigurationMutation_UpdateConfiguration(t *testing.T) {
+func TestConfigurationMutation_EditConfiguration(t *testing.T) {
 	resetMocks()
 	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
 		return &types.User{ID: 1}, nil
@@ -37,7 +37,7 @@ func TestConfigurationMutation_UpdateConfiguration(t *testing.T) {
 			Query: `
 				mutation($value: JSONValue) {
 					configurationMutation(input: {subject: "VXNlcjox", lastID: 1}) {
-						updateConfiguration(input: {property: "p", value: $value}) {
+						editConfiguration(property: "p", value: $value) {
 							empty {
 								alwaysNil
 							}
@@ -49,7 +49,51 @@ func TestConfigurationMutation_UpdateConfiguration(t *testing.T) {
 			ExpectedResult: `
 				{
 					"configurationMutation": {
-						"updateConfiguration": {
+						"editConfiguration": {
+							"empty": null
+						}
+					}
+				}
+			`,
+		},
+	})
+}
+
+func TestConfigurationMutation_OverwriteConfiguration(t *testing.T) {
+	resetMocks()
+	db.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
+		return &types.User{ID: 1}, nil
+	}
+	db.Mocks.Settings.GetLatest = func(context.Context, api.ConfigurationSubject) (*api.Settings, error) {
+		return &api.Settings{ID: 1, Contents: "{}"}, nil
+	}
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID int32, contents string) (*api.Settings, error) {
+		if want := `x`; contents != want {
+			t.Errorf("got %q, want %q", contents, want)
+		}
+		return &api.Settings{ID: 2, Contents: contents}, nil
+	}
+
+	gqltesting.RunTests(t, []*gqltesting.Test{
+		{
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+			Schema:  GraphQLSchema,
+			Query: `
+				mutation($contents: String!) {
+					configurationMutation(input: {subject: "VXNlcjox", lastID: 1}) {
+						overwriteConfiguration(contents: $contents) {
+							empty {
+								alwaysNil
+							}
+						}
+					}
+				}
+			`,
+			Variables: map[string]interface{}{"contents": "x"},
+			ExpectedResult: `
+				{
+					"configurationMutation": {
+						"overwriteConfiguration": {
 							"empty": null
 						}
 					}

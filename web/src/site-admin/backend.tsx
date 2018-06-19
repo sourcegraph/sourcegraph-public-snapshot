@@ -2,6 +2,7 @@ import { Observable, Subject } from 'rxjs'
 import { map, mergeMap, startWith, tap } from 'rxjs/operators'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
+import { settingsFragment } from '../configuration/backend'
 import { createAggregateError } from '../util/errors'
 import { resetAllMemoizationCaches } from '../util/memoize'
 
@@ -460,15 +461,6 @@ export function fetchSite(): Observable<GQL.ISite> {
         })
     )
 }
-
-const settingsFragment = gql`
-    fragment SettingsFields on Settings {
-        id
-        configuration {
-            contents
-        }
-    }
-`
 
 /**
  * Fetches global site settings.

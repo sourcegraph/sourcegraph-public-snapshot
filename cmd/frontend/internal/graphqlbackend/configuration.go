@@ -54,38 +54,38 @@ func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct
 	}, nil
 }
 
-type updateConfigurationInput struct {
-	Property string
-	Value    *jsonValue
-}
-
 type updateConfigurationPayload struct{}
 
 func (updateConfigurationPayload) Empty() *EmptyResponse { return nil }
 
-func (r *configurationMutationResolver) UpdateConfiguration(ctx context.Context, args *struct {
-	Input *updateConfigurationInput
+func (r *configurationMutationResolver) EditConfiguration(ctx context.Context, args *struct {
+	Property string
+	Value    *jsonValue
 }) (*updateConfigurationPayload, error) {
-	config, err := r.getCurrentConfig(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	remove := args.Input.Value == nil
+	remove := args.Value == nil
 	var value interface{}
-	if args.Input.Value != nil {
-		value = args.Input.Value.value
+	if args.Value != nil {
+		value = args.Value.value
 	}
-
-	keyPath := jsonx.PropertyPath(args.Input.Property)
-	_, err = r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
+	keyPath := jsonx.PropertyPath(args.Property)
+	_, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 		if remove {
-			edits, _, err = jsonx.ComputePropertyRemoval(config, keyPath, conf.FormatOptions)
+			edits, _, err = jsonx.ComputePropertyRemoval(oldConfig, keyPath, conf.FormatOptions)
 		} else {
-			edits, _, err = jsonx.ComputePropertyEdit(config, keyPath, value, nil, conf.FormatOptions)
+			edits, _, err = jsonx.ComputePropertyEdit(oldConfig, keyPath, value, nil, conf.FormatOptions)
 		}
 		return edits, err
 	})
+	if err != nil {
+		return nil, err
+	}
+	return &updateConfigurationPayload{}, nil
+}
+
+func (r *configurationMutationResolver) OverwriteConfiguration(ctx context.Context, args *struct {
+	Contents *string
+}) (*updateConfigurationPayload, error) {
+	_, err := settingsCreateIfUpToDate(ctx, r.subject, r.input.LastID, actor.FromContext(ctx).UID, *args.Contents)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (r *configurationMutationResolver) doUpdateConfiguration(ctx context.Contex
 	}
 
 	// Write mutated settings.
-	updatedSettings, err := db.Settings.CreateIfUpToDate(ctx, r.subject.toSubject(), r.input.LastID, actor.FromContext(ctx).UID, newConfig)
+	updatedSettings, err := settingsCreateIfUpToDate(ctx, r.subject, r.input.LastID, actor.FromContext(ctx).UID, newConfig)
 	if err != nil {
 		return 0, err
 	}

@@ -33,10 +33,6 @@ type Mutation {
     #
     # Only the user and site admins may perform this mutation.
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): EmptyResponse!
-    # Updates the user settings for the user with the given ID.
-    #
-    # Only the user and site admins may perform this mutation.
-    updateUserSettings(user: ID!, lastID: Int, contents: String!): Settings!
     # Update the global settings for all users.
     updateSiteSettings(lastID: Int, contents: String!): Settings!
     # Creates an organization. The caller is added as a member of the newly created organization.
@@ -47,17 +43,6 @@ type Mutation {
     #
     # Only site admins and any member of the organization may perform this mutation.
     updateOrganization(id: ID!, displayName: String): Org!
-    # Updates an organization's settings.
-    #
-    # Only site admins and any member of the organization may perform this mutation.
-    updateOrganizationSettings(
-        # The ID of the organization whose settings should be updated.
-        id: ID!
-        # The last known settings ID.
-        lastID: Int
-        # The contents of the settings.
-        contents: String!
-    ): Settings!
     # Deletes an organization. Only site admins may perform this mutation.
     deleteOrganization(organization: ID!): EmptyResponse
     # Adds a repository on a code host that is already present in the site configuration. The name (which may
@@ -319,9 +304,21 @@ input ConfigurationMutationGroupInput {
 # Grouping them lets us extract those common parameters to the
 # Mutation.configuration field.
 type ConfigurationMutation {
-    # Perform a raw configuration update. Use one of the other fields on this
-    # type instead if possible.
-    updateConfiguration(input: UpdateConfigurationInput!): UpdateConfigurationPayload
+    # Edit a single property in the configuration object.
+    editConfiguration(
+        # The name of the property to update.
+        #
+        # Inserting into an existing array is not yet supported.
+        property: String!
+        # The new JSON-encoded value to insert. If the field's value is not set, the property is removed. (This is
+        # different from the field's value being the JSON null value.)
+        #
+        # When the value is a non-primitive type, it must be specified using a GraphQL variable, not an inline literal,
+        # or else the GraphQL parser will return an error.
+        value: JSONValue
+    ): UpdateConfigurationPayload
+    # Overwrite the contents to the new contents provided.
+    overwriteConfiguration(contents: String): UpdateConfigurationPayload
     # Create a saved query.
     createSavedQuery(
         description: String!
@@ -342,20 +339,6 @@ type ConfigurationMutation {
     ): SavedQuery!
     # Delete the saved query with the given ID in the configuration.
     deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
-}
-
-# Input to ConfigurationMutation.updateConfiguration.
-input UpdateConfigurationInput {
-    # The name of the property to update.
-    #
-    # Inserting into an existing array is not yet supported.
-    property: String!
-    # The new JSON-encoded value to insert. If the field's value is not set, the property is removed. (This is
-    # different from the field's value being the JSON null value.)
-    #
-    # When the value is a non-primitive type, it must be specified using a GraphQL variable, not an inline literal,
-    # or else the GraphQL parser will return an error.
-    value: JSONValue
 }
 
 # The payload for ConfigurationMutation.updateConfiguration.
@@ -480,6 +463,8 @@ type Query {
         # Return organizations whose names or display names match the query.
         query: String
     ): OrgConnection!
+    # Looks up an instance of a type that implements ConfigurationSubject.
+    configurationSubject(id: ID!): ConfigurationSubject
     # The current site settings.
     currentSiteSettings: Settings
     # The configuration for the viewer.

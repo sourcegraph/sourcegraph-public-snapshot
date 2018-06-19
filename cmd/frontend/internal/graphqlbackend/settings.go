@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
@@ -48,66 +47,6 @@ func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
 	return &userResolver{o.user}, nil
 }
 
-func (*schemaResolver) UpdateUserSettings(ctx context.Context, args *struct {
-	User     graphql.ID
-	LastID   *int32
-	Contents string
-}) (*settingsResolver, error) {
-	userID, err := unmarshalUserID(args.User)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Only the user and site admins are allowed to update the user's settings.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
-		return nil, err
-	}
-
-	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{User: &userID}, args.LastID, actor.FromContext(ctx).UID, args.Contents)
-	if err != nil {
-		return nil, err
-	}
-
-	user, err := db.Users.GetByID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-	return &settingsResolver{
-		subject:  &configurationSubject{user: &userResolver{user: user}},
-		settings: settings,
-	}, nil
-}
-
-func (*schemaResolver) UpdateOrganizationSettings(ctx context.Context, args *struct {
-	ID       graphql.ID
-	LastID   *int32
-	Contents string
-}) (*settingsResolver, error) {
-	orgID, err := unmarshalOrgID(args.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check that the current user is a member of the org.
-	if err := backend.CheckOrgAccess(ctx, orgID); err != nil {
-		return nil, err
-	}
-
-	org, err := db.Orgs.GetByID(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-
-	settings, err := settingsCreateIfUpToDate(ctx, api.ConfigurationSubject{Org: &orgID}, args.LastID, actor.FromContext(ctx).UID, args.Contents)
-	if err != nil {
-		return nil, err
-	}
-	return &settingsResolver{
-		subject:  &configurationSubject{org: &orgResolver{org}},
-		settings: settings,
-	}, nil
-}
-
 func currentSiteSettings(ctx context.Context) (*settingsResolver, error) {
 	settings, err := db.Settings.GetLatest(ctx, api.ConfigurationSubject{})
 	if err != nil {
@@ -133,7 +72,7 @@ func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
 	}
 
 	settings, err := settingsCreateIfUpToDate(ctx,
-		api.ConfigurationSubject{Site: &singletonSiteResolver.gqlID},
+		&configurationSubject{site: singletonSiteResolver},
 		args.LastID, actor.FromContext(ctx).UID, args.Contents)
 	if err != nil {
 		return nil, err
@@ -146,31 +85,22 @@ func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
 
 // like db.Settings.CreateIfUpToDate, except it handles notifying the
 // query-runner if any saved queries have changed.
-func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
-	subjectID, err := configurationSubjectID(subject)
-	if err != nil {
-		return nil, err
-	}
-	configSubject, err := configurationSubjectByID(ctx, subjectID)
-	if err != nil {
-		return nil, err
-	}
-
+func settingsCreateIfUpToDate(ctx context.Context, subject *configurationSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
 	// Read current saved queries.
 	var oldSavedQueries api.PartialConfigSavedQueries
-	if err := configSubject.readConfiguration(ctx, &oldSavedQueries); err != nil {
+	if err := subject.readConfiguration(ctx, &oldSavedQueries); err != nil {
 		return nil, err
 	}
 
 	// Update settings.
-	latestSettings, err := db.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
+	latestSettings, err := db.Settings.CreateIfUpToDate(ctx, subject.toSubject(), lastID, authorUserID, contents)
 	if err != nil {
 		return nil, err
 	}
 
 	// Read new saved queries.
 	var newSavedQueries api.PartialConfigSavedQueries
-	if err := configSubject.readConfiguration(ctx, &newSavedQueries); err != nil {
+	if err := subject.readConfiguration(ctx, &newSavedQueries); err != nil {
 		return nil, err
 	}
 
@@ -189,7 +119,7 @@ func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubj
 		}
 	}
 	if createdOrUpdated {
-		go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), subject, newSavedQueries, false)
+		go queryrunnerapi.Client.SavedQueryWasCreatedOrUpdated(context.Background(), subject.toSubject(), newSavedQueries, false)
 	}
 	for i, deletedQuery := range oldSavedQueries.SavedQueries {
 		if i <= len(newSavedQueries.SavedQueries) {
@@ -197,7 +127,7 @@ func settingsCreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubj
 			continue
 		}
 		// Deleted
-		spec := api.SavedQueryIDSpec{Subject: subject, Key: deletedQuery.Key}
+		spec := api.SavedQueryIDSpec{Subject: subject.toSubject(), Key: deletedQuery.Key}
 		go queryrunnerapi.Client.SavedQueryWasDeleted(context.Background(), spec, false)
 	}
 

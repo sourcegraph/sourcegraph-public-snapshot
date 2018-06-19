@@ -1,15 +1,16 @@
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { merge, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
+import { Subject, Subscription } from 'rxjs'
+import { catchError, concat, distinctUntilChanged, map, mergeMap, switchMap } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
+import { fetchSettings, updateSettings } from '../../configuration/backend'
 import { SettingsFile } from '../../settings/SettingsFile'
 import { eventLogger } from '../../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../../util/errors'
+import { ErrorLike, isErrorLike } from '../../util/errors'
 import { UserAreaPageProps } from '../area/UserArea'
-import { fetchUserSettings, updateUserSettings } from './backend'
+import { refreshConfiguration } from './backend'
 
 interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     isLightTheme: boolean
@@ -26,40 +27,31 @@ interface State {
 export class UserSettingsConfigurationPage extends React.Component<Props, State> {
     public state: State = {}
 
-    private componentUpdates = new Subject<Props>()
+    private userChanges = new Subject<{ id: GQL.ID /* user ID */ }>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSettingsConfiguration')
 
-        const userChanges = this.componentUpdates.pipe(
-            distinctUntilChanged((a, b) => a.user.id === b.user.id),
-            map(({ user }) => user)
-        )
-
-        // Fetch the user settings.
+        // Load settings.
         this.subscriptions.add(
-            userChanges
+            this.userChanges
                 .pipe(
-                    tap(() => this.setState({ commitError: undefined })),
-                    switchMap(user =>
-                        merge(
-                            of({ settingsOrError: undefined }),
-                            fetchUserSettings(user.id).pipe(
-                                catchError(error => [asError(error)]),
-                                map(c => ({ settingsOrError: c } as Pick<State, 'settingsOrError'>))
-                            )
-                        )
+                    distinctUntilChanged(),
+                    switchMap(({ id }) =>
+                        fetchSettings(id).pipe(catchError(error => [error]), map(c => ({ settingsOrError: c })))
                     )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
-        this.componentUpdates.next(this.props)
+        this.userChanges.next(this.props.user)
     }
 
-    public componentWillReceiveProps(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public componentWillReceiveProps(props: Props): void {
+        if (props.user !== this.props.user) {
+            this.userChanges.next(props.user)
+        }
     }
 
     public componentWillUnmount(): void {
@@ -92,17 +84,18 @@ export class UserSettingsConfigurationPage extends React.Component<Props, State>
 
     private onDidCommit = (lastID: number | null, contents: string): void => {
         this.setState({ commitError: undefined })
-        updateUserSettings(this.props.user.id, lastID, contents).subscribe(
-            settings =>
-                this.setState({
-                    commitError: undefined,
-                    settingsOrError: settings,
-                }),
-            error => {
-                this.setState({ commitError: error })
-                console.error(error)
-            }
-        )
+        updateSettings(this.props.user.id, lastID, contents)
+            .pipe(mergeMap(() => refreshConfiguration().pipe(concat([null]))))
+            .subscribe(
+                () => {
+                    this.setState({ commitError: undefined })
+                    this.userChanges.next({ id: this.props.user.id })
+                },
+                error => {
+                    this.setState({ commitError: error })
+                    console.error(error)
+                }
+            )
     }
 
     private onDidDiscard = (): void => {
