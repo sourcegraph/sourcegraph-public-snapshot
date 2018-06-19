@@ -66,12 +66,6 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 		}
 	}
 
-	for _, ghCfg := range cfg.Github {
-		if ghCfg.PreemptivelyClone {
-			invalid(`github[].preemptivelyClone is deprecated; use initialRepositoryEnablement instead`)
-		}
-	}
-
 	for _, c := range cfg.Gitlab {
 		if strings.Contains(c.Url, "example.com") {
 			invalid(fmt.Sprintf(`invalid GitLab URL detected: %s (did you forget to remove "example.com"?)`, c.Url))
