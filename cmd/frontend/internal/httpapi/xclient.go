@@ -76,10 +76,6 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 			return err
 		}
 		c.mode = init.InitializationOptions.Mode
-		if c.mode == "" {
-			// DEPRECATED: Use old Mode field if the new one is not set.
-			c.mode = init.Mode
-		}
 		var resultRaw json.RawMessage
 		if err := c.Client.Call(ctx, method, params, &resultRaw, opt...); err != nil {
 			return err

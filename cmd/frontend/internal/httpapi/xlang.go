@@ -154,16 +154,6 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	if err := json.Unmarshal(*reqs[0].Params, &initParams); err != nil {
 		return fmt.Errorf("invalid jsonrpc2 initialize params: %s", err)
 	}
-	{
-		// DEPRECATED: Be compatible with both
-		// pre-Mode-field-migration LSP proxy servers and
-		// post-migration LSP proxy servers.
-		if initParams.InitializationOptions.Mode == "" {
-			initParams.InitializationOptions.Mode = initParams.Mode
-		} else {
-			initParams.Mode = initParams.InitializationOptions.Mode
-		}
-	}
 	span.SetTag("RootURI", initParams.RootURI)
 	if initParams.RootURI == "" {
 		return errors.New("invalid empty LSP root URI in initialize request")
