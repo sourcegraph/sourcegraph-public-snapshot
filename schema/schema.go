@@ -238,7 +238,6 @@ type SiteConfiguration struct {
 	ExecuteGradleOriginalRootPaths    string                       `json:"executeGradleOriginalRootPaths,omitempty"`
 	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
 	GitMaxConcurrentClones            int                          `json:"gitMaxConcurrentClones,omitempty"`
-	GitOriginMap                      string                       `json:"gitOriginMap,omitempty"`
 	Github                            []*GitHubConnection          `json:"github,omitempty"`
 	GithubClientID                    string                       `json:"githubClientID,omitempty"`
 	GithubClientSecret                string                       `json:"githubClientSecret,omitempty"`

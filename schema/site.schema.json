@@ -206,11 +206,6 @@
       "type": "integer",
       "default": 5
     },
-    "gitOriginMap": {
-      "description":
-        "Space separated list of mappings from repo name prefix to origin url, for example \"github.com/!https://github.com/%.git\". DEPRECATED: Use code host configuration or repos.list (for adding repositories by Git URL) instead; see https://about.sourcegraph.com/docs/config/repositories.",
-      "type": "string"
-    },
     "repos.list": {
       "description": "JSON array of configuration for external repositories.",
       "type": "array",

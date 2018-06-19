@@ -26,7 +26,7 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 
 func needsRepositoryConfiguration() bool {
 	cfg := conf.Get()
-	return len(cfg.Github) == 0 && len(cfg.Gitlab) == 0 && len(cfg.ReposList) == 0 && len(cfg.AwsCodeCommit) == 0 && len(cfg.Gitolite) == 0 && cfg.GitOriginMap == "" && len(cfg.BitbucketServer) == 0
+	return len(cfg.Github) == 0 && len(cfg.Gitlab) == 0 && len(cfg.ReposList) == 0 && len(cfg.AwsCodeCommit) == 0 && len(cfg.Gitolite) == 0 && len(cfg.BitbucketServer) == 0
 }
 
 func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) {

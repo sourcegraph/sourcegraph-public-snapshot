@@ -78,12 +78,6 @@ func (o *originMapsT) setup() error {
 	o.gitoliteHostMap = nil
 	o.reposListOriginMap = make(map[string]string)
 
-	var err error
-	o.originMap, err = parse(conf.Get().GitOriginMap, 1)
-	if err != nil {
-		return err
-	}
-
 	for _, gitoliteConf := range conf.Get().Gitolite {
 		o.gitoliteHostMap = append(o.gitoliteHostMap, prefixAndOrgin{
 			Prefix: gitoliteConf.Prefix,

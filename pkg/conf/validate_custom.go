@@ -78,10 +78,6 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 		}
 	}
 
-	if cfg.GitOriginMap != "" {
-		invalid(`gitOriginMap is deprecated; instead use code host configuration such as "github", "gitlab", "repos.list", documented at https://about.sourcegraph.com/docs/config/repositories`)
-	}
-
 	for _, f := range contributedValidators {
 		problems = append(problems, f(cfg)...)
 	}
