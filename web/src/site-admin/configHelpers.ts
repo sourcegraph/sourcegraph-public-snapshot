@@ -158,13 +158,6 @@ export const siteConfigActions: EditorAction[] = [
     { id: 'sourcegraph.site.addSAMLAUthProvider', label: 'Add SAML user auth', run: addSAMLAuthProvider },
 ]
 
-/**
- * Indicates whether the site config has set the `disableTelemetry` option.
- */
-export function getDisableTelemetryUsed(text: string): boolean {
-    return getProperty(text, 'disableTelemetry')
-}
-
 export function getUpdateChannel(text: string): string {
     const channel = getProperty(text, 'update.channel')
     return channel || 'release'

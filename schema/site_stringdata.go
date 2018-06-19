@@ -35,11 +35,6 @@ const SiteSchemaJSON = `{
       "description": "Set to ` + "`" + `true` + "`" + ` to not include symbol results if no ` + "`" + `type:` + "`" + ` filter was given",
       "type": "boolean"
     },
-    "disableTelemetry": {
-      "description":
-        "(Deprecated: event-level telemetry is now always disabled) Prevent event-level usage data from being sent back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data).",
-      "type": "boolean"
-    },
     "disableBuiltInSearches": {
       "description": "Whether built-in searches should be hidden on the Searches page.",
       "type": "boolean"

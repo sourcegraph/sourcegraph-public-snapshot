@@ -233,7 +233,6 @@ type SiteConfiguration struct {
 	DisableBrowserExtension           bool                         `json:"disableBrowserExtension,omitempty"`
 	DisableBuiltInSearches            bool                         `json:"disableBuiltInSearches,omitempty"`
 	DisablePublicRepoRedirects        bool                         `json:"disablePublicRepoRedirects,omitempty"`
-	DisableTelemetry                  bool                         `json:"disableTelemetry,omitempty"`
 	DontIncludeSymbolResultsByDefault bool                         `json:"dontIncludeSymbolResultsByDefault,omitempty"`
 	EmailAddress                      string                       `json:"email.address,omitempty"`
 	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`

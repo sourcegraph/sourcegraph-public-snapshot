@@ -4,11 +4,10 @@ import { Subscription } from 'rxjs'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite } from './backend'
-import { getDisableTelemetryUsed, getUpdateChannel } from './configHelpers'
+import { getUpdateChannel } from './configHelpers'
 
 interface State {
     channel?: string | null
-    disableTelemetryUsed?: boolean
     error?: string
 }
 
@@ -28,7 +27,6 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
                 site =>
                     this.setState({
                         channel: getUpdateChannel(site.configuration.effectiveContents),
-                        disableTelemetryUsed: getDisableTelemetryUsed(site.configuration.effectiveContents),
                         error: undefined,
                     }),
                 error => this.setState({ error: error.message })
@@ -48,12 +46,6 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
                 <PageTitle title="Pings - Admin" />
                 <h2>Pings</h2>
                 {this.state.error && <p className="alert alert-danger">Error: {upperFirst(this.state.error)}</p>}
-                {this.state.disableTelemetryUsed && (
-                    <p className="alert alert-warning">
-                        Event-level telemetry was completely removed from Sourcegraph in May 2018. You can remove{' '}
-                        <code>"disableTelemetry"</code> from your site configuration.
-                    </p>
-                )}
                 <p>
                     Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It
                     sends only the high-level data below. It never sends code, repository names, usernames, or any other
