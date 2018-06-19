@@ -267,7 +267,6 @@ var doNotRequireRestart = []string{
 	"httpStrictTransportSecurity",
 	"httpToHttpsRedirect",
 	"disableBuiltInSearches",
-	"disableExampleSearches",
 	"email.smtp",
 	"email.address",
 	"disableAutoGitUpdates",

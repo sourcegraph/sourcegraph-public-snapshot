@@ -78,14 +78,6 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 		}
 	}
 
-	if cfg.DisableExampleSearches {
-		if cfg.DisableBuiltInSearches {
-			invalid(`disableExampleSearches was renamed to disableBuiltInSearches, which is set; you can safely remove the disableExampleSearches setting`)
-		} else {
-			invalid(`disableExampleSearches was renamed to disableBuiltInSearches; use that instead`)
-		}
-	}
-
 	if cfg.GithubEnterpriseAccessToken != "" || cfg.GithubEnterpriseCert != "" || cfg.GithubEnterpriseURL != "" {
 		invalid(`githubEnterprise{AccessToken,Cert,URL} are deprecated; instead use {..., "github": [{"url": "https://github-enterprise.example.com", "token": "..."}], ...}`)
 	}

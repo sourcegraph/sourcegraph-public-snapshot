@@ -232,7 +232,6 @@ type SiteConfiguration struct {
 	DisableAutoGitUpdates             bool                         `json:"disableAutoGitUpdates,omitempty"`
 	DisableBrowserExtension           bool                         `json:"disableBrowserExtension,omitempty"`
 	DisableBuiltInSearches            bool                         `json:"disableBuiltInSearches,omitempty"`
-	DisableExampleSearches            bool                         `json:"disableExampleSearches,omitempty"`
 	DisablePublicRepoRedirects        bool                         `json:"disablePublicRepoRedirects,omitempty"`
 	DisableTelemetry                  bool                         `json:"disableTelemetry,omitempty"`
 	DontIncludeSymbolResultsByDefault bool                         `json:"dontIncludeSymbolResultsByDefault,omitempty"`

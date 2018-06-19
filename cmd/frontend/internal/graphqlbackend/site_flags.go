@@ -78,7 +78,7 @@ func (*siteResolver) ConfigurationNotice(ctx context.Context) bool {
 }
 
 func (*siteResolver) DisableBuiltInSearches() bool {
-	return conf.Get().DisableExampleSearches || conf.Get().DisableBuiltInSearches
+	return conf.Get().DisableBuiltInSearches
 }
 
 func (*siteResolver) SendsEmailVerificationEmails() bool { return conf.EmailVerificationRequired() }

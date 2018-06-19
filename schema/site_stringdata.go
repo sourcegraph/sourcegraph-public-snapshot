@@ -40,11 +40,6 @@ const SiteSchemaJSON = `{
         "(Deprecated: event-level telemetry is now always disabled) Prevent event-level usage data from being sent back to Sourcegraph (no private code is sent and URLs are sanitized to prevent leakage of private data).",
       "type": "boolean"
     },
-    "disableExampleSearches": {
-      "description":
-        "(Deprecated: use disableBuiltInSearches) Whether built-in searches should be hidden on the Searches page.",
-      "type": "boolean"
-    },
     "disableBuiltInSearches": {
       "description": "Whether built-in searches should be hidden on the Searches page.",
       "type": "boolean"
