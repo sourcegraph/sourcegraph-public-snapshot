@@ -12,10 +12,6 @@ func TestValidateCustom(t *testing.T) {
 		input        schema.SiteConfiguration
 		wantProblems []string
 	}{
-		"deprecated saml*": {
-			input:        schema.SiteConfiguration{AppURL: "x", SamlSPKey: "x"},
-			wantProblems: []string{"must set auth.provider", "saml* properties are deprecated"},
-		},
 		"duplicates": {
 			input: schema.SiteConfiguration{
 				AppURL:               "x",

@@ -12,10 +12,6 @@ func TestValidateCustom(t *testing.T) {
 		input        schema.SiteConfiguration
 		wantProblems []string
 	}{
-		"deprecated oidc*": {
-			input:        schema.SiteConfiguration{AppURL: "x", OidcClientID: "x"},
-			wantProblems: []string{"must set auth.provider", "oidc* properties are deprecated"},
-		},
 		"duplicates": {
 			input: schema.SiteConfiguration{
 				AppURL:               "x",

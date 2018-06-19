@@ -82,16 +82,9 @@ func validateConfig(c *schema.SiteConfiguration) (problems []string) {
 		}
 	}
 
-	hasOldSAML := c.SamlIDProviderMetadataURL != "" || c.SamlSPCert != "" || c.SamlSPKey != ""
 	hasSingularSAML := c.AuthSaml != nil
-	if hasOldSAML {
-		problems = append(problems, `saml* properties are deprecated; use auth provider "saml" instead`)
-	}
 	if c.AuthProvider == "saml" && !hasSingularSAML {
 		problems = append(problems, `auth.saml must be configured when auth.provider == "saml"`)
-	}
-	if hasOldSAML && c.AuthProvider != "saml" {
-		problems = append(problems, `must set auth.provider == "saml" for saml* config to take effect (also, saml* config is deprecated; see other message to that effect)`)
 	}
 	if hasSingularSAML && c.AuthProvider != "saml" {
 		problems = append(problems, `must set auth.provider == "saml" for auth.saml config to take effect`)

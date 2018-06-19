@@ -321,10 +321,6 @@ type SiteConfiguration struct {
 	Log                               *Log                         `json:"log,omitempty"`
 	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
 	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
-	OidcClientID                      string                       `json:"oidcClientID,omitempty"`
-	OidcClientSecret                  string                       `json:"oidcClientSecret,omitempty"`
-	OidcEmailDomain                   string                       `json:"oidcEmailDomain,omitempty"`
-	OidcProvider                      string                       `json:"oidcProvider,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
 	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
 	Platform                          *Platform                    `json:"platform,omitempty"`
@@ -335,9 +331,6 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
 	ReposList                         []*Repository                `json:"repos.list,omitempty"`
 	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
-	SamlIDProviderMetadataURL         string                       `json:"samlIDProviderMetadataURL,omitempty"`
-	SamlSPCert                        string                       `json:"samlSPCert,omitempty"`
-	SamlSPKey                         string                       `json:"samlSPKey,omitempty"`
 	SearchScopes                      []*SiteConfigSearchScope     `json:"searchScopes,omitempty"`
 	Settings                          *SiteConfigSettings          `json:"settings,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`

@@ -67,16 +67,9 @@ func validateConfig(c *schema.SiteConfiguration) (problems []string) {
 		}
 	}
 
-	hasOldOIDC := c.OidcProvider != "" || c.OidcClientID != "" || c.OidcClientSecret != "" || c.OidcEmailDomain != ""
 	hasSingularOIDC := c.AuthOpenIDConnect != nil
-	if hasOldOIDC {
-		problems = append(problems, `oidc* properties are deprecated; use auth provider "openidconnect" instead`)
-	}
 	if c.AuthProvider == "openidconnect" && !hasSingularOIDC {
 		problems = append(problems, `auth.openIDConnect must be configured when auth.provider == "openidconnect"`)
-	}
-	if hasOldOIDC && c.AuthProvider != "openidconnect" {
-		problems = append(problems, `must set auth.provider == "openidconnect" for oidc* config to take effect (also, oidc* config is deprecated; see other message to that effect)`)
 	}
 	if hasSingularOIDC && c.AuthProvider != "openidconnect" {
 		problems = append(problems, `must set auth.provider == "openidconnect" for auth.openIDConnect config to take effect`)

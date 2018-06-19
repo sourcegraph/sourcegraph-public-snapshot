@@ -56,7 +56,7 @@ func authProvider(c *schema.SiteConfiguration) schema.AuthProviders {
 	case c.AuthProvider != "":
 		return authProviderSingular(c)
 	default:
-		return authProviderLegacy(c)
+		return schema.AuthProviders{} // none set (this forbids all access)
 	}
 }
 
@@ -93,29 +93,6 @@ func authProviderSingular(c *schema.SiteConfiguration) schema.AuthProviders {
 		// 🚨 SECURITY: This means "forbid all access". See the func AuthProviders SECURITY note.
 		return schema.AuthProviders{}
 	}
-}
-
-// authProviderLegacy returns an auth provider config from the deprecated, legacy `oidc*` and
-// `saml*` properties.
-func authProviderLegacy(c *schema.SiteConfiguration) schema.AuthProviders {
-	if c.OidcClientID != "" || c.OidcClientSecret != "" || c.OidcProvider != "" || c.OidcEmailDomain != "" {
-		return schema.AuthProviders{Openidconnect: &schema.OpenIDConnectAuthProvider{
-			Type:               "openidconnect",
-			ClientID:           c.OidcClientID,
-			ClientSecret:       c.OidcClientSecret,
-			Issuer:             c.OidcProvider,
-			RequireEmailDomain: c.OidcEmailDomain,
-		}}
-	}
-	if c.SamlIDProviderMetadataURL != "" || c.SamlSPCert != "" || c.SamlSPKey != "" {
-		return schema.AuthProviders{Saml: &schema.SAMLAuthProvider{
-			Type: "saml",
-			IdentityProviderMetadataURL: c.SamlIDProviderMetadataURL,
-			ServiceProviderCertificate:  c.SamlSPCert,
-			ServiceProviderPrivateKey:   c.SamlSPKey,
-		}}
-	}
-	return schema.AuthProviders{}
 }
 
 // AuthPublic reports whether the site is public. Currently only the builtin auth provider allows
