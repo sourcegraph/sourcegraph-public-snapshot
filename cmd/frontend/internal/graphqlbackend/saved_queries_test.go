@@ -20,6 +20,9 @@ func TestSavedQueries(t *testing.T) {
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 
 	defer resetMocks()
+	db.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+		return &types.User{ID: uid}, nil
+	}
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
 		return &api.Settings{Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}

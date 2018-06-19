@@ -3,11 +3,11 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -15,14 +15,19 @@ func (schemaResolver) Configuration() *configurationCascadeResolver {
 	return &configurationCascadeResolver{}
 }
 
-// configurationCasecadeResolver resolves settings from multiple sources.
-// When there is overlap between configuration values they will be merged in the
-// following cascading order (first is lowest-priority):
-// 1. Global site server configuration
+// configurationCascadeResolver resolves settings from multiple sources.  When there is overlap
+// between configuration values they will be merged in the following cascading order (first is
+// lowest-priority):
+//
+// 1. Global site configuration's "settings" field
 // 2. Global site settings
 // 3. Organization settings
 // 4. Current user settings
-type configurationCascadeResolver struct{}
+type configurationCascadeResolver struct {
+	// At most 1 of these fields is set.
+	unauthenticatedActor bool
+	subject              *configurationSubject
+}
 
 func (r *configurationCascadeResolver) Defaults() *configurationResolver {
 	return &configurationResolver{
@@ -41,23 +46,20 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 	}
 
 	subjects := []*configurationSubject{
-		{site: singletonSiteResolver},
+		{site: singletonSiteResolver}, // site config "settings" field
+		{}, // global settings
 	}
 
-	// Apply global site settings
-	subjects = append(subjects, &configurationSubject{})
+	if r.unauthenticatedActor {
+		return subjects, nil
+	}
 
-	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
+	switch {
+	case r.subject.org != nil:
+		subjects = append(subjects, r.subject)
 
-		user, err := currentUser(ctx)
-		if err != nil {
-			return nil, err
-		}
-		if user == nil {
-			return nil, nil // actor might be invalid or refer to since-deleted user
-		}
-
-		orgs, err := db.Orgs.GetByUserID(ctx, user.user.ID)
+	case r.subject.user != nil:
+		orgs, err := db.Orgs.GetByUserID(ctx, r.subject.user.user.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -69,12 +71,23 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 		for _, org := range orgs {
 			subjects = append(subjects, &configurationSubject{org: &orgResolver{org}})
 		}
-
 		// Apply the user's own configuration last (it has highest priority).
-		subjects = append(subjects, &configurationSubject{user: user})
+		subjects = append(subjects, r.subject)
+
+	default:
+		return nil, errors.New("unknown configuration subject")
 	}
 
 	return subjects, nil
+}
+
+// viewerMergedConfiguration returns the merged configuration for the viewer.
+func viewerMergedConfiguration(ctx context.Context) (*configurationResolver, error) {
+	cascade, err := (&schemaResolver{}).ViewerConfiguration(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return cascade.Merged(ctx)
 }
 
 func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurationResolver, error) {
@@ -157,4 +170,15 @@ func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
 		return out, nil
 	}
 	return out, fmt.Errorf("errors merging configurations: %q", errs)
+}
+
+func (schemaResolver) ViewerConfiguration(ctx context.Context) (*configurationCascadeResolver, error) {
+	user, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return &configurationCascadeResolver{unauthenticatedActor: true}, nil
+	}
+	return &configurationCascadeResolver{subject: &configurationSubject{user: user}}, nil
 }

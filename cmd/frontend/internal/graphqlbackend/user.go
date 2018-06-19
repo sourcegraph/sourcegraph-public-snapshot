@@ -121,6 +121,10 @@ func (r *userResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	return &settingsResolver{&configurationSubject{user: r}, settings, nil}, nil
 }
 
+func (r *userResolver) ConfigurationCascade() *configurationCascadeResolver {
+	return &configurationCascadeResolver{subject: &configurationSubject{user: r}}
+}
+
 func (r *userResolver) SiteAdmin(ctx context.Context) (bool, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to determine if the user is a site admin.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {

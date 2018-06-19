@@ -114,7 +114,11 @@ func toSavedQueryResolver(index int, subject *configurationSubject, entry api.Co
 }
 
 func (r *schemaResolver) SavedQueries(ctx context.Context) ([]*savedQueryResolver, error) {
-	configSubjects, err := r.Configuration().Subjects(ctx)
+	config, err := r.ViewerConfiguration(ctx)
+	if err != nil {
+		return nil, err
+	}
+	configSubjects, err := config.Subjects(ctx)
 	if err != nil {
 		return nil, err
 	}

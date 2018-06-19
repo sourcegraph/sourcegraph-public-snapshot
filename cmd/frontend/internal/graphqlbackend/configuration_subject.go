@@ -143,6 +143,19 @@ func (s *configurationSubject) ViewerCanAdminister(ctx context.Context) (bool, e
 	}
 }
 
+func (s *configurationSubject) ConfigurationCascade() (*configurationCascadeResolver, error) {
+	switch {
+	case s.site != nil:
+		return s.site.ConfigurationCascade(), nil
+	case s.org != nil:
+		return s.org.ConfigurationCascade(), nil
+	case s.user != nil:
+		return s.user.ConfigurationCascade(), nil
+	default:
+		return nil, errors.New("unknown configuration subject")
+	}
+}
+
 // readConfiguration unmarshals s's latest settings into v.
 func (s *configurationSubject) readConfiguration(ctx context.Context, v interface{}) error {
 	settings, err := s.LatestSettings(ctx)

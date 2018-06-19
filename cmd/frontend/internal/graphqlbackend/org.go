@@ -125,6 +125,10 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	return &settingsResolver{&configurationSubject{org: o}, settings, nil}, nil
 }
 
+func (o *orgResolver) ConfigurationCascade() *configurationCascadeResolver {
+	return &configurationCascadeResolver{subject: &configurationSubject{org: o}}
+}
+
 func (o *orgResolver) Tags(ctx context.Context) ([]*organizationTagResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins may access the tags.
 	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {

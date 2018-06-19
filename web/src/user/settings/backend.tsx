@@ -15,7 +15,7 @@ export function refreshConfiguration(): Observable<never> {
     return authRequired.pipe(
         take(1),
         filter(authRequired => !authRequired),
-        mergeMap(() => fetchConfiguration()),
+        mergeMap(() => fetchViewerConfiguration()),
         tap(result => configurationCascade.next(result)),
         mergeMap(() => [])
     )
@@ -51,26 +51,26 @@ const configurationCascadeFragment = gql`
 `
 
 /**
- * Fetches the configuration from the server. Callers should use refreshConfiguration
- * instead of calling this function, to ensure that the result is propagated consistently
- * throughout the app instead of only being returned to the caller.
+ * Fetches the viewer's configuration from the server. Callers should use refreshConfiguration instead of calling
+ * this function, to ensure that the result is propagated consistently throughout the app instead of only being
+ * returned to the caller.
  *
  * @return Observable that emits the configuration
  */
-function fetchConfiguration(): Observable<GQL.IConfigurationCascade> {
+function fetchViewerConfiguration(): Observable<GQL.IConfigurationCascade> {
     return queryGraphQL(gql`
         query Configuration {
-            configuration {
+            viewerConfiguration {
                 ...ConfigurationCascadeFields
             }
         }
         ${configurationCascadeFragment}
     `).pipe(
         map(({ data, errors }) => {
-            if (!data || !data.configuration) {
+            if (!data || !data.viewerConfiguration) {
                 throw createAggregateError(errors)
             }
-            return data.configuration
+            return data.viewerConfiguration
         })
     )
 }

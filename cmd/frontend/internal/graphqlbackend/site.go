@@ -98,6 +98,10 @@ func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
 	}, nil
 }
 
+func (r *siteResolver) ConfigurationCascade() *configurationCascadeResolver {
+	return &configurationCascadeResolver{subject: &configurationSubject{site: r}}
+}
+
 func (r *siteResolver) SettingsURL() string { return "/site-admin/global-settings" }
 
 func (r *siteResolver) CanReloadSite(ctx context.Context) bool {

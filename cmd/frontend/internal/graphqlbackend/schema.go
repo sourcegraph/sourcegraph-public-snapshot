@@ -475,8 +475,8 @@ type Query {
     ): OrgConnection!
     # The current site settings.
     currentSiteSettings: Settings
-    # The configuration.
-    configuration: ConfigurationCascade!
+    # The configuration for the viewer.
+    viewerConfiguration: ConfigurationCascade!
     # Runs a search.
     search(
         # The search query (such as "foo" or "repo:myrepo foo").
@@ -1744,6 +1744,9 @@ type User implements Node, ConfigurationSubject {
     #
     # Only the user and site admins can access this field.
     latestSettings: Settings
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
+    configurationCascade: ConfigurationCascade!
     # The organizations that this user is a member of.
     organizations: OrgConnection!
     # This user's organization memberships.
@@ -1950,6 +1953,9 @@ type Org implements Node, ConfigurationSubject {
     #
     # Only organization members and site admins can access this field.
     latestSettings: Settings
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
+    configurationCascade: ConfigurationCascade!
     # The internal tags associated with the organization. This is an internal site management feature.
     #
     # Only organization members and site admins can access this field.
@@ -2122,6 +2128,9 @@ type Site implements ConfigurationSubject {
     # The site's latest site-wide settings (which are the lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
+    configurationCascade: ConfigurationCascade!
     # The URL to the site's settings.
     settingsURL: String!
     # Whether the viewer can reload the site (with the reloadSite mutation).
@@ -2245,6 +2254,9 @@ interface ConfigurationSubject {
     settingsURL: String!
     # Whether the viewer can modify the subject's configuration.
     viewerCanAdminister: Boolean!
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
+    configurationCascade: ConfigurationCascade!
 }
 
 # The configurations for all of the relevant configuration subjects, plus the merged

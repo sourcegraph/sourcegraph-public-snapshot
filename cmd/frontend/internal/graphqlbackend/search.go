@@ -127,7 +127,7 @@ func resolveRepoGroups(ctx context.Context) (map[string][]*types.Repo, error) {
 	groups := map[string][]*types.Repo{}
 
 	// Repo groups can be defined in the search.repoGroups settings field.
-	merged, err := (&configurationCascadeResolver{}).Merged(ctx)
+	merged, err := viewerMergedConfiguration(ctx)
 	if err != nil {
 		return nil, err
 	}
