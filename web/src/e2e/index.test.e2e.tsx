@@ -437,8 +437,8 @@ describe('e2e test suite', () => {
                 await page.click('.repo-header__rev')
                 // Click "Tags" tab
                 await page.click('.repo-header__rev .tab-bar__tab:nth-child(2)')
-                await page.waitForSelector('.git-ref-node a[href*="0.1.0"]')
-                await page.click('.git-ref-node a[href*="0.1.0"]')
+                await page.waitForSelector('a.git-ref-node[href*="0.1.0"]')
+                await page.click('a.git-ref-node[href*="0.1.0"]')
                 await assertWindowLocation('/github.com/sourcegraph/checkup@v0.1.0/-/blob/s3.go')
             })
         })
