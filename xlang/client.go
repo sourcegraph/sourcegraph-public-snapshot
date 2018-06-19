@@ -152,6 +152,7 @@ func UnsafeOneShotClientRequest(ctx context.Context, mode string, rootURI lsp.Do
 			RootURI: rootURI,
 		},
 		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: mode},
+		Mode: mode,
 	}, nil)
 	if err != nil {
 		return errors.Wrap(err, "LSP initialize")
@@ -213,6 +214,7 @@ func RemoteOneShotClientRequest(ctx context.Context, remote *url.URL, mode strin
 			RootURI: rootURI,
 		},
 		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: mode},
+		Mode: mode,
 	})
 	if err != nil {
 		return err

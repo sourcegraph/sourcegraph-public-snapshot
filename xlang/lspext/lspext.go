@@ -146,13 +146,17 @@ func WalkURIFields(o interface{}, collect func(lsp.DocumentURI), update func(lsp
 type ClientProxyInitializeParams struct {
 	lsp.InitializeParams
 	InitializationOptions ClientProxyInitializationOptions `json:"initializationOptions"`
+
+	// Mode is DEPRECATED; it was moved to the subfield
+	// initializationOptions.Mode. It is still here for backward
+	// compatibility until the xlang service is upgraded.
+	Mode string `json:"mode,omitempty"`
 }
 
 // ClientProxyInitializationOptions is the "initializationOptions"
 // field of the "initialize" request params sent from the client to
 // the LSP client proxy.
 type ClientProxyInitializationOptions struct {
-	// Mode is the language mode that identifies the language server to use.
 	Mode string `json:"mode"`
 
 	// Same as, but takes precedence over, InitializeParams.rootUri.

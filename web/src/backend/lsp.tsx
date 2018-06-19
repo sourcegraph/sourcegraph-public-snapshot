@@ -48,7 +48,7 @@ const wrapLSPRequests = (ctx: AbsoluteRepo, mode: string, requests: LSPRequest[]
         method: 'initialize',
         params: {
             rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
-            initializationOptions: { mode },
+            mode,
         },
     },
     ...requests.map((req, i) => ({ id: i + 1, ...req })),
