@@ -43,8 +43,6 @@ type Mutation {
     #
     # Only authenticated users may perform this mutation.
     createOrganization(name: String!, displayName: String): Org!
-    # Creates an organization.
-    createOrg(name: String!, displayName: String!): Org! @deprecated(reason: "use createOrganization instead")
     # Updates an organization.
     #
     # Only site admins and any member of the organization may perform this mutation.
@@ -123,10 +121,6 @@ type Mutation {
     #
     # Only site admins may perform this mutation.
     deleteRepository(repository: ID!): EmptyResponse
-    # Creates a user account for a new user and generates a reset password link that the user
-    # must visit to sign into the account. Only site admins may perform this mutation.
-    createUserBySiteAdmin(username: String!, email: String!): CreateUserBySiteAdminResult!
-        @deprecated(reason: "use createUser instead")
     # Creates a new user account.
     #
     # Only site admins may perform this mutation.
@@ -220,9 +214,6 @@ type Mutation {
     #
     # Only site admins and any member of the organization may perform this mutation.
     removeUserFromOrganization(user: ID!, organization: ID!): EmptyResponse
-    # Removes a user from an organization.
-    removeUserFromOrg(userID: ID!, orgID: ID!): EmptyResponse
-        @deprecated(reason: "use removeUserFromOrganization instead")
     # Adds a Phabricator repository to Sourcegraph.
     addPhabricatorRepo(
         # The callsign, for example "MUX".
@@ -387,14 +378,6 @@ type CheckMirrorRepositoryConnectionResult {
     # The error message encountered during the update operation, if any. If null, then
     # the connection check succeeded.
     error: String
-}
-
-# The result for Mutation.createUserBySiteAdmin.
-#
-# DEPRECATED: Use Mutation.createUser (and CreateUserResult) instead.
-type CreateUserBySiteAdminResult {
-    # The reset password URL that the new user must visit to sign into their account.
-    resetPasswordURL: String!
 }
 
 # The result for Mutation.createUser.
@@ -1768,8 +1751,6 @@ type User implements Node, ConfigurationSubject {
     latestSettings: Settings
     # The organizations that this user is a member of.
     organizations: OrgConnection!
-    # The organizations that this user is a member of.
-    orgs: [Org!]! @deprecated(reason: "use organizations instead")
     # This user's organization memberships.
     organizationMemberships: OrganizationMembershipConnection!
     # The internal tags associated with the user. This is an internal site management feature.

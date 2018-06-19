@@ -207,17 +207,17 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 			return nil, nil // actor might be invalid or refer to since-deleted user
 		}
 
-		orgs, err := user.Orgs(ctx)
+		orgs, err := db.Orgs.GetByUserID(ctx, user.user.ID)
 		if err != nil {
 			return nil, err
 		}
 		// Stable-sort the orgs so that the priority of their configs is stable.
 		sort.Slice(orgs, func(i, j int) bool {
-			return orgs[i].org.ID < orgs[j].org.ID
+			return orgs[i].ID < orgs[j].ID
 		})
 		// Apply the user's orgs' configuration.
 		for _, org := range orgs {
-			subjects = append(subjects, &configurationSubject{org: org})
+			subjects = append(subjects, &configurationSubject{org: &orgResolver{org}})
 		}
 
 		// Apply the user's own configuration last (it has highest priority).

@@ -171,24 +171,6 @@ func (o *orgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-// DEPRECATED: use createOrganization instead
-func (*schemaResolver) CreateOrg(ctx context.Context, args *struct {
-	Name        string
-	DisplayName string
-}) (*orgResolver, error) {
-	var displayName *string
-	if args.DisplayName != "" {
-		displayName = &args.DisplayName
-	}
-	return (&schemaResolver{}).CreateOrganization(ctx, &struct {
-		Name        string
-		DisplayName *string
-	}{
-		Name:        args.Name,
-		DisplayName: displayName,
-	})
-}
-
 func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
@@ -239,20 +221,6 @@ func (*schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	}
 
 	return &orgResolver{org: updatedOrg}, nil
-}
-
-// DEPRECATED: use RemoveUserFromOrganization instead.
-func (*schemaResolver) RemoveUserFromOrg(ctx context.Context, args *struct {
-	UserID graphql.ID
-	OrgID  graphql.ID
-}) (*EmptyResponse, error) {
-	return (&schemaResolver{}).RemoveUserFromOrganization(ctx, &struct {
-		User         graphql.ID
-		Organization graphql.ID
-	}{
-		User:         args.UserID,
-		Organization: args.OrgID,
-	})
 }
 
 func (*schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *struct {
