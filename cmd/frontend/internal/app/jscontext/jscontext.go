@@ -24,11 +24,6 @@ import (
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 
-// immutableUser corresponds to the immutableUser type in the JS sourcegraphContext.
-type immutableUser struct {
-	UID int32
-}
-
 type authProviderInfo struct {
 	IsBuiltin         bool   `json:"isBuiltin"`
 	DisplayName       string `json:"displayName"`
@@ -51,7 +46,8 @@ type JSContext struct {
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
 	AssetsRoot     string            `json:"assetsRoot"`
 	Version        string            `json:"version"`
-	User           *immutableUser    `json:"user"`
+
+	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
 	SentryDSN      string `json:"sentryDSN"`
 	SiteID         string `json:"siteID"`
@@ -101,11 +97,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 	csrfToken := csrf.Token(req)
 	headers["X-Csrf-Token"] = csrfToken
 
-	var user *immutableUser
-	if actor.IsAuthenticated() {
-		user = &immutableUser{UID: actor.UID}
-	}
-
 	siteID := siteid.Get()
 
 	// Show the site init screen?
@@ -137,7 +128,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		UserAgentIsBot:      isBot(req.UserAgent()),
 		AssetsRoot:          assets.URL("").String(),
 		Version:             env.Version,
-		User:                user,
+		IsAuthenticatedUser: actor.IsAuthenticated(),
 		SentryDSN:           sentryDSNFrontend,
 		Debug:               envvar.InsecureDevMode(),
 		SiteID:              siteID,

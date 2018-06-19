@@ -30,12 +30,10 @@ interface SourcegraphContext {
     userAgentIsBot: boolean
 
     /**
-     * The currently logged in user or null if the user is not signed
-     * in/authenticated.
-     *
-     * @deprecated use currentUser in ./auth.ts instead
+     * Whether the user is authenticated. Use currentUser in ./auth.ts to obtain information about
+     * the user.
      */
-    readonly user: ImmutableUser | null
+    readonly isAuthenticatedUser: boolean
 
     sentryDSN: string
 

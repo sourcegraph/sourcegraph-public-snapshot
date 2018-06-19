@@ -8,10 +8,6 @@ import { createAggregateError } from './util/errors'
  * Always represents the latest
  * state of the currently authenticated user.
  *
- * Unlike sourcegraphContext.user, the global currentUser object contains
- * locally mutable properties such as email, displayName, and avatarUrl, all
- * of which are expected to change over the course of a user's session.
- *
  * Note that currentUser is not designed to survive across changes in the
  * currently authenicated user. Sign in, sign out, and account changes are
  * all expected to refresh the app.
@@ -82,7 +78,7 @@ const initialSiteConfigAuthPublic = window.context.site['auth.public']
 export const authRequired = currentUser.pipe(map(user => user === null && !initialSiteConfigAuthPublic))
 
 // Populate currentUser.
-if (window.context.user) {
+if (window.context.isAuthenticatedUser) {
     refreshCurrentUser()
         .toPromise()
         .then(() => void 0, err => console.error(err))
