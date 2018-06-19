@@ -54,13 +54,6 @@
           "enum": ["enabled", "disabled"],
           "default": "disabled"
         },
-        "hostSurveysLocally": {
-          "description":
-            "(Deprecated: always enabled) Enables or disables hosting user satisfaction surveys locally. Once stable, this feature will be default.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "configVars": {
           "description":
             "Enables or disables the interpolation of variables in string values in the site configuration JSON data.\n\nIf set to \"enabled\", all string values (except for JSON object property names) are interpolated, replacing ${var} or $var in the string with the value of the referenced environment variable (or the empty string if undefined).",

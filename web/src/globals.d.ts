@@ -99,11 +99,6 @@ interface SourcegraphContext {
      */
     isRunningDataCenter: boolean
 
-    /**
-     * Whether the hostSurveysLocally feature flag is enabled.
-     */
-    hostSurveysLocallyEnabled: boolean
-
     /** Whether signup is allowed on the site. */
     allowSignup: boolean
 

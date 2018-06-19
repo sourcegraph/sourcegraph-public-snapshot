@@ -83,7 +83,6 @@ type BuiltinAuthProvider struct {
 type ExperimentalFeatures struct {
 	CanonicalURLRedirect  string `json:"canonicalURLRedirect,omitempty"`
 	ConfigVars            string `json:"configVars,omitempty"`
-	HostSurveysLocally    string `json:"hostSurveysLocally,omitempty"`
 	JumpToDefOSSIndex     string `json:"jumpToDefOSSIndex,omitempty"`
 	MultipleAuthProviders string `json:"multipleAuthProviders,omitempty"`
 }
