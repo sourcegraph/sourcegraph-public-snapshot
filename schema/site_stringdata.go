@@ -162,10 +162,6 @@ const SiteSchemaJSON = `{
         }
       }
     },
-    "phabricatorURL": {
-      "description": "(Deprecated: Use Phabricator) URL of Phabricator instance.",
-      "type": "string"
-    },
     "github": {
       "description":
         "JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information.",

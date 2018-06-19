@@ -260,7 +260,6 @@ type SiteConfiguration struct {
 	OidcEmailDomain                   string                       `json:"oidcEmailDomain,omitempty"`
 	OidcProvider                      string                       `json:"oidcProvider,omitempty"`
 	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
-	PhabricatorURL                    string                       `json:"phabricatorURL,omitempty"`
 	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
 	PrivateArtifactRepoPassword       string                       `json:"privateArtifactRepoPassword,omitempty"`
 	PrivateArtifactRepoURL            string                       `json:"privateArtifactRepoURL,omitempty"`
