@@ -57,7 +57,11 @@ export class SiteAdminArea extends React.Component<Props> {
             return <NotSiteAdminPage />
         }
 
-        const transferProps = { user: this.props.user, isLightTheme: this.props.isLightTheme }
+        const transferProps = {
+            user: this.props.user,
+            isLightTheme: this.props.isLightTheme,
+            site: { id: window.context.siteGQLID },
+        }
 
         return (
             <div className="site-admin-area area">

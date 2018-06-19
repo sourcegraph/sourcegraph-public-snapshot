@@ -31,8 +31,6 @@ type Mutation {
     #
     # Only the user and site admins may perform this mutation.
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): EmptyResponse!
-    # Update the global settings for all users.
-    updateSiteSettings(lastID: Int, contents: String!): Settings!
     # Creates an organization. The caller is added as a member of the newly created organization.
     #
     # Only authenticated users may perform this mutation.
@@ -458,8 +456,6 @@ type Query {
     ): OrgConnection!
     # Looks up an instance of a type that implements ConfigurationSubject.
     configurationSubject(id: ID!): ConfigurationSubject
-    # The current site settings.
-    currentSiteSettings: Settings
     # The configuration for the viewer.
     viewerConfiguration: ConfigurationCascade!
     # Runs a search.
@@ -2113,6 +2109,9 @@ type Site implements ConfigurationSubject {
     # The site's latest site-wide settings (which are the lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
+    # Deprecated settings specified in the site configuration "settings" field. These are distinct from a site's
+    # latestSettings (which are stored in the DB) and are applied at the lowest level of precedence.
+    deprecatedSiteConfigurationSettings: String
     # The configuration cascade including this subject and all applicable subjects whose configuration is lower
     # precedence than this subject.
     configurationCascade: ConfigurationCascade!

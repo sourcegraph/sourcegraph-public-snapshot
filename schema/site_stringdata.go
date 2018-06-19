@@ -513,7 +513,8 @@ const SiteSchemaJSON = `{
       }
     },
     "settings": {
-      "description": "Site settings. Organization and user settings override site settings.",
+      "description":
+        "Site settings hard-coded in site configuration.\n\nDEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying the cluster in Sourcegraph Data Center.",
       "$ref": "./settings.schema.json#"
     }
   },

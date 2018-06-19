@@ -7,13 +7,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/sourcegraphlicense"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
@@ -24,8 +24,6 @@ import (
 )
 
 const singletonSiteGQLID = "site"
-
-var serverStart = time.Now()
 
 func siteByGQLID(ctx context.Context, id graphql.ID) (node, error) {
 	siteGQLID, err := unmarshalSiteGQLID(id)
@@ -39,6 +37,10 @@ func siteByGQLID(ctx context.Context, id graphql.ID) (node, error) {
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
+
+// SiteGQLID is the GraphQL ID of the Sourcegraph site. It is a constant across all Sourcegraph
+// instances.
+func SiteGQLID() graphql.ID { return singletonSiteResolver.ID() }
 
 func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 	err = relay.UnmarshalSpec(id, &siteID)
@@ -76,26 +78,32 @@ func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 }
 
 func (r *siteResolver) configurationSubject() api.ConfigurationSubject {
-	return api.ConfigurationSubject{Site: &r.gqlID}
+	return api.ConfigurationSubject{Site: true}
 }
 
-func (r *siteResolver) LatestSettings() (*settingsResolver, error) {
+func (r *siteResolver) DeprecatedSiteConfigurationSettings() (*string, error) {
 	// The site configuration (which is only visible to admins) contains a field "settings"
 	// that is visible to all users. So, this does not need a permissions check.
-	siteConfigJSON, err := json.MarshalIndent(conf.Get().Settings, "", "  ")
+	settings := conf.Get().Settings
+	if settings == nil {
+		return nil, nil
+	}
+	data, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
 		return nil, err
 	}
+	return strptr(string(data)), nil
+}
 
-	return &settingsResolver{
-		subject: &configurationSubject{site: r},
-		settings: &api.Settings{
-			ID:        1,
-			Contents:  string(siteConfigJSON),
-			CreatedAt: serverStart,
-			Subject:   r.configurationSubject(),
-		},
-	}, nil
+func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+	settings, err := db.Settings.GetLatest(ctx, r.configurationSubject())
+	if err != nil {
+		return nil, err
+	}
+	if settings == nil {
+		return nil, nil
+	}
+	return &settingsResolver{&configurationSubject{site: r}, settings, nil}, nil
 }
 
 func (r *siteResolver) ConfigurationCascade() *configurationCascadeResolver {

@@ -1,22 +1,40 @@
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Subscription } from 'rxjs'
+import { Link } from 'react-router-dom'
+import { Observable, Subscription } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
+import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
-import { SettingsFile } from '../settings/SettingsFile'
-import { eventLogger } from '../tracking/eventLogger'
-import { fetchSiteSettings, updateSiteSettings } from './backend'
+import { SettingsConfigurationPage } from '../settings/SettingsConfigurationPage'
+import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 
-interface Props extends RouteComponentProps<any> {
-    user: GQL.IUser
+function querySiteConfigDeprecatedSettings(): Observable<string | null> {
+    return queryGraphQL(gql`
+        query SiteConfigDeprecatedSettings {
+            site {
+                deprecatedSiteConfigurationSettings
+            }
+        }
+    `).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.site) {
+                throw createAggregateError(errors)
+            }
+            return data.site.deprecatedSiteConfigurationSettings
+        })
+    )
+}
+
+interface Props extends RouteComponentProps<{}> {
     isLightTheme: boolean
+    site: Pick<GQL.ISite, 'id'>
 }
 
 interface State {
-    settings?: GQL.ISettings | null
-    error?: string
-    commitError?: Error
+    /** The deprecated settings from the site config "settings" field, undefined while loading, or an error. */
+    deprecatedSettingsOrError?: string | null | ErrorLike
 }
 
 export class SiteAdminSettingsPage extends React.Component<Props, State> {
@@ -25,13 +43,10 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserSettingsConfiguration')
-
         this.subscriptions.add(
-            fetchSiteSettings().subscribe(
-                settings => this.setState({ settings }),
-                error => this.setState({ error: error.message })
-            )
+            querySiteConfigDeprecatedSettings()
+                .pipe(catchError(error => [error]), map(c => ({ deprecatedSettingsOrError: c })))
+                .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
     }
 
@@ -41,48 +56,47 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="user-settings-configuration-page">
-                <PageTitle title="Site settings - Admin" />
-                <h2>Configuration</h2>
-                {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
-                <p>
-                    Global settings apply to all organizations and users. Settings for a user or organization override
-                    global settings.
-                </p>
-                {this.state.settings !== undefined && (
-                    <SettingsFile
-                        settings={this.state.settings}
-                        onDidCommit={this.onDidCommit}
-                        onDidDiscard={this.onDidDiscard}
-                        commitError={this.state.commitError}
-                        history={this.props.history}
-                        isLightTheme={this.props.isLightTheme}
-                    />
-                )}
-            </div>
+            <>
+                <PageTitle title="Site settings" />
+                <SettingsConfigurationPage
+                    subject={this.props.site}
+                    description={
+                        <div>
+                            <p>
+                                Global settings apply to all organizations and users. Settings for a user or
+                                organization override global settings.
+                            </p>
+                            {this.state.deprecatedSettingsOrError !== undefined &&
+                                this.state.deprecatedSettingsOrError !== null &&
+                                (isErrorLike(this.state.deprecatedSettingsOrError) ? (
+                                    <div className="alert alert-danger my-2">
+                                        {upperFirst(this.state.deprecatedSettingsOrError.message)}
+                                    </div>
+                                ) : (
+                                    <div className="alert alert-warning my-2">
+                                        <p>
+                                            Your <Link to="/site-admin/configuration">site configuration</Link> contains
+                                            a <strong>deprecated</strong> <code>settings</code> field (contents below).
+                                            Support for providing settings in the site configuration file will be
+                                            removed in a future Sourcegraph release.
+                                        </p>
+                                        <p>
+                                            To fix this problem: Add these settings to the editable global settings
+                                            below, and remove them from{' '}
+                                            <Link to="/site-admin/configuration">site configuration</Link>.
+                                        </p>
+                                        <pre className="form-control">
+                                            <code>{this.state.deprecatedSettingsOrError}</code>
+                                        </pre>
+                                    </div>
+                                ))}
+                        </div>
+                    }
+                    location={this.props.location}
+                    history={this.props.history}
+                    isLightTheme={this.props.isLightTheme}
+                />
+            </>
         )
-    }
-
-    private onDidCommit = (lastID: number | null, contents: string): void => {
-        this.setState({
-            error: undefined,
-            commitError: undefined,
-        })
-        updateSiteSettings(lastID, contents).subscribe(
-            settings =>
-                this.setState({
-                    error: undefined,
-                    commitError: undefined,
-                    settings,
-                }),
-            error => {
-                this.setState({ error: undefined, commitError: error })
-                console.error(error)
-            }
-        )
-    }
-
-    private onDidDiscard = (): void => {
-        this.setState({ commitError: undefined })
     }
 }

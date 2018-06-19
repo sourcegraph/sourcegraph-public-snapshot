@@ -15,7 +15,10 @@ func (r *schemaResolver) ConfigurationSubject(ctx context.Context, args *struct{
 	return configurationSubjectByID(ctx, args.ID)
 }
 
+var errUnknownConfigurationSubject = errors.New("unknown configuration subject")
+
 type configurationSubject struct {
+	// Exactly 1 of these fields must be set.
 	site *siteResolver
 	org  *orgResolver
 	user *userResolver
@@ -48,27 +51,27 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 		return &configurationSubject{org: s}, nil
 
 	default:
-		return nil, errors.New("bad configuration subject type")
+		return nil, errUnknownConfigurationSubject
 	}
 }
 
 func configurationSubjectID(subject api.ConfigurationSubject) (graphql.ID, error) {
 	switch {
-	case subject.Site != nil:
-		return marshalSiteGQLID(*subject.Site), nil
+	case subject.Site:
+		return marshalSiteGQLID(singletonSiteResolver.gqlID), nil
 	case subject.User != nil:
 		return marshalUserID(*subject.User), nil
 	case subject.Org != nil:
 		return marshalOrgID(*subject.Org), nil
 	default:
-		return "", errors.New("bad configuration subject type")
+		return "", errUnknownConfigurationSubject
 	}
 }
 
 func configurationSubjectsEqual(a, b api.ConfigurationSubject) bool {
 	switch {
-	case a.Site != nil && b.Site != nil:
-		return *a.Site == *b.Site
+	case a.Site || b.Site:
+		return a.Site == b.Site
 	case a.User != nil && b.User != nil:
 		return *a.User == *b.User
 	case a.Org != nil && b.Org != nil:
@@ -77,7 +80,9 @@ func configurationSubjectsEqual(a, b api.ConfigurationSubject) bool {
 	return false
 }
 
-func (s *configurationSubject) ToSite() (*siteResolver, bool) { return s.site, s.site != nil }
+func (s *configurationSubject) ToSite() (*siteResolver, bool) {
+	return s.site, s.site != nil
+}
 
 func (s *configurationSubject) ToOrg() (*orgResolver, bool) { return s.org, s.org != nil }
 
@@ -86,38 +91,39 @@ func (s *configurationSubject) ToUser() (*userResolver, bool) { return s.user, s
 func (s *configurationSubject) toSubject() api.ConfigurationSubject {
 	switch {
 	case s.site != nil:
-		return api.ConfigurationSubject{Site: &s.site.gqlID}
+		return api.ConfigurationSubject{Site: true}
 	case s.org != nil:
 		return api.ConfigurationSubject{Org: &s.org.org.ID}
 	case s.user != nil:
 		return api.ConfigurationSubject{User: &s.user.user.ID}
 	default:
-		return api.ConfigurationSubject{}
+		panic("invalid configuration subject")
 	}
 }
 
-func (s *configurationSubject) ID() graphql.ID {
+func (s *configurationSubject) ID() (graphql.ID, error) {
 	switch {
 	case s.site != nil:
-		return s.site.ID()
+		return s.site.ID(), nil
 	case s.org != nil:
-		return s.org.ID()
+		return s.org.ID(), nil
 	case s.user != nil:
-		return s.user.ID()
+		return s.user.ID(), nil
+	default:
+		return "", errUnknownConfigurationSubject
 	}
-	return "Global"
 }
 
 func (s *configurationSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	switch {
 	case s.site != nil:
-		return s.site.LatestSettings()
+		return s.site.LatestSettings(ctx)
 	case s.org != nil:
 		return s.org.LatestSettings(ctx)
 	case s.user != nil:
 		return s.user.LatestSettings(ctx)
 	default:
-		return currentSiteSettings(ctx)
+		return nil, errUnknownConfigurationSubject
 	}
 }
 
@@ -130,7 +136,7 @@ func (s *configurationSubject) SettingsURL() (string, error) {
 	case s.user != nil:
 		return s.user.SettingsURL(), nil
 	default:
-		return "", errors.New("unknown configuration subject")
+		return "", errUnknownConfigurationSubject
 	}
 }
 
@@ -143,7 +149,7 @@ func (s *configurationSubject) ViewerCanAdminister(ctx context.Context) (bool, e
 	case s.user != nil:
 		return s.user.ViewerCanAdminister(ctx)
 	default:
-		return false, errors.New("unknown configuration subject")
+		return false, errUnknownConfigurationSubject
 	}
 }
 
@@ -156,7 +162,7 @@ func (s *configurationSubject) ConfigurationCascade() (*configurationCascadeReso
 	case s.user != nil:
 		return s.user.ConfigurationCascade(), nil
 	default:
-		return nil, errors.New("unknown configuration subject")
+		return nil, errUnknownConfigurationSubject
 	}
 }
 

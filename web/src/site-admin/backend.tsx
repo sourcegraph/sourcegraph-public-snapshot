@@ -2,7 +2,6 @@ import { Observable, Subject } from 'rxjs'
 import { map, mergeMap, startWith, tap } from 'rxjs/operators'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { settingsFragment } from '../configuration/backend'
 import { createAggregateError } from '../util/errors'
 import { resetAllMemoizationCaches } from '../util/memoize'
 
@@ -458,57 +457,6 @@ export function fetchSite(): Observable<GQL.ISite> {
                 throw createAggregateError(errors)
             }
             return data.site
-        })
-    )
-}
-
-/**
- * Fetches global site settings.
- *
- * @return Observable that emits the settings or `null` if it doesn't exist
- */
-export function fetchSiteSettings(): Observable<GQL.ISettings | null> {
-    return queryGraphQL(
-        gql`
-            query CurrentSiteSettings() {
-                currentSiteSettings {
-                    ...SettingsFields
-                }
-            }
-            ${settingsFragment}
-        `
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data) {
-                throw createAggregateError(errors)
-            }
-            return data.currentSiteSettings
-        })
-    )
-}
-
-/**
- * Updates global site settings.
- *
- * @return Observable that emits the newly updated settings
- */
-export function updateSiteSettings(lastID: number | null, contents: string): Observable<GQL.ISettings> {
-    return mutateGraphQL(
-        gql`
-            mutation UpdateSiteSettings($lastID: Int, $contents: String!) {
-                updateSiteSettings(lastID: $lastID, contents: $contents) {
-                    ...SettingsFields
-                }
-            }
-            ${settingsFragment}
-        `,
-        { lastID, contents }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0) || !data.updateSiteSettings) {
-                throw createAggregateError(errors)
-            }
-            return data.updateSiteSettings
         })
     )
 }

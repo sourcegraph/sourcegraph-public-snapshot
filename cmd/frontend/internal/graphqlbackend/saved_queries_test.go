@@ -77,7 +77,7 @@ func TestCreateSavedQuery(t *testing.T) {
 
 	mutation, err := (&schemaResolver{}).ConfigurationMutation(ctx, &struct {
 		Input *configurationMutationGroupInput
-	}{Input: &configurationMutationGroupInput{LastID: &lastID, Subject: subject.ID()}})
+	}{Input: &configurationMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,7 @@ func TestUpdateSavedQuery(t *testing.T) {
 
 	mutation, err := (&schemaResolver{}).ConfigurationMutation(ctx, &struct {
 		Input *configurationMutationGroupInput
-	}{Input: &configurationMutationGroupInput{LastID: &lastID, Subject: subject.ID()}})
+	}{Input: &configurationMutationGroupInput{LastID: &lastID, Subject: subject.user.ID()}})
 	if err != nil {
 		t.Fatal(err)
 	}

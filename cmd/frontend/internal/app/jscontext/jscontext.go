@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -51,6 +52,7 @@ type JSContext struct {
 
 	SentryDSN      string `json:"sentryDSN"`
 	SiteID         string `json:"siteID"`
+	SiteGQLID      string `json:"siteGQLID"`
 	Debug          bool   `json:"debug"`
 	ShowOnboarding bool   `json:"showOnboarding"`
 	EmailEnabled   bool   `json:"emailEnabled"`
@@ -134,6 +136,9 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		SentryDSN:           sentryDSNFrontend,
 		Debug:               envvar.InsecureDevMode(),
 		SiteID:              siteID,
+
+		SiteGQLID: string(graphqlbackend.SiteGQLID()),
+
 		ShowOnboarding:      showOnboarding,
 		EmailEnabled:        conf.CanSendEmail(),
 		Site:                publicSiteConfiguration(),

@@ -4,11 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
@@ -45,42 +43,6 @@ func (o *settingsResolver) Author(ctx context.Context) (*userResolver, error) {
 		}
 	}
 	return &userResolver{o.user}, nil
-}
-
-func currentSiteSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := db.Settings.GetLatest(ctx, api.ConfigurationSubject{})
-	if err != nil {
-		return nil, err
-	}
-	if settings == nil {
-		return nil, nil
-	}
-	return &settingsResolver{&configurationSubject{}, settings, nil}, nil
-}
-
-func (r *schemaResolver) CurrentSiteSettings(ctx context.Context) (*settingsResolver, error) {
-	return currentSiteSettings(ctx)
-}
-
-func (*schemaResolver) UpdateSiteSettings(ctx context.Context, args *struct {
-	LastID   *int32
-	Contents string
-}) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only admins should be authorized to set global settings.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	settings, err := settingsCreateIfUpToDate(ctx,
-		&configurationSubject{site: singletonSiteResolver},
-		args.LastID, actor.FromContext(ctx).UID, args.Contents)
-	if err != nil {
-		return nil, err
-	}
-	return &settingsResolver{
-		subject:  &configurationSubject{},
-		settings: settings,
-	}, nil
 }
 
 // like db.Settings.CreateIfUpToDate, except it handles notifying the

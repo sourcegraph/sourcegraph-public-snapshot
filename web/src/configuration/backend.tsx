@@ -6,7 +6,7 @@ import { configurationCascade } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
 import { createAggregateError } from '../util/errors'
 
-export const settingsFragment = gql`
+const settingsFragment = gql`
     fragment SettingsFields on Settings {
         id
         configuration {

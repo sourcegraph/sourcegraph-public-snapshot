@@ -57,6 +57,9 @@ interface SourcegraphContext {
      */
     siteID: string
 
+    /** The GraphQL ID of the Sourcegraph site. */
+    siteGQLID: GQL.ID
+
     /**
      * Status of onboarding
      */

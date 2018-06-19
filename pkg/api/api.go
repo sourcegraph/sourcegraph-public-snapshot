@@ -144,18 +144,17 @@ type ListPackagesOp struct {
 	Limit int
 }
 
-// A ConfigurationSubject is something that can have settings. A subject with no
-// fields set represents the global site settings subject.
+// A ConfigurationSubject is something that can have settings. Exactly 1 field must be nonzero.
 type ConfigurationSubject struct {
-	Site *string // the site's ID
-	Org  *int32  // the org's ID
-	User *int32  // the user's ID
+	Site bool   // whether this is for site config
+	Org  *int32 // the org's ID
+	User *int32 // the user's ID
 }
 
 func (s ConfigurationSubject) String() string {
 	switch {
-	case s.Site != nil:
-		return fmt.Sprintf("site %q", *s.Site)
+	case s.Site:
+		return "site"
 	case s.Org != nil:
 		return fmt.Sprintf("org %d", *s.Org)
 	case s.User != nil:
