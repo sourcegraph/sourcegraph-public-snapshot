@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -26,7 +25,7 @@ const (
 // needing to give them G Suite access.
 func OverrideAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		secret := getOverrideAuthSecret()
+		secret := envOverrideAuthSecret
 		// Accept both old header (X-Oidc-Override, deprecated) and new overrideSecretHeader for now.
 		if secret != "" && (r.Header.Get("X-Oidc-Override") == secret || r.Header.Get(overrideSecretHeader) == secret) {
 			username := r.Header.Get(overrideUsernameHeader)
@@ -68,13 +67,3 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 // envOverrideAuthSecret (the env var OVERRIDE_AUTH_SECRET) is the preferred source of the secret
 // for overriding auth.
 var envOverrideAuthSecret = env.Get("OVERRIDE_AUTH_SECRET", "", "X-Override-Auth-Secret HTTP request header value used to authenticate site-admin-authed sessions (use X-Override-Auth-Username header to set username)")
-
-func getOverrideAuthSecret() string {
-	if envOverrideAuthSecret != "" {
-		return envOverrideAuthSecret
-	}
-	if c := conf.Get(); c.AuthOpenIDConnect != nil {
-		return c.AuthOpenIDConnect.OverrideToken
-	}
-	return ""
-}

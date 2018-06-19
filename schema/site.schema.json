@@ -904,11 +904,6 @@
             "Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading \"@\". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.",
           "type": "string",
           "pattern": "^[^<@]"
-        },
-        "overrideToken": {
-          "description":
-            "(For testing and development only) A token used to circumvent the OpenID Connect authentication layer.\n\nDEPRECATED: This override-auth feature will be removed, and no replacement is planned.",
-          "type": "string"
         }
       }
     },

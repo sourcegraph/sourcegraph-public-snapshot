@@ -147,7 +147,6 @@ type OpenIDConnectAuthProvider struct {
 	ClientSecret       string `json:"clientSecret"`
 	DisplayName        string `json:"displayName,omitempty"`
 	Issuer             string `json:"issuer"`
-	OverrideToken      string `json:"overrideToken,omitempty"`
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
 	Type               string `json:"type"`
 }

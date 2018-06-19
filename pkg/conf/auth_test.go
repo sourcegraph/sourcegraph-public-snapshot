@@ -41,7 +41,6 @@ func TestAuthProvider(t *testing.T) {
 					ClientID:           "b",
 					ClientSecret:       "c",
 					RequireEmailDomain: "d",
-					OverrideToken:      "e",
 				},
 			},
 			want: nil,
@@ -75,7 +74,6 @@ func TestAuthProvider(t *testing.T) {
 					ClientID:           "b",
 					ClientSecret:       "c",
 					RequireEmailDomain: "d",
-					OverrideToken:      "e",
 				},
 			},
 			want: []schema.AuthProviders{{Openidconnect: &schema.OpenIDConnectAuthProvider{
@@ -84,7 +82,6 @@ func TestAuthProvider(t *testing.T) {
 				ClientID:           "b",
 				ClientSecret:       "c",
 				RequireEmailDomain: "d",
-				OverrideToken:      "e",
 			}}},
 		},
 		"openidconnect: auth.provider and old": {
@@ -99,7 +96,6 @@ func TestAuthProvider(t *testing.T) {
 					ClientID:           "b2",
 					ClientSecret:       "c2",
 					RequireEmailDomain: "d2",
-					OverrideToken:      "e2",
 				},
 			},
 			want: []schema.AuthProviders{{Openidconnect: &schema.OpenIDConnectAuthProvider{
@@ -108,7 +104,6 @@ func TestAuthProvider(t *testing.T) {
 				ClientID:           "b2",
 				ClientSecret:       "c2",
 				RequireEmailDomain: "d2",
-				OverrideToken:      "e2",
 			}}},
 		},
 		"openidconnect: auth.providers": {
@@ -120,7 +115,6 @@ func TestAuthProvider(t *testing.T) {
 						ClientID:           "b",
 						ClientSecret:       "c",
 						RequireEmailDomain: "d",
-						OverrideToken:      "e",
 					},
 				}},
 			},
@@ -130,7 +124,6 @@ func TestAuthProvider(t *testing.T) {
 				ClientID:           "b",
 				ClientSecret:       "c",
 				RequireEmailDomain: "d",
-				OverrideToken:      "e",
 			}}},
 		},
 		"openidconnect: auth.provider and auth.providers": {
@@ -141,7 +134,6 @@ func TestAuthProvider(t *testing.T) {
 					ClientID:           "b2",
 					ClientSecret:       "c2",
 					RequireEmailDomain: "d2",
-					OverrideToken:      "e2",
 				},
 				AuthProviders: []schema.AuthProviders{{
 					Openidconnect: &schema.OpenIDConnectAuthProvider{
@@ -150,7 +142,6 @@ func TestAuthProvider(t *testing.T) {
 						ClientID:           "b",
 						ClientSecret:       "c",
 						RequireEmailDomain: "d",
-						OverrideToken:      "e",
 					},
 				}},
 			},
@@ -160,7 +151,6 @@ func TestAuthProvider(t *testing.T) {
 				ClientID:           "b",
 				ClientSecret:       "c",
 				RequireEmailDomain: "d",
-				OverrideToken:      "e",
 			}}},
 		},
 		"openidconnect: all": {
@@ -175,7 +165,6 @@ func TestAuthProvider(t *testing.T) {
 					ClientID:           "b2",
 					ClientSecret:       "c2",
 					RequireEmailDomain: "d2",
-					OverrideToken:      "e2",
 				},
 				AuthProviders: []schema.AuthProviders{{
 					Openidconnect: &schema.OpenIDConnectAuthProvider{
@@ -184,7 +173,6 @@ func TestAuthProvider(t *testing.T) {
 						ClientID:           "b",
 						ClientSecret:       "c",
 						RequireEmailDomain: "d",
-						OverrideToken:      "e",
 					},
 				}},
 			},
@@ -194,7 +182,6 @@ func TestAuthProvider(t *testing.T) {
 				ClientID:           "b",
 				ClientSecret:       "c",
 				RequireEmailDomain: "d",
-				OverrideToken:      "e",
 			}}},
 		},
 

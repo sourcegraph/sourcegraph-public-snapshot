@@ -54,9 +54,6 @@ func validateConfig(c *schema.SiteConfiguration) (problems []string) {
 			problems = append(problems, `openidconnect auth provider requires appURL to be set to the external URL of your site (example: https://sourcegraph.example.com)`)
 			loggedNeedsAppURL = true
 		}
-		if p.Openidconnect != nil && p.Openidconnect.OverrideToken != "" {
-			problems = append(problems, `openidconnect auth provider "overrideToken" is deprecated (because it applies to all auth providers, not just OIDC); use OVERRIDE_AUTH_SECRET env var instead`)
-		}
 	}
 
 	seen := map[schema.OpenIDConnectAuthProvider]int{}
