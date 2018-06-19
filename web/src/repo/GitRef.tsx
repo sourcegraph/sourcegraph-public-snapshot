@@ -5,6 +5,7 @@ import { map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { FilteredConnection } from '../components/FilteredConnection'
+import { LinkOrSpan } from '../components/LinkOrSpan'
 import { Timestamp } from '../components/time/Timestamp'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
@@ -30,8 +31,9 @@ export const GitRefNode: React.SFC<GitRefNodeProps> = ({ node, url, rootIsLink, 
             : node.target.commit.author)
     const behindAhead = node.target.commit && node.target.commit.behindAhead
     url = url !== undefined ? url : node.url
-    const contents = (
-        <>
+
+    return (
+        <LinkOrSpan key={node.id} className="git-ref-node list-group-item" to={url}>
             <span>
                 {rootIsLink ? (
                     <code className="git-ref-tag-2">{node.displayName}</code>
@@ -53,13 +55,7 @@ export const GitRefNode: React.SFC<GitRefNodeProps> = ({ node, url, rootIsLink, 
                 </small>
             )}
             {children}
-        </>
-    )
-
-    return (
-        <div key={node.id} className="git-ref-node list-group-item">
-            {rootIsLink ? <Link to={url}>{contents}</Link> : contents}
-        </div>
+        </LinkOrSpan>
     )
 }
 

@@ -1,8 +1,8 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import VisibilitySensor from 'react-visibility-sensor'
 import * as GQL from '../backend/graphqlschema'
 import { highlightNode } from '../util/dom'
+import { LinkOrSpan } from './LinkOrSpan'
 
 interface Props {
     /**
@@ -128,7 +128,7 @@ export class DecoratedTextLines extends React.PureComponent<Props, State> {
                             {this.state.lines.map((line, i) => (
                                 <tr key={i} className={line.classNames ? line.classNames.join(' ') : undefined}>
                                     <td className="code" onMouseDown={this.props.onMouseDown}>
-                                        {line.url ? <Link to={line.url}>{line.value}</Link> : line.value}
+                                        <LinkOrSpan to={line.url}>{line.value}</LinkOrSpan>
                                     </td>
                                 </tr>
                             ))}

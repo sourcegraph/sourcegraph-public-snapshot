@@ -1,6 +1,6 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { RepoRev } from '.'
+import { LinkOrSpan } from '../components/LinkOrSpan'
 import { toPrettyBlobURL, toTreeURL } from '../util/url'
 
 interface Props {
@@ -22,19 +22,11 @@ class Breadcrumb extends React.Component<Props, {}> {
             const className = `part ${this.props.partToClassName ? this.props.partToClassName(i) : ''} ${
                 i === parts.length - 1 ? 'part-last' : ''
             }`
-            if (link) {
-                spans.push(
-                    <Link key={i} className={className} to={link}>
-                        {part}
-                    </Link>
-                )
-            } else {
-                spans.push(
-                    <span key={i} className={className}>
-                        {part}
-                    </span>
-                )
-            }
+            spans.push(
+                <LinkOrSpan key={i} className={className} to={link}>
+                    {part}
+                </LinkOrSpan>
+            )
             if (i < parts.length - 1) {
                 spans.push(
                     <span key={'sep' + i} className="breadcrumb__separator">
