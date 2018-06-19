@@ -78,14 +78,6 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 		}
 	}
 
-	if cfg.GithubEnterpriseAccessToken != "" || cfg.GithubEnterpriseCert != "" || cfg.GithubEnterpriseURL != "" {
-		invalid(`githubEnterprise{AccessToken,Cert,URL} are deprecated; instead use {..., "github": [{"url": "https://github-enterprise.example.com", "token": "..."}], ...}`)
-	}
-
-	if cfg.GithubPersonalAccessToken != "" {
-		invalid(`githubPersonalAccessToken is deprecated; instead use {..., "github": [{"url": "https://github.com", "token": "..."}], ....}`)
-	}
-
 	if cfg.GitOriginMap != "" {
 		invalid(`gitOriginMap is deprecated; instead use code host configuration such as "github", "gitlab", "repos.list", documented at https://about.sourcegraph.com/docs/config/repositories`)
 	}

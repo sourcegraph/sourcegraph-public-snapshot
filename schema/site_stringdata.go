@@ -182,23 +182,6 @@ const SiteSchemaJSON = `{
       "description": "Client secret for GitHub.",
       "type": "string"
     },
-    "githubPersonalAccessToken": {
-      "description": "(Deprecated: Use GitHub) Personal access token for GitHub. ",
-      "type": "string"
-    },
-    "githubEnterpriseURL": {
-      "description": "(Deprecated: Use GitHub) URL of GitHub Enterprise instance from which to sync repositories.",
-      "type": "string"
-    },
-    "githubEnterpriseCert": {
-      "description":
-        "(Deprecated: Use GitHub) TLS certificate of GitHub Enterprise instance, if from a CA that's not part of the standard certificate chain.",
-      "type": "string"
-    },
-    "githubEnterpriseAccessToken": {
-      "description": "(Deprecated: Use GitHub) Access token to authenticate to GitHub Enterprise API.",
-      "type": "string"
-    },
     "gitlab": {
       "description": "JSON array of configuration for GitLab hosts.",
       "type": "array",

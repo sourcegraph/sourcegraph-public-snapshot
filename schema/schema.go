@@ -242,10 +242,6 @@ type SiteConfiguration struct {
 	Github                            []*GitHubConnection          `json:"github,omitempty"`
 	GithubClientID                    string                       `json:"githubClientID,omitempty"`
 	GithubClientSecret                string                       `json:"githubClientSecret,omitempty"`
-	GithubEnterpriseAccessToken       string                       `json:"githubEnterpriseAccessToken,omitempty"`
-	GithubEnterpriseCert              string                       `json:"githubEnterpriseCert,omitempty"`
-	GithubEnterpriseURL               string                       `json:"githubEnterpriseURL,omitempty"`
-	GithubPersonalAccessToken         string                       `json:"githubPersonalAccessToken,omitempty"`
 	Gitlab                            []*GitLabConnection          `json:"gitlab,omitempty"`
 	Gitolite                          []*GitoliteConnection        `json:"gitolite,omitempty"`
 	HtmlBodyBottom                    string                       `json:"htmlBodyBottom,omitempty"`
