@@ -392,6 +392,13 @@ const SiteSchemaJSON = `{
         "The authentication providers to use for identifying and signing in users.\n\nOnly one authentication provider is supported. If you set the deprecated field \"auth.provider\", then that value is used as the authentication provider, and you can't set another one here.",
       "type": "array",
       "items": {
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["builtin", "saml", "openidconnect", "http-header"]
+          }
+        },
         "oneOf": [
           { "$ref": "#/definitions/BuiltinAuthProvider" },
           { "$ref": "#/definitions/SAMLAuthProvider" },
