@@ -68,6 +68,8 @@ type JSContext struct {
 
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
 
+	PlatformEnabled bool `json:"platformEnabled,omitempty"`
+
 	AuthProviders []authProviderInfo `json:"authProviders"`
 }
 
@@ -146,6 +148,8 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		AccessTokensEnabled: conf.AccessTokensEnabled(),
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
+
+		PlatformEnabled: conf.PlatformEnabled(),
 
 		AllowSignup: conf.AuthAllowSignup(),
 
