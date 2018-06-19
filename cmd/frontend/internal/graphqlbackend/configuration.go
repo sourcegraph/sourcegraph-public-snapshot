@@ -202,7 +202,7 @@ type configurationCascadeResolver struct{}
 
 func (r *configurationCascadeResolver) Defaults() *configurationResolver {
 	return &configurationResolver{
-		contents: `// This is the default configuration. Override it with org or user settings.
+		contents: `// This is the default configuration. Override it to configure settings.
 {
   /* default configuration is empty */
 }`,
