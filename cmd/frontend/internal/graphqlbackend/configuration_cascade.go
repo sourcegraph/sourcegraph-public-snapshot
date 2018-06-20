@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
 
@@ -72,7 +71,7 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 		subjects = append(subjects, r.subject)
 
 	default:
-		return nil, errors.New("unknown configuration subject")
+		return nil, errUnknownConfigurationSubject
 	}
 
 	return subjects, nil
