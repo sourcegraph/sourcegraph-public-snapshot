@@ -13,6 +13,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+* Fixed a goroutine leak which occurs when search requests are canceled.
+
 ## 2.9.1
 
 ### Fixed

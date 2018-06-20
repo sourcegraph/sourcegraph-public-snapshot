@@ -124,7 +124,7 @@ func (s *Store) prepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 		path string
 		err  error
 	}
-	resC := make(chan result)
+	resC := make(chan result, 1)
 	go func() {
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
