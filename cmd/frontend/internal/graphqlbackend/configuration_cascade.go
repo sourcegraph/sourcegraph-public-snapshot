@@ -51,6 +51,9 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 	}
 
 	switch {
+	case r.subject.site != nil:
+		// Nothing more to do.
+
 	case r.subject.org != nil:
 		subjects = append(subjects, r.subject)
 
