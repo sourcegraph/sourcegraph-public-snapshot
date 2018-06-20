@@ -137,6 +137,9 @@ func (o *settings) parseQueryRows(ctx context.Context, rows *sql.Rows) ([]*api.S
 		if err != nil {
 			return nil, err
 		}
+		if s.Subject.Org == nil && s.Subject.User == nil {
+			s.Subject.Site = true
+		}
 		settings = append(settings, &s)
 	}
 	if err := rows.Err(); err != nil {
