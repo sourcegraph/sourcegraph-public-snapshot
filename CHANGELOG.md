@@ -10,6 +10,16 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+## 2.9.2
+
+### Changed
+
+### Added
+
+### Fixed
+
+* Fixed an issue where enabling TLS would result in an infinite redirect loop.
+
 ## 2.9.1
 
 ### Fixed
