@@ -1,6 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
+import { parseHash } from '../util/url'
 
 /**
  * Describes a tab.
@@ -237,18 +238,6 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
     }
 
     /**
-     * Returns the tab ID specified in the URL. The tab ID is in the URL fragment (hash) after the rightmost "$".
-     * For example, in the URL "https://example.com/foo/bar?baz#qux$zip", the tab ID is "zip".
-     */
-    public static getTabIDFromURL(location: H.Location): string | null {
-        const i = location.hash.lastIndexOf('$')
-        if (i >= 0) {
-            return location.hash.slice(i + 1) || null
-        }
-        return null
-    }
-
-    /**
      * Returns the URL hash (which can be used as a relative URL) that specifies the given tab. If the URL hash
      * already contains a tab ID, it replaces it; otherwise it appends it to the current URL fragment. If the tabID
      * argument is null, then the tab ID is removed from the URL.
@@ -263,7 +252,7 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
     }
 
     private readFromURL(location: H.Location, tabs: T[]): ID | undefined {
-        const urlTabID = TabsWithURLViewStatePersistence.getTabIDFromURL(location)
+        const urlTabID = parseHash(location.hash).viewState
         if (urlTabID) {
             for (const tab of tabs) {
                 if (tab.id === urlTabID) {
