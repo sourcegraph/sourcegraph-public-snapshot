@@ -20,16 +20,18 @@ var (
 	// compared against the remote handler's build.Assets.ProductVersion
 	// field.
 	//
-	// When we speak to sourcegraph.com we report this version. Usually should
-	// be equal to latestReleaseBuild.Version, unless we are in the process of
-	// doing a release, in which case it should be one version ahead.
+	// When we speak to sourcegraph.com we report this version. This can be behind, equal to, or ahead of
+	// latestReleaseServerBuild:
+	// - If ahead, we are the in middle of a release, and ProductVersion should only be ahead by 1.
+	// - If equal to, we have recently released a new major/minor version cut from master.
+	// - If behind, we've released a patch release cut from a non-master branch.
 	ProductVersion = "2.9.1"
 
 	// latestReleaseServerBuild is only used by sourcegraph.com to tell existing
 	// Server installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseServerBuild = newBuild("2.9.1")
+	latestReleaseServerBuild = newBuild("2.9.2")
 
 	// latestReleaseDataCenterBuild is only used by sourcegraph.com to tell existing
 	// Data Center installations what the latest version is. The version here _must_ be
