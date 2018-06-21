@@ -75,7 +75,7 @@ func CanonicalURL(next http.Handler) http.Handler {
 
 		requireHostMatch := conf.ExperimentalFeatures != nil && canonicalURLRedirect
 		useXForwardedProto := httpToHTTPSRedirect == "load-balanced"
-		if reqURL := getRequestURL(r, useXForwardedProto); (requireHostMatch && reqURL.Host != appURL.Host) || (requireSchemeMatch && reqURL.Scheme != appURL.Scheme) {
+		if reqURL := getRequestURL(r, useXForwardedProto); (requireHostMatch && reqURL.Host != appURL.Host) || (requireSchemeMatch && !doesSchemeMatch(r, appURL, useXForwardedProto)) {
 			// Redirect.
 			dest := appURL.ResolveReference(&url.URL{Path: reqURL.Path, RawQuery: reqURL.RawQuery, Fragment: reqURL.Fragment})
 			http.Redirect(w, r, dest.String(), http.StatusMovedPermanently)
@@ -85,6 +85,25 @@ func CanonicalURL(next http.Handler) http.Handler {
 		// No redirect needed.
 		next.ServeHTTP(w, r)
 	})
+}
+
+// doesSchemeMatch returns true if and only if the request matches the app URL scheme.  Because the
+// request URL typically has no scheme set, we use http.Request.TLS to determine if the request's
+// scheme was "https". If useXForwardedProto is true, then use that while ignoring the scheme of the
+// actual request.
+func doesSchemeMatch(r *http.Request, appURL *url.URL, useXForwardedProto bool) bool {
+	if useXForwardedProto {
+		if v := r.Header.Get("X-Forwarded-Proto"); v != "" {
+			return v == appURL.Scheme
+		}
+	}
+	if appURL.Scheme == "https" && r.TLS == nil {
+		return false
+	}
+	if appURL.Scheme == "http" && r.TLS != nil {
+		return false
+	}
+	return true
 }
 
 func getRequestURL(r *http.Request, useXForwardedProto bool) *url.URL {
