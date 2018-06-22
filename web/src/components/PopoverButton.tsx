@@ -34,7 +34,7 @@ interface Props {
     /**
      * Hide the popover when this prop changes.
      */
-    hideOnChange: string
+    hideOnChange: any
 }
 
 interface State {
