@@ -36,7 +36,7 @@ export const UsernameInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement
         type="text"
         placeholder="Username"
         spellCheck={false}
-        pattern={VALID_USERNAME_REGEXP.toString().slice(1, -1)}
+        pattern={VALID_USERNAME_REGEXP}
         maxLength={USERNAME_MAX_LENGTH}
         autoComplete="username"
     />

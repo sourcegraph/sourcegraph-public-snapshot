@@ -98,7 +98,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                             type="text"
                             className="form-control"
                             placeholder="acme-corp"
-                            pattern={VALID_ORG_NAME_REGEXP.toString().slice(1, -1)}
+                            pattern={VALID_ORG_NAME_REGEXP}
                             maxLength={ORG_NAME_MAX_LENGTH}
                             required={true}
                             autoCorrect="off"
