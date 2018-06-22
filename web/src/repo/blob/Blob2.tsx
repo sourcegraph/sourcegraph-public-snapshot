@@ -18,7 +18,8 @@ import {
 import { Key } from 'ts-key-enum'
 import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
+import { getHover, getJumpURL } from '../../backend/features'
+import { EMODENOTFOUND, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
@@ -472,7 +473,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     return of(undefined)
                 }
                 // Fetch the hover for that position
-                const hoverFetch = fetchHover({
+                const hover = getHover({
                     repoPath: this.props.repoPath,
                     commitID: this.props.commitID,
                     filePath: this.props.filePath,
@@ -490,7 +491,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 // 1. Reset the hover content, so no old hover content is displayed at the new position while fetching
                 // 2. Show a loader if the hover fetch hasn't returned after 100ms
                 // 3. Show the hover once it returned
-                return merge([undefined], of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hoverFetch)), hoverFetch)
+                return merge([undefined], of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(hover)), hover)
             }),
             share()
         )
@@ -551,7 +552,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 }
                 return concat(
                     [LOADING],
-                    fetchJumpURL({
+                    getJumpURL({
                         repoPath: this.props.repoPath,
                         commitID: this.props.commitID,
                         filePath: this.props.filePath,

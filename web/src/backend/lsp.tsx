@@ -3,17 +3,27 @@ import {
     SymbolLocationInformation,
     WorkspaceReferenceParams,
 } from 'javascript-typescript-langserver/lib/request-type'
-import { Observable, throwError as error } from 'rxjs'
+import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString, MarkupContent } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
-import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
-import { siteFlags } from '../site/backend'
-import { getModeFromPath } from '../util'
+import { AbsoluteRepo, FileSpec, makeRepoURI, parseRepoURI, PositionSpec } from '../repo'
 import { normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
+import { ModeSpec } from './features'
+
+/**
+ * Contains the fields necessary to route the request to the correct logical LSP server process and construct the
+ * correct initialization request.
+ */
+interface LSPSelector extends AbsoluteRepo, ModeSpec {}
+
+/**
+ * Contains the fields necessary to construct an LSP TextDocumentPositionParams value.
+ */
+interface LSPTextDocumentPositionParams extends LSPSelector, PositionSpec, FileSpec {}
 
 interface LSPRequest {
     method: string
@@ -35,13 +45,13 @@ export function firstMarkedString(hover: Hover): MarkedString | undefined {
     return hover.contents.value
 }
 
-const wrapLSPRequests = (ctx: AbsoluteRepo, mode: string, requests: LSPRequest[]): any[] => [
+const wrapLSPRequests = (ctx: LSPSelector, requests: LSPRequest[]): any[] => [
     {
         id: 0,
         method: 'initialize',
         params: {
             rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
-            mode,
+            mode: ctx.mode,
         },
     },
     ...requests.map((req, i) => ({ id: i + 1, ...req })),
@@ -58,41 +68,8 @@ const wrapLSPRequests = (ctx: AbsoluteRepo, mode: string, requests: LSPRequest[]
 /** LSP proxy error code for unsupported modes */
 export const EMODENOTFOUND = -32000
 
-/**
- * Modes that are known to not be supported because the server replied with a mode not found error
- */
-const unsupportedModes = new Set<string>()
-
-// TODO(sqs): This is a messy global var. Refactor this code after
-// https://github.com/sourcegraph/sourcegraph/pull/8893 is merged.
-let siteHasCodeIntelligence = false
-
-siteFlags.subscribe(v => (siteHasCodeIntelligence = v && v.hasCodeIntelligence))
-
-let loggedSiteHasNoCodeIntelligence = false
-
-const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPRequest[]): Observable<any> => {
-    if (!siteHasCodeIntelligence) {
-        if (!loggedSiteHasNoCodeIntelligence) {
-            console.log(
-                '✱ Visit https://about.sourcegraph.com to enable code intelligence on this server (for hovers, go-to-definition, find references, etc.).'
-            )
-            loggedSiteHasNoCodeIntelligence = true
-        }
-        return error(
-            Object.assign(new Error('Code intelligence is not enabled'), {
-                code: EMODENOTFOUND,
-            })
-        )
-    }
-
-    // Check if mode is known to not be supported
-    const mode = getModeFromPath(path)
-    if (!mode || unsupportedModes.has(mode)) {
-        return error(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
-    }
-
-    return ajax({
+const sendLSPRequests = (ctx: LSPSelector, ...requests: LSPRequest[]): Observable<any> =>
+    ajax({
         method: 'POST',
         url: `/.api/xlang/${requests.map(({ method }) => method).join(',')}`,
         headers: {
@@ -100,7 +77,7 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
             Accept: 'application/json',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(wrapLSPRequests(ctx, mode, requests)),
+        body: JSON.stringify(wrapLSPRequests(ctx, requests)),
     }).pipe(
         // Workaround for https://github.com/ReactiveX/rxjs/issues/3606
         tap(response => {
@@ -116,9 +93,6 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
         map(results => {
             for (const result of results) {
                 if (result && result.error) {
-                    if (result.error.code === EMODENOTFOUND) {
-                        unsupportedModes.add(mode)
-                    }
                     throw Object.assign(new Error(result.error.message), result.error)
                 }
             }
@@ -126,7 +100,6 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
             return results.map((result: any) => result && result.result)
         })
     )
-}
 
 /**
  * Sends an LSP request to the xlang API.
@@ -134,15 +107,20 @@ const sendLSPRequests = (ctx: AbsoluteRepo, path: string, ...requests: LSPReques
  *
  * @param req The LSP request to send
  * @param ctx Repo and revision
+ * @param mode the LSP mode identifying the language server to use
  * @param path File path for determining the mode
  * @return The result of the method call
  */
-const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Observable<any> =>
-    sendLSPRequests(ctx, path, req).pipe(map(results => results[1]))
+const sendLSPRequest = (req: LSPRequest, ctx: LSPSelector): Observable<any> =>
+    sendLSPRequests(ctx, req).pipe(map(results => results[1]))
 
+/**
+ * Query the server's capabilities. The filePath must be any valid file path, to avoid causing the server to
+ * complain about the file not existing, even though the file itself is only used in a noop response.
+ */
 export const fetchServerCapabilities = memoizeObservable(
-    (pos: AbsoluteRepoFile & { mode: string }): Observable<ServerCapabilities> =>
-        sendLSPRequests(pos, pos.filePath, {
+    (pos: LSPSelector & { filePath: string }): Observable<ServerCapabilities> =>
+        sendLSPRequests(pos, {
             method: 'textDocument/didOpen',
             params: {
                 textDocument: {
@@ -150,7 +128,7 @@ export const fetchServerCapabilities = memoizeObservable(
                 },
             } as DidOpenTextDocumentParams,
         }).pipe(map(results => (results[0] as InitializeResult).capabilities)),
-    ({ mode }) => mode
+    cacheKey
 )
 
 /**
@@ -163,7 +141,7 @@ export const fetchServerCapabilities = memoizeObservable(
  *
  * @param response The LSP response to fix (will be mutated)
  */
-export const normalizeHoverResponse = (hoverResponse: any): void => {
+const normalizeHoverResponse = (hoverResponse: any): void => {
     // rls for Rust sometimes responds with `range: null`.
     // https://github.com/sourcegraph/sourcegraph/issues/11880
     if (hoverResponse && !hoverResponse.range) {
@@ -177,11 +155,9 @@ export const normalizeHoverResponse = (hoverResponse: any): void => {
     }
 }
 
-/**
- * @param pos Repo, commit, rev, file and 1-indexed position to request definition for
- */
+/** Callers should use features.getHover instead. */
 export const fetchHover = memoizeObservable(
-    (pos: AbsoluteRepoFilePosition): Observable<Hover | null> =>
+    (pos: LSPTextDocumentPositionParams): Observable<Hover | null> =>
         sendLSPRequest(
             {
                 method: 'textDocument/hover',
@@ -195,8 +171,7 @@ export const fetchHover = memoizeObservable(
                     },
                 },
             },
-            pos,
-            pos.filePath
+            pos
         ).pipe(
             tap(hover => {
                 normalizeHoverResponse(hover)
@@ -206,11 +181,12 @@ export const fetchHover = memoizeObservable(
                 }
             })
         ),
-    makeRepoURI
+    cacheKey
 )
 
+/** Callers should use features.getDefinition instead. */
 export const fetchDefinition = memoizeObservable(
-    (options: AbsoluteRepoFilePosition): Observable<Definition> =>
+    (options: LSPTextDocumentPositionParams): Observable<Definition> =>
         sendLSPRequest(
             {
                 method: 'textDocument/definition',
@@ -224,17 +200,13 @@ export const fetchDefinition = memoizeObservable(
                     },
                 },
             },
-            options,
-            options.filePath
+            options
         ),
-    makeRepoURI
+    cacheKey
 )
 
-/**
- * @param options Repo, commit, rev, file and 1-indexed position to request definition for
- * @return URL to jump to
- */
-export function fetchJumpURL(options: AbsoluteRepoFilePosition): Observable<string | null> {
+/** Callers should use features.getJumpURL instead. */
+export function fetchJumpURL(options: LSPTextDocumentPositionParams): Observable<string | null> {
     return fetchDefinition(options).pipe(
         map(def => {
             const defArray = Array.isArray(def) ? def : [def]
@@ -243,7 +215,7 @@ export function fetchJumpURL(options: AbsoluteRepoFilePosition): Observable<stri
                 return null
             }
 
-            const uri = parseRepoURI(def.uri) as AbsoluteRepoFilePosition
+            const uri = parseRepoURI(def.uri) as LSPTextDocumentPositionParams
             uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
             if (uri.repoPath === options.repoPath && uri.commitID === options.commitID) {
                 // Use pretty rev from the current context for same-repo J2D.
@@ -255,8 +227,9 @@ export function fetchJumpURL(options: AbsoluteRepoFilePosition): Observable<stri
     )
 }
 
+/** Callers should use features.getXdefinition instead. */
 export const fetchXdefinition = memoizeObservable(
-    (options: AbsoluteRepoFilePosition): Observable<SymbolLocationInformation | undefined> =>
+    (options: LSPTextDocumentPositionParams): Observable<SymbolLocationInformation | undefined> =>
         sendLSPRequest(
             {
                 method: 'textDocument/xdefinition',
@@ -270,14 +243,18 @@ export const fetchXdefinition = memoizeObservable(
                     },
                 },
             },
-            options,
-            options.filePath
+            options
         ).pipe(map((result: SymbolLocationInformation[]) => result[0])),
-    makeRepoURI
+    cacheKey
 )
 
+export interface LSPReferencesParams {
+    includeDeclaration?: boolean
+}
+
+/** Callers should use features.getReferences instead. */
 export const fetchReferences = memoizeObservable(
-    (options: AbsoluteRepoFilePosition & { includeDeclaration?: boolean }): Observable<Location[]> =>
+    (options: LSPTextDocumentPositionParams & LSPReferencesParams): Observable<Location[]> =>
         sendLSPRequest(
             {
                 method: 'textDocument/references',
@@ -294,14 +271,14 @@ export const fetchReferences = memoizeObservable(
                     },
                 },
             },
-            options,
-            options.filePath
+            options
         ),
-    makeRepoURI
+    cacheKey
 )
 
-export const queryImplementation = memoizeObservable(
-    (options: AbsoluteRepoFilePosition): Observable<Location[]> =>
+/** Callers should use features.getImplementation instead. */
+export const fetchImplementation = memoizeObservable(
+    (options: LSPTextDocumentPositionParams): Observable<Location[]> =>
         sendLSPRequest(
             {
                 method: 'textDocument/implementation',
@@ -315,13 +292,12 @@ export const queryImplementation = memoizeObservable(
                     },
                 },
             },
-            options,
-            options.filePath
+            options
         ),
-    makeRepoURI
+    cacheKey
 )
 
-interface XReferenceOptions extends WorkspaceReferenceParams, AbsoluteRepoFile {
+export interface XReferenceOptions extends WorkspaceReferenceParams {
     /**
      * This is not in the spec, but Go and possibly others support it
      * https://github.com/sourcegraph/go-langserver/blob/885ad3639de0e1e6c230db5395ea0f682534b458/pkg/lspext/lspext.go#L32
@@ -329,8 +305,9 @@ interface XReferenceOptions extends WorkspaceReferenceParams, AbsoluteRepoFile {
     limit: number
 }
 
+/** Callers should use features.getXreferences instead. */
 export const fetchXreferences = memoizeObservable(
-    (options: XReferenceOptions): Observable<Location[]> =>
+    (options: XReferenceOptions & LSPSelector): Observable<Location[]> =>
         sendLSPRequest(
             {
                 method: 'workspace/xreferences',
@@ -344,8 +321,12 @@ export const fetchXreferences = memoizeObservable(
                 repoPath: options.repoPath,
                 rev: options.rev,
                 commitID: options.commitID,
-            },
-            options.filePath
+                mode: options.mode,
+            }
         ).pipe(map((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference))),
-    options => makeRepoURI(options) + ':' + JSON.stringify([options.query, options.hints, options.limit])
+    options => cacheKey(options) + ':' + JSON.stringify([options.query, options.hints, options.limit])
 )
+
+function cacheKey(sel: LSPSelector): string {
+    return `${makeRepoURI(sel)}:mode=${sel.mode}`
+}

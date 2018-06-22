@@ -21,23 +21,15 @@ import {
 } from 'rxjs/operators'
 import { Hover, Location, MarkedString, Position } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
+import { getDefinition, getHover, getImplementations, getReferences, withDefaultMode } from '../../../backend/features'
 import * as GQL from '../../../backend/graphqlschema'
-import {
-    fetchDefinition,
-    fetchHover,
-    fetchReferences,
-    fetchServerCapabilities,
-    firstMarkedString,
-    isEmptyHover,
-    queryImplementation,
-} from '../../../backend/lsp'
+import { fetchServerCapabilities, firstMarkedString, isEmptyHover } from '../../../backend/lsp'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { getModeFromPath } from '../../../util'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
-import { AbsoluteRepoFile, AbsoluteRepoFilePosition } from '../../index'
+import { AbsoluteRepoFile, AbsoluteRepoFilePosition, PositionSpec } from '../../index'
 import { RepoHeaderActionPortal } from '../../RepoHeaderActionPortal'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { ToggleHistoryPanel } from '../actions/ToggleHistoryPanel'
@@ -45,11 +37,10 @@ import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
 import { FileLocationsTree } from './FileLocationsTree'
 
-interface Props extends AbsoluteRepoFile {
+interface Props extends AbsoluteRepoFile, Partial<PositionSpec> {
     location: H.Location
     history: H.History
     repoID: GQL.ID
-    position?: Position
     isLightTheme: boolean
 }
 
@@ -123,25 +114,23 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                     distinctUntilChanged(
                         (a, b) => a.repoPath === b.repoPath && a.commitID === b.commitID && a.filePath === b.filePath
                     ),
-                    switchMap(subject => {
-                        const mode = getModeFromPath(subject.filePath)
-                        if (!mode) {
-                            return [{ serverCapabilitiesOrError: undefined }]
-                        }
-                        return fetchServerCapabilities({
-                            filePath: subject.filePath,
-                            repoPath: subject.repoPath,
-                            rev: subject.rev,
-                            commitID: subject.commitID,
-                            mode,
-                        }).pipe(
+                    switchMap(subject =>
+                        withDefaultMode(
+                            {
+                                repoPath: subject.repoPath,
+                                rev: subject.rev,
+                                commitID: subject.commitID,
+                                filePath: subject.filePath,
+                            },
+                            fetchServerCapabilities
+                        ).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ serverCapabilitiesOrError: c })),
                             startWith<Pick<State, 'serverCapabilitiesOrError'>>({
                                 serverCapabilitiesOrError: undefined,
                             })
                         )
-                    })
+                    )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )
@@ -159,7 +148,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                             return [{ hoverOrError: undefined }]
                         }
                         type PartialStateUpdate = Pick<State, 'hoverOrError'>
-                        const result = fetchHover(subject as AbsoluteRepoFilePosition).pipe(
+                        const result = getHover(subject as AbsoluteRepoFilePosition).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ hoverOrError: c } as PartialStateUpdate))
                         )
@@ -350,12 +339,12 @@ export class BlobPanel extends React.PureComponent<Props, State> {
     private onSelectLocation = (tab: BlobPanelTabID): void => eventLogger.log('BlobPanelLocationSelected', { tab })
 
     private queryDefinition = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        fetchDefinition(this.props as AbsoluteRepoFilePosition).pipe(
+        getDefinition(this.props as AbsoluteRepoFilePosition).pipe(
             map(locations => ({ loading: false, locations: locations ? castArray(locations) : [] }))
         )
 
     private queryReferencesLocal = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        fetchReferences({ ...(this.props as AbsoluteRepoFilePosition), includeDeclaration: false }).pipe(
+        getReferences({ ...(this.props as AbsoluteRepoFilePosition), includeDeclaration: false }).pipe(
             map(c => ({ loading: false, locations: c }))
         )
 
@@ -374,7 +363,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         )
 
     private queryImplementation = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        queryImplementation(this.props as AbsoluteRepoFilePosition).pipe(map(c => ({ loading: false, locations: c })))
+        getImplementations(this.props as AbsoluteRepoFilePosition).pipe(map(c => ({ loading: false, locations: c })))
 }
 
 function renderMarkedString(markedString: MarkedString): React.ReactFragment {

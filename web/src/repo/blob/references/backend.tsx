@@ -1,9 +1,9 @@
 import { from, Observable } from 'rxjs'
 import { bufferCount, catchError, concatMap, filter, map, mergeMap, tap } from 'rxjs/operators'
 import { Location } from 'vscode-languageserver-types'
+import { getXdefinition, getXreferences } from '../../../backend/features'
 import { gql, queryGraphQL } from '../../../backend/graphql'
 import * as GQL from '../../../backend/graphqlschema'
-import { fetchXdefinition, fetchXreferences } from '../../../backend/lsp'
 import * as util from '../../../util'
 import { memoizeObservable } from '../../../util/memoize'
 import { AbsoluteRepoFilePosition, makeRepoURI } from '../../index'
@@ -86,7 +86,7 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
     // Memoization is not done at the top level (b/c we only support Promise fetching memoization ATM).
     // In this case, memoization is achieved at a lower level since this function simply calls out to
     // other memoized fetchers.
-    fetchXdefinition(ctx).pipe(
+    getXdefinition(ctx).pipe(
         mergeMap(defInfo => {
             if (!defInfo) {
                 return []
@@ -135,7 +135,7 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                                     if (!dependent.workspace) {
                                         return []
                                     }
-                                    return fetchXreferences({
+                                    return getXreferences({
                                         ...dependent.workspace,
                                         filePath: ctx.filePath,
                                         query: defInfo.symbol,

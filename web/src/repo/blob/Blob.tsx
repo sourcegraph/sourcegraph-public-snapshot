@@ -5,7 +5,8 @@ import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'r
 import { catchError, debounceTime, filter, map, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 import { Position, Range } from 'vscode-languageserver-types'
-import { EMODENOTFOUND, fetchHover, fetchJumpURL, isEmptyHover } from '../../backend/lsp'
+import { getHover, getJumpURL } from '../../backend/features'
+import { EMODENOTFOUND, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { asError } from '../../util/errors'
@@ -574,7 +575,7 @@ export class Blob extends React.Component<Props, State> {
      * tooltip is defined, it will update the target styling.
      */
     private getTooltip(target: HTMLElement, ctx: AbsoluteRepoFilePosition): Observable<TooltipData> {
-        return fetchHover(ctx).pipe(
+        return getHover(ctx).pipe(
             tap(data => {
                 if (isEmptyHover(data)) {
                     // short-cirtuit, no tooltip data
@@ -591,7 +592,7 @@ export class Blob extends React.Component<Props, State> {
      * This Observable will emit exactly one value before it completes.
      */
     private getDefinition(ctx: AbsoluteRepoFilePosition): Observable<string | null> {
-        return fetchJumpURL(ctx)
+        return getJumpURL(ctx)
     }
 
     /**
