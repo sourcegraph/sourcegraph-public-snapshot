@@ -7,13 +7,16 @@ import { Link } from 'react-router-dom'
  */
 export const LinkOrSpan: React.SFC<{
     to: string | undefined | null
+    target?: string
     className?: string
     children?: React.ReactNode
-}> = ({ to, className = '', children }) =>
+}> = ({ to, className = '', children, ...otherProps }) =>
     to ? (
-        <Link to={to} className={className}>
+        <Link to={to} className={className} {...otherProps}>
             {children}
         </Link>
     ) : (
-        <span className={className}>{children}</span>
+        <span className={className} {...otherProps}>
+            {children}
+        </span>
     )
