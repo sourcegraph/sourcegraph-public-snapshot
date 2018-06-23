@@ -189,21 +189,18 @@ export class BlobPanel extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         let titleRendered: React.ReactFragment | undefined
         let extraRendered: React.ReactFragment | undefined
-        if (this.state.hoverOrError === LOADING) {
+        const { hoverOrError } = this.state
+        if (hoverOrError === LOADING) {
             titleRendered = <Loader className="icon-inline" />
-        } else if (this.state.hoverOrError === undefined) {
+        } else if (hoverOrError === undefined) {
             // Don't show loading indicator yet (to reduce UI jitter).
             titleRendered = undefined
-        } else if (
-            this.state.hoverOrError &&
-            !isErrorLike(this.state.hoverOrError) &&
-            !isEmptyHover(this.state.hoverOrError)
-        ) {
+        } else if (hoverOrError && !isErrorLike(hoverOrError) && !isEmptyHover(hoverOrError)) {
             // Hover with one or more MarkedStrings.
-            titleRendered = renderMarkedString(firstMarkedString(this.state.hoverOrError)!)
+            titleRendered = renderMarkedString(firstMarkedString(hoverOrError)!)
 
-            if (Array.isArray(this.state.hoverOrError.contents) && this.state.hoverOrError.contents.length >= 2) {
-                extraRendered = this.state.hoverOrError.contents.slice(1).map((s, i) => (
+            if (Array.isArray(hoverOrError.contents) && hoverOrError.contents.length >= 2) {
+                extraRendered = hoverOrError.contents.slice(1).map((s, i) => (
                     <div key={i} className="blob-panel__extra-item px-2 pt-1">
                         {renderMarkedString(s)}
                     </div>
@@ -216,8 +213,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
             // displayed.
         }
 
-        const isValidToken =
-            this.state.hoverOrError && this.state.hoverOrError !== LOADING && !isErrorLike(this.state.hoverOrError)
+        const isValidToken = hoverOrError && hoverOrError !== LOADING && !isErrorLike(hoverOrError)
 
         const viewState = parseHash<BlobPanelTabID>(this.props.location.hash).viewState
 
