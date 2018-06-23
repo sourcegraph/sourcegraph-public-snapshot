@@ -531,7 +531,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             zip(positions, hoverObservables)
                 .pipe(
                     distinctUntilChanged(([positionA], [positionB]) => isEqual(positionA, positionB)),
-                    switchMap(([position, hoverObservable]) => hoverObservable),
+                    switchMap(([, hoverObservable]) => hoverObservable),
                     filter(Hover.is)
                 )
                 .subscribe(() => {

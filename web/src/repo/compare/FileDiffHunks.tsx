@@ -192,7 +192,7 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
                                 }
 
                                 this.setFixedTooltip(tooltip)
-                                updateTooltip(tooltip, true, this.tooltipActions(ctx))
+                                updateTooltip(tooltip, true, this.tooltipActions())
                             }),
                             zip(this.getDefinition(ctx).pipe(catchError(err => [asError(err)]))),
                             map(([tooltip, defResponse]) => ({
@@ -222,7 +222,7 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
                     }
 
                     this.setFixedTooltip(data)
-                    updateTooltip(data, true, this.tooltipActions(data.ctx))
+                    updateTooltip(data, true, this.tooltipActions())
                 })
         )
 
@@ -275,13 +275,13 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
                     if (click) {
                         this.fixedTooltip.next(data)
                     } else if (!this.state.fixedTooltip) {
-                        updateTooltip(data, false, this.tooltipActions(data.ctx))
+                        updateTooltip(data, false, this.tooltipActions())
                     }
                 })
         )
 
         this.subscriptions.add(
-            fromEvent<MouseEvent>(ref, 'mouseout').subscribe(e => {
+            fromEvent<MouseEvent>(ref, 'mouseout').subscribe(() => {
                 for (const el of ref.querySelectorAll('.selection-highlight')) {
                     el.classList.remove('selection-highlight')
                 }
@@ -442,7 +442,7 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
         this.setFixedTooltip()
     }
 
-    private tooltipActions = (ctx: AbsoluteRepoFilePosition) => ({
+    private tooltipActions = () => ({
         definition: this.handleGoToDefinition,
         references: this.handleFindReferences,
         dismiss: this.handleDismiss,

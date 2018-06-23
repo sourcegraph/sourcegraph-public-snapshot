@@ -174,7 +174,7 @@ export class Blob extends React.Component<Props, State> {
             this.subscriptions.unsubscribe()
             this.subscriptions = new Subscription()
             if (this.blobElement) {
-                this.addEventListeners(this.blobElement, nextProps)
+                this.addEventListeners(this.blobElement)
             }
             this.setFixedTooltip()
         }
@@ -212,7 +212,7 @@ export class Blob extends React.Component<Props, State> {
         return false
     }
 
-    public componentDidUpdate(prevProps: Props, prevState: State): void {
+    public componentDidUpdate(prevProps: Props): void {
         hideTooltip()
         if (this.blobElement) {
             createTooltips(this.blobElement)
@@ -267,7 +267,7 @@ export class Blob extends React.Component<Props, State> {
             // This is the first time the component is ever mounted. We need to set initial scroll.
             this.scrollToLine(this.props)
             createTooltips(ref)
-            this.addEventListeners(ref, this.props)
+            this.addEventListeners(ref)
             const parsedHash = parseHash(this.props.location.hash)
             if (parsedHash.line && parsedHash.character) {
                 this.fixedTooltip.next(this.props)
@@ -275,7 +275,7 @@ export class Blob extends React.Component<Props, State> {
         }
     }
 
-    private addEventListeners = (ref: HTMLElement, props: Props): void => {
+    private addEventListeners = (ref: HTMLElement): void => {
         this.subscriptions.add(
             this.fixedTooltip
                 .pipe(
@@ -336,7 +336,7 @@ export class Blob extends React.Component<Props, State> {
                                 }
 
                                 this.setFixedTooltip(tooltip)
-                                updateTooltip(tooltip, true, this.tooltipActions(ctx))
+                                updateTooltip(tooltip, true, this.tooltipActions())
                             }),
                             zip(this.getDefinition(ctx).pipe(catchError(err => [asError(err)]))),
                             map(([tooltip, defResponse]) => ({
@@ -366,7 +366,7 @@ export class Blob extends React.Component<Props, State> {
                     }
 
                     this.setFixedTooltip(data)
-                    updateTooltip(data, true, this.tooltipActions(data.ctx))
+                    updateTooltip(data, true, this.tooltipActions())
                 })
         )
         this.subscriptions.add(
@@ -406,13 +406,13 @@ export class Blob extends React.Component<Props, State> {
                 .subscribe(data => {
                     logTelemetryOnTooltip(data, !!this.state.fixedTooltip)
                     if (!this.state.fixedTooltip) {
-                        updateTooltip(data, false, this.tooltipActions(data.ctx))
+                        updateTooltip(data, false, this.tooltipActions())
                     }
                 })
         )
 
         this.subscriptions.add(
-            fromEvent<MouseEvent>(ref, 'mouseout').subscribe(e => {
+            fromEvent<MouseEvent>(ref, 'mouseout').subscribe(() => {
                 for (const el of document.querySelectorAll('.blob .selection-highlight')) {
                     el.classList.remove('selection-highlight')
                 }
@@ -671,7 +671,7 @@ export class Blob extends React.Component<Props, State> {
         }
     }
 
-    private tooltipActions = (ctx: AbsoluteRepoFilePosition) => ({
+    private tooltipActions = () => ({
         definition: this.handleGoToDefinition,
         references: this.handleFindReferences,
         dismiss: this.handleDismiss,
