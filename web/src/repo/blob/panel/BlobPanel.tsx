@@ -124,8 +124,8 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         (a, b) => a.repoPath === b.repoPath && a.commitID === b.commitID && a.filePath === b.filePath
                     ),
                     switchMap(subject => {
-                        const language = getModeFromPath(subject.filePath)
-                        if (!language) {
+                        const mode = getModeFromPath(subject.filePath)
+                        if (!mode) {
                             return [{ serverCapabilitiesOrError: undefined }]
                         }
                         return fetchServerCapabilities({
@@ -133,7 +133,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                             repoPath: subject.repoPath,
                             rev: subject.rev,
                             commitID: subject.commitID,
-                            language,
+                            mode,
                         }).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ serverCapabilitiesOrError: c })),

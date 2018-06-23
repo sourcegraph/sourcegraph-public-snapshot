@@ -8,14 +8,7 @@ import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString, MarkupContent } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
-import {
-    AbsoluteRepo,
-    AbsoluteRepoFile,
-    AbsoluteRepoFilePosition,
-    AbsoluteRepoLanguageFile,
-    makeRepoURI,
-    parseRepoURI,
-} from '../repo'
+import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, makeRepoURI, parseRepoURI } from '../repo'
 import { siteFlags } from '../site/backend'
 import { getModeFromPath } from '../util'
 import { normalizeAjaxError } from '../util/errors'
@@ -148,7 +141,7 @@ const sendLSPRequest = (req: LSPRequest, ctx: AbsoluteRepo, path: string): Obser
     sendLSPRequests(ctx, path, req).pipe(map(results => results[1]))
 
 export const fetchServerCapabilities = memoizeObservable(
-    (pos: AbsoluteRepoLanguageFile): Observable<ServerCapabilities> =>
+    (pos: AbsoluteRepoFile & { mode: string }): Observable<ServerCapabilities> =>
         sendLSPRequests(pos, pos.filePath, {
             method: 'textDocument/didOpen',
             params: {
@@ -157,7 +150,7 @@ export const fetchServerCapabilities = memoizeObservable(
                 },
             } as DidOpenTextDocumentParams,
         }).pipe(map(results => (results[0] as InitializeResult).capabilities)),
-    ({ language }) => language
+    ({ mode }) => mode
 )
 
 /**

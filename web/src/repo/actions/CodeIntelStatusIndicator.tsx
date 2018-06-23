@@ -41,14 +41,14 @@ const CapabilityStatus: React.StatelessComponent<{ label: string; provided: bool
 
 const propsToStateUpdate = (obs: Observable<CodeIntelStatusIndicatorProps>) =>
     obs.pipe(
-        distinctUntilChanged((a, b) => a.language === b.language),
-        switchMap(({ repoPath, rev, commitID, filePath, language }) => {
-            if (!language) {
+        distinctUntilChanged((a, b) => a.mode === b.mode),
+        switchMap(({ repoPath, rev, commitID, filePath, mode }) => {
+            if (!mode) {
                 return [null]
             }
             return forkJoin(
-                fetchLangServer(language),
-                fetchServerCapabilities({ repoPath, rev, commitID, filePath, language }).pipe(
+                fetchLangServer(mode),
+                fetchServerCapabilities({ repoPath, rev, commitID, filePath, mode }).pipe(
                     catchError(err => {
                         if (err.code === EMODENOTFOUND) {
                             return [undefined]
@@ -76,7 +76,7 @@ const propsToStateUpdate = (obs: Observable<CodeIntelStatusIndicatorProps>) =>
 
 interface CodeIntelStatusIndicatorProps extends AbsoluteRepoFile {
     userIsSiteAdmin: boolean
-    language?: string
+    mode?: string
 }
 interface CodeIntelStatusIndicatorState {
     /** The language server, error, undefined while loading or null if no language server registered */
@@ -100,7 +100,7 @@ export class CodeIntelStatusIndicator extends React.Component<
         return (
             !isEqual(this.state, nextState) ||
             this.props.userIsSiteAdmin !== nextProps.userIsSiteAdmin ||
-            this.props.language !== nextProps.language
+            this.props.mode !== nextProps.mode
         )
     }
 
@@ -140,7 +140,7 @@ export class CodeIntelStatusIndicator extends React.Component<
     }
 
     public render(): React.ReactNode {
-        const language = getModeFromPath(this.props.filePath)
+        const mode = this.props.mode || getModeFromPath(this.props.filePath)
         return (
             <div className="code-intel-status-indicator">
                 <button
@@ -163,18 +163,17 @@ export class CodeIntelStatusIndicator extends React.Component<
                                 <a href="http://langserver.org/" target="_blank">
                                     langserver.org
                                 </a>{' '}
-                                for {language} language servers.
+                                for {mode} language servers.
                             </>
                         ) : !this.state.langServerOrError.capabilities ? (
                             <>
                                 <h3>
-                                    The {this.state.langServerOrError.displayName || language} language server is
-                                    disabled
+                                    The {this.state.langServerOrError.displayName || mode} language server is disabled
                                 </h3>
                                 {this.props.userIsSiteAdmin ? (
                                     <>
-                                        You can enable the {this.state.langServerOrError.displayName || language}{' '}
-                                        language server on the{' '}
+                                        You can enable the {this.state.langServerOrError.displayName || mode} language
+                                        server on the{' '}
                                         <Link to="/site-admin/code-intelligence">
                                             code intelligence administration page
                                         </Link>.
@@ -182,7 +181,7 @@ export class CodeIntelStatusIndicator extends React.Component<
                                 ) : (
                                     <>
                                         Ask your site admin to enable the{' '}
-                                        {this.state.langServerOrError.displayName || language} language server.
+                                        {this.state.langServerOrError.displayName || mode} language server.
                                     </>
                                 )}
                             </>
@@ -191,7 +190,7 @@ export class CodeIntelStatusIndicator extends React.Component<
                                 <h3>
                                     Connected to the <wbr />
                                     <a href={this.state.langServerOrError.homepageURL} target="_blank">
-                                        {this.state.langServerOrError.displayName || language} language server
+                                        {this.state.langServerOrError.displayName || mode} language server
                                     </a>
                                 </h3>
                                 <h4 className="mt-2 mb-0">Provides:</h4>

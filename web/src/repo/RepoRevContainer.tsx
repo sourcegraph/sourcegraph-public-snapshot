@@ -250,7 +250,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                                 rev={this.props.rev}
                                                                 commitID={resolvedRev.commitID}
                                                                 filePath={filePath}
-                                                                language={getModeFromPath(filePath)}
+                                                                mode={getModeFromPath(filePath)}
                                                             />
                                                         }
                                                     />

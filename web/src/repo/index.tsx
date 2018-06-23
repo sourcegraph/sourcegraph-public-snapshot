@@ -114,13 +114,6 @@ export interface RepoFile extends RepoSpec, RevSpec, Partial<ResolvedRevSpec>, F
 export interface AbsoluteRepoFile extends RepoSpec, RevSpec, ResolvedRevSpec, FileSpec {}
 
 /**
- * A file at an exact commit of a known programming language
- */
-export interface AbsoluteRepoLanguageFile extends AbsoluteRepoFile {
-    language: string
-}
-
-/**
  * A position in file
  */
 export interface RepoFilePosition
