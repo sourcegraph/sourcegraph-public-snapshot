@@ -39,14 +39,18 @@ export function scrollIntoView(listElement?: HTMLElement, selectedElement?: HTML
     }
 }
 
+/** The LSP mode used for plain text files and all other unrecognized files. */
+export const PLAINTEXT_MODE = 'plaintext'
+
 /**
- * getModeFromPath returns the LSP mode for the provided file path.
+ * getModeFromPath returns the LSP mode for the provided file path. If the file path does not correspond to any
+ * known mode, 'plaintext' is returned.
  */
-export function getModeFromPath(path: string): string | undefined {
+export function getModeFromPath(path: string): string {
     const fileName = basename(path)
     const ext = getPathExtension(path)
 
-    return getModeFromExactFilename(fileName) || getModeFromExtension(ext)
+    return getModeFromExactFilename(fileName) || getModeFromExtension(ext) || PLAINTEXT_MODE
 }
 
 /**

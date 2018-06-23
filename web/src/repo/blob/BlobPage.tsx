@@ -4,6 +4,7 @@ import { isEqual, pick, upperFirst } from 'lodash'
 import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+import { ModeSpec } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
@@ -73,7 +74,7 @@ const fetchBlob = memoizeObservable(
     fetchBlobCacheKey
 )
 
-interface Props extends AbsoluteRepoFile {
+interface Props extends AbsoluteRepoFile, ModeSpec {
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -216,6 +217,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                                     filePath={this.props.filePath}
                                     html={this.state.blobOrError.highlight.html}
                                     rev={this.props.rev}
+                                    mode={this.props.mode}
                                     wrapCode={this.state.wrapCode}
                                     renderMode={renderMode}
                                     location={this.props.location}
@@ -229,6 +231,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                                     filePath={this.props.filePath}
                                     html={this.state.blobOrError.highlight.html}
                                     rev={this.props.rev}
+                                    mode={this.props.mode}
                                     wrapCode={this.state.wrapCode}
                                     renderMode={renderMode}
                                     isLightTheme={this.props.isLightTheme}

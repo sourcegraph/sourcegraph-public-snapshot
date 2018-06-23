@@ -18,7 +18,7 @@ import {
 import { Key } from 'ts-key-enum'
 import { Hover, Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { getHover, getJumpURL } from '../../backend/features'
+import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { EMODENOTFOUND, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike } from '../../util/errors'
@@ -152,7 +152,7 @@ const scrollIntoCenterIfNeeded = (container: HTMLElement, content: HTMLElement, 
  */
 const toPortalID = (line: number) => `blame-portal-${line}`
 
-interface BlobProps extends AbsoluteRepoFile {
+interface BlobProps extends AbsoluteRepoFile, ModeSpec {
     /** The trusted syntax-highlighted code as HTML */
     html: string
 
@@ -479,6 +479,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     filePath: this.props.filePath,
                     rev: this.props.rev,
                     position,
+                    mode: this.props.mode,
                 }).pipe(
                     catchError(error => {
                         if (error && error.code === EMODENOTFOUND) {
@@ -558,6 +559,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         filePath: this.props.filePath,
                         rev: this.props.rev,
                         position,
+                        mode: this.props.mode,
                     }).pipe(map(url => (url !== null ? { jumpURL: url } : null)), catchError(error => [asError(error)]))
                 )
             })

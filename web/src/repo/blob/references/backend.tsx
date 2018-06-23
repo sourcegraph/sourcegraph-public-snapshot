@@ -4,14 +4,13 @@ import { Location } from 'vscode-languageserver-types'
 import { getXdefinition, getXreferences } from '../../../backend/features'
 import { gql, queryGraphQL } from '../../../backend/graphql'
 import * as GQL from '../../../backend/graphqlschema'
-import * as util from '../../../util'
+import { LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { memoizeObservable } from '../../../util/memoize'
-import { AbsoluteRepoFilePosition, makeRepoURI } from '../../index'
+import { makeRepoURI } from '../../index'
 
 const fetchDependencyReferences = memoizeObservable(
-    (ctx: AbsoluteRepoFilePosition): Observable<GQL.IDependencyReferences | null> => {
-        const mode = util.getModeFromPath(ctx.filePath)
-        return queryGraphQL(
+    (ctx: LSPTextDocumentPositionParams): Observable<GQL.IDependencyReferences | null> =>
+        queryGraphQL(
             gql`
                 query DependencyReferences(
                     $repoPath: String!
@@ -55,7 +54,7 @@ const fetchDependencyReferences = memoizeObservable(
             {
                 repoPath: ctx.repoPath,
                 commitID: ctx.commitID,
-                mode,
+                mode: ctx.mode,
                 filePath: ctx.filePath,
                 line: ctx.position.line - 1,
                 character: ctx.position.character! - 1,
@@ -77,12 +76,11 @@ const fetchDependencyReferences = memoizeObservable(
 
                 return result.data.repository.commit.file.dependencyReferences
             })
-        )
-    },
+        ),
     makeRepoURI
 )
 
-export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observable<Location[]> =>
+export const fetchExternalReferences = (ctx: LSPTextDocumentPositionParams): Observable<Location[]> =>
     // Memoization is not done at the top level (b/c we only support Promise fetching memoization ATM).
     // In this case, memoization is achieved at a lower level since this function simply calls out to
     // other memoized fetchers.
@@ -141,6 +139,7 @@ export const fetchExternalReferences = (ctx: AbsoluteRepoFilePosition): Observab
                                         query: defInfo.symbol,
                                         hints: dependent.hints,
                                         limit: 50,
+                                        mode: ctx.mode,
                                     }).pipe(
                                         tap(refs => (numRefsFetched += refs.length)),
                                         catchError(e => {

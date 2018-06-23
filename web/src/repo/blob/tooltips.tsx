@@ -2,9 +2,9 @@ import { highlightBlock } from 'highlight.js/lib/highlight'
 import { isEmpty, unescape } from 'lodash'
 import marked from 'marked'
 import { Hover, MarkedString, Position } from 'vscode-languageserver-types'
+import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { urlWithoutSearchOptions } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
-import { getModeFromPath } from '../../util'
 import { toAbsoluteBlobURL } from '../../util/url'
 import { AbsoluteRepoFilePosition, parseBrowserRepoURL } from './../index'
 
@@ -20,7 +20,7 @@ const definitionIconSVG =
 
 export interface TooltipData extends Partial<Hover> {
     target: HTMLElement
-    ctx: AbsoluteRepoFilePosition
+    ctx: LSPTextDocumentPositionParams
     defUrlOrError?: string | Error
     loading?: boolean
 }
@@ -187,7 +187,10 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         tooltipElements.findRefsAction.onclick = actions.references(ctx)
 
         if (ctx) {
-            tooltipElements.findRefsAction.href = toAbsoluteBlobURL({ ...ctx, viewState: 'references' })
+            tooltipElements.findRefsAction.href = toAbsoluteBlobURL({
+                ...(ctx as Pick<typeof ctx, Exclude<keyof typeof ctx, 'mode'>>), // suppress tsc error about extra 'mode' prop
+                viewState: 'references',
+            })
         } else {
             tooltipElements.findRefsAction.href = ''
         }
@@ -225,7 +228,7 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         container.className = 'tooltip__divider e2e-tooltip-content'
 
         const tooltipText = document.createElement('DIV')
-        tooltipText.className = `tooltip__title ${getModeFromPath(ctx.filePath)}`
+        tooltipText.className = `tooltip__title ${ctx.mode}`
         tooltipText.appendChild(document.createTextNode(title))
 
         container.appendChild(tooltipText)

@@ -1,10 +1,8 @@
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
-import { Observable, throwError as error } from 'rxjs'
+import { Observable } from 'rxjs'
 import { Definition, Hover, Location } from 'vscode-languageserver-types'
-import { AbsoluteRepo, AbsoluteRepoFile, AbsoluteRepoFilePosition, FileSpec } from '../repo'
-import { getModeFromPath } from '../util'
+import { AbsoluteRepoFile } from '../repo'
 import {
-    EMODENOTFOUND,
     fetchDefinition,
     fetchHover,
     fetchImplementation,
@@ -13,6 +11,8 @@ import {
     fetchXdefinition,
     fetchXreferences,
     LSPReferencesParams,
+    LSPSelector,
+    LSPTextDocumentPositionParams,
     XReferenceOptions,
 } from './lsp'
 
@@ -24,36 +24,14 @@ export interface ModeSpec {
     mode: string
 }
 
-export function withDefaultMode<C extends AbsoluteRepo & FileSpec, R>(
-    ctx: C,
-    f: (pos: C & ModeSpec) => Observable<R>
-): Observable<R> {
-    // Check if mode is known to not be supported
-    const mode = getModeFromArg(ctx)
-    if (!mode) {
-        return error(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
-    }
-    return f(Object.assign({}, ctx, { mode })) // TS compiler rejects spread until https://github.com/Microsoft/TypeScript/pull/13288 is merged
-}
-
-function getModeFromArg(arg: FileSpec | ModeSpec): string | undefined {
-    if ('mode' in arg && arg.mode) {
-        return arg.mode
-    }
-    if ('filePath' in arg && arg.filePath) {
-        return getModeFromPath(arg.filePath)
-    }
-    return undefined
-}
-
 /**
  * Fetches hover information for the given location.
  *
  * @param ctx the location
  * @return hover for the location
  */
-export function getHover(ctx: AbsoluteRepoFilePosition): Observable<Hover | null> {
-    return withDefaultMode(ctx, fetchHover)
+export function getHover(ctx: LSPTextDocumentPositionParams): Observable<Hover | null> {
+    return fetchHover(ctx)
 }
 
 /**
@@ -62,8 +40,8 @@ export function getHover(ctx: AbsoluteRepoFilePosition): Observable<Hover | null
  * @param ctx the location
  * @return definitions of the symbol at the location
  */
-export function getDefinition(ctx: AbsoluteRepoFilePosition): Observable<Definition> {
-    return withDefaultMode(ctx, fetchDefinition)
+export function getDefinition(ctx: LSPTextDocumentPositionParams): Observable<Definition> {
+    return fetchDefinition(ctx)
 }
 
 /**
@@ -72,8 +50,8 @@ export function getDefinition(ctx: AbsoluteRepoFilePosition): Observable<Definit
  * @param ctx the location containing the token whose definition to jump to
  * @return destination URL
  */
-export function getJumpURL(ctx: AbsoluteRepoFilePosition): Observable<string | null> {
-    return withDefaultMode(ctx, fetchJumpURL)
+export function getJumpURL(ctx: LSPTextDocumentPositionParams): Observable<string | null> {
+    return fetchJumpURL(ctx)
 }
 
 /**
@@ -82,8 +60,8 @@ export function getJumpURL(ctx: AbsoluteRepoFilePosition): Observable<string | n
  * @param ctx the location
  * @return information about the symbol at the location
  */
-export function getXdefinition(ctx: AbsoluteRepoFilePosition): Observable<SymbolLocationInformation | undefined> {
-    return withDefaultMode(ctx, fetchXdefinition)
+export function getXdefinition(ctx: LSPTextDocumentPositionParams): Observable<SymbolLocationInformation | undefined> {
+    return fetchXdefinition(ctx)
 }
 
 /**
@@ -92,8 +70,8 @@ export function getXdefinition(ctx: AbsoluteRepoFilePosition): Observable<Symbol
  * @param ctx the location
  * @return references to the symbol at the location
  */
-export function getReferences(ctx: AbsoluteRepoFilePosition & LSPReferencesParams): Observable<Location[]> {
-    return withDefaultMode(ctx, fetchReferences)
+export function getReferences(ctx: LSPTextDocumentPositionParams & LSPReferencesParams): Observable<Location[]> {
+    return fetchReferences(ctx)
 }
 
 /**
@@ -102,8 +80,8 @@ export function getReferences(ctx: AbsoluteRepoFilePosition & LSPReferencesParam
  * @param ctx the location
  * @return implementations of the symbol at the location
  */
-export function getImplementations(ctx: AbsoluteRepoFilePosition): Observable<Location[]> {
-    return withDefaultMode(ctx, fetchImplementation)
+export function getImplementations(ctx: LSPTextDocumentPositionParams): Observable<Location[]> {
+    return fetchImplementation(ctx)
 }
 
 /**
@@ -112,6 +90,6 @@ export function getImplementations(ctx: AbsoluteRepoFilePosition): Observable<Lo
  * @param ctx the symbol descriptor and repository to search in
  * @return references to the symbol
  */
-export function getXreferences(ctx: XReferenceOptions & AbsoluteRepoFile): Observable<Location[]> {
-    return withDefaultMode(ctx, fetchXreferences)
+export function getXreferences(ctx: XReferenceOptions & AbsoluteRepoFile & LSPSelector): Observable<Location[]> {
+    return fetchXreferences(ctx)
 }

@@ -3,10 +3,10 @@ import * as React from 'react'
 import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime, filter, map, startWith, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import { AbsoluteRepoFilePosition } from '..'
+import { AbsoluteRepoFilePosition, FileSpec } from '..'
 import { getHover, getJumpURL } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
-import { EMODENOTFOUND, isEmptyHover } from '../../backend/lsp'
+import { EMODENOTFOUND, isEmptyHover, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError } from '../../util/errors'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../../util/url'
@@ -124,15 +124,24 @@ const DiffHunk: React.SFC<{
     )
 }
 
+interface DiffFile {
+    repoPath: string
+    repoID: GQL.ID
+    rev: string
+    commitID: string
+    filePath: string | null
+    mode: string | null
+}
+
 interface Props {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 
     /** The base repository, revision, and file. */
-    base: { repoPath: string; repoID: GQL.ID; rev: string; commitID: string; filePath: string | null }
+    base: DiffFile
 
     /** The head repository, revision, and file. */
-    head: { repoPath: string; repoID: GQL.ID; rev: string; commitID: string; filePath: string | null }
+    head: DiffFile
 
     /** The file's hunks. */
     hunks: GQL.IFileDiffHunk[]
@@ -247,9 +256,14 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
                         type,
                         target,
                         ctx: {
-                            ...(loc!.part! === 'old' ? this.props.base : this.props.head),
+                            // The two "as" type casts are because *we* know that either base xor head's
+                            // filePath/mode are null (and not both), but TypeScript doesn't know that.
+                            ...((loc!.part! === 'old' ? this.props.base : this.props.head) as DiffFile & FileSpec),
                             position: loc!,
-                        } as AbsoluteRepoFilePosition,
+                            mode: (this.props.base.filePath === null
+                                ? this.props.head.mode
+                                : this.props.base.mode) as string,
+                        },
                     })),
                     switchMap(({ type, target, ctx }) => {
                         const tooltip = this.getTooltip(target, ctx)
@@ -386,7 +400,7 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
      * This Observable will emit exactly one value before it completes. If the resolved
      * tooltip is defined, it will update the target styling.
      */
-    private getTooltip(target: HTMLElement, ctx: AbsoluteRepoFilePosition): Observable<TooltipData> {
+    private getTooltip(target: HTMLElement, ctx: LSPTextDocumentPositionParams): Observable<TooltipData> {
         return getHover(ctx).pipe(
             tap(data => {
                 if (isEmptyHover(data)) {
@@ -403,7 +417,7 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
      * getDefinition wraps the asynchronous fetch of tooltip data from the Sourcegraph API.
      * This Observable will emit exactly one value before it completes.
      */
-    private getDefinition(ctx: AbsoluteRepoFilePosition): Observable<string | null> {
+    private getDefinition(ctx: LSPTextDocumentPositionParams): Observable<string | null> {
         return getJumpURL(ctx)
     }
 
@@ -413,7 +427,7 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
      */
     private getLoadingTooltip(
         target: HTMLElement,
-        ctx: AbsoluteRepoFilePosition,
+        ctx: LSPTextDocumentPositionParams,
         tooltip: Observable<TooltipData>
     ): Observable<TooltipData> {
         return interval(500).pipe(take(1), takeUntil(tooltip), map(() => ({ target, ctx, loading: true })))

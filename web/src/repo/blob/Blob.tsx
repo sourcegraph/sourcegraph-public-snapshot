@@ -5,8 +5,8 @@ import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'r
 import { catchError, debounceTime, filter, map, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 import { Position, Range } from 'vscode-languageserver-types'
-import { getHover, getJumpURL } from '../../backend/features'
-import { EMODENOTFOUND, isEmptyHover } from '../../backend/lsp'
+import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
+import { EMODENOTFOUND, isEmptyHover, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { asError } from '../../util/errors'
@@ -111,7 +111,7 @@ function scrollToCell(cell: HTMLElement): void {
     scrollingElement.scrollTop = targetBound.top - tableBound.top - viewportBound.height / 2 + targetBound.height / 2
 }
 
-interface Props extends AbsoluteRepoFile {
+interface Props extends AbsoluteRepoFile, ModeSpec {
     location: H.Location
     history: H.History
     className: string
@@ -574,7 +574,7 @@ export class Blob extends React.Component<Props, State> {
      * This Observable will emit exactly one value before it completes. If the resolved
      * tooltip is defined, it will update the target styling.
      */
-    private getTooltip(target: HTMLElement, ctx: AbsoluteRepoFilePosition): Observable<TooltipData> {
+    private getTooltip(target: HTMLElement, ctx: LSPTextDocumentPositionParams): Observable<TooltipData> {
         return getHover(ctx).pipe(
             tap(data => {
                 if (isEmptyHover(data)) {
@@ -591,7 +591,7 @@ export class Blob extends React.Component<Props, State> {
      * getDefinition wraps the asynchronous fetch of tooltip data from the Sourcegraph API.
      * This Observable will emit exactly one value before it completes.
      */
-    private getDefinition(ctx: AbsoluteRepoFilePosition): Observable<string | null> {
+    private getDefinition(ctx: LSPTextDocumentPositionParams): Observable<string | null> {
         return getJumpURL(ctx)
     }
 
@@ -601,7 +601,7 @@ export class Blob extends React.Component<Props, State> {
      */
     private getLoadingTooltip(
         target: HTMLElement,
-        ctx: AbsoluteRepoFilePosition,
+        ctx: LSPTextDocumentPositionParams,
         tooltip: Observable<TooltipData>
     ): Observable<TooltipData> {
         return interval(500).pipe(take(1), takeUntil(tooltip), map(() => ({ target, ctx, loading: true })))

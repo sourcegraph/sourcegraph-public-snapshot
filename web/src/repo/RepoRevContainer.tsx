@@ -219,7 +219,8 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             ) => {
                                 const objectType: 'blob' | 'tree' =
                                     routeComponentProps.match.params.objectType || 'tree'
-                                const filePath = routeComponentProps.match.params.filePath
+                                const filePath = routeComponentProps.match.params.filePath || '' // empty string is root
+                                const mode = getModeFromPath(filePath)
                                 return (
                                     <>
                                         {filePath && (
@@ -250,7 +251,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                                 rev={this.props.rev}
                                                                 commitID={resolvedRev.commitID}
                                                                 filePath={filePath}
-                                                                mode={getModeFromPath(filePath)}
+                                                                mode={mode}
                                                             />
                                                         }
                                                     />
@@ -282,6 +283,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         }
                                                         rev={this.props.rev}
                                                         filePath={routeComponentProps.match.params.filePath || ''}
+                                                        mode={mode}
                                                         location={this.props.location}
                                                         history={this.props.history}
                                                         isLightTheme={this.props.isLightTheme}

@@ -4,6 +4,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
+import { getModeFromPath } from '../../util'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 
@@ -88,8 +89,16 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                         <FileDiffHunks
                             className="file-diff-node__hunks"
                             fileDiffAnchor={anchor}
-                            base={{ ...this.props.base, filePath: node.oldPath }}
-                            head={{ ...this.props.head, filePath: node.newPath }}
+                            base={{
+                                ...this.props.base,
+                                filePath: node.oldPath,
+                                mode: getModeFromPath(node.oldPath || ''),
+                            }}
+                            head={{
+                                ...this.props.head,
+                                filePath: node.newPath,
+                                mode: getModeFromPath(node.newPath || ''),
+                            }}
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
                             history={this.props.history}

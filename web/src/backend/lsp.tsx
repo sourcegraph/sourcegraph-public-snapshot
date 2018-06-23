@@ -18,12 +18,12 @@ import { ModeSpec } from './features'
  * Contains the fields necessary to route the request to the correct logical LSP server process and construct the
  * correct initialization request.
  */
-interface LSPSelector extends AbsoluteRepo, ModeSpec {}
+export interface LSPSelector extends AbsoluteRepo, ModeSpec {}
 
 /**
  * Contains the fields necessary to construct an LSP TextDocumentPositionParams value.
  */
-interface LSPTextDocumentPositionParams extends LSPSelector, PositionSpec, FileSpec {}
+export interface LSPTextDocumentPositionParams extends LSPSelector, PositionSpec, FileSpec {}
 
 interface LSPRequest {
     method: string
