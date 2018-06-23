@@ -7,8 +7,9 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Hover, MarkedString, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types'
+import { MarkedString, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types'
 import { PositionSpec, RangeSpec, RepoFile, ViewStateSpec } from '..'
+import { HoverMerged } from '../../backend/features'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toPrettyBlobURL } from '../../util/url'
@@ -50,7 +51,7 @@ const LOADING: 'loading' = 'loading'
 
 interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<ViewStateSpec>, Partial<RangeSpec> {
     /** What to show as contents */
-    hoverOrError?: typeof LOADING | Hover | null | ErrorLike
+    hoverOrError?: typeof LOADING | HoverMerged | null | ErrorLike
 
     /**
      * The URL to jump to on go to definition.

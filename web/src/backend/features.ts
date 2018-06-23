@@ -1,6 +1,7 @@
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { Observable } from 'rxjs'
-import { Definition, Hover, Location } from 'vscode-languageserver-types'
+import { map } from 'rxjs/operators'
+import { Definition, Hover, Location, MarkedString, MarkupContent, Range } from 'vscode-languageserver-types'
 import { AbsoluteRepo } from '../repo'
 import {
     fetchDefinition,
@@ -25,13 +26,45 @@ export interface ModeSpec {
 }
 
 /**
+ * A normalized Hover that is easier to use.
+ */
+export type HoverMerged = Pick<Hover, Exclude<keyof Hover, 'contents'>> & {
+    /** Also allows MarkupContent[]. */
+    contents: (MarkupContent | MarkedString)[]
+}
+
+export namespace HoverMerged {
+    /** Reports whether the value conforms to the HoverMerged interface. */
+    export function is(value: any): value is HoverMerged {
+        // Based on Hover.is from vscode-languageserver-types.
+        return (
+            value !== null &&
+            typeof value === 'object' &&
+            Array.isArray(value.contents) &&
+            (value.contents as any[]).every(c => MarkupContent.is(c) || MarkedString.is(c)) &&
+            (value.range === undefined || Range.is(value.range))
+        )
+    }
+}
+
+/**
  * Fetches hover information for the given location.
  *
  * @param ctx the location
  * @return hover for the location
  */
-export function getHover(ctx: LSPTextDocumentPositionParams): Observable<Hover | null> {
-    return fetchHover(ctx)
+export function getHover(ctx: LSPTextDocumentPositionParams): Observable<HoverMerged | null> {
+    return fetchHover(ctx).pipe(
+        map(
+            result =>
+                result
+                    ? {
+                          ...result,
+                          contents: Array.isArray(result.contents) ? result.contents : [result.contents],
+                      }
+                    : null
+        )
+    )
 }
 
 /**

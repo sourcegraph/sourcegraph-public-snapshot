@@ -19,16 +19,18 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { Hover, Location, MarkedString, Position } from 'vscode-languageserver-types'
+import { Location, MarkupContent, Position } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
-import { getDefinition, getHover, getImplementations, getReferences, ModeSpec } from '../../../backend/features'
-import * as GQL from '../../../backend/graphqlschema'
 import {
-    fetchServerCapabilities,
-    firstMarkedString,
-    isEmptyHover,
-    LSPTextDocumentPositionParams,
-} from '../../../backend/lsp'
+    getDefinition,
+    getHover,
+    getImplementations,
+    getReferences,
+    HoverMerged,
+    ModeSpec,
+} from '../../../backend/features'
+import * as GQL from '../../../backend/graphqlschema'
+import { fetchServerCapabilities, isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -92,7 +94,7 @@ interface State {
     serverCapabilitiesOrError?: ServerCapabilities | ErrorLike
 
     /** The hover information for the subject. */
-    hoverOrError?: Hover | ErrorLike | typeof LOADING
+    hoverOrError?: HoverMerged | ErrorLike | typeof LOADING
 }
 
 /**
@@ -195,12 +197,12 @@ export class BlobPanel extends React.PureComponent<Props, State> {
             titleRendered = undefined
         } else if (hoverOrError && !isErrorLike(hoverOrError) && !isEmptyHover(hoverOrError)) {
             // Hover with one or more MarkedStrings.
-            titleRendered = renderMarkedString(firstMarkedString(hoverOrError)!)
+            titleRendered = renderHoverContents(hoverOrError.contents[0])
 
             if (Array.isArray(hoverOrError.contents) && hoverOrError.contents.length >= 2) {
                 extraRendered = hoverOrError.contents.slice(1).map((s, i) => (
                     <div key={i} className="blob-panel__extra-item px-2 pt-1">
-                        {renderMarkedString(s)}
+                        {renderHoverContents(s)}
                     </div>
                 ))
             }
@@ -377,9 +379,10 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         )
 }
 
-function renderMarkedString(markedString: MarkedString): React.ReactFragment {
-    const value = typeof markedString === 'string' ? markedString : markedString.value
-    const language = typeof markedString === 'string' ? 'markdown' : markedString.language
+function renderHoverContents(contents: HoverMerged['contents'][0]): React.ReactFragment {
+    const value = typeof contents === 'string' ? contents : contents.value
+    const language =
+        typeof contents === 'string' ? 'markdown' : MarkupContent.is(contents) ? contents.kind : contents.language
     try {
         if (language === 'markdown') {
             return (

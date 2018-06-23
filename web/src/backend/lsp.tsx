@@ -6,13 +6,13 @@ import {
 import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { Definition, Hover, Location, MarkedString, MarkupContent } from 'vscode-languageserver-types'
+import { Definition, Hover, Location, MarkupContent } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, FileSpec, makeRepoURI, parseRepoURI, PositionSpec } from '../repo'
 import { normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
-import { ModeSpec } from './features'
+import { HoverMerged, ModeSpec } from './features'
 
 /**
  * Contains the fields necessary to route the request to the correct logical LSP server process and construct the
@@ -29,21 +29,11 @@ interface LSPRequest {
     method: string
     params?: any
 }
-export const isEmptyHover = (hover: Hover | null): boolean =>
+export const isEmptyHover = (hover: HoverMerged | null): boolean =>
     !hover ||
     !hover.contents ||
     (Array.isArray(hover.contents) && hover.contents.length === 0) ||
     (MarkupContent.is(hover.contents) && !hover.contents.value)
-
-/** Returns the first MarkedString element from the hover, or undefined if it has none. */
-export function firstMarkedString(hover: Hover): MarkedString | undefined {
-    if (typeof hover.contents === 'string') {
-        return hover.contents
-    } else if (Array.isArray(hover.contents)) {
-        return hover.contents[0]
-    }
-    return hover.contents.value
-}
 
 const wrapLSPRequests = (ctx: LSPSelector, requests: LSPRequest[]): any[] => [
     {

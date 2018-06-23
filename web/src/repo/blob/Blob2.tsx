@@ -16,9 +16,9 @@ import {
     withLatestFrom,
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import { Hover, Position } from 'vscode-languageserver-types'
+import { Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { getHover, getJumpURL, ModeSpec } from '../../backend/features'
+import { getHover, getJumpURL, HoverMerged, ModeSpec } from '../../backend/features'
 import { EMODENOTFOUND, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike } from '../../util/errors'
@@ -166,7 +166,7 @@ interface BlobProps extends AbsoluteRepoFile, ModeSpec {
 const LOADING: 'loading' = 'loading'
 
 interface BlobState {
-    hoverOrError?: typeof LOADING | Hover | null | ErrorLike
+    hoverOrError?: typeof LOADING | HoverMerged | null | ErrorLike
     definitionURLOrError?: typeof LOADING | { jumpURL: string } | null | ErrorLike
     hoverOverlayIsFixed: boolean
 
@@ -203,7 +203,7 @@ interface BlobState {
  * Returns true if the HoverOverlay would have anything to show according to the given hover and definition states.
  */
 const overlayUIHasContent = (state: Pick<BlobState, 'hoverOrError' | 'definitionURLOrError'>): boolean =>
-    (state.hoverOrError && !(Hover.is(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
+    (state.hoverOrError && !(HoverMerged.is(state.hoverOrError) && isEmptyHover(state.hoverOrError))) ||
     isJumpURL(state.definitionURLOrError)
 
 /**
@@ -516,7 +516,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 if (currentHighlighted) {
                     currentHighlighted.classList.remove('selection-highlight')
                 }
-                if (!Hover.is(hoverOrError) || !hoverOrError.range) {
+                if (!HoverMerged.is(hoverOrError) || !hoverOrError.range) {
                     return
                 }
                 // LSP is 0-indexed, the code in the webapp currently is 1-indexed
@@ -534,7 +534,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 .pipe(
                     distinctUntilChanged(([positionA], [positionB]) => isEqual(positionA, positionB)),
                     switchMap(([, hoverObservable]) => hoverObservable),
-                    filter(Hover.is)
+                    filter(HoverMerged.is)
                 )
                 .subscribe(() => {
                     eventLogger.log('SymbolHovered')
