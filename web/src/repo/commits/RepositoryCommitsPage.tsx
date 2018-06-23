@@ -131,7 +131,7 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
                     defaultFirst={20}
                     autoFocus={true}
                     history={this.props.history}
-                    hideFilter={true}
+                    hideSearch={true}
                     location={this.props.location}
                 />
             </div>

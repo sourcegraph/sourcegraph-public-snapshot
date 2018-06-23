@@ -235,7 +235,7 @@ export class SiteAdminAnalyticsPage extends React.Component<SiteAdminAnalyticsPa
                     <FilteredUserConnection
                         listComponent="table"
                         className="table"
-                        hideFilter={false}
+                        hideSearch={false}
                         filters={USER_ACTIVITY_FILTERS}
                         noShowMore={false}
                         noun="user"

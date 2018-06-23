@@ -305,7 +305,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     defaultFirst={7}
                                     history={this.props.history}
                                     shouldUpdateURLQuery={false}
-                                    hideFilter={true}
+                                    hideSearch={true}
                                     location={this.props.location}
                                 />
                             </div>

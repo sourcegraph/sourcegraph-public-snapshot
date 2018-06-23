@@ -52,7 +52,7 @@ export class UserSettingsExternalAccountsPage extends React.Component<Props> {
                     nodeComponent={ExternalAccountNode}
                     nodeComponentProps={nodeProps}
                     updates={this.externalAccountUpdates}
-                    hideFilter={true}
+                    hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}

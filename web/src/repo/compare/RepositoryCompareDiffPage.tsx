@@ -144,7 +144,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
                         history: this.props.history,
                     }}
                     defaultFirst={25}
-                    hideFilter={true}
+                    hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}

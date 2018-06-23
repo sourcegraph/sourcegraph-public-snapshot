@@ -354,7 +354,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                         path,
                     }}
                     defaultFirst={20}
-                    hideFilter={true}
+                    hideSearch={true}
                     shouldUpdateURLQuery={false}
                     updates={this.specChanges}
                     history={this.props.history}

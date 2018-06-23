@@ -62,7 +62,7 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
                     nodeComponent={AccessTokenNode}
                     nodeComponentProps={nodeProps}
                     updates={this.accessTokenUpdates}
-                    hideFilter={true}
+                    hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}

@@ -71,7 +71,7 @@ export class SiteAdminExternalAccountsPage extends React.Component<Props> {
                     nodeComponent={ExternalAccountNode}
                     nodeComponentProps={nodeProps}
                     updates={this.externalAccountUpdates}
-                    hideFilter={true}
+                    hideSearch={true}
                     history={this.props.history}
                     location={this.props.location}
                 />

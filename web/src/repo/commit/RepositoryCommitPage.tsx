@@ -166,7 +166,7 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
                                 }}
                                 updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
                                 defaultFirst={25}
-                                hideFilter={true}
+                                hideSearch={true}
                                 noSummaryIfAllNodesVisible={true}
                                 history={this.props.history}
                                 location={this.props.location}

@@ -95,7 +95,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
                     pluralNoun="authentication providers"
                     queryConnection={this.queryAuthProviders}
                     nodeComponent={AuthProviderNode}
-                    hideFilter={true}
+                    hideSearch={true}
                     history={this.props.history}
                     location={this.props.location}
                 />

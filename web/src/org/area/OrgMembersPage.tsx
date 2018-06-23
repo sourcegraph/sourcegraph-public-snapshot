@@ -197,7 +197,7 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
                     nodeComponent={UserNode}
                     nodeComponentProps={nodeProps}
                     noShowMore={true}
-                    hideFilter={true}
+                    hideSearch={true}
                     updates={this.userUpdates}
                     history={this.props.history}
                     location={this.props.location}

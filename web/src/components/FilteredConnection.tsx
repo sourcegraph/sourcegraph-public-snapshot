@@ -298,7 +298,7 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}> extends C
     defaultFirst?: number
 
     /** Hides the filter input field. */
-    hideFilter?: boolean
+    hideSearch?: boolean
 
     /** Autofocuses the filter input field. */
     autoFocus?: boolean
@@ -413,7 +413,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const q = new URLSearchParams(this.props.location.search)
         this.state = {
             loading: true,
-            query: (!this.props.hideFilter && q.get(QUERY_KEY)) || '',
+            query: (!this.props.hideSearch && q.get(QUERY_KEY)) || '',
             activeFilter: getFilterFromURL(q, this.props.filters),
             first: parseQueryInt(q, 'first') || this.props.defaultFirst!,
         }
@@ -423,7 +423,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const activeFilterChanges = this.activeFilterChanges.pipe(startWith(this.state.activeFilter))
         const queryChanges = this.queryInputChanges.pipe(
             distinctUntilChanged(),
-            tap(query => !this.props.hideFilter && this.setState({ query })),
+            tap(query => !this.props.hideSearch && this.setState({ query })),
             debounceTime(200),
             startWith(this.state.query)
         )
@@ -569,22 +569,24 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div className={`filtered-connection ${compactnessClass} ${this.props.className || ''}`}>
-                {!this.props.hideFilter && (
+                {(!this.props.hideSearch || this.props.filters) && (
                     <Form className="filtered-connection__form" onSubmit={this.onSubmit}>
-                        <input
-                            className="form-control filtered-connection__filter"
-                            type="search"
-                            placeholder={`Search ${this.props.pluralNoun}...`}
-                            name="query"
-                            value={this.state.query}
-                            onChange={this.onChange}
-                            autoFocus={this.props.autoFocus}
-                            autoComplete="off"
-                            autoCorrect="off"
-                            autoCapitalize="off"
-                            ref={this.setFilterRef}
-                            spellCheck={false}
-                        />
+                        {!this.props.hideSearch && (
+                            <input
+                                className="form-control filtered-connection__filter"
+                                type="search"
+                                placeholder={`Search ${this.props.pluralNoun}...`}
+                                name="query"
+                                value={this.state.query}
+                                onChange={this.onChange}
+                                autoFocus={this.props.autoFocus}
+                                autoComplete="off"
+                                autoCorrect="off"
+                                autoCapitalize="off"
+                                ref={this.setFilterRef}
+                                spellCheck={false}
+                            />
+                        )}
                         {this.props.filters &&
                             this.state.activeFilter && (
                                 <FilteredConnectionFilterControl

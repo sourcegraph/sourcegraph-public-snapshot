@@ -314,7 +314,7 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                     <FilteredSurveyResponseConnection
                         key="chronological"
                         className="list-group list-group-flush"
-                        hideFilter={true}
+                        hideSearch={true}
                         noun="survey response"
                         pluralNoun="survey responses"
                         queryConnection={fetchAllSurveyResponses}
@@ -327,7 +327,7 @@ export class SiteAdminSurveyResponsesPage extends React.Component<Props, State> 
                         listComponent="table"
                         headComponent={UserSurveyResponsesHeader}
                         className="table mt-2 site-admin-survey-responses-connection"
-                        hideFilter={false}
+                        hideSearch={false}
                         filters={USER_ACTIVITY_FILTERS}
                         noun="user"
                         pluralNoun="users"

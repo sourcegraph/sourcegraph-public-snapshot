@@ -199,7 +199,7 @@ export class UserSettingsEmailsPage extends React.Component<Props, State> {
                     nodeComponent={UserEmailNode}
                     nodeComponentProps={nodeProps}
                     updates={this.userEmailUpdates}
-                    hideFilter={true}
+                    hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}

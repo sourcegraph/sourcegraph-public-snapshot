@@ -97,7 +97,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                             compact: true,
                         }}
                         defaultFirst={50}
-                        hideFilter={true}
+                        hideSearch={true}
                         noSummaryIfAllNodesVisible={true}
                         updates={this.updates}
                         history={this.props.history}
