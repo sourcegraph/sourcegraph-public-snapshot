@@ -53,8 +53,6 @@ interface State {
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
 const hideRepoRevContent = localStorage.getItem('hideRepoRevContent')
 
-const codeIntelStatusIndicatorEnabled = localStorage.getItem('disableCodeIntelStatusIndicator') !== 'true'
-
 /**
  * A container for a repository page that incorporates revisioned Git data. (For example,
  * blob and tree pages are revisioned, but the repository settings page is not.)
@@ -238,26 +236,25 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         />
                                                     }
                                                 />
-                                                {codeIntelStatusIndicatorEnabled &&
-                                                    objectType === 'blob' && (
-                                                        <RepoHeaderActionPortal
-                                                            position="right"
-                                                            priority={-10}
-                                                            element={
-                                                                <CodeIntelStatusIndicator
-                                                                    key="code-intel-status"
-                                                                    userIsSiteAdmin={
-                                                                        !!this.props.user && this.props.user.siteAdmin
-                                                                    }
-                                                                    repoPath={this.props.repo.uri}
-                                                                    rev={this.props.rev}
-                                                                    commitID={resolvedRev.commitID}
-                                                                    filePath={filePath}
-                                                                    language={getModeFromPath(filePath)}
-                                                                />
-                                                            }
-                                                        />
-                                                    )}
+                                                {objectType === 'blob' && (
+                                                    <RepoHeaderActionPortal
+                                                        position="right"
+                                                        priority={-10}
+                                                        element={
+                                                            <CodeIntelStatusIndicator
+                                                                key="code-intel-status"
+                                                                userIsSiteAdmin={
+                                                                    !!this.props.user && this.props.user.siteAdmin
+                                                                }
+                                                                repoPath={this.props.repo.uri}
+                                                                rev={this.props.rev}
+                                                                commitID={resolvedRev.commitID}
+                                                                filePath={filePath}
+                                                                language={getModeFromPath(filePath)}
+                                                            />
+                                                        }
+                                                    />
+                                                )}
                                             </>
                                         )}
                                         <RepoRevSidebar
