@@ -3,7 +3,16 @@ $navbar-top-row-height: 2.75rem;
 
 .global-navbar {
     width: 100%;
+    position: sticky;
+    flex: none;
     z-index: 2;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    background-color: $color-bg-2;
+    height: $navbar-top-row-height;
 
     &__right {
         display: flex;
@@ -60,45 +69,10 @@ $navbar-top-row-height: 2.75rem;
         flex-direction: column;
         justify-content: center;
     }
-
-    &__search {
-        position: sticky;
-        flex: none;
-        z-index: 1;
-
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-
-        background-color: $color-bg-2;
-        height: $navbar-top-row-height;
-    }
-
-    &__scopesbar {
-        width: 100%;
-
-        padding-left: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: $color-bg-2;
-
-        &--hidden {
-            display: none !important;
-        }
-    }
 }
 
 .theme-light {
     .global-navbar {
-        &__search {
-            background-color: $color-light-bg-2;
-        }
-
-        &__scopesbar {
-            background-color: $color-light-bg-2;
-            // stylelint-disable-next-line declaration-property-unit-whitelist
-            border-bottom: solid 1px darken($color-light-border-2, 3%);
-        }
+        background-color: $color-light-bg-2;
     }
 }
