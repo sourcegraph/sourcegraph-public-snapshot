@@ -101,7 +101,7 @@ var (
 		"show":   append([]string{}, gitCommonWhitelist...),
 		"remote": []string{"-v"},
 		"diff":   append([]string{}, gitCommonWhitelist...),
-		"blame":  []string{"--root", "--incremental", "--"},
+		"blame":  []string{"--root", "--incremental", "-p", "--"},
 		"branch": []string{"-r", "-a", "--contains"},
 
 		"rev-parse":    []string{"--abbrev-ref", "--symbolic-full-name"},
