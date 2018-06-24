@@ -28,12 +28,12 @@ var (
 	// accessed by other packages at init time.
 	//
 	// This is populated by the addServersFromEnv func.
-	ServersByMode map[string]func() (io.ReadWriteCloser, error)
+	ServersByMode map[string]func() (jsonrpc2.ObjectStream, error)
 )
 
 // connectToServer opens a connection to the server that is registered
 // for the given mode (e.g., "go" or "typescript").
-func connectToServer(ctx context.Context, mode string) (io.ReadWriteCloser, error) {
+func connectToServer(ctx context.Context, mode string) (jsonrpc2.ObjectStream, error) {
 	serversByModeMu.RLock()
 	connect, ok := ServersByMode[mode]
 	serversByModeMu.RUnlock()
@@ -52,7 +52,7 @@ func RegisterServers() {
 		serversByModeMu.Lock()
 		defer serversByModeMu.Unlock()
 
-		ServersByMode = make(map[string]func() (io.ReadWriteCloser, error))
+		ServersByMode = make(map[string]func() (jsonrpc2.ObjectStream, error))
 
 		err := registerServersFromEnv()
 		if err != nil {
@@ -119,23 +119,7 @@ func registerServersFromEnv() error {
 				}
 
 				log15.Info("Registering language server executable", "mode", mode, "path", val)
-
-				ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
-					cmd := exec.Command(val, args...)
-					cmd.Stderr = &prefixWriter{w: os.Stderr, prefix: filepath.Base(val) + ": "}
-					in, err := cmd.StdinPipe()
-					if err != nil {
-						return nil, err
-					}
-					out, err := cmd.StdoutPipe()
-					if err != nil {
-						return nil, err
-					}
-					if err := cmd.Start(); err != nil {
-						return nil, err
-					}
-					return readWriteCloser{out, in, cmd.Process.Kill}, nil
-				}
+				ServersByMode[mode] = execServer(val, args)
 			}
 		}
 	}
@@ -152,10 +136,39 @@ func registerTCPServer(mode, addr, scope string) error {
 		return nil
 	}
 	log15.Info("Registering language server listener", "mode", mode, "listener", addr)
-	ServersByMode[mode] = func() (io.ReadWriteCloser, error) {
-		return net.DialTimeout("tcp", strings.TrimPrefix(addr, "tcp://"), 5*time.Second)
-	}
+	ServersByMode[mode] = tcpServer(strings.TrimPrefix(addr, "tcp://"))
 	return nil
+}
+
+const connectTimeout = 5 * time.Second
+
+func tcpServer(addr string) func() (jsonrpc2.ObjectStream, error) {
+	return func() (jsonrpc2.ObjectStream, error) {
+		conn, err := net.DialTimeout("tcp", addr, connectTimeout)
+		if err != nil {
+			return nil, err
+		}
+		return jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), nil
+	}
+}
+
+func execServer(name string, args []string) func() (jsonrpc2.ObjectStream, error) {
+	return func() (jsonrpc2.ObjectStream, error) {
+		cmd := exec.Command(name, args...)
+		cmd.Stderr = &prefixWriter{w: os.Stderr, prefix: filepath.Base(name) + ": "}
+		in, err := cmd.StdinPipe()
+		if err != nil {
+			return nil, err
+		}
+		out, err := cmd.StdoutPipe()
+		if err != nil {
+			return nil, err
+		}
+		if err := cmd.Start(); err != nil {
+			return nil, err
+		}
+		return jsonrpc2.NewBufferedStream(readWriteCloser{out, in, cmd.Process.Kill}, jsonrpc2.VSCodeObjectCodec{}), nil
+	}
 }
 
 type readWriteCloser struct {
@@ -211,10 +224,11 @@ func (w *prefixWriter) Write(p []byte) (int, error) {
 // It can be used, for example, to run an in-memory JSON-RPC handler
 // that speaks to an in-memory client, without needin to open a Unix
 // or TCP connection.
-func InMemoryPeerConns() (io.ReadWriteCloser, io.ReadWriteCloser) {
+func InMemoryPeerConns() (jsonrpc2.ObjectStream, jsonrpc2.ObjectStream) {
 	sr, cw := io.Pipe()
 	cr, sw := io.Pipe()
-	return &pipeReadWriteCloser{sr, sw}, &pipeReadWriteCloser{cr, cw}
+	return jsonrpc2.NewBufferedStream(&pipeReadWriteCloser{sr, sw}, jsonrpc2.VSCodeObjectCodec{}),
+		jsonrpc2.NewBufferedStream(&pipeReadWriteCloser{cr, cw}, jsonrpc2.VSCodeObjectCodec{})
 }
 
 type pipeReadWriteCloser struct {

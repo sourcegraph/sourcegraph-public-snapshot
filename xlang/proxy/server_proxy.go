@@ -254,7 +254,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyC
 		didWeInit = true
 
 		// Best effort cleanup of resources when we fail to connect.
-		var rwc io.ReadWriteCloser
+		var stream jsonrpc2.ObjectStream
 		defer func() {
 			if c.initErr == nil {
 				return
@@ -265,8 +265,8 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyC
 			if c.conn != nil {
 				_ = c.conn.Close()
 			}
-			if rwc != nil {
-				_ = rwc.Close()
+			if stream != nil {
+				_ = stream.Close()
 			}
 		}()
 
@@ -295,7 +295,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyC
 			mode = strings.TrimSuffix(mode, "_bg")
 		}
 
-		rwc, err = connectToServer(ctx, mode)
+		stream, err = connectToServer(ctx, mode)
 		if err != nil {
 			c.initErr = err
 			return
@@ -306,7 +306,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyC
 		if p.Trace {
 			connOpt = append(connOpt, jsonrpc2.LogMessages(log.New(os.Stderr, "", 0)))
 		}
-		c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
+		c.conn = jsonrpc2.NewConn(ctx, stream, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)), connOpt...)
 
 		c.initResult, c.initErr = c.lspInitialize(ctx)
 		if c.initErr != nil {

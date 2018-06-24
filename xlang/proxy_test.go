@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"net/url"
 	"os"
@@ -29,11 +28,11 @@ import (
 
 func init() {
 	// Use in-process Go language server for tests.
-	proxy.ServersByMode = map[string]func() (io.ReadWriteCloser, error){
-		"go": func() (io.ReadWriteCloser, error) {
+	proxy.ServersByMode = map[string]func() (jsonrpc2.ObjectStream, error){
+		"go": func() (jsonrpc2.ObjectStream, error) {
 			// Run in-process for easy development (no recompiles, etc.).
 			a, b := proxy.InMemoryPeerConns()
-			jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
+			jsonrpc2.NewConn(context.Background(), a, jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
 			return b, nil
 		},
 	}
@@ -750,12 +749,12 @@ func TestProxy_connections(t *testing.T) {
 
 	// Start test build/lang server S1.
 	calledConnectToTestServer := 0 // track the times we need to open a new server connection
-	proxy.ServersByMode["test"] = func() (io.ReadWriteCloser, error) {
+	proxy.ServersByMode["test"] = func() (jsonrpc2.ObjectStream, error) {
 		mu.Lock()
 		calledConnectToTestServer++
 		mu.Unlock()
 		a, b := proxy.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
+		jsonrpc2.NewConn(context.Background(), a, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 			addReq(req)
 			return nil, nil
 		})))
@@ -891,9 +890,9 @@ func TestProxy_propagation(t *testing.T) {
 
 	// Start test build/lang server that sends diagnostics about any
 	// file that we call textDocument/definition on.
-	proxy.ServersByMode["test"] = func() (io.ReadWriteCloser, error) {
+	proxy.ServersByMode["test"] = func() (jsonrpc2.ObjectStream, error) {
 		a, b := proxy.InMemoryPeerConns()
-		jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
+		jsonrpc2.NewConn(context.Background(), a, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
 			if req.Method == "textDocument/definition" {
 				var params lsp.TextDocumentPositionParams
 				if err := json.Unmarshal(*req.Params, &params); err != nil {

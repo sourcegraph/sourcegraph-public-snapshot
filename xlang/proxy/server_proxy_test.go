@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"testing"
 	"time"
 
@@ -24,7 +23,7 @@ func TestCache(t *testing.T) {
 
 	// Setup fake "language server". connC will have a connection we can
 	// use to do the test on
-	var rwc io.ReadWriteCloser
+	var stream jsonrpc2.ObjectStream
 	connC := make(chan *jsonrpc2.Conn, 1)
 	{
 		handler := func(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
@@ -35,15 +34,15 @@ func TestCache(t *testing.T) {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("method not supported: %s", req.Method)}
 		}
 		a, b := InMemoryPeerConns()
-		jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(a, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(handler)))
-		rwc = b
+		jsonrpc2.NewConn(ctx, a, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(handler)))
+		stream = b
 	}
-	defer rwc.Close()
+	defer stream.Close()
 
 	c := &serverProxyConn{
 		id: serverID{contextID: contextID{mode: "cache-test"}},
 	}
-	c.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewBufferedStream(rwc, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)))
+	c.conn = jsonrpc2.NewConn(ctx, stream, jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(c.handle)))
 	defer c.conn.Close()
 	c.initOnce.Do(func() {
 		_, err := c.lspInitialize(ctx)
