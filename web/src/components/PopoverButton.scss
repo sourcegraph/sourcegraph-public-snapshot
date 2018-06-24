@@ -45,7 +45,7 @@
             margin-left: -0.185rem;
         }
     }
-    &__icon:hover,
+    &__anchor:hover &__icon,
     &--open &__icon {
         opacity: 0.75;
     }
