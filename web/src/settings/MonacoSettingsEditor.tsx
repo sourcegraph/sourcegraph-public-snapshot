@@ -12,7 +12,6 @@ const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLi
 
 interface Props {
     id?: string
-    className: string
     value: string | undefined
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined

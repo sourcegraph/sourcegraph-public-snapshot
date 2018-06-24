@@ -164,7 +164,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return (
-            <div className="settings-file">
+            <div>
                 {this.state.monacoSettingsEditorOrError === undefined ? (
                     <Loader className="icon-inline" />
                 ) : isErrorLike(this.state.monacoSettingsEditorOrError) ? (
@@ -204,7 +204,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                                     onDiscard={this.discard}
                                 />
                                 <MonacoSettingsEditor
-                                    className="settings-file__contents form-control"
                                     value={contents}
                                     jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
                                     onChange={this.onEditorChange}

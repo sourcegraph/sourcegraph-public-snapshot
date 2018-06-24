@@ -351,7 +351,6 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                                 />
                                             )}
                                             <MonacoSettingsEditor
-                                                className="site-admin-configuration-page__config"
                                                 value={localContents}
                                                 jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
                                                 onChange={this.onDidChange}
