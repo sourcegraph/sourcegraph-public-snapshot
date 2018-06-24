@@ -36,7 +36,7 @@ func GitCmdRaw(ctx context.Context, repo gitserver.Repo, params []string) (strin
 	}
 
 	if !isWhitelistedGitCmd(params) {
-		return "", fmt.Errorf("command failed: %s is not a whitelisted git command", strings.Join(params, ""))
+		return "", fmt.Errorf("command failed: %s is not a whitelisted git command", strings.Join(params, " "))
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", params...)
