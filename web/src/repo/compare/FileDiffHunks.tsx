@@ -4,7 +4,7 @@ import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'r
 import { catchError, debounceTime, filter, map, startWith, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 import { AbsoluteRepoFilePosition, FileSpec } from '..'
-import { getHover, getJumpURL } from '../../backend/features'
+import { ExtensionsProps, getHover, getJumpURL } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
 import { EMODENOTFOUND, isEmptyHover, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -133,7 +133,7 @@ interface DiffFile {
     mode: string | null
 }
 
-interface Props {
+interface Props extends ExtensionsProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
     fileDiffAnchor: string
 
@@ -401,7 +401,7 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
      * tooltip is defined, it will update the target styling.
      */
     private getTooltip(target: HTMLElement, ctx: LSPTextDocumentPositionParams): Observable<TooltipData> {
-        return getHover(ctx).pipe(
+        return getHover(ctx, this.props.extensions).pipe(
             tap(data => {
                 if (isEmptyHover(data)) {
                     // short-cirtuit, no tooltip data
@@ -418,7 +418,7 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
      * This Observable will emit exactly one value before it completes.
      */
     private getDefinition(ctx: LSPTextDocumentPositionParams): Observable<string | null> {
-        return getJumpURL(ctx)
+        return getJumpURL(ctx, this.props.extensions)
     }
 
     /**

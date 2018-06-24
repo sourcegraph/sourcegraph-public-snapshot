@@ -4,6 +4,7 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs'
+import { ExtensionsProps } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { escapeRevspecForURL } from '../../util/url'
@@ -20,7 +21,7 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{ spec: string }> {
+interface Props extends RouteComponentProps<{ spec: string }>, ExtensionsProps {
     repo: GQL.IRepository
 }
 
@@ -31,7 +32,7 @@ interface State {
 /**
  * Properties passed to all page components in the repository compare area.
  */
-export interface RepositoryCompareAreaPageProps {
+export interface RepositoryCompareAreaPageProps extends ExtensionsProps {
     /** The repository being compared. */
     repo: GQL.IRepository
 
@@ -72,6 +73,7 @@ export class RepositoryCompareArea extends React.Component<Props> {
             base: { repoID: this.props.repo.id, repoPath: this.props.repo.uri, rev: spec && spec.base },
             head: { repoID: this.props.repo.id, repoPath: this.props.repo.uri, rev: spec && spec.head },
             routePrefix: this.props.match.url,
+            extensions: this.props.extensions,
         }
 
         return (

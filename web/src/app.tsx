@@ -29,12 +29,14 @@ registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
+import { isEqual } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { currentUser } from './auth'
+import { Extensions, ExtensionsChangeProps, ExtensionsProps } from './backend/features'
 import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
@@ -49,7 +51,7 @@ import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { eventLogger } from './tracking/eventLogger'
 
-interface LayoutProps extends RouteComponentProps<any> {
+interface LayoutProps extends RouteComponentProps<any>, ExtensionsProps, ExtensionsChangeProps {
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
@@ -113,7 +115,7 @@ const Layout: React.SFC<LayoutProps> = props => {
     )
 }
 
-interface AppState {
+interface AppState extends ExtensionsProps {
     error?: Error
     user?: GQL.IUser | null
 
@@ -141,6 +143,7 @@ class App extends React.Component<{}, AppState> {
         isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
         navbarSearchQuery: '',
         showHelpPopover: false,
+        extensions: [],
     }
 
     private subscriptions = new Subscription()
@@ -217,6 +220,8 @@ class App extends React.Component<{}, AppState> {
             onNavbarQueryChange={this.onNavbarQueryChange}
             showHelpPopover={this.state.showHelpPopover}
             onHelpPopoverToggle={this.onHelpPopoverToggle}
+            extensions={this.state.extensions}
+            onExtensionsChange={this.onExtensionsChange}
         />
     )
 
@@ -240,6 +245,10 @@ class App extends React.Component<{}, AppState> {
             // onHelpPopoverToggle directly in an event handler without wrapping it in an another function.
             showHelpPopover: visible !== true && visible !== false ? !prevState.showHelpPopover : visible,
         }))
+    }
+
+    private onExtensionsChange = (extensions: Extensions): void => {
+        this.setState(prevState => (isEqual(prevState.extensions, extensions) ? null : { extensions }))
     }
 }
 

@@ -5,6 +5,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
+import { ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
@@ -28,7 +29,7 @@ import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './Reposito
 import { RevisionsPopover } from './RevisionsPopover'
 import { TreePage } from './TreePage'
 
-interface RepoRevContainerProps extends RouteComponentProps<{}> {
+interface RepoRevContainerProps extends RouteComponentProps<{}>, ExtensionsProps {
     repo: GQL.IRepository
     rev: string
     user: GQL.IUser | null
@@ -284,6 +285,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         rev={this.props.rev}
                                                         filePath={routeComponentProps.match.params.filePath || ''}
                                                         mode={mode}
+                                                        extensions={this.props.extensions}
                                                         location={this.props.location}
                                                         history={this.props.history}
                                                         isLightTheme={this.props.isLightTheme}

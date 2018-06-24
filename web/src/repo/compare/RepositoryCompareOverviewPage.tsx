@@ -4,6 +4,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { ExtensionsProps } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
@@ -66,7 +67,7 @@ function queryRepositoryComparison(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {
+interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>, ExtensionsProps {
     /** The base of the comparison. */
     base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
 

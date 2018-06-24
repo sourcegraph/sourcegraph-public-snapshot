@@ -2,6 +2,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
+import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
@@ -10,7 +11,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
-interface Props {
+interface Props extends ExtensionsProps, ExtensionsChangeProps {
     location: H.Location
     user: GQL.IUser | null
     isLightTheme: boolean

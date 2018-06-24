@@ -4,6 +4,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
+import { ExtensionsProps } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -48,7 +49,7 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props extends RouteComponentProps<{ revspec: string }> {
+interface Props extends RouteComponentProps<{ revspec: string }>, ExtensionsProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
@@ -61,7 +62,7 @@ interface State {
 
 class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
-    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'location' | 'history'>
+    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'extensions' | 'location' | 'history'>
 > {}
 
 /** Displays a commit. */
@@ -161,6 +162,7 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
                                         commitID: this.state.commitOrError.oid,
                                     },
                                     lineNumbers: true,
+                                    extensions: this.props.extensions,
                                     location: this.props.location,
                                     history: this.props.history,
                                 }}

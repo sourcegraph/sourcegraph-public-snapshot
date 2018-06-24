@@ -18,7 +18,7 @@ import {
 import { Key } from 'ts-key-enum'
 import { Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { getHover, getJumpURL, HoverMerged, ModeSpec } from '../../backend/features'
+import { ExtensionsProps, getHover, getJumpURL, HoverMerged, ModeSpec } from '../../backend/features'
 import { EMODENOTFOUND, isEmptyHover } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike } from '../../util/errors'
@@ -152,7 +152,7 @@ const scrollIntoCenterIfNeeded = (container: HTMLElement, content: HTMLElement, 
  */
 const toPortalID = (line: number) => `blame-portal-${line}`
 
-interface BlobProps extends AbsoluteRepoFile, ModeSpec {
+interface BlobProps extends AbsoluteRepoFile, ModeSpec, ExtensionsProps {
     /** The trusted syntax-highlighted code as HTML */
     html: string
 
@@ -463,24 +463,34 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             )
         ).pipe(share())
 
+        /** Emits the extensions when they change. */
+        const extensionsChanges = this.componentUpdates.pipe(
+            map(({ extensions }) => extensions),
+            distinctUntilChanged(isEqual),
+            share()
+        )
+
         /**
-         * For every position, emits an Observable with new values for the `hoverOrError` state.
-         * This is a higher-order Observable (Observable that emits Observables).
+         * For every position (and when extensions change), emits an Observable with new values for the
+         * `hoverOrError` state. This is a higher-order Observable (Observable that emits Observables).
          */
-        const hoverObservables = positions.pipe(
-            map(({ position }) => {
+        const hoverObservables = combineLatest(positions, extensionsChanges).pipe(
+            map(([{ position }, extensions]) => {
                 if (!position) {
                     return of(undefined)
                 }
                 // Fetch the hover for that position
-                const hover = getHover({
-                    repoPath: this.props.repoPath,
-                    commitID: this.props.commitID,
-                    filePath: this.props.filePath,
-                    rev: this.props.rev,
-                    position,
-                    mode: this.props.mode,
-                }).pipe(
+                const hover = getHover(
+                    {
+                        repoPath: this.props.repoPath,
+                        commitID: this.props.commitID,
+                        filePath: this.props.filePath,
+                        rev: this.props.rev,
+                        position,
+                        mode: this.props.mode,
+                    },
+                    extensions
+                ).pipe(
                     catchError(error => {
                         if (error && error.code === EMODENOTFOUND) {
                             return [undefined]
@@ -553,14 +563,17 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 }
                 return concat(
                     [LOADING],
-                    getJumpURL({
-                        repoPath: this.props.repoPath,
-                        commitID: this.props.commitID,
-                        filePath: this.props.filePath,
-                        rev: this.props.rev,
-                        position,
-                        mode: this.props.mode,
-                    }).pipe(map(url => (url !== null ? { jumpURL: url } : null)), catchError(error => [asError(error)]))
+                    getJumpURL(
+                        {
+                            repoPath: this.props.repoPath,
+                            commitID: this.props.commitID,
+                            filePath: this.props.filePath,
+                            rev: this.props.rev,
+                            position,
+                            mode: this.props.mode,
+                        },
+                        this.props.extensions
+                    ).pipe(map(url => (url !== null ? { jumpURL: url } : null)), catchError(error => [asError(error)]))
                 )
             })
         )

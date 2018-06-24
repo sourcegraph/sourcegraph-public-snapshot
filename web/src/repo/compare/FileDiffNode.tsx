@@ -3,12 +3,13 @@ import { ChevronUp } from '@sourcegraph/icons/lib/ChevronUp'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { ExtensionsProps } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
 import { getModeFromPath } from '../../util'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 
-export interface FileDiffNodeProps {
+export interface FileDiffNodeProps extends ExtensionsProps {
     node: GQL.IFileDiff
 
     /** The base repository and revision. */
@@ -101,6 +102,7 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             }}
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
+                            extensions={this.props.extensions}
                             history={this.props.history}
                             location={this.props.location}
                         />

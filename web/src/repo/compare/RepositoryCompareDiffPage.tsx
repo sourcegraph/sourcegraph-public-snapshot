@@ -2,6 +2,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
+import { ExtensionsProps } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { FilteredConnection } from '../../components/FilteredConnection'
@@ -87,7 +88,7 @@ export function queryRepositoryComparisonFileDiffs(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> {
+interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>, ExtensionsProps {
     /** The base of the comparison. */
     base: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
 
@@ -97,7 +98,7 @@ interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}> 
 
 class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
-    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'location' | 'history'>
+    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'extensions' | 'location' | 'history'>
 > {}
 
 /** A page with the file diffs in the comparison. */
@@ -140,6 +141,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
                         base: { ...this.props.base, rev: this.props.base.rev || 'HEAD' },
                         head: { ...this.props.head, rev: this.props.head.rev || 'HEAD' },
                         lineNumbers: true,
+                        extensions: this.props.extensions,
                         location: this.props.location,
                         history: this.props.history,
                     }}

@@ -1,7 +1,7 @@
 import { from, Observable } from 'rxjs'
 import { bufferCount, catchError, concatMap, filter, map, mergeMap, tap } from 'rxjs/operators'
 import { Location } from 'vscode-languageserver-types'
-import { getXdefinition, getXreferences } from '../../../backend/features'
+import { Extensions, getXdefinition, getXreferences } from '../../../backend/features'
 import { gql, queryGraphQL } from '../../../backend/graphql'
 import * as GQL from '../../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../../backend/lsp'
@@ -80,11 +80,14 @@ const fetchDependencyReferences = memoizeObservable(
     makeRepoURI
 )
 
-export const fetchExternalReferences = (ctx: LSPTextDocumentPositionParams): Observable<Location[]> =>
+export const fetchExternalReferences = (
+    ctx: LSPTextDocumentPositionParams,
+    extensions: Extensions
+): Observable<Location[]> =>
     // Memoization is not done at the top level (b/c we only support Promise fetching memoization ATM).
     // In this case, memoization is achieved at a lower level since this function simply calls out to
     // other memoized fetchers.
-    getXdefinition(ctx).pipe(
+    getXdefinition(ctx, extensions).pipe(
         mergeMap(defInfo => {
             if (!defInfo) {
                 return []
@@ -133,13 +136,16 @@ export const fetchExternalReferences = (ctx: LSPTextDocumentPositionParams): Obs
                                     if (!dependent.workspace) {
                                         return []
                                     }
-                                    return getXreferences({
-                                        ...dependent.workspace,
-                                        query: defInfo.symbol,
-                                        hints: dependent.hints,
-                                        limit: 50,
-                                        mode: ctx.mode,
-                                    }).pipe(
+                                    return getXreferences(
+                                        {
+                                            ...dependent.workspace,
+                                            query: defInfo.symbol,
+                                            hints: dependent.hints,
+                                            limit: 50,
+                                            mode: ctx.mode,
+                                        },
+                                        extensions
+                                    ).pipe(
                                         tap(refs => (numRefsFetched += refs.length)),
                                         catchError(e => {
                                             console.error(e)

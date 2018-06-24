@@ -2,7 +2,7 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
-import { castArray } from 'lodash'
+import { castArray, isEqual } from 'lodash'
 import marked from 'marked'
 import * as React from 'react'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -22,6 +22,7 @@ import {
 import { Location, MarkupContent, Position } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
+    ExtensionsProps,
     getDefinition,
     getHover,
     getImplementations,
@@ -44,7 +45,7 @@ import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
 import { FileLocationsTree } from './FileLocationsTree'
 
-interface Props extends AbsoluteRepoFile, Partial<PositionSpec>, ModeSpec {
+interface Props extends AbsoluteRepoFile, Partial<PositionSpec>, ModeSpec, ExtensionsProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
@@ -52,7 +53,7 @@ interface Props extends AbsoluteRepoFile, Partial<PositionSpec>, ModeSpec {
 }
 
 /** The subject (what the contextual information refers to). */
-interface ContextSubject extends ModeSpec {
+interface ContextSubject extends ModeSpec, ExtensionsProps {
     repoPath: string
     commitID: string
     filePath: string
@@ -71,6 +72,7 @@ function toSubject(props: Props): ContextSubject {
         mode: props.mode,
         line: parsedHash.line || 1,
         character: parsedHash.character || 1,
+        extensions: props.extensions,
     }
 }
 
@@ -83,7 +85,8 @@ function subjectIsEqual(a: ContextSubject, b: ContextSubject & { line?: number; 
         a.filePath === b.filePath &&
         a.mode === b.mode &&
         a.line === b.line &&
-        a.character === b.character
+        a.character === b.character &&
+        isEqual(a.extensions, b.extensions)
     )
 }
 
@@ -150,7 +153,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             subjectChanges
                 .pipe(
-                    switchMap((subject: AbsoluteRepoFile & ModeSpec & { position?: Position }) => {
+                    switchMap((subject: AbsoluteRepoFile & ModeSpec & ExtensionsProps & { position?: Position }) => {
                         const { position } = subject
                         if (
                             !position ||
@@ -159,7 +162,13 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                             return [{ hoverOrError: undefined }]
                         }
                         type PartialStateUpdate = Pick<State, 'hoverOrError'>
-                        const result = getHover({ ...subject, position }).pipe(
+                        const result = getHover(
+                            {
+                                ...(subject as Pick<typeof subject, Exclude<keyof typeof subject, 'extensions'>>),
+                                position,
+                            },
+                            subject.extensions
+                        ).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ hoverOrError: c } as PartialStateUpdate))
                         )
@@ -350,17 +359,18 @@ export class BlobPanel extends React.PureComponent<Props, State> {
     private onSelectLocation = (tab: BlobPanelTabID): void => eventLogger.log('BlobPanelLocationSelected', { tab })
 
     private queryDefinition = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        getDefinition(this.props as LSPTextDocumentPositionParams).pipe(
+        getDefinition(this.props as LSPTextDocumentPositionParams, this.props.extensions).pipe(
             map(locations => ({ loading: false, locations: locations ? castArray(locations) : [] }))
         )
 
     private queryReferencesLocal = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        getReferences({ ...(this.props as LSPTextDocumentPositionParams), includeDeclaration: false }).pipe(
-            map(c => ({ loading: false, locations: c }))
-        )
+        getReferences(
+            { ...(this.props as LSPTextDocumentPositionParams), includeDeclaration: false },
+            this.props.extensions
+        ).pipe(map(c => ({ loading: false, locations: c })))
 
     private queryReferencesExternal = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        fetchExternalReferences(this.props as LSPTextDocumentPositionParams).pipe(
+        fetchExternalReferences(this.props as LSPTextDocumentPositionParams, this.props.extensions).pipe(
             map(c => ({ loading: true, locations: c })),
             concat([{ loading: false, locations: [] }]),
             bufferTime(500), // reduce UI jitter
@@ -374,7 +384,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         )
 
     private queryImplementation = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        getImplementations(this.props as LSPTextDocumentPositionParams).pipe(
+        getImplementations(this.props as LSPTextDocumentPositionParams, this.props.extensions).pipe(
             map(c => ({ loading: false, locations: c }))
         )
 }
