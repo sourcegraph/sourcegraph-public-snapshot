@@ -81,7 +81,7 @@ func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, e
 func (o *siteConfig) tryInsertNew(ctx context.Context, dbh interface {
 	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
 }) error {
-	siteID, err := uuid.NewUUID()
+	siteID, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}
