@@ -1,7 +1,7 @@
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { Observable } from 'rxjs'
 import { Definition, Hover, Location } from 'vscode-languageserver-types'
-import { AbsoluteRepoFile } from '../repo'
+import { AbsoluteRepo } from '../repo'
 import {
     fetchDefinition,
     fetchHover,
@@ -90,6 +90,6 @@ export function getImplementations(ctx: LSPTextDocumentPositionParams): Observab
  * @param ctx the symbol descriptor and repository to search in
  * @return references to the symbol
  */
-export function getXreferences(ctx: XReferenceOptions & AbsoluteRepoFile & LSPSelector): Observable<Location[]> {
+export function getXreferences(ctx: XReferenceOptions & AbsoluteRepo & LSPSelector): Observable<Location[]> {
     return fetchXreferences(ctx)
 }

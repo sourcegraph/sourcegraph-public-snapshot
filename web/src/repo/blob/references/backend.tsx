@@ -135,7 +135,6 @@ export const fetchExternalReferences = (ctx: LSPTextDocumentPositionParams): Obs
                                     }
                                     return getXreferences({
                                         ...dependent.workspace,
-                                        filePath: ctx.filePath,
                                         query: defInfo.symbol,
                                         hints: dependent.hints,
                                         limit: 50,
