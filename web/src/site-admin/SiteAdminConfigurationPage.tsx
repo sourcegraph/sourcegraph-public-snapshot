@@ -1,25 +1,14 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import * as H from 'history'
-import { upperFirst } from 'lodash'
-import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { from as fromPromise, Subject, Subscription } from 'rxjs'
+import { Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
-import { SaveToolbar } from '../components/SaveToolbar'
-import * as _monacoSettingsEditorModule from '../settings/MonacoSettingsEditor' // type only
+import { DynamicallyImportedMonacoSettingsEditor } from '../registry/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
-import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
-import { siteConfigActions } from './configHelpers'
-
-/**
- * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
- */
-const disposableToFn = (disposable: _monaco.IDisposable) => () => disposable.dispose()
 
 interface Props extends RouteComponentProps<any> {
     isLightTheme: boolean
@@ -30,17 +19,10 @@ interface State {
     loading: boolean
     error?: Error
 
-    /**
-     * The contents of the editor in this component.
-     */
-    contents?: string
-
+    isDirty?: boolean
     saving?: boolean
     restartToApply: boolean
     reloadStartedAt?: number
-
-    /** The dynamically imported MonacoSettingsEditor module, undefined while loading. */
-    monacoSettingsEditorOrError?: typeof _monacoSettingsEditorModule | ErrorLike
 }
 
 const EXPECTED_RELOAD_WAIT = 4 * 1000 // 4 seconds
@@ -59,37 +41,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
     private siteReloads = new Subject<void>()
     private subscriptions = new Subscription()
 
-    private monaco: typeof _monaco | null = null
-    private configEditor?: _monaco.editor.ICodeEditor
-
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminConfiguration')
-
-        this.subscriptions.add(
-            fromPromise(import('../settings/MonacoSettingsEditor'))
-                .pipe(
-                    catchError(error => {
-                        console.error(error)
-                        return [asError(error)]
-                    })
-                )
-                .subscribe(m => {
-                    this.setState({ monacoSettingsEditorOrError: m })
-                })
-        )
-
-        // Prevent navigation when dirty.
-        this.subscriptions.add(
-            this.props.history.block((location: H.Location, action: H.Action) => {
-                if (action === 'REPLACE') {
-                    return undefined
-                }
-                if (this.state.saving || this.localDirty) {
-                    return 'Discard configuration changes?'
-                }
-                return undefined // allow navigation
-            })
-        )
 
         this.subscriptions.add(
             this.remoteRefreshes.pipe(mergeMap(() => fetchSite())).subscribe(
@@ -161,26 +114,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private get remoteContents(): string | undefined {
-        return (
-            this.state.site &&
-            (this.state.site.configuration.pendingContents || this.state.site.configuration.effectiveContents)
-        )
-    }
-
-    private get localContents(): string | undefined {
-        return this.state.contents === undefined ? this.remoteContents : this.state.contents
-    }
-
-    private get localDirty(): boolean {
-        return !!this.state.site && !!this.state.site.configuration && this.localContents !== this.remoteContents
-    }
-
     public render(): JSX.Element | null {
-        const isReloading = typeof this.state.reloadStartedAt === 'number'
-        const localContents = this.localContents
-        const localDirty = this.localDirty
-
         const alerts: JSX.Element[] = []
         if (this.state.error) {
             alerts.push(
@@ -258,6 +192,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         // Avoid user confusion on Data Center config.
         //
         // To get a list of all keys: jq '.properties | keys' < datacenter.schema.json
+        const contents =
+            this.state.site && this.state.site.configuration && this.state.site.configuration.effectiveContents
         const dataCenterProps = [
             'alertmanagerConfig',
             'alertmanagerURL',
@@ -285,7 +221,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             'rbac',
             'storageClass',
             'useAlertManager',
-        ].filter(prop => localContents && localContents.includes(`"${prop}"`))
+        ].filter(prop => contents && contents.includes(`"${prop}"`))
         if (dataCenterProps.length > 0) {
             alerts.push(
                 <div key="datacenter-props-present" className="alert alert-info site-admin-configuration-page__alert">
@@ -295,6 +231,8 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 </div>
             )
         }
+
+        const isReloading = typeof this.state.reloadStartedAt === 'number'
 
         return (
             <div className="site-admin-configuration-page">
@@ -309,61 +247,18 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 {this.state.site &&
                     this.state.site.configuration && (
                         <div>
-                            {this.state.monacoSettingsEditorOrError === undefined ? (
-                                <Loader className="icon-inline" />
-                            ) : isErrorLike(this.state.monacoSettingsEditorOrError) ? (
-                                <div className="alert alert-danger">
-                                    Error loading site configuration editor:{' '}
-                                    {upperFirst(this.state.monacoSettingsEditorOrError.message)}
-                                </div>
-                            ) : (
-                                (() => {
-                                    const MonacoSettingsEditor = this.state.monacoSettingsEditorOrError
-                                        .MonacoSettingsEditor
-                                    return (
-                                        <>
-                                            <div className="site-admin-configuration-page__action-groups">
-                                                <div className="site-admin-configuration-page__action-groups">
-                                                    <div className="site-admin-configuration-page__action-group-header">
-                                                        Quick configure:
-                                                    </div>
-                                                    <div className="site-admin-configuration-page__actions">
-                                                        {siteConfigActions.map(({ id, label }) => (
-                                                            <button
-                                                                key={id}
-                                                                className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                                                // tslint:disable-next-line:jsx-no-lambda
-                                                                onClick={() => this.runAction(id, this.configEditor)}
-                                                            >
-                                                                {label}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {this.state.site.configuration.canUpdate && (
-                                                <SaveToolbar
-                                                    dirty={localDirty}
-                                                    disabled={isReloading || this.state.saving || !localDirty}
-                                                    saving={this.state.saving}
-                                                    onSave={this.save}
-                                                    onDiscard={this.discard}
-                                                />
-                                            )}
-                                            <MonacoSettingsEditor
-                                                value={localContents}
-                                                jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
-                                                onChange={this.onDidChange}
-                                                readOnly={isReloading || this.state.saving}
-                                                height={600}
-                                                monacoRef={this.monacoRef}
-                                                isLightTheme={this.props.isLightTheme}
-                                                onDidSave={this.save}
-                                            />
-                                        </>
-                                    )
-                                })()
-                            )}
+                            <DynamicallyImportedMonacoSettingsEditor
+                                value={contents || ''}
+                                jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
+                                onDirtyChange={this.onDirtyChange}
+                                canEdit={this.state.site.configuration.canUpdate}
+                                saving={this.state.saving}
+                                loading={isReloading || this.state.saving}
+                                height={600}
+                                isLightTheme={this.props.isLightTheme}
+                                onSave={this.onSave}
+                                history={this.props.history}
+                            />
                             <p className="form-text text-muted">
                                 <small>Source: {formatEnvVar(this.state.site.configuration.source)}</small>
                             </p>
@@ -382,64 +277,16 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
         )
     }
 
-    private onDidChange = (newValue: string) => this.setState({ contents: newValue })
+    private onDirtyChange = (isDirty: boolean) => this.setState({ isDirty })
 
-    private discard = () => {
-        if (
-            this.state.contents === undefined ||
-            this.remoteContents === this.state.contents ||
-            window.confirm('Really discard edits?')
-        ) {
-            eventLogger.log('SiteConfigurationDiscarded')
-            this.setState({ contents: undefined, error: undefined })
-        } else {
-            eventLogger.log('SettingsFileDiscardCanceled')
-        }
-    }
-
-    private save = () => {
+    private onSave = (value: string) => {
         eventLogger.log('SiteConfigurationSaved')
-        this.remoteUpdates.next(this.state.contents)
+        this.remoteUpdates.next(value)
     }
 
     private reloadSite = () => {
         eventLogger.log('SiteReloaded')
         this.siteReloads.next()
-    }
-
-    private monacoRef = (monacoValue: typeof _monaco | null) => {
-        this.monaco = monacoValue
-        // This function can only be called if the editor was loaded so it is okay to cast here
-        const monacoSettingsEditor = this.state.monacoSettingsEditorOrError as typeof _monacoSettingsEditorModule
-        if (this.monaco && monacoSettingsEditor) {
-            this.subscriptions.add(
-                disposableToFn(
-                    this.monaco.editor.onDidCreateEditor(editor => {
-                        this.configEditor = editor
-                    })
-                )
-            )
-            this.subscriptions.add(
-                disposableToFn(
-                    this.monaco.editor.onDidCreateModel(model => {
-                        if (this.configEditor && monacoSettingsEditor.isStandaloneCodeEditor(this.configEditor)) {
-                            for (const { id, label, run } of siteConfigActions) {
-                                monacoSettingsEditor.addEditorAction(this.configEditor, model, label, id, run)
-                            }
-                        }
-                    })
-                )
-            )
-        }
-    }
-
-    private runAction(id: string, editor?: _monaco.editor.ICodeEditor): void {
-        if (editor) {
-            const action = editor.getAction(id)
-            action.run().done(() => void 0, (err: any) => console.error(err))
-        } else {
-            alert('Wait for editor to load before running action.')
-        }
     }
 }
 

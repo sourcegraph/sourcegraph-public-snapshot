@@ -10,7 +10,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
 
-interface Props {
+export interface Props {
     id?: string
     value: string | undefined
     onChange?: (newValue: string) => void

@@ -128,7 +128,7 @@ const addSlackWebhook: ConfigInsertionFunction = config => {
     return { edits, selectText: '""', cursorOffset: 1 }
 }
 
-interface EditorAction {
+export interface EditorAction {
     id: string
     label: string
     run: ConfigInsertionFunction
