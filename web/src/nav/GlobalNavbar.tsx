@@ -18,6 +18,12 @@ interface Props {
     onNavbarQueryChange: (query: string) => void
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
+
+    /**
+     * Whether to use the low-profile form of the navbar, which has no border or background. Used on the search
+     * homepage.
+     */
+    lowProfile: boolean
 }
 
 interface State {
@@ -56,24 +62,30 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         const logo = <img className="global-navbar__logo" src="/.assets/img/sourcegraph-mark.svg" />
         return (
-            <div className="global-navbar">
-                <div className="global-navbar__left">
-                    {this.state.authRequired ? (
-                        <div className="global-navbar__logo-link">{logo}</div>
-                    ) : (
-                        <Link to="/search" className="global-navbar__logo-link">
-                            {logo}
-                        </Link>
-                    )}
-                </div>
-                {!this.state.authRequired && (
-                    <div className="global-navbar__search-box-container">
-                        <SearchNavbarItem
-                            {...this.props}
-                            navbarSearchQuery={this.props.navbarSearchQuery}
-                            onChange={this.props.onNavbarQueryChange}
-                        />
-                    </div>
+            <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg'}`}>
+                {this.props.lowProfile ? (
+                    <div />
+                ) : (
+                    <>
+                        <div className="global-navbar__left">
+                            {this.state.authRequired ? (
+                                <div className="global-navbar__logo-link">{logo}</div>
+                            ) : (
+                                <Link to="/search" className="global-navbar__logo-link">
+                                    {logo}
+                                </Link>
+                            )}
+                        </div>
+                        {!this.state.authRequired && (
+                            <div className="global-navbar__search-box-container">
+                                <SearchNavbarItem
+                                    {...this.props}
+                                    navbarSearchQuery={this.props.navbarSearchQuery}
+                                    onChange={this.props.onNavbarQueryChange}
+                                />
+                            </div>
+                        )}
+                    </>
                 )}
                 {!this.state.authRequired && (
                     <NavLinks {...this.props} className="global-navbar__nav-links" adjacentToQueryInput={true} />

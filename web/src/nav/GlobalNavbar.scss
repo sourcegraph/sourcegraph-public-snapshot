@@ -1,18 +1,18 @@
 @import '../search/input/QueryInput';
-$navbar-top-row-height: 2.75rem;
 
 .global-navbar {
-    width: 100%;
     position: sticky;
     flex: none;
-    z-index: 2;
-
     display: flex;
     align-items: center;
     justify-content: space-between;
+    height: 2.75rem;
+    width: 100%;
+    z-index: 2;
 
-    background-color: $color-bg-2;
-    height: $navbar-top-row-height;
+    &--bg {
+        background-color: $color-bg-2;
+    }
 
     &__right {
         display: flex;
@@ -73,6 +73,8 @@ $navbar-top-row-height: 2.75rem;
 
 .theme-light {
     .global-navbar {
-        background-color: $color-light-bg-2;
+        &--bg {
+            background-color: $color-light-bg-2;
+        }
     }
 }

@@ -65,8 +65,6 @@ const Layout: React.SFC<LayoutProps> = props => {
     const needsSiteInit = window.context.showOnboarding
     const isSiteInit = props.location.pathname === '/site-admin/init'
 
-    const hideNavbar = isSearchHomepage || isSiteInit
-
     // Force light theme on site init page.
     if (isSiteInit && !props.isLightTheme) {
         props.onThemeChange()
@@ -81,7 +79,7 @@ const Layout: React.SFC<LayoutProps> = props => {
         <div className="layout">
             <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
             {!needsSiteInit && !isSiteInit && !!props.user && <IntegrationsToast history={props.history} />}
-            {!hideNavbar && <GlobalNavbar {...props} />}
+            {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
                 {routes.map((route, i) => {

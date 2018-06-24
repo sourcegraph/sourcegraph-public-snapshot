@@ -4,7 +4,6 @@ import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { OpenHelpPopoverButton } from '../../global/OpenHelpPopoverButton'
-import { NavLinks } from '../../nav/NavLinks'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
@@ -59,7 +58,6 @@ export class SearchPage extends React.Component<Props, State> {
         return (
             <div className="search-page">
                 <PageTitle title={this.getPageTitle()} />
-                <NavLinks {...this.props} />
                 <img
                     className="search-page__logo"
                     src={
