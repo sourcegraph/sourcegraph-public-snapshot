@@ -9,8 +9,8 @@ func TestStaticInfo_SiteConfig_Language(t *testing.T) {
 	// https://github.com/sourcegraph/sourcegraph/issues/10671
 	//
 	for lang, staticInfo := range StaticInfo {
-		if lang != staticInfo.siteConfig.Language {
-			t.Fatalf("mismatched StaticInfo entry found; lang %q != siteConfig.Language %q", lang, staticInfo.siteConfig.Language)
+		if lang != staticInfo.SiteConfig.Language {
+			t.Fatalf("mismatched StaticInfo entry found; lang %q != siteConfig.Language %q", lang, staticInfo.SiteConfig.Language)
 		}
 	}
 }

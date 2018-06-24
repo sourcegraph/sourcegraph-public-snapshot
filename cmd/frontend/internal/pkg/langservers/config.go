@@ -73,7 +73,7 @@ func SetDisabled(language string, disabled bool) error {
 			// Doesn't already exist, so add a new entry.
 			var newLangserver *schema.Langservers
 			if !customLangserver {
-				newLangserver = &StaticInfo[language].siteConfig
+				newLangserver = &StaticInfo[language].SiteConfig
 			} else {
 				// best effort
 				newLangserver = &schema.Langservers{Language: language}

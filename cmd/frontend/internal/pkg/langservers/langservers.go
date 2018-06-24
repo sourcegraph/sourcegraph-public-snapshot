@@ -55,7 +55,8 @@ type StaticInfoT struct {
 	// TODO: Remove the need for this: https://github.com/sourcegraph/sourcegraph/issues/10693
 	kill bool
 
-	siteConfig schema.Langservers
+	// SiteConfig is the "langservers" site config entry for this language server.
+	SiteConfig schema.Langservers
 }
 
 // StaticInfo maps language keys to static information about the language
@@ -68,14 +69,14 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/sourcegraph/go-langserver/issues",
 		DocsURL:      "https://github.com/sourcegraph/go-langserver/blob/master/README.md",
 		Experimental: false,
-		siteConfig:   schema.Langservers{Language: "go", Address: "tcp://go:4389"},
+		SiteConfig:   schema.Langservers{Language: "go", Address: "tcp://go:4389"},
 	},
 	"typescript": {
 		DisplayName:  "TypeScript",
 		HomepageURL:  "https://github.com/sourcegraph/javascript-typescript-langserver",
 		IssuesURL:    "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
 		DocsURL:      "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
-		siteConfig:   schema.Langservers{Language: "typescript", Address: "tcp://typescript:2088"},
+		SiteConfig:   schema.Langservers{Language: "typescript", Address: "tcp://typescript:2088"},
 		Experimental: false,
 		kill:         true,
 	},
@@ -84,7 +85,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		HomepageURL:  "https://github.com/sourcegraph/javascript-typescript-langserver",
 		IssuesURL:    "https://github.com/sourcegraph/javascript-typescript-langserver/issues",
 		DocsURL:      "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
-		siteConfig:   schema.Langservers{Language: "javascript", Address: "tcp://typescript:2088"},
+		SiteConfig:   schema.Langservers{Language: "javascript", Address: "tcp://typescript:2088"},
 		Experimental: false,
 		kill:         true,
 	},
@@ -93,7 +94,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		HomepageURL:  "https://github.com/sourcegraph/python-langserver",
 		IssuesURL:    "https://github.com/sourcegraph/python-langserver/issues",
 		DocsURL:      "https://github.com/sourcegraph/python-langserver/blob/master/README.md",
-		siteConfig:   schema.Langservers{Language: "python", Address: "tcp://python:2087"},
+		SiteConfig:   schema.Langservers{Language: "python", Address: "tcp://python:2087"},
 		Experimental: false,
 		kill:         true,
 	},
@@ -102,7 +103,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		HomepageURL:  "https://github.com/sourcegraph/java-langserver-docs",
 		IssuesURL:    "https://github.com/sourcegraph/java-langserver-docs/issues",
 		DocsURL:      "https://github.com/sourcegraph/java-langserver-docs/blob/master/README.md",
-		siteConfig:   schema.Langservers{Language: "java", Address: "tcp://java:2088"},
+		SiteConfig:   schema.Langservers{Language: "java", Address: "tcp://java:2088"},
 		Experimental: false,
 		kill:         true,
 	},
@@ -112,7 +113,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/felixfbecker/php-language-server/issues",
 		DocsURL:      "https://github.com/felixfbecker/php-language-server/blob/master/README.md",
 		Experimental: false,
-		siteConfig:   schema.Langservers{Language: "php", Address: "tcp://php:2088"},
+		SiteConfig:   schema.Langservers{Language: "php", Address: "tcp://php:2088"},
 	},
 	"bash": {
 		DisplayName:  "Bash",
@@ -120,7 +121,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/mads-hartmann/bash-language-server/issues",
 		DocsURL:      "https://github.com/mads-hartmann/bash-language-server/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "bash", Address: "tcp://bash:8080"},
+		SiteConfig:   schema.Langservers{Language: "bash", Address: "tcp://bash:8080"},
 	},
 	"clojure": {
 		DisplayName:  "Clojure",
@@ -128,7 +129,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/snoe/clojure-lsp/issues",
 		DocsURL:      "https://github.com/snoe/clojure-lsp/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "clojure", Address: "tcp://clojure:8080"},
+		SiteConfig:   schema.Langservers{Language: "clojure", Address: "tcp://clojure:8080"},
 	},
 	"cpp": {
 		DisplayName:  "C++",
@@ -136,7 +137,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/Chilledheart/vim-clangd/issues",
 		DocsURL:      "https://github.com/Chilledheart/vim-clangd/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "cpp", Address: "tcp://cpp:8080"},
+		SiteConfig:   schema.Langservers{Language: "cpp", Address: "tcp://cpp:8080"},
 	},
 	"cs": {
 		DisplayName:  "C#",
@@ -144,7 +145,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/OmniSharp/omnisharp-node-client/issues",
 		DocsURL:      "https://github.com/OmniSharp/omnisharp-node-client/blob/master/readme.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "cs", Address: "tcp://cs:8080"},
+		SiteConfig:   schema.Langservers{Language: "cs", Address: "tcp://cs:8080"},
 	},
 	"css": {
 		DisplayName:  "CSS",
@@ -152,7 +153,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/vscode-langservers/vscode-css-languageserver-bin/issues",
 		DocsURL:      "https://github.com/vscode-langservers/vscode-css-languageserver-bin/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "css", Address: "tcp://css:8080"},
+		SiteConfig:   schema.Langservers{Language: "css", Address: "tcp://css:8080"},
 	},
 	"dockerfile": {
 		DisplayName:  "Dockerfile",
@@ -160,7 +161,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/rcjsuen/dockerfile-language-server-nodejs/issues",
 		DocsURL:      "https://github.com/rcjsuen/dockerfile-language-server-nodejs/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "dockerfile", Address: "tcp://docker:8080"},
+		SiteConfig:   schema.Langservers{Language: "dockerfile", Address: "tcp://docker:8080"},
 	},
 	"elixir": {
 		DisplayName:  "Elixir",
@@ -168,7 +169,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/JakeBecker/elixir-ls/issues",
 		DocsURL:      "https://github.com/JakeBecker/elixir-ls/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "elixir", Address: "tcp://elixir:8080"},
+		SiteConfig:   schema.Langservers{Language: "elixir", Address: "tcp://elixir:8080"},
 	},
 	"haskell": {
 		DisplayName:  "Haskell",
@@ -176,7 +177,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/haskell/haskell-ide-engine/issues",
 		DocsURL:      "https://github.com/haskell/haskell-ide-engine/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "haskell", Address: "tcp://haskell:8080"},
+		SiteConfig:   schema.Langservers{Language: "haskell", Address: "tcp://haskell:8080"},
 	},
 	"html": {
 		DisplayName:  "HTML",
@@ -184,7 +185,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/vscode-langservers/vscode-html-languageserver-bin/issues",
 		DocsURL:      "https://github.com/vscode-langservers/vscode-html-languageserver-bin/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "html", Address: "tcp://html:8080"},
+		SiteConfig:   schema.Langservers{Language: "html", Address: "tcp://html:8080"},
 	},
 	"lua": {
 		DisplayName:  "Lua",
@@ -192,7 +193,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/Alloyed/lua-lsp/issues",
 		DocsURL:      "https://github.com/Alloyed/lua-lsp/blob/master/readme.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "lua", Address: "tcp://lua:8080"},
+		SiteConfig:   schema.Langservers{Language: "lua", Address: "tcp://lua:8080"},
 	},
 	"ocaml": {
 		DisplayName:  "OCaml",
@@ -200,7 +201,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/freebroccolo/ocaml-language-server/issues",
 		DocsURL:      "https://github.com/freebroccolo/ocaml-language-server/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "ocaml", Address: "tcp://ocaml:8080"},
+		SiteConfig:   schema.Langservers{Language: "ocaml", Address: "tcp://ocaml:8080"},
 	},
 	"r": {
 		DisplayName:  "R",
@@ -208,7 +209,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/REditorSupport/languageserver/issues",
 		DocsURL:      "https://github.com/REditorSupport/languageserver/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "r", Address: "tcp://rlang:8080"},
+		SiteConfig:   schema.Langservers{Language: "r", Address: "tcp://rlang:8080"},
 	},
 	"ruby": {
 		DisplayName:  "Ruby",
@@ -216,7 +217,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/castwide/solargraph/issues",
 		DocsURL:      "https://github.com/castwide/solargraph/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "ruby", Address: "tcp://ruby:8080"},
+		SiteConfig:   schema.Langservers{Language: "ruby", Address: "tcp://ruby:8080"},
 	},
 	"rust": {
 		DisplayName:  "Rust",
@@ -224,7 +225,7 @@ var StaticInfo = map[string]*StaticInfoT{
 		IssuesURL:    "https://github.com/rust-lang-nursery/rls/issues",
 		DocsURL:      "https://github.com/rust-lang-nursery/rls/blob/master/README.md",
 		Experimental: true,
-		siteConfig:   schema.Langservers{Language: "rust", Address: "tcp://rust:8080"},
+		SiteConfig:   schema.Langservers{Language: "rust", Address: "tcp://rust:8080"},
 	},
 }
 
@@ -282,7 +283,7 @@ func init() {
 		for lang, ls := range StaticInfo {
 			// Save the port that the container is listening on internally so
 			// that we can specify it later with the docker run `-p` flag.
-			split := strings.Split(ls.siteConfig.Address, ":")
+			split := strings.Split(ls.SiteConfig.Address, ":")
 			p := debugContainerPorts[lang]
 			p.ContainerPort = split[len(split)-1]
 			debugContainerPorts[lang] = p
@@ -290,7 +291,7 @@ func init() {
 			// Since some language servers (typescript, java, php) listen on
 			// the same internal port, we give all explicit host ports
 			// (otherwise they would conflict).
-			ls.siteConfig.Address = "tcp://localhost:" + debugContainerPorts[lang].HostPort
+			ls.SiteConfig.Address = "tcp://localhost:" + debugContainerPorts[lang].HostPort
 			StaticInfo[lang] = ls
 		}
 	}
