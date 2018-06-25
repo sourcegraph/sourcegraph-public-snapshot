@@ -774,6 +774,10 @@ func TestProxy_connections(t *testing.T) {
 		XFilesProvider:   true,
 		XContentProvider: true,
 		XCacheProvider:   true,
+		Experimental: lspext.ExperimentalClientCapabilities{
+			Decorations: true,
+			Exec:        true,
+		},
 	}
 
 	// Start the test client C1.

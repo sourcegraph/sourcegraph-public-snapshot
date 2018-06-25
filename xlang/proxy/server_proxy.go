@@ -450,6 +450,19 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 				XFilesProvider:   true,
 				XContentProvider: true,
 				XCacheProvider:   true,
+
+				// NOTE: These may not accurately represent the end client's (e.g., the Sourcegraph
+				// web frontend's, or a VS Code extension client's) capabilities. This is because it
+				// was designed for the case where multiple true clients are sharing the same
+				// backend, and it doesn't make sense to arbitrarily choose (e.g.) the first client's
+				// capabilities.
+				//
+				// TODO: If the session is not shared, then we can pass through the end client's
+				// capabilities.
+				Experimental: lspext.ExperimentalClientCapabilities{
+					Decorations: true,
+					Exec:        true,
+				},
 			},
 		},
 		OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
@@ -673,6 +686,9 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 	case "workspace/xfiles":
 		return c.handleWorkspaceFilesExt(ctx, req)
+
+	case "exec":
+		return c.handleExec(ctx, req)
 
 	case "$/partialResult":
 		// The partialResult is for a specific client, but we

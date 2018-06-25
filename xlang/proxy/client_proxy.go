@@ -482,6 +482,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		return nil, nil
 
 	case "textDocument/definition", "textDocument/hover", "textDocument/references", "textDocument/documentHighlight", "textDocument/documentLink", "documentLink/resolve", "textDocument/implementation", "textDocument/typeDefinition", "textDocument/documentSymbol", "workspace/symbol",
+		"textDocument/decorations",
 		"textDocument/xdefinition", "workspace/xreferences", "workspace/xdependencies", "workspace/xpackages":
 		if err := ensureInitialized(); err != nil {
 			return nil, err
