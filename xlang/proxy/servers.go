@@ -46,6 +46,12 @@ func connectToServer(ctx context.Context, mode string) (jsonrpc2.ObjectStream, e
 	if ok {
 		return connect()
 	}
+
+	conn, err := lookupExtension(ctx, mode)
+	if conn != nil || err != nil {
+		return conn, err
+	}
+
 	return nil, &jsonrpc2.Error{
 		Code:    CodeModeNotFound,
 		Message: fmt.Sprintf("xlang server proxy: no server registered for mode %q", mode),

@@ -212,3 +212,5 @@ func SupportsManagingLanguageServers() (reason string, ok bool) {
 func PlatformEnabled() bool { return platformEnabled }
 
 var platformEnabled, _ = strconv.ParseBool(os.Getenv("EXP_PLATFORM"))
+
+func Platform() *struct{} { return nil }

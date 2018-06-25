@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -35,11 +36,13 @@ func (e *errorList) error() error {
 
 // getInitializationOptions returns the initializationOptions value to use in an LSP
 // initialize request.
-func getInitializationOptions(lang string) map[string]interface{} {
+func getInitializationOptions(ctx context.Context, lang string) (interface{}, error) {
 	for _, ls := range conf.EnabledLangservers() {
 		if ls.Language == lang {
-			return ls.InitializationOptions
+			return ls.InitializationOptions, nil
 		}
 	}
-	return nil
+	// TODO(extensions): Clean this up: remove these 2 similar funcs
+	// getInitializationOptions{,ForExtension}.
+	return getInitializationOptionsForExtension(ctx, lang)
 }

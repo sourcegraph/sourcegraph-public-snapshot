@@ -468,11 +468,15 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 		OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
 		Mode:            c.id.mode,
 	}
-	if initOps := getInitializationOptions(c.id.mode); initOps != nil {
-		initParams.InitializationOptions = initOps
+
+	initOpts, err := getInitializationOptions(ctx, c.id.mode)
+	if err != nil {
+		return nil, err
 	}
+	initParams.InitializationOptions = initOpts
+
 	var res lsp.InitializeResult
-	err := c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
+	err = c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
 	if err != nil {
 		if errors.Cause(err) == context.DeadlineExceeded {
 			err = errors.Wrapf(err, "%s language server failed to respond to initalize within %s for rootURI %s", c.id.mode, timeout, c.id.rootURI.String())
