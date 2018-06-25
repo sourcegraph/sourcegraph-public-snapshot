@@ -687,8 +687,8 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	case "workspace/xfiles":
 		return c.handleWorkspaceFilesExt(ctx, req)
 
-	case "exec":
-		return c.handleExec(ctx, req)
+	case "workspace/exec":
+		return c.handleWorkspaceExec(ctx, req)
 
 	case "$/partialResult":
 		// The partialResult is for a specific client, but we

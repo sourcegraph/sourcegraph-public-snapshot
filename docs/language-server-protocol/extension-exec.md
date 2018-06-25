@@ -10,7 +10,7 @@ Open questions:
 
 _Request_:
 
-* method: 'exec'
+* method: 'workspace/exec'
 * params: `ExecParams` defined as follows:
 
 ```typescript

@@ -11,9 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
-// handleExec handles exec requests adherent to the LSP exec extension (see
+// handleWorkspaceExec handles exec requests adherent to the LSP exec extension (see
 // language-server-protocol/extension-exec.md).
-func (c *serverProxyConn) handleExec(ctx context.Context, req *jsonrpc2.Request) (result interface{}, err error) {
+func (c *serverProxyConn) handleWorkspaceExec(ctx context.Context, req *jsonrpc2.Request) (result interface{}, err error) {
 	if req.Params == nil {
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 	}
@@ -23,7 +23,7 @@ func (c *serverProxyConn) handleExec(ctx context.Context, req *jsonrpc2.Request)
 	}
 
 	if params.Command != "git" {
-		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams, Message: fmt.Sprintf("exec: unsupported command %q (supported commands are: git)", params.Command)}
+		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams, Message: fmt.Sprintf("workspace/exec: unsupported command %q (supported commands are: git)", params.Command)}
 	}
 
 	repo := gitserver.Repo{Name: c.id.rootURI.Repo()}
