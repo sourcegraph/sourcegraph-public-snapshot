@@ -7,9 +7,10 @@ import (
 	"net/rpc"
 )
 
-type Goreman int
+// Goreman is RPC server
+type Goreman struct{}
 
-// rpc: start
+// Start do start
 func (r *Goreman) Start(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -24,7 +25,7 @@ func (r *Goreman) Start(args []string, ret *string) (err error) {
 	return err
 }
 
-// rpc: stop
+// Stop do stop
 func (r *Goreman) Stop(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -39,7 +40,7 @@ func (r *Goreman) Stop(args []string, ret *string) (err error) {
 	return err
 }
 
-// rpc: stop-all
+// StopAll do stop all
 func (r *Goreman) StopAll(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -54,7 +55,7 @@ func (r *Goreman) StopAll(args []string, ret *string) (err error) {
 	return err
 }
 
-// rpc: restart
+// Restart do restart
 func (r *Goreman) Restart(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -69,7 +70,7 @@ func (r *Goreman) Restart(args []string, ret *string) (err error) {
 	return err
 }
 
-// rpc: restart-all
+// RestartAll do restart all
 func (r *Goreman) RestartAll(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -84,7 +85,7 @@ func (r *Goreman) RestartAll(args []string, ret *string) (err error) {
 	return err
 }
 
-// rpc: list
+// List do list
 func (r *Goreman) List(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -98,7 +99,7 @@ func (r *Goreman) List(args []string, ret *string) (err error) {
 	return err
 }
 
-// rpc: status
+// Status do status
 func (r *Goreman) Status(args []string, ret *string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -162,5 +163,4 @@ func startServer(listenPort uint) error {
 		}
 		rpc.ServeConn(client)
 	}
-	return nil
 }

@@ -123,7 +123,7 @@ func readProcfile(cfg *config) error {
 		p := &procInfo{proc: k, cmdline: v, port: cfg.BasePort}
 		p.cond = sync.NewCond(&p.mu)
 		procs[k] = p
-		cfg.BasePort++
+		cfg.BasePort += 100
 		if len(k) > maxProcNameLength {
 			maxProcNameLength = len(k)
 		}

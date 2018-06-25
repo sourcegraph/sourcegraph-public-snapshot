@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func export_upstart(cfg *config, path string) error {
+func exportUpstart(cfg *config, path string) error {
 	keys := make([]string, len(procs))
 	i := 0
 	for k := range procs {
@@ -79,7 +79,7 @@ func export(cfg *config, format, path string) error {
 
 	switch format {
 	case "upstart":
-		return export_upstart(cfg, path)
+		return exportUpstart(cfg, path)
 	}
 	return nil
 }
