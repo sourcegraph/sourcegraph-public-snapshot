@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,7 +16,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonrpc2"
+	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -149,6 +154,27 @@ func tcpServer(addr string) func() (jsonrpc2.ObjectStream, error) {
 			return nil, err
 		}
 		return jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), nil
+	}
+}
+
+func webSocketServer(url string) func() (jsonrpc2.ObjectStream, error) {
+	return func() (jsonrpc2.ObjectStream, error) {
+		d := websocket.Dialer{
+			Proxy:            http.ProxyFromEnvironment,
+			HandshakeTimeout: connectTimeout,
+		}
+		wc, resp, err := d.Dial(url, nil)
+		if err != nil {
+			if resp != nil {
+				body, _ := ioutil.ReadAll(resp.Body)
+				if max := 64; len(body) > max {
+					body = body[:max]
+				}
+				err = errors.WithMessage(err, fmt.Sprintf("WebSocket HTTP request received error response HTTP %d %s (partial body: %q)", resp.StatusCode, http.StatusText(resp.StatusCode), body))
+			}
+			return nil, err
+		}
+		return websocketjsonrpc2.NewObjectStream(wc), nil
 	}
 }
 
