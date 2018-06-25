@@ -179,6 +179,8 @@ type ServerCapabilities struct {
 	// querying symbols by properties with WorkspaceSymbolParams.symbol. This
 	// is a Sourcegraph extension.
 	XWorkspaceSymbolByProperties bool `json:"xworkspaceSymbolByProperties,omitempty"`
+
+	Experimental interface{} `json:"experimental,omitempty"`
 }
 
 type CompletionOptions struct {
