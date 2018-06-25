@@ -151,7 +151,7 @@ func registerTCPServer(mode, addr, scope string) error {
 	return nil
 }
 
-const connectTimeout = 5 * time.Second
+const connectTimeout = 10 * time.Second
 
 func tcpServer(addr string) func() (jsonrpc2.ObjectStream, error) {
 	return func() (jsonrpc2.ObjectStream, error) {
