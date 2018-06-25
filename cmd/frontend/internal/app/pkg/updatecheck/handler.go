@@ -25,7 +25,7 @@ var (
 	// - If ahead, we are the in middle of a release, and ProductVersion should only be ahead by 1.
 	// - If equal to, we have recently released a new major/minor version cut from master.
 	// - If behind, we've released a patch release cut from a non-master branch.
-	ProductVersion = "2.9.1"
+	ProductVersion = "2.9.2"
 
 	// latestReleaseServerBuild is only used by sourcegraph.com to tell existing
 	// Server installations what the latest version is. The version here _must_ be
