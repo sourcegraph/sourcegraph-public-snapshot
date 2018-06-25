@@ -1,5 +1,5 @@
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { combineLatest, concat, fromEvent, merge, Observable, of, Subject, Subscription, zip } from 'rxjs'
 import {
@@ -18,8 +18,8 @@ import {
 import { Key } from 'ts-key-enum'
 import { Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { ExtensionsProps, getHover, getJumpURL, HoverMerged, ModeSpec } from '../../backend/features'
-import { EMODENOTFOUND, isEmptyHover } from '../../backend/lsp'
+import { ExtensionsProps, getDecorations, getHover, getJumpURL, HoverMerged, ModeSpec } from '../../backend/features'
+import { EMODENOTFOUND, isEmptyHover, LSPSelector, TextDocumentDecoration } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
@@ -197,6 +197,9 @@ interface BlobState {
     selectedPosition?: LineOrPositionOrRange
 
     mouseIsMoving: boolean
+
+    /** The decorations to display in the blob. */
+    decorationsOrError?: TextDocumentDecoration[] | ErrorLike
 }
 
 /**
@@ -551,6 +554,35 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 })
         )
 
+        /** Emits when the URL's target blob (repository, revision, and path) changes. */
+        const modelChanges: Observable<AbsoluteRepoFile & LSPSelector> = this.componentUpdates.pipe(
+            map(props => pick(props, 'repoPath', 'rev', 'commitID', 'filePath', 'mode')),
+            distinctUntilChanged((a, b) => isEqual(a, b)),
+            share()
+        )
+
+        /** Decorations */
+        let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined
+        const decorations: Observable<TextDocumentDecoration[] | undefined> = combineLatest(
+            modelChanges,
+            extensionsChanges
+        ).pipe(
+            switchMap(([model, extensions]) => {
+                const modelChanged = !isEqual(model, lastModel)
+                lastModel = model // record so we can compute modelChanged
+
+                // Only clear decorations if the model changed. If only the extensions changed, keep
+                // the old decorations until the new ones are available, to avoid UI jitter.
+                return merge(modelChanged ? [undefined] : [], getDecorations(model, extensions))
+            }),
+            share()
+        )
+        this.subscriptions.add(
+            decorations
+                .pipe(catchError(error => [asError(error)]))
+                .subscribe(decorationsOrError => this.setState({ decorationsOrError }))
+        )
+
         /**
          * For every position, emits an Observable that emits new values for the `definitionURLOrError` state.
          * This is a higher-order Observable (Observable that emits Observables).
@@ -698,6 +730,44 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     // Scroll into view
                     if (rows.length > 0) {
                         scrollIntoCenterIfNeeded(blobElement, codeElement, rows[0].element)
+                    }
+                })
+        )
+
+        /** Render decorations. */
+        let decoratedElements: HTMLElement[] = []
+        this.subscriptions.add(
+            combineLatest(
+                decorations.pipe(
+                    map(decorations => decorations || []),
+                    catchError(error => {
+                        console.error(error)
+
+                        // Treat decorations error as empty decorations.
+                        return [[] as TextDocumentDecoration[]]
+                    })
+                ),
+                this.codeElements
+            )
+                .pipe(map(([decorations, codeElement]) => ({ decorations, codeElement })))
+                .subscribe(({ decorations, codeElement }) => {
+                    if (codeElement) {
+                        if (decoratedElements) {
+                            // Clear previous decorations.
+                            for (const e of decoratedElements) {
+                                e.style.backgroundColor = null
+                            }
+                        }
+
+                        for (const d of decorations) {
+                            const lineElement = getRowInCodeElement(codeElement, d.range.start.line + 1)
+                            if (lineElement && d.backgroundColor) {
+                                lineElement.style.backgroundColor = d.backgroundColor
+                                decoratedElements.push(lineElement)
+                            }
+                        }
+                    } else {
+                        decoratedElements = []
                     }
                 })
         )

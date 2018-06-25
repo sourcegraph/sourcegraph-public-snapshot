@@ -1,10 +1,12 @@
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { compact, flatten } from 'lodash'
-import { forkJoin, Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { forkJoin, Observable, of, throwError } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString, MarkupContent, Range } from 'vscode-languageserver-types'
-import { AbsoluteRepo } from '../repo'
+import { AbsoluteRepo, AbsoluteRepoFile } from '../repo'
 import {
+    EMETHODNOTFOUND,
+    fetchDecorations,
     fetchDefinition,
     fetchHover,
     fetchImplementation,
@@ -15,6 +17,7 @@ import {
     LSPReferencesParams,
     LSPSelector,
     LSPTextDocumentPositionParams,
+    TextDocumentDecoration,
     XReferenceOptions,
 } from './lsp'
 
@@ -175,6 +178,37 @@ export function getXreferences(
     return forkJoin(getModes(ctx, extensions).map(mode => fetchXreferences({ ...ctx, mode }))).pipe(
         map(results => flatten(results))
     )
+}
+
+/**
+ * Fetches decorations for the given file.
+ *
+ * @param ctx the file
+ * @return decorations
+ */
+export function getDecorations(
+    ctx: AbsoluteRepoFile & LSPSelector,
+    extensions: Extensions
+): Observable<TextDocumentDecoration[]> {
+    if (!window.context.platformEnabled) {
+        return of([])
+    }
+    return forkJoin(
+        getModes(ctx, extensions).map(mode =>
+            fetchDecorations({ ...ctx, mode }).pipe(
+                catchError(error => {
+                    if (isMethodNotFoundError(error)) {
+                        return [[]]
+                    }
+                    return throwError(error)
+                })
+            )
+        )
+    ).pipe(map(results => flatten(results)))
+}
+
+function isMethodNotFoundError(val: any): boolean {
+    return val && val.code === EMETHODNOTFOUND
 }
 
 /** Computes the set of LSP modes to use. */

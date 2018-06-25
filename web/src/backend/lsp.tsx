@@ -6,7 +6,7 @@ import {
 import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { Definition, Hover, Location, MarkupContent } from 'vscode-languageserver-types'
+import { Definition, Hover, Location, MarkupContent, Range } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, FileSpec, makeRepoURI, parseRepoURI, PositionSpec } from '../repo'
 import { normalizeAjaxError } from '../util/errors'
@@ -54,6 +54,9 @@ const wrapLSPRequests = (ctx: LSPSelector, requests: LSPRequest[]): any[] => [
         method: 'exit',
     },
 ]
+
+/** JSON-RPC2 error for methods that are not found */
+export const EMETHODNOTFOUND = -32601
 
 /** LSP proxy error code for unsupported modes */
 export const EMODENOTFOUND = -32000
@@ -315,6 +318,28 @@ export const fetchXreferences = memoizeObservable(
             }
         ).pipe(map((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference))),
     options => cacheKey(options) + ':' + JSON.stringify([options.query, options.hints, options.limit])
+)
+
+export interface TextDocumentDecoration {
+    range: Range
+    isWholeLine?: boolean
+    backgroundColor?: string
+}
+
+export const fetchDecorations = memoizeObservable(
+    (options: LSPSelector & FileSpec): Observable<TextDocumentDecoration[]> =>
+        sendLSPRequest(
+            {
+                method: 'textDocument/decorations',
+                params: {
+                    textDocument: {
+                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
+                    },
+                },
+            },
+            options
+        ),
+    cacheKey
 )
 
 function cacheKey(sel: LSPSelector): string {
