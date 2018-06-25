@@ -225,8 +225,8 @@ func TestFileOrDir(t *testing.T) {
 			}
 			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
 		}
-		git.Mocks.GitCmdRaw = func(params []string) (string, error) {
-			return "mybranch", nil
+		git.Mocks.ExecSafe = func(params []string) ([]byte, []byte, int, error) {
+			return []byte("mybranch"), nil, 0, nil
 		}
 		defer git.ResetMocks()
 		links, err := FileOrDir(context.Background(), &types.Repo{URI: "myrepo"}, rev, path, true)

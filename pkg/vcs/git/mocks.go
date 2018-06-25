@@ -12,7 +12,7 @@ import (
 // (The emptyMocks is used by ResetMocks to zero out Mocks without needing to use a named type.)
 var Mocks, emptyMocks struct {
 	GetCommit        func(api.CommitID) (*Commit, error)
-	GitCmdRaw        func(params []string) (string, error)
+	ExecSafe         func(params []string) (stdout, stderr []byte, exitCode int, err error)
 	RawLogDiffSearch func(opt RawLogDiffSearchOptions) ([]*LogCommitSearchResult, bool, error)
 	ReadDir          func(commit api.CommitID, name string, recurse bool) ([]os.FileInfo, error)
 	ResolveRevision  func(spec string, opt *ResolveRevisionOptions) (api.CommitID, error)

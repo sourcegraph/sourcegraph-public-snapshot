@@ -23,30 +23,35 @@ func checkSpecArgSafety(spec string) error {
 	return nil
 }
 
-func GitCmdRaw(ctx context.Context, repo gitserver.Repo, params []string) (string, error) {
-	if Mocks.GitCmdRaw != nil {
-		return Mocks.GitCmdRaw(params)
+// ExecSafe executes a Git subcommand iff it is allowed according to a whitelist.
+//
+// An error is only returned when there is a failure unrelated to the actual command being
+// executed. If the executed command exits with a nonzero exit code, err == nil. This is similar to
+// how http.Get returns a nil error for HTTP non-2xx responses.
+func ExecSafe(ctx context.Context, repo gitserver.Repo, params []string) (stdout, stderr []byte, exitCode int, err error) {
+	if Mocks.ExecSafe != nil {
+		return Mocks.ExecSafe(params)
 	}
 
-	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ExtensionGitCmd")
+	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: ExecSafe")
 	defer span.Finish()
 
 	if len(params) == 0 {
-		return "", errors.New("at least one argument required")
+		return nil, nil, 0, errors.New("at least one argument required")
 	}
 
 	if !isWhitelistedGitCmd(params) {
-		return "", fmt.Errorf("command failed: %s is not a whitelisted git command", strings.Join(params, " "))
+		return nil, nil, 0, fmt.Errorf("command failed: %q is not a whitelisted git command", params)
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", params...)
 	cmd.Repo = repo
-	out, err := cmd.CombinedOutput(ctx)
-	if err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("git raw command %q failed (output: %q)", params, out))
+	stdout, stderr, err = cmd.DividedOutput(ctx)
+	exitCode = cmd.ExitStatus
+	if exitCode != 0 && err != nil {
+		err = nil // the error must just indicate that the exit code was nonzero
 	}
-
-	return string(out), nil
+	return stdout, stderr, exitCode, err
 }
 
 // ExecReader executes an arbitrary `git` command (`git [args...]`) and returns a reader connected
@@ -95,7 +100,7 @@ func readUntilTimeout(ctx context.Context, cmd *gitserver.Cmd) (data []byte, com
 }
 
 var (
-	// gitCmdWhitelist are commands and arguments that are allowed to execute when calling GitCmdRaw.
+	// gitCmdWhitelist are commands and arguments that are allowed to execute when calling ExecSafe.
 	gitCmdWhitelist = map[string][]string{
 		"log":    append([]string{}, gitCommonWhitelist...),
 		"show":   append([]string{}, gitCommonWhitelist...),

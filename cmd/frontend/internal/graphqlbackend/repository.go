@@ -1,11 +1,11 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -140,9 +140,10 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
-	ref, err := git.GitCmdRaw(ctx, backend.CachedGitRepo(r.repo), []string{"symbolic-ref", "HEAD"})
+	refBytes, _, exitCode, err := git.ExecSafe(ctx, backend.CachedGitRepo(r.repo), []string{"symbolic-ref", "HEAD"})
+	refName := string(bytes.TrimSpace(refBytes))
 
-	if err == nil {
+	if err == nil && exitCode == 0 {
 		// Check that our repo is not empty
 		_, err = git.ResolveRevision(ctx, backend.CachedGitRepo(r.repo), nil, "HEAD", &git.ResolveRevisionOptions{NoEnsureRevision: true})
 	}
@@ -155,7 +156,7 @@ func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver
 		return nil, err
 	}
 
-	return &gitRefResolver{repo: r, name: strings.TrimSpace(ref)}, nil
+	return &gitRefResolver{repo: r, name: refName}, nil
 }
 
 func (r *repositoryResolver) Language() string {
