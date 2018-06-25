@@ -9,6 +9,7 @@ import { DynamicallyImportedMonacoSettingsEditor } from '../registry/Dynamically
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+import { siteConfigActions } from './configHelpers'
 
 interface Props extends RouteComponentProps<any> {
     isLightTheme: boolean
@@ -249,6 +250,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                         <div>
                             <DynamicallyImportedMonacoSettingsEditor
                                 value={contents || ''}
+                                actions={siteConfigActions}
                                 jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
                                 onDirtyChange={this.onDirtyChange}
                                 canEdit={this.state.site.configuration.canUpdate}
