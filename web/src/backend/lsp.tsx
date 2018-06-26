@@ -3,13 +3,13 @@ import {
     SymbolLocationInformation,
     WorkspaceReferenceParams,
 } from 'javascript-typescript-langserver/lib/request-type'
-import { Observable } from 'rxjs'
+import { Observable, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkupContent, Range } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, FileSpec, makeRepoURI, parseRepoURI, PositionSpec } from '../repo'
-import { normalizeAjaxError } from '../util/errors'
+import { ErrorLike, normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { HoverMerged, ModeSpec } from './features'
@@ -58,10 +58,21 @@ const wrapLSPRequests = (ctx: LSPSelector, requests: LSPRequest[]): any[] => [
 /** JSON-RPC2 error for methods that are not found */
 export const EMETHODNOTFOUND = -32601
 
+/** Returns whether the LSP message is a "method not found" error. */
+export function isMethodNotFoundError(val: any): boolean {
+    return val && val.code === EMETHODNOTFOUND
+}
+
 /** LSP proxy error code for unsupported modes */
 export const EMODENOTFOUND = -32000
 
-const sendLSPRequests = (ctx: LSPSelector, ...requests: LSPRequest[]): Observable<any> =>
+type ResponseMessages = { 0: { result: InitializeResult } } & any[]
+
+type ResponseResults = { 0: InitializeResult } & any[]
+
+type ResponseError = ErrorLike & { responses: ResponseMessages }
+
+const sendLSPRequests = (ctx: LSPSelector, ...requests: LSPRequest[]): Observable<ResponseResults> =>
     ajax({
         method: 'POST',
         url: `/.api/xlang/${requests.map(({ method }) => method).join(',')}`,
@@ -83,14 +94,14 @@ const sendLSPRequests = (ctx: LSPSelector, ...requests: LSPRequest[]): Observabl
             throw err
         }),
         map(({ response }) => response),
-        map(results => {
+        map((results: ResponseMessages) => {
             for (const result of results) {
                 if (result && result.error) {
-                    throw Object.assign(new Error(result.error.message), result.error)
+                    throw Object.assign(new Error(result.error.message), result.error, { responses: results })
                 }
             }
 
-            return results.map((result: any) => result && result.result)
+            return results.map(result => result && result.result) as ResponseResults
         })
     )
 
@@ -166,6 +177,20 @@ export const fetchHover = memoizeObservable(
             },
             pos
         ).pipe(
+            catchError((error: ResponseError) => {
+                // If the language server doesn't support textDocument/hover and it reported that it doesn't
+                // support it, ignore the error.
+                if (
+                    isMethodNotFoundError(error) &&
+                    error.responses &&
+                    error.responses[0] &&
+                    error.responses[0].result.capabilities &&
+                    !error.responses[0].result.capabilities.hoverProvider
+                ) {
+                    return [null]
+                }
+                return throwError(error)
+            }),
             tap(hover => {
                 normalizeHoverResponse(hover)
                 // Do some shallow validation on response, e.g. to catch https://github.com/sourcegraph/sourcegraph/issues/11711

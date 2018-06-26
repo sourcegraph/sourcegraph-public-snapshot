@@ -5,7 +5,6 @@ import { catchError, map } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString, MarkupContent, Range } from 'vscode-languageserver-types'
 import { AbsoluteRepo, AbsoluteRepoFile } from '../repo'
 import {
-    EMETHODNOTFOUND,
     fetchDecorations,
     fetchDefinition,
     fetchHover,
@@ -14,6 +13,7 @@ import {
     fetchReferences,
     fetchXdefinition,
     fetchXreferences,
+    isMethodNotFoundError,
     LSPReferencesParams,
     LSPSelector,
     LSPTextDocumentPositionParams,
@@ -205,10 +205,6 @@ export function getDecorations(
             )
         )
     ).pipe(map(results => flatten(results)))
-}
-
-function isMethodNotFoundError(val: any): boolean {
-    return val && val.code === EMETHODNOTFOUND
 }
 
 /** Computes the set of LSP modes to use. */
