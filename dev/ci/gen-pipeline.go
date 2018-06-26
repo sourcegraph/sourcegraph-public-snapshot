@@ -294,7 +294,7 @@ func main() {
 			Env("FORCE_COLOR", "1"),
 			Cmd("cd web"),
 			Cmd("npm ci"),
-			Cmd("npm run test-e2e"),
+			Cmd("npm run test-e2e -- --retries 5"),
 			ArtifactPaths("web/puppeteer/*.png"))
 		pipeline.AddWait()
 
