@@ -27,7 +27,7 @@ case "$DEPLOYMENT" in
         ;;
 esac
 
-IMAGE=$(kubectl get deployment "--namespace=$NAMESPACE" "--context=$CONTEXT" -o 'jsonpath={.spec.template.spec.containers[?(@.name="'"$CONTAINER"'")].image}' "$DEPLOYMENT" | awk -F ':' '{printf $1}')
+IMAGE=$(kubectl get deployment "--namespace=$NAMESPACE" "--context=$CONTEXT" -o 'jsonpath={.spec.template.spec.containers[?(@.name=="'"$CONTAINER"'")].image}' "$DEPLOYMENT" | awk -F ':' '{printf $1}')
 
 kubectl "--namespace=$NAMESPACE" "--context=$CONTEXT" set image "deployment/$DEPLOYMENT" "$DEPLOYMENT=$IMAGE:$VERSION"
 kubectl "--namespace=$NAMESPACE" "--context=$CONTEXT" rollout status "deployment/$DEPLOYMENT"
