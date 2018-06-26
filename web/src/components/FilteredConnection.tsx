@@ -376,6 +376,11 @@ interface Connection<N> {
      * pageInfo (if not, then they generally all do return totalCount).
      */
     pageInfo?: { hasNextPage: boolean }
+
+    /**
+     * If set, this error is displayed. Even when there is an error, the results are still displayed.
+     */
+    error?: string | null
 }
 
 /** The URL query parameter where the search query for FilteredConnection is stored. */
@@ -566,6 +571,18 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
     }
 
     public render(): JSX.Element | null {
+        const errors: string[] = []
+        if (isErrorLike(this.state.connectionOrError)) {
+            errors.push(...uniq(this.state.connectionOrError.message.split('\n')))
+        }
+        if (
+            this.state.connectionOrError &&
+            !isErrorLike(this.state.connectionOrError) &&
+            this.state.connectionOrError.error
+        ) {
+            errors.push(this.state.connectionOrError.error)
+        }
+
         const compactnessClass = `filtered-connection--${this.props.compact ? 'compact' : 'noncompact'}`
         return (
             <div className={`filtered-connection ${compactnessClass} ${this.props.className || ''}`}>
@@ -597,17 +614,18 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             )}
                     </Form>
                 )}
-                {isErrorLike(this.state.connectionOrError) ? (
+                {errors.length > 0 && (
                     <div className="alert alert-danger filtered-connection__error">
-                        {uniq(this.state.connectionOrError.message.split('\n')).map((m, i) => (
+                        {errors.map((m, i) => (
                             <React.Fragment key={i}>
                                 {upperFirst(m)}
                                 <br />
                             </React.Fragment>
                         ))}
                     </div>
-                ) : (
-                    this.state.connectionOrError && (
+                )}
+                {this.state.connectionOrError &&
+                    !isErrorLike(this.state.connectionOrError) && (
                         <ConnectionNodes
                             connection={this.state.connectionOrError}
                             loading={this.state.loading}
@@ -628,8 +646,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             onShowMore={this.onClickShowMore}
                             location={this.props.location}
                         />
-                    )
-                )}
+                    )}
                 {this.state.loading && <Loader className="icon-inline filtered-connection__loader" />}
             </div>
         )
