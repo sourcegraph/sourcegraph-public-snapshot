@@ -20,8 +20,11 @@ esac
 case "$DEPLOYMENT" in
     gitserver)
         DEPLOYMENT="gitserver-1"
+        ;;
+
     xlang-javascript-typescript)
         DEPLOYMENT="xlang-typescript"
+        ;;
 esac
 
 IMAGE=$(kubectl get deployment "--namespace=$NAMESPACE" "--context=$CONTEXT" -o 'jsonpath={.spec.template.spec.containers[?(@.name="'"$CONTAINER"'")].image}' "$DEPLOYMENT" | awk -F ':' '{printf $1}')
