@@ -169,10 +169,12 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
+// currentUser returns the authenticated user if any. If there is no authenticated user, it returns
+// (nil, nil). If some other error occurs, then the error is returned.
 func currentUser(ctx context.Context) (*userResolver, error) {
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
-		if errcode.IsNotFound(err) {
+		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
 			return nil, nil
 		}
 		return nil, err
