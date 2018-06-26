@@ -9,6 +9,7 @@ import { ExplorePage } from './explore/ExplorePage'
 import { SurveyPage } from './marketing/SurveyPage'
 import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
+import { RegistryArea } from './registry/RegistryArea'
 import { RepoContainer } from './repo/RepoContainer'
 import { parseSearchURLQuery } from './search'
 import { ScopePage } from './search/input/ScopePage'
@@ -128,5 +129,13 @@ export const routes: LayoutRouteProps[] = [
         path: '/survey/:score?',
         component: SurveyPage,
     },
+    ...(window.context.platformEnabled
+        ? [
+              {
+                  path: '/registry',
+                  component: RegistryArea,
+              },
+          ]
+        : []),
     repoRevRoute,
 ]

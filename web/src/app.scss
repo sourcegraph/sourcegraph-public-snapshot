@@ -22,6 +22,8 @@ $border-radius-lg: 4px;
 $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
+$grid-gutter-width: 1.5rem;
+
 // Tell Bootstrap to use colors from OpenColor
 $blue: $oc-blue-7;
 $indigo: $oc-indigo-7;
@@ -43,6 +45,18 @@ $danger: $red;
 $secondary-light: $gray-01;
 
 $theme-colors-light: ('secondary': $secondary-light);
+
+:root {
+    --primary: #{$primary};
+    --secondary: #{$secondary};
+    --success: #{$success};
+    --info: #{$info};
+    --warning: #{$warning};
+    --danger: #{$danger};
+}
+.theme-light {
+    --secondary: #{$secondary-light};
+}
 
 $body-color: var(--body-color);
 $body-bg: var(--body-bg);
@@ -96,6 +110,7 @@ $table-border-color-light: #e4e9f1;
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/reboot';
 @import 'bootstrap/scss/utilities';
+@import 'bootstrap/scss/grid';
 @import './global-styles/badge';
 @import './global-styles/card';
 @import './global-styles/nav';
@@ -248,6 +263,9 @@ hr {
 @import './auth/ResetPasswordPage';
 @import './auth/SignInPage';
 @import './auth/SignUpPage';
+@import './registry/RegistryArea';
+@import './registry/RegistryExtensionArea';
+@import './registry/extensions/actions/ExtensionSelector';
 @import './repo/GitRefTag';
 @import './repo/Repository';
 @import './repo/RepoContainer';

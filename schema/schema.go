@@ -79,12 +79,73 @@ type BuiltinAuthProvider struct {
 	Type        string `json:"type"`
 }
 
+// DockerTarget description: A specification of how to run a Docker container to provide this extension's functionality.
+type DockerTarget struct {
+	Image string `json:"image"`
+	Type  string `json:"type"`
+}
+
+// ExecTarget description: An local executable to run and communicate with over stdin/stdout to provide this extension's functionality.
+type ExecTarget struct {
+	Command string `json:"command"`
+	Type    string `json:"type"`
+}
+
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
 	CanonicalURLRedirect  string `json:"canonicalURLRedirect,omitempty"`
 	ConfigVars            string `json:"configVars,omitempty"`
 	JumpToDefOSSIndex     string `json:"jumpToDefOSSIndex,omitempty"`
 	MultipleAuthProviders string `json:"multipleAuthProviders,omitempty"`
+	Platform              *bool  `json:"platform,omitempty"`
+}
+
+// ExtensionPlatform description: The platform targeted by this extension.
+type ExtensionPlatform struct {
+	Docker    *DockerTarget
+	Websocket *WebSocketTarget
+	Tcp       *TCPTarget
+	Exec      *ExecTarget
+}
+
+func (v ExtensionPlatform) MarshalJSON() ([]byte, error) {
+	if v.Docker != nil {
+		return json.Marshal(v.Docker)
+	}
+	if v.Websocket != nil {
+		return json.Marshal(v.Websocket)
+	}
+	if v.Tcp != nil {
+		return json.Marshal(v.Tcp)
+	}
+	if v.Exec != nil {
+		return json.Marshal(v.Exec)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *ExtensionPlatform) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "docker":
+		return json.Unmarshal(data, &v.Docker)
+	case "exec":
+		return json.Unmarshal(data, &v.Exec)
+	case "tcp":
+		return json.Unmarshal(data, &v.Tcp)
+	case "websocket":
+		return json.Unmarshal(data, &v.Websocket)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"docker", "websocket", "tcp", "exec"})
+}
+
+// ExtensionSettings description: Settings for an extension.
+type ExtensionSettings struct {
+	Disabled bool `json:"disabled,omitempty"`
 }
 type GitHubConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
@@ -153,6 +214,11 @@ type Phabricator struct {
 	Token string   `json:"token,omitempty"`
 	Url   string   `json:"url,omitempty"`
 }
+
+// Platform description: Configures the Sourcegraph platform functionality. Requires experimentalFeatures.platform to be `true` to take effect. EXPERIMENTAL: This configuration is subject to change without notice.
+type Platform struct {
+	RemoteRegistry interface{} `json:"remoteRegistry,omitempty"`
+}
 type Repos struct {
 	Callsign string `json:"callsign"`
 	Path     string `json:"path"`
@@ -204,11 +270,12 @@ type SearchScope struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
-	Motd                   []string                  `json:"motd,omitempty"`
-	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
-	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
-	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
-	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
+	Extensions             map[string]ExtensionSettings `json:"extensions,omitempty"`
+	Motd                   []string                     `json:"motd,omitempty"`
+	NotificationsSlack     *SlackNotificationsConfig    `json:"notifications.slack,omitempty"`
+	SearchRepositoryGroups map[string][]string          `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries     []*SearchSavedQueries        `json:"search.savedQueries,omitempty"`
+	SearchScopes           []*SearchScope               `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -258,6 +325,7 @@ type SiteConfiguration struct {
 	OidcEmailDomain                   string                       `json:"oidcEmailDomain,omitempty"`
 	OidcProvider                      string                       `json:"oidcProvider,omitempty"`
 	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
+	Platform                          *Platform                    `json:"platform,omitempty"`
 	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
 	PrivateArtifactRepoPassword       string                       `json:"privateArtifactRepoPassword,omitempty"`
 	PrivateArtifactRepoURL            string                       `json:"privateArtifactRepoURL,omitempty"`
@@ -280,4 +348,25 @@ type SiteConfiguration struct {
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.
 type SlackNotificationsConfig struct {
 	WebhookURL string `json:"webhookURL"`
+}
+
+// SourcegraphExtension description: Configuration for a Sourcegraph extension.
+type SourcegraphExtension struct {
+	ActivationEvents []string          `json:"activationEvents"`
+	Args             *interface{}      `json:"args,omitempty"`
+	Description      string            `json:"description,omitempty"`
+	Platform         ExtensionPlatform `json:"platform"`
+	Title            string            `json:"title,omitempty"`
+}
+
+// TCPTarget description: An existing TCP server that serves this extension's functionality.
+type TCPTarget struct {
+	Address string `json:"address"`
+	Type    string `json:"type"`
+}
+
+// WebSocketTarget description: An existing WebSocket URL endpoint that serves this extension's functionality.
+type WebSocketTarget struct {
+	Type string `json:"type"`
+	Url  string `json:"url"`
 }

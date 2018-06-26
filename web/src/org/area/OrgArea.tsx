@@ -10,6 +10,7 @@ import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { OrgSettingsArea } from '../settings/OrgSettingsArea'
+import { OrgExtensionsPage } from './OrgExtensionsPage'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
@@ -20,9 +21,12 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
         gql`
             query Organization($name: String!) {
                 organization(name: $name) {
+                    __typename
                     id
                     name
                     displayName
+                    url
+                    settingsURL
                     viewerPendingInvitation {
                         id
                         sender {
@@ -38,6 +42,9 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
                     createdAt
                     tags {
                         name
+                    }
+                    registryExtensions {
+                        url
                     }
                 }
             }
@@ -178,6 +185,16 @@ export class OrgArea extends React.Component<Props> {
                                     <OrgMembersPage {...routeComponentProps} {...transferProps} />
                                 )}
                             />
+                            {window.context.platformEnabled && (
+                                <Route
+                                    path={`${this.props.match.url}/extensions`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <OrgExtensionsPage {...routeComponentProps} {...transferProps} />
+                                    )}
+                                />
+                            )}
                             <Route
                                 path={`${this.props.match.url}/settings`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

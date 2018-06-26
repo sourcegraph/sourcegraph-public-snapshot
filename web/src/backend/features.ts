@@ -4,6 +4,7 @@ import { forkJoin, Observable, of, throwError } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString, MarkupContent, Range } from 'vscode-languageserver-types'
 import { AbsoluteRepo, AbsoluteRepoFile } from '../repo'
+import * as GQL from './graphqlschema'
 import {
     fetchDecorations,
     fetchDefinition,
@@ -30,7 +31,7 @@ export interface ModeSpec {
 }
 
 /** The extensions in use. */
-export type Extensions = string[]
+export type Extensions = GQL.IConfiguredExtension['extensionID'][]
 
 /** Extended by React prop types that carry extensions. */
 export interface ExtensionsProps {

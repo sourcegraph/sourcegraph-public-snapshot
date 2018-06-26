@@ -124,6 +124,19 @@ func (r *nodeResolver) ToPackage() (*packageResolver, bool) {
 	return n, ok
 }
 
+func (r *nodeResolver) ToRegistryExtension() (*registryExtensionMultiResolver, bool) {
+	switch n := r.node.(type) {
+	case *registryExtensionDBResolver:
+		return &registryExtensionMultiResolver{local: n}, true
+	case *registryExtensionRemoteResolver:
+		return &registryExtensionMultiResolver{remote: n}, true
+	case *registryExtensionMultiResolver:
+		return n, true
+	default:
+		return nil, false
+	}
+}
+
 func (r *nodeResolver) ToSite() (*siteResolver, bool) {
 	n, ok := r.node.(*siteResolver)
 	return n, ok
@@ -166,6 +179,8 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return gitCommitByID(ctx, id)
 	case "Package":
 		return packageByID(ctx, id)
+	case "RegistryExtension":
+		return registryExtensionByID(ctx, id)
 	case "SavedQuery":
 		return savedQueryByID(ctx, id)
 	case "Site":

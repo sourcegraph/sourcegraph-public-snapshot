@@ -1,4 +1,5 @@
 import GearIcon from '@sourcegraph/icons/lib/Gear'
+import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
@@ -39,6 +40,15 @@ export const OrgHeader: React.SFC<Props> = (props: Props) => (
                             >
                                 <UserIcon className="icon-inline" /> Members
                             </NavLink>
+                            {window.context.platformEnabled && (
+                                <NavLink
+                                    to={`${props.match.url}/extensions`}
+                                    className="btn area-header__nav-link"
+                                    activeClassName="area-header__nav-link--active"
+                                >
+                                    <PuzzleIcon className="icon-inline" /> Extensions
+                                </NavLink>
+                            )}
                             {props.org.viewerCanAdminister && (
                                 <NavLink
                                     to={`${props.match.url}/settings`}

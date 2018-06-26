@@ -11,6 +11,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
+import { UserExtensionsPage } from './UserExtensionsPage'
 import { UserHeader } from './UserHeader'
 import { UserOverviewPage } from './UserOverviewPage'
 
@@ -22,9 +23,12 @@ const fetchUser = memoizeObservable(
             gql`
                 query User($username: String!) {
                     user(username: $username) {
+                        __typename
                         id
                         username
                         displayName
+                        url
+                        settingsURL
                         avatarURL
                         viewerCanAdminister
                         siteAdmin
@@ -39,6 +43,9 @@ const fetchUser = memoizeObservable(
                                 displayName
                                 name
                             }
+                        }
+                        registryExtensions {
+                            url
                         }
                     }
                 }
@@ -185,6 +192,16 @@ export class UserArea extends React.Component<Props> {
                                     />
                                 )}
                             />
+                            {window.context.platformEnabled && (
+                                <Route
+                                    path={`${this.props.match.url}/extensions`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <UserExtensionsPage {...routeComponentProps} {...transferProps} />
+                                    )}
+                                />
+                            )}
                             <Route key="hardcoded-key" component={NotFoundPage} />
                         </Switch>
                     </div>

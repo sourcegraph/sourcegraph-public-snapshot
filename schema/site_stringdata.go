@@ -72,6 +72,12 @@ const SiteSchemaJSON = `{
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "disabled"
+        },
+        "platform": {
+          "description": "Enables the platform experiment.",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": true }
         }
       }
     },
@@ -510,6 +516,18 @@ const SiteSchemaJSON = `{
           }
         },
         "required": ["language"]
+      }
+    },
+    "platform": {
+      "description":
+        "Configures the Sourcegraph platform functionality. Requires experimentalFeatures.platform to be ` + "`" + `true` + "`" + ` to take effect. EXPERIMENTAL: This configuration is subject to change without notice.",
+      "type": "object",
+      "properties": {
+        "remoteRegistry": {
+          "description":
+            "The remote extension registry URL, or ` + "`" + `false` + "`" + ` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
+          "oneOf": [{ "type": "string", "format": "uri" }, { "type": "boolean", "const": false }]
+        }
       }
     },
     "settings": {

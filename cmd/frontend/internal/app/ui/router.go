@@ -56,6 +56,7 @@ const (
 	aboutRedirectHost   = "about.sourcegraph.com"
 	routeSurvey         = "survey"
 	routeSurveyScore    = "survey-score"
+	routeRegistry       = "registry"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -122,6 +123,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/users/{username}").Methods("GET").Name(routeUser)
 	r.Path("/survey").Methods("GET").Name(routeSurvey)
 	r.Path("/survey/{score}").Methods("GET").Name(routeSurveyScore)
+	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -188,6 +190,7 @@ func initRouter() {
 	router.Get(routeSearchScope).Handler(handler(serveBasicPageString("Search scope - Sourcegraph")))
 	router.Get(routeSurvey).Handler(handler(serveBasicPageString("Survey - Sourcegraph")))
 	router.Get(routeSurveyScore).Handler(handler(serveBasicPageString("Survey - Sourcegraph")))
+	router.Get(routeRegistry).Handler(handler(serveBasicPageString("Registry - Sourcegraph")))
 
 	router.Get(routeUserSettings).Handler(handler(serveBasicPageString("User settings - Sourcegraph")))
 	router.Get(routeUser).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {

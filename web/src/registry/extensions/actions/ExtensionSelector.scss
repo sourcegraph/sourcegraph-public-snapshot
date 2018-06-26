@@ -1,0 +1,32 @@
+.extension-selector-extension-node {
+    cursor: pointer;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    border: 0;
+}
+
+.extension-selector {
+    &:hover &__label {
+        color: var(--link-hover-color);
+    }
+    &__label:hover {
+        text-decoration: none;
+    }
+    &__label:focus {
+        // Remove focus ring because this is a subcomponent of the PopoverButton.
+        box-shadow: none !important;
+    }
+
+    // stylelint-disable-next-line declaration-property-unit-whitelist
+    margin-top: calc(-0.125rem - 1px);
+    // stylelint-disable-next-line declaration-property-unit-whitelist
+    margin-bottom: calc(-0.125rem - 1px);
+
+    &__popover-content {
+        overflow: hidden;
+        min-height: 0 !important;
+        min-width: 14rem;
+        max-width: 19rem;
+    }
+}

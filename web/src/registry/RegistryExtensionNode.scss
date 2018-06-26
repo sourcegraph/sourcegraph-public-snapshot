@@ -1,0 +1,27 @@
+.registry-extension-node-card {
+    &__title {
+        overflow: hidden;
+        &-link {
+            display: flex;
+            flex-wrap: wrap;
+        }
+    }
+
+    &__card {
+        min-height: 5.5rem;
+
+        &-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .theme-dark & {
+            background-color: $color-bg-2;
+        }
+
+        .theme-light & {
+            background-color: lighten($color-light-bg-2, 2.5%);
+        }
+    }
+}

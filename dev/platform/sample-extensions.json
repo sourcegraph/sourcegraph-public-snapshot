@@ -1,0 +1,52 @@
+[
+  {
+    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d891",
+    "extensionID": "sample/decorations-rainbow",
+    "publisher": { "name": "sample" },
+    "name": "decorations-rainbow",
+    "manifest":
+      "{\n  \"title\":\"Decorations: rainbow (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"red\", \"orange\", \"yellow\", \"blue\", \"green\", \"indigo\", \"violet\", \"white\"]},\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
+  },
+  {
+    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d892",
+    "extensionID": "sample/decorations-us",
+    "publisher": { "name": "sample" },
+    "name": "decorations-us",
+    "manifest":
+      "{\n  \"title\":\"Decorations: USA (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"red\", \"white\", \"blue\"]},\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
+  },
+  {
+    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d893",
+    "extensionID": "sample/decorations-de",
+    "publisher": { "name": "sample" },
+    "name": "decorations-de",
+    "manifest":
+      "{\n  \"title\":\"Decorations: Germany (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"#000000\", \"#DD0000\", \"#FFCE00\"]},\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
+  },
+  {
+    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d894",
+    "extensionID": "sample/decorations-za",
+    "publisher": { "name": "sample" },
+    "name": "decorations-za",
+    "manifest":
+      "{\n  \"title\":\"Decorations: South Africa (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"#000000\", \"#FFB612\", \"#007A4D\", \"#FFFFFF\", \"#DE3831\", \"#002395\"]},\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
+  },
+  {
+    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d895",
+    "extensionID": "sample/decorations-ae",
+    "publisher": { "name": "sample" },
+    "name": "decorations-ae",
+    "manifest":
+      "{\n  \"title\":\"Decorations: Dubai/UAE (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"#FF0000\", \"#00732F\", \"#FFFFFF\", \"#000000\"]},\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
+  }
+]

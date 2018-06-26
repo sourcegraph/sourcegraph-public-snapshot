@@ -39,7 +39,7 @@ func init() {
 }
 
 func serveLSP(w http.ResponseWriter, r *http.Request) {
-	if !conf.PlatformEnabled() {
+	if conf.Platform() == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}

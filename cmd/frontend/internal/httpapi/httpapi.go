@@ -46,6 +46,8 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 
+	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(serveRegistry)))
+
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
 		http.Error(w, "no route", http.StatusNotFound)
@@ -67,6 +69,7 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.StrictSlash(true)
 
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
+	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(serveRegistry)))
 	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
 	m.Get(apirouter.ReposUpdateIndex).Handler(trace.TraceRoute(handler(serveReposUpdateIndex)))
 	m.Get(apirouter.ReposUnindexedDependencies).Handler(trace.TraceRoute(handler(serveReposUnindexedDependencies)))
@@ -87,6 +90,7 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.AppURL).Handler(trace.TraceRoute(handler(serveAppURL)))
 	m.Get(apirouter.CanSendEmail).Handler(trace.TraceRoute(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
+	m.Get(apirouter.Extension).Handler(trace.TraceRoute(handler(serveExtension)))
 	m.Get(apirouter.DefsRefreshIndex).Handler(trace.TraceRoute(handler(serveDefsRefreshIndex)))
 	m.Get(apirouter.PkgsRefreshIndex).Handler(trace.TraceRoute(handler(servePkgsRefreshIndex)))
 	m.Get(apirouter.GitoliteUpdateRepos).Handler(trace.TraceRoute(handler(serveGitoliteUpdateRepos)))

@@ -250,6 +250,8 @@ type Mutation {
     reloadSite: EmptyResponse
     # Submits a user satisfaction (NPS) survey.
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
+    # Manages the extension registry.
+    extensionRegistry: ExtensionRegistryMutation!
 }
 
 # Mutations for language servers.
@@ -330,6 +332,17 @@ type ConfigurationMutation {
     ): SavedQuery!
     # Delete the saved query with the given ID in the configuration.
     deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
+    # Update an extension's configuration. Exactly 1 of the extension and extensionID parameters must be non-null.
+    updateExtension(
+        # The GraphQL API ID of the extension to configure.
+        extension: ID
+        # The extension ID of the extension to configure.
+        extensionID: String
+        # The new enablement state (true to enable, false to disable, null to leave unchanged).
+        enabled: Boolean
+        # Remove the extension from settings.
+        remove: Boolean
+    ): EmptyResponse!
 }
 
 # The payload for ConfigurationMutation.updateConfiguration.
@@ -456,6 +469,8 @@ type Query {
     ): OrgConnection!
     # Looks up an instance of a type that implements ConfigurationSubject.
     configurationSubject(id: ID!): ConfigurationSubject
+    # Looks up an instance of a type that implements ExtensionConfigurationSubject.
+    extensionConfigurationSubject(id: ID!): ExtensionConfigurationSubject
     # The configuration for the viewer.
     viewerConfiguration: ConfigurationCascade!
     # Runs a search.
@@ -476,6 +491,20 @@ type Query {
         # Returns the first n survey responses from the list.
         first: Int
     ): SurveyResponseConnection!
+    # The extension registry.
+    extensionRegistry: ExtensionRegistry!
+    # A list of extensions that are configured for the viewer.
+    viewerConfiguredExtensions(
+        # Returns the first n extensions from the list.
+        first: Int
+        # Include enabled extensions.
+        enabled: Boolean = true
+        # Include disabled extensions.
+        disabled: Boolean = false
+        # Include entries that do not refer to a valid registry extension (e.g., entries whose extension ID doesn't
+        # match any known registry extensions).
+        invalid: Boolean = false
+    ): ConfiguredExtensionConnection!
 }
 
 # A search.
@@ -1694,7 +1723,7 @@ type UserConnection {
 }
 
 # A user.
-type User implements Node, ConfigurationSubject {
+type User implements Node, ConfigurationSubject, ExtensionConfigurationSubject {
     # The unique ID for the user.
     id: ID!
     # The user's username.
@@ -1769,6 +1798,25 @@ type User implements Node, ConfigurationSubject {
     #
     # Only the user and site admins can access this field.
     surveyResponses: [SurveyResponse!]!
+    # A list of extensions published by this user in the extension registry.
+    registryExtensions(
+        # Returns the first n extensions from the list.
+        first: Int
+        # Returns only extensions matching the query.
+        query: String
+    ): RegistryExtensionConnection!
+    # A list of extensions that are configured for this user.
+    configuredExtensions(
+        # Returns the first n extensions from the list.
+        first: Int
+        # Include enabled extensions.
+        enabled: Boolean = true
+        # Include disabled extensions.
+        disabled: Boolean = false
+        # Include entries that do not refer to a valid registry extension (e.g., entries whose extension ID doesn't
+        # match any known registry extensions).
+        invalid: Boolean = false
+    ): ConfiguredExtensionConnection!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -1919,7 +1967,7 @@ type OrgConnection {
 }
 
 # An organization, which is a group of users.
-type Org implements Node, ConfigurationSubject {
+type Org implements Node, ConfigurationSubject, ExtensionConfigurationSubject {
     # The unique ID for the organization.
     id: ID!
     # The organization's name. This is unique among all organizations on this Sourcegraph site.
@@ -1952,6 +2000,25 @@ type Org implements Node, ConfigurationSubject {
     url: String!
     # The URL to the organization's settings.
     settingsURL: String!
+    # A list of extensions published by this organization in the extension registry.
+    registryExtensions(
+        # Returns the first n extensions from the list.
+        first: Int
+        # Returns only extensions matching the query.
+        query: String
+    ): RegistryExtensionConnection!
+    # A list of extensions that are configured for this organization.
+    configuredExtensions(
+        # Returns the first n extensions from the list.
+        first: Int
+        # Include enabled extensions.
+        enabled: Boolean = true
+        # Include disabled extensions.
+        disabled: Boolean = false
+        # Include entries that do not refer to a valid registry extension (e.g., entries whose extension ID doesn't
+        # match any known registry extensions).
+        invalid: Boolean = false
+    ): ConfiguredExtensionConnection!
 }
 
 # The result of Mutation.inviteUserToOrganization.
@@ -2097,7 +2164,7 @@ enum RepoOrderBy {
 # servers that share the same configuration and database.
 #
 # The site is a singleton; the API only ever returns the single global site.
-type Site implements ConfigurationSubject {
+type Site implements ConfigurationSubject, ExtensionConfigurationSubject {
     # The site's opaque GraphQL ID. This is NOT the "site ID" as it is referred to elsewhere;
     # use the siteID field for that. (GraphQL node types conventionally have an id field of type
     # ID! that globally identifies the node.)
@@ -2189,6 +2256,18 @@ type Site implements ConfigurationSubject {
         # Months of history.
         months: Int
     ): SiteActivity!
+    # A list of extensions that are configured for this site.
+    configuredExtensions(
+        # Returns the first n extensions from the list.
+        first: Int
+        # Include enabled extensions.
+        enabled: Boolean = true
+        # Include disabled extensions.
+        disabled: Boolean = false
+        # Include entries that do not refer to a valid registry extension (e.g., entries whose extension ID doesn't
+        # match any known registry extensions).
+        invalid: Boolean = false
+    ): ConfiguredExtensionConnection!
 }
 
 # The configuration for a site.
@@ -2574,5 +2653,257 @@ type SourcegraphFeature {
     enabled: Boolean!
     # A URL with more information about this feature.
     informationURL: String!
+}
+
+# An extension registry.
+type ExtensionRegistry {
+    # Find an extension by its extension ID (which is the concatenation of the publisher name, a slash ("/"), and the
+    # extension name).
+    #
+    # To find an extension by its GraphQL ID, use Query.node.
+    extension(extensionID: String!): RegistryExtension
+    # A list of extensions published in the extension registry.
+    extensions(
+        # Returns the first n extensions from the list.
+        first: Int
+        # Returns only extensions from this publisher.
+        publisher: ID
+        # Returns only extensions matching the query.
+        query: String
+        # Include extensions from the local registry.
+        local: Boolean = true
+        # Include extensions from remote registries.
+        remote: Boolean = true
+    ): RegistryExtensionConnection!
+    # A list of publishers with at least 1 extension in the registry.
+    publishers(
+        # Return the first n publishers from the list.
+        first: Int
+    ): RegistryPublisherConnection!
+    # A list of publishers that the viewer may publish extensions as.
+    viewerPublishers: [RegistryPublisher!]!
+    # The extension ID prefix for extensions that are published in the local extension registry. This is the
+    # hostname (and port, if non-default HTTP/HTTPS) of the Sourcegraph "appURL" site configuration property.
+    #
+    # It is null if extensions published on this Sourcegraph site do not have an extension ID prefix.
+    #
+    # Examples: "sourcegraph.example.com/", "sourcegraph.example.com:1234/"
+    localExtensionIDPrefix: String
+}
+
+# A publisher of a registry extension.
+union RegistryPublisher = User | Org
+
+# A list of publishers of extensions in the registry.
+type RegistryPublisherConnection {
+    # A list of publishers.
+    nodes: [RegistryPublisher!]!
+    # The total count of publishers in the connection. This total count may be larger than the number of
+    # nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Mutations for the extension registry.
+type ExtensionRegistryMutation {
+    # Create a new extension in the extension registry.
+    createExtension(
+        # The ID of the extension's publisher (a user or organization).
+        publisher: ID!
+        # The name of the extension.
+        name: String!
+    ): ExtensionRegistryCreateExtensionResult!
+    # Update an extension in the extension registry.
+    #
+    # Only authorized extension publishers may perform this mutation.
+    updateExtension(
+        # The extension to update.
+        extension: ID!
+        # The new name for the extension, or null to leave unchanged.
+        name: String
+        # The new manifest for the extension, or null to leave unchanged.
+        manifest: String
+    ): ExtensionRegistryUpdateExtensionResult!
+    # Delete an extension from the extension registry.
+    #
+    # Only authorized extension publishers may perform this mutation.
+    deleteExtension(
+        # The ID of the extension to delete.
+        extension: ID!
+    ): EmptyResponse!
+}
+
+# The result of Mutation.extensionRegistry.createExtension.
+type ExtensionRegistryCreateExtensionResult {
+    # The newly created extension.
+    extension: RegistryExtension!
+}
+
+# The result of Mutation.extensionRegistry.updateExtension.
+type ExtensionRegistryUpdateExtensionResult {
+    # The newly updated extension.
+    extension: RegistryExtension!
+}
+
+# An extension's listing in the extension registry.
+type RegistryExtension implements Node {
+    # The unique, opaque, permanent ID of the extension. Do not display this ID to the user; display
+    # RegistryExtension.extensionID instead (it is friendlier and still unique, but it can be renamed).
+    id: ID!
+    # The UUID of the extension. This identifies the extension externally (along with the origin). The UUID maps
+    # 1-to-1 to RegistryExtension.id.
+    uuid: String!
+    # The publisher of the extension. If this extension is from a remote registry, the publisher may be null.
+    publisher: RegistryPublisher
+    # The qualified, unique name that refers to this extension, consisting of the registry name (if non-default),
+    # publisher's name, and the extension's name, all joined by "/" (for example, "acme-corp/my-extension-name").
+    extensionID: String!
+    # The extension ID without the registry name.
+    extensionIDWithoutRegistry: String!
+    # The name of the extension (not including the publisher's name).
+    name: String!
+    # The extension manifest, or null if none is set.
+    manifest: ExtensionManifest
+    # The date when this extension was created on the registry.
+    createdAt: String
+    # The date when this extension was last updated on the registry.
+    updatedAt: String
+    # The URL to the extension on this Sourcegraph site.
+    url: String!
+    # The URL to the extension on the extension registry where it lives (if this is a remote
+    # extension). If this extension is local, then this field's value is null.
+    remoteURL: String
+    # The name of this extension's registry.
+    registryName: String!
+    # Whether the registry extension is published on this Sourcegraph site.
+    isLocal: Boolean!
+    # A list of configuration subjects whose settings configure this extension, without accounting for
+    # configuration cascading.
+    #
+    # Because this does not account for configuration cascading, only the direct subjects of settings will be
+    # included in the list. For example, if an organization enables the extension in the organizations settings,
+    # only the organization will be included in this list, but not any of its members (unless they explicitly also
+    # enable the extension in their user settings).
+    extensionConfigurationSubjects(
+        # Returns the first n subjects from the list.
+        first: Int
+        # Include users.
+        users: Boolean = false
+    ): ExtensionConfigurationSubjectConnection!
+    # A list of users for whom this extension is enabled, accounting for configuration cascading.
+    #
+    # Because this accounts for configuration cascading, for example, a user who is a member of an organization
+    # with the extension enabled will be included in the list (unless they explicitly disable the extension in
+    # their user settings).
+    users(
+        # Returns the first n users from the list.
+        first: Int
+    ): UserConnection!
+    # Whether the viewer has this extension enabled in their settings.
+    viewerHasEnabled: Boolean!
+    # Whether the viewer can configure this extension for themselves (i.e., enable, disable, and configure it in
+    # their settings). It does NOT mean that the user can administer this extension; see
+    # RegistryExtension.viewerCanAdminister for that.
+    viewerCanConfigure: Boolean!
+    # Whether the viewer has admin privileges on this registry extension.
+    viewerCanAdminister: Boolean!
+    # The configured form of this extension, using the configuration for the given configuration subject (or null
+    # to use empty configuration).
+    configuredExtension(subject: ID): ConfiguredExtension!
+}
+
+# A description of the extension, how to run or access it, and when to activate it.
+type ExtensionManifest {
+    # The raw JSON contents of the manifest.
+    raw: String!
+    # The title specified in the manifest, if any.
+    title: String
+    # The description specified in the manifest, if any.
+    description: String
+}
+
+# A list of registry extensions.
+type RegistryExtensionConnection {
+    # A list of registry extensions.
+    nodes: [RegistryExtension!]!
+    # The total count of registry extensions in the connection. This total count may be larger than the number of
+    # nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+    # The URL to this list, or null if none exists.
+    url: String
+    # Errors that occurred while communicating with remote registries to obtain the list of extensions.
+    #
+    # In order to be able to return local extensions even when the remote registry is unreachable, errors are
+    # recorded here instead of in the top-level GraphQL errors list.
+    error: String
+}
+
+# An extension's configuration for a specific configuration subject (e.g., a user).
+#
+# A ConfiguredExtension is synthesized when a registry extension is configured in settings (e.g., when a user
+# enables an extension).
+type ConfiguredExtension {
+    # The extension that is configured, or null if no extension is found with the extension ID in
+    # ConfiguredExtension.extensionID.
+    extension: RegistryExtension
+    # The extension ID of the configured extension. This field is set even if there is no extension found with the
+    # extension ID.
+    extensionID: String!
+    # The configuration subject for whom the extension is configured, or null if this extension is not configured
+    # (and the empty configuration is being used, such as when the extension is just being queried for
+    # capabilities).
+    subject: ConfigurationSubject
+    # Whether the extension is enabled. A configured extension is disabled when the "disabled" property is true in
+    # its settings.
+    isEnabled: Boolean!
+    # Whether the viewer can configure the extension for this configuration subject.
+    viewerCanConfigure: Boolean!
+    # The extension's reported contributions.
+    contributions: String
+}
+
+# A list of configured extensions.
+type ConfiguredExtensionConnection {
+    # A list of configured extensions.
+    nodes: [ConfiguredExtension!]!
+    # The total count of configured extensions in the connection. This total count may be larger than the number of
+    # nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+    # The URL to this list, or null if none exists.
+    url: String
+}
+
+# An extension configuration subject is something that can have an extension configured for it.
+interface ExtensionConfigurationSubject {
+    # A list of extensions that are configured for this subject.
+    configuredExtensions(
+        # Returns the first n extensions from the list.
+        first: Int
+        # Include enabled extensions.
+        enabled: Boolean = true
+        # Include disabled extensions.
+        disabled: Boolean = false
+        # Include entries that do not refer to a valid registry extension (e.g., entries whose extension ID doesn't
+        # match any known registry extensions).
+        invalid: Boolean = false
+    ): ConfiguredExtensionConnection!
+    # The URL to the settings.
+    settingsURL: String!
+    # Whether the viewer can modify the subject's configuration.
+    viewerCanAdminister: Boolean!
+}
+
+# A list of extension configuration subjects.
+type ExtensionConfigurationSubjectConnection {
+    # A list of extension configuration subjects.
+    nodes: [ExtensionConfigurationSubject!]!
+    # The total count of extension configuration subjects in the connection. This total count may be larger than
+    # the number of nodes in this object when the result is paginated.
+    totalCount: Int!
 }
 `

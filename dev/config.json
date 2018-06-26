@@ -4,7 +4,8 @@
   "experimentalFeatures": {
     "configVars": "enabled",
     "canonicalURLRedirect": "enabled",
-    "multipleAuthProviders": "enabled"
+    "multipleAuthProviders": "enabled",
+    "platform": true
   },
   "htmlHeadTop":
     "<script>if (localStorage.getItem('disableDefaultFeatureFlags') !== 'true') { localStorage.setItem('treeVersion', '3'); localStorage.setItem('codeIntelStatusIndicator', 'true'); localStorage.setItem('blobVersion', '2'); }</script>",
@@ -169,5 +170,12 @@
     //   "displayName": "Windows Server 2012 Datacenter ADFS 2.1 SAML (dev)",
     //   "identityProviderMetadataURL": "https://adfstest.sgdev.org/federationmetadata/2007-06/federationmetadata.xml"
     // }
-  ]
+  ],
+
+  // EXPERIMENTAL: Sourcegraph platform and extensions. The config schema is subject to change.
+  "platform": {
+    // Combined with the FAKE_REGISTRY=dev/platform/sample-extensions.json env var set in
+    // dev/start.sh, this makes some useful sample extensions available to your local dev server.
+    "remoteRegistry": "http://localhost:3090/.internal/registry"
+  }
 }

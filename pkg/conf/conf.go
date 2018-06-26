@@ -273,6 +273,7 @@ var doNotRequireRestart = []string{
 	"corsOrigin",
 	"dontIncludeSymbolResultsByDefault",
 	"langservers",
+	"platform",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown

@@ -1,5 +1,6 @@
 import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import LockIcon from '@sourcegraph/icons/lib/Lock'
+import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as H from 'history'
 import * as React from 'react'
@@ -158,6 +159,26 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                                 exact={true}
                             >
                                 Comments
+                            </NavLink>
+                        </li>
+                    </ul>
+                )}
+                {window.context.platformEnabled && (
+                    <ul className="sidebar__items">
+                        <li className="sidebar__header">
+                            <div className="sidebar__header-icon">
+                                <PuzzleIcon className="icon-inline" />
+                            </div>
+                            <h5 className="sidebar__header-title">Registry</h5>
+                        </li>
+                        <li className="sidebar__item">
+                            <NavLink
+                                to="/site-admin/registry/extensions"
+                                className="sidebar__item-link"
+                                activeClassName="sidebar__item--active"
+                                exact={true}
+                            >
+                                Extensions
                             </NavLink>
                         </li>
                     </ul>

@@ -14,6 +14,7 @@ import { SiteAdminExternalAccountsPage } from './SiteAdminExternalAccountsPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { SiteAdminPingsPage } from './SiteAdminPingsPage'
+import { SiteAdminRegistryExtensionsPage } from './SiteAdminRegistryExtensionsPage'
 import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
 import { SiteAdminSettingsPage } from './SiteAdminSettingsPage'
 import { SiteAdminSidebar } from './SiteAdminSidebar'
@@ -138,6 +139,11 @@ export class SiteAdminArea extends React.Component<Props> {
                             render={routeComponentProps => (
                                 <SiteAdminTokensPage {...routeComponentProps} {...transferProps} />
                             )}
+                        />
+                        <Route
+                            path={`${this.props.match.url}/registry/extensions`}
+                            component={SiteAdminRegistryExtensionsPage}
+                            exact={true}
                         />
                         <Route
                             path={`${this.props.match.url}/analytics`}

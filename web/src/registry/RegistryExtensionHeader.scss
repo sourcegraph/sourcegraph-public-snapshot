@@ -1,0 +1,19 @@
+.registry-extension-header {
+    &__icon {
+        display: block;
+        .icon {
+            width: 3rem;
+            height: 3rem;
+        }
+        padding: 0.6rem 0.5rem 0.5rem 0.75rem; // compensate for the puzzle icon not being centered
+        border-radius: 100%;
+    }
+    .theme-light & &__icon {
+        background-color: $color-light-bg-5;
+        color: $color-text-2;
+    }
+    .theme-dark & &__icon {
+        background-color: $color-bg-5;
+        color: $color-text-2;
+    }
+}

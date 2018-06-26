@@ -64,6 +64,13 @@
         "An array (often with just one element) of messages to display at the top of all pages, including for unauthenticated users. Users may dismiss a message (and any message with the same string value will remain dismissed for the user).\n\nMarkdown formatting is supported.\n\nUsually this setting is used in global and organization settings. If set in user settings, the message will only be displayed to that user. (This is useful for testing the correctness of the message's Markdown formatting.)\n\nMOTD stands for \"message of the day\" (which is the conventional Unix name for this type of message).",
       "type": "array",
       "items": { "type": "string" }
+    },
+    "extensions": {
+      "description": "Extension configuration, mapping extension IDs to the configuration for that extension.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/ExtensionSettings"
+      }
     }
   },
   "definitions": {
@@ -102,6 +109,17 @@
           "description":
             "The Slack webhook URL used to post notification messages to a Slack channel. To obtain this URL, go to: https://YOUR-WORKSPACE-NAME.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks",
           "format": "uri"
+        }
+      }
+    },
+    "ExtensionSettings": {
+      "description": "Settings for an extension.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "disabled": {
+          "description": "Disable this extension (if it is enabled at a lower-precedence level of configuration).",
+          "type": "boolean"
         }
       }
     }

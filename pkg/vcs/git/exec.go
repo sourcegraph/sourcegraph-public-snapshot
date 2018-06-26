@@ -106,7 +106,7 @@ var (
 		"show":   append([]string{}, gitCommonWhitelist...),
 		"remote": []string{"-v"},
 		"diff":   append([]string{}, gitCommonWhitelist...),
-		"blame":  []string{"--root", "--incremental", "-p", "--"},
+		"blame":  []string{"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
 		"branch": []string{"-r", "-a", "--contains"},
 
 		"rev-parse":    []string{"--abbrev-ref", "--symbolic-full-name"},
@@ -172,4 +172,21 @@ func isWhitelistedGitCmd(args []string) bool {
 		}
 	}
 	return true
+}
+
+func gitserverCmdFunc(repo gitserver.Repo) CmdFunc {
+	return func(args []string) Cmd {
+		cmd := gitserver.DefaultClient.Command("git", args...)
+		cmd.Repo = gitserver.Repo(repo)
+		return cmd
+	}
+}
+
+// CmdFunc is a func that creates a new executable Git command.
+type CmdFunc func(args []string) Cmd
+
+// Cmd is an executable Git command.
+type Cmd interface {
+	Output(context.Context) ([]byte, error)
+	String() string
 }

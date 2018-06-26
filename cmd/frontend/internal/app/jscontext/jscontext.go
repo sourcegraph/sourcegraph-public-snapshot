@@ -154,7 +154,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 
-		PlatformEnabled: conf.PlatformEnabled(),
+		PlatformEnabled: conf.Platform() != nil,
 
 		AllowSignup: conf.AuthAllowSignup(),
 

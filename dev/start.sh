@@ -52,6 +52,8 @@ export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
 export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
+export FAKE_REGISTRY=dev/platform/sample-extensions.json
+export INSECURE_ALLOW_EXTENSION_TARGETS='localhost:* 127.0.0.1:* *://localhost:* *://127.0.0.1:* *.tcp.ngrok.io:* *://*.ngrok.io' # CI:LOCALHOST_OK
 
 export SOURCEGRAPH_EXPAND_CONFIG_VARS=1 # experiment: interpolate ${var} and $var in site config JSON
 export SAML_ONELOGIN_CERT=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.cert.pem)

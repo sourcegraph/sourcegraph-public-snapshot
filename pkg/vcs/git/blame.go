@@ -34,13 +34,17 @@ type Hunk struct {
 	Message string
 }
 
+// BlameFile returns Git blame information about a file.
 func BlameFile(ctx context.Context, repo gitserver.Repo, path string, opt *BlameOptions) ([]*Hunk, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Git: BlameFile")
 	span.SetTag("repo", repo.Name)
 	span.SetTag("path", path)
 	span.SetTag("opt", opt)
 	defer span.Finish()
+	return BlameFileCmd(ctx, gitserverCmdFunc(repo), path, opt)
+}
 
+func BlameFileCmd(ctx context.Context, command CmdFunc, path string, opt *BlameOptions) ([]*Hunk, error) {
 	if opt == nil {
 		opt = &BlameOptions{}
 	}
@@ -60,11 +64,9 @@ func BlameFile(ctx context.Context, repo gitserver.Repo, path string, opt *Blame
 	}
 	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
 
-	cmd := gitserver.DefaultClient.Command("git", args...)
-	cmd.Repo = repo
-	out, err := cmd.CombinedOutput(ctx)
+	out, err := command(args).Output(ctx)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
+		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
 	if len(out) == 0 {
 		return nil, nil

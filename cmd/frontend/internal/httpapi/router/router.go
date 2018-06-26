@@ -11,6 +11,8 @@ const (
 	XLang   = "xlang"
 	LSP     = "lsp"
 
+	Registry = "registry"
+
 	RepoShield = "repo.shield"
 	Telemetry  = "telemetry"
 
@@ -26,6 +28,7 @@ const (
 	AppURL                     = "internal.app-url"
 	CanSendEmail               = "internal.can-send-email"
 	SendEmail                  = "internal.send-email"
+	Extension                  = "internal.extension"
 	DefsRefreshIndex           = "internal.defs.refresh-index"
 	PkgsRefreshIndex           = "internal.pkgs.refresh-index"
 	GitInfoRefs                = "internal.git.info-refs"
@@ -55,6 +58,7 @@ func New(base *mux.Router) *mux.Router {
 
 	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
 	base.Path("/lsp").Methods("GET").Name(LSP)
+	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)
 
@@ -89,6 +93,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/app-url").Methods("POST").Name(AppURL)
 	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
+	base.Path("/extension").Methods("POST").Name(Extension)
 	base.Path("/defs/refresh-index").Methods("POST").Name(DefsRefreshIndex)
 	base.Path("/pkgs/refresh-index").Methods("POST").Name(PkgsRefreshIndex)
 	base.Path("/gitolite/update-repos").Methods("POST").Name(GitoliteUpdateRepos)
@@ -105,10 +110,15 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/unindexed-dependencies").Methods("POST").Name(ReposUnindexedDependencies)
 	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/{RepoURI:.*}").Methods("POST").Name(ReposGetByURI)
+	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)
 
 	return base
+}
+
+func addRegistryRoute(m *mux.Router) {
+	m.PathPrefix("/registry").Methods("GET").Name(Registry)
 }
 
 func addTelemetryRoute(m *mux.Router) {

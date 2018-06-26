@@ -150,7 +150,7 @@ export async function graphQLTypes(): Promise<void> {
 export async function schemaTypes(): Promise<void> {
     await mkdirp(__dirname + '/src/schema')
     await Promise.all(
-        ['settings', 'site'].map(async file => {
+        ['settings', 'site', 'extension'].map(async file => {
             const types = await compileFromFile(__dirname + `/../schema/${file}.schema.json`, {
                 cwd: __dirname + '/../schema',
             })

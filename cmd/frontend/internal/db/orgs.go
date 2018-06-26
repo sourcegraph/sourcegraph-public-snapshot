@@ -233,6 +233,9 @@ func (o *orgs) Delete(ctx context.Context, id int32) error {
 	if _, err := tx.ExecContext(ctx, "UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND org_id=$1", id); err != nil {
 		return err
 	}
+	if _, err := tx.ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE deleted_at IS NULL AND publisher_org_id=$1", id); err != nil {
+		return err
+	}
 
 	return nil
 }

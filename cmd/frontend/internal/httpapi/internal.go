@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
@@ -458,6 +459,38 @@ func serveSendEmail(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return txemail.Send(r.Context(), msg)
+}
+
+func serveExtension(w http.ResponseWriter, r *http.Request) error {
+	var args api.ExtensionRequest
+	err := json.NewDecoder(r.Body).Decode(&args)
+	if err != nil {
+		return err
+	}
+	local, remote, err := backend.GetExtensionByExtensionID(r.Context(), args.ExtensionID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			w.WriteHeader(http.StatusNotFound)
+		}
+		return err
+	}
+
+	var data *string
+	switch {
+	case local != nil:
+		data = local.Manifest
+	case remote != nil:
+		data = remote.Manifest
+	}
+
+	if data == nil {
+		w.WriteHeader(http.StatusNoContent)
+		return nil
+	}
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Write(conf.NormalizeJSON(*data))
+	return nil
 }
 
 func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {

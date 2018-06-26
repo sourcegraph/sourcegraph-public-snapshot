@@ -217,6 +217,8 @@ func (c *Cmd) CombinedOutput(ctx context.Context) ([]byte, error) {
 	return append(stdout, stderr...), err
 }
 
+func (c *Cmd) String() string { return fmt.Sprintf("%q", c.Args) }
+
 // StdoutReader returns an io.ReadCloser of stdout of c. If the command has a
 // non-zero return value, Read returns a non io.EOF error. Do not pass in a
 // started command.
