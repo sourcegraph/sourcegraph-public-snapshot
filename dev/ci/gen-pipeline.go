@@ -19,11 +19,13 @@ type Pipeline struct {
 }
 
 type Step struct {
-	Label         string                 `json:"label"`
-	Command       string                 `json:"command"`
-	Env           map[string]string      `json:"env"`
-	Plugins       map[string]interface{} `json:"plugins"`
-	ArtifactPaths string                 `json:"artifact_paths,omitempty"`
+	Label            string                 `json:"label"`
+	Command          string                 `json:"command"`
+	Env              map[string]string      `json:"env"`
+	Plugins          map[string]interface{} `json:"plugins"`
+	ArtifactPaths    string                 `json:"artifact_paths,omitempty"`
+	ConcurrencyGroup string                 `json:"concurrency_group,omitempty"`
+	Concurrency      int                    `json:"concurrency,omitempty"`
 }
 
 func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
@@ -53,6 +55,18 @@ type StepOpt func(step *Step)
 func Cmd(command string) StepOpt {
 	return func(step *Step) {
 		step.Command = strings.TrimSpace(step.Command + "\n" + command)
+	}
+}
+
+func ConcurrencyGroup(group string) StepOpt {
+	return func(step *Step) {
+		step.ConcurrencyGroup = group
+	}
+}
+
+func Concurrency(limit int) StepOpt {
+	return func(step *Step) {
+		step.Concurrency = limit
 	}
 }
 
@@ -261,15 +275,39 @@ func main() {
 		Cmd("buildkite-agent artifact download '*/coverage-final.json' ."),
 		Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
 
+	addDeploySteps := func() {
+		// Deploy to dogfood
+		pipeline.AddStep(":dog:",
+			ConcurrencyGroup("deploy"),
+			Concurrency(1),
+			Env("VERSION", version),
+			Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
+			Env("NAMESPACE", "default"),
+			Cmd("./dev/ci/deploy-dogfood.sh"))
+		pipeline.AddWait()
+
+		// Run e2e tests against dogfood
+		pipeline.AddStep(":chromium:",
+			ConcurrencyGroup("deploy"),
+			Concurrency(1),
+			Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
+			Cmd("cd web"),
+			Cmd("npm ci"),
+			Cmd("npm run test-e2e"))
+		pipeline.AddWait()
+
+		// Deploy to prod
+		pipeline.AddStep(":rocket:",
+			Env("VERSION", version),
+			Cmd("./dev/ci/deploy-prod.sh"))
+	}
+
 	switch {
 	case branch == "master":
 		addDockerImageStep("frontend", true)
 		addDockerImageStep("server", true)
 		pipeline.AddWait()
-		pipeline.AddStep(":rocket:",
-			Env("VERSION", version),
-			Cmd("./dev/ci/deploy-dogfood.sh"),
-			Cmd("./dev/ci/deploy-prod.sh"))
+		addDeploySteps()
 
 	case strings.HasPrefix(branch, "staging/"):
 		cmds, err := ioutil.ReadDir("./cmd")
@@ -295,10 +333,7 @@ func main() {
 	case strings.HasPrefix(branch, "docker-images/"):
 		addDockerImageStep(branch[14:], true)
 		pipeline.AddWait()
-		pipeline.AddStep(":rocket:",
-			Env("VERSION", version),
-			Cmd("./dev/ci/deploy-dogfood.sh"),
-			Cmd("./dev/ci/deploy-prod.sh"))
+		addDeploySteps()
 
 	}
 
