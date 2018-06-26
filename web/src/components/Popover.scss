@@ -15,6 +15,11 @@ $popover-item-padding-v: 0.325rem;
 
         min-height: 27rem; // avoid jitter when only loading indicator is shown
         max-height: 70vh;
+        width: max-content;
+
+        .alert {
+            word-break: break-word;
+        }
     }
 
     &__node {
