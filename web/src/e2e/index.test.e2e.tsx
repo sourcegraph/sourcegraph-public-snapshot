@@ -218,7 +218,7 @@ describe('e2e test suite', () => {
          */
         const clickToken = async (line: number, spanOffset: number): Promise<void> => {
             const selector = `${blobTableSelector} tr:nth-child(${line}) > td.code > span:nth-child(${spanOffset})`
-            await page.waitForSelector(selector)
+            await page.waitForSelector(selector, { visible: true })
             await page.click(selector)
         }
 
@@ -226,7 +226,7 @@ describe('e2e test suite', () => {
         const getTooltipContents = async (expectedCount = 1): Promise<string[]> => {
             const selector =
                 expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : `.e2e-tooltip-content`
-            await page.waitForSelector(selector)
+            await page.waitForSelector(selector, { visible: true })
             return await page.evaluate(() =>
                 // You can't reference tooltipContentSelector in puppeteer's page.evaluate
                 Array.from(document.querySelectorAll('.e2e-tooltip-content')).map(t => t.textContent)
@@ -238,12 +238,12 @@ describe('e2e test suite', () => {
 
         const clickTooltipJ2D = async (): Promise<void> => {
             const selector = '.e2e-tooltip-j2d'
-            await page.waitForSelector(selector)
+            await page.waitForSelector(selector, { visible: true })
             await page.click(selector)
         }
         const clickTooltipFindRefs = async (): Promise<void> => {
             const selector = '.e2e-tooltip-find-refs'
-            await page.waitForSelector(selector)
+            await page.waitForSelector(selector, { visible: true })
             await page.click(selector)
         }
 
