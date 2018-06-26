@@ -78,7 +78,7 @@ describe('e2e test suite', () => {
                 if (process.env.CI) {
                     // Print image with ANSI escape code for Buildkite
                     // https://buildkite.com/docs/builds/images-in-log-output
-                    const relativePath = path.relative(REPO_ROOT, SCREENSHOT_DIRECTORY)
+                    const relativePath = path.relative(REPO_ROOT, filePath)
                     console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
                 }
             }
