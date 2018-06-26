@@ -346,9 +346,21 @@ export const fetchXreferences = memoizeObservable(
 )
 
 export interface TextDocumentDecoration {
-    range: Range
-    isWholeLine?: boolean
+    after?: DecorationAttachmentRenderOptions
+    background?: string
     backgroundColor?: string
+    border?: string
+    borderColor?: string
+    borderWidth?: string
+    isWholeLine?: boolean
+    range: Range
+}
+
+export interface DecorationAttachmentRenderOptions {
+    backgroundColor?: string
+    color?: string
+    contentText?: string
+    linkURL?: string
 }
 
 export const fetchDecorations = memoizeObservable(

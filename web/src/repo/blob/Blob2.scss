@@ -1,5 +1,6 @@
 @import './HoverOverlay';
 @import './blame/BlameLine';
+@import './LineDecorationAttachment';
 
 .blob2 {
     position: relative;
@@ -66,7 +67,7 @@
                 display: inline-block;
 
                 span::before {
-                    content: attr(data-blame);
+                    content: attr(data-contents);
                 }
 
                 .blame {

@@ -104,7 +104,7 @@ export class BlameLine extends React.Component<BlameLineProps, BlameLineState> {
 
         return ReactDOM.createPortal(
             <Link className="blame" to={this.state.href}>
-                <span className="blame__contents" data-blame={this.state.content} />
+                <span className="blame__contents" data-contents={this.state.content} />
             </Link>,
             this.portal
         )

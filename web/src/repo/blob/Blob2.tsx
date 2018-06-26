@@ -21,11 +21,12 @@ import { AbsoluteRepoFile, RenderMode } from '..'
 import { ExtensionsProps, getDecorations, getHover, getJumpURL, HoverMerged, ModeSpec } from '../../backend/features'
 import { EMODENOTFOUND, isEmptyHover, LSPSelector, TextDocumentDecoration } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
-import { asError, ErrorLike } from '../../util/errors'
+import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { HoverOverlay, isJumpURL } from './HoverOverlay'
+import { LineDecorationAttachment } from './LineDecorationAttachment'
 import { convertCodeCellIdempotent, findElementWithOffset, getTableDataCell, locateTarget } from './tooltips'
 
 /**
@@ -755,15 +756,43 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         if (decoratedElements) {
                             // Clear previous decorations.
                             for (const e of decoratedElements) {
-                                e.style.backgroundColor = null
+                                e.style.cssText = ''
                             }
                         }
 
                         for (const d of decorations) {
-                            const lineElement = getRowInCodeElement(codeElement, d.range.start.line + 1)
-                            if (lineElement && d.backgroundColor) {
-                                lineElement.style.backgroundColor = d.backgroundColor
-                                decoratedElements.push(lineElement)
+                            const line = d.range.start.line + 1
+                            const lineElement = getRowInCodeElement(codeElement, line)
+                            if (lineElement) {
+                                let decorated = false
+                                if (d.background) {
+                                    lineElement.style.background = d.background
+                                    decorated = true
+                                }
+                                if (d.backgroundColor) {
+                                    lineElement.style.backgroundColor = d.backgroundColor
+                                    decorated = true
+                                }
+                                if (d.border) {
+                                    lineElement.style.border = d.border
+                                    decorated = true
+                                }
+                                if (d.borderColor) {
+                                    lineElement.style.borderColor = d.borderColor
+                                    decorated = true
+                                }
+                                if (d.borderWidth) {
+                                    lineElement.style.borderWidth = d.borderWidth
+                                    decorated = true
+                                }
+                                if (decorated) {
+                                    decoratedElements.push(lineElement)
+                                }
+
+                                if (d.after) {
+                                    const codeCell = lineElement.cells[1]!
+                                    this.createBlameDomNode(line, codeCell)
+                                }
                             }
                         }
                     } else {
@@ -854,6 +883,22 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             {...this.props}
                         />
                     )}
+                {this.state.decorationsOrError &&
+                    !isErrorLike(this.state.decorationsOrError) &&
+                    this.state.decorationsOrError
+                        .filter(d => !!d.after && this.state.blameLineIDs[d.range.start.line + 1])
+                        .map((d, i) => {
+                            const line = d.range.start.line + 1
+                            return (
+                                <LineDecorationAttachment
+                                    key={this.state.blameLineIDs[line]}
+                                    portalID={this.state.blameLineIDs[line]}
+                                    line={line}
+                                    attachment={d.after!}
+                                    {...this.props}
+                                />
+                            )
+                        })}
             </div>
         )
     }
