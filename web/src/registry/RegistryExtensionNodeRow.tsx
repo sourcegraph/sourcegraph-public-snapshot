@@ -88,10 +88,12 @@ export class RegistryExtensionNodeRow extends React.PureComponent<
                             {this.props.showSource && (
                                 <>
                                     {' '}
-                                    &mdash; <RegistryExtensionSourceBadge extension={this.props.node} showText={true} />
+                                    - <RegistryExtensionSourceBadge extension={this.props.node} showText={true} />
                                 </>
                             )}
-                            {this.props.showSource && this.props.showTimestamp && ', '}
+                            {this.props.showTimestamp &&
+                                this.props.node.updatedAt &&
+                                (this.props.showSource ? ', ' : <> - </>)}
                             {this.props.showTimestamp &&
                                 this.props.node.updatedAt && (
                                     <>
