@@ -120,6 +120,12 @@
   version = "1.0.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/dustin/go-humanize"
+  packages = ["."]
+  revision = "02af3965c54e8cacf948b97fef38925c4120652c"
+
+[[projects]]
   name = "github.com/emicklei/go-restful"
   packages = [
     ".",
@@ -1386,6 +1392,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "beffe5570ac50c04114fb3e17bb33f0f03bd2a095e32a3b82f76a96dd26c1d92"
+  inputs-digest = "340207a380b02872a9f7b1506d970261e5d0990188e28a5912ff7613c581e8bb"
   solver-name = "gps-cdcl"
   solver-version = 1
