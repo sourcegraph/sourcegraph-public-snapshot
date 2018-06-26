@@ -48,5 +48,25 @@
       "{\n  \"title\":\"Decorations: Dubai/UAE (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"#FF0000\", \"#00732F\", \"#FFFFFF\", \"#000000\"]},\n  \"activationEvents\": [\"*\"]\n}",
     "createdAt": "2018-06-21T03:44:00.30563Z",
     "updatedAt": "2018-06-24T09:30:52.899736Z"
+  },
+  {
+    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d896",
+    "extensionID": "sample/lightstep",
+    "publisher": { "name": "sample" },
+    "name": "lightstep",
+    "manifest":
+      "{\n  \"title\":\"LightStep (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:16629\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
+  },
+  {
+    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d897",
+    "extensionID": "sample/line-age",
+    "publisher": { "name": "sample" },
+    "name": "line-age",
+    "manifest":
+      "{\n  \"title\":\"Line age (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:10602\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
   }
 ]
