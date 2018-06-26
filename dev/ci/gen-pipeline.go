@@ -291,6 +291,7 @@ func main() {
 			ConcurrencyGroup("deploy"),
 			Concurrency(1),
 			Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
+			Env("FORCE_COLOR", "1"),
 			Cmd("cd web"),
 			Cmd("npm ci"),
 			Cmd("npm run test-e2e"),
