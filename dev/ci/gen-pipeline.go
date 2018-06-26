@@ -234,7 +234,7 @@ func main() {
 		Cmd("npm ci"),
 		Cmd("cd web"),
 		Cmd("npm ci"),
-		Cmd("NODE_ENV=production npm run build"))
+		Cmd("NODE_ENV=production npm run build -- --color"))
 
 	pipeline.AddStep(":mocha:",
 		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
