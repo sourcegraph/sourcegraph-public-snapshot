@@ -46,7 +46,13 @@ describe('e2e test suite', () => {
         })
     } else {
         before('Start browser', async () => {
-            browser = await launch()
+            let args: string[] | undefined
+            if (process.getuid() === 0) {
+                // TODO don't run as root in CI
+                console.warn('Running as root, disabling sandbox')
+                args = ['--no-sandbox', '--disable-setuid-sandbox']
+            }
+            browser = await launch({ args })
         })
         after('Close browser', async () => {
             if (browser) {
