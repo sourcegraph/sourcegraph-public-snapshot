@@ -293,7 +293,8 @@ func main() {
 			Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
 			Cmd("cd web"),
 			Cmd("npm ci"),
-			Cmd("npm run test-e2e"))
+			Cmd("npm run test-e2e"),
+			ArtifactPaths("web/puppeteer/*.png"))
 		pipeline.AddWait()
 
 		// Deploy to prod

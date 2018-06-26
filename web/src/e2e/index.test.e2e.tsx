@@ -4,7 +4,8 @@ import * as path from 'path'
 import { Browser, connect, launch, Page } from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
 
-const SCREENSHOT_DIRECTORY = __dirname + '/../../puppeteer'
+const REPO_ROOT = path.resolve(__dirname, '..', '..', '..')
+const SCREENSHOT_DIRECTORY = path.resolve(__dirname, '..', '..', 'puppeteer')
 
 describe('e2e test suite', () => {
     let authenticate: (page: Page) => Promise<void>
@@ -74,6 +75,12 @@ describe('e2e test suite', () => {
                     this.currentTest.fullTitle().replace(/ /g, '_') + '.png'
                 )
                 await page.screenshot({ path: filePath })
+                if (process.env.CI) {
+                    // Print image with ANSI escape code for Buildkite
+                    // https://buildkite.com/docs/builds/images-in-log-output
+                    const relativePath = path.relative(REPO_ROOT, SCREENSHOT_DIRECTORY)
+                    console.log(`\u001B]1338;url="artifact://${relativePath}";alt="Screenshot"\u0007`)
+                }
             }
             await page.close()
         }
