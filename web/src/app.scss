@@ -63,6 +63,15 @@ $body-bg: var(--body-bg);
 
 $text-muted: var(--text-muted);
 
+// Borders
+$border-color: var(--border-color);
+.theme-dark {
+    --border-color: #{$color-border};
+}
+.theme-light {
+    --border-color: #{$color-light-border};
+}
+
 // Links
 
 $link-color: var(--link-color);
