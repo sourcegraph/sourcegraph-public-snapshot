@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -459,7 +460,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 				//
 				// TODO: If the session is not shared, then we can pass through the end client's
 				// capabilities.
-				Experimental: lspext.ExperimentalClientCapabilities{
+				Experimental: cxp.ExperimentalClientCapabilities{
 					Decorations: true,
 					Exec:        true,
 				},

@@ -80,7 +80,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
-				Experimental: lspext.ExperimentalServerCapabilities{
+				Experimental: cxp.ExperimentalServerCapabilities{
 					DecorationsProvider: true,
 				},
 			},

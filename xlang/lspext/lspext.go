@@ -71,19 +71,6 @@ type InitializeParams struct {
 	Mode string `json:"mode"`
 }
 
-// ExperimentalClientCapabilities describes experimental client capabilities. It is sent in the
-// client's initialize request in the `capabilities.experimental` field.
-type ExperimentalClientCapabilities struct {
-	Decorations bool `json:"decorations"` // textDocument/decorations extension
-	Exec        bool `json:"exec"`        // exec extension
-}
-
-// ExperimentalServerCapabilities describes experimental server capabilities. It is sent in the
-// server's initialize response in the `capabilities.experimental` field.
-type ExperimentalServerCapabilities struct {
-	DecorationsProvider bool `json:"decorationsProvider"`
-}
-
 // WalkURIFields walks the LSP params/result object for fields
 // containing document URIs.
 //

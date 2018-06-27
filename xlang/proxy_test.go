@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "github.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -774,7 +775,7 @@ func TestProxy_connections(t *testing.T) {
 		XFilesProvider:   true,
 		XContentProvider: true,
 		XCacheProvider:   true,
-		Experimental: lspext.ExperimentalClientCapabilities{
+		Experimental: cxp.ExperimentalClientCapabilities{
 			Decorations: true,
 			Exec:        true,
 		},

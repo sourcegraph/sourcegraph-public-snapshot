@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/cxp/pkg/cxpmain"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -47,7 +48,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
-				Experimental: lspext.ExperimentalServerCapabilities{
+				Experimental: cxp.ExperimentalServerCapabilities{
 					DecorationsProvider: true,
 				},
 			},
