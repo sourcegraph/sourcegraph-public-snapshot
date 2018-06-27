@@ -69,8 +69,13 @@ func init() {
 * [Issue tracker](` + info.IssuesURL + `)`
 			}
 
+			var url string
+			if info != nil {
+				url = info.HomepageURL
+			}
+
 			x := schema.SourcegraphExtension{
-				Title:       info.DisplayName + " code intelligence",
+				Title:       lang + " code intelligence",
 				Description: description,
 				Platform: schema.ExtensionPlatform{
 					Tcp: &schema.TCPTarget{
@@ -96,7 +101,7 @@ func init() {
 				Publisher:   registry.Publisher{Name: "langserver"},
 				Name:        ls.Language + "-langserver",
 				Manifest:    &dataStr,
-				URL:         info.HomepageURL,
+				URL:         url,
 
 				IsSynthesizedLocalExtension: true,
 			})
