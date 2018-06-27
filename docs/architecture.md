@@ -5,6 +5,47 @@ This is a high level overview of our architecture at Sourcegraph so you can unde
 You should take a moment to browse our public documentation and marketing to see what our customers see:
 https://about.sourcegraph.com/
 
+## Diagram
+
+```mermaid
+graph LR
+    Frontend-- HTTP -->gitserver
+    searcher-- HTTP -->gitserver
+
+    query-runner-- HTTP -->Frontend
+    query-runner-- Graphql -->Frontend
+    repo-updater-- HTTP -->github-proxy
+    github-proxy-- HTTP -->github[github.com]
+
+    repo-updater-- HTTP -->codehosts[Code hosts: GitHub Enterprise, BitBucket, etc.]
+    repo-updater-->redis-cache
+
+    Frontend-- HTTP -->query-runner
+    Frontend-->redis-cache["Redis (cache)"]
+    Frontend-- SQL -->db[Postgresql Database]
+    Frontend-->redis["Redis (session data)"]
+    indexer-->lsp-proxy
+    Frontend-- HTTP -->searcher
+    Frontend-- LSP over TCP -->lsp-proxy
+    Frontend-- HTTP ---indexer
+    Frontend-- HTTP ---repo-updater
+    Frontend-- net/rpc -->indexed-search
+    indexed-search[indexed-search/zoekt]-- HTTP -->Frontend
+
+    indexer-- HTTP -->gitserver
+    repo-updater-- HTTP -->gitserver
+
+    lsp-proxy-->redis-cache
+
+    lsp-proxy-- LSP over TCP -->langservers[Language servers: Go, Java, etc.]
+
+    react[React App]-- Graphql -->Frontend
+    react[React App]-- LSP over HTTP -->Frontend
+
+    browser_extensions[Browser Extensions]-- Graphql -->Frontend
+    browser_extensions[Browser Extensions]-- LSP over HTTP -->Frontend
+```
+
 ## Services
 
 Here are the services that compose Sourcegraph.

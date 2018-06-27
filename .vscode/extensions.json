@@ -8,6 +8,7 @@
     "kumar-harsh.graphql-for-vscode",
     "ms-vscode.Go",
     "shinnn.stylelint",
-    "exiasr.hadolint"
+    "exiasr.hadolint",
+    "bierner.markdown-mermaid"
   ]
 }
