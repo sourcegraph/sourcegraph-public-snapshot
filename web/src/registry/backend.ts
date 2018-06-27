@@ -1,5 +1,5 @@
 import { Observable, of } from 'rxjs'
-import { filter, map, switchMap, take } from 'rxjs/operators'
+import { map, switchMap, take } from 'rxjs/operators'
 import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { mutateConfigurationGraphQL } from '../configuration/backend'
@@ -102,30 +102,33 @@ export function updateUserExtensionSettings(
 
 export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Observable<void> {
     return of(window.confirm('Really delete this extension from the extension registry?')).pipe(
-        filter(ok => ok),
-        switchMap(() =>
-            mutateGraphQL(
-                gql`
-                    mutation DeleteRegistryExtension($extension: ID!) {
-                        extensionRegistry {
-                            deleteExtension(extension: $extension) {
-                                alwaysNil
+        switchMap(ok => {
+            if (ok) {
+                return mutateGraphQL(
+                    gql`
+                        mutation DeleteRegistryExtension($extension: ID!) {
+                            extensionRegistry {
+                                deleteExtension(extension: $extension) {
+                                    alwaysNil
+                                }
                             }
                         }
-                    }
-                `,
-                { extension }
-            )
-        ),
-        map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.extensionRegistry ||
-                !data.extensionRegistry.deleteExtension ||
-                (errors && errors.length > 0)
-            ) {
-                throw createAggregateError(errors)
+                    `,
+                    { extension }
+                ).pipe(
+                    map(({ data, errors }) => {
+                        if (
+                            !data ||
+                            !data.extensionRegistry ||
+                            !data.extensionRegistry.deleteExtension ||
+                            (errors && errors.length > 0)
+                        ) {
+                            throw createAggregateError(errors)
+                        }
+                    })
+                )
             }
+            return [void 0]
         })
     )
 }
