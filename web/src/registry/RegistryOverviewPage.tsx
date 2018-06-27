@@ -126,7 +126,7 @@ export class RegistryOverviewPage extends React.PureComponent<Props, State> {
                                             className="w-100 mb-2 d-block"
                                             to={this.state.viewerInfoOrError.configuredExtensionsURL}
                                         >
-                                            Your in-use extensions
+                                            Your configured extensions
                                         </Link>
                                     )}
                                     {this.state.viewerInfoOrError.registryExtensionsURL && (
