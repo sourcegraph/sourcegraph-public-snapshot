@@ -15,7 +15,7 @@ import (
 //docker:user sourcegraph
 
 func main() {
-	cxpmain.Main("cx-sample-linecolors", func() jsonrpc2.Handler { return jsonrpc2.HandlerWithError((&handler{}).handle) })
+	cxpmain.Main("cx-sample-line-colors", func() jsonrpc2.Handler { return jsonrpc2.HandlerWithError((&handler{}).handle) })
 }
 
 type handler struct {
