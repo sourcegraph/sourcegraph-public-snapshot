@@ -5,7 +5,7 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, concatMap, map, tap } from 'rxjs/operators'
+import { catchError, concatMap, map, mapTo, switchMap, tap } from 'rxjs/operators'
 import { gql, mutateGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { Form } from '../components/Form'
@@ -13,7 +13,7 @@ import { ModalPage } from '../components/ModalPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
-import { queryViewerRegistryPublishers } from './backend'
+import { queryViewerRegistryPublishers, updateUserExtensionSettings } from './backend'
 import { RegistryPublisher, toExtensionID } from './extension'
 import { RegistryAreaPageProps } from './RegistryArea'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
@@ -25,6 +25,7 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
                 extensionRegistry {
                     createExtension(publisher: $publisher, name: $name) {
                         extension {
+                            id
                             url
                         }
                     }
@@ -45,6 +46,15 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
             return data.extensionRegistry.createExtension
         })
     )
+}
+
+/**
+ * It is convenient and less confusing for users if newly created extensions are added to their user settings. That
+ * means that they are immediately available in the extensions menu in the global navbar. However, they are not
+ * enabled (because that is likely to be unexpected and undesirable).
+ */
+function configureNewExtensionAsDisabled(extension: GQL.ID): Observable<void> {
+    return updateUserExtensionSettings({ extension, enabled: false })
 }
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {}
@@ -92,6 +102,9 @@ export class RegistryNewExtensionPage extends React.PureComponent<Props, State> 
                         concat(
                             [{ creationOrError: 'loading' }],
                             createExtension(this.state.publisher!, this.state.name).pipe(
+                                switchMap(result =>
+                                    configureNewExtensionAsDisabled(result.extension.id).pipe(mapTo(result))
+                                ),
                                 tap(result => {
                                     // Go to the page for the newly created extension.
                                     this.props.history.push(result.extension.url)
