@@ -570,7 +570,7 @@ describe('e2e test suite', () => {
                                     await page.evaluate(
                                         () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
                                     ),
-                                    4
+                                    3 // 4 references, two of which got merged into one because their context overlaps
                                 )
                             )
 
