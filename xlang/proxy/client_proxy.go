@@ -466,6 +466,11 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 				XDefinitionProvider:          caps.XDefinitionProvider,
 				XWorkspaceSymbolByProperties: caps.XWorkspaceSymbolByProperties,
 
+				// The LSP proxy might not support these experimental capabilities, but pass them
+				// through anyway. (If an unsupported request method is used, the client will still
+				// get an error and understand why.)
+				Experimental: caps.Experimental,
+
 				// Intentionally left out TextDocumentSync since no value
 				// means no syncing
 			},
