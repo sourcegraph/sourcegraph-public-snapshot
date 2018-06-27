@@ -37,6 +37,80 @@ Indexes:
 
 ```
 
+# Table "public.discussion_comments"
+```
+     Column     |           Type           |                            Modifiers                             
+----------------+--------------------------+------------------------------------------------------------------
+ id             | bigint                   | not null default nextval('discussion_comments_id_seq'::regclass)
+ thread_id      | bigint                   | not null
+ author_user_id | integer                  | not null
+ contents       | text                     | not null
+ created_at     | timestamp with time zone | not null default now()
+ updated_at     | timestamp with time zone | not null default now()
+ deleted_at     | timestamp with time zone | 
+Indexes:
+    "discussion_comments_pkey" PRIMARY KEY, btree (id)
+    "discussion_comments_author_user_id_idx" btree (author_user_id)
+    "discussion_comments_thread_id_idx" btree (thread_id)
+Foreign-key constraints:
+    "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    "discussion_comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.discussion_threads"
+```
+     Column     |           Type           |                            Modifiers                            
+----------------+--------------------------+-----------------------------------------------------------------
+ id             | bigint                   | not null default nextval('discussion_threads_id_seq'::regclass)
+ author_user_id | integer                  | not null
+ title          | text                     | 
+ target_repo_id | bigint                   | 
+ created_at     | timestamp with time zone | not null default now()
+ archived_at    | timestamp with time zone | 
+ updated_at     | timestamp with time zone | not null default now()
+ deleted_at     | timestamp with time zone | 
+Indexes:
+    "discussion_threads_pkey" PRIMARY KEY, btree (id)
+    "discussion_threads_author_user_id_idx" btree (author_user_id)
+    "discussion_threads_id_idx" btree (id)
+Foreign-key constraints:
+    "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "discussion_comments" CONSTRAINT "discussion_comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+    TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+
+```
+
+# Table "public.discussion_threads_target_repo"
+```
+     Column      |  Type   |                                  Modifiers                                  
+-----------------+---------+-----------------------------------------------------------------------------
+ id              | bigint  | not null default nextval('discussion_threads_target_repo_id_seq'::regclass)
+ thread_id       | bigint  | not null
+ repo_id         | integer | not null
+ path            | text    | 
+ branch          | text    | 
+ revision        | text    | 
+ start_line      | integer | 
+ end_line        | integer | 
+ start_character | integer | 
+ end_character   | integer | 
+ lines_before    | text    | 
+ lines           | text    | 
+ lines_after     | text    | 
+Indexes:
+    "discussion_threads_target_repo_pkey" PRIMARY KEY, btree (id)
+    "discussion_threads_target_repo_repo_id_path_idx" btree (repo_id, path)
+Foreign-key constraints:
+    "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
+    "discussion_threads_target_repo_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+Referenced by:
+    TABLE "discussion_threads" CONSTRAINT "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE RESTRICT
+
+```
+
 # Table "public.global_dep"
 ```
   Column  |  Type   | Modifiers 
@@ -243,6 +317,7 @@ Indexes:
 Check constraints:
     "check_external" CHECK (external_id IS NULL AND external_service_type IS NULL AND external_service_id IS NULL OR external_id IS NOT NULL AND external_service_type IS NOT NULL AND external_service_id IS NOT NULL)
 Referenced by:
+    TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
     TABLE "global_dep" CONSTRAINT "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
     TABLE "pkgs" CONSTRAINT "pkgs_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 
@@ -419,6 +494,8 @@ Check constraints:
 Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
+    TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
