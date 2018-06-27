@@ -53,33 +53,18 @@ class FilteredConnectionFilterControl extends React.PureComponent<FilterProps, F
 }
 
 /**
- * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
- *
- * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
- * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
- * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
+ * Fields that belong in ConnectionPropsCommon and that don't depend on the type parameters. These are the fields
+ * that are most likely to be needed by callers, and it's simpler for them if they are in a parameter-less type.
  */
-interface ConnectionPropsCommon<N, NP = {}> {
+interface ConnectionDisplayProps {
     /** list HTML element type. Default is <ul>. */
     listComponent?: 'ul' | 'table' | 'div'
 
     /** CSS class name for the list element (<ul>, <table>, or <div>). */
     listClassName?: string
 
-    /** Header row to appear above all nodes. */
-    headComponent?: React.ComponentType<{ nodes: N[] }>
-
-    /** Footer row to appear below all nodes. */
-    footComponent?: React.ComponentType<{ nodes: N[] }>
-
     /** CSS class name for the "Show more" button. */
     showMoreClassName?: string
-
-    /** The component type to use to display each node. */
-    nodeComponent: React.ComponentType<{ node: N } & NP>
-
-    /** Props to pass to each nodeComponent in addition to `{ node: N }`. */
-    nodeComponentProps?: NP
 
     /** The English noun (in singular form) describing what this connection contains. */
     noun: string
@@ -95,6 +80,27 @@ interface ConnectionPropsCommon<N, NP = {}> {
 
     /** The component displayed when the list of nodes is empty. */
     emptyElement?: JSX.Element
+}
+
+/**
+ * Props for the FilteredConnection component's result nodes and associated summary/pagination controls.
+ *
+ * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
+ * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
+ * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
+ */
+interface ConnectionPropsCommon<N, NP = {}> extends ConnectionDisplayProps {
+    /** Header row to appear above all nodes. */
+    headComponent?: React.ComponentType<{ nodes: N[] }>
+
+    /** Footer row to appear below all nodes. */
+    footComponent?: React.ComponentType<{ nodes: N[] }>
+
+    /** The component type to use to display each node. */
+    nodeComponent: React.ComponentType<{ node: N } & NP>
+
+    /** Props to pass to each nodeComponent in addition to `{ node: N }`. */
+    nodeComponentProps?: NP
 }
 
 /** State related to the ConnectionNodes component. */
@@ -266,13 +272,10 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
 }
 
 /**
- * Props for the FilteredConnection component.
- *
- * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
- * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
- * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
+ * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
+ * that are most likely to be needed by callers, and it's simpler for them if they are in a parameter-less type.
  */
-interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}> extends ConnectionPropsCommon<N, NP> {
+export interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     history: H.History
     location: H.Location
 
@@ -281,12 +284,6 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}> extends C
 
     /** Whether to display it more compactly. */
     compact?: boolean
-
-    /** Called to fetch the connection data to populate this component. */
-    queryConnection: (args: FilteredConnectionQueryArgs) => Observable<C>
-
-    /** Called when the queryConnection Observable emits. */
-    onUpdate?: (value: C | ErrorLike | undefined) => void
 
     /**
      * An observable that upon emission causes the connection to refresh the data (by calling queryConnection).
@@ -318,6 +315,26 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}> extends C
      * Filters are mutually exclusive.
      */
     filters?: FilteredConnectionFilter[]
+
+    /** Called when a filter is selected and on initial render. */
+    onFilterSelect?: (filterID: string | undefined) => void
+}
+
+/**
+ * Props for the FilteredConnection component.
+ *
+ * @template C The GraphQL connection type, such as GQL.IRepositoryConnection.
+ * @template N The node type of the GraphQL connection, such as GQL.IRepository (if C is GQL.IRepositoryConnection)
+ * @template NP Props passed to `nodeComponent` in addition to `{ node: N }`
+ */
+interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}>
+    extends ConnectionPropsCommon<N, NP>,
+        FilteredConnectionDisplayProps {
+    /** Called to fetch the connection data to populate this component. */
+    queryConnection: (args: FilteredConnectionQueryArgs) => Observable<C>
+
+    /** Called when the queryConnection Observable emits. */
+    onUpdate?: (value: C | ErrorLike | undefined) => void
 }
 
 /**
@@ -431,7 +448,10 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
     }
 
     public componentDidMount(): void {
-        const activeFilterChanges = this.activeFilterChanges.pipe(startWith(this.state.activeFilter))
+        const activeFilterChanges = this.activeFilterChanges.pipe(
+            startWith(this.state.activeFilter),
+            distinctUntilChanged()
+        )
         const queryChanges = this.queryInputChanges.pipe(
             distinctUntilChanged(),
             tap(query => !this.props.hideSearch && this.setState({ query })),
@@ -441,9 +461,21 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
         const refreshRequests = new Subject<void>()
 
         this.subscriptions.add(
-            this.activeFilterChanges
-                .pipe(distinctUntilChanged())
-                .subscribe(filter => this.setState({ activeFilter: filter }))
+            activeFilterChanges
+                .pipe(
+                    tap(filter => {
+                        if (this.props.onFilterSelect) {
+                            this.props.onFilterSelect(filter ? filter.id : undefined)
+                        }
+                    })
+                )
+                .subscribe()
+        )
+
+        this.subscriptions.add(
+            // Use this.activeFilterChanges not activeFilterChanges so that it doesn't trigger on the initial mount
+            // (it doesn't need to).
+            this.activeFilterChanges.subscribe(filter => this.setState({ activeFilter: filter }))
         )
 
         // Track the last query and filter we used. We only want to show the loader if these change,

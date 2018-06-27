@@ -261,7 +261,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                             noSummaryIfAllNodesVisible={true}
                             shouldUpdateURLQuery={false}
                             emptyElement={
-                                <div className="px-3 py-4 text-center extension-selector__empty">
+                                <div className="px-3 py-4 text-center bg-striped-secondary">
                                     <h4 className="text-muted mb-3">
                                         Enable extensions to add new features to Sourcegraph.
                                     </h4>

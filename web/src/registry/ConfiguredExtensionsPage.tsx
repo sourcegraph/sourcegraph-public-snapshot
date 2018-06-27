@@ -7,7 +7,7 @@ import { map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { FilteredConnectionFilter } from '../components/FilteredConnection'
+import { FilteredConnectionDisplayProps, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
@@ -20,13 +20,18 @@ import {
 } from './ConfiguredExtensionNode'
 import { extensionIDPrefix, RegistryPublisher } from './extension'
 
-interface ConfiguredExtensionsListProps extends ConfiguredExtensionNodeDisplayProps, RouteComponentProps<{}> {
+interface ConfiguredExtensionsListProps
+    extends ConfiguredExtensionNodeDisplayProps,
+        RouteComponentProps<{}>,
+        Pick<FilteredConnectionDisplayProps, 'emptyElement' | 'onFilterSelect'> {
     /** Show extensions configured for this subject. */
     subject: Pick<GQL.ExtensionConfigurationSubject, '__typename' | 'id' | 'settingsURL' | 'viewerCanAdminister'>
 
     /** Update the connection from the data source when this value changes. */
     updateOnChange?: any
 }
+
+const FILTER_ALL_ID = 'all'
 
 /**
  * Displays a list of all extensions used by a configuration subject.
@@ -35,7 +40,7 @@ class ConfiguredExtensionsList extends React.PureComponent<ConfiguredExtensionsL
     private static FILTERS: FilteredConnectionFilter[] = [
         {
             label: 'All',
-            id: 'all',
+            id: FILTER_ALL_ID,
             tooltip: 'Show all extensions referenced in configuration (including disabled and invalid extensions)',
             args: { enabled: true, disabled: true, invalid: true },
         },
@@ -78,6 +83,8 @@ class ConfiguredExtensionsList extends React.PureComponent<ConfiguredExtensionsL
                 filters={ConfiguredExtensionsList.FILTERS}
                 noSummaryIfAllNodesVisible={true}
                 updateOnChange={this.props.updateOnChange}
+                emptyElement={this.props.emptyElement}
+                onFilterSelect={this.props.onFilterSelect}
                 compact={true}
                 history={this.props.history}
                 location={this.props.location}
@@ -144,10 +151,19 @@ interface ConfiguredExtensionsPageProps extends ConfiguredExtensionsListProps {
     } & RegistryPublisher
 }
 
+interface ConfiguredExtensionsPageState {
+    activeFilter?: string
+}
+
 /**
  * Displays a page listing all extensions used by a configuration subject.
  */
-export class ConfiguredExtensionsPage extends React.PureComponent<ConfiguredExtensionsPageProps> {
+export class ConfiguredExtensionsPage extends React.PureComponent<
+    ConfiguredExtensionsPageProps,
+    ConfiguredExtensionsPageState
+> {
+    public state: ConfiguredExtensionsPageState = {}
+
     public componentDidMount(): void {
         eventLogger.logViewEvent('ConfiguredExtensions')
     }
@@ -173,6 +189,9 @@ export class ConfiguredExtensionsPage extends React.PureComponent<ConfiguredExte
                                     Extensions published by {extensionIDPrefix(this.props.publisher)}
                                 </Link>
                             )}{' '}
+                        <Link to="/registry" className="btn btn-outline-primary">
+                            View all extensions in registry
+                        </Link>{' '}
                         {this.props.subject &&
                             this.props.subject.settingsURL &&
                             this.props.subject.viewerCanAdminister && (
@@ -182,8 +201,29 @@ export class ConfiguredExtensionsPage extends React.PureComponent<ConfiguredExte
                             )}
                     </div>
                 </div>
-                <ConfiguredExtensionsList {...this.props} />
+                <ConfiguredExtensionsList
+                    {...this.props}
+                    onFilterSelect={this.onFilterSelect}
+                    emptyElement={
+                        this.props.subject.viewerCanAdminister && this.state.activeFilter === 'all' ? (
+                            <div className="px-3 py-5 text-center bg-striped-secondary border">
+                                <h4 className="text-muted mb-3">
+                                    Enable extensions to add new features to Sourcegraph.
+                                </h4>
+                                <Link to="/registry" className="btn btn-primary">
+                                    View available extensions in registry
+                                </Link>
+                            </div>
+                        ) : (
+                            undefined
+                        )
+                    }
+                />
             </div>
         )
+    }
+
+    private onFilterSelect = (filterID: string | undefined): void => {
+        this.setState({ activeFilter: filterID })
     }
 }

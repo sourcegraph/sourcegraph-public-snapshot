@@ -34,14 +34,4 @@
         min-width: 14rem;
         max-width: 19rem;
     }
-
-    &__empty {
-        background: repeating-linear-gradient(
-            45deg,
-            var(--secondary),
-            var(--secondary) 10px,
-            transparent 10px,
-            transparent 20px
-        );
-    }
 }
