@@ -30,7 +30,19 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
         }
 
         return ReactDOM.createPortal(
-            <LinkOrSpan className="line-decoration-attachment" to={this.props.attachment.linkURL}>
+            <LinkOrSpan
+                className="line-decoration-attachment"
+                to={this.props.attachment.linkURL}
+                // Use target to open external URLs (or else react-router's Link will treat the URL as a URL path
+                // and navigation will fail).
+                target={
+                    this.props.attachment.linkURL && /^https?:\/\//.test(this.props.attachment.linkURL)
+                        ? '_blank'
+                        : undefined
+                }
+                // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                rel="noreferrer noopener"
+            >
                 <span
                     className="line-decoration-attachment__contents"
                     // tslint:disable-next-line:jsx-ban-props
