@@ -186,6 +186,7 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
                     <InviteForm
                         orgID={this.props.org.id}
                         authenticatedUser={this.props.authenticatedUser}
+                        onOrganizationUpdate={this.props.onOrganizationUpdate}
                         onDidUpdateOrganizationMembers={this.onDidUpdateOrganizationMembers}
                     />
                 )}

@@ -4,7 +4,7 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
@@ -17,50 +17,47 @@ import { UserOverviewPage } from './UserOverviewPage'
 
 export const enableUserArea = localStorage.getItem('userArea') !== null
 
-const fetchUser = memoizeObservable(
-    (args: { username: string }): Observable<GQL.IUser | null> =>
-        queryGraphQL(
-            gql`
-                query User($username: String!) {
-                    user(username: $username) {
-                        __typename
-                        id
-                        username
-                        displayName
-                        url
-                        settingsURL
-                        avatarURL
-                        viewerCanAdminister
-                        siteAdmin
-                        createdAt
-                        emails {
-                            email
-                            verified
-                        }
-                        organizations {
-                            nodes {
-                                id
-                                displayName
-                                name
-                            }
-                        }
-                        registryExtensions {
-                            url
+const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
+    queryGraphQL(
+        gql`
+            query User($username: String!) {
+                user(username: $username) {
+                    __typename
+                    id
+                    username
+                    displayName
+                    url
+                    settingsURL
+                    avatarURL
+                    viewerCanAdminister
+                    siteAdmin
+                    createdAt
+                    emails {
+                        email
+                        verified
+                    }
+                    organizations {
+                        nodes {
+                            id
+                            displayName
+                            name
                         }
                     }
+                    registryExtensions {
+                        url
+                    }
                 }
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data || !data.user) {
-                    throw createAggregateError(errors)
-                }
-                return data.user
-            })
-        ),
-    ({ username }) => username
-)
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.user) {
+                throw createAggregateError(errors)
+            }
+            return data.user
+        })
+    )
 
 const NotFoundPage = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="Sorry, the requested user was not found." />
@@ -121,17 +118,17 @@ export class UserArea extends React.Component<Props> {
 
         // Fetch user.
         this.subscriptions.add(
-            combineLatest(usernameChanges, merge(this.refreshRequests.pipe(map(() => true)), of(false)))
+            combineLatest(usernameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true)))
                 .pipe(
                     switchMap(([username, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'userOrError'>
-                        return fetchUser({ username }, forceRefresh).pipe(
+                        return fetchUser({ username }).pipe(
                             catchError(error => [error]),
                             map(c => ({ userOrError: c } as PartialStateUpdate)),
 
                             // Don't clear old user data while we reload, to avoid unmounting all components during
                             // loading.
-                            startWith<PartialStateUpdate>(forceRefresh ? {} : { userOrError: undefined })
+                            startWith<PartialStateUpdate>(forceRefresh ? { userOrError: undefined } : {})
                         )
                     })
                 )

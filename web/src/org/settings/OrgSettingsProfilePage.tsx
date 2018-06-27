@@ -55,6 +55,7 @@ export class OrgSettingsProfilePage extends React.PureComponent<Props, State> {
                 .pipe(
                     switchMap(() =>
                         updateOrganization(this.props.org.id, this.state.displayName).pipe(
+                            tap(() => this.props.onOrganizationUpdate()),
                             mergeMap(() =>
                                 // Reset email, reenable submit button, flash "updated" text
                                 of<Partial<State>>({ loading: false, updated: true })

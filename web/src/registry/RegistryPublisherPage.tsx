@@ -104,7 +104,7 @@ export class RegistryPublisherPage extends React.Component<Props> {
 
                             // Don't clear old data while we reload, to avoid unmounting all components during
                             // loading.
-                            startWith<PartialStateUpdate>(forceRefresh ? {} : { publisherOrError: undefined })
+                            startWith<PartialStateUpdate>(forceRefresh ? { publisherOrError: undefined } : {})
                         )
                     })
                 )

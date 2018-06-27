@@ -36,6 +36,7 @@ export const OrgSettingsArea: React.SFC<Props> = props => {
     const transferProps = {
         authenticatedUser: props.authenticatedUser,
         org: props.org,
+        onOrganizationUpdate: props.onOrganizationUpdate,
         isLightTheme: props.isLightTheme,
     }
     return (

@@ -91,6 +91,9 @@ export interface OrgAreaPageProps {
     /** The org that is the subject of the page. */
     org: GQL.IOrg
 
+    /** Called when the organization is updated and must be reloaded. */
+    onOrganizationUpdate: () => void
+
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 }
@@ -111,7 +114,7 @@ export class OrgArea extends React.Component<Props> {
 
         // Fetch organization.
         this.subscriptions.add(
-            combineLatest(nameChanges, merge(this.refreshRequests.pipe(mapTo(true)), of(false)))
+            combineLatest(nameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true)))
                 .pipe(
                     switchMap(([name, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'orgOrError'>
@@ -121,7 +124,7 @@ export class OrgArea extends React.Component<Props> {
 
                             // Don't clear old org data while we reload, to avoid unmounting all components during
                             // loading.
-                            startWith<PartialStateUpdate>(forceRefresh ? {} : { orgOrError: undefined })
+                            startWith<PartialStateUpdate>(forceRefresh ? { orgOrError: undefined } : {})
                         )
                     })
                 )
@@ -152,6 +155,7 @@ export class OrgArea extends React.Component<Props> {
         const transferProps: OrgAreaPageProps = {
             authenticatedUser: this.props.user,
             org: this.state.orgOrError,
+            onOrganizationUpdate: this.onDidUpdateOrganization,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {
@@ -216,4 +220,6 @@ export class OrgArea extends React.Component<Props> {
     }
 
     private onDidRespondToInvitation = () => this.refreshRequests.next()
+
+    private onDidUpdateOrganization = () => this.refreshRequests.next()
 }

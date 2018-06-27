@@ -108,6 +108,8 @@ interface Props {
 
     /** Called when the organization members list changes. */
     onDidUpdateOrganizationMembers: () => void
+
+    onOrganizationUpdate: () => void
 }
 
 interface SubmittedInvite extends Pick<GQL.IInviteUserToOrganizationResult, 'sentInvitationEmail' | 'invitationURL'> {
@@ -158,6 +160,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                     ),
                     mergeMap(([, { orgID }, username]) =>
                         inviteUserToOrganization(username, orgID).pipe(
+                            tap(() => this.props.onOrganizationUpdate()),
                             tap(() => this.usernameChanges.next('')),
                             mergeMap(({ sentInvitationEmail, invitationURL }) =>
                                 // Reset email, reenable submit button, flash "invited" text
