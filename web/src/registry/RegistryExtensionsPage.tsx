@@ -149,8 +149,8 @@ export class RegistryExtensionsList extends React.PureComponent<RegistryExtensio
                     this.props.mode === ExtensionsListViewMode.Cards ? 'row mt-3' : 'list-group list-group-flush'
                 }
                 listComponent={this.props.mode === ExtensionsListViewMode.Cards ? 'div' : 'ul'}
-                noun="registry extension"
-                pluralNoun="registry extensions"
+                noun="extension"
+                pluralNoun="extensions"
                 queryConnection={this.queryRegistryExtensions}
                 nodeComponent={
                     this.props.mode === ExtensionsListViewMode.Cards

@@ -283,7 +283,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                                         className="btn btn-link w-100 d-flex px-2 border-top rounded-0"
                                         onClick={this.dismissPopover}
                                     >
-                                        <GearIcon className="icon-inline mr-2" /> Configure extensions
+                                        <GearIcon className="icon-inline mr-2" /> Configure
                                     </Link>
                                 )}
                                 <Link
@@ -291,7 +291,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                                     className="btn btn-link w-100 d-flex px-2 border-top rounded-0"
                                     onClick={this.dismissPopover}
                                 >
-                                    <MoreIcon className="icon-inline mr-2" /> View all extensions in registry
+                                    <MoreIcon className="icon-inline mr-2" /> Extension registry
                                 </Link>
                             </>
                         )}
