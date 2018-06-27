@@ -243,6 +243,8 @@ type Mutation {
     updateSiteConfiguration(input: String!): Boolean!
     # Manages language servers.
     langServers: LangServersMutation
+    # Manages discussions.
+    discussions: DiscussionsMutation
     # Sets whether the user with the specified user ID is a site admin.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     # Reloads the site by restarting the server. This is not supported for all deployment
@@ -275,6 +277,101 @@ type LangServersMutation {
     #
     # Only admins can perform this action.
     update(language: String!): EmptyResponse
+}
+
+# A selection within a file.
+input DiscussionThreadTargetRepoSelectionInput {
+    # The line that the selection started on (zero-based, inclusive).
+    startLine: Int!
+
+    # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
+    startCharacter: Int!
+
+    # The line that the selection ends on (zero-based, inclusive).
+    endLine: Int!
+
+    # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
+    endCharacter: Int!
+
+    # The literal textual (UTF-8) lines before the line the selection started
+    # on.
+    #
+    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
+    linesBefore: String!
+
+    # The literal textual (UTF-8) lines of the selection. i.e. all lines
+    # between and including startLine and endLine.
+    lines: String!
+
+    # The literal textual (UTF-8) lines after the line the selection ended on.
+    #
+    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
+    linesAfter: String!
+}
+
+# A discussion thread that is centered around:
+#
+# - A repository.
+# - A directory inside a repository.
+# - A file inside a repository.
+# - A selection inside a file inside a repository.
+#
+input DiscussionThreadTargetRepoInput {
+    # The repository in which the thread was created.
+    repository: ID!
+
+    # The path (relative to the repository root) of the file or directory that
+    # the thread is referencing, if any. If the path is null, the thread is not
+    # talking about a specific path but rather just the repository generally.
+    path: String
+
+    # The branch (but not exact revision) that the thread was referencing, if
+    # any.
+    branch: String
+
+    # The exact revision that the thread was referencing, if any.
+    revision: String
+
+    # The selection that the thread was referencing, if any.
+    selection: DiscussionThreadTargetRepoSelectionInput
+}
+
+# Describes the creation of a new thread around some target (e.g. a file in a repo).
+input DiscussionThreadCreateInput {
+    # The title of the thread's first comment (i.e. the threads title).
+    title: String!
+
+    # The contents of the thread's first comment (i.e. the threads comment).
+    contents: String!
+
+    # The target repo of this discussion thread. This is nullable so that in
+    # the future more target types may be added.
+    targetRepo: DiscussionThreadTargetRepoInput
+}
+
+# Describes an update mutation to an existing thread.
+input DiscussionThreadUpdateInput {
+    # The ID of the thread to update.
+    ThreadID: ID!
+
+    # When non-null, indicates that the thread should be archived.
+    Archive: Boolean
+
+    # When non-null, indicates that the thread should be deleted. Only admins
+    # can perform this action.
+    Delete: Boolean
+}
+
+# Mutations for discussions.
+type DiscussionsMutation {
+    # Creates a new thread. Returns the new thread.
+    createThread(input: DiscussionThreadCreateInput!): DiscussionThread!
+
+    # Updates an existing thread. Returns the updated thread.
+    updateThread(input: DiscussionThreadUpdateInput!): DiscussionThread!
+
+    # Adds a new comment to a thread. Returns the updated thread.
+    addCommentToThread(threadID: ID!, contents: String!): DiscussionThread!
 }
 
 # Describes options for rendering Markdown.
@@ -503,6 +600,26 @@ type Query {
         # Return organizations whose names or display names match the query.
         query: String
     ): OrgConnection!
+    # Lists discussion threads.
+    discussionThreads(
+        # Returns the first n threads from the list.
+        first: Int
+        # When present, lists only the thread with this ID.
+        threadID: ID
+        # When present, lists only the threads created by this author.
+        authorUserID: ID
+        # When present, lists only the threads whose target is a repository with this ID.
+        targetRepositoryID: ID
+        # When present, lists only the threads whose target is a repository with this file path.
+        targetRepositoryPath: String
+    ): DiscussionThreadConnection!
+    # Lists discussion comments.
+    discussionComments(
+        # Returns the first n comments from the list.
+        first: Int
+        # When present, lists only the comments created by this author.
+        authorUserID: ID
+    ): DiscussionCommentConnection!
     # Renders Markdown to HTML. The returned HTML is already sanitized and
     # escaped and thus is always safe to render.
     renderMarkdown(markdown: String!, options: MarkdownOptions): String!
@@ -2190,6 +2307,165 @@ type LangServer {
     #
     # Always false in Data Center and for custom language servers.
     healthy: Boolean!
+}
+
+# A selection within a file.
+type DiscussionThreadTargetRepoSelection {
+    # The line that the selection started on (zero-based, inclusive).
+    startLine: Int!
+
+    # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
+    startCharacter: Int!
+
+    # The line that the selection ends on (zero-based, inclusive).
+    endLine: Int!
+
+    # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
+    endCharacter: Int!
+
+    # The literal textual (UTF-8) lines before the line the selection started
+    # on.
+    #
+    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
+    linesBefore: String!
+
+    # The literal textual (UTF-8) lines of the selection. i.e. all lines
+    # between and including startLine and endLine.
+    lines: String!
+
+    # The literal textual (UTF-8) lines after the line the selection ended on.
+    #
+    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
+    linesAfter: String!
+}
+
+# A discussion thread that is centered around:
+#
+# - A repository.
+# - A directory inside a repository.
+# - A file inside a repository.
+# - A selection inside a file inside a repository.
+#
+type DiscussionThreadTargetRepo {
+    # The repository in which the thread was created.
+    repository: Repository!
+
+    # The path (relative to the repository root) of the file or directory that
+    # the thread is referencing, if any. If the path is null, the thread is not
+    # talking about a specific path but rather just the repository generally.
+    path: String
+
+    # The branch (but not exact revision) that the thread was referencing, if
+    # any.
+    branch: GitRef
+
+    # The exact revision that the thread was referencing, if any.
+    revision: GitRef
+
+    # The selection that the thread was referencing, if any.
+    selection: DiscussionThreadTargetRepoSelection
+}
+
+# The target of a discussion thread. Today, the only possible target is a
+# repository. In the future, this may be extended to include other targets such
+# as user profiles, extensions, etc. Clients should ignore target types they
+# do not understand gracefully.
+union DiscussionThreadTarget = DiscussionThreadTargetRepo
+
+# A discussion thread around some target (e.g. a file in a repo).
+type DiscussionThread {
+    # The discussion thread ID (globally unique).
+    id: ID!
+
+    # The user who authored this discussion thread.
+    author: User!
+
+    # The title of the thread.
+    #
+    # Note: the contents of the thread (its 'body') is always the first comment
+    # in the thread. It is always present, even if the user e.g. input no content.
+    title: String!
+
+    # The target of this discussion thread.
+    target: DiscussionThreadTarget!
+
+    # The date when the discussion thread was created.
+    createdAt: String!
+
+    # The date when the discussion thread was last updated.
+    updatedAt: String!
+
+    # The date when the discussion thread was archived (or null if it has not).
+    archivedAt: String
+
+    # The comments in the discussion thread.
+    comments(
+        # Returns the first n comments from the list.
+        first: Int
+    ): DiscussionCommentConnection!
+}
+
+# A comment made within a discussion thread.
+type DiscussionComment {
+    # The discussion comment ID (globally unique).
+    id: ID!
+
+    # The discussion thread the comment was made in.
+    thread: DiscussionThread!
+
+    # The user who authored this discussion thread.
+    author: User!
+
+    # The actual markdown contents of the comment.
+    #
+    # Empty comments are allowed, so that users can create a discussion thread
+    # with a title and no comment contents. Thus, clients should be prepared to
+    # render them. Suggested rendering when the string contains only whitespace
+    # is "_(no comment text)_".
+    contents: String!
+
+    # The markdown contents rendered as an HTML string. It is already sanitized
+    # and escaped and thus is always safe to render.
+    #
+    # Empty comments are allowed, so that users can create a discussion thread
+    # with a title and no comment contents. Thus, clients should be prepared to
+    # render them. Suggested rendering when the string contains only whitespace
+    # is "<em>(no comment text)</em>".
+    html(options: MarkdownOptions): String!
+
+    # The date when the discussion thread was created.
+    createdAt: String!
+
+    # The date when the discussion thread was last updated.
+    updatedAt: String!
+}
+
+# A list of discussion threads.
+type DiscussionThreadConnection {
+    # A list of discussion threads.
+    nodes: [DiscussionThread!]!
+
+    # The total count of discussion threads in the connection. This total
+    # count may be larger than the number of nodes in this object when the
+    # result is paginated.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A list of discussion comments.
+type DiscussionCommentConnection {
+    # A list of discussion comments.
+    nodes: [DiscussionComment!]!
+
+    # The total count of discussion comments in the connection. This total
+    # count may be larger than the number of nodes in this object when the
+    # result is paginated.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # RepoOrderBy enumerates the ways a repositories-list result set can
