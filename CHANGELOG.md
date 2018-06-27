@@ -9,6 +9,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+* The search results page will merge duplicated lines of context.
+
 ### Added
 
 ### Fixed

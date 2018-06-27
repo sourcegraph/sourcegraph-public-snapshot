@@ -1,3 +1,4 @@
+import { flatMap } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'
@@ -6,6 +7,7 @@ import { pluralize } from '../util/strings'
 import { toPositionOrRangeHash } from '../util/url'
 import { CodeExcerpt } from './CodeExcerpt'
 import { CodeExcerpt2 } from './CodeExcerpt2'
+import { mergeContext } from './FileMatchContext'
 import { RepoFileLink } from './RepoFileLink'
 import { Props as ResultContainerProps, ResultContainer } from './ResultContainer'
 
@@ -26,11 +28,6 @@ interface IMatchItem {
     }[]
     preview: string
     line: number
-    repoName: string
-    repoURL: string
-    filePath: string
-    fileURL: string
-    commitID: string
 }
 
 interface Props {
@@ -88,11 +85,6 @@ export class FileMatch extends React.PureComponent<Props> {
             })),
             preview: m.preview,
             line: m.lineNumber,
-            repoName: result.repository.name,
-            repoURL: result.repository.url,
-            filePath: result.file.path,
-            fileURL: result.file.url,
-            commitID: result.file.commit.oid,
         }))
 
         const title = (
@@ -106,7 +98,7 @@ export class FileMatch extends React.PureComponent<Props> {
 
         let containerProps: ResultContainerProps
 
-        const expandedChildren = this.getChildren(items, result.file.url, true)
+        const expandedChildren = this.getChildren(items, result, true)
         if (this.props.showAllMatches) {
             containerProps = {
                 collapsible: true,
@@ -123,7 +115,7 @@ export class FileMatch extends React.PureComponent<Props> {
                 defaultExpanded: this.props.expanded,
                 icon: this.props.icon,
                 title,
-                collapsedChildren: this.getChildren(items, result.file.url, false),
+                collapsedChildren: this.getChildren(items, result, false),
                 expandedChildren,
                 collapseLabel: `Hide ${len} matches`,
                 expandLabel: `Show ${len} more ${pluralize('match', len, 'matches')}`,
@@ -135,7 +127,7 @@ export class FileMatch extends React.PureComponent<Props> {
     }
 
     // If this grows any larger, it needs to be factored out into it's own component
-    private getChildren = (items: IMatchItem[], fileURL: string, allMatches: boolean) => {
+    private getChildren = (items: IMatchItem[], result: IFileMatch, allMatches: boolean) => {
         const showItems = items
             .sort((a, b) => {
                 if (a.line < b.line) {
@@ -155,8 +147,24 @@ export class FileMatch extends React.PureComponent<Props> {
             .filter((item, i) => allMatches || i < this.subsetMatches)
 
         if (NO_SEARCH_HIGHLIGHTING) {
-            return <CodeExcerpt2 urlWithoutPosition={fileURL} items={showItems} onSelect={this.props.onSelect} />
+            return (
+                <CodeExcerpt2 urlWithoutPosition={result.file.url} items={showItems} onSelect={this.props.onSelect} />
+            )
         }
+
+        // The number of lines of context to show before and after each match.
+        const context = 1
+
+        const groupsOfItems = mergeContext(
+            context,
+            flatMap(showItems, item =>
+                item.highlightRanges.map(range => ({
+                    line: item.line,
+                    character: range.start,
+                    highlightLength: range.highlightLength,
+                }))
+            )
+        )
 
         return (
             <div className="file-match__list">
@@ -174,22 +182,22 @@ export class FileMatch extends React.PureComponent<Props> {
                         </code>
                     </Link>
                 ))}
-                {showItems.map((item, i) => {
-                    const position = { line: item.line + 1, character: item.highlightRanges[0].start + 1 }
+                {groupsOfItems.map(items => {
+                    const item = items[0]!
+                    const position = { line: item.line + 1, character: item.character + 1 }
                     return (
                         <Link
-                            to={`${item.fileURL}${toPositionOrRangeHash({ position })}`}
-                            key={`linematch:${item.fileURL}${position.line}:${position.character}`}
+                            to={`${result.file.url}${toPositionOrRangeHash({ position })}`}
+                            key={`linematch:${result.file.url}${position.line}:${position.character}`}
                             className="file-match__item file-match__item-clickable"
                             onClick={this.props.onSelect}
                         >
                             <CodeExcerpt
-                                repoPath={item.repoName}
-                                commitID={item.commitID}
-                                filePath={item.filePath}
-                                previewWindowExtraLines={1}
-                                highlightRanges={item.highlightRanges}
-                                line={item.line}
+                                repoPath={result.repository.name}
+                                commitID={result.file.commit.oid}
+                                filePath={result.file.path}
+                                context={context}
+                                highlightRanges={items}
                                 className="file-match__item-code-excerpt"
                                 isLightTheme={this.props.isLightTheme}
                             />

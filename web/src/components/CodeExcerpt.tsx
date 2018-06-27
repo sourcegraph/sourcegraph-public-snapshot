@@ -1,3 +1,4 @@
+import { range } from 'lodash'
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { combineLatest, Subject, Subscription } from 'rxjs'
@@ -10,8 +11,7 @@ interface Props extends Repo {
     commitID: string
     filePath: string
     // How many extra lines to show in the excerpt before/after the ref.
-    previewWindowExtraLines?: number
-    line: number
+    context?: number
     highlightRanges: HighlightRange[]
     className?: string
     isLightTheme: boolean
@@ -19,9 +19,13 @@ interface Props extends Repo {
 
 interface HighlightRange {
     /**
+     * The 0-based line number that this highlight appears in
+     */
+    line: number
+    /**
      * The 0-based character offset to start highlighting at
      */
-    start: number
+    character: number
     /**
      * The number of characters to highlight
      */
@@ -71,15 +75,10 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         if (this.tableContainerElement) {
-            const rows = this.tableContainerElement.querySelectorAll('table tr')
-            for (const row of rows) {
-                const line = row.firstChild as HTMLTableDataCellElement
-                const code = row.lastChild as HTMLTableDataCellElement
-                if (line.getAttribute('data-line') === '' + (this.props.line + 1)) {
-                    for (const range of this.props.highlightRanges) {
-                        highlightNode(code, range.start, range.highlightLength)
-                    }
-                }
+            const visibleRows = this.tableContainerElement.querySelectorAll('table tr')
+            for (const highlight of this.props.highlightRanges) {
+                const code = visibleRows[highlight.line - this.getFirstLine()].lastChild as HTMLTableDataCellElement
+                highlightNode(code, highlight.character, highlight.highlightLength)
             }
         }
     }
@@ -88,28 +87,13 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    private getPreviewWindowLines(): number[] {
-        const targetLine = this.props.line
-        let res = [targetLine]
-        for (
-            let i = targetLine - this.props.previewWindowExtraLines!;
-            i < targetLine + this.props.previewWindowExtraLines! + 1;
-            ++i
-        ) {
-            if (i > 0 && i < targetLine) {
-                res = [i].concat(res)
-            }
-            if (this.state.blobLines) {
-                if (i < this.state.blobLines!.length && i > targetLine) {
-                    res = res.concat([i])
-                }
-            } else {
-                if (i > targetLine) {
-                    res = res.concat([i])
-                }
-            }
-        }
-        return res
+    private getFirstLine(): number {
+        return Math.max(0, Math.min(...this.props.highlightRanges.map(r => r.line)) - (this.props.context || 1))
+    }
+
+    private getLastLine(): number {
+        const lastLine = Math.max(...this.props.highlightRanges.map(r => r.line)) + (this.props.context || 1)
+        return this.state.blobLines ? Math.min(lastLine, this.state.blobLines.length) : lastLine
     }
 
     private onChangeVisibility = (isVisible: boolean): void => {
@@ -136,7 +120,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     {!this.state.blobLines && (
                         <table>
                             <tbody>
-                                {this.getPreviewWindowLines().map(i => (
+                                {range(this.getFirstLine(), this.getLastLine()).map(i => (
                                     <tr key={i}>
                                         <td className="line">{i + 1}</td>
                                         {/* create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) */}
@@ -156,9 +140,8 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     }
 
     private makeTableHTML(): string {
-        const start = Math.max(0, this.props.line - (this.props.previewWindowExtraLines || 0))
-        const end = this.props.line + (this.props.previewWindowExtraLines || 0) + 1
-        const lineRange = this.state.blobLines!.slice(start, end)
-        return '<table>' + lineRange.join('') + '</table>'
+        return (
+            '<table>' + this.state.blobLines!.slice(this.getFirstLine(), this.getLastLine() + 1).join('') + '</table>'
+        )
     }
 }
