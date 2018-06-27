@@ -106,7 +106,7 @@ class ExtensionSelectorExtensionNode extends React.PureComponent<ExtensionNodePr
         return (
             <button
                 type="button"
-                className={`list-group-item list-group-item-action extension-selector-extension-node d-flex align-items-center py-2 ${
+                className={`list-group-item list-group-item-action extension-selector-extension-node d-flex align-items-center py-2 pr-3 ${
                     this.props.node.isEnabled ? '' : 'text-muted'
                 }`}
                 onClick={this.toggleExtensionEnabled}
@@ -122,13 +122,16 @@ class ExtensionSelectorExtensionNode extends React.PureComponent<ExtensionNodePr
             >
                 {this.props.node.isEnabled ? (
                     <span
-                        className="badge badge-success d-flex align-items-center mr-2 border border-success"
+                        className="extension-selector-extension-node__state badge badge-success d-flex align-items-center justify-content-center mr-2 border border-success"
                         title="Enabled"
                     >
                         <CheckmarkIcon className="icon-inline" />
                     </span>
                 ) : (
-                    <span className="badge badge-secondary d-flex align-items-center mr-2 border" title="Disabled">
+                    <span
+                        className="extension-selector-extension-node__state badge badge-secondary d-flex align-items-center justify-content-center mr-2 border"
+                        title="Disabled"
+                    >
                         <NoIcon className="icon-inline invisible" />
                     </span>
                 )}
