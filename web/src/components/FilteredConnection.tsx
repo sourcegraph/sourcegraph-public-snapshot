@@ -92,6 +92,9 @@ interface ConnectionPropsCommon<N, NP = {}> {
 
     /** Do not show a count summary if all nodes are visible in the list's first page. */
     noSummaryIfAllNodesVisible?: boolean
+
+    /** The component displayed when the list of nodes is empty. */
+    emptyElement?: JSX.Element
 }
 
 /** State related to the ConnectionNodes component. */
@@ -193,7 +196,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
             } else if (this.props.connection.pageInfo && this.props.connection.pageInfo.hasNextPage) {
                 // No total count to show, but it will show a 'Show more' button.
             } else if (totalCount === 0) {
-                summary = (
+                summary = this.props.emptyElement || (
                     <p className="filtered-connection__summary">
                         <small>
                             No {this.props.pluralNoun}{' '}
@@ -281,6 +284,9 @@ interface FilteredConnectionProps<C extends Connection<N>, N, NP = {}> extends C
 
     /** Called to fetch the connection data to populate this component. */
     queryConnection: (args: FilteredConnectionQueryArgs) => Observable<C>
+
+    /** Called when the queryConnection Observable emits. */
+    onUpdate?: (value: C | ErrorLike | undefined) => void
 
     /**
      * An observable that upon emission causes the connection to refresh the data (by calling queryConnection).
@@ -493,6 +499,11 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                                   )
                               )
                             : result
+                    }),
+                    tap(({ connectionOrError }) => {
+                        if (this.props.onUpdate) {
+                            this.props.onUpdate(connectionOrError)
+                        }
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
@@ -645,6 +656,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             noSummaryIfAllNodesVisible={this.props.noSummaryIfAllNodesVisible}
                             onShowMore={this.onClickShowMore}
                             location={this.props.location}
+                            emptyElement={this.props.emptyElement}
                         />
                     )}
                 {this.state.loading && <Loader className="icon-inline filtered-connection__loader" />}

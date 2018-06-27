@@ -121,15 +121,15 @@ class ExtensionSelectorExtensionNode extends React.PureComponent<ExtensionNodePr
                 }`}
             >
                 {this.props.node.isEnabled ? (
-                    <span className="badge badge-success d-flex align-items-center mr-2" title="Enabled">
+                    <span
+                        className="badge badge-success d-flex align-items-center mr-2 border border-success"
+                        title="Enabled"
+                    >
                         <CheckmarkIcon className="icon-inline" />
                     </span>
                 ) : (
-                    <span
-                        className="badge badge-secondary text-muted d-flex align-items-center mr-2 invisible"
-                        title="Disabled"
-                    >
-                        <NoIcon className="icon-inline" />
+                    <span className="badge badge-secondary d-flex align-items-center mr-2 border" title="Disabled">
+                        <NoIcon className="icon-inline invisible" />
                     </span>
                 )}
                 <div className="d-flex align-items-center">
@@ -173,11 +173,18 @@ interface State {
 
     /** The viewer's extensions, undefined while loading, or an error. */
     viewerExtensionsOrError: Pick<GQL.IConfiguredExtension, 'extensionID'>[] | typeof LOADING | ErrorLike
+
+    /** The list of configured extensions, undefined while loading, or an error. */
+    extensionConnectionOrError: Pick<GQL.IConfiguredExtensionConnection, 'nodes'> | undefined | ErrorLike
 }
 
 /** Displays an indication of the currently selected extension and allows changing it. */
 export class ExtensionSelector extends React.PureComponent<Props, State> {
-    public state: State = { changed: {}, viewerExtensionsOrError: 'loading' }
+    public state: State = {
+        changed: {},
+        viewerExtensionsOrError: 'loading',
+        extensionConnectionOrError: undefined,
+    }
 
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
@@ -250,23 +257,41 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                             location={this.props.location}
                             noSummaryIfAllNodesVisible={true}
                             shouldUpdateURLQuery={false}
+                            emptyElement={
+                                <div className="px-3 py-4 text-center extension-selector__empty">
+                                    <h4 className="text-muted mb-3">
+                                        Enable extensions to add new features to Sourcegraph.
+                                    </h4>
+                                    <Link to="/registry" className="btn btn-primary" onClick={this.dismissPopover}>
+                                        View available extensions in registry
+                                    </Link>
+                                </div>
+                            }
+                            onUpdate={this.onExtensionConnectionUpdate}
                         />
-                        {this.props.configuredExtensionsURL && (
-                            <Link
-                                to={this.props.configuredExtensionsURL}
-                                className="btn btn-link w-100 d-flex px-2 border-top rounded-0"
-                                onClick={this.dismissPopover}
-                            >
-                                <GearIcon className="icon-inline mr-2" /> Configure extensions
-                            </Link>
+                        {(!this.state.extensionConnectionOrError ||
+                            isErrorLike(this.state.extensionConnectionOrError) ||
+                            (this.state.extensionConnectionOrError.nodes &&
+                                this.state.extensionConnectionOrError.nodes.length > 0)) && (
+                            <>
+                                {this.props.configuredExtensionsURL && (
+                                    <Link
+                                        to={this.props.configuredExtensionsURL}
+                                        className="btn btn-link w-100 d-flex px-2 border-top rounded-0"
+                                        onClick={this.dismissPopover}
+                                    >
+                                        <GearIcon className="icon-inline mr-2" /> Configure extensions
+                                    </Link>
+                                )}
+                                <Link
+                                    to="/registry"
+                                    className="btn btn-link w-100 d-flex px-2 border-top rounded-0"
+                                    onClick={this.dismissPopover}
+                                >
+                                    <MoreIcon className="icon-inline mr-2" /> View all extensions in registry
+                                </Link>
+                            </>
                         )}
-                        <Link
-                            to="/registry"
-                            className="btn btn-link w-100 d-flex px-2 border-top rounded-0"
-                            onClick={this.dismissPopover}
-                        >
-                            <MoreIcon className="icon-inline mr-2" /> View all extensions in registry
-                        </Link>
                     </>
                 }
             >
@@ -321,4 +346,10 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                 return data.viewerConfiguredExtensions.nodes
             })
         )
+
+    private onExtensionConnectionUpdate = (
+        v: Pick<GQL.IConfiguredExtensionConnection, 'nodes'> | ErrorLike | undefined
+    ): void => {
+        this.setState({ extensionConnectionOrError: v })
+    }
 }
