@@ -1,6 +1,7 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { RegistryAreaHeader } from './RegistryAreaHeader'
@@ -17,7 +18,7 @@ const AreaContent: React.SFC<{ children: JSX.Element }> = ({ children }) => (
     </div>
 )
 
-interface Props extends RouteComponentProps<{ extensionID: string }> {
+interface Props extends RouteComponentProps<{ extensionID: string }>, ExtensionsProps, ExtensionsChangeProps {
     /**
      * The currently authenticated user.
      */
@@ -29,7 +30,7 @@ interface Props extends RouteComponentProps<{ extensionID: string }> {
 /**
  * Properties passed to all page components in the registry area.
  */
-export interface RegistryAreaPageProps {
+export interface RegistryAreaPageProps extends ExtensionsProps, ExtensionsChangeProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 }
@@ -41,6 +42,8 @@ export class RegistryArea extends React.Component<Props> {
     public render(): JSX.Element | null {
         const transferProps: RegistryAreaPageProps = {
             authenticatedUser: this.props.user,
+            extensions: this.props.extensions,
+            onExtensionsChange: this.props.onExtensionsChange,
         }
 
         let showActions: 'primary' | 'link' | false

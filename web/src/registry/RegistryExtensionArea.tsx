@@ -5,6 +5,7 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
@@ -55,7 +56,7 @@ interface State {
 /**
  * Properties passed to all page components in the registry extension area.
  */
-export interface RegistryExtensionAreaPageProps {
+export interface RegistryExtensionAreaPageProps extends ExtensionsProps, ExtensionsChangeProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -75,20 +76,32 @@ export interface RegistryExtensionAreaPageProps {
 export class RegistryExtensionArea extends React.Component<Props> {
     public state: State = {}
 
-    private routeMatchChanges = new Subject<{ extensionID: string }>()
+    private componentUpdates = new Subject<Props>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        const routeMatchChanges = this.componentUpdates.pipe(map(({ match }) => match.params), distinctUntilChanged())
+
         // Changes to the route-matched extension ID.
-        const extensionIDChanges = this.routeMatchChanges.pipe(
-            map(({ extensionID }) => extensionID),
+        const extensionIDChanges = routeMatchChanges.pipe(map(({ extensionID }) => extensionID), distinctUntilChanged())
+
+        // Changes to the global extensions settings.
+        const globalExtensionsSettingsChanges = this.componentUpdates.pipe(
+            map(({ extensions }) => extensions),
             distinctUntilChanged()
         )
 
         // Fetch extension.
         this.subscriptions.add(
-            combineLatest(extensionIDChanges, merge(this.refreshRequests.pipe(mapTo(true)), of(false)))
+            combineLatest(
+                extensionIDChanges,
+                merge(
+                    this.refreshRequests.pipe(mapTo(false)),
+                    globalExtensionsSettingsChanges.pipe(mapTo(false)),
+                    of(false)
+                )
+            )
                 .pipe(
                     switchMap(([extensionID, forceRefresh]) => {
                         type PartialStateUpdate = Pick<State, 'extensionOrError'>
@@ -98,20 +111,18 @@ export class RegistryExtensionArea extends React.Component<Props> {
 
                             // Don't clear old data while we reload, to avoid unmounting all components during
                             // loading.
-                            startWith<PartialStateUpdate>(forceRefresh ? {} : { extensionOrError: undefined })
+                            startWith<PartialStateUpdate>(forceRefresh ? { extensionOrError: undefined } : {})
                         )
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
 
-        this.routeMatchChanges.next(this.props.match.params)
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillReceiveProps(props: Props): void {
-        if (props.match.params !== this.props.match.params) {
-            this.routeMatchChanges.next(props.match.params)
-        }
+        this.componentUpdates.next(props)
     }
 
     public componentWillUnmount(): void {
@@ -135,6 +146,8 @@ export class RegistryExtensionArea extends React.Component<Props> {
             authenticatedUser: this.props.authenticatedUser,
             onDidUpdateExtension: this.onDidUpdateExtension,
             extension: this.state.extensionOrError,
+            extensions: this.props.extensions,
+            onExtensionsChange: this.props.onExtensionsChange,
         }
 
         return (

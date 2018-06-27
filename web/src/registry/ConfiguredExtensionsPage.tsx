@@ -23,6 +23,9 @@ import { extensionIDPrefix, RegistryPublisher } from './extension'
 interface ConfiguredExtensionsListProps extends ConfiguredExtensionNodeDisplayProps, RouteComponentProps<{}> {
     /** Show extensions configured for this subject. */
     subject: Pick<GQL.ExtensionConfigurationSubject, '__typename' | 'id' | 'settingsURL' | 'viewerCanAdminister'>
+
+    /** Update the connection from the data source when this value changes. */
+    updateOnChange?: any
 }
 
 /**
@@ -74,6 +77,7 @@ class ConfiguredExtensionsList extends React.PureComponent<ConfiguredExtensionsL
                 hideSearch={true}
                 filters={ConfiguredExtensionsList.FILTERS}
                 noSummaryIfAllNodesVisible={true}
+                updateOnChange={this.props.updateOnChange}
                 compact={true}
                 history={this.props.history}
                 location={this.props.location}

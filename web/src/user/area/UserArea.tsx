@@ -5,12 +5,12 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
+import { ExtensionsProps } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { memoizeObservable } from '../../util/memoize'
 import { UserExtensionsPage } from './UserExtensionsPage'
 import { UserHeader } from './UserHeader'
 import { UserOverviewPage } from './UserOverviewPage'
@@ -63,7 +63,7 @@ const NotFoundPage = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="Sorry, the requested user was not found." />
 )
 
-interface Props extends RouteComponentProps<{ username: string }> {
+interface Props extends RouteComponentProps<{ username: string }>, ExtensionsProps {
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
      * parameter.
@@ -84,7 +84,7 @@ interface State {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaPageProps {
+export interface UserAreaPageProps extends ExtensionsProps {
     /**
      * The user who is the subject of the page.
      */
@@ -160,6 +160,7 @@ export class UserArea extends React.Component<Props> {
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
             authenticatedUser: this.props.user,
+            extensions: this.props.extensions,
         }
         return (
             <div className="user-area area--vertical">
