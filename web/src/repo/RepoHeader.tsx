@@ -210,39 +210,36 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                             <div className="repo-header__rev">{a.element}</div>
                         </div>
                     ))}
-                {this.state.leftActions && (
-                    <ul className="navbar-nav">
-                        {this.state.leftActions.map((a, i) => (
+                <ul className="navbar-nav">
+                    {this.state.leftActions &&
+                        this.state.leftActions.map((a, i) => (
                             <li className="nav-item" key={a.element.key || i}>
                                 {a.element}
                             </li>
                         ))}
-                    </ul>
-                )}
+                </ul>
                 <div className="repo-header__spacer" />
-                {(this.state.rightActions || this.props.repo.viewerCanAdminister) && (
-                    <ul className="navbar-nav">
-                        {this.state.rightActions &&
-                            this.state.rightActions.map((a, i) => (
-                                <li className="nav-item" key={a.element.key || i}>
-                                    {a.element}
-                                </li>
-                            ))}
-                        {this.props.repo.viewerCanAdminister && (
-                            <li className="nav-item">
-                                <NavLink
-                                    to={`/${this.props.repo.uri}/-/settings`}
-                                    className="nav-link composite-container__header-action"
-                                    activeClassName="composite-container__header-action-active"
-                                    data-tooltip="Repository settings"
-                                >
-                                    <GearIcon className="icon-inline" />
-                                    <span className="composite-container__header-action-text">Settings</span>
-                                </NavLink>
+                <ul className="navbar-nav">
+                    {this.state.rightActions &&
+                        this.state.rightActions.map((a, i) => (
+                            <li className="nav-item" key={a.element.key || i}>
+                                {a.element}
                             </li>
-                        )}
-                    </ul>
-                )}
+                        ))}
+                    {this.props.repo.viewerCanAdminister && (
+                        <li className="nav-item">
+                            <NavLink
+                                to={`/${this.props.repo.uri}/-/settings`}
+                                className="nav-link composite-container__header-action"
+                                activeClassName="composite-container__header-action-active"
+                                data-tooltip="Repository settings"
+                            >
+                                <GearIcon className="icon-inline" />
+                                <span className="composite-container__header-action-text">Settings</span>
+                            </NavLink>
+                        </li>
+                    )}
+                </ul>
             </nav>
         )
     }
