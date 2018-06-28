@@ -58,16 +58,53 @@ type updateConfigurationPayload struct{}
 
 func (updateConfigurationPayload) Empty() *EmptyResponse { return nil }
 
-func (r *configurationMutationResolver) EditConfiguration(ctx context.Context, args *struct {
-	Property string
-	Value    *jsonValue
-}) (*updateConfigurationPayload, error) {
-	remove := args.Value == nil
-	var value interface{}
-	if args.Value != nil {
-		value = args.Value.value
+type configurationEdit struct {
+	KeyPath []*keyPathSegment
+	Value   *jsonValue
+}
+
+type keyPathSegment struct {
+	Property *string
+	Index    *int32
+}
+
+func toKeyPath(gqlKeyPath []*keyPathSegment) (jsonx.Path, error) {
+	keyPath := make(jsonx.Path, len(gqlKeyPath))
+	for i, s := range gqlKeyPath {
+		if (s.Property == nil) == (s.Index == nil) {
+			return nil, fmt.Errorf("invalid key path segment at index %d: exactly 1 of property and index must be non-null", i)
+		}
+
+		var segment jsonx.Segment
+		if s.Property != nil {
+			segment.IsProperty = true
+			segment.Property = *s.Property
+		} else {
+			segment.Index = int(*s.Index)
+		}
+		keyPath[i] = segment
 	}
-	keyPath := jsonx.PropertyPath(args.Property)
+	return keyPath, nil
+}
+
+func (r *configurationMutationResolver) EditConfiguration(ctx context.Context, args *struct {
+	Edit *configurationEdit
+}) (*updateConfigurationPayload, error) {
+	keyPath, err := toKeyPath(args.Edit.KeyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	remove := args.Edit.Value == nil
+	var value interface{}
+	if args.Edit.Value != nil {
+		value = args.Edit.Value.value
+	}
+
+	return r.editConfiguration(ctx, keyPath, value, remove)
+}
+
+func (r *configurationMutationResolver) editConfiguration(ctx context.Context, keyPath jsonx.Path, value interface{}, remove bool) (*updateConfigurationPayload, error) {
 	_, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 		if remove {
 			edits, _, err = jsonx.ComputePropertyRemoval(oldConfig, keyPath, conf.FormatOptions)

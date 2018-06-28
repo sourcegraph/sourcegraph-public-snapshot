@@ -17,6 +17,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/cxp/pkg/cxpmain"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -32,8 +33,13 @@ func main() {
 }
 
 type handler struct {
-	mu      sync.Mutex
-	rootURI *uri.URI
+	mu       sync.Mutex
+	rootURI  *uri.URI
+	settings extensionSettings
+}
+
+type extensionSettings struct {
+	Hide bool `json:"hide,omitempty"`
 }
 
 func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
@@ -48,6 +54,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 
 	h.mu.Lock()
 	rootURI := h.rootURI
+	settings := h.settings
 	h.mu.Unlock()
 
 	switch req.Method {
@@ -66,7 +73,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			return nil, errors.New("client does not support decorations")
 		}
 
-		var params lspext.InitializeParams
+		var params cxp.InitializeParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
@@ -74,14 +81,36 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		if err != nil {
 			return nil, err
 		}
+		var settings extensionSettings
+		if merged := params.InitializationOptions.Settings.Merged; merged != nil {
+			if err := json.Unmarshal(*merged, &settings); err != nil {
+				return nil, err
+			}
+		}
 		h.mu.Lock()
 		h.rootURI = rootURI
+		h.settings = settings
 		h.mu.Unlock()
 
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				Experimental: cxp.ExperimentalServerCapabilities{
 					DecorationsProvider: true,
+					Contributions: &cxp.Contributions{
+						Commands: []*cxp.CommandContribution{
+							{
+								Command: toggleCommandID,
+								Title:   "Line age",
+								ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
+									Path:        jsonx.PropertyPath("hide"),
+									CycleValues: []interface{}{false, true},
+								},
+							},
+						},
+						Menus: &cxp.MenuContributions{
+							EditorTitle: []*cxp.MenuItemContribution{{Command: toggleCommandID}},
+						},
+					},
 				},
 			},
 		}, nil
@@ -96,6 +125,10 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		var params lspext.TextDocumentDecorationsParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
+		}
+
+		if settings.Hide {
+			return []lspext.TextDocumentDecoration{}, nil
 		}
 
 		uri, err := url.Parse(string(params.TextDocument.URI))
@@ -172,3 +205,5 @@ func colorForAge(age, oldest, newest time.Duration) string {
 
 	return fmt.Sprintf("hsla(%d, 100%%, 50%%, %.2f)", redHue+int(x*float64(greenHue-redHue)), alpha)
 }
+
+const toggleCommandID = "line-age.toggle"

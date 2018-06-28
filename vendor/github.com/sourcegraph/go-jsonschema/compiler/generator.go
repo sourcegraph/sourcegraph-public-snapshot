@@ -61,7 +61,7 @@ func (g *generator) emit(schema *jsonschema.Schema) ([]ast.Decl, []*ast.ImportSp
 	return g.emitStructType(schema)
 }
 
-func (g *generator) emitStructType(schema *jsonschema.Schema) ([]ast.Decl, []*ast.ImportSpec, error) {
+func (g *generator) emitStructType(schema *jsonschema.Schema) (decls []ast.Decl, imports []*ast.ImportSpec, err error) {
 	// Sort properties deterministically (by name).
 	names := make([]string, 0, len(*schema.Properties))
 	for name := range *schema.Properties {
@@ -70,7 +70,7 @@ func (g *generator) emitStructType(schema *jsonschema.Schema) ([]ast.Decl, []*as
 	sort.Strings(names)
 
 	// Create a field for each property.
-	fields := make([]*ast.Field, len(names))
+	fields := make([]field, len(names))
 	for i, name := range names {
 		prop := (*schema.Properties)[name]
 
@@ -92,12 +92,17 @@ func (g *generator) emitStructType(schema *jsonschema.Schema) ([]ast.Decl, []*as
 			jsonStructTagExtra = ",omitempty"
 		}
 
-		fields[i] = &ast.Field{
-			Names: []*ast.Ident{ast.NewIdent(toGoName(name, "Property_"))},
-			Type:  typeExpr,
-			Tag: &ast.BasicLit{
-				Kind:  token.STRING,
-				Value: fmt.Sprintf("`json:%q`", name+jsonStructTagExtra),
+		goName := toGoName(name, "Property_")
+		fields[i] = field{
+			GoName:   goName,
+			JSONName: name,
+			Field: &ast.Field{
+				Names: []*ast.Ident{ast.NewIdent(goName)},
+				Type:  typeExpr,
+				Tag: &ast.BasicLit{
+					Kind:  token.STRING,
+					Value: fmt.Sprintf("`json:%q`", name+jsonStructTagExtra),
+				},
 			},
 		}
 	}
@@ -108,13 +113,28 @@ func (g *generator) emitStructType(schema *jsonschema.Schema) ([]ast.Decl, []*as
 	}
 	typeSpec := &ast.TypeSpec{
 		Name: ast.NewIdent(goName),
-		Type: &ast.StructType{Fields: &ast.FieldList{List: fields}},
+		Type: &ast.StructType{Fields: &ast.FieldList{List: astFields(fields)}},
 	}
-	return []ast.Decl{&ast.GenDecl{
+	decls = append(decls, &ast.GenDecl{
 		Doc:   docForSchema(schema, goName),
 		Tok:   token.TYPE,
 		Specs: []ast.Spec{typeSpec},
-	}}, nil, nil
+	})
+
+	// If the JSON Schema object type also allows additionalProperties, then support marshaling and
+	// unmarshaling those (see the object-with-props test case).
+	if schema.AdditionalProperties != nil && !schema.AdditionalProperties.IsNegated {
+		addlField, decls1, imports1, err := g.emitStructAdditionalField(schema, goName, fields)
+		if err != nil {
+			return nil, nil, errors.WithMessage(err, "failed to emit decl for object schema with additionalProperties")
+		}
+		typeSpec.Type.(*ast.StructType).Fields.List = append(typeSpec.Type.(*ast.StructType).Fields.List, addlField)
+		decls = append(decls, decls1...)
+		imports = append(imports, imports1...)
+
+	}
+
+	return decls, imports, nil
 }
 
 // expr returns the Go expression AST node that refers to the Go type (builtin or named) for schema.

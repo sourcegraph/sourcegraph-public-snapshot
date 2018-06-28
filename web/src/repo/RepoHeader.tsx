@@ -4,9 +4,12 @@ import * as H from 'history'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Subject, Subscription, Unsubscribable } from 'rxjs'
+import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
+import { ContributedActions } from '../extensions/ContributedActions'
+import { ContributableMenu } from '../extensions/contributions'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
@@ -26,7 +29,7 @@ interface RepoHeaderAction {
     element: React.ReactElement<any>
 }
 
-interface Props {
+interface Props extends ExtensionsProps, ExtensionsChangeProps {
     /**
      * The repository that this header is for.
      */
@@ -220,6 +223,11 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 </ul>
                 <div className="repo-header__spacer" />
                 <ul className="navbar-nav">
+                    <ContributedActions
+                        menu={ContributableMenu.EditorTitle}
+                        extensions={this.props.extensions}
+                        onExtensionsChange={this.props.onExtensionsChange}
+                    />
                     {this.state.rightActions &&
                         this.state.rightActions.map((a, i) => (
                             <li className="nav-item" key={a.element.key || i}>

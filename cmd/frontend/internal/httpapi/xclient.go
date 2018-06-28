@@ -15,12 +15,12 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/xlang"
-	xlspext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 // xclient is an LSP client that transparently wraps xlang.Client,
@@ -71,7 +71,7 @@ func (c *xclient) Call(ctx context.Context, method string, params, result interf
 
 	switch {
 	case method == "initialize":
-		var init xlspext.ClientProxyInitializeParams
+		var init cxp.ClientProxyInitializeParams
 		if err := json.Unmarshal(*params.(*json.RawMessage), &init); err != nil {
 			return err
 		}

@@ -29,6 +29,11 @@
                 margin-left: 0.25rem;
             }
 
+            &-icon {
+                width: 1.75rem;
+                height: auto;
+            }
+
             &-text {
                 &:not(:empty) {
                     margin-left: 0.25rem;

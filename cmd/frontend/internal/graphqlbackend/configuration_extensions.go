@@ -14,7 +14,8 @@ func (r *configurationMutationResolver) UpdateExtension(ctx context.Context, arg
 	ExtensionID *string
 	Enabled     *bool
 	Remove      *bool
-}) (*EmptyResponse, error) {
+	Edit        *configurationEdit
+}) (*updateExtensionConfigurationResult, error) {
 	var extensionID string
 	switch {
 	case args.Extension != nil && args.ExtensionID != nil:
@@ -23,10 +24,10 @@ func (r *configurationMutationResolver) UpdateExtension(ctx context.Context, arg
 	case args.Extension == nil && args.ExtensionID == nil:
 		return nil, errors.New("exactly 1 of extension or extensionID must be set")
 
-	case args.Enabled != nil && args.Remove != nil && *args.Remove:
-		return nil, errors.New("either enabled or remove must be set, not both")
+	case (args.Enabled != nil && args.Remove != nil && *args.Remove) || (args.Enabled != nil && args.Edit != nil) || (args.Remove != nil && *args.Remove && args.Edit != nil):
+		return nil, errors.New("either enabled, remove, or edit must be set, not all")
 
-	case args.Enabled == nil && args.Remove == nil:
+	case args.Enabled == nil && args.Remove == nil && args.Edit == nil:
 		return nil, errors.New("exactly 1 of enabled or remove must be set")
 
 	case args.Extension != nil:
@@ -46,6 +47,17 @@ func (r *configurationMutationResolver) UpdateExtension(ctx context.Context, arg
 
 	case args.ExtensionID != nil:
 		extensionID = *args.ExtensionID
+	}
+
+	if args.Edit != nil {
+		// Add key path prefix for the extension.
+		keyPath := []*keyPathSegment{{Property: strptr("extensions")}, {Property: strptr(extensionID)}}
+		keyPath = append(keyPath, args.Edit.KeyPath...)
+		args.Edit.KeyPath = keyPath
+		if _, err := r.EditConfiguration(ctx, &struct{ Edit *configurationEdit }{Edit: args.Edit}); err != nil {
+			return nil, err
+		}
+		return &updateExtensionConfigurationResult{extensionID: extensionID, subject: r.subject}, nil
 	}
 
 	_, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
@@ -80,5 +92,14 @@ func (r *configurationMutationResolver) UpdateExtension(ctx context.Context, arg
 	if err != nil {
 		return nil, err
 	}
-	return &EmptyResponse{}, nil
+	return &updateExtensionConfigurationResult{}, nil
+}
+
+type updateExtensionConfigurationResult struct {
+	extensionID string
+	subject     *configurationSubject
+}
+
+func (r *updateExtensionConfigurationResult) MergedSettings(ctx context.Context) (*jsonValue, error) {
+	return (&configuredExtensionResolver{extensionID: r.extensionID, subject: r.subject}).MergedSettings(ctx)
 }

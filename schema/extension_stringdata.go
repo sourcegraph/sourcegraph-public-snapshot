@@ -36,6 +36,8 @@ const ExtensionSchemaJSON = `{
     "args": {
       "description":
         "Arguments provided to the extension upon initialization (in the ` + "`" + `initialize` + "`" + ` message's ` + "`" + `initializationOptions` + "`" + ` field).",
+      "type": "object",
+      "additionalProperties": true,
       "!go": {
         "pointer": true
       }

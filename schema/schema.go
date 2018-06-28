@@ -145,8 +145,40 @@ func (v *ExtensionPlatform) UnmarshalJSON(data []byte) error {
 
 // ExtensionSettings description: Settings for an extension.
 type ExtensionSettings struct {
-	Disabled bool `json:"disabled,omitempty"`
+	Disabled   bool                   `json:"disabled,omitempty"`
+	Additional map[string]interface{} `json:"-"`
 }
+
+func (v ExtensionSettings) MarshalJSON() ([]byte, error) {
+	m := make(map[string]interface{}, len(v.Additional)+1)
+	for k, v := range v.Additional {
+		m[k] = v
+	}
+	m["disabled"] = v.Disabled
+	return json.Marshal(m)
+}
+func (v *ExtensionSettings) UnmarshalJSON(data []byte) error {
+	var s struct {
+		Disabled bool `json:"disabled,omitempty"`
+	}
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*v = ExtensionSettings{Disabled: s.Disabled}
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return err
+	}
+	delete(m, "disabled")
+	if len(m) > 0 {
+		(*v).Additional = make(map[string]interface{}, len(m))
+	}
+	for k, vv := range m {
+		(*v).Additional[k] = vv
+	}
+	return nil
+}
+
 type GitHubConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
 	GitURLType                  string   `json:"gitURLType,omitempty"`
@@ -352,11 +384,11 @@ type SlackNotificationsConfig struct {
 
 // SourcegraphExtension description: Configuration for a Sourcegraph extension.
 type SourcegraphExtension struct {
-	ActivationEvents []string          `json:"activationEvents"`
-	Args             *interface{}      `json:"args,omitempty"`
-	Description      string            `json:"description,omitempty"`
-	Platform         ExtensionPlatform `json:"platform"`
-	Title            string            `json:"title,omitempty"`
+	ActivationEvents []string                `json:"activationEvents"`
+	Args             *map[string]interface{} `json:"args,omitempty"`
+	Description      string                  `json:"description,omitempty"`
+	Platform         ExtensionPlatform       `json:"platform"`
+	Title            string                  `json:"title,omitempty"`
 }
 
 // TCPTarget description: An existing TCP server that serves this extension's functionality.

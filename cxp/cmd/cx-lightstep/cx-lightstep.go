@@ -8,6 +8,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,11 +16,13 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/cxp/pkg/cxpmain"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -30,14 +33,24 @@ import (
 //docker:user sourcegraph
 
 var (
-	lightstepProject = env.Get("LIGHTSTEP_PROJECT", "", "the LightStep project name (used for generating URLs)")
+	defaultProject = env.Get("LIGHTSTEP_PROJECT", "", "the default LightStep project name (used for generating URLs)")
 )
 
 func main() {
-	cxpmain.Main("cx-lightstep", func() jsonrpc2.Handler { return jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(handle)) })
+	cxpmain.Main("cx-lightstep", func() jsonrpc2.Handler { return jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError((&handler{}).handle)) })
 }
 
-func handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
+type handler struct {
+	mu       sync.Mutex
+	settings extensionSettings
+}
+
+type extensionSettings struct {
+	SpanLinks bool   `json:"spanLinks,omitempty"`
+	Project   string `json:"project,omitempty"`
+}
+
+func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "CXP: "+req.Method)
 	defer func() {
 		if err != nil {
@@ -47,26 +60,61 @@ func handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (re
 		span.Finish()
 	}()
 
+	h.mu.Lock()
+	settings := h.settings
+	h.mu.Unlock()
+
 	switch req.Method {
 	case "initialize":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
+
 		cap, err := cxp.ParseExperimentalClientCapabilities(*req.Params)
 		if err != nil {
 			return nil, err
-		}
-		if !cap.Exec {
-			return nil, errors.New("client does not support exec")
 		}
 		if !cap.Decorations {
 			return nil, errors.New("client does not support decorations")
 		}
 
+		var params cxp.InitializeParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
+		}
+		var settings extensionSettings
+		if merged := params.InitializationOptions.Settings.Merged; merged != nil {
+			if err := json.Unmarshal(*merged, &settings); err != nil {
+				return nil, err
+			}
+		}
+		if settings.Project == "" {
+			settings.Project = defaultProject
+		}
+		h.mu.Lock()
+		h.settings = settings
+		h.mu.Unlock()
+
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				Experimental: cxp.ExperimentalServerCapabilities{
 					DecorationsProvider: true,
+					Contributions: &cxp.Contributions{
+						Commands: []*cxp.CommandContribution{
+							{
+								Command: toggleSpanLinksCommandID,
+								Title:   "Show/hide OpenTracing span links",
+								IconURL: iconURL,
+								ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
+									Path:        jsonx.PropertyPath("spanLinks"),
+									CycleValues: []interface{}{true, false},
+								},
+							},
+						},
+						Menus: &cxp.MenuContributions{
+							EditorTitle: []*cxp.MenuItemContribution{{Command: toggleSpanLinksCommandID}},
+						},
+					},
 				},
 			},
 		}, nil
@@ -81,6 +129,10 @@ func handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (re
 		var params lspext.TextDocumentDecorationsParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
+		}
+
+		if !settings.SpanLinks {
+			return []lspext.TextDocumentDecoration{}, nil
 		}
 
 		uri, err := url.Parse(string(params.TextDocument.URI))
@@ -112,7 +164,7 @@ func handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (re
 					Color:           "rgba(255, 255, 255, 0.8)",
 					BackgroundColor: "#2925ff", // LightStep brand color
 					LinkURL: fmt.Sprintf("https://app.lightstep.com/%s/live?q=%s",
-						lightstepProject,
+						settings.Project,
 						url.QueryEscape(fmt.Sprintf("operation:%q", span.query)),
 					),
 				},
@@ -129,7 +181,7 @@ type span struct {
 	query string
 }
 
-var spanPattern = regexp.MustCompile(`StartSpan[^"]+"([^"]+)"`)
+var spanPattern = regexp.MustCompile(`(?i)start_?span[^"']+["']([^"']+)["']`)
 
 func findSpans(text []byte) []span {
 	var found []span
@@ -140,3 +192,43 @@ func findSpans(text []byte) []span {
 	}
 	return found
 }
+
+const toggleSpanLinksCommandID = "lightstep.spanLinks.toggle"
+
+var iconURL = "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(lightstepLogoSVG))
+
+const lightstepLogoSVG = `<?xml version="1.0" encoding="UTF-8"?>
+<svg
+   xmlns="http://www.w3.org/2000/svg"
+   viewBox="0 0 181.60001 101.6"
+   height="101.6"
+   width="181.60001">
+  <g
+     transform="translate(-0.8,-0.1)"
+     style="fill:none;fill-rule:evenodd;stroke:none;stroke-width:1"
+     id="Page-1">
+    <g
+       id="logo">
+      <g
+         id="Group">
+        <g
+           style="fill-rule:nonzero"
+           transform="translate(203,20)"
+           id="right-side_light_text_1_" />
+        <g
+           style="fill:#2d36fb"
+           id="dark_logo">
+          <path
+             id="path4592"
+             d="m 28.8,101.7 h 52.3 c 15.6,0 27,-9 35.4,-21.2 5,-7.3 10.2,-13.8 19.9,-13.8 H 168 V 50.1 h -43.8 c -9.7,0 -14.8,6.5 -19.9,13.8 C 95.9,76.1 84.6,85.1 68.9,85.1 H 28.8 Z" />
+          <path
+             id="path4594"
+             d="m 0.8,79.3 h 64.8 c 15.6,0 27,-9 35.4,-21.2 5,-7.3 10.2,-13.8 19.9,-13.8 h 61.5 V 23.6 h -61.5 c -19.1,0 -24.8,8.9 -32.7,19.3 -5.8,7.7 -12,15.7 -22.6,15.7 H 0.8 Z" />
+          <path
+             id="path4596"
+             d="M 16.4,53.1 H 61.5 C 72.1,53.1 78.3,45 84.1,37.4 92,27 97.7,18.1 116.8,18.1 h 34.5 V 0.1 H 108 C 88.9,0.1 83.2,9 75.3,19.4 69.5,27.1 63.3,35.1 52.7,35.1 H 16.4 Z" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>`

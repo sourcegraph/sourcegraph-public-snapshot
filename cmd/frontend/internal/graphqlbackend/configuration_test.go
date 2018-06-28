@@ -37,7 +37,7 @@ func TestConfigurationMutation_EditConfiguration(t *testing.T) {
 			Query: `
 				mutation($value: JSONValue) {
 					configurationMutation(input: {subject: "VXNlcjox", lastID: 1}) {
-						editConfiguration(property: "p", value: $value) {
+						editConfiguration(edit: {keyPath: [{property: "p"}], value: $value}) {
 							empty {
 								alwaysNil
 							}

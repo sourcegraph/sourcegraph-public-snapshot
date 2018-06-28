@@ -1,10 +1,10 @@
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { compact, flatten } from 'lodash'
-import { forkJoin, Observable, of, throwError } from 'rxjs'
+import { forkJoin, Observable, of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString, MarkupContent, Range } from 'vscode-languageserver-types'
+import { Extension, ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, AbsoluteRepoFile } from '../repo'
-import * as GQL from './graphqlschema'
 import {
     fetchDecorations,
     fetchDefinition,
@@ -31,7 +31,7 @@ export interface ModeSpec {
 }
 
 /** The extensions in use. */
-export type Extensions = GQL.IConfiguredExtension['extensionID'][]
+export type Extensions = Extension[]
 
 /** Extended by React prop types that carry extensions. */
 export interface ExtensionsProps {
@@ -74,7 +74,7 @@ export namespace HoverMerged {
  * @return hover for the location
  */
 export function getHover(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<HoverMerged | null> {
-    return forkJoin(getModes(ctx, extensions).map(mode => fetchHover({ ...ctx, mode }))).pipe(
+    return forkJoin(getModes(ctx, extensions).map(({ mode, settings }) => fetchHover({ ...ctx, mode, settings }))).pipe(
         map(results => {
             const contents: HoverMerged['contents'] = []
             let range: HoverMerged['range']
@@ -102,9 +102,9 @@ export function getHover(ctx: LSPTextDocumentPositionParams, extensions: Extensi
  * @return definitions of the symbol at the location
  */
 export function getDefinition(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<Definition> {
-    return forkJoin(getModes(ctx, extensions).map(mode => fetchDefinition({ ...ctx, mode }))).pipe(
-        map(results => flatten(compact(results)))
-    )
+    return forkJoin(
+        getModes(ctx, extensions).map(({ mode, settings }) => fetchDefinition({ ...ctx, mode, settings }))
+    ).pipe(map(results => flatten(compact(results))))
 }
 
 /**
@@ -117,9 +117,9 @@ export function getDefinition(ctx: LSPTextDocumentPositionParams, extensions: Ex
  * @return destination URL
  */
 export function getJumpURL(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<string | null> {
-    return forkJoin(getModes(ctx, extensions).map(mode => fetchJumpURL({ ...ctx, mode }))).pipe(
-        map(results => results.find(v => v !== null) || null)
-    )
+    return forkJoin(
+        getModes(ctx, extensions).map(({ mode, settings }) => fetchJumpURL({ ...ctx, mode, settings }))
+    ).pipe(map(results => results.find(v => v !== null) || null))
 }
 
 /**
@@ -134,9 +134,9 @@ export function getXdefinition(
     ctx: LSPTextDocumentPositionParams,
     extensions: Extensions
 ): Observable<SymbolLocationInformation | undefined> {
-    return forkJoin(getModes(ctx, extensions).map(mode => fetchXdefinition({ ...ctx, mode }))).pipe(
-        map(results => results.find(v => !!v))
-    )
+    return forkJoin(
+        getModes(ctx, extensions).map(({ mode, settings }) => fetchXdefinition({ ...ctx, mode, settings }))
+    ).pipe(map(results => results.find(v => !!v)))
 }
 
 /**
@@ -149,9 +149,9 @@ export function getReferences(
     ctx: LSPTextDocumentPositionParams & LSPReferencesParams,
     extensions: Extensions
 ): Observable<Location[]> {
-    return forkJoin(getModes(ctx, extensions).map(mode => fetchReferences({ ...ctx, mode }))).pipe(
-        map(results => flatten(results))
-    )
+    return forkJoin(
+        getModes(ctx, extensions).map(({ mode, settings }) => fetchReferences({ ...ctx, mode, settings }))
+    ).pipe(map(results => flatten(results)))
 }
 
 /**
@@ -161,9 +161,9 @@ export function getReferences(
  * @return implementations of the symbol at the location
  */
 export function getImplementations(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<Location[]> {
-    return forkJoin(getModes(ctx, extensions).map(mode => fetchImplementation({ ...ctx, mode }))).pipe(
-        map(results => flatten(results))
-    )
+    return forkJoin(
+        getModes(ctx, extensions).map(({ mode, settings }) => fetchImplementation({ ...ctx, mode, settings }))
+    ).pipe(map(results => flatten(results)))
 }
 
 /**
@@ -176,9 +176,9 @@ export function getXreferences(
     ctx: XReferenceOptions & AbsoluteRepo & LSPSelector,
     extensions: Extensions
 ): Observable<Location[]> {
-    return forkJoin(getModes(ctx, extensions).map(mode => fetchXreferences({ ...ctx, mode }))).pipe(
-        map(results => flatten(results))
-    )
+    return forkJoin(
+        getModes(ctx, extensions).map(({ mode, settings }) => fetchXreferences({ ...ctx, mode, settings }))
+    ).pipe(map(results => flatten(results)))
 }
 
 /**
@@ -195,13 +195,14 @@ export function getDecorations(
         return of([])
     }
     return forkJoin(
-        getModes(ctx, extensions).map(mode =>
-            fetchDecorations({ ...ctx, mode }).pipe(
+        getModes(ctx, extensions).map(({ mode, settings }) =>
+            fetchDecorations({ ...ctx, mode, settings }).pipe(
+                map(results => (results === null ? [] : compact(results))),
                 catchError(error => {
-                    if (isMethodNotFoundError(error)) {
-                        return [[]]
+                    if (!isMethodNotFoundError(error)) {
+                        console.error(error)
                     }
-                    return throwError(error)
+                    return [[]]
                 })
             )
         )
@@ -209,9 +210,9 @@ export function getDecorations(
 }
 
 /** Computes the set of LSP modes to use. */
-function getModes(ctx: ModeSpec, extensions: Extensions): string[] {
+function getModes(ctx: ModeSpec, extensions: Extensions): { mode: string; settings: ExtensionSettings | null }[] {
     if (extensions.length === 0 || !window.context.platformEnabled) {
-        return [ctx.mode]
+        return [{ mode: ctx.mode, settings: null }]
     }
-    return extensions
+    return extensions.map(({ extensionID, settings }) => ({ mode: extensionID, settings }))
 }

@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -229,6 +230,12 @@ type contextID struct {
 	// to users, we should guarantee that session is always chosen
 	// externally so that sufficiently unguessable values are used.
 	session string
+
+	// initOpts is the (ideally canonical) JSON representation of the client InitializeRequest's
+	// initializationOptions field. This means that clients providing different
+	// initializationOptions will have their requests served by different servers, each of which is
+	// provided with those initializationOptions.
+	initOpts string
 }
 
 func (id contextID) String() string {
@@ -288,7 +295,7 @@ type clientProxyConn struct {
 
 	mu       sync.Mutex
 	context  contextID
-	init     *lspext.ClientProxyInitializeParams
+	init     *cxp.ClientProxyInitializeParams
 	last     time.Time // max(last request received, last response sent), used to evict idle clients
 	shutdown bool      // whether this connection has received an LSP "shutdown"
 }
@@ -379,7 +386,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params lspext.ClientProxyInitializeParams
+		var params cxp.ClientProxyInitializeParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
@@ -427,6 +434,9 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.rootURI = *rootURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
+		if c.init.InitializationOptions.Settings.Merged != nil {
+			c.context.initOpts = string(*c.init.InitializationOptions.Settings.Merged)
+		}
 		c.mu.Unlock()
 
 		// Send saved messages on init. (We do this outside of the

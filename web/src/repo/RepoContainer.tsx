@@ -6,7 +6,7 @@ import { merge, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import { parseBrowserRepoURL } from '.'
-import { ExtensionsProps } from '../backend/features'
+import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { searchQueryForRepoRev } from '../search'
@@ -31,7 +31,7 @@ const RepoPageNotFound: React.SFC = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="The repository page was not found." />
 )
 
-interface Props extends RouteComponentProps<{ repoRevAndRest: string }>, ExtensionsProps {
+interface Props extends RouteComponentProps<{ repoRevAndRest: string }>, ExtensionsProps, ExtensionsChangeProps {
     user: GQL.IUser | null
     onHelpPopoverToggle: () => void
     isLightTheme: boolean
@@ -197,6 +197,8 @@ export class RepoContainer extends React.Component<Props, State> {
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
                     className="repo-composite-container__header"
+                    extensions={this.props.extensions}
+                    onExtensionsChange={this.props.onExtensionsChange}
                     location={this.props.location}
                     history={this.props.history}
                 />

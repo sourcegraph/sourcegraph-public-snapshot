@@ -306,16 +306,8 @@ input ConfigurationMutationGroupInput {
 type ConfigurationMutation {
     # Edit a single property in the configuration object.
     editConfiguration(
-        # The name of the property to update.
-        #
-        # Inserting into an existing array is not yet supported.
-        property: String!
-        # The new JSON-encoded value to insert. If the field's value is not set, the property is removed. (This is
-        # different from the field's value being the JSON null value.)
-        #
-        # When the value is a non-primitive type, it must be specified using a GraphQL variable, not an inline literal,
-        # or else the GraphQL parser will return an error.
-        value: JSONValue
+        # The configuration edit to apply.
+        edit: ConfigurationEdit!
     ): UpdateConfigurationPayload
     # Overwrite the contents to the new contents provided.
     overwriteConfiguration(contents: String): UpdateConfigurationPayload
@@ -349,13 +341,49 @@ type ConfigurationMutation {
         enabled: Boolean
         # Remove the extension from settings.
         remove: Boolean
-    ): EmptyResponse!
+        # Edit a (nested) property's value.
+        edit: ConfigurationEdit
+    ): UpdateExtensionConfigurationResult!
+}
+
+# An edit to a (nested) configuration property's value.
+input ConfigurationEdit {
+    # The key path of the property to update.
+    #
+    # Inserting into an existing array is not yet supported.
+    keyPath: [KeyPathSegment!]!
+    # The new JSON-encoded value to insert. If the field's value is not set, the property is removed. (This is
+    # different from the field's value being the JSON null value.)
+    #
+    # When the value is a non-primitive type, it must be specified using a GraphQL variable, not an inline literal,
+    # or else the GraphQL parser will return an error.
+    value: JSONValue
+}
+
+# A segment of a key path that locates a nested JSON value in a root JSON value. Exactly one field in each
+# KeyPathSegment must be non-null.
+#
+# For example, in {"a": [0, {"b": 3}]}, the value 3 is located at the key path ["a", 1, "b"].
+input KeyPathSegment {
+    # The name of the property in the object at this location to descend into.
+    property: String
+    # The index of the array at this location to descend into.
+    index: Int
 }
 
 # The payload for ConfigurationMutation.updateConfiguration.
 type UpdateConfigurationPayload {
     # An empty response.
     empty: EmptyResponse
+}
+
+# The payload for ConfigurationMutation.updateExtension.
+type UpdateExtensionConfigurationResult {
+    # The merged settings for the extension after the update was applied.
+    #
+    # NOTE: This is currently only set by the ConfigurationMutation.updateExtension mutation when providing the
+    # edit parameter.
+    mergedSettings: JSONValue
 }
 
 # The result for Mutation.createAccessToken.
@@ -2868,8 +2896,12 @@ type ConfiguredExtension {
     isEnabled: Boolean!
     # Whether the viewer can configure the extension for this configuration subject.
     viewerCanConfigure: Boolean!
-    # The extension's reported contributions.
-    contributions: String
+    # The extension's reported capabilities, as a JSON-serialized string.
+    capabilities: JSONValue
+    # The extension's reported contributions, as a JSON-serialized string.
+    contributions: JSONValue
+    # The merged settings for the extension (based on the global, organization, and user settings).
+    mergedSettings: JSONValue
 }
 
 # A list of configured extensions.

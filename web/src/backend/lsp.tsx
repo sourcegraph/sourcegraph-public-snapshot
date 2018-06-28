@@ -8,6 +8,7 @@ import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkupContent, Range } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
+import { ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, FileSpec, makeRepoURI, parseRepoURI, PositionSpec } from '../repo'
 import { ErrorLike, normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
@@ -19,6 +20,11 @@ import { HoverMerged, ModeSpec } from './features'
  * correct initialization request.
  */
 export interface LSPSelector extends AbsoluteRepo, ModeSpec {}
+
+/** All of the context to send to the backend to initialize the correct server for a request. */
+interface LSPContext extends LSPSelector {
+    settings: ExtensionSettings | null
+}
 
 /**
  * Contains the fields necessary to construct an LSP TextDocumentPositionParams value.
@@ -35,13 +41,17 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
     (Array.isArray(hover.contents) && hover.contents.length === 0) ||
     (MarkupContent.is(hover.contents) && !hover.contents.value)
 
-const wrapLSPRequests = (ctx: LSPSelector, requests: LSPRequest[]): any[] => [
+const wrapLSPRequests = (ctx: LSPContext, requests: LSPRequest[]): any[] => [
     {
         id: 0,
         method: 'initialize',
         params: {
             rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
             mode: ctx.mode,
+            initializationOptions: {
+                mode: ctx.mode,
+                settings: ctx.settings,
+            },
         },
     },
     ...requests.map((req, i) => ({ id: i + 1, ...req })),
@@ -56,7 +66,7 @@ const wrapLSPRequests = (ctx: LSPSelector, requests: LSPRequest[]): any[] => [
 ]
 
 /** JSON-RPC2 error for methods that are not found */
-export const EMETHODNOTFOUND = -32601
+const EMETHODNOTFOUND = -32601
 
 /** Returns whether the LSP message is a "method not found" error. */
 export function isMethodNotFoundError(val: any): boolean {
@@ -72,7 +82,7 @@ type ResponseResults = { 0: InitializeResult } & any[]
 
 type ResponseError = ErrorLike & { responses: ResponseMessages }
 
-const sendLSPRequests = (ctx: LSPSelector, ...requests: LSPRequest[]): Observable<ResponseResults> =>
+const sendLSPRequests = (ctx: LSPContext, ...requests: LSPRequest[]): Observable<ResponseResults> =>
     ajax({
         method: 'POST',
         url: `/.api/xlang/${requests.map(({ method }) => method).join(',')}`,
@@ -115,7 +125,7 @@ const sendLSPRequests = (ctx: LSPSelector, ...requests: LSPRequest[]): Observabl
  * @param path File path for determining the mode
  * @return The result of the method call
  */
-const sendLSPRequest = (req: LSPRequest, ctx: LSPSelector): Observable<any> =>
+const sendLSPRequest = (req: LSPRequest, ctx: LSPContext): Observable<any> =>
     sendLSPRequests(ctx, req).pipe(map(results => results[1]))
 
 /**
@@ -123,7 +133,7 @@ const sendLSPRequest = (req: LSPRequest, ctx: LSPSelector): Observable<any> =>
  * complain about the file not existing, even though the file itself is only used in a noop response.
  */
 export const fetchServerCapabilities = memoizeObservable(
-    (pos: LSPSelector & { filePath: string }): Observable<ServerCapabilities> =>
+    (pos: LSPContext & { filePath: string }): Observable<ServerCapabilities> =>
         sendLSPRequests(pos, {
             method: 'textDocument/didOpen',
             params: {
@@ -161,7 +171,7 @@ const normalizeHoverResponse = (hoverResponse: any): void => {
 
 /** Callers should use features.getHover instead. */
 export const fetchHover = memoizeObservable(
-    (pos: LSPTextDocumentPositionParams): Observable<Hover | null> =>
+    (pos: LSPTextDocumentPositionParams & LSPContext): Observable<Hover | null> =>
         sendLSPRequest(
             {
                 method: 'textDocument/hover',
@@ -204,7 +214,7 @@ export const fetchHover = memoizeObservable(
 
 /** Callers should use features.getDefinition instead. */
 export const fetchDefinition = memoizeObservable(
-    (options: LSPTextDocumentPositionParams): Observable<Definition> =>
+    (options: LSPTextDocumentPositionParams & LSPContext): Observable<Definition> =>
         sendLSPRequest(
             {
                 method: 'textDocument/definition',
@@ -224,7 +234,7 @@ export const fetchDefinition = memoizeObservable(
 )
 
 /** Callers should use features.getJumpURL instead. */
-export function fetchJumpURL(options: LSPTextDocumentPositionParams): Observable<string | null> {
+export function fetchJumpURL(options: LSPTextDocumentPositionParams & LSPContext): Observable<string | null> {
     return fetchDefinition(options).pipe(
         map(def => {
             const defArray = Array.isArray(def) ? def : [def]
@@ -247,7 +257,7 @@ export function fetchJumpURL(options: LSPTextDocumentPositionParams): Observable
 
 /** Callers should use features.getXdefinition instead. */
 export const fetchXdefinition = memoizeObservable(
-    (options: LSPTextDocumentPositionParams): Observable<SymbolLocationInformation | undefined> =>
+    (options: LSPTextDocumentPositionParams & LSPContext): Observable<SymbolLocationInformation | undefined> =>
         sendLSPRequest(
             {
                 method: 'textDocument/xdefinition',
@@ -272,7 +282,7 @@ export interface LSPReferencesParams {
 
 /** Callers should use features.getReferences instead. */
 export const fetchReferences = memoizeObservable(
-    (options: LSPTextDocumentPositionParams & LSPReferencesParams): Observable<Location[]> =>
+    (options: LSPTextDocumentPositionParams & LSPReferencesParams & LSPContext): Observable<Location[]> =>
         sendLSPRequest(
             {
                 method: 'textDocument/references',
@@ -296,7 +306,7 @@ export const fetchReferences = memoizeObservable(
 
 /** Callers should use features.getImplementation instead. */
 export const fetchImplementation = memoizeObservable(
-    (options: LSPTextDocumentPositionParams): Observable<Location[]> =>
+    (options: LSPTextDocumentPositionParams & LSPContext): Observable<Location[]> =>
         sendLSPRequest(
             {
                 method: 'textDocument/implementation',
@@ -325,7 +335,7 @@ export interface XReferenceOptions extends WorkspaceReferenceParams {
 
 /** Callers should use features.getXreferences instead. */
 export const fetchXreferences = memoizeObservable(
-    (options: XReferenceOptions & LSPSelector): Observable<Location[]> =>
+    (options: XReferenceOptions & LSPContext): Observable<Location[]> =>
         sendLSPRequest(
             {
                 method: 'workspace/xreferences',
@@ -340,6 +350,7 @@ export const fetchXreferences = memoizeObservable(
                 rev: options.rev,
                 commitID: options.commitID,
                 mode: options.mode,
+                settings: options.settings,
             }
         ).pipe(map((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference))),
     options => cacheKey(options) + ':' + JSON.stringify([options.query, options.hints, options.limit])
@@ -364,7 +375,7 @@ export interface DecorationAttachmentRenderOptions {
 }
 
 export const fetchDecorations = memoizeObservable(
-    (options: LSPSelector & FileSpec): Observable<TextDocumentDecoration[]> =>
+    (options: LSPContext & FileSpec): Observable<TextDocumentDecoration[] | null> =>
         sendLSPRequest(
             {
                 method: 'textDocument/decorations',
@@ -379,6 +390,6 @@ export const fetchDecorations = memoizeObservable(
     cacheKey
 )
 
-function cacheKey(sel: LSPSelector): string {
-    return `${makeRepoURI(sel)}:mode=${sel.mode}`
+function cacheKey(sel: LSPContext): string {
+    return `${makeRepoURI(sel)}:mode=${sel.mode}:settings=${JSON.stringify(sel.settings)}`
 }

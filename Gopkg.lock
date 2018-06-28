@@ -857,7 +857,7 @@
     "compiler",
     "jsonschema"
   ]
-  revision = "fb37ef63ec6c1f7f5b2087021b3efac0b52f849d"
+  revision = "d0bc3b7ffa727fcdfcc60430c93568eda2b16e4d"
 
 [[projects]]
   branch = "master"
@@ -913,7 +913,7 @@
   branch = "master"
   name = "github.com/sourcegraph/jsonx"
   packages = ["."]
-  revision = "255da098122c4943c68ed854178a38ab5f3210af"
+  revision = "c36de8ab1fb0e9f845dc648bc930d37a5635246a"
 
 [[projects]]
   branch = "master"

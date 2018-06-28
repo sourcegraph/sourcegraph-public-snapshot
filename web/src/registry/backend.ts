@@ -46,7 +46,7 @@ export function queryViewerRegistryPublishers(): Observable<RegistryPublisher[]>
 function updateExtensionSettings(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
     args: GQL.IUpdateExtensionOnConfigurationMutationArguments
-): Observable<void> {
+): Observable<GQL.IUpdateExtensionConfigurationResult> {
     return mutateConfigurationGraphQL(
         subject,
         gql`
@@ -57,6 +57,7 @@ function updateExtensionSettings(
                 $extensionID: String
                 $enabled: Boolean
                 $remove: Boolean
+                $edit: ConfigurationEdit
             ) {
                 configurationMutation(input: { subject: $subject, lastID: $lastID }) {
                     updateExtension(
@@ -64,8 +65,9 @@ function updateExtensionSettings(
                         extensionID: $extensionID
                         enabled: $enabled
                         remove: $remove
+                        edit: $edit
                     ) {
-                        alwaysNil
+                        mergedSettings
                     }
                 }
             }
@@ -81,13 +83,14 @@ function updateExtensionSettings(
             ) {
                 throw createAggregateError(errors)
             }
+            return data.configurationMutation.updateExtension
         })
     )
 }
 
 export function updateUserExtensionSettings(
     args: GQL.IUpdateExtensionOnConfigurationMutationArguments
-): Observable<void> {
+): Observable<GQL.IUpdateExtensionConfigurationResult> {
     return configurationCascade.pipe(
         take(1),
         switchMap(configurationCascade =>

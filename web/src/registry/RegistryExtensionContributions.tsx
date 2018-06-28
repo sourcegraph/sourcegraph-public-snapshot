@@ -8,14 +8,14 @@ import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 
-function queryRegistryExtensionContributions(extension: GQL.ID, subject: GQL.ID | null): Observable<string | null> {
+function queryRegistryExtensionCapabilities(extension: GQL.ID, subject: GQL.ID | null): Observable<object | null> {
     return queryGraphQL(
         gql`
-            query RegistryExtensionContributions($extension: ID!, $subject: ID) {
+            query RegistryExtensionCapabilities($extension: ID!, $subject: ID) {
                 node(id: $extension) {
                     ... on RegistryExtension {
                         configuredExtension(subject: $subject) {
-                            contributions
+                            capabilities
                         }
                     }
                 }
@@ -28,7 +28,7 @@ function queryRegistryExtensionContributions(extension: GQL.ID, subject: GQL.ID 
                 throw createAggregateError(errors)
             }
             const extension = data.node as GQL.IRegistryExtension
-            return extension.configuredExtension ? extension.configuredExtension.contributions : null
+            return extension.configuredExtension ? extension.configuredExtension.capabilities : null
         })
     )
 }
@@ -39,7 +39,7 @@ interface Props {
 
 interface State {
     /** The extension's contributions, 'loading', or an error. */
-    contributionsOrError: 'loading' | string | null | ErrorLike
+    contributionsOrError: 'loading' | object | null | ErrorLike
 }
 
 /** Displays the contributions reported by the extension. */
@@ -63,7 +63,7 @@ export class RegistryExtensionContributions extends React.PureComponent<Props, S
             extensionChanges
                 .pipe(
                     switchMap(org =>
-                        queryRegistryExtensionContributions(org.id, null).pipe(
+                        queryRegistryExtensionCapabilities(org.id, null).pipe(
                             catchError(error => [asError(error)]),
                             map(result => ({ contributionsOrError: result })),
                             startWith<Pick<State, 'contributionsOrError'>>({ contributionsOrError: 'loading' })
@@ -96,7 +96,7 @@ export class RegistryExtensionContributions extends React.PureComponent<Props, S
                 ) : (
                     <>
                         <pre className="form-control">
-                            <code>{this.state.contributionsOrError}</code>
+                            <code>{JSON.stringify(this.state.contributionsOrError, null, 2)}</code>
                         </pre>
                     </>
                 )}

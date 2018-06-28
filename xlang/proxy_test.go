@@ -785,19 +785,30 @@ func TestProxy_connections(t *testing.T) {
 	c1 := dialProxy(t, addr, nil)
 
 	// C1 connects to the proxy.
-	initParams := lspext.ClientProxyInitializeParams{
-		InitializeParams:      lsp.InitializeParams{RootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", Capabilities: caps},
-		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
+	initParams := cxp.ClientProxyInitializeParams{
+		ClientProxyInitializeParams: lspext.ClientProxyInitializeParams{
+			InitializeParams: lsp.InitializeParams{RootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", Capabilities: caps},
+		},
+		InitializationOptions: cxp.ClientProxyInitializationOptions{
+			ClientProxyInitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
+		},
 	}
 	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(100 * time.Millisecond) // we're testing for a negative, so this is not as flaky as it seems; if a request is received later, it'll cause a test failure the next time we call wantReqs
 	want := []testRequest{
-		{"initialize", lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{RootPath: "/", RootURI: "file:///", Capabilities: caps},
-			OriginalRootURI:  "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Mode:             "test",
+		{"initialize", cxp.InitializeParams{
+			InitializeParams: lspext.InitializeParams{
+				InitializeParams: lsp.InitializeParams{
+					RootPath:     "/",
+					RootURI:      "file:///",
+					Capabilities: caps,
+				},
+				OriginalRootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+				Mode:            "test",
+			},
+			InitializationOptions: &cxp.InitializationOptions{},
 		}},
 	}
 	if err := wantReqs(want); err != nil {
@@ -863,10 +874,17 @@ func TestProxy_connections(t *testing.T) {
 	want = []testRequest{
 		{"shutdown", nil},
 		{"exit", nil},
-		{"initialize", lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{RootPath: "/", RootURI: "file:///", Capabilities: caps},
-			OriginalRootURI:  "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-			Mode:             "test",
+		{"initialize", cxp.InitializeParams{
+			InitializeParams: lspext.InitializeParams{
+				InitializeParams: lsp.InitializeParams{
+					RootPath:     "/",
+					RootURI:      "file:///",
+					Capabilities: caps,
+				},
+				OriginalRootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+				Mode:            "test",
+			},
+			InitializationOptions: &cxp.InitializationOptions{},
 		}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile3"},

@@ -443,38 +443,48 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	initParams := lspext.InitializeParams{
-		InitializeParams: lsp.InitializeParams{
-			RootPath: "/",
-			RootURI:  "file:///",
-			Capabilities: lsp.ClientCapabilities{
-				XFilesProvider:   true,
-				XContentProvider: true,
-				XCacheProvider:   true,
+	initParams := cxp.InitializeParams{
+		InitializeParams: lspext.InitializeParams{
+			InitializeParams: lsp.InitializeParams{
+				RootPath: "/",
+				RootURI:  "file:///",
+				Capabilities: lsp.ClientCapabilities{
+					XFilesProvider:   true,
+					XContentProvider: true,
+					XCacheProvider:   true,
 
-				// NOTE: These may not accurately represent the end client's (e.g., the Sourcegraph
-				// web frontend's, or a VS Code extension client's) capabilities. This is because it
-				// was designed for the case where multiple true clients are sharing the same
-				// backend, and it doesn't make sense to arbitrarily choose (e.g.) the first client's
-				// capabilities.
-				//
-				// TODO: If the session is not shared, then we can pass through the end client's
-				// capabilities.
-				Experimental: cxp.ExperimentalClientCapabilities{
-					Decorations: true,
-					Exec:        true,
+					// NOTE: These may not accurately represent the end client's (e.g., the Sourcegraph
+					// web frontend's, or a VS Code extension client's) capabilities. This is because it
+					// was designed for the case where multiple true clients are sharing the same
+					// backend, and it doesn't make sense to arbitrarily choose (e.g.) the first client's
+					// capabilities.
+					//
+					// TODO: If the session is not shared, then we can pass through the end client's
+					// capabilities.
+					Experimental: cxp.ExperimentalClientCapabilities{
+						Decorations: true,
+						Exec:        true,
+					},
 				},
 			},
+			OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
+			Mode:            c.id.mode,
 		},
-		OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
-		Mode:            c.id.mode,
 	}
 
 	initOpts, err := getInitializationOptions(ctx, c.id.mode)
 	if err != nil {
 		return nil, err
 	}
-	initParams.InitializationOptions = initOpts
+	var mergedSettings *json.RawMessage
+	if c.id.initOpts != "" {
+		tmp := json.RawMessage(c.id.initOpts)
+		mergedSettings = &tmp
+	}
+	initParams.InitializationOptions = &cxp.InitializationOptions{
+		Other:    initOpts,
+		Settings: cxp.ExtensionSettings{Merged: mergedSettings},
+	}
 
 	var res lsp.InitializeResult
 	err = c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))

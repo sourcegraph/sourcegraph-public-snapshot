@@ -53,6 +53,31 @@ type Segment struct {
 	Index    int    // an array index
 }
 
+// MarshalJSON implements json.Marshaler.
+func (s Segment) MarshalJSON() ([]byte, error) {
+	if s.IsProperty {
+		return json.Marshal(s.Property)
+	}
+	return json.Marshal(s.Index)
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (s *Segment) UnmarshalJSON(data []byte) error {
+	var t Segment
+	var target interface{}
+	if len(data) > 0 && data[0] == '"' {
+		t.IsProperty = true
+		target = &t.Property
+	} else {
+		target = &t.Index
+	}
+	if err := json.Unmarshal(data, target); err != nil {
+		return err
+	}
+	*s = t
+	return nil
+}
+
 // A Path is a JSON key path, which describes a path from an ancestor
 // node in a JSON document's parse tree to one of its descendents.
 //

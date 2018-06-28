@@ -49,6 +49,12 @@ func connectToServer(ctx context.Context, mode string) (jsonrpc2.ObjectStream, e
 
 	conn, err := lookupExtension(ctx, mode)
 	if conn != nil || err != nil {
+		if err != nil {
+			err = &jsonrpc2.Error{
+				Code:    CodeModeNotFound,
+				Message: err.Error(),
+			}
+		}
 		return conn, err
 	}
 

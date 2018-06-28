@@ -120,7 +120,7 @@ const SettingsSchemaJSON = `{
     "ExtensionSettings": {
       "description": "Settings for an extension.",
       "type": "object",
-      "additionalProperties": false,
+      "additionalProperties": true,
       "properties": {
         "disabled": {
           "description": "Disable this extension (if it is enabled at a lower-precedence level of configuration).",

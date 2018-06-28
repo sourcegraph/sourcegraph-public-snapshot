@@ -72,7 +72,7 @@ func lookupExtension(ctx context.Context, extensionID string) (jsonrpc2.ObjectSt
 	}
 }
 
-func getInitializationOptionsForExtension(ctx context.Context, extensionID string) (interface{}, error) {
+func getInitializationOptionsForExtension(ctx context.Context, extensionID string) (map[string]interface{}, error) {
 	// TODO(extensions): This should allow for using extra initializationOptions that a user
 	// specifies in their user settings for the extension.
 	if conf.Platform() == nil {

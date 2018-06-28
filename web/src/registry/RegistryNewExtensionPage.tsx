@@ -54,7 +54,7 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
  * enabled (because that is likely to be unexpected and undesirable).
  */
 function configureNewExtensionAsDisabled(extension: GQL.ID): Observable<void> {
-    return updateUserExtensionSettings({ extension, enabled: false })
+    return updateUserExtensionSettings({ extension, enabled: false }) as Observable<any>
 }
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {}

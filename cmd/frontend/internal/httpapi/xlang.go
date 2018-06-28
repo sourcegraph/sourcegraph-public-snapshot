@@ -20,11 +20,11 @@ import (
 
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/xlang"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -150,7 +150,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	if reqs[3].ID != (jsonrpc2.ID{}) {
 		return errors.New("invalid jsonrpc2 exit request: id should NOT be present")
 	}
-	var initParams lspext.ClientProxyInitializeParams
+	var initParams cxp.ClientProxyInitializeParams
 	if err := json.Unmarshal(*reqs[0].Params, &initParams); err != nil {
 		return fmt.Errorf("invalid jsonrpc2 initialize params: %s", err)
 	}

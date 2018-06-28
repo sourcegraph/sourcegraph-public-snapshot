@@ -15,6 +15,7 @@ import { gql, queryGraphQL } from '../../../backend/graphql'
 import * as GQL from '../../../backend/graphqlschema'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PopoverButton } from '../../../components/PopoverButton'
+import { fromRawExtension, RawExtension } from '../../../extensions/extension'
 import { currentConfiguration } from '../../../settings/configuration'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { updateUserExtensionSettings } from '../../backend'
@@ -175,7 +176,7 @@ interface State {
     changed: any
 
     /** The viewer's extensions, undefined while loading, or an error. */
-    viewerExtensionsOrError: Pick<GQL.IConfiguredExtension, 'extensionID'>[] | typeof LOADING | ErrorLike
+    viewerExtensionsOrError: RawExtension[] | typeof LOADING | ErrorLike
 
     /** The list of configured extensions, undefined while loading, or an error. */
     extensionConnectionOrError: Pick<GQL.IConfiguredExtensionConnection, 'nodes'> | undefined | ErrorLike
@@ -213,7 +214,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                                     this.props.onChange(
                                         isErrorLike(viewerExtensionsOrError)
                                             ? []
-                                            : viewerExtensionsOrError.map(({ extensionID }) => extensionID)
+                                            : viewerExtensionsOrError.map(fromRawExtension)
                                     )
                                 }
                             })
@@ -325,13 +326,15 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
      * Unlike queryConfiguredExtensions, this includes (1) only enabled extensions and (2) all extensions (not just
      * the first N).
      */
-    private queryAllEnabledExtensions = (): Observable<Pick<GQL.IConfiguredExtension, 'extensionID'>[]> =>
+    private queryAllEnabledExtensions = (): Observable<RawExtension[]> =>
         queryGraphQL(
             gql`
             query ViewerAllEnabledExtensions() {
                     viewerConfiguredExtensions(enabled: true, disabled: false, invalid: false) {
                         nodes {
                             extensionID
+                            contributions
+                            mergedSettings
                         }
                     }
             }

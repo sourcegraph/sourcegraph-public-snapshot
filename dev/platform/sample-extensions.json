@@ -1,61 +1,31 @@
 [
   {
-    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d891",
-    "extensionID": "sample/decorations-rainbow",
+    "uuid": "164bc7a6-a80a-12cd-8103-a55314394896",
+    "extensionID": "sample/blame",
     "publisher": { "name": "sample" },
-    "name": "decorations-rainbow",
+    "name": "blame",
     "manifest":
-      "{\n  \"title\":\"Decorations: rainbow (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"red\", \"orange\", \"yellow\", \"blue\", \"green\", \"indigo\", \"violet\", \"white\"]},\n  \"activationEvents\": [\"*\"]\n}",
+      "{\n  \"title\":\"Blame\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"x.sgdev.org:4000\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
     "createdAt": "2018-06-21T03:44:00.30563Z",
     "updatedAt": "2018-06-24T09:30:52.899736Z"
   },
   {
-    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d892",
-    "extensionID": "sample/decorations-us",
+    "uuid": "064bc7a6-380a-15cd-8103-a5535439d893",
+    "extensionID": "sample/codecov",
     "publisher": { "name": "sample" },
-    "name": "decorations-us",
+    "name": "codecov",
     "manifest":
-      "{\n  \"title\":\"Decorations: USA (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"red\", \"white\", \"blue\"]},\n  \"activationEvents\": [\"*\"]\n}",
+      "{\n  \"title\":\"Codecov\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"x.sgdev.org:4001\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
     "createdAt": "2018-06-21T03:44:00.30563Z",
     "updatedAt": "2018-06-24T09:30:52.899736Z"
   },
   {
-    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d893",
-    "extensionID": "sample/decorations-de",
-    "publisher": { "name": "sample" },
-    "name": "decorations-de",
-    "manifest":
-      "{\n  \"title\":\"Decorations: Germany (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"#000000\", \"#DD0000\", \"#FFCE00\"]},\n  \"activationEvents\": [\"*\"]\n}",
-    "createdAt": "2018-06-21T03:44:00.30563Z",
-    "updatedAt": "2018-06-24T09:30:52.899736Z"
-  },
-  {
-    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d894",
-    "extensionID": "sample/decorations-za",
-    "publisher": { "name": "sample" },
-    "name": "decorations-za",
-    "manifest":
-      "{\n  \"title\":\"Decorations: South Africa (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"#000000\", \"#FFB612\", \"#007A4D\", \"#FFFFFF\", \"#DE3831\", \"#002395\"]},\n  \"activationEvents\": [\"*\"]\n}",
-    "createdAt": "2018-06-21T03:44:00.30563Z",
-    "updatedAt": "2018-06-24T09:30:52.899736Z"
-  },
-  {
-    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d895",
-    "extensionID": "sample/decorations-ae",
-    "publisher": { "name": "sample" },
-    "name": "decorations-ae",
-    "manifest":
-      "{\n  \"title\":\"Decorations: Dubai/UAE (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:11127\"\n  },\n  \"args\": {\"colors\": [\"#FF0000\", \"#00732F\", \"#FFFFFF\", \"#000000\"]},\n  \"activationEvents\": [\"*\"]\n}",
-    "createdAt": "2018-06-21T03:44:00.30563Z",
-    "updatedAt": "2018-06-24T09:30:52.899736Z"
-  },
-  {
-    "uuid": "064bc7a6-a80a-12cd-8103-a5535439d896",
+    "uuid": "064ef7a6-a80a-12cd-8103-a5535439d891",
     "extensionID": "sample/lightstep",
     "publisher": { "name": "sample" },
     "name": "lightstep",
     "manifest":
-      "{\n  \"title\":\"LightStep (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:16629\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
+      "{\n  \"title\":\"LightStep\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"x.sgdev.org:4002\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
     "createdAt": "2018-06-21T03:44:00.30563Z",
     "updatedAt": "2018-06-24T09:30:52.899736Z"
   },
@@ -65,7 +35,37 @@
     "publisher": { "name": "sample" },
     "name": "line-age",
     "manifest":
-      "{\n  \"title\":\"Line age (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"0.tcp.ngrok.io:10602\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
+      "{\n  \"title\":\"Line age\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"x.sgdev.org:4003\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
+  },
+  {
+    "uuid": "004bc7a6-a80a-121d-3103-a5c3a6394896",
+    "extensionID": "sample/logdna",
+    "publisher": { "name": "sample" },
+    "name": "logdna",
+    "manifest":
+      "{\n  \"title\":\"LogDNA\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"x.sgdev.org:4005\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
+  },
+  {
+    "uuid": "064bc3a6-a80a-12ad-8103-a55c5439d896",
+    "extensionID": "sample/line-colors",
+    "publisher": { "name": "sample" },
+    "name": "line-colors",
+    "manifest":
+      "{\n  \"title\":\"Line colors (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"x.sgdev.org:4006\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
+    "createdAt": "2018-06-21T03:44:00.30563Z",
+    "updatedAt": "2018-06-24T09:30:52.899736Z"
+  },
+  {
+    "uuid": "064bc7a6-a80a-19cd-8103-a5535439d893",
+    "extensionID": "sample/lsp",
+    "publisher": { "name": "sample" },
+    "name": "lsp",
+    "manifest":
+      "{\n  \"title\":\"LSP (sample)\",\n  \"platform\": {\n    \"type\": \"tcp\",\n    \"address\": \"x.sgdev.org:4007\"\n  },\n  \"activationEvents\": [\"*\"]\n}",
     "createdAt": "2018-06-21T03:44:00.30563Z",
     "updatedAt": "2018-06-24T09:30:52.899736Z"
   }

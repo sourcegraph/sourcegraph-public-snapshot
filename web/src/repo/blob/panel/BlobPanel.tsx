@@ -137,6 +137,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                             commitID: subject.commitID,
                             filePath: subject.filePath,
                             mode: subject.mode,
+                            settings: null,
                         }).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ serverCapabilitiesOrError: c })),

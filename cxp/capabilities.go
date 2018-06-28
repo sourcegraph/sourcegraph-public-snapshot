@@ -18,6 +18,8 @@ type ExperimentalClientCapabilities struct {
 // server's initialize response in the `capabilities.experimental` field.
 type ExperimentalServerCapabilities struct {
 	DecorationsProvider bool `json:"decorationsProvider"`
+
+	Contributions *Contributions `json:"contributions,omitempty"`
 }
 
 // ParseExperimentalClientCapabilities parses the "clientCapabilities.experimental" object from the

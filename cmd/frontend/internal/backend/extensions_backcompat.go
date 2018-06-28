@@ -86,8 +86,7 @@ func init() {
 				ActivationEvents: []string{"*"},
 			}
 			if ls.InitializationOptions != nil {
-				var v interface{} = ls.InitializationOptions
-				x.Args = &v
+				x.Args = &ls.InitializationOptions
 			}
 			data, err := json.MarshalIndent(x, "", "  ")
 			if err != nil {
