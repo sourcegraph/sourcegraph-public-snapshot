@@ -89,7 +89,7 @@ func handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (re
 		}
 		path := strings.TrimPrefix(uri.Path, "/")
 
-		fs := vfsutil.RemoteFS(conn)
+		fs := vfsutil.XRemoteFS{Conn: conn}
 		f, err := fs.Open(ctx, "/"+path)
 		if err != nil {
 			return nil, err
