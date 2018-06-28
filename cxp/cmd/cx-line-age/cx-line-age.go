@@ -139,7 +139,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		for _, hunk := range hunks {
 			for line := hunk.StartLine; line < hunk.EndLine; line++ {
 				lineDecorations[line-1] = lspext.TextDocumentDecoration{
-					Background: colorForAge(now.Sub(hunk.Author.Date), oldestD, newestD),
+					BackgroundColor: colorForAge(now.Sub(hunk.Author.Date), oldestD, newestD),
 					Range: lsp.Range{
 						Start: lsp.Position{Line: line - 1},
 						End:   lsp.Position{Line: line - 1},
