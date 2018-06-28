@@ -284,6 +284,14 @@ type LangServersMutation {
     update(language: String!): EmptyResponse
 }
 
+# Describes options for rendering Markdown.
+input MarkdownOptions {
+    # TODO(slimsag:discussions): add option for controlling relative links
+
+    # A dummy null value (empty input types are not allowed yet).
+    alwaysNil: String
+}
+
 # Input for Mutation.configuration, which contains fields that all configuration
 # mutations need.
 input ConfigurationMutationGroupInput {
@@ -502,6 +510,9 @@ type Query {
         # Return organizations whose names or display names match the query.
         query: String
     ): OrgConnection!
+    # Renders Markdown to HTML. The returned HTML is already sanitized and
+    # escaped and thus is always safe to render.
+    renderMarkdown(markdown: String!, options: MarkdownOptions): String!
     # Looks up an instance of a type that implements ConfigurationSubject.
     configurationSubject(id: ID!): ConfigurationSubject
     # Looks up an instance of a type that implements ExtensionConfigurationSubject.

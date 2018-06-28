@@ -48,6 +48,17 @@ func (r *gitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 	return renderMarkdown(content), nil
 }
 
+type markdownOptions struct {
+	AlwaysNil *string
+}
+
+func (*schemaResolver) RenderMarkdown(args *struct {
+	Markdown string
+	Options  *markdownOptions
+}) string {
+	return renderMarkdown(args.Markdown)
+}
+
 func renderMarkdown(content string) string {
 	unsafeHTML := gfm.Markdown([]byte(content))
 
