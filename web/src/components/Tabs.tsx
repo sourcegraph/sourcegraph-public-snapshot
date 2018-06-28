@@ -206,6 +206,7 @@ export class TabsWithLocalStorageViewStatePersistence<ID extends string, T exten
 
     private renderTab = ({ tab, className }: { tab: T; className: string }): JSX.Element => (
         <button
+            type="button"
             className={className}
             // tslint:disable-next-line:jsx-no-lambda
             onClick={() => this.onSelectTab(tab.id)}
