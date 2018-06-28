@@ -94,10 +94,12 @@ export class SavedQueries extends React.Component<Props, State> {
         )
 
         this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
+
+        this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

@@ -80,10 +80,12 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
                 .pipe(distinctUntilChanged((a, b) => a.query === b.query))
                 .subscribe(() => Tooltip.forceUpdate())
         )
+
+        this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {

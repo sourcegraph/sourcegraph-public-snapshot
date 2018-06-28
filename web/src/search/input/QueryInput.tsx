@@ -84,6 +84,7 @@ interface State {
 export class QueryInput extends React.Component<Props, State> {
     private static SUGGESTIONS_QUERY_MIN_LENGTH = 2
 
+    /** Emits on componentDidUpdate and componentDidMount */
     private componentUpdates = new Subject<Props>()
 
     /** Subscriptions to unsubscribe from on component unmount */
@@ -256,10 +257,8 @@ export class QueryInput extends React.Component<Props, State> {
                 this.focusInputAndPositionCursorAtEnd()
                 break
         }
-    }
 
-    public componentWillReceiveProps(newProps: Props): void {
-        this.componentUpdates.next(newProps)
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -267,6 +266,7 @@ export class QueryInput extends React.Component<Props, State> {
     }
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
+        this.componentUpdates.next(this.props)
         // Check if selected suggestion is out of view
         scrollIntoView(this.suggestionListElement, this.selectedSuggestionElement)
     }
