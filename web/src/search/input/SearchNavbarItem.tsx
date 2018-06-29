@@ -29,7 +29,6 @@ export class SearchNavbarItem extends React.Component<Props> {
 
         /** Emits whenever the route changes */
         const routeChanges = this.componentUpdates.pipe(
-            startWith(props),
             distinctUntilChanged((a, b) => a.location === b.location),
             skip(1)
         )
