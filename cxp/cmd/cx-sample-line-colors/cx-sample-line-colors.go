@@ -80,13 +80,13 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 								ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
 									Path: jsonx.PropertyPath("colors"),
 									CycleValues: []interface{}{
-										[]string{},
 										[]string{"red", "white", "blue"},
 										[]string{"red", "orange", "yellow", "blue", "green", "indigo", "violet", "white"},
 										[]string{"blue", "white"},
 										[]string{"red", "green"},
 										[]string{"black", "#DD0000", "#FFCE00"},
 										[]string{"#000000", "#FFB612", "#007A4D", "#FFFFFF", "#DE3831", "#002395"},
+										[]string{},
 									},
 								},
 							},
