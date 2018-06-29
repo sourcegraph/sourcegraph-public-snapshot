@@ -35,7 +35,7 @@ func Main(name string, handler func() jsonrpc2.Handler) {
 	log.SetFlags(0)
 	env.HandleHelpFlag()
 
-	tracer.Init(name)
+	tracer.Init(tracer.ServiceName(name))
 
 	// Filter log output by level.
 	lvl, err := log15.LvlFromString(env.LogLevel)

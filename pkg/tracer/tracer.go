@@ -59,13 +59,19 @@ func condensedFormat(r *log15.Record) []byte {
 
 // Options control the behavior of a tracer.
 type Options struct {
-	filters []func(*log15.Record) bool
+	filters     []func(*log15.Record) bool
+	serviceName string
 }
 
 // If this idiom seems strange:
 // https://github.com/tmrts/go-patterns/blob/master/idiom/functional-options.md
 type Option func(*Options)
 
+func ServiceName(s string) Option {
+	return func(o *Options) {
+		o.serviceName = s
+	}
+}
 func Filter(f func(*log15.Record) bool) Option {
 	return func(o *Options) {
 		o.filters = append(o.filters, f)
@@ -77,7 +83,9 @@ func Init(options ...Option) {
 	for _, setter := range options {
 		setter(opts)
 	}
-	serviceName := filepath.Base(os.Args[0])
+	if opts.serviceName == "" {
+		opts.serviceName = filepath.Base(os.Args[0])
+	}
 	var handler log15.Handler
 	switch env.LogFormat {
 	case "condensed":
@@ -105,7 +113,7 @@ func Init(options ...Option) {
 			},
 		}
 		_, err := cfg.InitGlobalTracer(
-			serviceName,
+			opts.serviceName,
 			jaegercfg.Logger(jaegerlog.StdLogger),
 			jaegercfg.Metrics(jaegermetrics.NullFactory),
 		)
@@ -123,7 +131,7 @@ func Init(options ...Option) {
 			AccessToken: lightstepAccessToken,
 			UseGRPC:     true,
 			Tags: opentracing.Tags{
-				lightstep.ComponentNameKey: serviceName,
+				lightstep.ComponentNameKey: opts.serviceName,
 			},
 			DropSpanLogs: !lightstepIncludeSensitive,
 		}))
