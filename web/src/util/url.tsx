@@ -22,6 +22,27 @@ export type LineOrPositionOrRange =
     | { line: number; character: number; endLine: number; endCharacter: number }
 
 /**
+ * Tells if the given fragment component is a legacy blob hash component or not.
+ *
+ * @param hash The URL fragment.
+ */
+export function isLegacyFragment(hash: string): boolean {
+    if (hash.startsWith('#')) {
+        hash = hash.substr('#'.length)
+    }
+    return (
+        hash !== '' &&
+        !hash.includes('=') &&
+        (hash.includes('$info') ||
+            hash.includes('$def') ||
+            hash.includes('$references') ||
+            hash.includes('$references:external') ||
+            hash.includes('$impl') ||
+            hash.includes('$history'))
+    )
+}
+
+/**
  * Parses the URL fragment (hash) portion, which consists of a line, position, or range in the file, plus an
  * optional "viewState" parameter (that encodes other view state, such as for the panel).
  *
@@ -34,12 +55,39 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
     if (hash.startsWith('#')) {
         hash = hash.substr('#'.length)
     }
+
+    if (!isLegacyFragment(hash)) {
+        // Modern hash parsing logic (e.g. for hashes like `"#L17:19-21:23&tab=foo:bar"`:
+        const searchParams = new URLSearchParams(hash)
+        const lpr = (findLineInSearchParams(searchParams) || {}) as LineOrPositionOrRange & {
+            viewState?: V
+        }
+        if (searchParams.get('tab')) {
+            lpr.viewState = searchParams.get('tab') as V
+        }
+        return lpr
+    }
+
+    // Legacy hash parsing logic (e.g. for hashes like "#L17:19-21:23$foo:bar" where the "viewState" is "foo:bar"):
     if (!/^(L[0-9]+(:[0-9]+)?(-[0-9]+(:[0-9]+)?)?)?(\$.*)?$/.test(hash)) {
         // invalid or empty hash
         return {}
     }
-
     const lineCharModalInfo = hash.split('$', 2) // e.g. "L17:19-21:23$references:external"
+    const lpr = parseLineOrPositionOrRange(lineCharModalInfo[0]) as LineOrPositionOrRange & { viewState?: V }
+    if (lineCharModalInfo[1]) {
+        lpr.viewState = lineCharModalInfo[1] as V
+    }
+    return lpr
+}
+
+/**
+ * Parses a string like "L1-2:3", a range from a line to a position.
+ */
+function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
+    if (!/^(L[0-9]+(:[0-9]+)?(-[0-9]+(:[0-9]+)?)?)?$/.test(lineChar)) {
+        return {} // invalid
+    }
 
     // Parse the line or position range, ensuring we don't get an inconsistent result
     // (such as L1-2:3, a range from a line to a position).
@@ -47,8 +95,8 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
     let character: number | undefined // 19
     let endLine: number | undefined // 21
     let endCharacter: number | undefined // 23
-    if (lineCharModalInfo[0].startsWith('L')) {
-        const posOrRangeString = lineCharModalInfo[0].slice(1)
+    if (lineChar.startsWith('L')) {
+        const posOrRangeString = lineChar.slice(1)
         const [startString, endString] = posOrRangeString.split('-', 2)
         if (startString) {
             const parsed = parseLineOrPosition(startString)
@@ -61,7 +109,7 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
             endCharacter = parsed.character
         }
     }
-    let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange & { viewState?: V }
+    let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange
     if (typeof line === 'undefined' || (typeof endLine !== 'undefined' && typeof character !== typeof endCharacter)) {
         lpr = {}
     } else if (typeof character === 'undefined') {
@@ -71,10 +119,51 @@ export function parseHash<V extends string>(hash: string): LineOrPositionOrRange
     } else {
         lpr = { line, character, endLine, endCharacter }
     }
-    if (lineCharModalInfo[1]) {
-        lpr.viewState = lineCharModalInfo[1] as V
-    }
     return lpr
+}
+
+/**
+ * Returns the LineOrPositionOrRange and given URLSearchParams as a string.
+ */
+export function formatHash(lpr: LineOrPositionOrRange, searchParams: URLSearchParams): string {
+    if (!lpr.line) {
+        return `#${searchParams.toString()}`
+    }
+    const anyParams = Array.from(searchParams).length > 0
+    return `#L${formatLineOrPositionOrRange(lpr)}${anyParams ? '&' + searchParams.toString() : ''}`
+}
+
+/**
+ * Returns the textual form of the LineOrPositionOrRange suitable for encoding
+ * in a URL fragment' query parameter.
+ *
+ * @param lpr The `LineOrPositionOrRange`
+ */
+function formatLineOrPositionOrRange(lpr: LineOrPositionOrRange): string {
+    const range = lprToRange(lpr)
+    if (!range) {
+        return ''
+    }
+    const emptyRange = range.start.line === range.end.line && range.start.character === range.end.character
+    return emptyRange
+        ? toPositionHashComponent(range.start)
+        : `${toPositionHashComponent(range.start)}-${toPositionHashComponent(range.end)}`
+}
+
+/**
+ * Finds the URL search parameter which has a key like "L1-2:3" without any
+ * value.
+ *
+ * @param searchParams The URLSearchParams to look for the line in.
+ */
+function findLineInSearchParams(searchParams: URLSearchParams): LineOrPositionOrRange | undefined {
+    for (const key of searchParams.keys()) {
+        if (key.startsWith('L')) {
+            return parseLineOrPositionOrRange(key)
+        }
+        break
+    }
+    return undefined
 }
 
 export function lprToRange(lpr: LineOrPositionOrRange): Range | undefined {
@@ -155,7 +244,7 @@ export function escapeRevspecForURL(rev: string): string {
 }
 
 export function toViewStateHashComponent(viewState: string | undefined): string {
-    return viewState ? `$${viewState}` : ''
+    return viewState ? `&tab=${viewState}` : ''
 }
 
 /**

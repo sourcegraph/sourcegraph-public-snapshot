@@ -243,12 +243,13 @@ export class TabsWithURLViewStatePersistence<ID extends string, T extends Tab<ID
      * argument is null, then the tab ID is removed from the URL.
      */
     public static urlForTabID(location: H.Location, tabID: string | null): H.LocationDescriptorObject {
-        const newSuffix = tabID === null ? '' : `$${tabID}`
-        const i = location.hash.lastIndexOf('$')
-        if (i >= 0) {
-            return { ...location, hash: location.hash.slice(0, i) + newSuffix }
+        const hash = new URLSearchParams(location.hash.slice('#'.length))
+        if (tabID) {
+            hash.set('tab', tabID)
+        } else {
+            hash.delete('tab')
         }
-        return { ...location, hash: location.hash + newSuffix }
+        return { ...location, hash: hash.toString().replace(/%3A/g, ':') }
     }
 
     private readFromURL(location: H.Location, tabs: T[]): ID | undefined {

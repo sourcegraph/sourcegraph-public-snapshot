@@ -1,3 +1,8 @@
+// Polyfill URLSearchParams because we still use node 8 on CI where
+// URLSearchParams is not a global.
+import { URLSearchParams } from 'whatwg-url'
+Object.assign(global, { URLSearchParams })
+
 import * as assert from 'assert'
 import { parseHash, toPrettyBlobURL, toTreeURL } from './url'
 
@@ -55,9 +60,17 @@ describe('util/url', () => {
             assert.deepStrictEqual(parseHash('L1:1$references'), localRefMode)
             assert.deepStrictEqual(parseHash('L1:1$references'), localRefMode)
         })
+        it('parses modern hash with local references', () => {
+            assert.deepStrictEqual(parseHash('tab=references'), { viewState: 'references' })
+            assert.deepStrictEqual(parseHash('L1:1&tab=references'), localRefMode)
+            assert.deepStrictEqual(parseHash('L1:1&tab=references'), localRefMode)
+        })
 
         it('parses hash with external references', () => {
             assert.deepStrictEqual(parseHash('L1:1$references:external'), externalRefMode)
+        })
+        it('parses modern hash with external references', () => {
+            assert.deepStrictEqual(parseHash('L1:1&tab=references:external'), externalRefMode)
         })
     })
 
@@ -83,7 +96,7 @@ describe('util/url', () => {
         it('formats url with view state', () => {
             assert.strictEqual(
                 toPrettyBlobURL({ ...ctx, position: lineCharPosition, viewState: 'references:external' }),
-                '/github.com/gorilla/mux/-/blob/mux.go#L1:1$references:external'
+                '/github.com/gorilla/mux/-/blob/mux.go#L1:1&tab=references:external'
             )
         })
     })

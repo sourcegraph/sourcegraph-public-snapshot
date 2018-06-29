@@ -2,7 +2,7 @@ import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsProps } from '../backend/features'
@@ -15,6 +15,7 @@ import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
 import { ResizablePanel } from '../panel/Panel'
 import { getModeFromPath } from '../util'
 import { ErrorLike, isErrorLike } from '../util/errors'
+import { formatHash, isLegacyFragment, parseHash } from '../util/url'
 import { CodeIntelStatusIndicator } from './actions/CodeIntelStatusIndicator'
 import { CopyLinkAction } from './actions/CopyLinkAction'
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
@@ -222,6 +223,30 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                     routeComponentProps.match.params.objectType || 'tree'
                                 const filePath = routeComponentProps.match.params.filePath || '' // empty string is root
                                 const mode = getModeFromPath(filePath)
+
+                                // For blob pages with legacy URL fragment hashes like "#L17:19-21:23$foo:bar"
+                                // redirect to the modern URL fragment hashes like "#L17:19-21:23&tab=foo:bar"
+                                if (
+                                    !hideRepoRevContent &&
+                                    objectType === 'blob' &&
+                                    isLegacyFragment(window.location.hash)
+                                ) {
+                                    const hash = parseHash(window.location.hash)
+                                    const newHash = new URLSearchParams()
+                                    if (hash.viewState) {
+                                        newHash.set('tab', hash.viewState)
+                                    }
+                                    return (
+                                        <Redirect
+                                            to={
+                                                window.location.pathname +
+                                                window.location.search +
+                                                formatHash(hash, newHash)
+                                            }
+                                        />
+                                    )
+                                }
+
                                 return (
                                     <>
                                         {filePath && (
