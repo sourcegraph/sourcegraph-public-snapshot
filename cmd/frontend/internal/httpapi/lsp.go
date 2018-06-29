@@ -313,6 +313,28 @@ func authorizeInitialize(ctx context.Context, req *jsonrpc2.Request) (*trackedIn
 		return nil, err
 	}
 
+	// 🚨 SECURITY: Ensure that the client has set a session value. LSP sessions with different
+	// session keys are isolated from each other, even if they are for the same
+	// repository/commit/etc. This WebSocket LSP API, as opposed to the simple HTTP POST interface,
+	// allows clients to send arbitrary LSP requests, including ones that cause mutation (such as
+	// textDocument/didChange). For example, a malicious client could send a textDocument/didChange
+	// saying that a popular library's documentation comment for a common function recommends that
+	// users run `rm -rf`, and the language server would report that in the textDocument/hover
+	// response to all users.
+	//
+	// We must prevent those mutations from affecting readonly clients using the simple HTTP POST
+	// interface. These clients all share a session because the session value is empty. This is OK
+	// because the simple HTTP POST interface does not allow clients to mutate state.
+	//
+	// Note that any other clients who know the session value can join or hijack this session. It is
+	// the client's responsibility to generate a random session value and keep it secret.
+	if params.InitializationOptions.Session == "" {
+		return nil, &jsonrpc2.Error{
+			Code:    jsonrpc2.CodeInvalidParams,
+			Message: "initializationOptions.session must be set",
+		}
+	}
+
 	rootURI, err := uri.Parse(string(params.RootURI))
 	if err != nil {
 		return nil, err
