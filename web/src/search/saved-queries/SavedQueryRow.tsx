@@ -68,12 +68,10 @@ export class SavedQueryRow extends React.PureComponent<Props, State> {
                 )
         )
         this.refreshRequested.next(this.props.query)
-
-        this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+    public componentWillReceiveProps(newProps: Props): void {
+        this.componentUpdates.next(newProps)
     }
 
     public componentWillUnmount(): void {

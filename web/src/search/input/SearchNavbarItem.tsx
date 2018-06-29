@@ -21,7 +21,7 @@ export class SearchNavbarItem extends React.Component<Props> {
     /** Subscriptions to unsubscribe from on component unmount */
     private subscriptions = new Subscription()
 
-    /** Emits on componentDidMount and componentDidUpdate */
+    /** Emits on componentWillReceiveProps */
     private componentUpdates = new Subject<Props>()
 
     constructor(props: Props) {
@@ -53,12 +53,8 @@ export class SearchNavbarItem extends React.Component<Props> {
         this.subscriptions.add(props.history.listen(location => this.onLocationChange(location)))
     }
 
-    public componentDidMount(): void {
-        this.componentUpdates.next(this.props)
-    }
-
-    public componentDidUpdate(): void {
-        this.componentUpdates.next(this.props)
+    public componentWillReceiveProps(newProps: Props): void {
+        this.componentUpdates.next(newProps)
     }
 
     public componentWillUnmount(): void {
