@@ -9,11 +9,13 @@ import (
 	"os"
 	"strings"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
 )
 
@@ -118,6 +120,21 @@ func serveRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 		return
 	}
 
+	builder := honey.Builder("registry")
+	builder.AddField("api_version", r.Header.Get("Accept"))
+	builder.AddField("url", r.URL.String())
+	ev := builder.NewEvent()
+	defer func() {
+		ev.AddField("success", err == nil)
+		if err == nil {
+			registryRequestsSuccessCounter.Inc()
+		} else {
+			registryRequestsErrorCounter.Inc()
+			ev.AddField("error", err.Error())
+		}
+		ev.Send()
+	}()
+
 	// Identify this response as coming from the registry API.
 	w.Header().Set(registry.MediaTypeHeaderName, registry.MediaType)
 	w.Header().Set("Vary", registry.MediaTypeHeaderName)
@@ -141,10 +158,13 @@ func serveRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	var result interface{}
 	switch {
 	case urlPath == extensionsPath:
-		xs, err := registryList(r.Context(), db.RegistryExtensionsListOptions{Query: r.URL.Query().Get("q")})
+		query := r.URL.Query().Get("q")
+		ev.AddField("query", query)
+		xs, err := registryList(r.Context(), db.RegistryExtensionsListOptions{Query: query})
 		if err != nil {
 			return err
 		}
+		ev.AddField("results_count", len(xs))
 		result = xs
 
 	case strings.HasPrefix(urlPath, extensionsPath+"/"):
@@ -170,6 +190,7 @@ func serveRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 			}
 			return err
 		}
+		ev.AddField("extension-id", x.ExtensionID)
 		result = x
 
 	default:
@@ -184,4 +205,24 @@ func serveRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 	}
 	w.Write(data)
 	return nil
+}
+
+var (
+	registryRequestsSuccessCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "registry",
+		Name:      "requests_success",
+		Help:      "Number of successful requests (HTTP 200) to the HTTP registry API",
+	})
+	registryRequestsErrorCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "registry",
+		Name:      "requests_error",
+		Help:      "Number of failed (non-HTTP 200) requests to the HTTP registry API",
+	})
+)
+
+func init() {
+	prometheus.MustRegister(registryRequestsSuccessCounter)
+	prometheus.MustRegister(registryRequestsErrorCounter)
 }
