@@ -8,7 +8,7 @@ case "$BUILDKITE_BRANCH" in
         ;;
 
     docker-images/*)
-        DEPLOYMENT=$($BUILDKITE_BRANCH | awk -F '/' '{printf $2}')
+        DEPLOYMENT=$(echo $BUILDKITE_BRANCH | awk -F '/' '{printf $2}')
         CONTAINER=$DEPLOYMENT
         ;;
 
