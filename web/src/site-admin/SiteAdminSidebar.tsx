@@ -6,11 +6,14 @@ import * as H from 'history'
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Subscription } from 'rxjs'
+import * as GQL from '../backend/graphqlschema'
+import { platformEnabled } from '../user/tags'
 
 interface Props {
     history: H.History
     location: H.Location
     className: string
+    user: GQL.IUser
 }
 
 interface State {}
@@ -163,7 +166,7 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                         </li>
                     </ul>
                 )}
-                {window.context.platformEnabled && (
+                {platformEnabled(this.props.user) && (
                     <ul className="sidebar__items">
                         <li className="sidebar__header">
                             <div className="sidebar__header-icon">

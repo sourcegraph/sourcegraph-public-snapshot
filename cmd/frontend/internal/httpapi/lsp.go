@@ -19,13 +19,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/xlang"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var websocketUpgrader = websocket.Upgrader{}
@@ -39,7 +40,8 @@ func init() {
 }
 
 func serveLSP(w http.ResponseWriter, r *http.Request) {
-	if conf.Platform() == nil {
+	if err := backend.CheckActorHasPlatformEnabled(r.Context()); err != nil {
+		log15.Warn("Rejected LSP WebSocket API access by actor for whom the platform is not enabled.", "actor", actor.FromContext(r.Context()), "error", err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}

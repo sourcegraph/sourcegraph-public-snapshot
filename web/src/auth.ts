@@ -31,6 +31,7 @@ export function refreshCurrentUser(): Observable<never> {
                 username
                 displayName
                 siteAdmin
+                tags
                 organizations {
                     nodes {
                         id

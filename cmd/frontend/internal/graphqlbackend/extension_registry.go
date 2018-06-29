@@ -2,15 +2,13 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-func (r *schemaResolver) ExtensionRegistry() (*extensionRegistryResolver, error) {
-	if conf.Platform() == nil {
-		return nil, errors.New("platform disabled")
+func (r *schemaResolver) ExtensionRegistry(ctx context.Context) (*extensionRegistryResolver, error) {
+	if err := backend.CheckActorHasPlatformEnabled(ctx); err != nil {
+		return nil, err
 	}
 	return &extensionRegistryResolver{}, nil
 }

@@ -1917,6 +1917,10 @@ type User implements Node, ConfigurationSubject, ExtensionConfigurationSubject {
     organizations: OrgConnection!
     # This user's organization memberships.
     organizationMemberships: OrganizationMembershipConnection!
+    # Tags associated with the user. These are used for internal site management and feature selection.
+    #
+    # Only the user and site admins can access this field.
+    tags: [String!]!
     # The user's usage activity on Sourcegraph.
     #
     # Only the user and site admins can access this field.

@@ -9,6 +9,7 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { ExtensionSelector } from '../registry/extensions/actions/ExtensionSelector'
 import { eventLogger } from '../tracking/eventLogger'
+import { platformEnabled } from '../user/tags'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
@@ -52,18 +53,19 @@ export class NavLinks extends React.PureComponent<Props> {
                         Install <span className="nav-links__widescreen-only">Sourcegraph</span>
                     </a>
                 )}
-                {window.context.platformEnabled && (
-                    <ExtensionSelector
-                        key="extension-selector"
-                        className="ml-2 mr-0"
-                        onChange={this.props.onExtensionsChange}
-                        configuredExtensionsURL={
-                            (this.props.user && this.props.user.configuredExtensions.url) || undefined
-                        }
-                        history={this.props.history}
-                        location={this.props.location}
-                    />
-                )}
+                {this.props.user &&
+                    platformEnabled(this.props.user) && (
+                        <ExtensionSelector
+                            key="extension-selector"
+                            className="ml-2 mr-0"
+                            onChange={this.props.onExtensionsChange}
+                            configuredExtensionsURL={
+                                (this.props.user && this.props.user.configuredExtensions.url) || undefined
+                            }
+                            history={this.props.history}
+                            location={this.props.location}
+                        />
+                    )}
                 {this.props.user && (
                     <Link to="/search/searches" className="nav-links__link">
                         Searches

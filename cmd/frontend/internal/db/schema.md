@@ -484,6 +484,7 @@ Foreign-key constraints:
  site_admin        | boolean                  | not null default false
  page_views        | integer                  | not null default 0
  search_queries    | integer                  | not null default 0
+ tags              | text[]                   | default '{}'::text[]
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL

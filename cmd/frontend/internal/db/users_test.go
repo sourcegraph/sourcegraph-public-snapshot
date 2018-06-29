@@ -223,6 +223,7 @@ func TestUsers_ListCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	user.Tags = []string{}
 
 	if count, err := Users.Count(ctx, UsersListOptions{}); err != nil {
 		t.Fatal(err)

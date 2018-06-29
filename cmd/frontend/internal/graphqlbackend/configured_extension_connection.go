@@ -2,10 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
@@ -20,8 +20,8 @@ type configuredExtensionConnectionArgs struct {
 }
 
 func (r *schemaResolver) ViewerConfiguredExtensions(ctx context.Context, args *configuredExtensionConnectionArgs) (*configuredExtensionConnectionResolver, error) {
-	if conf.Platform() == nil {
-		return nil, errors.New("platform disabled")
+	if err := backend.CheckActorHasPlatformEnabled(ctx); err != nil {
+		return nil, err
 	}
 	cascade, err := r.ViewerConfiguration(ctx)
 	if err != nil {
@@ -31,8 +31,8 @@ func (r *schemaResolver) ViewerConfiguredExtensions(ctx context.Context, args *c
 }
 
 func (r *siteResolver) ConfiguredExtensions(ctx context.Context, args *configuredExtensionConnectionArgs) (*configuredExtensionConnectionResolver, error) {
-	if conf.Platform() == nil {
-		return nil, errors.New("platform disabled")
+	if err := backend.CheckActorHasPlatformEnabled(ctx); err != nil {
+		return nil, err
 	}
 	return &configuredExtensionConnectionResolver{
 		args:    *args,
@@ -41,8 +41,8 @@ func (r *siteResolver) ConfiguredExtensions(ctx context.Context, args *configure
 }
 
 func (r *userResolver) ConfiguredExtensions(ctx context.Context, args *configuredExtensionConnectionArgs) (*configuredExtensionConnectionResolver, error) {
-	if conf.Platform() == nil {
-		return nil, errors.New("platform disabled")
+	if err := backend.CheckActorHasPlatformEnabled(ctx); err != nil {
+		return nil, err
 	}
 	return &configuredExtensionConnectionResolver{
 		args:    *args,
@@ -51,8 +51,8 @@ func (r *userResolver) ConfiguredExtensions(ctx context.Context, args *configure
 }
 
 func (r *orgResolver) ConfiguredExtensions(ctx context.Context, args *configuredExtensionConnectionArgs) (*configuredExtensionConnectionResolver, error) {
-	if conf.Platform() == nil {
-		return nil, errors.New("platform disabled")
+	if err := backend.CheckActorHasPlatformEnabled(ctx); err != nil {
+		return nil, err
 	}
 	return &configuredExtensionConnectionResolver{
 		args:    *args,
@@ -61,8 +61,8 @@ func (r *orgResolver) ConfiguredExtensions(ctx context.Context, args *configured
 }
 
 func (r *extensionConfigurationSubject) ConfiguredExtensions(ctx context.Context, args *configuredExtensionConnectionArgs) (*configuredExtensionConnectionResolver, error) {
-	if conf.Platform() == nil {
-		return nil, errors.New("platform disabled")
+	if err := backend.CheckActorHasPlatformEnabled(ctx); err != nil {
+		return nil, err
 	}
 	return &configuredExtensionConnectionResolver{
 		args:    *args,

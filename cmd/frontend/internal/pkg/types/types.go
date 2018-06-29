@@ -67,6 +67,7 @@ type User struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	SiteAdmin   bool
+	Tags        []string
 }
 
 type Org struct {

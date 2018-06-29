@@ -2,14 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
 )
 
@@ -48,8 +46,8 @@ func (r *extensionRegistryResolver) Extensions(ctx context.Context, args *struct
 func (r *userResolver) RegistryExtensions(ctx context.Context, args *struct {
 	registryExtensionConnectionArgs
 }) (*registryExtensionConnectionResolver, error) {
-	if conf.Platform() == nil {
-		return nil, errors.New("platform disabled")
+	if err := backend.CheckActorHasPlatformEnabled(ctx); err != nil {
+		return nil, err
 	}
 
 	opt := db.RegistryExtensionsListOptions{Publisher: db.RegistryPublisher{UserID: r.user.ID}}
@@ -63,8 +61,8 @@ func (r *userResolver) RegistryExtensions(ctx context.Context, args *struct {
 func (r *orgResolver) RegistryExtensions(ctx context.Context, args *struct {
 	registryExtensionConnectionArgs
 }) (*registryExtensionConnectionResolver, error) {
-	if conf.Platform() == nil {
-		return nil, errors.New("platform disabled")
+	if err := backend.CheckActorHasPlatformEnabled(ctx); err != nil {
+		return nil, err
 	}
 
 	opt := db.RegistryExtensionsListOptions{Publisher: db.RegistryPublisher{OrgID: r.org.ID}}

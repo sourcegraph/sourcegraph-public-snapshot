@@ -70,6 +70,7 @@ export class SiteAdminArea extends React.Component<Props> {
                     className="area__sidebar"
                     history={this.props.history}
                     location={this.props.location}
+                    user={this.props.user}
                 />
                 <div className="area__content">
                     <Switch>

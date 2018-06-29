@@ -11,6 +11,7 @@ import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
+import { platformEnabled } from '../tags'
 import { UserExtensionsPage } from './UserExtensionsPage'
 import { UserHeader } from './UserHeader'
 import { UserOverviewPage } from './UserOverviewPage'
@@ -190,16 +191,17 @@ export class UserArea extends React.Component<Props> {
                                     />
                                 )}
                             />
-                            {window.context.platformEnabled && (
-                                <Route
-                                    path={`${this.props.match.url}/extensions`}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    render={routeComponentProps => (
-                                        <UserExtensionsPage {...routeComponentProps} {...transferProps} />
-                                    )}
-                                />
-                            )}
+                            {this.props.user &&
+                                platformEnabled(this.props.user) && (
+                                    <Route
+                                        path={`${this.props.match.url}/extensions`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => (
+                                            <UserExtensionsPage {...routeComponentProps} {...transferProps} />
+                                        )}
+                                    />
+                                )}
                             <Route key="hardcoded-key" component={NotFoundPage} />
                         </Switch>
                     </div>

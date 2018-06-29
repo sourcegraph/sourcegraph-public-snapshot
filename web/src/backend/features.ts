@@ -1,6 +1,6 @@
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { compact, flatten } from 'lodash'
-import { forkJoin, Observable, of } from 'rxjs'
+import { forkJoin, Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString, MarkupContent, Range } from 'vscode-languageserver-types'
 import { Extension, ExtensionSettings } from '../extensions/extension'
@@ -191,9 +191,6 @@ export function getDecorations(
     ctx: AbsoluteRepoFile & LSPSelector,
     extensions: Extensions
 ): Observable<TextDocumentDecoration[]> {
-    if (!window.context.platformEnabled) {
-        return of([])
-    }
     return forkJoin(
         getModes(ctx, extensions).map(({ mode, settings }) =>
             fetchDecorations({ ...ctx, mode, settings }).pipe(
@@ -211,7 +208,12 @@ export function getDecorations(
 
 /** Computes the set of LSP modes to use. */
 function getModes(ctx: ModeSpec, extensions: Extensions): { mode: string; settings: ExtensionSettings | null }[] {
-    if (extensions.length === 0 || !window.context.platformEnabled) {
+    // Using the old behavior (use the language server identified by the mode) when there are no extensions set is
+    // the most reliable way of supporting both platform-enabled and non-platform-enabled users. A user would only
+    // have a non-empty extensions list if they were platform-enabled. The one weird thing is that if a
+    // platform-enabled user disables all extensions, then they will get the default behavior (of using the mode's
+    // language server); that is acceptable.
+    if (extensions.length === 0) {
         return [{ mode: ctx.mode, settings: null }]
     }
     return extensions.map(({ extensionID, settings }) => ({ mode: extensionID, settings }))

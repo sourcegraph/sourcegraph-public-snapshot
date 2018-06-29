@@ -4,6 +4,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
+import { platformEnabled } from '../user/tags'
 import { RegistryAreaHeader } from './RegistryAreaHeader'
 import { RegistryExtensionArea } from './RegistryExtensionArea'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
@@ -40,6 +41,10 @@ export interface RegistryAreaPageProps extends ExtensionsProps, ExtensionsChange
  */
 export class RegistryArea extends React.Component<Props> {
     public render(): JSX.Element | null {
+        if (!this.props.user || !platformEnabled(this.props.user)) {
+            return <NotFoundPage />
+        }
+
         const transferProps: RegistryAreaPageProps = {
             authenticatedUser: this.props.user,
             extensions: this.props.extensions,
