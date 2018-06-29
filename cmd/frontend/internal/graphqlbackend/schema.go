@@ -2900,11 +2900,13 @@ type ConfiguredExtension {
     isEnabled: Boolean!
     # Whether the viewer can configure the extension for this configuration subject.
     viewerCanConfigure: Boolean!
-    # The extension's reported capabilities, as a JSON-serialized string.
+    # The extension's reported capabilities for the viewer, as a JSON-serialized string. The extension may return
+    # different values depending on the viewer's settings.
     capabilities: JSONValue
-    # The extension's reported contributions, as a JSON-serialized string.
+    # The extension's reported contributions for the viewer, as a JSON-serialized string. The extension may return
+    # different values depending on the viewer's settings.
     contributions: JSONValue
-    # The merged settings for the extension (based on the global, organization, and user settings).
+    # The merged settings for the extension (based on the the viewer's global, organization, and user settings).
     mergedSettings: JSONValue
 }
 

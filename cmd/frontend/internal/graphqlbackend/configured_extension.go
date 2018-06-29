@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/sourcegraph/sourcegraph/xlang"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -46,6 +47,19 @@ func (r *configuredExtensionResolver) ViewerCanConfigure(ctx context.Context) (b
 
 func (r *configuredExtensionResolver) getInitializeResult(ctx context.Context) (*lsp.InitializeResult, error) {
 	do := func() (*lsp.InitializeResult, error) {
+		mergedSettings, err := r.viewerMergedSettings(ctx)
+		if err != nil {
+			return nil, err
+		}
+		var mergedSettingsRaw *json.RawMessage
+		if mergedSettings != nil {
+			raw, err := json.Marshal(mergedSettings)
+			if err != nil {
+				return nil, err
+			}
+			mergedSettingsRaw = (*json.RawMessage)(&raw)
+		}
+
 		c, err := xlang.UnsafeNewDefaultClient()
 		if err != nil {
 			return nil, err
@@ -53,14 +67,18 @@ func (r *configuredExtensionResolver) getInitializeResult(ctx context.Context) (
 		defer c.Close()
 
 		var result lsp.InitializeResult
-		err = c.Call(ctx, "initialize", lspext.ClientProxyInitializeParams{
-			InitializeParams: lsp.InitializeParams{
-				// TODO(extensions): dummy URI because xlang requires a URI
-				RootURI: lsp.DocumentURI("git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06"),
+		err = c.Call(ctx, "initialize", cxp.ClientProxyInitializeParams{
+			ClientProxyInitializeParams: lspext.ClientProxyInitializeParams{
+				InitializeParams: lsp.InitializeParams{
+					// TODO(extensions): dummy URI because xlang requires a URI
+					RootURI: lsp.DocumentURI("git://github.com/gorilla/mux?4dbd923b0c9e99ff63ad54b0e9705ff92d3cdb06"),
+				},
 			},
-			InitializationOptions: lspext.ClientProxyInitializationOptions{
-				// TODO(extensions): merge in user's configuration
-				Mode: r.extensionID,
+			InitializationOptions: cxp.ClientProxyInitializationOptions{
+				ClientProxyInitializationOptions: lspext.ClientProxyInitializationOptions{
+					Mode: r.extensionID,
+				},
+				Settings: cxp.ExtensionSettings{Merged: mergedSettingsRaw},
 			},
 		}, &result)
 		if err != nil {
@@ -103,7 +121,7 @@ func (r *configuredExtensionResolver) Contributions(ctx context.Context) (*jsonV
 	return &jsonValue{value: contributions}, nil
 }
 
-func (r *configuredExtensionResolver) MergedSettings(ctx context.Context) (*jsonValue, error) {
+func (r *configuredExtensionResolver) viewerMergedSettings(ctx context.Context) (*schema.ExtensionSettings, error) {
 	merged, err := viewerMergedConfiguration(ctx)
 	if err != nil {
 		return nil, err
@@ -120,5 +138,16 @@ func (r *configuredExtensionResolver) MergedSettings(ctx context.Context) (*json
 	if !ok {
 		return nil, nil
 	}
-	return &jsonValue{value: extensionSettings}, nil
+	return &extensionSettings, nil
+}
+
+func (r *configuredExtensionResolver) MergedSettings(ctx context.Context) (*jsonValue, error) {
+	s, err := r.viewerMergedSettings(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if s == nil {
+		return nil, err
+	}
+	return &jsonValue{value: *s}, nil
 }
