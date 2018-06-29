@@ -12,7 +12,6 @@ import {
     publishReplay,
     refCount,
     repeat,
-    startWith,
     switchMap,
     takeUntil,
     tap,
