@@ -1,12 +1,13 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Observable, Subject, Subscription } from 'rxjs'
-import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { ExtensionsProps } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { createAggregateError } from '../../util/errors'
+import { Hoverifier } from '../hoverify/hoverifier'
 import { FileDiffNode, FileDiffNodeProps } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
@@ -88,46 +89,28 @@ export function queryRepositoryComparisonFileDiffs(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>, ExtensionsProps {
+interface RepositoryCompareDiffPageProps
+    extends RepositoryCompareAreaPageProps,
+        RouteComponentProps<{}>,
+        ExtensionsProps {
     /** The base of the comparison. */
     base: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
 
     /** The head of the comparison. */
     head: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
+    hoverifier: Hoverifier
 }
 
 class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
-    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'extensions' | 'location' | 'history'>
+    Pick<
+        FileDiffNodeProps,
+        'base' | 'head' | 'lineNumbers' | 'className' | 'extensions' | 'location' | 'history' | 'hoverifier'
+    >
 > {}
 
 /** A page with the file diffs in the comparison. */
-export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
-    private componentUpdates = new Subject<Props>()
-    private updates = new Subject<void>()
-    private subscriptions = new Subscription()
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            this.componentUpdates
-                .pipe(
-                    startWith(this.props),
-                    distinctUntilChanged(
-                        (a, b) => a.repo.id === b.repo.id && a.base.rev === b.base.rev && a.head.rev === b.head.rev
-                    )
-                )
-                .subscribe(() => this.updates.next())
-        )
-    }
-
-    public componentWillUpdate(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
-    }
-
+export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCompareDiffPageProps> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-compare-page">
@@ -144,6 +127,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<Props> {
                         extensions: this.props.extensions,
                         location: this.props.location,
                         history: this.props.history,
+                        hoverifier: this.props.hoverifier,
                     }}
                     defaultFirst={25}
                     hideSearch={true}

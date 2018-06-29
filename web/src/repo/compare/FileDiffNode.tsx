@@ -5,7 +5,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsProps } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
-import { getModeFromPath } from '../../util'
+import { Hoverifier } from '../hoverify/hoverifier'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 
@@ -22,6 +22,7 @@ export interface FileDiffNodeProps extends ExtensionsProps {
     className?: string
     location: H.Location
     history: H.History
+    hoverifier: Hoverifier
 }
 
 interface State {
@@ -93,18 +94,17 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             base={{
                                 ...this.props.base,
                                 filePath: node.oldPath,
-                                mode: getModeFromPath(node.oldPath || ''),
                             }}
                             head={{
                                 ...this.props.head,
                                 filePath: node.newPath,
-                                mode: getModeFromPath(node.newPath || ''),
                             }}
                             hunks={node.hunks}
                             lineNumbers={this.props.lineNumbers}
                             extensions={this.props.extensions}
                             history={this.props.history}
                             location={this.props.location}
+                            hoverifier={this.props.hoverifier}
                         />
                     )}
                 </div>

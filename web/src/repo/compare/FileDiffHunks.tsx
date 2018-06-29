@@ -1,25 +1,10 @@
 import * as H from 'history'
+import { isEqual } from 'lodash'
 import * as React from 'react'
-import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'rxjs'
-import { catchError, debounceTime, filter, map, startWith, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
-import { Key } from 'ts-key-enum'
-import { AbsoluteRepoFilePosition, FileSpec } from '..'
-import { ExtensionsProps, getHover, getJumpURL } from '../../backend/features'
+import { NEVER, Subject, Subscription } from 'rxjs'
+import { ExtensionsProps } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
-import { EMODENOTFOUND, isEmptyHover, LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { eventLogger } from '../../tracking/eventLogger'
-import { asError } from '../../util/errors'
-import { toAbsoluteBlobURL, toPrettyBlobURL } from '../../util/url'
-import {
-    convertNode,
-    createTooltips,
-    getTableDataCell,
-    getTargetLineAndOffset,
-    hideTooltip,
-    logTelemetryOnTooltip,
-    TooltipData,
-    updateTooltip,
-} from '../blob/tooltips'
+import { Hoverifier } from '../hoverify/hoverifier'
 
 const DiffBoundary: React.SFC<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
@@ -57,7 +42,8 @@ const DiffHunk: React.SFC<{
     lineNumbers: boolean
 
     location: H.Location
-}> = ({ fileDiffAnchor, hunk, lineNumbers, location }) => {
+    history: H.History
+}> = ({ fileDiffAnchor, hunk, lineNumbers, location, history }) => {
     let oldLine = hunk.oldRange.startLine
     let newLine = hunk.newRange.startLine
     return (
@@ -100,6 +86,8 @@ const DiffHunk: React.SFC<{
                                             data-line={oldLine - 1}
                                             data-part="old"
                                             id={oldAnchor}
+                                            // tslint:disable-next-line:jsx-no-lambda need access to props
+                                            onClick={() => history.push({ hash: oldAnchor })}
                                         />
                                     ) : (
                                         <td className="diff-hunk__num diff-hunk__num--empty" />
@@ -110,6 +98,8 @@ const DiffHunk: React.SFC<{
                                             data-line={newLine - 1}
                                             data-part="new"
                                             id={newAnchor}
+                                            // tslint:disable-next-line:jsx-no-lambda need access to props
+                                            onClick={() => history.push({ hash: newAnchor })}
                                         />
                                     ) : (
                                         <td className="diff-hunk__num diff-hunk__num--empty" />
@@ -124,13 +114,12 @@ const DiffHunk: React.SFC<{
     )
 }
 
-interface DiffFile {
+interface Part {
     repoPath: string
     repoID: GQL.ID
     rev: string
     commitID: string
     filePath: string | null
-    mode: string | null
 }
 
 interface Props extends ExtensionsProps {
@@ -138,10 +127,10 @@ interface Props extends ExtensionsProps {
     fileDiffAnchor: string
 
     /** The base repository, revision, and file. */
-    base: DiffFile
+    base: Part
 
     /** The head repository, revision, and file. */
-    head: DiffFile
+    head: Part
 
     /** The file's hunks. */
     hunks: GQL.IFileDiffHunk[]
@@ -152,184 +141,74 @@ interface Props extends ExtensionsProps {
     className: string
     location: H.Location
     history: H.History
+    hoverifier: Hoverifier
 }
 
-interface State {
-    fixedTooltip?: TooltipData
-}
+interface State {}
 
 /** Displays hunks in a unified file diff. */
-export class FileDiffHunks extends React.PureComponent<Props, State> {
-    public state: State = {}
+export class FileDiffHunks extends React.Component<Props, State> {
+    /** Emits whenever the ref callback for the code element is called */
+    private codeElements = new Subject<HTMLElement | null>()
+    private nextCodeElement = (element: HTMLElement | null) => this.codeElements.next(element)
 
-    private refSubscriptions: Subscription | undefined
-    private fixedTooltip = new Subject<TooltipData>()
+    /** Emits whenever the ref callback for the blob element is called */
+    private blobElements = new Subject<HTMLElement | null>()
+    private nextBlobElement = (element: HTMLElement | null) => this.blobElements.next(element)
+
+    /** Emits whenever something is hovered in the code */
+    private codeMouseOvers = new Subject<React.MouseEvent<HTMLElement>>()
+    private nextCodeMouseOver = (event: React.MouseEvent<HTMLElement>) => this.codeMouseOvers.next(event)
+
+    /** Emits whenever something is hovered in the code */
+    private codeMouseMoves = new Subject<React.MouseEvent<HTMLElement>>()
+    private nextCodeMouseMove = (event: React.MouseEvent<HTMLElement>) => this.codeMouseMoves.next(event)
+
+    /** Emits whenever something is clicked in the code */
+    private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
+    private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => {
+        event.persist()
+        this.codeClicks.next(event)
+    }
+
+    /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
+    private componentUpdates = new Subject<void>()
+
+    /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
 
-    private setElement = (ref: HTMLElement | null): void => {
-        if (ref === null) {
-            if (this.refSubscriptions) {
-                this.refSubscriptions.unsubscribe()
-                this.subscriptions.remove(this.refSubscriptions)
-                this.refSubscriptions = undefined
-            }
-            return
+    constructor(props: Props) {
+        super(props)
+        this.state = {
+            hoverOverlayIsFixed: false,
+            clickedGoToDefinition: false,
+            mouseIsMoving: false,
         }
 
-        this.refSubscriptions = new Subscription()
-        this.subscriptions.add(this.refSubscriptions)
-
         this.subscriptions.add(
-            this.fixedTooltip
-                .pipe(
-                    startWith(this.state.fixedTooltip || null),
-                    switchMap(data => {
-                        if (data === null) {
-                            return [null]
-                        }
-                        const { target, ctx } = data
-                        return this.getTooltip(target, ctx).pipe(
-                            tap(tooltip => {
-                                if (!tooltip) {
-                                    this.setFixedTooltip()
-                                    return
-                                }
-
-                                const contents = tooltip.contents
-                                if (!contents || isEmptyHover({ contents })) {
-                                    this.setFixedTooltip()
-                                    return
-                                }
-
-                                this.setFixedTooltip(tooltip)
-                                updateTooltip(tooltip, true, this.tooltipActions())
-                            }),
-                            zip(this.getDefinition(ctx).pipe(catchError(err => [asError(err)]))),
-                            map(([tooltip, defResponse]) => ({
-                                ...tooltip,
-                                defUrlOrError: defResponse || undefined,
-                            })),
-                            catchError(err => {
-                                if (err.code !== EMODENOTFOUND) {
-                                    console.error(err)
-                                }
-                                const data: TooltipData = { target, ctx }
-                                return [data]
-                            })
-                        )
-                    })
-                )
-                .subscribe(data => {
-                    if (!data) {
-                        this.setFixedTooltip()
-                        return
-                    }
-
-                    const contents = data.contents
-                    if (!contents || isEmptyHover({ contents })) {
-                        this.setFixedTooltip()
-                        return
-                    }
-
-                    this.setFixedTooltip(data)
-                    updateTooltip(data, true, this.tooltipActions())
-                })
-        )
-
-        this.refSubscriptions.add(
-            merge(fromEvent<MouseEvent>(ref, 'mouseover'), fromEvent<MouseEvent>(ref, 'click'))
-                .pipe(
-                    debounceTime(50),
-                    map(e => ({ type: e.type as 'mouseover' | 'click', target: e.target as HTMLElement })),
-                    tap(({ target }) => {
-                        createTooltips(ref)
-
-                        const td = getTableDataCell(target, ref)
-                        if (td && !td.classList.contains('annotated')) {
-                            td.classList.add('annotated')
-                            convertNode(td)
-                        }
-                    }),
-                    map(({ type, target }) => ({ type, target, loc: getTargetLineAndOffset(target, ref, true) })),
-                    filter(data => !!data.loc && Boolean(data.loc.part)),
-                    map(({ type, target, loc }) => ({
-                        type,
-                        target,
-                        ctx: {
-                            // The two "as" type casts are because *we* know that either base xor head's
-                            // filePath/mode are null (and not both), but TypeScript doesn't know that.
-                            ...((loc!.part! === 'old' ? this.props.base : this.props.head) as DiffFile & FileSpec),
-                            position: loc!,
-                            mode: (this.props.base.filePath === null
-                                ? this.props.head.mode
-                                : this.props.base.mode) as string,
-                        },
-                    })),
-                    switchMap(({ type, target, ctx }) => {
-                        const tooltip = this.getTooltip(target, ctx)
-                        const loading = this.getLoadingTooltip(target, ctx, tooltip)
-
-                        // Preemptively fetch the symbol's definition, but no need to pass it on to the hover
-                        // (getDefinition is called again when the hover is docked).
-                        this.getDefinition(ctx)
-
-                        return merge(loading, tooltip).pipe(
-                            catchError(err => {
-                                if (err.code !== EMODENOTFOUND) {
-                                    console.error(err)
-                                }
-                                return [{ target, ctx } as TooltipData]
-                            }),
-                            map(data => ({ ...data, type }))
-                        )
-                    })
-                )
-                .subscribe(data => {
-                    const click = data.type === 'click'
-                    logTelemetryOnTooltip(data, click)
-                    if (click) {
-                        this.fixedTooltip.next(data)
-                    } else if (!this.state.fixedTooltip) {
-                        updateTooltip(data, false, this.tooltipActions())
-                    }
-                })
-        )
-
-        this.subscriptions.add(
-            fromEvent<MouseEvent>(ref, 'mouseout').subscribe(() => {
-                for (const el of ref.querySelectorAll('.selection-highlight')) {
-                    el.classList.remove('selection-highlight')
-                }
-                if (!this.state.fixedTooltip) {
-                    hideTooltip()
-                }
+            this.props.hoverifier.hoverify({
+                codeMouseMoves: this.codeMouseMoves,
+                codeMouseOvers: this.codeMouseOvers,
+                codeClicks: this.codeClicks,
+                positionJumps: NEVER, // TODO support diff URLs
+                resolveContext: hoveredToken => {
+                    const { repoPath, rev, filePath, commitID } = this.props[
+                        // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same
+                        hoveredToken.part === 'old' ? 'base' : 'head'
+                    ]
+                    // If a hover or go-to-definition was invoked on this part, we know the file path must exist
+                    return { repoPath, filePath: filePath!, rev, commitID }
+                },
             })
         )
+    }
 
-        // When the user presses 'esc', dismiss tooltip.
-        this.subscriptions.add(
-            fromEvent<KeyboardEvent>(window, 'keydown')
-                .pipe(filter(event => event.key === Key.Escape))
-                .subscribe(event => {
-                    event.preventDefault()
-                    this.handleDismiss()
-                })
-        )
+    public componentDidUpdate(): void {
+        this.componentUpdates.next()
+    }
 
-        // Make diff hunk line numbers clickable.
-        this.subscriptions.add(
-            fromEvent<MouseEvent>(ref, 'click')
-                .pipe(
-                    filter(e => {
-                        // .diff-hunk__num has no children, so we don't need to check if the target is a child of it.
-                        const target = e.target as HTMLElement
-                        return target.classList.contains('diff-hunk__num') && !!target.id
-                    })
-                )
-                .subscribe(e => {
-                    this.props.history.push({ hash: (e.target as HTMLElement).id })
-                })
-        )
+    public shouldComponentUpdate(nextProps: Readonly<Props>, nextState: Readonly<State>): boolean {
+        return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
     }
 
     public componentWillUnmount(): void {
@@ -338,11 +217,17 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className={`file-diff-hunks ${this.props.className}`} ref={this.setElement}>
+            <div className={`file-diff-hunks ${this.props.className}`} ref={this.nextBlobElement}>
                 {this.props.hunks.length === 0 ? (
                     <div className="text-muted m-2">No changes</div>
                 ) : (
-                    <div className="file-diff-hunks__container">
+                    <div
+                        className="file-diff-hunks__container"
+                        ref={this.nextCodeElement}
+                        onMouseOver={this.nextCodeMouseOver}
+                        onMouseMove={this.nextCodeMouseMove}
+                        onClick={this.nextCodeClick}
+                    >
                         <table className="file-diff-hunks__table">
                             {this.props.lineNumbers && (
                                 <colgroup>
@@ -355,10 +240,11 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
                                 {this.props.hunks.map((hunk, i) => (
                                     <DiffHunk
                                         key={i}
-                                        fileDiffAnchor={this.props.fileDiffAnchor}
                                         hunk={hunk}
+                                        fileDiffAnchor={this.props.fileDiffAnchor}
                                         lineNumbers={this.props.lineNumbers}
                                         location={this.props.location}
+                                        history={this.props.history}
                                     />
                                 ))}
                             </tbody>
@@ -368,98 +254,4 @@ export class FileDiffHunks extends React.PureComponent<Props, State> {
             </div>
         )
     }
-
-    /**
-     * A fixed tooltip is one that is docked. In the web UI, this means the user has
-     * clicked on the symbol corresponding to the tooltip. getTooltip and getDefinition
-     * is called on the current fixedTooltip, so this should be called whenever there is
-     * a new symbol clicked/the tooltip we need information for changes.
-     */
-    private setFixedTooltip = (data?: TooltipData) => {
-        for (const el of document.querySelectorAll('.selection-highlight')) {
-            el.classList.remove('selection-highlight')
-        }
-        for (const el of document.querySelectorAll('.selection-highlight-sticky')) {
-            el.classList.remove('selection-highlight-sticky')
-        }
-        if (data) {
-            if (data.defUrlOrError === undefined) {
-                eventLogger.log('TooltipDocked', { hoverHasDefUrl: false })
-            } else {
-                eventLogger.log('TooltipDockedWithDefinition', { hoverHasDefUrl: true })
-            }
-            data.target.classList.add('selection-highlight-sticky')
-        } else {
-            hideTooltip()
-        }
-        this.setState({ fixedTooltip: data || undefined })
-    }
-
-    /**
-     * getTooltip wraps the asynchronous fetch of tooltip data from the Sourcegraph API.
-     * This Observable will emit exactly one value before it completes. If the resolved
-     * tooltip is defined, it will update the target styling.
-     */
-    private getTooltip(target: HTMLElement, ctx: LSPTextDocumentPositionParams): Observable<TooltipData> {
-        return getHover(ctx, this.props.extensions).pipe(
-            tap(data => {
-                if (isEmptyHover(data)) {
-                    // short-cirtuit, no tooltip data
-                    return
-                }
-                target.style.cursor = 'pointer'
-                target.classList.add('selection-highlight')
-            }),
-            map(data => ({ target, ctx, ...data }))
-        )
-    }
-    /**
-     * getDefinition wraps the asynchronous fetch of tooltip data from the Sourcegraph API.
-     * This Observable will emit exactly one value before it completes.
-     */
-    private getDefinition(ctx: LSPTextDocumentPositionParams): Observable<string | null> {
-        return getJumpURL(ctx, this.props.extensions)
-    }
-
-    /**
-     * getLoadingTooltip emits "loading" tooltip data after a delay,
-     * iff the other Observable hasn't already emitted a value.
-     */
-    private getLoadingTooltip(
-        target: HTMLElement,
-        ctx: LSPTextDocumentPositionParams,
-        tooltip: Observable<TooltipData>
-    ): Observable<TooltipData> {
-        return interval(500).pipe(take(1), takeUntil(tooltip), map(() => ({ target, ctx, loading: true })))
-    }
-
-    private handleGoToDefinition = (defCtx: AbsoluteRepoFilePosition) => (e: MouseEvent) => {
-        eventLogger.log('GoToDefClicked')
-        if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
-            return
-        }
-        e.preventDefault()
-        hideTooltip()
-        this.setFixedTooltip()
-        this.props.history.push(toAbsoluteBlobURL(defCtx))
-    }
-
-    private handleFindReferences = (ctx: AbsoluteRepoFilePosition) => (e: MouseEvent) => {
-        eventLogger.log('FindRefsClicked')
-        if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) {
-            return
-        }
-        e.preventDefault()
-        this.props.history.push(toPrettyBlobURL({ ...ctx, viewState: 'references' }))
-    }
-
-    private handleDismiss = () => {
-        this.setFixedTooltip()
-    }
-
-    private tooltipActions = () => ({
-        definition: this.handleGoToDefinition,
-        references: this.handleFindReferences,
-        dismiss: this.handleDismiss,
-    })
 }

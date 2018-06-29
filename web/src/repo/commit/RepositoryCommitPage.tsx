@@ -1,21 +1,28 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
-import { upperFirst } from 'lodash'
+import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, switchMap, tap } from 'rxjs/operators'
-import { ExtensionsProps } from '../../backend/features'
+import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
+import { ExtensionsProps, getHover, getJumpURL } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
+import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
+import { getModeFromPath } from '../../util'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
+import { toNativeEvent } from '../../util/react'
+import { propertyIsDefined } from '../../util/types'
+import { HoveredToken } from '../blob/tooltips'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffNode, FileDiffNodeProps } from '../compare/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
+import { createHoverifier, HoveredTokenContext, Hoverifier, HoverState } from '../hoverify/hoverifier'
+import { HoverOverlay } from '../hoverify/HoverOverlay'
 
 const queryCommit = memoizeObservable(
     (args: { repo: GQL.ID; revspec: string }): Observable<GQL.IGitCommit> =>
@@ -55,22 +62,86 @@ interface Props extends RouteComponentProps<{ revspec: string }>, ExtensionsProp
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
 }
 
-interface State {
+interface State extends HoverState {
     /** The commit, undefined while loading, or an error. */
     commitOrError?: GQL.IGitCommit | ErrorLike
 }
 
 class FilteredFileDiffConnection extends FilteredConnection<
     GQL.IFileDiff,
-    Pick<FileDiffNodeProps, 'base' | 'head' | 'lineNumbers' | 'className' | 'extensions' | 'location' | 'history'>
+    Pick<
+        FileDiffNodeProps,
+        'base' | 'head' | 'lineNumbers' | 'className' | 'extensions' | 'location' | 'history' | 'hoverifier'
+    >
 > {}
 
 /** Displays a commit. */
-export class RepositoryCommitPage extends React.PureComponent<Props, State> {
-    public state: State = {}
-
+export class RepositoryCommitPage extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
+
+    /** Emits whenever the ref callback for the hover element is called */
+    private hoverOverlayElements = new Subject<HTMLElement | null>()
+    private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
+
+    /** Emits whenever the ref callback for the hover element is called */
+    private repositoryCommitPageElements = new Subject<HTMLElement | null>()
+    private nextRepositoryCommitPageElement = (element: HTMLElement | null) =>
+        this.repositoryCommitPageElements.next(element)
+
+    /** Emits when the go to definition button was clicked */
+    private goToDefinitionClicks = new Subject<React.MouseEvent<HTMLElement>>()
+    private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => this.goToDefinitionClicks.next(event)
+
+    /** Emits when the close button was clicked */
+    private closeButtonClicks = new Subject<React.MouseEvent<HTMLElement>>()
+    private nextCloseButtonClick = (event: React.MouseEvent<HTMLElement>) => this.closeButtonClicks.next(event)
+
     private subscriptions = new Subscription()
+    private hoverifier: Hoverifier
+
+    constructor(props: Props) {
+        super(props)
+        this.hoverifier = createHoverifier({
+            closeButtonClicks: this.closeButtonClicks.pipe(map(toNativeEvent)),
+            goToDefinitionClicks: this.goToDefinitionClicks.pipe(map(toNativeEvent)),
+            hoverOverlayElements: this.hoverOverlayElements,
+            hoverOverlayRerenders: this.componentUpdates.pipe(
+                withLatestFrom(this.hoverOverlayElements, this.repositoryCommitPageElements),
+                map(([, hoverOverlayElement, repositoryCommitPageElement]) => ({
+                    hoverOverlayElement,
+                    // The root component element is guaranteed to be rendered after a componentDidUpdate
+                    scrollElement: repositoryCommitPageElement!,
+                })),
+                // Can't reposition HoverOverlay if it wasn't rendered
+                filter(propertyIsDefined('hoverOverlayElement'))
+            ),
+            getHistory: () => this.props.history,
+            fetchHover: hoveredToken =>
+                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props.extensions),
+            fetchJumpURL: hoveredToken =>
+                getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props.extensions),
+        })
+        this.subscriptions.add(this.hoverifier)
+        this.state = this.hoverifier.hoverState
+        this.subscriptions.add(
+            this.hoverifier.hoverStateUpdates.subscribe(update => {
+                this.setState(update)
+            })
+        )
+    }
+
+    private getLSPTextDocumentPositionParams(
+        hoveredToken: HoveredToken & HoveredTokenContext
+    ): LSPTextDocumentPositionParams {
+        return {
+            repoPath: hoveredToken.repoPath,
+            rev: hoveredToken.rev,
+            filePath: hoveredToken.filePath,
+            commitID: hoveredToken.commitID,
+            position: hoveredToken,
+            mode: getModeFromPath(hoveredToken.filePath || ''),
+        }
+    }
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('RepositoryCommit')
@@ -103,8 +174,12 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillUpdate(nextProps: Props): void {
-        this.componentUpdates.next(nextProps)
+    public shouldComponentUpdate(nextProps: Readonly<Props>, nextState: Readonly<State>): boolean {
+        return !isEqual(this.props, nextProps) || !isEqual(this.state, nextState)
+    }
+
+    public componentDidUpdate(): void {
+        this.componentUpdates.next(this.props)
     }
 
     public componentWillUnmount(): void {
@@ -114,7 +189,7 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-commit-page area">
+            <div className="repository-commit-page area" ref={this.nextRepositoryCommitPageElement}>
                 <PageTitle
                     title={
                         this.state.commitOrError && !isErrorLike(this.state.commitOrError)
@@ -165,6 +240,7 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
                                     extensions: this.props.extensions,
                                     location: this.props.location,
                                     history: this.props.history,
+                                    hoverifier: this.hoverifier,
                                 }}
                                 updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
                                 defaultFirst={25}
@@ -176,6 +252,14 @@ export class RepositoryCommitPage extends React.PureComponent<Props, State> {
                         </>
                     )}
                 </div>
+                {this.state.hoverOverlayProps && (
+                    <HoverOverlay
+                        {...this.state.hoverOverlayProps}
+                        hoverRef={this.nextOverlayElement}
+                        onGoToDefinitionClick={this.nextGoToDefinitionClick}
+                        onCloseButtonClick={this.nextCloseButtonClick}
+                    />
+                )}
             </div>
         )
     }

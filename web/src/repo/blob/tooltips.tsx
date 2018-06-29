@@ -482,7 +482,7 @@ interface Line {
     line: number
 }
 
-interface HoveredToken {
+export interface HoveredToken {
     /** 1-indexed */
     line: number
     /** 1-indexed */

@@ -7,12 +7,13 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { MarkedString, MarkupContent, MarkupKind, Position } from 'vscode-languageserver-types'
-import { PositionSpec, RangeSpec, RepoFile, ViewStateSpec } from '..'
+import { MarkedString, MarkupContent, MarkupKind } from 'vscode-languageserver-types'
 import { HoverMerged } from '../../backend/features'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toPrettyBlobURL } from '../../util/url'
+import { HoveredToken } from '../blob/tooltips'
+import { HoveredTokenContext } from './hoverifier'
 
 /**
  * Attempts to syntax-highlight the given code.
@@ -49,7 +50,7 @@ const ButtonOrLink: React.StatelessComponent<{ to?: string } & React.HTMLAttribu
 
 const LOADING: 'loading' = 'loading'
 
-interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<ViewStateSpec>, Partial<RangeSpec> {
+export interface HoverOverlayProps {
     /** What to show as contents */
     hoverOrError?: typeof LOADING | HoverMerged | null | ErrorLike
 
@@ -62,9 +63,6 @@ interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<Vie
      */
     definitionURLOrError?: typeof LOADING | { jumpURL: string } | null | ErrorLike
 
-    /** Called when the Go-to-definition button was clicked */
-    onGoToDefinitionClick: (event: React.MouseEvent<HTMLElement>) => void
-
     /** The position of the tooltip (assigned to `style`) */
     overlayPosition?: { left: number; top: number }
 
@@ -75,13 +73,16 @@ interface HoverOverlayProps extends RepoFile, Partial<PositionSpec>, Partial<Vie
      * The hovered token (position and word).
      * Used for the Find References/Implementations buttons and for error messages
      */
-    hoveredTokenPosition?: Position
+    hoveredToken?: HoveredToken & HoveredTokenContext
 
     /** Whether to show the close button for the hover overlay */
     showCloseButton: boolean
 
+    /** Called when the Go-to-definition button was clicked */
+    onGoToDefinitionClick?: (event: React.MouseEvent<HTMLElement>) => void
+
     /** Called when the close button is clicked */
-    onCloseButtonClick: (event: React.MouseEvent<HTMLElement>) => void
+    onCloseButtonClick?: (event: React.MouseEvent<HTMLElement>) => void
 }
 
 const onFindImplementationsClick = () => eventLogger.log('FindImplementationsClicked')
@@ -190,14 +191,12 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
             <ButtonOrLink
                 onClick={onFindReferencesClick}
                 to={
-                    props.hoveredTokenPosition &&
+                    props.hoveredToken &&
                     toPrettyBlobURL({
-                        repoPath: props.repoPath,
-                        commitID: props.commitID,
-                        rev: props.rev,
-                        filePath: props.filePath,
-                        position: props.hoveredTokenPosition,
-                        range: props.range,
+                        repoPath: props.hoveredToken.repoPath,
+                        rev: props.hoveredToken.rev,
+                        filePath: props.hoveredToken.filePath,
+                        position: props.hoveredToken,
                         viewState: 'references',
                     })
                 }
@@ -208,14 +207,12 @@ export const HoverOverlay: React.StatelessComponent<HoverOverlayProps> = props =
             <ButtonOrLink
                 onClick={onFindImplementationsClick}
                 to={
-                    props.hoveredTokenPosition &&
+                    props.hoveredToken &&
                     toPrettyBlobURL({
-                        repoPath: props.repoPath,
-                        commitID: props.commitID,
-                        rev: props.rev,
-                        filePath: props.filePath,
-                        position: props.hoveredTokenPosition,
-                        range: props.range,
+                        repoPath: props.hoveredToken.repoPath,
+                        rev: props.hoveredToken.rev,
+                        filePath: props.hoveredToken.filePath,
+                        position: props.hoveredToken,
                         viewState: 'impl',
                     })
                 }

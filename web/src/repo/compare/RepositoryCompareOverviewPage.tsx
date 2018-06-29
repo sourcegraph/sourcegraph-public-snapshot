@@ -10,6 +10,7 @@ import * as GQL from '../../backend/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
+import { Hoverifier } from '../hoverify/hoverifier'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
@@ -73,6 +74,7 @@ interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>,
 
     /** The head of the comparison. */
     head: { repoPath: string; repoID: GQL.ID; rev?: string | null }
+    hoverifier: Hoverifier
 }
 
 interface State {
