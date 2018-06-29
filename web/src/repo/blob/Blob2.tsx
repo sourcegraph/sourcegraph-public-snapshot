@@ -10,7 +10,7 @@ import { LSPSelector, LSPTextDocumentPositionParams, TextDocumentDecoration } fr
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toNativeEvent } from '../../util/react'
 import { propertyIsDefined } from '../../util/types'
-import { parseHash, toPositionOrRangeHash } from '../../util/url'
+import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { getRowInCodeElement, getRowsInRange } from '../hoverify/helpers'
 import { createHoverifier, HoverState } from '../hoverify/hoverifier'
 import { HoverOverlay } from '../hoverify/HoverOverlay'
@@ -98,9 +98,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         }
 
         /** Emits parsed positions found in the URL */
-        const locationPositions: Observable<Position> = this.componentUpdates.pipe(
+        const locationPositions: Observable<LineOrPositionOrRange> = this.componentUpdates.pipe(
             map(props => parseHash(props.location.hash)),
-            filter(Position.is),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
         )
