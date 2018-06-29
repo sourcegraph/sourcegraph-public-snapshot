@@ -81,7 +81,7 @@ interface State {
     loading: boolean
 }
 
-export class QueryInput extends React.PureComponent<Props, State> {
+export class QueryInput extends React.Component<Props, State> {
     private static SUGGESTIONS_QUERY_MIN_LENGTH = 2
 
     /** Emits on componentDidUpdate and componentDidMount */
@@ -236,7 +236,10 @@ export class QueryInput extends React.PureComponent<Props, State> {
             /** Whenever the URL query has a "focus" property, remove it and focus the query input. */
             this.subscriptions.add(
                 this.componentUpdates
-                    .pipe(filter(({ location }) => new URLSearchParams(location.search).get('focus') !== null))
+                    .pipe(
+                        startWith(props),
+                        filter(({ location }) => new URLSearchParams(location.search).get('focus') !== null)
+                    )
                     .subscribe(props => {
                         this.focusInputAndPositionCursorAtEnd()
 
