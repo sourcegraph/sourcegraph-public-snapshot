@@ -96,22 +96,32 @@ export class ContributedActionItem extends React.PureComponent<Props> {
 
         let edit: GQL.IConfigurationEdit
         if (this.props.contribution.experimentalSettingsAction) {
-            const { path: keyPath, cycleValues } = this.props.contribution.experimentalSettingsAction
-            if (cycleValues.length === 0) {
-                return
-            }
-            const node = parseTree(JSON.stringify(extension.settings.merged))
-            const currentValueNode = findNodeAtLocation(node, keyPath)
-            let currentValueIndex: number
-            if (currentValueNode === undefined) {
-                currentValueIndex = -1
-            } else {
-                const currentValue = getNodeValue(currentValueNode)
-                currentValueIndex = cycleValues.findIndex(v => isEqual(v, currentValue))
+            const { path: keyPath, cycleValues, prompt } = this.props.contribution.experimentalSettingsAction
+
+            let value: any
+            if (cycleValues !== undefined) {
+                if (cycleValues.length === 0) {
+                    return
+                }
+                const node = parseTree(JSON.stringify(extension.settings.merged))
+                const currentValueNode = findNodeAtLocation(node, keyPath)
+                let currentValueIndex: number
+                if (currentValueNode === undefined) {
+                    currentValueIndex = -1
+                } else {
+                    const currentValue = getNodeValue(currentValueNode)
+                    currentValueIndex = cycleValues.findIndex(v => isEqual(v, currentValue))
+                }
+                value = cycleValues[(currentValueIndex + 1) % cycleValues.length]
+            } else if (prompt !== undefined) {
+                value = window.prompt(prompt)
+                if (value === null) {
+                    return
+                }
             }
             edit = {
                 keyPath: toGQLKeyPath(this.props.contribution.experimentalSettingsAction.path),
-                value: cycleValues[(currentValueIndex + 1) % cycleValues.length],
+                value,
             }
         } else {
             throw new Error('nothing to do')

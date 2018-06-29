@@ -371,6 +371,7 @@ export interface DecorationAttachmentRenderOptions {
     backgroundColor?: string
     color?: string
     contentText?: string
+    hoverMessage?: string
     linkURL?: string
 }
 

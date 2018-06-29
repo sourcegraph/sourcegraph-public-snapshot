@@ -11,9 +11,9 @@ export const ContributedActions: React.SFC<Props> = props => {
     const items: ContributedActionItemProps[] = []
     for (const x of props.extensions) {
         if (x.contributions && x.contributions.commands && x.contributions.menus && x.contributions.menus[props.menu]) {
-            for (const { command: commandID } of x.contributions.menus[props.menu]) {
+            for (const { command: commandID, hidden } of x.contributions.menus[props.menu]) {
                 const command = x.contributions.commands.find(c => c.command === commandID)
-                if (command) {
+                if (command && !hidden) {
                     items.push({
                         extensionID: x.extensionID,
                         contribution: command,

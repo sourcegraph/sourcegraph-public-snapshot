@@ -33,6 +33,7 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
             <LinkOrSpan
                 className="line-decoration-attachment"
                 to={this.props.attachment.linkURL}
+                data-tooltip={this.props.attachment.hoverMessage}
                 // Use target to open external URLs (or else react-router's Link will treat the URL as a URL path
                 // and navigation will fail).
                 target={

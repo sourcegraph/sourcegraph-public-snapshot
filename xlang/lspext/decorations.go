@@ -24,5 +24,6 @@ type DecorationAttachmentRenderOptions struct {
 	BackgroundColor string `json:"backgroundColor,omitempty"`
 	Color           string `json:"color,omitempty"`
 	ContentText     string `json:"contentText,omitempty"`
+	HoverMessage    string `json:"hoverMessage,omitempty"`
 	LinkURL         string `json:"linkURL,omitempty"`
 }

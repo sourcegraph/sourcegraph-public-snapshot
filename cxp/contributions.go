@@ -29,8 +29,12 @@ type CommandContribution struct {
 // CommandContributionSettingsAction is the special action executed by a contributed command that
 // modifies settings.
 type CommandContributionSettingsAction struct {
-	Path        jsonx.Path    `json:"path"`        // the key path to the value
-	CycleValues []interface{} `json:"cycleValues"` // the values of the setting to cycle among
+	Path jsonx.Path `json:"path"` // the key path to the value
+
+	// Exactly 1 of the following fields must be set.
+
+	CycleValues []interface{} `json:"cycleValues,omitempty"` // the values of the setting to cycle among
+	Prompt      string        `json:"prompt,omitempty"`      // show a user prompt to obtain the value for the setting
 }
 
 // MenuContributions describes the menu items contributed by an extension.
@@ -41,4 +45,5 @@ type MenuContributions struct {
 // MenuItemContribution is a menu item contributed by an extension.
 type MenuItemContribution struct {
 	Command string `json:"command"` // the command to execute when selected (== (CommandContribution).Command)
+	Hidden  bool   `json:"hidden"`  // whether the item is hidden (TODO(extensions): will be replaced w/ more general contextKey/when-like API)
 }

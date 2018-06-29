@@ -18,7 +18,8 @@ export interface CommandContribution {
 
 interface CommandContributionSettingsAction {
     path: (string | number)[]
-    cycleValues: any[]
+    cycleValues?: any[]
+    prompt?: string
 }
 
 export enum ContributableMenu {
@@ -29,4 +30,5 @@ interface MenuContributions extends Record<ContributableMenu, MenuItemContributi
 
 interface MenuItemContribution {
     command: string
+    hidden?: boolean
 }

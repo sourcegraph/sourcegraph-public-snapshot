@@ -25,16 +25,11 @@ import (
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/cxp/pkg/cxpmain"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
 //docker:user sourcegraph
-
-var (
-	defaultProject = env.Get("LIGHTSTEP_PROJECT", "", "the default LightStep project name (used for generating URLs)")
-)
 
 func main() {
 	cxpmain.Main("cx-lightstep", func() jsonrpc2.Handler { return jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError((&handler{}).handle)) })
@@ -88,33 +83,52 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 				return nil, err
 			}
 		}
-		if settings.Project == "" {
-			settings.Project = defaultProject
-		}
 		h.mu.Lock()
 		h.settings = settings
 		h.mu.Unlock()
+
+		var showHide string
+		if settings.SpanLinks {
+			showHide = "Hide"
+		} else {
+			showHide = "Show"
+		}
+
+		contributions := &cxp.Contributions{
+			Commands: []*cxp.CommandContribution{
+				{
+					Command: toggleSpanLinksCommandID,
+					Title:   showHide + " OpenTracing span links",
+					IconURL: iconURL,
+					ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
+						Path:        jsonx.PropertyPath("spanLinks"),
+						CycleValues: []interface{}{true, false},
+					},
+				},
+				{
+					Command: setProjectCommandID,
+					Title:   "Set LightStep project name",
+					IconURL: iconURL,
+					ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
+						Path:   jsonx.PropertyPath("project"),
+						Prompt: "Set LightStep project name (example: mycompany-prod)",
+					},
+				},
+			},
+			Menus: &cxp.MenuContributions{
+				EditorTitle: []*cxp.MenuItemContribution{
+					// Show only 1 of these commands, depending on whether the project name is set.
+					{Command: toggleSpanLinksCommandID, Hidden: settings.Project == ""},
+					{Command: setProjectCommandID, Hidden: settings.Project != ""},
+				},
+			},
+		}
 
 		return lsp.InitializeResult{
 			Capabilities: lsp.ServerCapabilities{
 				Experimental: cxp.ExperimentalServerCapabilities{
 					DecorationsProvider: true,
-					Contributions: &cxp.Contributions{
-						Commands: []*cxp.CommandContribution{
-							{
-								Command: toggleSpanLinksCommandID,
-								Title:   "Show/hide OpenTracing span links",
-								IconURL: iconURL,
-								ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
-									Path:        jsonx.PropertyPath("spanLinks"),
-									CycleValues: []interface{}{true, false},
-								},
-							},
-						},
-						Menus: &cxp.MenuContributions{
-							EditorTitle: []*cxp.MenuItemContribution{{Command: toggleSpanLinksCommandID}},
-						},
-					},
+					Contributions:       contributions,
 				},
 			},
 		}, nil
@@ -131,15 +145,15 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			return nil, err
 		}
 
-		if !settings.SpanLinks {
-			return []lspext.TextDocumentDecoration{}, nil
-		}
-
 		uri, err := url.Parse(string(params.TextDocument.URI))
 		if err != nil {
 			return nil, err
 		}
 		path := strings.TrimPrefix(uri.Path, "/")
+
+		if !settings.SpanLinks && settings.Project != "" {
+			return []lspext.TextDocumentDecoration{}, nil
+		}
 
 		fs := vfsutil.XRemoteFS{Conn: conn}
 		f, err := fs.Open(ctx, "/"+path)
@@ -154,21 +168,27 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		spans := findSpans(data)
 		decorations := make([]lspext.TextDocumentDecoration, len(spans))
 		for i, span := range spans {
-			decorations[i] = lspext.TextDocumentDecoration{
+			d := lspext.TextDocumentDecoration{
 				Range: lsp.Range{
 					Start: lsp.Position{Line: span.line},
 					End:   lsp.Position{Line: span.line},
 				},
 				After: &lspext.DecorationAttachmentRenderOptions{
-					ContentText:     "Live traces (LightStep) » ",
 					Color:           "rgba(255, 255, 255, 0.8)",
 					BackgroundColor: "#2925ff", // LightStep brand color
-					LinkURL: fmt.Sprintf("https://app.lightstep.com/%s/live?q=%s",
-						settings.Project,
-						url.QueryEscape(fmt.Sprintf("operation:%q", span.query)),
-					),
 				},
 			}
+			if settings.Project != "" {
+				d.After.ContentText = "Live traces (LightStep) » "
+				d.After.LinkURL = fmt.Sprintf("https://app.lightstep.com/%s/live?q=%s",
+					settings.Project,
+					url.QueryEscape(fmt.Sprintf("operation:%q", span.query)),
+				)
+			} else {
+				d.After.ContentText = "Configure LightStep..."
+				d.After.HoverMessage = "Press the LightStep icon in the title bar to set your project name."
+			}
+			decorations[i] = d
 		}
 		return decorations, nil
 	}
@@ -193,7 +213,10 @@ func findSpans(text []byte) []span {
 	return found
 }
 
-const toggleSpanLinksCommandID = "lightstep.spanLinks.toggle"
+const (
+	toggleSpanLinksCommandID = "lightstep.spanLinks.toggle"
+	setProjectCommandID      = "lightstep.project.set"
+)
 
 var iconURL = "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(lightstepLogoSVG))
 
