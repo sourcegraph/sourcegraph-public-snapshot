@@ -47,7 +47,7 @@ export class ContributedActionItem extends React.PureComponent<Props> {
                                         this.props.extensions.map(
                                             x =>
                                                 x.extensionID === this.props.extensionID
-                                                    ? { ...x, settings: mergedSettings }
+                                                    ? { ...x, settings: { merged: mergedSettings } }
                                                     : x
                                         )
                                     )
