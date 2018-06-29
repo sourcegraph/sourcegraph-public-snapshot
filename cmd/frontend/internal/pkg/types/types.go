@@ -85,18 +85,6 @@ type OrgMembership struct {
 	UpdatedAt time.Time
 }
 
-type UserTag struct {
-	ID     int32
-	UserID int32
-	Name   string
-}
-
-type OrgTag struct {
-	ID    int32
-	OrgID int32
-	Name  string
-}
-
 type PhabricatorRepo struct {
 	ID       int32
 	URI      api.RepoURI

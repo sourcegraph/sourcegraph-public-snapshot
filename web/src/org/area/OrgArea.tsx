@@ -40,9 +40,6 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
                     viewerIsMember
                     viewerCanAdminister
                     createdAt
-                    tags {
-                        name
-                    }
                     registryExtensions {
                         url
                     }

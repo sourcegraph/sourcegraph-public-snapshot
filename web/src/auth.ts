@@ -35,14 +35,7 @@ export function refreshCurrentUser(): Observable<never> {
                     nodes {
                         id
                         name
-                        tags {
-                            name
-                        }
                     }
-                }
-                tags {
-                    id
-                    name
                 }
                 session {
                     canSignOut

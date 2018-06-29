@@ -129,23 +129,6 @@ func (o *orgResolver) ConfigurationCascade() *configurationCascadeResolver {
 	return &configurationCascadeResolver{subject: &configurationSubject{org: o}}
 }
 
-func (o *orgResolver) Tags(ctx context.Context) ([]*organizationTagResolver, error) {
-	// 🚨 SECURITY: Only organization members and site admins may access the tags.
-	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
-		return nil, err
-	}
-
-	tags, err := db.OrgTags.GetByOrgID(ctx, o.org.ID)
-	if err != nil {
-		return nil, err
-	}
-	organizationTagResolvers := []*organizationTagResolver{}
-	for _, tag := range tags {
-		organizationTagResolvers = append(organizationTagResolvers, &organizationTagResolver{tag})
-	}
-	return organizationTagResolvers, nil
-}
-
 func (o *orgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
 		orgInvitation, err := db.OrgInvitations.GetPending(ctx, o.org.ID, actor.UID)

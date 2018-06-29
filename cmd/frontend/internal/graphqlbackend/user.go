@@ -194,23 +194,6 @@ func (r *userResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 	return &c, nil
 }
 
-func (r *userResolver) Tags(ctx context.Context) ([]*userTagResolver, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's tags.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
-		return nil, err
-	}
-
-	tags, err := db.UserTags.GetByUserID(ctx, r.user.ID)
-	if err != nil {
-		return nil, err
-	}
-	userTagResolvers := []*userTagResolver{}
-	for _, tag := range tags {
-		userTagResolvers = append(userTagResolvers, &userTagResolver{tag})
-	}
-	return userTagResolvers, nil
-}
-
 func (r *userResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseResolver, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's survey responses.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {

@@ -11,12 +11,10 @@ var (
 	UserActivity       = &userActivity{} // DEPRECATED: use package useractivity instead (based on persisted redis cache)
 	SavedQueries       = &savedQueries{}
 	Orgs               = &orgs{}
-	OrgTags            = &orgTags{}
 	OrgMembers         = &orgMembers{}
 	Settings           = &settings{}
 	Users              = &users{}
 	UserEmails         = &userEmails{}
-	UserTags           = &userTags{}
 	SiteConfig         = &siteConfig{}
 	CertCache          = &certCache{}
 

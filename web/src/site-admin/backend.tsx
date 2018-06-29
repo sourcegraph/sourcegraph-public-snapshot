@@ -36,9 +36,6 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
                                 name
                             }
                         }
-                        tags {
-                            name
-                        }
                     }
                     totalCount
                 }
@@ -76,9 +73,6 @@ export function fetchAllOrganizations(args: { first?: number; query?: string }):
                         }
                         members {
                             totalCount
-                        }
-                        tags {
-                            name
                         }
                     }
                     totalCount

@@ -1917,10 +1917,6 @@ type User implements Node, ConfigurationSubject, ExtensionConfigurationSubject {
     organizations: OrgConnection!
     # This user's organization memberships.
     organizationMemberships: OrganizationMembershipConnection!
-    # The internal tags associated with the user. This is an internal site management feature.
-    #
-    # Only the user and site admins can access this field.
-    tags: [UserTag!]!
     # The user's usage activity on Sourcegraph.
     #
     # Only the user and site admins can access this field.
@@ -2141,10 +2137,6 @@ type Org implements Node, ConfigurationSubject, ExtensionConfigurationSubject {
     # The configuration cascade including this subject and all applicable subjects whose configuration is lower
     # precedence than this subject.
     configurationCascade: ConfigurationCascade!
-    # The internal tags associated with the organization. This is an internal site management feature.
-    #
-    # Only organization members and site admins can access this field.
-    tags: [OrganizationTag!]!
     # A pending invitation for the viewer to join this organization, if any.
     viewerPendingInvitation: OrganizationInvitation
     # Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
@@ -2823,22 +2815,6 @@ type ApproximateCount {
     exact: Boolean!
     # A textual label that approximates the count (e.g., "99+" if the counting is cut off at 99).
     label: String!
-}
-
-# A user tag.
-type UserTag {
-    # The ID.
-    id: Int!
-    # The name.
-    name: String!
-}
-
-# An organization tag.
-type OrganizationTag {
-    # The ID.
-    id: Int!
-    # The name.
-    name: String!
 }
 
 # UserActivity describes a user's activity on the site.
