@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	insecureAllowExtensionTargets = strings.Fields(env.Get("INSECURE_ALLOW_EXTENSION_TARGETS", "*.tcp.ngrok.io:* *://*.ngrok.io", "whitelist of globs specifying allowed TCP host:port and WebSocket URL targets for extensions (INSECURE: allows users to cause the server to communicate with these targets; include only targets that are known to be in the external network)"))
+	insecureAllowExtensionTargets = strings.Fields(env.Get("INSECURE_ALLOW_EXTENSION_TARGETS", "", "whitelist of globs specifying allowed TCP host:port and WebSocket URL targets for extensions (INSECURE: allows users to cause the server to communicate with these targets; include only targets that are known to be in the external network)"))
 	insecureAllowExtensionExec, _ = strconv.ParseBool(env.Get("INSECURE_EXTENSION_EXEC", "false", "allow extensions to specify a command to exec (INSECURE: allows users to run arbitrary shell commands)"))
 )
 
