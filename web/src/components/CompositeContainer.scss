@@ -21,10 +21,6 @@
             margin-left: 0.75rem;
             user-select: none;
 
-            &:not(&-active) {
-                opacity: 0.8;
-            }
-
             @media (max-width: $media-md) {
                 margin-left: 0.25rem;
             }

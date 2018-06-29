@@ -2,7 +2,7 @@ import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as H from 'history'
 import * as React from 'react'
-import { NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Subject, Subscription, Unsubscribable } from 'rxjs'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
@@ -236,15 +236,14 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         ))}
                     {this.props.repo.viewerCanAdminister && (
                         <li className="nav-item">
-                            <NavLink
+                            <Link
                                 to={`/${this.props.repo.uri}/-/settings`}
                                 className="nav-link composite-container__header-action"
-                                activeClassName="composite-container__header-action-active"
                                 data-tooltip="Repository settings"
                             >
                                 <GearIcon className="icon-inline" />
                                 <span className="composite-container__header-action-text">Settings</span>
-                            </NavLink>
+                            </Link>
                         </li>
                     )}
                 </ul>
