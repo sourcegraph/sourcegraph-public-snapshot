@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -35,6 +36,11 @@ type handler struct {
 	mu       sync.Mutex
 	rootURI  *uri.URI
 	revision string
+	settings extensionSettings
+}
+
+type extensionSettings struct {
+	Token string `json:"token,omitempty"`
 }
 
 func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
@@ -64,10 +70,21 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			return nil, errors.New("client does not support decorations")
 		}
 
-		var params lspext.InitializeParams
+		var params cxp.InitializeParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
+
+		var settings extensionSettings
+		if merged := params.InitializationOptions.Settings.Merged; merged != nil {
+			if err := json.Unmarshal(*merged, &settings); err != nil {
+				return nil, err
+			}
+		}
+		h.mu.Lock()
+		h.settings = settings
+		h.mu.Unlock()
+
 		rootURI, err := uri.Parse(string(params.OriginalRootURI))
 		if err != nil {
 			return nil, err
@@ -106,7 +123,14 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		fetchCodecov := func(repositorySlug string, revision string, path string) (map[int]interface{}, error) {
 			codeHost := "gh" // TODO support other code hosts
 			url := fmt.Sprintf("https://codecov.io/api/%s/%s/commits/%s?src=extension", codeHost, repositorySlug, revision)
-			resp, err := ctxhttp.Get(ctx, nil, url)
+			req, err := http.NewRequest("GET", url, nil)
+			if err != nil {
+				return nil, err
+			}
+			if h.settings.Token != "" {
+				req.Header.Set("Authorization", "token "+h.settings.Token)
+			}
+			resp, err := ctxhttp.Do(ctx, nil, req)
 			if err != nil {
 				return nil, err
 			}
@@ -114,7 +138,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 
 			if resp.StatusCode != 200 {
 				body, _ := ioutil.ReadAll(io.LimitReader(resp.Body, 200))
-				return nil, fmt.Errorf("Codecov API returned HTTP %d (expected 200) with body: %s", resp.StatusCode, string(body))
+				return nil, fmt.Errorf("Codecov API returned HTTP %d (expected 200) at %s with body: %s", resp.StatusCode, req.URL, string(body))
 			}
 
 			type codecovFile struct {
@@ -167,7 +191,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			yellowHue := 60
 			saturated := 100
 			hsla := func(hue int, saturation int, lightness int, alpha float64) string {
-				return fmt.Sprintf("hsla(%d, %d%%, %d%%, %.2f", hue, saturation, lightness, alpha)
+				return fmt.Sprintf("hsla(%d, %d%%, %d%%, %.2f)", hue, saturation, lightness, alpha)
 			}
 
 			decorations := []lspext.TextDocumentDecoration{}
@@ -209,7 +233,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 					continue
 				}
 				decorations = append(decorations, lspext.TextDocumentDecoration{
-					Background: hsla(hue, saturated, 50, 0.1),
+					BackgroundColor: hsla(hue, saturated, 50, 0.1),
 					Range: lsp.Range{
 						Start: lsp.Position{Line: line - 1},
 						End:   lsp.Position{Line: line - 1},
