@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 )
@@ -28,6 +29,9 @@ func getExtensionByExtensionID(ctx context.Context, extensionID string) (*regist
 	}
 	if local != nil {
 		return &registryExtensionMultiResolver{local: &registryExtensionDBResolver{local}}, nil
+	}
+	if remote == nil {
+		return nil, fmt.Errorf("no remote extension found with ID %q", extensionID)
 	}
 	return &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{remote}}, nil
 }
