@@ -95,6 +95,7 @@ type ExecTarget struct {
 type ExperimentalFeatures struct {
 	CanonicalURLRedirect  string `json:"canonicalURLRedirect,omitempty"`
 	ConfigVars            string `json:"configVars,omitempty"`
+	Discussions           string `json:"discussions,omitempty"`
 	JumpToDefOSSIndex     string `json:"jumpToDefOSSIndex,omitempty"`
 	MultipleAuthProviders string `json:"multipleAuthProviders,omitempty"`
 	Platform              *bool  `json:"platform,omitempty"`

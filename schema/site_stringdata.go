@@ -78,6 +78,12 @@ const SiteSchemaJSON = `{
           "type": "boolean",
           "default": false,
           "!go": { "pointer": true }
+        },
+        "discussions": {
+          "description": "Enables the code discussions experiment.",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         }
       }
     },

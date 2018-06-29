@@ -5,7 +5,8 @@
     "configVars": "enabled",
     "canonicalURLRedirect": "enabled",
     "multipleAuthProviders": "enabled",
-    "platform": true
+    "platform": true,
+    "discussions": "enabled"
   },
   "htmlHeadTop":
     "<script>if (localStorage.getItem('disableDefaultFeatureFlags') !== 'true') { localStorage.setItem('treeVersion', '3'); localStorage.setItem('codeIntelStatusIndicator', 'true'); localStorage.setItem('blobVersion', '2'); }</script>",

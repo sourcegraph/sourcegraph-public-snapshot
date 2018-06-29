@@ -77,6 +77,9 @@ interface SourcegraphContext {
         'auth.public': boolean
     }
 
+    /** Whether discussions are enabled. */
+    discussionsEnabled: boolean
+
     /** Whether access tokens are enabled. */
     accessTokensEnabled: boolean
 
