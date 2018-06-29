@@ -558,7 +558,7 @@ describe('e2e test suite', () => {
                             await enableOrAddRepositoryIfNeeded()
                             await clickTooltipFindRefs()
                             await assertWindowLocation(
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6$references'
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6&tab=references'
                             )
 
                             await assertNonemptyLocalRefs()
@@ -590,7 +590,7 @@ describe('e2e test suite', () => {
 
                             await page.goto(
                                 baseURL +
-                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16$references:external'
+                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references:external'
                             )
                             await enableOrAddRepositoryIfNeeded()
 
