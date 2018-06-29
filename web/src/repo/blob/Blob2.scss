@@ -1,6 +1,7 @@
 @import '../hoverify/HoverOverlay';
 @import './blame/BlameLine';
 @import './LineDecorationAttachment';
+@import './discussions/DiscussionsGutterOverlay.scss';
 
 .blob2 {
     position: relative;

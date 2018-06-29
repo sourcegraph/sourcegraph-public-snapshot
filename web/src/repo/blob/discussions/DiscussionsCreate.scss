@@ -1,0 +1,7 @@
+@import './DiscussionsInput';
+@import './DiscussionsNavbar';
+
+.discussions-create {
+    display: flex;
+    flex-direction: column;
+}

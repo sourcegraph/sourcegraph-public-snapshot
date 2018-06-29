@@ -69,7 +69,7 @@ export const BLOB_PADDING_TOP = 8
 
 /**
  * Calculates the desired position of the hover overlay depending on the container,
- * the hover target and the size of the hover overlay
+ * the hover target and the size of the hover overlay (if tooltip is specified).
  *
  * @param scrollable The closest container that is scrollable
  * @param target The DOM Node that was hovered
@@ -78,7 +78,7 @@ export const BLOB_PADDING_TOP = 8
 export const calculateOverlayPosition = (
     scrollable: HTMLElement,
     target: HTMLElement,
-    tooltip: HTMLElement
+    tooltip?: HTMLElement
 ): { left: number; top: number } => {
     // The scrollable element is the one with scrollbars. The scrolling element is the one with the content.
     const scrollableBounds = scrollable.getBoundingClientRect()
@@ -88,9 +88,13 @@ export const calculateOverlayPosition = (
     // changes to vertical height if the tooltip is at the edge of the viewport.
     const relLeft = targetBound.left - scrollableBounds.left
 
+    const relTop = targetBound.top + scrollable.scrollTop - scrollableBounds.top
+    if (!tooltip) {
+        return { left: relLeft, top: relTop }
+    }
+
     // Anchor the tooltip vertically.
     const tooltipBound = tooltip.getBoundingClientRect()
-    const relTop = targetBound.top + scrollable.scrollTop - scrollableBounds.top
     // This is the padding-top of the blob element
     let tooltipTop = relTop - (tooltipBound.height - BLOB_PADDING_TOP)
     if (tooltipTop - scrollable.scrollTop < 0) {

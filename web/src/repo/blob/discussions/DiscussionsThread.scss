@@ -1,0 +1,11 @@
+@import './DiscussionsComment.scss';
+
+.discussions-thread {
+    display: flex;
+    flex-direction: column;
+
+    &__comments {
+        overflow: auto;
+        padding-bottom: 1rem;
+    }
+}

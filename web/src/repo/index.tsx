@@ -54,7 +54,7 @@ export interface RangeSpec {
     range: Range
 }
 
-export type BlobViewState = 'references' | 'references:external' | 'impl'
+export type BlobViewState = 'references' | 'references:external' | 'discussions' | 'impl'
 
 export interface ViewStateSpec {
     /**

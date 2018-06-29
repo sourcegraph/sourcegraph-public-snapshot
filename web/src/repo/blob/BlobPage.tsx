@@ -243,6 +243,8 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             <BlobPanel
                                 {...this.props}
                                 repoID={this.props.repoID}
+                                repoPath={this.props.repoPath}
+                                commitID={this.props.commitID}
                                 extensions={this.props.extensions}
                                 position={
                                     lprToRange(parseHash(this.props.location.hash))

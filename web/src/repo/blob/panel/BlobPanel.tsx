@@ -40,7 +40,9 @@ import { parseHash } from '../../../util/url'
 import { AbsoluteRepoFile, PositionSpec } from '../../index'
 import { RepoHeaderActionPortal } from '../../RepoHeaderActionPortal'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
+import { ToggleDiscussionsPanel } from '../actions/ToggleDiscussions'
 import { ToggleHistoryPanel } from '../actions/ToggleHistoryPanel'
+import { DiscussionsTree } from '../discussions/DiscussionsTree'
 import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
 import { FileLocationsTree } from './FileLocationsTree'
@@ -49,6 +51,8 @@ interface Props extends AbsoluteRepoFile, Partial<PositionSpec>, ModeSpec, Exten
     location: H.Location
     history: H.History
     repoID: GQL.ID
+    repoPath: string
+    commitID: string
     isLightTheme: boolean
 }
 
@@ -61,7 +65,7 @@ interface ContextSubject extends ModeSpec, ExtensionsProps {
     character: number
 }
 
-export type BlobPanelTabID = 'info' | 'def' | 'references' | 'references:external' | 'impl' | 'history'
+export type BlobPanelTabID = 'info' | 'def' | 'references' | 'references:external' | 'discussions' | 'impl' | 'history'
 
 function toSubject(props: Props): ContextSubject {
     const parsedHash = parseHash(props.location.hash)
@@ -240,6 +244,19 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         />
                     }
                 />
+                {window.context.discussionsEnabled && (
+                    <RepoHeaderActionPortal
+                        position="right"
+                        priority={20}
+                        element={
+                            <ToggleDiscussionsPanel
+                                key="toggle-blob-discussion-panel"
+                                location={this.props.location}
+                                history={this.props.history}
+                            />
+                        }
+                    />
+                )}
 
                 {titleRendered && <PanelTitlePortal>{titleRendered}</PanelTitlePortal>}
                 {extraRendered && (
@@ -353,6 +370,24 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         />
                     }
                 />
+                {window.context.discussionsEnabled && (
+                    <PanelItemPortal
+                        id="discussions"
+                        label="File discussions"
+                        priority={-5}
+                        element={
+                            <DiscussionsTree
+                                repoID={this.props.repoID}
+                                repoPath={this.props.repoPath}
+                                commitID={this.props.commitID}
+                                rev={this.props.rev}
+                                filePath={this.props.filePath}
+                                history={this.props.history}
+                                location={this.props.location}
+                            />
+                        }
+                    />
+                )}
             </>
         )
     }

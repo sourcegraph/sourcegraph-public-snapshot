@@ -1,0 +1,10 @@
+.discussions-navbar {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #212c45;
+}
+
+.theme-light {
+    .discussions-navbar {
+        border-color: $color-light-border;
+    }
+}

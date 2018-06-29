@@ -11,10 +11,11 @@ import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toNativeEvent } from '../../util/react'
 import { propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
-import { getRowInCodeElement, getRowsInRange } from '../hoverify/helpers'
+import { calculateOverlayPosition, getRowInCodeElement, getRowsInRange } from '../hoverify/helpers'
 import { createHoverifier, HoverState } from '../hoverify/hoverifier'
 import { HoverOverlay } from '../hoverify/HoverOverlay'
 import { BlameLine } from './blame/BlameLine'
+import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 import { locateTarget } from './tooltips'
 
@@ -35,6 +36,9 @@ interface BlobProps extends AbsoluteRepoFile, ModeSpec, ExtensionsProps {
 }
 
 interface BlobState extends HoverState {
+    /** The desired position of the discussions gutter overlay */
+    discussionsGutterOverlayPosition?: { left: number; top: number }
+
     /**
      * blameLineIDs is a map from line numbers with portal nodes created to portal IDs.
      * It's used to render the portals for blames. The line numbers are taken from the blob
@@ -205,6 +209,16 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                     this.createBlameDomNode(line, codeCell)
                     // Highlight row
                     element.classList.add('selected')
+                }
+
+                // Update overlay position for discussions gutter icon.
+                if (rows.length > 0) {
+                    this.setState({
+                        discussionsGutterOverlayPosition: calculateOverlayPosition(
+                            codeElement.parentElement!, // ! because we know its there
+                            rows[0].element.cells[0]
+                        ),
+                    })
                 }
             })
         )
@@ -384,6 +398,15 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                                 />
                             )
                         })}
+                {window.context.discussionsEnabled &&
+                    this.state.selectedPosition &&
+                    this.state.selectedPosition.line !== undefined && (
+                        <DiscussionsGutterOverlay
+                            overlayPosition={this.state.discussionsGutterOverlayPosition}
+                            selectedPosition={this.state.selectedPosition}
+                            {...this.props}
+                        />
+                    )}
             </div>
         )
     }

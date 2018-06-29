@@ -1,0 +1,110 @@
+import LinkIcon from '@sourcegraph/icons/lib/Link'
+import copy from 'copy-to-clipboard'
+import * as H from 'history'
+import * as React from 'react'
+import { Link } from 'react-router-dom'
+import * as GQL from '../../../backend/graphqlschema'
+import { Markdown } from '../../../components/Markdown'
+import { Timestamp } from '../../../components/time/Timestamp'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { UserAvatar } from '../../../user/UserAvatar'
+
+interface Props {
+    comment: GQL.IDiscussionComment
+    threadID: GQL.ID
+    repoID: GQL.ID
+    rev: string | undefined
+    filePath: string
+    history: H.History
+    location: H.Location
+}
+
+interface State {
+    copiedLink: boolean
+}
+
+export class DiscussionsComment extends React.PureComponent<Props> {
+    private scrollToElement: HTMLElement | null = null
+
+    public state: State = {
+        copiedLink: false,
+    }
+
+    public componentDidMount(): void {
+        if (this.scrollToElement) {
+            this.scrollToElement.scrollIntoView()
+        }
+    }
+
+    public render(): JSX.Element | null {
+        const { location, comment } = this.props
+        const isTargeted = new URLSearchParams(location.hash).get('commentID') === comment.id
+
+        // TODO(slimsag:discussions): ASAP: markdown links, headings, etc lead to #
+
+        return (
+            <div
+                className={`discussions-comment${isTargeted ? ' discussions-comment--targeted' : ''}`}
+                ref={isTargeted ? this.setScrollToElement : undefined}
+            >
+                <div className="discussions-comment__top-area">
+                    <span className="discussions-comment__author">
+                        <Link to={`/users/${comment.author.username}`} data-tooltip={comment.author.displayName}>
+                            <UserAvatar user={comment.author} className="icon-inline icon-sm" />
+                        </Link>
+                        <Link
+                            to={`/users/${comment.author.username}`}
+                            data-tooltip={comment.author.displayName}
+                            className="discussions-comment__author-name"
+                        >
+                            {comment.author.username}
+                        </Link>
+                        {' commented'}
+                    </span>
+                    <span className="discussions-comment__spacer" />
+                    <span className="discussions-comment__top-right-area">
+                        {/* TODO(slimsag:discussions): timestamp should not wrap around on small screen widths */}
+                        <Timestamp date={comment.createdAt} />
+                        <Link
+                            className="btn btn-link btn-sm discussions-comment__share"
+                            data-tooltip="Copy link to this comment"
+                            to={this.getShareLinkURL()}
+                            onClick={this.onShareLinkClick}
+                        >
+                            {this.state.copiedLink ? 'Copied!' : <LinkIcon className="icon-inline" />}
+                        </Link>
+                    </span>
+                </div>
+                <div className="discussions-comment__content">
+                    <Markdown dangerousInnerHTML={comment.html !== '' ? comment.html : '<em>(no comment text)</em>'} />
+                </div>
+            </div>
+        )
+    }
+
+    private onShareLinkClick: React.MouseEventHandler<HTMLElement> = event => {
+        if (event.metaKey || event.altKey || event.ctrlKey) {
+            return
+        }
+        eventLogger.log('ShareCommentButtonClicked')
+        event.preventDefault()
+        copy(this.getShareLinkURL())
+        this.setState({ copiedLink: true })
+        setTimeout(() => {
+            this.setState({ copiedLink: false })
+        }, 1000)
+    }
+
+    private getShareLinkURL(): string {
+        const hash = new URLSearchParams()
+        hash.set('tab', 'discussions')
+        hash.set('threadID', this.props.threadID)
+        hash.set('commentID', this.props.comment.id)
+        const loc = this.props.location
+        return new URL(loc.pathname + loc.search + '#' + hash.toString(), window.location.href).href
+    }
+
+    private setScrollToElement = (ref: HTMLElement | null) => {
+        this.scrollToElement = ref
+    }
+}
