@@ -303,13 +303,13 @@ export const createHoverifier = ({
         codeElement: HTMLElement
         resolveContext: ContextResolver
     }> = allPositionJumps.pipe(
+        // Only use line and character for comparison
         map(({ position: { line, character }, ...rest }) => ({ position: { line, character }, ...rest })),
         // Ignore same values
         // It's important to do this before filtering otherwise navigating from
         // a position, to a line-only position, back to the first position would get ignored
         distinctUntilChanged((a, b) => isEqual(a, b)),
         // Ignore undefined or partial positions (e.g. line only)
-
         filter((jump): jump is typeof jump & { position: Position } => Position.is(jump.position)),
         map(({ position, codeElement, ...rest }) => {
             const row = getRowInCodeElement(codeElement, position.line)
