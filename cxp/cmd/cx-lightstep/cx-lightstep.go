@@ -41,7 +41,7 @@ type handler struct {
 }
 
 type extensionSettings struct {
-	SpanLinks bool   `json:"spanLinks,omitempty"`
+	SpanLinks *bool  `json:"spanLinks,omitempty"`
 	Project   string `json:"project,omitempty"`
 }
 
@@ -88,7 +88,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		h.mu.Unlock()
 
 		var showHide string
-		if settings.SpanLinks {
+		if settings.SpanLinks == nil || *settings.SpanLinks {
 			showHide = "Hide"
 		} else {
 			showHide = "Show"
@@ -151,7 +151,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		}
 		path := strings.TrimPrefix(uri.Path, "/")
 
-		if !settings.SpanLinks && settings.Project != "" {
+		if (settings.SpanLinks != nil && !*settings.SpanLinks) && settings.Project != "" {
 			return []lspext.TextDocumentDecoration{}, nil
 		}
 
