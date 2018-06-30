@@ -49,5 +49,5 @@ ssh "$HOST" mkdir -p "$HOSTDIR"
 rsync --progress -avz "$TMPDIR"/ "$HOST":"$HOSTDIR"
 
 for prog in "${!extensions[@]}"; do
-    echo "cp ${HOSTDIR}/systemd/${prog}.service /etc/systemd/system && systemctl reset-failed ${prog} && systemctl start ${prog} && systemctl enable ${prog}" | ssh "$HOST" sudo bash -
+    echo "cp ${HOSTDIR}/systemd/${prog}.service /etc/systemd/system && systemctl reset-failed ${prog} && systemctl start ${prog} && systemctl reload-or-restart ${prog} && systemctl enable ${prog}" | ssh "$HOST" sudo bash -
 done
