@@ -200,3 +200,7 @@ required = [
 [[constraint]]
   branch = "master"
   name = "github.com/golang/groupcache"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/google/pprof"

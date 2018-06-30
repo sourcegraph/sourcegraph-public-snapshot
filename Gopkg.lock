@@ -317,6 +317,12 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/google/pprof"
+  packages = ["profile"]
+  revision = "2b5d4350d687b058368c98ab141d34d08162ec7b"
+
+[[projects]]
   name = "github.com/google/uuid"
   packages = ["."]
   revision = "064e2069ce9c359c118179501254f67d7d37ba24"
@@ -1392,6 +1398,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "340207a380b02872a9f7b1506d970261e5d0990188e28a5912ff7613c581e8bb"
+  inputs-digest = "f834b7e9ef583899f453efd096d3d2ad8f28318ea5ab234aef304ec8f786c242"
   solver-name = "gps-cdcl"
   solver-version = 1
