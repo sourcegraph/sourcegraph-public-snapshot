@@ -148,6 +148,7 @@
     "write-file-webpack-plugin": "^4.2.0"
   },
   "dependencies": {
+    "@sourcegraph/codeintellify": "0.0.2",
     "@sourcegraph/icons": "^1.15.0",
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/uuid": "^3.4.3",
@@ -162,9 +163,9 @@
     "graphiql": "^0.11.11",
     "highlight.js": "^9.12.0",
     "js-base64": "^2.3.2",
-    "lodash": "^4.17.5",
+    "lodash": "^4.17.10",
     "marked": "0.3.7",
-    "mdi-react": "^3.3.0",
+    "mdi-react": "^4.0.0",
     "monaco-editor": "^0.13.1",
     "open-color": "^1.6.2",
     "pretty-bytes": "^4.0.2",
@@ -174,7 +175,7 @@
     "react-router-dom": "^4.2.2",
     "react-visibility-sensor": "^3.11.0",
     "rx-component": "^0.1.0",
-    "rxjs": "^6.2.0",
+    "rxjs": "^6.2.1",
     "string-score": "^1.0.1",
     "ts-key-enum": "^2.0.0",
     "uuid": "^3.2.1",
