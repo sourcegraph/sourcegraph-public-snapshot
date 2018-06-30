@@ -3,10 +3,14 @@ package backend
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"net/http"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
+	"github.com/gregjones/httpcache"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
@@ -17,7 +21,12 @@ import (
 
 func init() {
 	// Use a caching HTTP client for communicating with the remote registry.
-	registry.HTTPClient = httputil.CachingClient
+	if envvar.InsecureDevMode() {
+		// Also simulate latency in dev mode. See docs for sleepIfUncachedTransport for more information.
+		registry.HTTPClient = &http.Client{Transport: sleepIfUncachedTransport{httputil.CachingClient.Transport}}
+	} else {
+		registry.HTTPClient = httputil.CachingClient
+	}
 }
 
 // GetExtensionByExtensionID gets the extension with the given extension ID.
@@ -186,4 +195,22 @@ func ListRemoteRegistryExtensions(ctx context.Context, query string) ([]*registr
 		x.RegistryURL = registryURL.String()
 	}
 	return xs, nil
+}
+
+// sleepIfUncachedTransport is used to simulate latency in local dev mode.
+//
+// This helps us feel the UX of not being in Northern California latency-wise and ensure that
+// Sourcegraph's communication with the remote extension registry (usually Sourcegraph.com) does not
+// block unrelated workflows.
+type sleepIfUncachedTransport struct {
+	http.RoundTripper
+}
+
+func (t sleepIfUncachedTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := t.RoundTripper.RoundTrip(req)
+	if err != nil || resp.Header.Get(httpcache.XFromCache) == "" {
+		n := rand.Intn(750)
+		time.Sleep(time.Duration(750+n) * time.Millisecond)
+	}
+	return resp, err
 }
