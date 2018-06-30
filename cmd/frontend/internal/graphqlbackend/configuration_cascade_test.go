@@ -8,7 +8,10 @@ import (
 
 func TestMergeConfigs(t *testing.T) {
 	orig := deeplyMergedConfigFields
-	deeplyMergedConfigFields = map[string]struct{}{"testDeeplyMergedField": {}}
+	deeplyMergedConfigFields = map[string]int{
+		"f1": 1,
+		"f2": 2,
+	}
 	defer func() { deeplyMergedConfigFields = orig }()
 
 	tests := map[string]struct {
@@ -45,57 +48,64 @@ func TestMergeConfigs(t *testing.T) {
 			},
 			want: `{"a":1,"b":2}`,
 		},
-		"deeply merged fields of arrays": {
+		"arrays": {
 			configs: []string{
-				`{"testDeeplyMergedField":[0,1]}`,
-				`{"testDeeplyMergedField":[2,3]}`,
+				`{"f1":[0,1]}`,
+				`{"f1":[2,3]}`,
 			},
-			want: `{"testDeeplyMergedField":[0,1,2,3]}`,
+			want: `{"f1":[0,1,2,3]}`,
 		},
-		"deeply merged fields of objects": {
+		"objects": {
 			configs: []string{
-				`{"testDeeplyMergedField":{"a":1,"b":2}}`,
-				`{"testDeeplyMergedField":{"a":3,"c":4}}`,
+				`{"f1":{"a":1,"b":2}}`,
+				`{"f1":{"a":3,"c":4}}`,
 			},
-			want: `{"testDeeplyMergedField":{"a":3,"b":2,"c":4}}`,
+			want: `{"f1":{"a":3,"b":2,"c":4}}`,
 		},
-		"deeply merged fields of nested objects": {
+		"nested objects with depth 1": {
 			configs: []string{
-				`{"testDeeplyMergedField":{"a":{"x":1,"y":2}}}`,
-				`{"testDeeplyMergedField":{"a":{"x":3,"z":4}}}`,
+				`{"f1":{"a":{"x":1,"y":2}}}`,
+				`{"f1":{"a":{"x":3,"z":4}}}`,
 			},
-			// NOTE: It is expected that this does not include the "y":2 property. Recursive merging
-			// may be desirable in the future, but it is not implemented now.
-			want: `{"testDeeplyMergedField":{"a":{"x":3,"z":4}}}`,
+			// NOTE: It is expected that this does not include the "y":2 property because the
+			// merging only occurs 1 level deep for field f1.
+			want: `{"f1":{"a":{"x":3,"z":4}}}`,
 		},
-		"deeply merged fields of arrays and null": {
+		"nested objects with depth 2": {
 			configs: []string{
-				`{"testDeeplyMergedField":[0,1]}`,
-				`{"testDeeplyMergedField":null}`,
-				`{"testDeeplyMergedField":[2,3]}`,
+				`{"f2":{"a":{"x":1,"y":2}}}`,
+				`{"f2":{"a":{"x":3,"z":4}}}`,
 			},
-			want: `{"testDeeplyMergedField":[0,1,2,3]}`,
+			want: `{"f2":{"a":{"x":3,"y":2,"z":4}}}`,
 		},
-		"deeply merged fields with unset 1nd": {
+		"arrays and null": {
+			configs: []string{
+				`{"f1":[0,1]}`,
+				`{"f1":null}`,
+				`{"f1":[2,3]}`,
+			},
+			want: `{"f1":[0,1,2,3]}`,
+		},
+		"unset 1nd": {
 			configs: []string{
 				`{}`,
-				`{"testDeeplyMergedField":[0,1]}`,
+				`{"f1":[0,1]}`,
 			},
-			want: `{"testDeeplyMergedField":[0,1]}`,
+			want: `{"f1":[0,1]}`,
 		},
-		"deeply merged fields with unset 2nd": {
+		"unset 2nd": {
 			configs: []string{
-				`{"testDeeplyMergedField":[0,1]}`,
+				`{"f1":[0,1]}`,
 				`{}`,
 			},
-			want: `{"testDeeplyMergedField":[0,1]}`,
+			want: `{"f1":[0,1]}`,
 		},
-		"deeply merged fields of arrays of heterogenous objects": {
+		"arrays of heterogenous objects": {
 			configs: []string{
-				`{"testDeeplyMergedField":[{"a":0},1]}`,
-				`{"testDeeplyMergedField":[2,{"b":3}]}`,
+				`{"f1":[{"a":0},1]}`,
+				`{"f1":[2,{"b":3}]}`,
 			},
-			want: `{"testDeeplyMergedField":[{"a":0},1,2,{"b":3}]}`,
+			want: `{"f1":[{"a":0},1,2,{"b":3}]}`,
 		},
 	}
 	for label, test := range tests {

@@ -126,52 +126,33 @@ func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurati
 }
 
 // deeplyMergedConfigFields contains the names of top-level configuration fields whose values should
-// be merged if they appear in multiple cascading configurations.
+// be merged if they appear in multiple cascading configurations. The value is the merge depth (how
+// many levels into the object should the merging occur).
 //
 // For example, suppose org config is {"a":[1]} and user config is {"a":[2]}. If "a" is NOT a deeply
-// merged field, the merged config would be {"a":[2]}. If "a" IS a deeply merged field, then the
-// merged config would be {"a":[1,2].}
-var deeplyMergedConfigFields = map[string]struct{}{
-	"search.scopes":           {},
-	"search.savedQueries":     {},
-	"search.repositoryGroups": {},
-	"motd":       {},
-	"extensions": {},
+// merged field, the merged config would be {"a":[2]}. If "a" IS a deeply merged field with depth >=
+// 1, then the merged config would be {"a":[1,2].}
+var deeplyMergedConfigFields = map[string]int{
+	"search.scopes":           1,
+	"search.savedQueries":     1,
+	"search.repositoryGroups": 1,
+	"motd":       1,
+	"extensions": 2, // merge settings for individual extensions (2 levels deep)
 }
 
-// mergeConfigs merges the specified JSON configs together to produce a single JSON config. The merge
-// algorithm is currently rudimentary but eventually it will be similar to VS Code's. The only "smart"
-// merging behavior is that described in the documentation for deeplyMergedConfigFields.
+// mergeConfigs merges the specified JSON configs together to produce a single JSON config. The deep
+// merging behavior is described in the documentation for deeplyMergedConfigFields.
 func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
 	var errs []error
 	merged := map[string]interface{}{}
 	for _, s := range jsonConfigStrings {
-		var config map[string]interface{}
-		if err := conf.UnmarshalJSON(s, &config); err != nil {
+		var o map[string]interface{}
+		if err := conf.UnmarshalJSON(s, &o); err != nil {
 			errs = append(errs, err)
-			continue
 		}
-		for name, value := range config {
-			// See if we should deeply merge this field.
-			if _, ok := deeplyMergedConfigFields[name]; ok {
-				if mv, ok := merged[name].([]interface{}); merged[name] == nil || ok {
-					if cv, ok := value.([]interface{}); merged[name] != nil || (value != nil && ok) {
-						merged[name] = append(mv, cv...)
-						continue
-					}
-				} else if mv, ok := merged[name].(map[string]interface{}); merged[name] == nil || ok {
-					if cv, ok := value.(map[string]interface{}); merged[name] != nil || (value != nil && ok) {
-						for key, value := range cv {
-							mv[key] = value
-						}
-						merged[name] = mv
-						continue
-					}
-				}
-			}
-
-			// Otherwise clobber any existing value.
-			merged[name] = value
+		for name, value := range o {
+			depth := deeplyMergedConfigFields[name]
+			mergeConfigValues(merged, name, value, depth)
 		}
 	}
 	out, err := json.Marshal(merged)
@@ -182,6 +163,29 @@ func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
 		return out, nil
 	}
 	return out, fmt.Errorf("errors merging configurations: %q", errs)
+}
+
+func mergeConfigValues(dst map[string]interface{}, field string, value interface{}, depth int) {
+	// Try to deeply merge this field.
+	if depth > 0 {
+		if mv, ok := dst[field].([]interface{}); dst[field] == nil || ok {
+			if cv, ok := value.([]interface{}); dst[field] != nil || (value != nil && ok) {
+				dst[field] = append(mv, cv...)
+				return
+			}
+		} else if mv, ok := dst[field].(map[string]interface{}); dst[field] == nil || ok {
+			if cv, ok := value.(map[string]interface{}); dst[field] != nil || (value != nil && ok) {
+				for key, value := range cv {
+					mergeConfigValues(mv, key, value, depth-1)
+				}
+				dst[field] = mv
+				return
+			}
+		}
+	}
+
+	// Otherwise just clobber any existing value.
+	dst[field] = value
 }
 
 func (schemaResolver) ViewerConfiguration(ctx context.Context) (*configurationCascadeResolver, error) {
