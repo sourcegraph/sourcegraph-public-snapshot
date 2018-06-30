@@ -1,4 +1,4 @@
-@import '@sourcegraph/codeintellify/lib/HoverOverlay';
+@import '../hoverify/HoverOverlay';
 @import './blame/BlameLine';
 @import './LineDecorationAttachment';
 @import './discussions/DiscussionsGutterOverlay.scss';

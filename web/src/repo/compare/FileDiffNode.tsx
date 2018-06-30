@@ -1,4 +1,3 @@
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import { ChevronDown } from '@sourcegraph/icons/lib/ChevronDown'
 import { ChevronUp } from '@sourcegraph/icons/lib/ChevronUp'
 import * as H from 'history'
@@ -6,6 +5,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsProps } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
+import { Hoverifier } from '../hoverify/hoverifier'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 

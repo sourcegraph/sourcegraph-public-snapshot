@@ -1,4 +1,3 @@
-import { Hoverifier } from '@sourcegraph/codeintellify'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -8,6 +7,7 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { createAggregateError } from '../../util/errors'
+import { Hoverifier } from '../hoverify/hoverifier'
 import { FileDiffNode, FileDiffNodeProps } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 

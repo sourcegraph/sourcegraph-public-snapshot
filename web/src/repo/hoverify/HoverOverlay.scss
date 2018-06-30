@@ -1,0 +1,83 @@
+.hover-overlay {
+    position: absolute;
+    width: 30rem;
+    max-height: 15rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+
+    transition: opacity 200ms ease-in-out;
+
+    &__close-button {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 0.25rem;
+        background: inherit;
+        z-index: 1;
+    }
+
+    &__row {
+        display: block;
+        width: 100%;
+        margin: 0;
+        &:not(:first-child) {
+            border-top: 1px solid $color-border;
+            .theme-light & {
+                border-top-color: $color-light-border;
+            }
+        }
+    }
+
+    &__contents {
+        flex: 1 1 auto;
+        overflow-y: auto;
+    }
+
+    &__content {
+        padding: 0.5rem;
+        overflow-x: auto;
+        word-wrap: normal;
+        p:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    &__actions {
+        flex: 0 0 auto;
+        display: flex;
+    }
+
+    &__action:not(:first-child) {
+        border-left: 1px solid $color-border;
+        .theme-light & {
+            border-left-color: $color-light-border;
+        }
+    }
+
+    &__action {
+        width: percentage(1/3);
+    }
+
+    &__action,
+    &__actions-placeholder {
+        flex: 1 1 auto;
+        border-radius: 0;
+    }
+
+    &__loader-row {
+        text-align: center;
+    }
+
+    &__loader-row,
+    &__hover-error,
+    &__content-error,
+    &__alert-below {
+        padding: 0.5rem;
+    }
+
+    &__alert-below {
+        margin: 0;
+        overflow-y: auto;
+    }
+}

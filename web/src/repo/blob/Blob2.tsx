@@ -1,20 +1,19 @@
-import { createHoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
-import { getRowInCodeElement, getRowsInRange } from '@sourcegraph/codeintellify/lib/token_position'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
 import { Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { ExtensionsProps, getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams, TextDocumentDecoration } from '../../backend/lsp'
-import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toNativeEvent } from '../../util/react'
 import { propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
+import { calculateOverlayPosition, getRowInCodeElement, getRowsInRange } from '../hoverify/helpers'
+import { createHoverifier, HoverState } from '../hoverify/hoverifier'
+import { HoverOverlay } from '../hoverify/HoverOverlay'
 import { BlameLine } from './blame/BlameLine'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
@@ -51,9 +50,6 @@ interface BlobState extends HoverState {
     decorationsOrError?: TextDocumentDecoration[] | ErrorLike
 }
 
-const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
-const LinkComponent = ({ to }: { to: string }) => <Link to={to} />
-
 export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
     private componentUpdates = new Subject<BlobProps>()
@@ -83,7 +79,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
      * Note that this also fires when the user selects text, see `codeClicksWithoutSelection` further down.
      */
     private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => this.codeClicks.next(event)
+    private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => {
+        event.persist()
+        this.codeClicks.next(event)
+    }
 
     /** Emits when the go to definition button was clicked */
     private goToDefinitionClicks = new Subject<React.MouseEvent<HTMLElement>>()
@@ -120,8 +119,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            pushHistory: path => this.props.history.push(path),
-            logTelemetryEvent,
+            getHistory: () => this.props.history,
             fetchHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props.extensions),
             fetchJumpURL: position =>
                 getJumpURL(this.getLSPTextDocumentPositionParams(position), this.props.extensions),
@@ -136,9 +134,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         })
         this.subscriptions.add(
             hoverifier.hoverify({
-                codeMouseMoves: this.codeMouseMoves.pipe(map(toNativeEvent)),
-                codeMouseOvers: this.codeMouseOvers.pipe(map(toNativeEvent)),
-                codeClicks: this.codeClicks.pipe(map(toNativeEvent)),
+                codeMouseMoves: this.codeMouseMoves,
+                codeMouseOvers: this.codeMouseOvers,
+                codeClicks: this.codeClicks,
                 positionJumps: locationPositions.pipe(
                     withLatestFrom(this.codeElements, this.blobElements),
                     map(([position, codeElement, scrollElement]) => ({
@@ -215,11 +213,12 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
                 // Update overlay position for discussions gutter icon.
                 if (rows.length > 0) {
-                    const blobBounds = codeElement.parentElement!.getBoundingClientRect()
-                    const targetBounds = rows[0].element.cells[0].getBoundingClientRect()
-                    const left = targetBounds.left - blobBounds.left
-                    const top = targetBounds.top + codeElement.parentElement!.scrollTop - blobBounds.top
-                    this.setState({ discussionsGutterOverlayPosition: { left, top } })
+                    this.setState({
+                        discussionsGutterOverlayPosition: calculateOverlayPosition(
+                            codeElement.parentElement!, // ! because we know its there
+                            rows[0].element.cells[0]
+                        ),
+                    })
                 }
             })
         )
@@ -368,8 +367,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...this.state.hoverOverlayProps}
-                        logTelemetryEvent={logTelemetryEvent}
-                        linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
                         onGoToDefinitionClick={this.nextGoToDefinitionClick}
                         onCloseButtonClick={this.nextCloseButtonClick}
