@@ -171,12 +171,5 @@
     //   "displayName": "Windows Server 2012 Datacenter ADFS 2.1 SAML (dev)",
     //   "identityProviderMetadataURL": "https://adfstest.sgdev.org/federationmetadata/2007-06/federationmetadata.xml"
     // }
-  ],
-
-  // EXPERIMENTAL: Sourcegraph platform and extensions. The config schema is subject to change.
-  "platform": {
-    // Combined with the FAKE_REGISTRY=dev/platform/sample-extensions.json env var set in
-    // dev/start.sh, this makes some useful sample extensions available to your local dev server.
-    "remoteRegistry": "http://localhost:3090/.internal/registry"
-  }
+  ]
 }
