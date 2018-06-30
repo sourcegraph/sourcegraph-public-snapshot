@@ -24,22 +24,48 @@ func init() {
 //
 // It returns either a local or remote extension, depending on what the extension ID refers to.
 //
+// The format of an extension ID is [host/]publisher/name. If the host is omitted, the host defaults
+// to the remote registry specified in site configuration (usually sourcegraph.com). The host must
+// be specified to refer to a local extension on the current Sourcegraph site (e.g.,
+// sourcegraph.example.com/publisher/name).
+//
 // BACKCOMPAT: It also synthesizes registry extensions from known language servers.
 func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local *db.RegistryExtension, remote *registry.Extension, err error) {
-	if parts := strings.SplitN(extensionID, "/", 3); len(parts) == 3 {
-		prefix, err := GetLocalRegistryExtensionIDPrefix()
-		if err != nil {
-			return nil, nil, err
-		}
+	parts := strings.SplitN(extensionID, "/", 3)
+	if len(parts) == 0 || len(parts) == 1 {
+		return nil, nil, fmt.Errorf("invalid extension ID: %q", extensionID)
+	}
+
+	prefix, err := GetLocalRegistryExtensionIDPrefix()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var isLocal bool
+	switch len(parts) {
+	case 3: // extension ID is publisher/name
 		if prefix == nil {
-			// Don't look up remote extensions from Sourcegraph.com; it only cares about its own
-			// extensions.
+			// Don't look up fully qualified extensions from Sourcegraph.com; it only cares about
+			// its own extensions.
 			return nil, nil, errors.New("remote extension lookup disabled")
 		}
+
+		// Local extension on non-Sourcegraph.com instance.
 		if parts[0] != *prefix {
 			return nil, nil, fmt.Errorf("external extension lookup on non-default registry is forbidden (extension ID prefix %q, allowed prefixes are \"\" (default) and %q (local))", parts[0], *prefix)
 		}
-		x, err := db.RegistryExtensions.GetByExtensionID(ctx, path.Join(parts[1], parts[2]))
+		extensionID = path.Join(parts[1], parts[2])
+		isLocal = true
+
+	case 2: // extension ID is host/publisher/name
+		if prefix == nil {
+			// Local extension on Sourcegraph.com instance.
+			isLocal = true
+		}
+	}
+
+	if isLocal {
+		x, err := db.RegistryExtensions.GetByExtensionID(ctx, extensionID)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -49,13 +75,7 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local *
 		return x, nil, nil
 	}
 
-	// BACKCOMPAT: Synthesize extensions for known language servers.
-	x, err := getSynthesizedRegistryExtension(ctx, "extensionID", extensionID)
-	if x != nil || err != nil {
-		return nil, x, err
-	}
-
-	x, err = GetRemoteRegistryExtension(ctx, "extensionID", extensionID)
+	x, err := GetRemoteRegistryExtension(ctx, "extensionID", extensionID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -88,9 +108,14 @@ func GetLocalRegistryName() (string, error) {
 	return registry.Name(u), nil
 }
 
+var mockLocalRegistryExtensionIDPrefix **string
+
 // GetLocalRegistryExtensionIDPrefix returns the extension ID prefix (if any) of extensions in the
 // local registry.
 func GetLocalRegistryExtensionIDPrefix() (*string, error) {
+	if mockLocalRegistryExtensionIDPrefix != nil {
+		return *mockLocalRegistryExtensionIDPrefix, nil
+	}
 	if envvar.SourcegraphDotComMode() {
 		return nil, nil
 	}
@@ -101,9 +126,9 @@ func GetLocalRegistryExtensionIDPrefix() (*string, error) {
 	return &name, nil
 }
 
-// GetRemoteRegistryURL returns the remote registry URL from site configuration, or nil if there is
+// getRemoteRegistryURL returns the remote registry URL from site configuration, or nil if there is
 // none. If an error exists while parsing the value in site configuration, the error is returned.
-func GetRemoteRegistryURL() (*url.URL, error) {
+func getRemoteRegistryURL() (*url.URL, error) {
 	pc := conf.Platform()
 	if pc == nil || pc.RemoteRegistryURL == "" {
 		return nil, nil
@@ -111,15 +136,21 @@ func GetRemoteRegistryURL() (*url.URL, error) {
 	return url.Parse(pc.RemoteRegistryURL)
 }
 
+var mockGetRemoteRegistryExtension func(field, value string) (*registry.Extension, error)
+
 // GetRemoteRegistryExtension gets the remote registry extension and rewrites its fields to be from
 // the frame-of-reference of this site. The field is either "uuid" or "extensionID".
 func GetRemoteRegistryExtension(ctx context.Context, field, value string) (*registry.Extension, error) {
+	if mockGetRemoteRegistryExtension != nil {
+		return mockGetRemoteRegistryExtension(field, value)
+	}
+
 	// BACKCOMPAT: First, look up among extensions synthesized from known language servers.
 	if x, err := getSynthesizedRegistryExtension(ctx, field, value); x != nil || err != nil {
 		return x, err
 	}
 
-	registryURL, err := GetRemoteRegistryURL()
+	registryURL, err := getRemoteRegistryURL()
 	if registryURL == nil || err != nil {
 		return nil, err
 	}
@@ -142,7 +173,7 @@ func GetRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 // ListRemoteRegistryExtensions lists the remote registry extensions and rewrites their fields to be
 // from the frame-of-reference of this site.
 func ListRemoteRegistryExtensions(ctx context.Context, query string) ([]*registry.Extension, error) {
-	registryURL, err := GetRemoteRegistryURL()
+	registryURL, err := getRemoteRegistryURL()
 	if registryURL == nil || err != nil {
 		return nil, err
 	}
@@ -150,6 +181,9 @@ func ListRemoteRegistryExtensions(ctx context.Context, query string) ([]*registr
 	xs, err := registry.List(ctx, registryURL, query)
 	if err != nil {
 		return nil, err
+	}
+	for _, x := range xs {
+		x.RegistryURL = registryURL.String()
 	}
 	return xs, nil
 }

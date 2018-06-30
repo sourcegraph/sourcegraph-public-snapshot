@@ -17,7 +17,7 @@ export const RegistryExtensionSourceBadge: React.SFC<{
         className={`text-muted text-nowrap d-inline-flex align-items-center ${className}`}
         data-tooltip={
             extension.isLocal
-                ? 'Published locally and only accessible to users on this site'
+                ? 'Published on this site'
                 : `Published on external extension registry ${extension.registryName}`
         }
     >
