@@ -10,7 +10,6 @@ type TextDocumentDecorationsParams struct {
 // TextDocumentDecoration represents a decoration to apply to a text document.
 type TextDocumentDecoration struct {
 	After           *DecorationAttachmentRenderOptions `json:"after,omitempty"`
-	Background      string                             `json:"background,omitempty"`
 	BackgroundColor string                             `json:"backgroundColor,omitempty"`
 	Border          string                             `json:"border,omitempty"`
 	BorderColor     string                             `json:"borderColor,omitempty"`
