@@ -55,7 +55,7 @@ func (r *userResolver) RegistryExtensions(ctx context.Context, args *struct {
 		opt.Query = *args.Query
 	}
 	args.connectionArgs.set(&opt.LimitOffset)
-	return &registryExtensionConnectionResolver{opt: opt}, nil
+	return &registryExtensionConnectionResolver{opt: opt, includeLocal: true}, nil
 }
 
 func (r *orgResolver) RegistryExtensions(ctx context.Context, args *struct {
@@ -70,7 +70,7 @@ func (r *orgResolver) RegistryExtensions(ctx context.Context, args *struct {
 		opt.Query = *args.Query
 	}
 	args.connectionArgs.set(&opt.LimitOffset)
-	return &registryExtensionConnectionResolver{opt: opt}, nil
+	return &registryExtensionConnectionResolver{opt: opt, includeLocal: true}, nil
 }
 
 // registryExtensionConnectionResolver resolves a list of registry extensions.
