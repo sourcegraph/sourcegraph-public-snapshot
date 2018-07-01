@@ -140,6 +140,9 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]*r
 func (r *registryExtensionConnectionResolver) Nodes(ctx context.Context) ([]*registryExtensionMultiResolver, error) {
 	// See (*registryExtensionConnectionResolver).Error for why we ignore the error.
 	xs, _ := r.compute(ctx)
+	if r.opt.LimitOffset != nil && len(xs) > r.opt.Limit {
+		xs = xs[:r.opt.Limit]
+	}
 	return xs, nil
 }
 
