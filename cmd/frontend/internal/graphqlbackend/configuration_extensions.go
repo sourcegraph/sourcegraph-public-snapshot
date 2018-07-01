@@ -3,9 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
+	"math/rand"
+	"time"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -16,6 +19,12 @@ func (r *configurationMutationResolver) UpdateExtension(ctx context.Context, arg
 	Remove      *bool
 	Edit        *configurationEdit
 }) (*updateExtensionConfigurationResult, error) {
+	if envvar.InsecureDevMode() {
+		// Simulate latency in dev mode so that we feel the pain of our high-latency users.
+		n := rand.Intn(200)
+		time.Sleep(time.Duration(200+n) * time.Millisecond)
+	}
+
 	var extensionID string
 	switch {
 	case args.Extension != nil && args.ExtensionID != nil:
