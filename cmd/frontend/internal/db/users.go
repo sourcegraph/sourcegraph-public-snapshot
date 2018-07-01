@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 // users provides access to the `users` table.
@@ -449,10 +450,16 @@ type UsersListOptions struct {
 	*LimitOffset
 }
 
-func (u *users) List(ctx context.Context, opt *UsersListOptions) ([]*types.User, error) {
+func (u *users) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
 	if Mocks.Users.List != nil {
 		return Mocks.Users.List(ctx, opt)
 	}
+
+	tr, ctx := trace.New(ctx, "db.Users.List", fmt.Sprintf("%+v", opt))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
 
 	if opt == nil {
 		opt = &UsersListOptions{}
