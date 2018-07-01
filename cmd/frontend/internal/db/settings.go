@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
 type settings struct{}
@@ -76,7 +77,13 @@ func (o *settings) GetLatest(ctx context.Context, subject api.ConfigurationSubje
 //
 // 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
 // responsible for ensuring this or that the response never makes it to a user.
-func (o *settings) ListAll(ctx context.Context) ([]*api.Settings, error) {
+func (o *settings) ListAll(ctx context.Context) (_ []*api.Settings, err error) {
+	tr, ctx := trace.New(ctx, "db.Settings.ListAll", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	q := sqlf.Sprintf(`
 		SELECT DISTINCT
 			ON (org_id, user_id, author_user_id)

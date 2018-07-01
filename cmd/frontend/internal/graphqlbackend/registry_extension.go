@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -112,7 +113,13 @@ func listExtensionConfigurationSubjects(ctx context.Context, extensionID string,
 	}, nil
 }
 
-func listRegistryExtensionUsers(ctx context.Context, extensionID string, args *connectionArgs) (*userConnectionResolver, error) {
+func listRegistryExtensionUsers(ctx context.Context, extensionID string, args *connectionArgs) (_ *userConnectionResolver, err error) {
+	tr, ctx := trace.New(ctx, "listRegistryExtensionUsers", extensionID)
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	allSettings, err := db.Settings.ListAll(ctx)
 	if err != nil {
 		return nil, err
