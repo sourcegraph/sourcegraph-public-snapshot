@@ -12,6 +12,10 @@
 }
 
 .extension-selector {
+    &__label {
+        white-space: nowrap;
+    }
+
     &:hover &__label {
         color: var(--link-hover-color);
     }

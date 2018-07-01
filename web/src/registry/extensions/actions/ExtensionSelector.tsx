@@ -300,7 +300,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                 }
             >
                 <Link to="/registry" onClick={this.onLabelClick} className="extension-selector__label">
-                    <PuzzleIcon className="icon-inline" /> <span className="d-md-none d-lg-inline">Extensions</span>
+                    <PuzzleIcon className="icon-inline" /> <span className="d-none d-lg-inline">Extensions</span>
                 </Link>
             </PopoverButton>
         )
