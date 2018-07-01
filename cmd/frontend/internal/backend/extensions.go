@@ -67,6 +67,12 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local *
 		isLocal = true
 
 	case 2: // extension ID is publisher/name
+
+		// BACKCOMPAT: First, look up among extensions synthesized from known language servers.
+		if x, err := getSynthesizedRegistryExtension(ctx, "extensionID", extensionID); x != nil || err != nil {
+			return nil, x, err
+		}
+
 		if prefix == nil {
 			// Local extension on Sourcegraph.com instance.
 			isLocal = true
