@@ -125,12 +125,13 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]*r
 			remote = append(remote, xs...)
 		}
 
+		var cache extensionRegistryCache
 		r.registryExtensions = make([]*registryExtensionMultiResolver, len(local)+len(remote))
 		for i, x := range local {
-			r.registryExtensions[i] = &registryExtensionMultiResolver{local: &registryExtensionDBResolver{x}}
+			r.registryExtensions[i] = &registryExtensionMultiResolver{local: &registryExtensionDBResolver{v: x, cache: &cache}}
 		}
 		for i, x := range remote {
-			r.registryExtensions[len(local)+i] = &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{x}}
+			r.registryExtensions[len(local)+i] = &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{v: x, cache: &cache}}
 		}
 	})
 	return r.registryExtensions, r.err

@@ -13,6 +13,8 @@ import (
 // registryExtensionDBResolver implements the GraphQL type RegistryExtension.
 type registryExtensionDBResolver struct {
 	v *db.RegistryExtension
+
+	cache *extensionRegistryCache
 }
 
 func (r *registryExtensionDBResolver) ID() graphql.ID {
@@ -57,11 +59,11 @@ func (r *registryExtensionDBResolver) RegistryName() (string, error) {
 func (r *registryExtensionDBResolver) IsLocal() bool { return true }
 
 func (r *registryExtensionDBResolver) ExtensionConfigurationSubjects(ctx context.Context, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
-	return listExtensionConfigurationSubjects(ctx, r.v.NonCanonicalExtensionID, args)
+	return listExtensionConfigurationSubjects(ctx, r.cache, r.v.NonCanonicalExtensionID, args)
 }
 
 func (r *registryExtensionDBResolver) Users(ctx context.Context, args *connectionArgs) (*userConnectionResolver, error) {
-	return listRegistryExtensionUsers(ctx, r.v.NonCanonicalExtensionID, args)
+	return listRegistryExtensionUsers(ctx, r.cache, r.v.NonCanonicalExtensionID, args)
 }
 
 func (r *registryExtensionDBResolver) ViewerHasEnabled(ctx context.Context) (bool, error) {

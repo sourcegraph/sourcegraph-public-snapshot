@@ -18,6 +18,8 @@ import (
 // misnomer.
 type registryExtensionRemoteResolver struct {
 	v *registry.Extension
+
+	cache *extensionRegistryCache
 }
 
 func (r *registryExtensionRemoteResolver) ID() graphql.ID {
@@ -89,11 +91,11 @@ func (r *registryExtensionRemoteResolver) RegistryName() (string, error) {
 func (r *registryExtensionRemoteResolver) IsLocal() bool { return r.v.IsSynthesizedLocalExtension }
 
 func (r *registryExtensionRemoteResolver) ExtensionConfigurationSubjects(ctx context.Context, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
-	return listExtensionConfigurationSubjects(ctx, r.v.ExtensionID, args)
+	return listExtensionConfigurationSubjects(ctx, r.cache, r.v.ExtensionID, args)
 }
 
 func (r *registryExtensionRemoteResolver) Users(ctx context.Context, args *connectionArgs) (*userConnectionResolver, error) {
-	return listRegistryExtensionUsers(ctx, r.v.ExtensionID, args)
+	return listRegistryExtensionUsers(ctx, r.cache, r.v.ExtensionID, args)
 }
 
 func (r *registryExtensionRemoteResolver) ViewerHasEnabled(ctx context.Context) (bool, error) {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -33,7 +34,7 @@ func registryExtensionByID(ctx context.Context, id graphql.ID) (*registryExtensi
 		if err != nil {
 			return nil, err
 		}
-		return &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{x}}, nil
+		return &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{v: x}}, nil
 	default:
 		return nil, errors.New("invalid registry extension ID")
 	}
@@ -69,6 +70,25 @@ func unmarshalRegistryExtensionID(id graphql.ID) (registryExtensionID registryEx
 	return
 }
 
+// extensionRegistryCache caches data for the lifetime of a single query that is used by fields for
+// multiple RegistryExtensions. It is a performance optimization (e.g., to avoid needing to call
+// db.Settings.ListAll n times to return results for n extensions).
+type extensionRegistryCache struct {
+	once        sync.Once
+	allSettings []*api.Settings
+	err         error
+}
+
+func (c *extensionRegistryCache) listAllSettings(ctx context.Context) ([]*api.Settings, error) {
+	if c == nil {
+		return db.Settings.ListAll(ctx)
+	}
+	c.once.Do(func() {
+		c.allSettings, c.err = db.Settings.ListAll(ctx)
+	})
+	return c.allSettings, c.err
+}
+
 func readRegistryExtensionEnablement(extensionID, data string) *bool {
 	var settings schema.Settings
 	if err := conf.UnmarshalJSON(data, &settings); err != nil {
@@ -91,8 +111,8 @@ type registryExtensionExtensionConfigurationSubjectsConnectionArgs struct {
 	connectionArgs
 }
 
-func listExtensionConfigurationSubjects(ctx context.Context, extensionID string, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
-	allSettings, err := db.Settings.ListAll(ctx)
+func listExtensionConfigurationSubjects(ctx context.Context, cache *extensionRegistryCache, extensionID string, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
+	allSettings, err := cache.listAllSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -113,14 +133,14 @@ func listExtensionConfigurationSubjects(ctx context.Context, extensionID string,
 	}, nil
 }
 
-func listRegistryExtensionUsers(ctx context.Context, extensionID string, args *connectionArgs) (_ *userConnectionResolver, err error) {
+func listRegistryExtensionUsers(ctx context.Context, cache *extensionRegistryCache, extensionID string, args *connectionArgs) (_ *userConnectionResolver, err error) {
 	tr, ctx := trace.New(ctx, "listRegistryExtensionUsers", extensionID)
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	allSettings, err := db.Settings.ListAll(ctx)
+	allSettings, err := cache.listAllSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

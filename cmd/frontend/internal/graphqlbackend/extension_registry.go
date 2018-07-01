@@ -28,12 +28,12 @@ func getExtensionByExtensionID(ctx context.Context, extensionID string) (*regist
 		return nil, err
 	}
 	if local != nil {
-		return &registryExtensionMultiResolver{local: &registryExtensionDBResolver{local}}, nil
+		return &registryExtensionMultiResolver{local: &registryExtensionDBResolver{v: local}}, nil
 	}
 	if remote == nil {
 		return nil, fmt.Errorf("no remote extension found with ID %q", extensionID)
 	}
-	return &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{remote}}, nil
+	return &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{v: remote}}, nil
 }
 
 func (*extensionRegistryResolver) LocalExtensionIDPrefix() (*string, error) {
