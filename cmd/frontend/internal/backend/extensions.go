@@ -52,7 +52,7 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local *
 
 	var isLocal bool
 	switch len(parts) {
-	case 3: // extension ID is publisher/name
+	case 3: // extension ID is host/publisher/name
 		if prefix == nil {
 			// Don't look up fully qualified extensions from Sourcegraph.com; it only cares about
 			// its own extensions.
@@ -66,7 +66,7 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local *
 		extensionID = path.Join(parts[1], parts[2])
 		isLocal = true
 
-	case 2: // extension ID is host/publisher/name
+	case 2: // extension ID is publisher/name
 		if prefix == nil {
 			// Local extension on Sourcegraph.com instance.
 			isLocal = true
