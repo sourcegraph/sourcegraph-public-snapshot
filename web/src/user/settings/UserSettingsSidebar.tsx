@@ -8,11 +8,11 @@ import SunIcon from '@sourcegraph/icons/lib/Sun'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import * as React from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
-import { OrgAvatar } from '../org/OrgAvatar'
-import { SiteAdminAlert } from '../site-admin/SiteAdminAlert'
-import { authExp } from '../site-admin/SiteAdminAuthenticationProvidersPage'
-import { eventLogger } from '../tracking/eventLogger'
-import { UserAreaPageProps } from '../user/area/UserArea'
+import { OrgAvatar } from '../../org/OrgAvatar'
+import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
+import { eventLogger } from '../../tracking/eventLogger'
+import { UserAreaPageProps } from '../area/UserArea'
 
 interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     className: string
@@ -22,9 +22,9 @@ interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
 }
 
 /**
- * Sidebar for settings pages
+ * Sidebar for user settings pages
  */
-export const SettingsSidebar: React.SFC<Props> = props => {
+export const UserSettingsSidebar: React.SFC<Props> = props => {
     if (!props.authenticatedUser) {
         return null
     }
@@ -33,7 +33,7 @@ export const SettingsSidebar: React.SFC<Props> = props => {
     const siteAdminViewingOtherUser = props.user.id !== props.authenticatedUser.id
 
     return (
-        <div className={`sidebar settings-sidebar ${props.className}`}>
+        <div className={`sidebar user-settings-sidebar ${props.className}`}>
             {/* Indicate when the site admin is viewing another user's settings */}
             {siteAdminViewingOtherUser && (
                 <SiteAdminAlert className="sidebar__alert">
@@ -129,26 +129,26 @@ export const SettingsSidebar: React.SFC<Props> = props => {
             </ul>
 
             {!siteAdminViewingOtherUser && (
-                <div className="settings-sidebar__theme-switcher">
+                <div className="user-settings-sidebar__theme-switcher">
                     <a className="sidebar__link" onClick={props.onThemeChange} title="Switch to light theme">
                         <div
                             className={
-                                'settings-sidebar__theme-switcher--button' +
-                                (props.isLightTheme ? ' settings-sidebar__theme-switcher--button--selected' : '')
+                                'user-settings-sidebar__theme-switcher--button' +
+                                (props.isLightTheme ? ' user-settings-sidebar__theme-switcher--button--selected' : '')
                             }
                         >
-                            <SunIcon className="settings-sidebar__theme-switcher--icon icon-inline" />
+                            <SunIcon className="user-settings-sidebar__theme-switcher--icon icon-inline" />
                             Light
                         </div>
                     </a>
                     <a className="sidebar__link" onClick={props.onThemeChange} title="Switch to dark theme">
                         <div
                             className={
-                                'settings-sidebar__theme-switcher--button' +
-                                (!props.isLightTheme ? ' settings-sidebar__theme-switcher--button--selected' : '')
+                                'user-settings-sidebar__theme-switcher--button' +
+                                (!props.isLightTheme ? ' user-settings-sidebar__theme-switcher--button--selected' : '')
                             }
                         >
-                            <MoonIcon className="settings-sidebar__theme-switcher--icon icon-inline" />
+                            <MoonIcon className="user-settings-sidebar__theme-switcher--icon icon-inline" />
                             Dark
                         </div>
                     </a>

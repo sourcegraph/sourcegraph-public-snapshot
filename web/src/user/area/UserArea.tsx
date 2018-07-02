@@ -10,8 +10,8 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { PublisherSubjectExtensionsArea } from '../../registry/PublisherSubjectExtensionsArea'
-import { SettingsArea } from '../../settings/SettingsArea'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
+import { UserSettingsArea } from '../settings/UserSettingsArea'
 import { platformEnabled } from '../tags'
 import { UserHeader } from './UserHeader'
 import { UserOverviewPage } from './UserOverviewPage'
@@ -183,7 +183,7 @@ export class UserArea extends React.Component<Props> {
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <SettingsArea
+                                    <UserSettingsArea
                                         {...routeComponentProps}
                                         {...transferProps}
                                         isLightTheme={this.props.isLightTheme}

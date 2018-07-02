@@ -1,9 +1,9 @@
-@import '../components/Sidebar';
+@import '../../components/Sidebar';
 
 $color-theme-switcher-background: rgba(42, 58, 81, 0.7);
 $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
 
-.settings-sidebar {
+.user-settings-sidebar {
     width: 12rem;
 
     .avatar {
@@ -36,7 +36,7 @@ $color-theme-switcher-btn-text: rgba(162, 176, 205, 0.5);
 }
 
 .theme-light {
-    .settings-sidebar {
+    .user-settings-sidebar {
         &__theme-switcher {
             background: $color-light-bg-4;
 

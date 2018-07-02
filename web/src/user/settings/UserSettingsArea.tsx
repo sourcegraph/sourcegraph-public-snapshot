@@ -4,27 +4,21 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import * as GQL from '../backend/graphqlschema'
-import { HeroPage } from '../components/HeroPage'
-import { siteFlags } from '../site/backend'
-import { UserAreaPageProps } from '../user/area/UserArea'
-import { UserSettingsAccountPage } from '../user/settings/UserSettingsAccountPage'
-import { UserSettingsConfigurationPage } from '../user/settings/UserSettingsConfigurationPage'
-import { UserSettingsCreateAccessTokenPage } from '../user/settings/UserSettingsCreateAccessTokenPage'
-import { UserSettingsEmailsPage } from '../user/settings/UserSettingsEmailsPage'
-import { UserSettingsExternalAccountsPage } from '../user/settings/UserSettingsExternalAccountsPage'
-import { UserSettingsIntegrationsPage } from '../user/settings/UserSettingsIntegrationsPage'
-import { UserSettingsProfilePage } from '../user/settings/UserSettingsProfilePage'
-import { UserSettingsTokensPage } from '../user/settings/UserSettingsTokensPage'
-import { SettingsSidebar } from './SettingsSidebar'
+import * as GQL from '../../backend/graphqlschema'
+import { HeroPage } from '../../components/HeroPage'
+import { siteFlags } from '../../site/backend'
+import { UserAreaPageProps } from '../area/UserArea'
+import { UserSettingsAccountPage } from './UserSettingsAccountPage'
+import { UserSettingsConfigurationPage } from './UserSettingsConfigurationPage'
+import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
+import { UserSettingsEmailsPage } from './UserSettingsEmailsPage'
+import { UserSettingsExternalAccountsPage } from './UserSettingsExternalAccountsPage'
+import { UserSettingsIntegrationsPage } from './UserSettingsIntegrationsPage'
+import { UserSettingsProfilePage } from './UserSettingsProfilePage'
+import { UserSettingsSidebar } from './UserSettingsSidebar'
+import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 
-const SettingsNotFoundPage = () => (
-    <HeroPage
-        icon={DirectionalSignIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested settings page was not found."
-    />
-)
+const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
 interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     isLightTheme: boolean
@@ -42,9 +36,9 @@ interface State {
 }
 
 /**
- * Renders a layout of a sidebar and a content area to display settings.
+ * Renders a layout of a sidebar and a content area to display user settings.
  */
-export class SettingsArea extends React.Component<Props, State> {
+export class UserSettingsArea extends React.Component<Props, State> {
     public state: State = { externalAuthEnabled: false }
     private subscriptions = new Subscription()
 
@@ -89,8 +83,8 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         return (
-            <div className="settings-area area">
-                <SettingsSidebar
+            <div className="user-settings-area area">
+                <UserSettingsSidebar
                     externalAuthEnabled={this.state.externalAuthEnabled}
                     className="area__sidebar"
                     {...this.props}
@@ -182,7 +176,7 @@ export class SettingsArea extends React.Component<Props, State> {
                             component={UserSettingsIntegrationsPage}
                             exact={true}
                         />
-                        <Route component={SettingsNotFoundPage} key="hardcoded-key" />
+                        <Route component={NotFoundPage} key="hardcoded-key" />
                     </Switch>
                 </div>
             </div>
