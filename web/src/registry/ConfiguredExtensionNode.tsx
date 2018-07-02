@@ -81,15 +81,16 @@ export class ConfiguredExtensionNode extends React.PureComponent<ConfiguredExten
                                         compact={true}
                                     />
                                 )}
-                            {this.props.settingsURL && (
-                                <Link
-                                    to={this.props.settingsURL}
-                                    className="btn btn-link btn-sm pr-0"
-                                    title="Extension settings"
-                                >
-                                    <GearIcon className="icon-inline" />
-                                </Link>
-                            )}
+                            {this.props.settingsURL &&
+                                this.props.node.viewerCanConfigure && (
+                                    <Link
+                                        to={this.props.settingsURL}
+                                        className="btn btn-link btn-sm pr-0"
+                                        title="Extension settings"
+                                    >
+                                        <GearIcon className="icon-inline" />
+                                    </Link>
+                                )}
                         </div>
                     )}
                 </div>
