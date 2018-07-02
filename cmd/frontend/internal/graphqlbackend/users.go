@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
@@ -86,11 +85,6 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 }
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*userResolver, error) {
-	// 🚨 SECURITY: Only site admins can list users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
 	var users []*types.User
 	var err error
 	if r.useCache() {
@@ -112,11 +106,6 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*userResolver, er
 }
 
 func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// 🚨 SECURITY: Only site admins can count users.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return 0, err
-	}
-
 	var count int
 	var err error
 	if r.useCache() {
