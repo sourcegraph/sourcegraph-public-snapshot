@@ -1,11 +1,11 @@
-import CityIcon from '@sourcegraph/icons/lib/City'
 import * as React from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
+import { SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS } from '../../components/Sidebar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
-    className: string
+    className?: string
 }
 
 /**
@@ -19,7 +19,7 @@ export const OrgAccountSidebar: React.SFC<Props> = ({ org, authenticatedUser, cl
     const siteAdminViewingOtherOrg = authenticatedUser && org.viewerCanAdminister && !org.viewerIsMember
 
     return (
-        <div className={`sidebar org-account-sidebar ${className}`}>
+        <div className={`org-account-sidebar ${className || ''}`}>
             {/* Indicate when the site admin is viewing another org's settings */}
             {siteAdminViewingOtherOrg && (
                 <SiteAdminAlert className="sidebar__alert">
@@ -27,24 +27,14 @@ export const OrgAccountSidebar: React.SFC<Props> = ({ org, authenticatedUser, cl
                 </SiteAdminAlert>
             )}
 
-            <ul className="sidebar__items">
-                <div className="sidebar__header">
-                    <div className="sidebar__header-icon">
-                        <CityIcon className="icon-inline" />
-                    </div>
-                    <h5 className="sidebar__header-title">Account</h5>
-                </div>
-                <li className="sidebar__item">
-                    <NavLink
-                        to={`${match.url}/profile`}
-                        exact={true}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
-                    >
+            <div className="card">
+                <div className="card-header">Organization</div>
+                <div className="list-group list-group-flush">
+                    <NavLink to={`${match.url}/profile`} exact={true} className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}>
                         Profile
                     </NavLink>
-                </li>
-            </ul>
+                </div>
+            </div>
         </div>
     )
 }
