@@ -3168,8 +3168,6 @@ type ConfiguredExtension {
     # Whether the extension is enabled. A configured extension is disabled when the "disabled" property is true in
     # its settings.
     isEnabled: Boolean!
-    # Whether the viewer can configure the extension for this configuration subject.
-    viewerCanConfigure: Boolean!
     # The extension's reported capabilities for the viewer, as a JSON-serialized string. The extension may return
     # different values depending on the viewer's settings.
     capabilities: JSONValue

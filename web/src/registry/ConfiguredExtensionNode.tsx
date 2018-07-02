@@ -18,10 +18,10 @@ export const configuredExtensionFragment = gql`
         }
         subject {
             id
+            viewerCanAdminister
         }
         extensionID
         isEnabled
-        viewerCanConfigure
     }
 `
 
@@ -69,20 +69,22 @@ export class ConfiguredExtensionNode extends React.PureComponent<ConfiguredExten
                     </div>
                     {this.props.showUserActions && (
                         <div>
-                            {this.props.node.viewerCanConfigure &&
+                            {this.props.node.subject &&
+                                this.props.node.subject.viewerCanAdminister &&
                                 this.props.node.subject && (
                                     <RegistryExtensionConfigureButton
                                         {...extensionSpec}
                                         showRemove={!this.props.node.extension || !this.props.node.isEnabled}
                                         subject={this.props.node.subject.id}
-                                        viewerCanConfigure={this.props.node.viewerCanConfigure}
+                                        viewerCanConfigure={this.props.node.subject.viewerCanAdminister}
                                         isEnabled={this.props.node.isEnabled}
                                         onDidUpdate={this.props.onDidUpdate}
                                         compact={true}
                                     />
                                 )}
                             {this.props.settingsURL &&
-                                this.props.node.viewerCanConfigure && (
+                                this.props.node.subject &&
+                                this.props.node.subject.viewerCanAdminister && (
                                     <Link
                                         to={this.props.settingsURL}
                                         className="btn btn-link btn-sm pr-0"

@@ -38,13 +38,6 @@ func (r *configuredExtensionResolver) Subject() *configurationSubject { return r
 
 func (r *configuredExtensionResolver) IsEnabled() bool { return r.enabled }
 
-func (r *configuredExtensionResolver) ViewerCanConfigure(ctx context.Context) (bool, error) {
-	if r.subject == nil {
-		return false, nil
-	}
-	return r.subject.ViewerCanAdminister(ctx)
-}
-
 func (r *configuredExtensionResolver) getInitializeResult(ctx context.Context) (*lsp.InitializeResult, error) {
 	do := func() (*lsp.InitializeResult, error) {
 		mergedSettings, err := r.viewerMergedSettings(ctx)

@@ -36,8 +36,8 @@ function queryConfiguredExtensions(args: { first?: number }): Observable<GQL.ICo
                         isEnabled
                         subject {
                             id
+                            viewerCanAdminister
                         }
-                        viewerCanConfigure
                     }
                 }
             }
@@ -112,7 +112,7 @@ class ExtensionSelectorExtensionNode extends React.PureComponent<ExtensionNodePr
                 }`}
                 onClick={this.toggleExtensionEnabled}
                 disabled={
-                    !this.props.node.viewerCanConfigure ||
+                    !(this.props.node.subject && this.props.node.subject.viewerCanAdminister) ||
                     !this.state.currentUserSubject ||
                     !this.props.node.subject ||
                     this.props.node.subject.id !== this.state.currentUserSubject
