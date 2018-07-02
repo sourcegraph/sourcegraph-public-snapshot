@@ -71,7 +71,9 @@ func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationRes
 }
 
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAuthenticated {
+		return false, nil
+	} else if err != nil {
 		return false, err
 	}
 	return true, nil

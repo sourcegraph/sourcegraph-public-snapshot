@@ -7,6 +7,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 )
 
@@ -76,6 +77,9 @@ func (r *registryExtensionDBResolver) ViewerCanConfigure(ctx context.Context) (b
 
 func (r *registryExtensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	err := toRegistryPublisherID(r.v).viewerCanAdminister(ctx)
+	if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAnOrgMember || err == backend.ErrNotAuthenticated {
+		return false, nil
+	}
 	return err == nil, err
 }
 
