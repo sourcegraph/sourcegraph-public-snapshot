@@ -80,7 +80,7 @@ class ConfiguredExtensionsList extends React.PureComponent<ConfiguredExtensionsL
                 nodeComponentProps={nodeProps}
                 updates={this.updates}
                 hideSearch={true}
-                filters={ConfiguredExtensionsList.FILTERS}
+                filters={this.props.subject.viewerCanAdminister ? ConfiguredExtensionsList.FILTERS : []}
                 noSummaryIfAllNodesVisible={true}
                 updateOnChange={this.props.updateOnChange}
                 emptyElement={this.props.emptyElement}
