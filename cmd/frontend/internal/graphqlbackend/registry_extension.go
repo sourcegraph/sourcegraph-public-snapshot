@@ -272,12 +272,6 @@ func viewerHasEnabledRegistryExtension(ctx context.Context, extensionID string) 
 	return ok && !extensionSettings.Disabled, nil
 }
 
-func viewerCanConfigureRegistryExtension(ctx context.Context) (bool, error) {
-	// Any authenticated user can use any extension.
-	currentUser, err := currentUser(ctx)
-	return currentUser != nil, err
-}
-
 func configuredExtensionFromRegistryExtension(ctx context.Context, extensionID string, args configuredExtensionFromRegistryExtensionArgs) (*configuredExtensionResolver, error) {
 	var subject *configurationSubject
 	if args.Subject != nil {

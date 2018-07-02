@@ -102,10 +102,6 @@ func (r *registryExtensionRemoteResolver) ViewerHasEnabled(ctx context.Context) 
 	return viewerHasEnabledRegistryExtension(ctx, r.v.ExtensionID)
 }
 
-func (r *registryExtensionRemoteResolver) ViewerCanConfigure(ctx context.Context) (bool, error) {
-	return viewerCanConfigureRegistryExtension(ctx)
-}
-
 func (r *registryExtensionRemoteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return false, nil // can't administer remote extensions
 }

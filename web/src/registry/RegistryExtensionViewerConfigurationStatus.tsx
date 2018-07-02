@@ -76,7 +76,7 @@ const RegistryExtensionViewerConfigurationSubjectEdge: React.SFC<{
 interface Props extends RouteComponentProps<{}> {
     authenticatedUser: Pick<GQL.IUser, 'id'> | null
 
-    extension: Pick<GQL.IRegistryExtension, 'id' | 'viewerHasEnabled' | 'viewerCanConfigure'>
+    extension: Pick<GQL.IRegistryExtension, 'id' | 'viewerHasEnabled'>
 
     nonEmptyClassName: string
 
@@ -141,7 +141,7 @@ export class RegistryExtensionViewerConfigurationStatus extends React.PureCompon
         const itemClassName = 'py-2'
 
         if (
-            (this.props.extension.viewerHasEnabled || this.props.extension.viewerCanConfigure) &&
+            (this.props.extension.viewerHasEnabled || this.props.authenticatedUser) &&
             this.state.subjectsOrError === LOADING
         ) {
             // Reserve vertical space for a common case where we know we (usually) need 1 row.
@@ -171,7 +171,7 @@ export class RegistryExtensionViewerConfigurationStatus extends React.PureCompon
                               extensionGQLID={this.props.extension.id}
                               extensionID={undefined}
                               subject={this.props.authenticatedUser.id}
-                              viewerCanConfigure={this.props.extension.viewerCanConfigure}
+                              viewerCanConfigure={!!this.props.authenticatedUser}
                               isEnabled={this.props.extension.viewerHasEnabled}
                               onDidUpdate={this.props.onUpdate}
                               buttonClassName="w-100"

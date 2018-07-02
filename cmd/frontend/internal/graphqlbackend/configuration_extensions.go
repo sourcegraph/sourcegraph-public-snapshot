@@ -44,14 +44,6 @@ func (r *configurationMutationResolver) UpdateExtension(ctx context.Context, arg
 		if err != nil {
 			return nil, err
 		}
-		if ok, err := extension.ViewerCanConfigure(ctx); err != nil {
-			return nil, err
-		} else if !ok {
-			// This is NOT for security, it is only to prevent confusion by users who try to enable
-			// extensions that won't work for them. They can still manually edit their settings to
-			// enable them (and presumably they would not work if viewerCanConfigure == false).
-			return nil, errors.New("viewer can't use extension")
-		}
 		extensionID = extension.ExtensionID()
 
 	case args.ExtensionID != nil:

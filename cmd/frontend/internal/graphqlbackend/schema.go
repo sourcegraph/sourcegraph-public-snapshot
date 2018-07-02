@@ -3104,10 +3104,6 @@ type RegistryExtension implements Node {
     ): UserConnection!
     # Whether the viewer has this extension enabled in their settings.
     viewerHasEnabled: Boolean!
-    # Whether the viewer can configure this extension for themselves (i.e., enable, disable, and configure it in
-    # their settings). It does NOT mean that the user can administer this extension; see
-    # RegistryExtension.viewerCanAdminister for that.
-    viewerCanConfigure: Boolean!
     # Whether the viewer has admin privileges on this registry extension.
     viewerCanAdminister: Boolean!
     # The configured form of this extension, using the configuration for the given configuration subject (or null

@@ -130,13 +130,6 @@ func (r *registryExtensionMultiResolver) ViewerHasEnabled(ctx context.Context) (
 	return r.remote.ViewerHasEnabled(ctx)
 }
 
-func (r *registryExtensionMultiResolver) ViewerCanConfigure(ctx context.Context) (bool, error) {
-	if r.local != nil {
-		return r.local.ViewerCanConfigure(ctx)
-	}
-	return r.remote.ViewerCanConfigure(ctx)
-}
-
 func (r *registryExtensionMultiResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	if r.local != nil {
 		return r.local.ViewerCanAdminister(ctx)

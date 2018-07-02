@@ -57,13 +57,14 @@ export const RegistryExtensionNodeCard: React.SFC<RegistryExtensionNodeProps> = 
                                 )}
                         </div>
                         <div>
-                            {node.viewerCanConfigure &&
-                                props.authenticatedUserID &&
+                            {props.subject &&
+                                props.subjectIsViewer &&
+                                props.subject.viewerCanAdminister &&
                                 props.showUserActions && (
                                     <RegistryExtensionConfigureButton
                                         extensionGQLID={node.id}
-                                        subject={props.authenticatedUserID}
-                                        viewerCanConfigure={node.viewerCanConfigure}
+                                        subject={props.subject.id}
+                                        viewerCanConfigure={props.subject.viewerCanAdminister}
                                         isEnabled={node.viewerHasEnabled}
                                         onDidUpdate={props.onDidUpdate}
                                         compact={true}

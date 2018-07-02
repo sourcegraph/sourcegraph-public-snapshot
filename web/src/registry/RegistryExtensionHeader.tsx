@@ -89,25 +89,24 @@ export const RegistryExtensionHeader: React.SFC<Props> = (props: Props) => (
                                 </NavLink>
                             )}
                         </div>
-                        {props.extension.viewerCanConfigure &&
-                            props.authenticatedUser && (
-                                <div className="area-header__nav-actions">
-                                    {props.extension.viewerHasEnabled && (
-                                        <small className="text-success mr-1">
-                                            <strong>
-                                                <CheckmarkIcon className="icon-inline" /> Enabled
-                                            </strong>
-                                        </small>
-                                    )}
-                                    <RegistryExtensionConfigureButton
-                                        extensionGQLID={props.extension.id}
-                                        subject={props.authenticatedUser.id}
-                                        viewerCanConfigure={props.extension.viewerCanConfigure}
-                                        isEnabled={props.extension.viewerHasEnabled}
-                                        onDidUpdate={props.onDidUpdateExtension}
-                                    />
-                                </div>
+                        <div className="area-header__nav-actions">
+                            {props.extension.viewerHasEnabled && (
+                                <small className="text-success mr-1">
+                                    <strong>
+                                        <CheckmarkIcon className="icon-inline" /> Enabled
+                                    </strong>
+                                </small>
                             )}
+                            {props.authenticatedUser && (
+                                <RegistryExtensionConfigureButton
+                                    extensionGQLID={props.extension.id}
+                                    subject={props.authenticatedUser.id}
+                                    viewerCanConfigure={!!props.authenticatedUser}
+                                    isEnabled={props.extension.viewerHasEnabled}
+                                    onDidUpdate={props.onDidUpdateExtension}
+                                />
+                            )}
+                        </div>
                     </div>
                 </>
             )}

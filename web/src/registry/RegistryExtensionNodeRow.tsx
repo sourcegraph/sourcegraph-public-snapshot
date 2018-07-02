@@ -134,8 +134,9 @@ export class RegistryExtensionNodeRow extends React.PureComponent<
                                     <ShareIcon className="icon-inline" />
                                 </Link>
                             )}
-                        {this.props.node.viewerCanConfigure &&
-                            this.props.subject &&
+                        {this.props.subject &&
+                            this.props.subjectIsViewer &&
+                            this.props.subject.viewerCanAdminister &&
                             this.props.showUserActions && (
                                 <RegistryExtensionConfigureButton
                                     className="ml-1"

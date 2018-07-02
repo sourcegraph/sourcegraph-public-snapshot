@@ -45,7 +45,6 @@ export const registryExtensionFragment = gql`
             totalCount
         }
         viewerHasEnabled
-        viewerCanConfigure
         viewerCanAdminister
     }
 `
@@ -68,17 +67,22 @@ export interface RegistryExtensionNodeDisplayProps {
 
     /** Whether to show the last-updated timestamp. */
     showTimestamp?: boolean
+
+    /** The subject to show enablement state and actions for. */
+    subject?: Pick<GQL.ExtensionConfigurationSubject, '__typename' | 'id' | 'viewerCanAdminister'>
+
+    /** Whether the subject is the viewer. */
+    subjectIsViewer?: boolean
 }
 
 export interface RegistryExtensionNodeProps extends RegistryExtensionNodeDisplayProps {
     node: GQL.IRegistryExtension
-    subject: Pick<GQL.ExtensionConfigurationSubject, '__typename' | 'id' | 'viewerCanAdminister'>
     onDidUpdate: () => void
 }
 
 class FilteredRegistryExtensionConnection extends FilteredConnection<
     GQL.IRegistryExtension,
-    Pick<RegistryExtensionNodeProps, 'subject' | 'onDidUpdate'>
+    Pick<RegistryExtensionNodeProps, 'subject' | 'subjectIsViewer' | 'onDidUpdate'>
 > {}
 
 /** Ways to display the list of extensions. */
@@ -90,8 +94,6 @@ export enum ExtensionsListViewMode {
 interface RegistryExtensionsListProps extends RegistryExtensionNodeDisplayProps, RouteComponentProps<{}> {
     /** Only show extensions from this publisher (or all if null). */
     publisher: Pick<GQL.RegistryPublisher, '__typename' | 'id'> | null
-
-    authenticatedUser: Pick<GQL.IUser, 'id'> | null
 
     /** How the list should be displayed. */
     mode: ExtensionsListViewMode
@@ -128,12 +130,10 @@ export class RegistryExtensionsList extends React.PureComponent<RegistryExtensio
     private updates = new Subject<void>()
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<
-            RegistryExtensionNodeProps,
-            'onDidUpdate' | 'authenticatedUserID' | keyof RegistryExtensionNodeDisplayProps
-        > = {
+        const nodeProps: Pick<RegistryExtensionNodeProps, 'onDidUpdate' | keyof RegistryExtensionNodeDisplayProps> = {
             onDidUpdate: this.onDidUpdateRegistryExtension,
-            authenticatedUserID: this.props.authenticatedUser && this.props.authenticatedUser.id,
+            subject: this.props.subject,
+            subjectIsViewer: this.props.subjectIsViewer,
             showExtensionID: this.props.showExtensionID,
             showSource: this.props.showSource,
             showUserActions: this.props.showUserActions,

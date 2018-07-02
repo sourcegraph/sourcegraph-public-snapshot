@@ -38,7 +38,6 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                 </p>
                 <RegistryExtensionsList
                     {...this.props}
-                    authenticatedUser={this.props.user}
                     mode={ExtensionsListViewMode.List}
                     publisher={null}
                     showExtensionID="extensionID"

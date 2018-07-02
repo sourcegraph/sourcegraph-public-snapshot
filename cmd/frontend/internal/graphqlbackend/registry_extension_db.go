@@ -71,10 +71,6 @@ func (r *registryExtensionDBResolver) ViewerHasEnabled(ctx context.Context) (boo
 	return viewerHasEnabledRegistryExtension(ctx, r.v.NonCanonicalExtensionID)
 }
 
-func (r *registryExtensionDBResolver) ViewerCanConfigure(ctx context.Context) (bool, error) {
-	return viewerCanConfigureRegistryExtension(ctx)
-}
-
 func (r *registryExtensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	err := toRegistryPublisherID(r.v).viewerCanAdminister(ctx)
 	if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAnOrgMember || err == backend.ErrNotAuthenticated {
