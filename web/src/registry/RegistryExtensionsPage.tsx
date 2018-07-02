@@ -72,13 +72,13 @@ export interface RegistryExtensionNodeDisplayProps {
 
 export interface RegistryExtensionNodeProps extends RegistryExtensionNodeDisplayProps {
     node: GQL.IRegistryExtension
-    authenticatedUserID: GQL.ID | null
+    subject: Pick<GQL.ExtensionConfigurationSubject, '__typename' | 'id' | 'viewerCanAdminister'>
     onDidUpdate: () => void
 }
 
 class FilteredRegistryExtensionConnection extends FilteredConnection<
     GQL.IRegistryExtension,
-    Pick<RegistryExtensionNodeProps, 'onDidUpdate' | 'authenticatedUserID'>
+    Pick<RegistryExtensionNodeProps, 'subject' | 'onDidUpdate'>
 > {}
 
 /** Ways to display the list of extensions. */

@@ -135,13 +135,13 @@ export class RegistryExtensionNodeRow extends React.PureComponent<
                                 </Link>
                             )}
                         {this.props.node.viewerCanConfigure &&
-                            this.props.authenticatedUserID &&
+                            this.props.subject &&
                             this.props.showUserActions && (
                                 <RegistryExtensionConfigureButton
                                     className="ml-1"
                                     extensionGQLID={this.props.node.id}
-                                    subject={this.props.authenticatedUserID}
-                                    viewerCanConfigure={this.props.node.viewerCanConfigure}
+                                    subject={this.props.subject.id}
+                                    viewerCanConfigure={this.props.subject.viewerCanAdminister}
                                     isEnabled={this.props.node.viewerHasEnabled}
                                     disabled={loading}
                                     onDidUpdate={this.props.onDidUpdate}
