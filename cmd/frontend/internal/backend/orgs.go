@@ -16,6 +16,9 @@ var ErrNotAuthenticated = errors.New("not authenticated")
 // It is used when an action on a user can be performed by site admins and the organization's
 // members, but nobody else.
 func CheckOrgAccess(ctx context.Context, orgID int32) error {
+	if hasAuthzBypass(ctx) {
+		return nil
+	}
 	currentUser, err := currentUser(ctx)
 	if err != nil {
 		return err

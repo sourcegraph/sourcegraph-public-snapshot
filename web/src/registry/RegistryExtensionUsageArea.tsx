@@ -2,7 +2,7 @@ import CityIcon from '@sourcegraph/icons/lib/City'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import * as React from 'react'
-import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { NavLink } from 'react-router-dom'
 import { HeroPage } from '../components/HeroPage'
 import { eventLogger } from '../tracking/eventLogger'
@@ -21,13 +21,18 @@ export class RegistryExtensionUsageArea extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element | null {
+        const usersPath = `${this.props.match.path}/users`
+        if (this.props.location.pathname === this.props.match.path) {
+            return <Redirect to={usersPath} />
+        }
+
         return (
             <div className="registry-extension-usage-area">
                 <div className="btn-group mb-3">
                     <NavLink
                         className="btn btn-secondary"
                         activeClassName="active font-weight-bold"
-                        to={`${this.props.match.path}/users`}
+                        to={usersPath}
                         exact={true}
                         data-tooltip="Users with this extension enabled"
                     >
@@ -45,7 +50,7 @@ export class RegistryExtensionUsageArea extends React.PureComponent<Props> {
                 </div>
                 <Switch>
                     <Route
-                        path={`${this.props.match.path}/users`}
+                        path={usersPath}
                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                         exact={true}
                         // tslint:disable-next-line:jsx-no-lambda

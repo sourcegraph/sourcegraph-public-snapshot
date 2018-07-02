@@ -14,6 +14,9 @@ var ErrMustBeSiteAdmin = errors.New("must be site admin")
 
 // CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.
 func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
+	if hasAuthzBypass(ctx) {
+		return nil
+	}
 	user, err := currentUser(ctx)
 	if err != nil {
 		return err
@@ -29,6 +32,9 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context) error {
 
 // CheckUserIsSiteAdmin returns an error if the user is NOT a site admin.
 func CheckUserIsSiteAdmin(ctx context.Context, userID int32) error {
+	if hasAuthzBypass(ctx) {
+		return nil
+	}
 	user, err := db.Users.GetByID(ctx, userID)
 	if err != nil {
 		return err
@@ -48,6 +54,9 @@ func CheckUserIsSiteAdmin(ctx context.Context, userID int32) error {
 // It is used when an action on a user can be performed by site admins and the
 // user themselves, but nobody else.
 func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
+	if hasAuthzBypass(ctx) {
+		return nil
+	}
 	actor := actor.FromContext(ctx)
 	if actor.IsAuthenticated() && actor.UID == subjectUserID {
 		return nil
@@ -65,3 +74,22 @@ func currentUser(ctx context.Context) (*types.User, error) {
 	}
 	return user, nil
 }
+
+// WithAuthzBypass returns a context that backend.CheckXyz funcs report as being a site admin. It
+// is used to bypass the backend.CheckXyz access control funcs when needed.
+//
+// 🚨 SECURITY: The caller MUST ensure that it performs its own access controls or removal of
+// sensitive data.
+func WithAuthzBypass(ctx context.Context) context.Context {
+	return context.WithValue(ctx, authzBypass, struct{}{})
+}
+
+func hasAuthzBypass(ctx context.Context) bool {
+	return ctx.Value(authzBypass) != nil
+}
+
+type contextKey int
+
+const (
+	authzBypass contextKey = iota
+)

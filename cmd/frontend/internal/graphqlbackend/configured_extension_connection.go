@@ -87,7 +87,7 @@ type configuredExtensionResult struct {
 
 func (r *configuredExtensionConnectionResolver) compute(ctx context.Context) ([]configuredExtensionResult, error) {
 	r.once.Do(func() {
-		configResolver, err := r.cascade.Merged(ctx)
+		configResolver, err := r.cascade.mergedWithExtensionsEnablementOnly(ctx)
 		if err != nil {
 			r.err = err
 			return
@@ -155,7 +155,7 @@ func (r *configuredExtensionConnectionResolver) PageInfo(ctx context.Context) (*
 }
 
 func (r *configuredExtensionConnectionResolver) URL(ctx context.Context) *string {
-	const urlSuffix = "/extensions"
+	const urlSuffix = "/extensions/used"
 	switch {
 	case r.cascade.subject.user != nil:
 		return strptr(r.cascade.subject.user.URL() + urlSuffix)

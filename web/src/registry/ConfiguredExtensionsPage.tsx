@@ -1,4 +1,3 @@
-import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -6,7 +5,6 @@ import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { DismissibleAlert } from '../components/DismissibleAlert'
 import { FilteredConnectionDisplayProps, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
@@ -18,9 +16,8 @@ import {
     ConfiguredExtensionNodeProps,
     FilteredConfiguredExtensionConnection,
 } from './ConfiguredExtensionNode'
-import { extensionIDPrefix, RegistryPublisher } from './extension'
 
-interface ConfiguredExtensionsListProps
+export interface ConfiguredExtensionsListProps
     extends ConfiguredExtensionNodeDisplayProps,
         RouteComponentProps<{}>,
         Pick<FilteredConnectionDisplayProps, 'emptyElement' | 'onFilterSelect'> {
@@ -141,15 +138,7 @@ class ConfiguredExtensionsList extends React.PureComponent<ConfiguredExtensionsL
     private onDidUpdateConfiguredExtension = () => this.updates.next()
 }
 
-interface ConfiguredExtensionsPageProps extends ConfiguredExtensionsListProps {
-    /**
-     * Also link to extensions published by this publisher (when the configuration subject also corresponds to a
-     * publisher) if publisher.registryExtensions.url is set.
-     */
-    publisher?: {
-        registryExtensions?: Pick<GQL.IRegistryExtensionConnection, 'url'>
-    } & RegistryPublisher
-}
+interface ConfiguredExtensionsPageProps extends ConfiguredExtensionsListProps {}
 
 interface ConfiguredExtensionsPageState {
     activeFilter?: string
@@ -171,36 +160,7 @@ export class ConfiguredExtensionsPage extends React.PureComponent<
     public render(): JSX.Element | null {
         return (
             <div className="configured-extensions-page">
-                <PageTitle title="Configured extensions" />
-                <DismissibleAlert className="alert-info mb-3" partialStorageKey="configured-extensions-help0">
-                    <span>
-                        <strong>Experimental feature:</strong> See which extensions a user or organization uses.
-                        Extensions add features to Sourcegraph and other connected tools (such as editors, code hosts,
-                        and code review tools).
-                    </span>
-                </DismissibleAlert>
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h2 className="mr-sm-2 mb-0">Configured extensions</h2>
-                    <div>
-                        {this.props.publisher &&
-                            this.props.publisher.registryExtensions &&
-                            this.props.publisher.registryExtensions.url && (
-                                <Link className="btn btn-outline-link" to={this.props.publisher.registryExtensions.url}>
-                                    Extensions published by {extensionIDPrefix(this.props.publisher)}
-                                </Link>
-                            )}{' '}
-                        <Link to="/registry" className="btn btn-outline-primary">
-                            View all extensions in registry
-                        </Link>{' '}
-                        {this.props.subject &&
-                            this.props.subject.settingsURL &&
-                            this.props.subject.viewerCanAdminister && (
-                                <Link className="btn btn-primary" to={this.props.subject.settingsURL}>
-                                    <GearIcon className="icon-inline" /> Configure extensions
-                                </Link>
-                            )}
-                    </div>
-                </div>
+                <PageTitle title="Extensions used" />
                 <ConfiguredExtensionsList
                     {...this.props}
                     onFilterSelect={this.onFilterSelect}

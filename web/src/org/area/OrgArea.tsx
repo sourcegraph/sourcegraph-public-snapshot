@@ -8,10 +8,10 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
+import { PublisherSubjectExtensionsArea } from '../../registry/PublisherSubjectExtensionsArea'
 import { platformEnabled } from '../../user/tags'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { OrgSettingsArea } from '../settings/OrgSettingsArea'
-import { OrgExtensionsPage } from './OrgExtensionsPage'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
@@ -194,7 +194,13 @@ export class OrgArea extends React.Component<Props> {
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         // tslint:disable-next-line:jsx-no-lambda
                                         render={routeComponentProps => (
-                                            <OrgExtensionsPage {...routeComponentProps} {...transferProps} />
+                                            <PublisherSubjectExtensionsArea
+                                                {...routeComponentProps}
+                                                {...transferProps}
+                                                publisher={transferProps.org}
+                                                subject={transferProps.org}
+                                                showUserActions={true}
+                                            />
                                         )}
                                     />
                                 )}
