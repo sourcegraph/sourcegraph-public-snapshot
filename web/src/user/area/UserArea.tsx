@@ -10,9 +10,10 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { PublisherSubjectExtensionsArea } from '../../registry/PublisherSubjectExtensionsArea'
+import { SettingsArea } from '../../settings/SettingsArea'
+import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { UserAccountArea } from '../account/UserAccountArea'
-import { UserSettingsPage } from '../settings/UserSettingsPage'
 import { platformEnabled } from '../tags'
 import { UserHeader } from './UserHeader'
 import { UserOverviewPage } from './UserOverviewPage'
@@ -185,10 +186,23 @@ export class UserArea extends React.Component<Props> {
                                 exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <UserSettingsPage
+                                    <SettingsArea
                                         {...routeComponentProps}
                                         {...transferProps}
+                                        subject={transferProps.user}
                                         isLightTheme={this.props.isLightTheme}
+                                        extraHeader={
+                                            <>
+                                                {transferProps.authenticatedUser &&
+                                                    transferProps.user.id !== transferProps.authenticatedUser.id && (
+                                                        <SiteAdminAlert className="sidebar__alert">
+                                                            Viewing settings for{' '}
+                                                            <strong>{transferProps.user.username}</strong>
+                                                        </SiteAdminAlert>
+                                                    )}
+                                                <p>User settings override global and organization settings.</p>
+                                            </>
+                                        }
                                     />
                                 )}
                             />

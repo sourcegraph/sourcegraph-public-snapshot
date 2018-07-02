@@ -9,10 +9,11 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { PublisherSubjectExtensionsArea } from '../../registry/PublisherSubjectExtensionsArea'
+import { SettingsArea } from '../../settings/SettingsArea'
+import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { platformEnabled } from '../../user/tags'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { OrgAccountArea } from '../account/OrgAccountArea'
-import { OrgSettingsPage } from '../settings/OrgSettingsPage'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
@@ -171,7 +172,7 @@ export class OrgArea extends React.Component<Props> {
                     <div className="area--vertical__content-inner">
                         <Switch>
                             <Route
-                                path={`${this.props.match.url}`}
+                                path={this.props.match.url}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
@@ -211,10 +212,27 @@ export class OrgArea extends React.Component<Props> {
                                 exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <OrgSettingsPage
+                                    <SettingsArea
                                         {...routeComponentProps}
                                         {...transferProps}
+                                        subject={transferProps.org}
                                         isLightTheme={this.props.isLightTheme}
+                                        extraHeader={
+                                            <>
+                                                {transferProps.authenticatedUser &&
+                                                    transferProps.org.viewerCanAdminister &&
+                                                    !transferProps.org.viewerIsMember && (
+                                                        <SiteAdminAlert className="sidebar__alert">
+                                                            Viewing settings for{' '}
+                                                            <strong>{transferProps.org.name}</strong>
+                                                        </SiteAdminAlert>
+                                                    )}
+                                                <p>
+                                                    Organization settings apply to all members. User settings override
+                                                    organization settings.
+                                                </p>
+                                            </>
+                                        }
                                     />
                                 )}
                             />

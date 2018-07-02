@@ -7,7 +7,7 @@ import { catchError, map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
-import { SettingsPage } from '../settings/SettingsPage'
+import { SettingsArea } from '../settings/SettingsArea'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 
 function querySiteConfigDeprecatedSettings(): Observable<string | null> {
@@ -28,6 +28,7 @@ function querySiteConfigDeprecatedSettings(): Observable<string | null> {
 }
 
 interface Props extends RouteComponentProps<{}> {
+    user: GQL.IUser
     isLightTheme: boolean
     site: Pick<GQL.ISite, '__typename' | 'id'>
 }
@@ -58,10 +59,12 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
         return (
             <>
                 <PageTitle title="Site settings" />
-                <SettingsPage
+                <SettingsArea
+                    {...this.props}
                     subject={this.props.site}
-                    description={
-                        <div>
+                    authenticatedUser={this.props.user}
+                    extraHeader={
+                        <>
                             <p>
                                 Global settings apply to all organizations and users. Settings for a user or
                                 organization override global settings.
@@ -90,11 +93,8 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
                                         </pre>
                                     </div>
                                 ))}
-                        </div>
+                        </>
                     }
-                    location={this.props.location}
-                    history={this.props.history}
-                    isLightTheme={this.props.isLightTheme}
                 />
             </>
         )
