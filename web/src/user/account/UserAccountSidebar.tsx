@@ -14,29 +14,27 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { UserAreaPageProps } from '../area/UserArea'
 
 interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
-    className: string
+    className?: string
     isLightTheme: boolean
     externalAuthEnabled: boolean
     onThemeChange: () => void
 }
 
-/**
- * Sidebar for user settings pages
- */
+/** Sidebar for user account pages. */
 export const UserAccountSidebar: React.SFC<Props> = props => {
     if (!props.authenticatedUser) {
         return null
     }
 
-    // When the site admin is viewing another user's settings.
+    // When the site admin is viewing another user's account.
     const siteAdminViewingOtherUser = props.user.id !== props.authenticatedUser.id
 
     return (
-        <div className={`sidebar user-settings-sidebar ${props.className}`}>
-            {/* Indicate when the site admin is viewing another user's settings */}
+        <div className={`user-account-sidebar ${props.className}`}>
+            {/* Indicate when the site admin is viewing another user's account */}
             {siteAdminViewingOtherUser && (
                 <SiteAdminAlert className="sidebar__alert">
-                    Viewing settings for <strong>{props.user.username}</strong>
+                    Viewing account for <strong>{props.user.username}</strong>
                 </SiteAdminAlert>
             )}
 
