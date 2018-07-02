@@ -83,7 +83,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         </Link>
                     )}
                 {this.props.user && (
-                    <Link className="nav-links__link nav-links__link-user" to="/settings/profile">
+                    <Link className="nav-links__link nav-links__link-user" to={`${this.props.user.url}/account`}>
                         {isGQLUser(this.props.user) && this.props.user.avatarURL ? (
                             <UserAvatar size={64} />
                         ) : isGQLUser(this.props.user) ? (

@@ -7,7 +7,7 @@ import { catchError, map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
-import { SettingsConfigurationPage } from '../settings/SettingsConfigurationPage'
+import { SettingsPage } from '../settings/SettingsPage'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 
 function querySiteConfigDeprecatedSettings(): Observable<string | null> {
@@ -29,7 +29,7 @@ function querySiteConfigDeprecatedSettings(): Observable<string | null> {
 
 interface Props extends RouteComponentProps<{}> {
     isLightTheme: boolean
-    site: Pick<GQL.ISite, 'id'>
+    site: Pick<GQL.ISite, '__typename' | 'id'>
 }
 
 interface State {
@@ -58,7 +58,7 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
         return (
             <>
                 <PageTitle title="Site settings" />
-                <SettingsConfigurationPage
+                <SettingsPage
                     subject={this.props.site}
                     description={
                         <div>

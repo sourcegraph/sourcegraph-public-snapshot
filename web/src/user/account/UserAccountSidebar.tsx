@@ -1,7 +1,6 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import CityIcon from '@sourcegraph/icons/lib/City'
 import FeedIcon from '@sourcegraph/icons/lib/Feed'
-import GearIcon from '@sourcegraph/icons/lib/Gear'
 import MoonIcon from '@sourcegraph/icons/lib/Moon'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
 import SunIcon from '@sourcegraph/icons/lib/Sun'
@@ -24,7 +23,7 @@ interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
 /**
  * Sidebar for user settings pages
  */
-export const UserSettingsSidebar: React.SFC<Props> = props => {
+export const UserAccountSidebar: React.SFC<Props> = props => {
     if (!props.authenticatedUser) {
         return null
     }
@@ -46,7 +45,7 @@ export const UserSettingsSidebar: React.SFC<Props> = props => {
                     <div className="sidebar__header-icon">
                         <UserIcon className="icon-inline" />
                     </div>
-                    <h5 className="sidebar__header-title">Settings</h5>
+                    <h5 className="sidebar__header-title">User account</h5>
                 </li>
                 <li className="sidebar__item">
                     <NavLink
@@ -58,28 +57,6 @@ export const UserSettingsSidebar: React.SFC<Props> = props => {
                         Profile
                     </NavLink>
                 </li>
-                <li className="sidebar__item">
-                    <NavLink
-                        to={`${props.match.path}/configuration`}
-                        exact={true}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
-                    >
-                        Configuration
-                    </NavLink>
-                </li>
-                {!siteAdminViewingOtherUser && (
-                    <li className="sidebar__item">
-                        <NavLink
-                            to={`${props.match.path}/integrations`}
-                            exact={true}
-                            className="sidebar__item-link"
-                            activeClassName="sidebar__item--active"
-                        >
-                            Integrations
-                        </NavLink>
-                    </li>
-                )}
                 {!siteAdminViewingOtherUser &&
                     !props.externalAuthEnabled && (
                         <li className="sidebar__item">
@@ -193,7 +170,6 @@ export const UserSettingsSidebar: React.SFC<Props> = props => {
                     <div className="sidebar__spacer" />
                 </>
             )}
-
             {!siteAdminViewingOtherUser && (
                 <div className="sidebar__item sidebar__action">
                     <NavLink
@@ -201,8 +177,18 @@ export const UserSettingsSidebar: React.SFC<Props> = props => {
                         className="sidebar__action-button btn"
                         activeClassName="sidebar__item--active"
                     >
-                        <FeedIcon className="icon-inline sidebar__action-icon" />
-                        API console
+                        <FeedIcon className="icon-inline sidebar__action-icon" /> API console
+                    </NavLink>
+                </div>
+            )}
+            {!siteAdminViewingOtherUser && (
+                <div className="sidebar__item sidebar__action">
+                    <NavLink
+                        to={`${props.match.path}/integrations`}
+                        exact={true}
+                        className="sidebar__action-button btn"
+                    >
+                        Integrations
                     </NavLink>
                 </div>
             )}
@@ -213,7 +199,6 @@ export const UserSettingsSidebar: React.SFC<Props> = props => {
                         className="sidebar__action-button btn"
                         activeClassName="sidebar__item--active"
                     >
-                        <GearIcon className="icon-inline sidebar__action-icon" />
                         Site admin
                     </NavLink>
                 </div>
@@ -223,8 +208,7 @@ export const UserSettingsSidebar: React.SFC<Props> = props => {
                 props.authenticatedUser.session.canSignOut && (
                     <div className="sidebar__item sidebar__action">
                         <a href="/-/sign-out" className="sidebar__action-button btn" onClick={logTelemetryOnSignOut}>
-                            <SignOutIcon className="icon-inline sidebar__item-action-icon" />
-                            Sign out
+                            <SignOutIcon className="icon-inline sidebar__item-action-icon" /> Sign out
                         </a>
                     </div>
                 )}

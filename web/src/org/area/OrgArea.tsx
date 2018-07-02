@@ -11,7 +11,8 @@ import { HeroPage } from '../../components/HeroPage'
 import { PublisherSubjectExtensionsArea } from '../../registry/PublisherSubjectExtensionsArea'
 import { platformEnabled } from '../../user/tags'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { OrgSettingsArea } from '../settings/OrgSettingsArea'
+import { OrgAccountArea } from '../account/OrgAccountArea'
+import { OrgSettingsPage } from '../settings/OrgSettingsPage'
 import { OrgHeader } from './OrgHeader'
 import { OrgInvitationPage } from './OrgInvitationPage'
 import { OrgMembersPage } from './OrgMembersPage'
@@ -207,9 +208,22 @@ export class OrgArea extends React.Component<Props> {
                             <Route
                                 path={`${this.props.match.url}/settings`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <OrgSettingsArea
+                                    <OrgSettingsPage
+                                        {...routeComponentProps}
+                                        {...transferProps}
+                                        isLightTheme={this.props.isLightTheme}
+                                    />
+                                )}
+                            />
+                            <Route
+                                path={`${this.props.match.url}/account`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <OrgAccountArea
                                         {...routeComponentProps}
                                         {...transferProps}
                                         isLightTheme={this.props.isLightTheme}

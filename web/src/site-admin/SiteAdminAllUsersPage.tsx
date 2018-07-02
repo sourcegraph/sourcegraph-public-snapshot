@@ -13,7 +13,7 @@ import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
-import { setUserEmailVerified } from '../user/settings/backend'
+import { setUserEmailVerified } from '../user/account/backend'
 import { asError } from '../util/errors'
 import { deleteUser, fetchAllUsers, randomizeUserPassword, setUserIsSiteAdmin } from './backend'
 

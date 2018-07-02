@@ -8,7 +8,7 @@ import * as GQL from '../../backend/graphqlschema'
  * Redirects from /settings to /user/$USERNAME/settings, where $USERNAME is the currently authenticated user's
  * username.
  */
-export const RedirectToUserSettings: React.SFC<{
+export const RedirectToUserAccount: React.SFC<{
     user: GQL.IUser | null
     location: H.Location
 }> = ({ user, location }) => {

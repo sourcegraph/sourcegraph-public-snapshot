@@ -32,6 +32,7 @@ export function refreshCurrentUser(): Observable<never> {
                 displayName
                 siteAdmin
                 tags
+                url
                 organizations {
                     nodes {
                         id

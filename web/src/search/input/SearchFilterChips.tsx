@@ -111,7 +111,7 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
                     <div className="search-filter-chips__edit">
                         <NavLink
                             className="search-filter-chips__add-edit"
-                            to="/settings/configuration"
+                            to="/settings"
                             data-tooltip={scopes.length > 0 ? 'Edit search scopes' : undefined}
                         >
                             <small className="search-filter-chips__center">

@@ -288,10 +288,10 @@ export class SavedQueryForm extends React.Component<Props, State> {
             return ''
         }
         if (chosen.__typename === 'Org') {
-            return `/organizations/${chosen.name}/settings/configuration`
+            return `/organizations/${chosen.name}/settings`
         }
         if (chosen.__typename === 'User') {
-            return `/settings/configuration`
+            return `/settings`
         }
         return '' // unexpected
     }

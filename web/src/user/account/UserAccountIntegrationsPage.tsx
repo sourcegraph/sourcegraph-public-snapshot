@@ -20,7 +20,7 @@ interface State {
 /**
  * A page displaying Sourcegraph integrations.
  */
-export class UserSettingsIntegrationsPage extends React.Component<Props, State> {
+export class UserAccountIntegrationsPage extends React.Component<Props, State> {
     public state: State = {
         browserExtensionInstalled: false,
         openSearchUrlCopied: false,
@@ -32,7 +32,7 @@ export class UserSettingsIntegrationsPage extends React.Component<Props, State> 
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserSettingsIntegrations')
+        eventLogger.logViewEvent('UserAccountIntegrations')
         this.subscriptions.add(
             browserExtensionMessageReceived.subscribe(isInstalled => {
                 this.setState(() => ({ browserExtensionInstalled: isInstalled }))

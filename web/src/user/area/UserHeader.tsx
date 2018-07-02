@@ -1,5 +1,6 @@
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
+import SlidersVerticalIcon from '@sourcegraph/icons/lib/SlidersVertical'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { orgURL } from '../../org'
@@ -54,10 +55,20 @@ export const UserHeader: React.SFC<Props> = (props: Props) => (
                             {props.user.viewerCanAdminister && (
                                 <NavLink
                                     to={`${props.match.url}/settings`}
+                                    exact={true}
                                     className="btn area-header__nav-link"
                                     activeClassName="area-header__nav-link--active"
                                 >
                                     <GearIcon className="icon-inline" /> Settings
+                                </NavLink>
+                            )}
+                            {props.user.viewerCanAdminister && (
+                                <NavLink
+                                    to={`${props.match.url}/account`}
+                                    className="btn area-header__nav-link"
+                                    activeClassName="area-header__nav-link--active"
+                                >
+                                    <SlidersVerticalIcon className="icon-inline" /> Account
                                 </NavLink>
                             )}
                         </div>

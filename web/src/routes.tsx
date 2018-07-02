@@ -18,8 +18,8 @@ import { SearchResults } from './search/results/SearchResults'
 import { SavedQueriesPage } from './search/saved-queries/SavedQueries'
 import { SiteAdminArea } from './site-admin/SiteAdminArea'
 import { SiteInitPage } from './site-admin/SiteInitPage'
+import { RedirectToUserAccount } from './user/account/RedirectToUserAccount'
 import { UserArea } from './user/area/UserArea'
-import { RedirectToUserSettings } from './user/settings/RedirectToUserSettings'
 import { canListAllRepositories } from './util/features'
 
 interface LayoutRouteProps extends RouteProps {
@@ -79,7 +79,7 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/settings',
-        component: RedirectToUserSettings,
+        component: RedirectToUserAccount,
     },
     {
         path: '/organizations',

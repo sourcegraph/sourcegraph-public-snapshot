@@ -13,8 +13,8 @@ import { refreshConfiguration } from '../user/settings/backend'
 import { ErrorLike, isErrorLike } from '../util/errors'
 
 interface Props extends Pick<RouteComponentProps<{}>, 'history' | 'location'> {
-    /** The subject whose configuration to edit. */
-    subject: Pick<GQL.IConfigurationSubject, 'id'>
+    /** The subject whose settings to edit. */
+    subject: Pick<GQL.ConfigurationSubject, '__typename' | 'id'>
 
     /** Optional description to render above the editor. */
     description?: React.ReactNode
@@ -28,9 +28,9 @@ interface State {
 }
 
 /**
- * Displays a page where the configuration for a subject can be edited.
+ * Displays a page where the settings for a subject can be edited.
  */
-export class SettingsConfigurationPage extends React.PureComponent<Props, State> {
+export class SettingsPage extends React.PureComponent<Props, State> {
     public state: State = {}
 
     private subjectChanges = new Subject<Pick<GQL.IConfigurationSubject, 'id'>>()
@@ -70,9 +70,25 @@ export class SettingsConfigurationPage extends React.PureComponent<Props, State>
             return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.settingsOrError.message)} />
         }
 
+        let term: string
+        switch (this.props.subject.__typename) {
+            case 'User':
+                term = 'User'
+                break
+            case 'Org':
+                term = 'Organization'
+                break
+            case 'Site':
+                term = 'Global'
+                break
+            default:
+                term = 'Unknown'
+                break
+        }
+
         return (
             <div>
-                <h2>Configuration</h2>
+                <h2>{term} settings</h2>
                 {this.props.description}
                 <SettingsFile
                     settings={this.state.settingsOrError}

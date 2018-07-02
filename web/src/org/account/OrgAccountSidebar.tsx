@@ -1,17 +1,17 @@
 import CityIcon from '@sourcegraph/icons/lib/City'
 import * as React from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
-interface Props extends OrgAreaPageProps {
+interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     className: string
 }
 
 /**
  * Sidebar for org settings pages
  */
-export const OrgSettingsSidebar: React.SFC<Props> = ({ org, authenticatedUser, className }) => {
+export const OrgAccountSidebar: React.SFC<Props> = ({ org, authenticatedUser, className, match }) => {
     if (!org) {
         return null
     }
@@ -19,7 +19,7 @@ export const OrgSettingsSidebar: React.SFC<Props> = ({ org, authenticatedUser, c
     const siteAdminViewingOtherOrg = authenticatedUser && org.viewerCanAdminister && !org.viewerIsMember
 
     return (
-        <div className={`sidebar org-settings-sidebar ${className}`}>
+        <div className={`sidebar org-account-sidebar ${className}`}>
             {/* Indicate when the site admin is viewing another org's settings */}
             {siteAdminViewingOtherOrg && (
                 <SiteAdminAlert className="sidebar__alert">
@@ -32,26 +32,16 @@ export const OrgSettingsSidebar: React.SFC<Props> = ({ org, authenticatedUser, c
                     <div className="sidebar__header-icon">
                         <CityIcon className="icon-inline" />
                     </div>
-                    <h5 className="sidebar__header-title">Settings</h5>
+                    <h5 className="sidebar__header-title">Account</h5>
                 </div>
                 <li className="sidebar__item">
                     <NavLink
-                        to={`/organizations/${org.name}/settings/profile`}
+                        to={`${match.url}/profile`}
                         exact={true}
                         className="sidebar__item-link"
                         activeClassName="sidebar__item--active"
                     >
                         Profile
-                    </NavLink>
-                </li>
-                <li className="sidebar__item">
-                    <NavLink
-                        to={`/organizations/${org.name}/settings/configuration`}
-                        exact={true}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
-                    >
-                        Configuration
                     </NavLink>
                 </li>
             </ul>

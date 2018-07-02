@@ -12,7 +12,7 @@ import {
     externalAccountFragment,
     ExternalAccountNode,
     ExternalAccountNodeProps,
-} from '../user/settings/ExternalAccountNode'
+} from '../user/account/ExternalAccountNode'
 import { createAggregateError } from '../util/errors'
 
 interface Props extends RouteComponentProps<{}> {}

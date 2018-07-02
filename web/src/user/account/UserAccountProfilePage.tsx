@@ -69,7 +69,7 @@ interface State {
     avatarURL?: string
 }
 
-export class UserSettingsProfilePage extends React.Component<Props, State> {
+export class UserAccountProfilePage extends React.Component<Props, State> {
     public state: State = { loading: false, saved: false }
 
     private componentUpdates = new Subject<Props>()

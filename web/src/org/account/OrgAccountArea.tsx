@@ -4,9 +4,8 @@ import * as React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { HeroPage } from '../../components/HeroPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
-import { OrgSettingsConfigurationPage } from './OrgSettingsConfigurationPage'
-import { OrgSettingsProfilePage } from './OrgSettingsProfilePage'
-import { OrgSettingsSidebar } from './OrgSettingsSidebar'
+import { OrgAccountProfilePage } from './OrgAccountProfilePage'
+import { OrgAccountSidebar } from './OrgAccountSidebar'
 
 const NotFoundPage = () => (
     <HeroPage
@@ -25,7 +24,7 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
  * Renders a layout of a sidebar and a content area to display pages related to
  * an organization's settings.
  */
-export const OrgSettingsArea: React.SFC<Props> = props => {
+export const OrgAccountArea: React.SFC<Props> = props => {
     if (props.location.pathname === props.match.path) {
         return <Redirect to={`${props.match.path}/profile`} />
     }
@@ -41,7 +40,7 @@ export const OrgSettingsArea: React.SFC<Props> = props => {
     }
     return (
         <div className="org-settings-area area">
-            <OrgSettingsSidebar className="area__sidebar" {...props} />
+            <OrgAccountSidebar className="area__sidebar" {...props} />
             <div className="area__content">
                 <Switch>
                     <Route
@@ -50,16 +49,7 @@ export const OrgSettingsArea: React.SFC<Props> = props => {
                         exact={true}
                         // tslint:disable-next-line:jsx-no-lambda
                         render={routeComponentProps => (
-                            <OrgSettingsProfilePage {...routeComponentProps} {...transferProps} />
-                        )}
-                    />
-                    <Route
-                        path={`${props.match.path}/configuration`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => (
-                            <OrgSettingsConfigurationPage {...routeComponentProps} {...transferProps} />
+                            <OrgAccountProfilePage {...routeComponentProps} {...transferProps} />
                         )}
                     />
                     <Route component={NotFoundPage} />

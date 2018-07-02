@@ -24,7 +24,7 @@ interface State {
     newPasswordConfirmation: string
 }
 
-export class UserSettingsAccountPage extends React.Component<Props, State> {
+export class UserAccountAccountPage extends React.Component<Props, State> {
     public state: State = {
         oldPassword: '',
         newPassword: '',

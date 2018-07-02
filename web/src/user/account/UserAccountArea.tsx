@@ -8,15 +8,14 @@ import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { siteFlags } from '../../site/backend'
 import { UserAreaPageProps } from '../area/UserArea'
-import { UserSettingsAccountPage } from './UserSettingsAccountPage'
-import { UserSettingsConfigurationPage } from './UserSettingsConfigurationPage'
-import { UserSettingsCreateAccessTokenPage } from './UserSettingsCreateAccessTokenPage'
-import { UserSettingsEmailsPage } from './UserSettingsEmailsPage'
-import { UserSettingsExternalAccountsPage } from './UserSettingsExternalAccountsPage'
-import { UserSettingsIntegrationsPage } from './UserSettingsIntegrationsPage'
-import { UserSettingsProfilePage } from './UserSettingsProfilePage'
-import { UserSettingsSidebar } from './UserSettingsSidebar'
-import { UserSettingsTokensPage } from './UserSettingsTokensPage'
+import { UserAccountAccountPage } from './UserAccountAccountPage'
+import { UserAccountCreateAccessTokenPage } from './UserAccountCreateAccessTokenPage'
+import { UserAccountEmailsPage } from './UserAccountEmailsPage'
+import { UserAccountExternalAccountsPage } from './UserAccountExternalAccountsPage'
+import { UserAccountIntegrationsPage } from './UserAccountIntegrationsPage'
+import { UserAccountProfilePage } from './UserAccountProfilePage'
+import { UserAccountSidebar } from './UserAccountSidebar'
+import { UserAccountTokensPage } from './UserAccountTokensPage'
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
@@ -29,7 +28,7 @@ interface State {
     externalAuthEnabled: boolean
 
     /**
-     * Holds the newly created access token (from UserSettingsCreateAccessTokenPage), if any. After
+     * Holds the newly created access token (from UserAccountCreateAccessTokenPage), if any. After
      * it is displayed to the user, this subject's value is set back to undefined.
      */
     newlyCreatedAccessToken?: GQL.ICreateAccessTokenResult
@@ -38,7 +37,7 @@ interface State {
 /**
  * Renders a layout of a sidebar and a content area to display user settings.
  */
-export class UserSettingsArea extends React.Component<Props, State> {
+export class UserAccountArea extends React.Component<Props, State> {
     public state: State = { externalAuthEnabled: false }
     private subscriptions = new Subscription()
 
@@ -84,7 +83,7 @@ export class UserSettingsArea extends React.Component<Props, State> {
 
         return (
             <div className="user-settings-area area">
-                <UserSettingsSidebar
+                <UserAccountSidebar
                     externalAuthEnabled={this.state.externalAuthEnabled}
                     className="area__sidebar"
                     {...this.props}
@@ -98,16 +97,7 @@ export class UserSettingsArea extends React.Component<Props, State> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <UserSettingsProfilePage {...routeComponentProps} {...this.props} />
-                            )}
-                        />
-                        <Route
-                            path={`${this.props.match.url}/configuration`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <UserSettingsConfigurationPage {...routeComponentProps} {...this.props} />
+                                <UserAccountProfilePage {...routeComponentProps} {...this.props} />
                             )}
                         />
                         {!this.state.externalAuthEnabled && (
@@ -117,7 +107,7 @@ export class UserSettingsArea extends React.Component<Props, State> {
                                 exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <UserSettingsAccountPage {...routeComponentProps} {...this.props} />
+                                    <UserAccountAccountPage {...routeComponentProps} {...this.props} />
                                 )}
                             />
                         )}
@@ -127,7 +117,7 @@ export class UserSettingsArea extends React.Component<Props, State> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <UserSettingsEmailsPage {...routeComponentProps} {...this.props} />
+                                <UserAccountEmailsPage {...routeComponentProps} {...this.props} />
                             )}
                         />
                         <Route
@@ -136,7 +126,7 @@ export class UserSettingsArea extends React.Component<Props, State> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <UserSettingsExternalAccountsPage {...routeComponentProps} {...this.props} />
+                                <UserAccountExternalAccountsPage {...routeComponentProps} {...this.props} />
                             )}
                         />
                         {window.context.accessTokensEnabled && (
@@ -146,7 +136,7 @@ export class UserSettingsArea extends React.Component<Props, State> {
                                 exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <UserSettingsTokensPage
+                                    <UserAccountTokensPage
                                         {...routeComponentProps}
                                         {...this.props}
                                         newToken={this.state.newlyCreatedAccessToken}
@@ -162,7 +152,7 @@ export class UserSettingsArea extends React.Component<Props, State> {
                                 exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <UserSettingsCreateAccessTokenPage
+                                    <UserAccountCreateAccessTokenPage
                                         {...routeComponentProps}
                                         {...this.props}
                                         onDidCreateAccessToken={this.setNewToken}
@@ -173,7 +163,7 @@ export class UserSettingsArea extends React.Component<Props, State> {
                         <Route
                             path={`${this.props.match.url}/integrations`}
                             key="hardcoded-key"
-                            component={UserSettingsIntegrationsPage}
+                            component={UserAccountIntegrationsPage}
                             exact={true}
                         />
                         <Route component={NotFoundPage} key="hardcoded-key" />

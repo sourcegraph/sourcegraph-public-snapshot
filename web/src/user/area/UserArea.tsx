@@ -11,7 +11,8 @@ import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { PublisherSubjectExtensionsArea } from '../../registry/PublisherSubjectExtensionsArea'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { UserSettingsArea } from '../settings/UserSettingsArea'
+import { UserAccountArea } from '../account/UserAccountArea'
+import { UserSettingsPage } from '../settings/UserSettingsPage'
 import { platformEnabled } from '../tags'
 import { UserHeader } from './UserHeader'
 import { UserOverviewPage } from './UserOverviewPage'
@@ -181,9 +182,22 @@ export class UserArea extends React.Component<Props> {
                             <Route
                                 path={`${this.props.match.url}/settings`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <UserSettingsArea
+                                    <UserSettingsPage
+                                        {...routeComponentProps}
+                                        {...transferProps}
+                                        isLightTheme={this.props.isLightTheme}
+                                    />
+                                )}
+                            />
+                            <Route
+                                path={`${this.props.match.url}/account`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <UserAccountArea
                                         {...routeComponentProps}
                                         {...transferProps}
                                         isLightTheme={this.props.isLightTheme}

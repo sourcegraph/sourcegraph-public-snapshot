@@ -61,7 +61,7 @@ export class SiteAdminArea extends React.Component<Props> {
         const transferProps = {
             user: this.props.user,
             isLightTheme: this.props.isLightTheme,
-            site: { id: window.context.siteGQLID },
+            site: { __typename: 'Site' as GQL.ISite['__typename'], id: window.context.siteGQLID },
         }
 
         return (
