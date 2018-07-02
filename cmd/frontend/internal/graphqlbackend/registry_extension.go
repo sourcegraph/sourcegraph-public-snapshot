@@ -107,29 +107,69 @@ func readRegistryExtensionEnablement(extensionID, data string) *bool {
 }
 
 type registryExtensionExtensionConfigurationSubjectsConnectionArgs struct {
-	Users bool
+	Users   bool
+	Subject *graphql.ID
+	Viewer  bool
 	connectionArgs
 }
 
-func listExtensionConfigurationSubjects(ctx context.Context, cache *extensionRegistryCache, extensionID string, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
-	allSettings, err := cache.listAllSettings(ctx)
-	if err != nil {
-		return nil, err
+func listExtensionConfigurationSubjects(ctx context.Context, cache *extensionRegistryCache, extension *registryExtensionMultiResolver, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
+	var settings []*api.Settings // settings for all subjects to examine
+	if args.Subject == nil && !args.Viewer {
+		// Check all subjects.
+		var err error
+		settings, err = cache.listAllSettings(ctx)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		// Only check the ancestors of the given subject.
+		var subjectCascade *configurationCascadeResolver
+		if args.Viewer {
+			var err error
+			subjectCascade, err = (&schemaResolver{}).ViewerConfiguration(ctx)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			subject, err := configurationSubjectByID(ctx, *args.Subject)
+			if err != nil {
+				return nil, err
+			}
+			subjectCascade, err = subject.ConfigurationCascade()
+			if err != nil {
+				return nil, err
+			}
+		}
+		ancestors, err := subjectCascade.Subjects(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, ancestor := range ancestors {
+			s, err := ancestor.LatestSettings(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if s != nil {
+				settings = append(settings, s.settings)
+			}
+		}
 	}
 
 	var subjects []api.ConfigurationSubject
-	for _, s := range allSettings {
+	for _, s := range settings {
 		if !args.Users && s.Subject.User != nil {
 			continue // exclude users
 		}
 
-		if v := readRegistryExtensionEnablement(extensionID, s.Contents); v != nil {
+		if v := readRegistryExtensionEnablement(extension.ExtensionID(), s.Contents); v != nil {
 			subjects = append(subjects, s.Subject)
 		}
 	}
 	return &extensionConfigurationSubjectConnection{
 		connectionArgs: args.connectionArgs,
 		subjects:       subjects,
+		extension:      extension,
 	}, nil
 }
 

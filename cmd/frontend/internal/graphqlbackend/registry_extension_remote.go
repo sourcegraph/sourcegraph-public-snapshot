@@ -91,7 +91,7 @@ func (r *registryExtensionRemoteResolver) RegistryName() (string, error) {
 func (r *registryExtensionRemoteResolver) IsLocal() bool { return r.v.IsSynthesizedLocalExtension }
 
 func (r *registryExtensionRemoteResolver) ExtensionConfigurationSubjects(ctx context.Context, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
-	return listExtensionConfigurationSubjects(ctx, r.cache, r.v.ExtensionID, args)
+	return listExtensionConfigurationSubjects(ctx, r.cache, &registryExtensionMultiResolver{remote: r}, args)
 }
 
 func (r *registryExtensionRemoteResolver) Users(ctx context.Context, args *connectionArgs) (*userConnectionResolver, error) {

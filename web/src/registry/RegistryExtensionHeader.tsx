@@ -3,9 +3,10 @@ import CodeArrayIcon from '@sourcegraph/icons/lib/CodeArray'
 import CodeTagsIcon from '@sourcegraph/icons/lib/CodeTags'
 import PencilIcon from '@sourcegraph/icons/lib/Pencil'
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
-import UserIcon from '@sourcegraph/icons/lib/User'
+import SharingIcon from '@sourcegraph/icons/lib/Sharing'
+import * as H from 'history'
 import * as React from 'react'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
+import { match, NavLink, RouteComponentProps } from 'react-router-dom'
 import { RegistryExtensionAreaPageProps } from './RegistryExtensionArea'
 import { RegistryExtensionConfigureButton } from './RegistryExtensionConfigureButton'
 import { RegistryExtensionSourceBadge } from './RegistryExtensionSourceBadge'
@@ -54,7 +55,15 @@ export const RegistryExtensionHeader: React.SFC<Props> = (props: Props) => (
                                 className="btn area-header__nav-link"
                                 activeClassName="area-header__nav-link--active"
                             >
-                                Extension
+                                <PuzzleIcon className="icon-inline" /> Extension
+                            </NavLink>
+                            <NavLink
+                                to={`${props.url}/-/usage/users`}
+                                isActive={isUsageLinkActive}
+                                className="btn area-header__nav-link"
+                                activeClassName="area-header__nav-link--active"
+                            >
+                                <SharingIcon className="icon-inline" /> Usage
                             </NavLink>
                             <NavLink
                                 to={`${props.url}/-/contributions`}
@@ -71,14 +80,6 @@ export const RegistryExtensionHeader: React.SFC<Props> = (props: Props) => (
                                 activeClassName="area-header__nav-link--active"
                             >
                                 <CodeTagsIcon className="icon-inline" /> Manifest
-                            </NavLink>
-                            <NavLink
-                                to={`${props.url}/-/users`}
-                                exact={true}
-                                className="btn area-header__nav-link"
-                                activeClassName="area-header__nav-link--active"
-                            >
-                                <UserIcon className="icon-inline" /> Users
                             </NavLink>
                             {props.extension.viewerCanAdminister && (
                                 <NavLink
@@ -115,3 +116,7 @@ export const RegistryExtensionHeader: React.SFC<Props> = (props: Props) => (
         </div>
     </div>
 )
+
+function isUsageLinkActive(match: match<any>, loc: H.Location): boolean {
+    return loc.pathname.endsWith('/-/usage/users') || loc.pathname.endsWith('/-/usage/organizations')
+}

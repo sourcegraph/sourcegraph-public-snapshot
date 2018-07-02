@@ -17,7 +17,7 @@ import { RegistryExtensionHeader } from './RegistryExtensionHeader'
 import { RegistryExtensionManifestPage } from './RegistryExtensionManifestPage'
 import { RegistryExtensionOverviewPage } from './RegistryExtensionOverviewPage'
 import { registryExtensionFragment } from './RegistryExtensionsPage'
-import { RegistryExtensionUsersPage } from './RegistryExtensionUsersPage'
+import { RegistryExtensionUsageArea } from './RegistryExtensionUsageArea'
 
 function queryRegistryExtension(args: { extensionID: string }): Observable<GQL.IRegistryExtension | null> {
     return queryGraphQL(
@@ -188,12 +188,11 @@ export class RegistryExtensionArea extends React.Component<Props> {
                                 )}
                             />
                             <Route
-                                path={`${url}/-/users`}
+                                path={`${url}/-/usage`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 render={routeComponentProps => (
-                                    <RegistryExtensionUsersPage {...routeComponentProps} {...transferProps} />
+                                    <RegistryExtensionUsageArea {...routeComponentProps} {...transferProps} />
                                 )}
                             />
                             <Route

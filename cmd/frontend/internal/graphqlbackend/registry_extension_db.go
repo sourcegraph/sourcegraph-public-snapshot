@@ -60,7 +60,7 @@ func (r *registryExtensionDBResolver) RegistryName() (string, error) {
 func (r *registryExtensionDBResolver) IsLocal() bool { return true }
 
 func (r *registryExtensionDBResolver) ExtensionConfigurationSubjects(ctx context.Context, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
-	return listExtensionConfigurationSubjects(ctx, r.cache, r.v.NonCanonicalExtensionID, args)
+	return listExtensionConfigurationSubjects(ctx, r.cache, &registryExtensionMultiResolver{local: r}, args)
 }
 
 func (r *registryExtensionDBResolver) Users(ctx context.Context, args *connectionArgs) (*userConnectionResolver, error) {

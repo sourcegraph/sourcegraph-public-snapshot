@@ -32,6 +32,7 @@ type Props = ExtensionSpec & {
     compact?: boolean
 
     className?: string
+    buttonClassName?: string
     disabled?: boolean
 
     /** Called when the extension is enabled or disabled. */
@@ -91,7 +92,7 @@ export class RegistryExtensionConfigureButton extends React.PureComponent<Props,
     }
 
     public render(): JSX.Element | null {
-        const buttonClassName = this.props.compact ? 'py-0' : ''
+        const buttonClassName = `${this.props.buttonClassName || 'btn-sm'} ${this.props.compact ? 'py-0' : ''}`
 
         const subjectIsSelf = this.state.currentUserSubject && this.state.currentUserSubject === this.props.subject
 
@@ -113,7 +114,7 @@ export class RegistryExtensionConfigureButton extends React.PureComponent<Props,
                 {this.props.showRemove &&
                     subjectIsSelf && (
                         <button
-                            className={`registry-extension-configure-button__btn btn btn-sm btn-secondary mr-2 ${buttonClassName}`}
+                            className={`registry-extension-configure-button__btn btn btn-secondary mr-2 ${buttonClassName}`}
                             onClick={this.removeExtensionSettings}
                             disabled={this.props.disabled || this.state.configureOrError === undefined}
                             title={subjectIsSelf ? `Remove extension from settings` : undefined}
@@ -122,7 +123,7 @@ export class RegistryExtensionConfigureButton extends React.PureComponent<Props,
                         </button>
                     )}
                 <button
-                    className={`registry-extension-configure-button__btn btn btn-sm registry-extension-configure-button__enable-btn btn-${
+                    className={`registry-extension-configure-button__btn btn registry-extension-configure-button__enable-btn btn-${
                         this.props.isEnabled ? 'link' : 'success'
                     } ${buttonClassName}`}
                     onClick={this.toggleExtensionEnabled}
@@ -135,7 +136,7 @@ export class RegistryExtensionConfigureButton extends React.PureComponent<Props,
                 {isErrorLike(this.state.configureOrError) && (
                     <button
                         disabled={true}
-                        className={`btn btn-danger btn-sm ${buttonClassName}`}
+                        className={`btn btn-danger ${buttonClassName}`}
                         title={upperFirst(this.state.configureOrError.message)}
                     >
                         <WarningIcon className="icon-inline" />

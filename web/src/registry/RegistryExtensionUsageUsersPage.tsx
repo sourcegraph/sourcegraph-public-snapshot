@@ -8,14 +8,14 @@ import { RegistryExtensionUsersList } from './RegistryExtensionUsersList'
 interface Props extends RegistryExtensionAreaPageProps, RouteComponentProps<{}> {}
 
 /** A page that displays the list of users of an extension. */
-export class RegistryExtensionUsersPage extends React.PureComponent<Props> {
+export class RegistryExtensionUsageUsersPage extends React.PureComponent<Props> {
     public componentDidMount(): void {
-        eventLogger.logViewEvent('RegistryExtensionUsers')
+        eventLogger.logViewEvent('RegistryExtensionUsageUsers')
     }
 
     public render(): JSX.Element | null {
         return (
-            <div className="registry-extension-users-page">
+            <div className="registry-extension-usage-users-page">
                 <PageTitle title={`Users of ${this.props.extension.extensionID}`} />
                 <RegistryExtensionUsersList {...this.props} />
             </div>

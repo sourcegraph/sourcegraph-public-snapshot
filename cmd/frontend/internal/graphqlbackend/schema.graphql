@@ -3092,6 +3092,13 @@ type RegistryExtension implements Node {
         first: Int
         # Include users.
         users: Boolean = false
+        # Only include subjects that are equal to or ancestors of the given subject. (For example, given a user's
+        # ID, only the following subjects would be returned: the user, all organizations of which they are a
+        # member, and global settings.)
+        subject: ID
+        # Equivalent to setting the subject parameter to the ID of the viewer, except that it also handles
+        # unauthenticated users.
+        viewer: Boolean = false
     ): ExtensionConfigurationSubjectConnection!
     # A list of users for whom this extension is enabled, accounting for configuration cascading.
     #
@@ -3208,9 +3215,23 @@ interface ExtensionConfigurationSubject {
 
 # A list of extension configuration subjects.
 type ExtensionConfigurationSubjectConnection {
+    # A list of edges with information about the relationships between the extension and its subjects.
+    edges: [ExtensionConfigurationSubjectEdge!]!
     # A list of extension configuration subjects.
     nodes: [ExtensionConfigurationSubject!]!
     # The total count of extension configuration subjects in the connection. This total count may be larger than
     # the number of nodes in this object when the result is paginated.
     totalCount: Int!
+}
+
+# A relationship between an extension and a subject.
+type ExtensionConfigurationSubjectEdge {
+    # The subject.
+    node: ExtensionConfigurationSubject!
+    # The extension.
+    extension: RegistryExtension!
+    # Whether the subject's configuration (ignoring cascading) enables the extension.
+    isEnabled: Boolean!
+    # The URL to the subject's configuration for the extension.
+    url: String!
 }

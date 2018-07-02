@@ -19,15 +19,13 @@ const registryExtensionUserFragment = gql`
 const RegistryExtensionUserNode: React.SFC<{
     node: GQL.IUser
 }> = ({ node }) => (
-    <Link to={node.url} className="list-group-item d-flex justify-content-between align-items-center">
+    <Link to={node.url} className="list-group-item px-0 py-2">
         {node.username}
     </Link>
 )
 
 interface Props extends RouteComponentProps<{}> {
     extension: Pick<GQL.IRegistryExtension, 'id' | 'viewerHasEnabled'>
-    shouldUpdateURLQuery?: boolean
-    noSummaryIfAllNodesVisible?: boolean
 }
 
 class FilteredRegistryExtensionUserConnection extends FilteredConnection<GQL.IUser> {}
@@ -49,8 +47,6 @@ export class RegistryExtensionUsersList extends React.PureComponent<Props> {
                 updateOnChange={`${this.props.extension.id}:${this.props.extension.viewerHasEnabled}`}
                 nodeComponent={RegistryExtensionUserNode}
                 hideSearch={true}
-                noSummaryIfAllNodesVisible={this.props.noSummaryIfAllNodesVisible}
-                shouldUpdateURLQuery={this.props.shouldUpdateURLQuery}
                 history={this.props.history}
                 location={this.props.location}
             />

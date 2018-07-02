@@ -1,4 +1,3 @@
-import InfoIcon from '@sourcegraph/icons/lib/Info'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -8,9 +7,8 @@ import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { extensionIDPrefix } from './extension'
 import { RegistryExtensionAreaPageProps } from './RegistryExtensionArea'
-import { RegistryExtensionConfigurationSubjectsList } from './RegistryExtensionConfigurationSubjectsList'
 import { RegistryExtensionDescription } from './RegistryExtensionDescription'
-import { RegistryExtensionUsersList } from './RegistryExtensionUsersList'
+import { RegistryExtensionViewerConfigurationStatus } from './RegistryExtensionViewerConfigurationStatus'
 
 interface Props extends RegistryExtensionAreaPageProps, RouteComponentProps<{}> {}
 
@@ -28,34 +26,11 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                     <RegistryExtensionDescription extension={this.props.extension} />
                 </div>
                 <div className="col-md-4">
-                    <div className="card">
-                        <div className="card-header d-flex align-items-center justify-content-between">
-                            <h4 className="mb-0">Users</h4>
-                            <InfoIcon
-                                className="icon-inline text-muted"
-                                data-tooltip="Users with this extension enabled"
-                            />
-                        </div>
-                        <RegistryExtensionUsersList
-                            {...this.props}
-                            shouldUpdateURLQuery={false}
-                            noSummaryIfAllNodesVisible={true}
-                        />
-                    </div>
-                    <div className="card mt-3">
-                        <div className="card-header d-flex align-items-center justify-content-between">
-                            <h4 className="mb-0">Organizations</h4>
-                            <InfoIcon
-                                className="icon-inline text-muted"
-                                data-tooltip="Organizations that enable this extension for members"
-                            />
-                        </div>
-                        <RegistryExtensionConfigurationSubjectsList
-                            {...this.props}
-                            shouldUpdateURLQuery={false}
-                            noSummaryIfAllNodesVisible={true}
-                        />
-                    </div>
+                    <RegistryExtensionViewerConfigurationStatus
+                        {...this.props}
+                        nonEmptyClassName="mb-3"
+                        onUpdate={this.props.onDidUpdateExtension}
+                    />
                     <small className="text-muted">
                         <dl className="mt-3">
                             {this.props.extension.publisher && (

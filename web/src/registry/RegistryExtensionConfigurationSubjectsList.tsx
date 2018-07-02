@@ -8,7 +8,7 @@ import * as GQL from '../backend/graphqlschema'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { createAggregateError } from '../util/errors'
 
-const registryExtensionConfigurationSubjectFragment = gql`
+export const registryExtensionConfigurationSubjectFragment = gql`
     fragment RegistryExtensionConfigurationSubjectFields on ExtensionConfigurationSubject {
         __typename
         settingsURL
@@ -53,7 +53,7 @@ const RegistryExtensionConfigurationSubjectNode: React.SFC<{
     }
 
     return (
-        <Link to={node.settingsURL} className="list-group-item d-flex justify-content-between align-items-center">
+        <Link to={node.settingsURL} className="list-group-item px-0 py-2">
             {label}
         </Link>
     )
@@ -61,8 +61,6 @@ const RegistryExtensionConfigurationSubjectNode: React.SFC<{
 
 interface Props extends RouteComponentProps<{}> {
     extension: Pick<GQL.IRegistryExtension, 'id' | 'viewerHasEnabled'>
-    shouldUpdateURLQuery?: boolean
-    noSummaryIfAllNodesVisible?: boolean
 }
 
 class FilteredRegistryExtensionConfigurationSubjectConnection extends FilteredConnection<
@@ -70,7 +68,7 @@ class FilteredRegistryExtensionConfigurationSubjectConnection extends FilteredCo
 > {}
 
 /**
- * Displays the users for whom an extension is enabled.
+ * Displays the configuration subjects for whom an extension is enabled.
  */
 export class RegistryExtensionConfigurationSubjectsList extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
@@ -78,16 +76,14 @@ export class RegistryExtensionConfigurationSubjectsList extends React.PureCompon
             <FilteredRegistryExtensionConfigurationSubjectConnection
                 listClassName="list-group list-group-flush"
                 listComponent="div"
-                noun="configuration specifying this extension"
-                pluralNoun="configurations specifying this extension"
+                noun="organization using this extension"
+                pluralNoun="organizations using this extension"
                 queryConnection={this.queryRegistryExtensionConfigurationSubjects}
                 // Updating when viewerHasEnabled changes makes it so that clicking "Enable/disable extension" in
                 // the header immediately updates this list.
                 updateOnChange={`${this.props.extension.id}:${this.props.extension.viewerHasEnabled}`}
                 nodeComponent={RegistryExtensionConfigurationSubjectNode}
                 hideSearch={true}
-                noSummaryIfAllNodesVisible={this.props.noSummaryIfAllNodesVisible}
-                shouldUpdateURLQuery={this.props.shouldUpdateURLQuery}
                 history={this.props.history}
                 location={this.props.location}
             />
