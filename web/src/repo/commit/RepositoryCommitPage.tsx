@@ -1,7 +1,9 @@
+import { createHoverifier, HoveredTokenContext, Hoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link, LinkProps } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import { ExtensionsProps, getHover, getJumpURL } from '../../backend/features'
@@ -21,8 +23,6 @@ import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffNode, FileDiffNodeProps } from '../compare/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
-import { createHoverifier, HoveredTokenContext, Hoverifier, HoverState } from '../hoverify/hoverifier'
-import { HoverOverlay } from '../hoverify/HoverOverlay'
 
 const queryCommit = memoizeObservable(
     (args: { repo: GQL.ID; revspec: string }): Observable<GQL.IGitCommit> =>
@@ -75,6 +75,9 @@ class FilteredFileDiffConnection extends FilteredConnection<
     >
 > {}
 
+const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
+const LinkComponent = (props: LinkProps) => <Link {...props} />
+
 /** Displays a commit. */
 export class RepositoryCommitPage extends React.Component<Props, State> {
     private componentUpdates = new Subject<Props>()
@@ -115,7 +118,8 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            getHistory: () => this.props.history,
+            pushHistory: path => this.props.history.push(path),
+            logTelemetryEvent,
             fetchHover: hoveredToken =>
                 getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props.extensions),
             fetchJumpURL: hoveredToken =>
@@ -255,6 +259,8 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...this.state.hoverOverlayProps}
+                        logTelemetryEvent={logTelemetryEvent}
+                        linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
                         onGoToDefinitionClick={this.nextGoToDefinitionClick}
                         onCloseButtonClick={this.nextCloseButtonClick}

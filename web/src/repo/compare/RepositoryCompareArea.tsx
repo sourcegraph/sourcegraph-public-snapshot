@@ -1,21 +1,22 @@
+import { createHoverifier, HoveredTokenContext, Hoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
+import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 import { ExtensionsProps, getHover, getJumpURL } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
+import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
 import { toNativeEvent } from '../../util/react'
 import { propertyIsDefined } from '../../util/types'
 import { escapeRevspecForURL } from '../../util/url'
 import { HoveredToken } from '../blob/tooltips'
-import { createHoverifier, HoveredTokenContext, Hoverifier, HoverState } from '../hoverify/hoverifier'
-import { HoverOverlay } from '../hoverify/HoverOverlay'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
@@ -53,6 +54,9 @@ export interface RepositoryCompareAreaPageProps extends ExtensionsProps {
     /** The URL route prefix for the comparison. */
     routePrefix: string
 }
+
+const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
+const LinkComponent = (props: LinkProps) => <Link {...props} />
 
 /**
  * Renders pages related to a repository comparison.
@@ -96,7 +100,8 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
-            getHistory: () => this.props.history,
+            pushHistory: path => this.props.history.push(path),
+            logTelemetryEvent,
             fetchHover: hoveredToken =>
                 getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props.extensions),
             fetchJumpURL: hoveredToken =>
@@ -192,6 +197,8 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...this.state.hoverOverlayProps}
+                        logTelemetryEvent={logTelemetryEvent}
+                        linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
                         onGoToDefinitionClick={this.nextGoToDefinitionClick}
                         onCloseButtonClick={this.nextCloseButtonClick}

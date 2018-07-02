@@ -1,10 +1,12 @@
+import { Hoverifier } from '@sourcegraph/codeintellify'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { NEVER, Subject, Subscription } from 'rxjs'
+import { fromEvent, NEVER, Subject, Subscription } from 'rxjs'
+import { filter, switchMap } from 'rxjs/operators'
 import { ExtensionsProps } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
-import { Hoverifier } from '../hoverify/hoverifier'
+import { isDefined } from '../../util/types'
 
 const DiffBoundary: React.SFC<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
@@ -185,11 +187,19 @@ export class FileDiffHunks extends React.Component<Props, State> {
             mouseIsMoving: false,
         }
 
+        // Get the native event objects by using fromEvent directly on the element,
+        // as React does dark magic with event objects that messes with the hoverify logic
+        // (currentTarget can have unexpected values)
+        const fromCodeElementEvent = (eventName: string) =>
+            this.codeElements.pipe(
+                filter(isDefined),
+                switchMap(codeElement => fromEvent<MouseEvent>(codeElement, eventName))
+            )
         this.subscriptions.add(
             this.props.hoverifier.hoverify({
-                codeMouseMoves: this.codeMouseMoves,
-                codeMouseOvers: this.codeMouseOvers,
-                codeClicks: this.codeClicks,
+                codeMouseMoves: fromCodeElementEvent('mousemove'),
+                codeMouseOvers: fromCodeElementEvent('mouseover'),
+                codeClicks: fromCodeElementEvent('click'),
                 positionJumps: NEVER, // TODO support diff URLs
                 resolveContext: hoveredToken => {
                     const { repoPath, rev, filePath, commitID } = this.props[
