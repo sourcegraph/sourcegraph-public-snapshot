@@ -82,7 +82,11 @@ export class UserAccountArea extends React.Component<Props, State> {
 
         return (
             <div className="user-settings-area area">
-                <UserAccountSidebar externalAuthEnabled={this.state.externalAuthEnabled} {...this.props} />
+                <UserAccountSidebar
+                    externalAuthEnabled={this.state.externalAuthEnabled}
+                    {...this.props}
+                    className="area__sidebar"
+                />
                 <div className="area__content">
                     <Switch>
                         {/* Render empty page if no settings page selected */}

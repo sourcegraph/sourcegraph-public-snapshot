@@ -40,7 +40,7 @@ export const OrgAccountArea: React.SFC<Props> = props => {
     }
     return (
         <div className="org-settings-area area">
-            <OrgAccountSidebar {...props} />
+            <OrgAccountSidebar {...props} className="area__sidebar" />
             <div className="area__content">
                 <Switch>
                     <Route

@@ -1,8 +1,12 @@
 import FeedIcon from '@sourcegraph/icons/lib/Feed'
-import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
+import {
+    SIDEBAR_BUTTON_CLASS,
+    SIDEBAR_CARD_CLASS,
+    SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
+} from '../../components/Sidebar'
 
 interface Props extends RouteComponentProps<any> {
     className: string
@@ -15,52 +19,38 @@ interface Props extends RouteComponentProps<any> {
  */
 export const RepositoryGraphSidebar: React.SFC<Props> = (props: Props) =>
     props.repo ? (
-        <div className={`sidebar repository-graph-sidebar ${props.className}`}>
-            <ul className="sidebar__items">
-                <div className="sidebar__header">
-                    <div className="sidebar__header-icon">
-                        <GlobeIcon className="icon-inline" />
-                    </div>
-                    <h5 className="sidebar__header-title">Repository graph</h5>
-                </div>
-                <li className="sidebar__item">
+        <div className={`repository-graph-sidebar ${props.className}`}>
+            <div className={SIDEBAR_CARD_CLASS}>
+                <div className="card-header">Repository graph</div>
+                <div className="list-group list-group-flush">
                     <NavLink
                         to={`${props.routePrefix}/-/graph`}
                         exact={true}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
+                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
                     >
                         Overview
                     </NavLink>
-                </li>
-                <li className="sidebar__item">
                     <NavLink
                         to={`${props.routePrefix}/-/graph/packages`}
                         exact={true}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
+                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
                     >
                         Packages
                     </NavLink>
-                </li>
-                <li className="sidebar__item">
                     <NavLink
                         to={`${props.routePrefix}/-/graph/dependencies`}
                         exact={true}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
+                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
                     >
                         Dependencies
                     </NavLink>
-                </li>
-            </ul>
-            <div className="sidebar__item sidebar__action">
-                <Link to="/api/console" className="sidebar__action-button btn">
-                    <FeedIcon className="icon-inline sidebar__action-icon" />
-                    API console
-                </Link>
+                </div>
             </div>
+            <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
+                <FeedIcon className="icon-inline" />
+                API console
+            </Link>
         </div>
     ) : (
-        <div className={`sidebar repository-graph-sidebar ${props.className}`} />
+        <div className={`repository-graph-sidebar ${props.className}`} />
     )

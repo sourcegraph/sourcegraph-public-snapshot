@@ -2,9 +2,14 @@ import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
+import {
+    SIDEBAR_BUTTON_CLASS,
+    SIDEBAR_CARD_CLASS,
+    SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
+} from '../../components/Sidebar'
 
 interface Props extends RouteComponentProps<any> {
-    className: string
+    className?: string
     repo?: GQL.IRepository
 }
 
@@ -13,49 +18,38 @@ interface Props extends RouteComponentProps<any> {
  */
 export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
     props.repo ? (
-        <div className={`sidebar repo-settings-sidebar ${props.className}`}>
-            <ul className="sidebar__items">
-                <div className="sidebar__header">
-                    <h5 className="sidebar__header-title">Repository settings</h5>
-                </div>
-                <li className="sidebar__item">
+        <div className={`repo-settings-sidebar ${props.className || ''}`}>
+            <div className={SIDEBAR_CARD_CLASS}>
+                <div className="card-header">Settings</div>
+                <div className="list-group list-group-flush">
                     <NavLink
                         to={`/${props.repo.uri}/-/settings`}
                         exact={true}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
+                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
                     >
                         Options
                     </NavLink>
-                </li>
-                <li className="sidebar__item">
                     <NavLink
                         to={`/${props.repo.uri}/-/settings/index`}
                         exact={true}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
+                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
                     >
                         Indexing
                     </NavLink>
-                </li>
-                <li className="sidebar__item">
                     <NavLink
                         to={`/${props.repo.uri}/-/settings/mirror`}
                         exact={true}
-                        className="sidebar__item-link"
-                        activeClassName="sidebar__item--active"
+                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
                     >
                         Mirroring
                     </NavLink>
-                </li>
-            </ul>
-            <div className="sidebar__item sidebar__action">
-                <Link to="/api/console" className="sidebar__action-button btn">
-                    <FeedIcon className="icon-inline sidebar__action-icon" />
-                    API console
-                </Link>
+                </div>
             </div>
+            <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
+                <FeedIcon className="icon-inline" />
+                API console
+            </Link>
         </div>
     ) : (
-        <div className={`sidebar repo-settings-sidebar ${props.className}`} />
+        <div className={`repo-settings-sidebar ${props.className || ''}`} />
     )
