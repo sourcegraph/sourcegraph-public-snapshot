@@ -21,7 +21,6 @@ const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not 
 
 interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     isLightTheme: boolean
-    onThemeChange: () => void
 }
 
 interface State {

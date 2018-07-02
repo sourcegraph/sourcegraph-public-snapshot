@@ -74,7 +74,6 @@ interface Props extends RouteComponentProps<{ username: string }>, ExtensionsPro
     user: GQL.IUser | null
 
     isLightTheme: boolean
-    onThemeChange: () => void
 }
 
 interface State {
@@ -215,7 +214,6 @@ export class UserArea extends React.Component<Props> {
                                         {...routeComponentProps}
                                         {...transferProps}
                                         isLightTheme={this.props.isLightTheme}
-                                        onThemeChange={this.props.onThemeChange}
                                     />
                                 )}
                             />
