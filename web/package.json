@@ -130,7 +130,7 @@
     "sass-loader": "^7.0.1",
     "source-map-support": "^0.5.5",
     "stylelint": "^9.1.1",
-    "stylelint-config-prettier": "^2.1.0",
+    "stylelint-config-prettier": "^3.0.0",
     "stylelint-config-standard": "^18.2.0",
     "stylelint-formatter-compact": "^1.1.0",
     "stylelint-scss": "^2.4.0",
