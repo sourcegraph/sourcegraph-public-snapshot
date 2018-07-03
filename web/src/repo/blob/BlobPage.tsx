@@ -17,7 +17,6 @@ import { AbsoluteRepoFile, makeRepoURI, ParsedRepoURI } from '../index'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
-import { Blob } from './Blob'
 import { Blob2 } from './Blob2'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
@@ -90,8 +89,6 @@ interface State {
      */
     blobOrError?: GQL.IGitBlob | ErrorLike
 }
-
-const blobVersion = parseInt(localStorage.getItem('blobVersion') || '2', 10)
 
 export class BlobPage extends React.PureComponent<Props, State> {
     private propsUpdates = new Subject<Props>()
@@ -209,37 +206,20 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 {renderAs === 'code' &&
                     !this.state.blobOrError.highlight.aborted && (
                         <>
-                            {blobVersion === 2 ? (
-                                <Blob2
-                                    className="blob-page__blob"
-                                    repoPath={this.props.repoPath}
-                                    commitID={this.props.commitID}
-                                    filePath={this.props.filePath}
-                                    html={this.state.blobOrError.highlight.html}
-                                    rev={this.props.rev}
-                                    mode={this.props.mode}
-                                    extensions={this.props.extensions}
-                                    wrapCode={this.state.wrapCode}
-                                    renderMode={renderMode}
-                                    location={this.props.location}
-                                    history={this.props.history}
-                                />
-                            ) : (
-                                <Blob
-                                    className="blob-page__blob"
-                                    repoPath={this.props.repoPath}
-                                    commitID={this.props.commitID}
-                                    filePath={this.props.filePath}
-                                    html={this.state.blobOrError.highlight.html}
-                                    rev={this.props.rev}
-                                    mode={this.props.mode}
-                                    wrapCode={this.state.wrapCode}
-                                    renderMode={renderMode}
-                                    isLightTheme={this.props.isLightTheme}
-                                    location={this.props.location}
-                                    history={this.props.history}
-                                />
-                            )}
+                            <Blob2
+                                className="blob-page__blob"
+                                repoPath={this.props.repoPath}
+                                commitID={this.props.commitID}
+                                filePath={this.props.filePath}
+                                html={this.state.blobOrError.highlight.html}
+                                rev={this.props.rev}
+                                mode={this.props.mode}
+                                extensions={this.props.extensions}
+                                wrapCode={this.state.wrapCode}
+                                renderMode={renderMode}
+                                location={this.props.location}
+                                history={this.props.history}
+                            />
                             <BlobPanel
                                 {...this.props}
                                 repoID={this.props.repoID}

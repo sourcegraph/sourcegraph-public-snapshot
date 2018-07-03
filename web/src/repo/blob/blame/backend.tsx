@@ -4,68 +4,6 @@ import { gql, queryGraphQL } from '../../../backend/graphql'
 import * as GQL from '../../../backend/graphqlschema'
 import { createAggregateError } from '../../../util/errors'
 import { memoizeObservable } from '../../../util/memoize'
-import { AbsoluteRepoFilePosition, makeRepoURI } from '../../index'
-
-export const fetchBlameFile = memoizeObservable(
-    (ctx: AbsoluteRepoFilePosition): Observable<GQL.IHunk[]> =>
-        queryGraphQL(
-            gql`
-                query BlameFile(
-                    $repoPath: String!
-                    $commitID: String!
-                    $filePath: String!
-                    $startLine: Int!
-                    $endLine: Int!
-                ) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            blob(path: $filePath) {
-                                blame(startLine: $startLine, endLine: $endLine) {
-                                    startLine
-                                    endLine
-                                    startByte
-                                    endByte
-                                    rev
-                                    author {
-                                        person {
-                                            name
-                                            email
-                                        }
-                                        date
-                                    }
-                                    message
-                                    commit {
-                                        url
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            {
-                repoPath: ctx.repoPath,
-                commitID: ctx.commitID,
-                filePath: ctx.filePath,
-                startLine: ctx.position.line,
-                endLine: ctx.position.line,
-            }
-        ).pipe(
-            map(result => {
-                if (
-                    !result.data ||
-                    !result.data.repository ||
-                    !result.data.repository.commit ||
-                    !result.data.repository.commit.blob ||
-                    !result.data.repository.commit.blob.blame
-                ) {
-                    throw createAggregateError(result.errors)
-                }
-                return result.data.repository.commit.blob.blame
-            })
-        ),
-    makeRepoURI
-)
 
 interface BlameArgs {
     repoPath: string

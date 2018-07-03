@@ -44,9 +44,6 @@ export interface ExtensionsChangeProps {
     onExtensionsChange: (enabledExtensions: Extensions) => void
 }
 
-/** An empty list of extensions, used in components that do not yet support extensions yet. */
-export const EXTENSIONS_NOT_SUPPORTED: Extensions = []
-
 /** A hover that is merged from multiple Hover results and normalized. */
 export type HoverMerged = Pick<Hover, Exclude<keyof Hover, 'contents'>> & {
     /** Also allows MarkupContent[]. */
