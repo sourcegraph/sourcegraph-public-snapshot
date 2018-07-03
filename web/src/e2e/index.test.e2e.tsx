@@ -223,25 +223,25 @@ describe('e2e test suite', () => {
         }
 
         // expectedCount defaults to one because of we haven't specified, we just want to ensure it exists at all
-        const getTooltipContents = async (expectedCount = 1): Promise<string[]> => {
+        const getHoverContents = async (expectedCount = 1): Promise<string[]> => {
             const selector =
                 expectedCount > 1 ? `.e2e-tooltip-content:nth-child(${expectedCount})` : `.e2e-tooltip-content`
             await page.waitForSelector(selector, { visible: true })
             return await page.evaluate(() =>
-                // You can't reference tooltipContentSelector in puppeteer's page.evaluate
+                // You can't reference hoverContentSelector in puppeteer's page.evaluate
                 Array.from(document.querySelectorAll('.e2e-tooltip-content')).map(t => t.textContent)
             )
         }
-        const assertTooltipContentContains = async (val: string, count?: number) => {
-            assert.include(await getTooltipContents(count), val, 'tooltip contains expected contents')
+        const assertHoverContentContains = async (val: string, count?: number) => {
+            assert.include(await getHoverContents(count), val, 'hover contains expected contents')
         }
 
-        const clickTooltipJ2D = async (): Promise<void> => {
+        const clickHoverJ2D = async (): Promise<void> => {
             const selector = '.e2e-tooltip-j2d'
             await page.waitForSelector(selector, { visible: true })
             await page.click(selector)
         }
-        const clickTooltipFindRefs = async (): Promise<void> => {
+        const clickHoverFindRefs = async (): Promise<void> => {
             const selector = '.e2e-tooltip-find-refs'
             await page.waitForSelector(selector, { visible: true })
             await page.click(selector)
@@ -456,7 +456,7 @@ describe('e2e test suite', () => {
             })
         })
 
-        describe('tooltips', () => {
+        describe('hovers', () => {
             for (const blobVersion of [1, 2]) {
                 describe(`Blob version ${blobVersion}`, () => {
                     beforeEach(async () => {
@@ -477,7 +477,7 @@ describe('e2e test suite', () => {
                         await assertWindowLocation(
                             '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
                         )
-                        await getTooltipContents() // verify there is a tooltip
+                        await getHoverContents() // verify there is a hover
                     })
 
                     it('gets displayed when navigating to a URL with a token position', async () => {
@@ -488,7 +488,7 @@ describe('e2e test suite', () => {
                         await enableOrAddRepositoryIfNeeded()
                         await retry(
                             async () =>
-                                await assertTooltipContentContains(
+                                await assertHoverContentContains(
                                     `The name of the program. Defaults to path.Base(os.Args[0]) \n`,
                                     2
                                 )
@@ -502,7 +502,7 @@ describe('e2e test suite', () => {
                                     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                             )
                             await enableOrAddRepositoryIfNeeded()
-                            await clickTooltipJ2D()
+                            await clickHoverJ2D()
                             await assertWindowLocation(
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                             )
@@ -514,7 +514,7 @@ describe('e2e test suite', () => {
                                     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L25:10'
                             )
                             await enableOrAddRepositoryIfNeeded()
-                            await clickTooltipJ2D()
+                            await clickHoverJ2D()
                             return await assertWindowLocation(
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                             )
@@ -526,7 +526,7 @@ describe('e2e test suite', () => {
                                     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go#L13:31'
                             )
                             await enableOrAddRepositoryIfNeeded()
-                            await clickTooltipJ2D()
+                            await clickHoverJ2D()
                             await assertWindowLocation(
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
                             )
@@ -540,7 +540,7 @@ describe('e2e test suite', () => {
                                     '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
                             )
                             await enableOrAddRepositoryIfNeeded()
-                            await clickTooltipJ2D()
+                            await clickHoverJ2D()
                             await assertWindowLocation(
                                 '/github.com/sourcegraph/go-vcs@aa7c38442c17a3387b8a21f566788d8555afedd0/-/blob/vcs/repository.go#L103:6'
                             )
@@ -556,7 +556,7 @@ describe('e2e test suite', () => {
                                     '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                             )
                             await enableOrAddRepositoryIfNeeded()
-                            await clickTooltipFindRefs()
+                            await clickHoverFindRefs()
                             await assertWindowLocation(
                                 '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6&tab=references'
                             )
