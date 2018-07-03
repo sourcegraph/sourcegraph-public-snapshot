@@ -457,153 +457,145 @@ describe('e2e test suite', () => {
         })
 
         describe('hovers', () => {
-            for (const blobVersion of [1, 2]) {
-                describe(`Blob version ${blobVersion}`, () => {
-                    beforeEach(async () => {
-                        await page.evaluate(
-                            (blobVersion: number) => localStorage.setItem('blobVersion', blobVersion.toString()),
-                            blobVersion
-                        )
-                    })
-                    // Temporarely skipped because of flakiness. TODO find cause
-                    it.skip('gets displayed and updates URL when clicking on a token', async () => {
-                        await page.goto(
-                            baseURL +
-                                '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
-                        )
-                        await enableOrAddRepositoryIfNeeded()
-                        await page.waitForSelector(blobTableSelector)
-                        await clickToken(23, 2)
-                        await assertWindowLocation(
+            describe(`Blob`, () => {
+                // Temporarely skipped because of flakiness. TODO find cause
+                it.skip('gets displayed and updates URL when clicking on a token', async () => {
+                    await page.goto(
+                        baseURL +
+                            '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go'
+                    )
+                    await enableOrAddRepositoryIfNeeded()
+                    await page.waitForSelector(blobTableSelector)
+                    await clickToken(23, 2)
+                    await assertWindowLocation(
+                        '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
+                    )
+                    await getHoverContents() // verify there is a hover
+                })
+
+                it('gets displayed when navigating to a URL with a token position', async () => {
+                    await page.goto(
+                        baseURL +
                             '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
-                        )
-                        await getHoverContents() // verify there is a hover
-                    })
+                    )
+                    await enableOrAddRepositoryIfNeeded()
+                    await retry(
+                        async () =>
+                            await assertHoverContentContains(
+                                `The name of the program. Defaults to path.Base(os.Args[0]) \n`,
+                                2
+                            )
+                    )
+                })
 
-                    it('gets displayed when navigating to a URL with a token position', async () => {
+                describe('jump to definition', () => {
+                    it('noops when on the definition', async () => {
                         await page.goto(
                             baseURL +
-                                '/github.com/sourcegraph/godockerize@05bac79edd17c0f55127871fa9c6f4d91bebf07c/-/blob/godockerize.go#L23:3'
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                         )
                         await enableOrAddRepositoryIfNeeded()
-                        await retry(
-                            async () =>
-                                await assertHoverContentContains(
-                                    `The name of the program. Defaults to path.Base(os.Args[0]) \n`,
-                                    2
-                                )
+                        await clickHoverJ2D()
+                        await assertWindowLocation(
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
                         )
                     })
 
-                    describe('jump to definition', () => {
-                        it('noops when on the definition', async () => {
-                            await page.goto(
-                                baseURL +
-                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
-                            )
-                            await enableOrAddRepositoryIfNeeded()
-                            await clickHoverJ2D()
-                            await assertWindowLocation(
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
-                            )
-                        })
-
-                        it('does navigation (same repo, same file)', async () => {
-                            await page.goto(
-                                baseURL +
-                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L25:10'
-                            )
-                            await enableOrAddRepositoryIfNeeded()
-                            await clickHoverJ2D()
-                            return await assertWindowLocation(
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
-                            )
-                        })
-
-                        it('does navigation (same repo, different file)', async () => {
-                            await page.goto(
-                                baseURL +
-                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go#L13:31'
-                            )
-                            await enableOrAddRepositoryIfNeeded()
-                            await clickHoverJ2D()
-                            await assertWindowLocation(
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
-                            )
-                            // Verify file tree is highlighting the new path.
-                            return await page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]')
-                        })
-
-                        it('does navigation (external repo)', async () => {
-                            await page.goto(
-                                baseURL +
-                                    '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
-                            )
-                            await enableOrAddRepositoryIfNeeded()
-                            await clickHoverJ2D()
-                            await assertWindowLocation(
-                                '/github.com/sourcegraph/go-vcs@aa7c38442c17a3387b8a21f566788d8555afedd0/-/blob/vcs/repository.go#L103:6'
-                            )
-                        })
+                    it('does navigation (same repo, same file)', async () => {
+                        await page.goto(
+                            baseURL +
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L25:10'
+                        )
+                        await enableOrAddRepositoryIfNeeded()
+                        await clickHoverJ2D()
+                        return await assertWindowLocation(
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
+                        )
                     })
 
-                    describe('find references', () => {
-                        it('opens widget and fetches local references', async function(): Promise<void> {
-                            this.timeout(120000)
+                    it('does navigation (same repo, different file)', async () => {
+                        await page.goto(
+                            baseURL +
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go#L13:31'
+                        )
+                        await enableOrAddRepositoryIfNeeded()
+                        await clickHoverJ2D()
+                        await assertWindowLocation(
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/diff.pb.go#L38:6'
+                        )
+                        // Verify file tree is highlighting the new path.
+                        return await page.waitForSelector('.tree__row--active [data-tree-path="diff/diff.pb.go"]')
+                    })
 
-                            await page.goto(
-                                baseURL +
-                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
-                            )
-                            await enableOrAddRepositoryIfNeeded()
-                            await clickHoverFindRefs()
-                            await assertWindowLocation(
-                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6&tab=references'
-                            )
-
-                            await assertNonemptyLocalRefs()
-
-                            // verify the appropriate # of references are fetched
-                            await page.waitForSelector('.panel__tabs-content .file-match__list')
-                            await retry(async () =>
-                                assert.equal(
-                                    await page.evaluate(
-                                        () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
-                                    ),
-                                    3 // 4 references, two of which got merged into one because their context overlaps
-                                )
-                            )
-
-                            // verify all the matches highlight a `MultiFileDiffReader` token
-                            await assertAllHighlightedTokens('MultiFileDiffReader')
-                        })
-
-                        it('opens widget and fetches external references', async function(): Promise<void> {
-                            // Testing external references on localhost is unreliable, since different dev environments will
-                            // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
-                            // 1 repo, in which case there would never be external references. So we *only* run this test against
-                            // non-localhost servers.
-                            if (baseURL === 'http://localhost:3080') {
-                                this.skip()
-                                return
-                            }
-
-                            await page.goto(
-                                baseURL +
-                                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references:external'
-                            )
-                            await enableOrAddRepositoryIfNeeded()
-
-                            // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
-                            // look like they're for the appropriate token)
-                            await assertNonemptyExternalRefs()
-
-                            // verify all the matches highlight a `Reader` token
-                            await assertAllHighlightedTokens('Reader')
-                        })
+                    it('does navigation (external repo)', async () => {
+                        await page.goto(
+                            baseURL +
+                                '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go#L27:30'
+                        )
+                        await enableOrAddRepositoryIfNeeded()
+                        await clickHoverJ2D()
+                        await assertWindowLocation(
+                            '/github.com/sourcegraph/go-vcs@aa7c38442c17a3387b8a21f566788d8555afedd0/-/blob/vcs/repository.go#L103:6'
+                        )
                     })
                 })
-            }
+
+                describe('find references', () => {
+                    it('opens widget and fetches local references', async function(): Promise<void> {
+                        this.timeout(120000)
+
+                        await page.goto(
+                            baseURL +
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6'
+                        )
+                        await enableOrAddRepositoryIfNeeded()
+                        await clickHoverFindRefs()
+                        await assertWindowLocation(
+                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L29:6&tab=references'
+                        )
+
+                        await assertNonemptyLocalRefs()
+
+                        // verify the appropriate # of references are fetched
+                        await page.waitForSelector('.panel__tabs-content .file-match__list')
+                        await retry(async () =>
+                            assert.equal(
+                                await page.evaluate(
+                                    () => document.querySelectorAll('.panel__tabs-content .file-match__item').length
+                                ),
+                                3 // 4 references, two of which got merged into one because their context overlaps
+                            )
+                        )
+
+                        // verify all the matches highlight a `MultiFileDiffReader` token
+                        await assertAllHighlightedTokens('MultiFileDiffReader')
+                    })
+
+                    it('opens widget and fetches external references', async function(): Promise<void> {
+                        // Testing external references on localhost is unreliable, since different dev environments will
+                        // not guarantee what repo(s) have been indexed. It's possible a developer has an environment with only
+                        // 1 repo, in which case there would never be external references. So we *only* run this test against
+                        // non-localhost servers.
+                        if (baseURL === 'http://localhost:3080') {
+                            this.skip()
+                            return
+                        }
+
+                        await page.goto(
+                            baseURL +
+                                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L32:16&tab=references:external'
+                        )
+                        await enableOrAddRepositoryIfNeeded()
+
+                        // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
+                        // look like they're for the appropriate token)
+                        await assertNonemptyExternalRefs()
+
+                        // verify all the matches highlight a `Reader` token
+                        await assertAllHighlightedTokens('Reader')
+                    })
+                })
+            })
         })
 
         describe.skip('godoc.org "Uses" links', () => {
