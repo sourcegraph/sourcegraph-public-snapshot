@@ -123,7 +123,7 @@
     "node-sass-import-once": "^1.2.0",
     "nyc": "^12.0.0",
     "ora": "^1.3.0",
-    "p-retry": "^1.0.0",
+    "p-retry": "^2.0.0",
     "plugin-error": "^1.0.1",
     "postcss-loader": "^2.1.3",
     "puppeteer": "~1.5.0",
