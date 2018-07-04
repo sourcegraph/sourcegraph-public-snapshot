@@ -80,7 +80,7 @@
     "@types/puppeteer": "^1.0.0",
     "@types/react": "^16.1.0",
     "@types/react-dom": "^16.0.4",
-    "@types/react-router": "^4.0.20",
+    "@types/react-router": "^4.0.28",
     "@types/react-router-dom": "^4.2.3",
     "@types/reactstrap": "^6.0.0",
     "@types/strip-json-comments": "0.0.30",
