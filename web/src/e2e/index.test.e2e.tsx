@@ -68,7 +68,7 @@ describe('e2e test suite', () => {
     })
     afterEach('Close page', async function(): Promise<void> {
         if (page) {
-            if (this.currentTest.state === 'failed') {
+            if (this.currentTest && this.currentTest.state === 'failed') {
                 await mkdirp(SCREENSHOT_DIRECTORY)
                 const filePath = path.join(
                     SCREENSHOT_DIRECTORY,

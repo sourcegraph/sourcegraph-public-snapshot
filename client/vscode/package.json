@@ -43,13 +43,13 @@
     "@sourcegraph/tsconfig": "^3.0.0",
     "@types/graphql": "^0.13.1",
     "@types/lodash": "^4.14.110",
-    "@types/mocha": "^2.2.32",
+    "@types/mocha": "^5.0.0",
     "@types/node": "^6.0.113",
     "@types/request": "^2.47.1",
     "@types/request-promise-native": "^1.0.15",
     "@types/uuid": "^3.4.3",
     "@types/ws": "^5.1.2",
-    "mocha": "^2.3.3",
+    "mocha": "^5.0.0",
     "typescript": "^2.0.3"
   },
   "dependencies": {
