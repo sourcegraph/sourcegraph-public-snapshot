@@ -4,12 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 'use strict'
 
-import * as vscode from 'vscode'
 import { DataCallback, Message, MessageReader, MessageWriter, RequestMessage } from 'vscode-jsonrpc'
 import { AbstractMessageReader } from 'vscode-jsonrpc/lib/messageReader'
 import { AbstractMessageWriter } from 'vscode-jsonrpc/lib/messageWriter'
 import { MessageTransports } from 'vscode-languageclient'
-import * as WebSocket from 'universal-websocket-client'
+import * as WebSocket from 'ws'
 
 /**
  * connectWebSocket can be passed to the LSP client to connect to an LSP server via a
@@ -20,26 +19,28 @@ import * as WebSocket from 'universal-websocket-client'
  * multiple times). If connectionRetryTimeout is 0, then it will only attempt connecting
  * once.
  */
-export function webSocketStreamOpener(
-    url: string,
-    requestTracer?: (trace: MessageTrace) => void,
-    connectionRetryTimeout: number = 20000
-): Promise<MessageTransports> {
+export function webSocketStreamOpener({
+    url,
+    headers,
+    requestTracer,
+    connectionRetryTimeout = 20000,
+}: {
+    url: string
+    headers?: any
+    requestTracer?: (trace: MessageTrace) => void
+    connectionRetryTimeout?: number
+}): Promise<MessageTransports> {
     const deadline = Date.now() + connectionRetryTimeout
     return new Promise((resolve, reject) => {
-        // const cookie = vscode.workspace.getConfiguration('remote').get<string>('cookie');
-        const headers: { [name: string]: string } = {
+        const allHeaders: { [name: string]: string } = {
             'Content-Type': 'application/json; charset=utf-8',
+            ...headers,
         }
 
-        const token = vscode.Uri.parse(vscode.workspace.getConfiguration('sourcegraph').get<string>('token'))
-
-        headers['Authorization'] = `token ${token}`
-
-        let socket = new WebSocket(url, [], { headers })
+        let socket = new WebSocket(url, [], { headers: allHeaders })
         socket.binaryType = 'arraybuffer'
         let connected = false
-        socket.onopen = () => {
+        socket.on('open', () => {
             connected = true
             const reader = new WebSocketMessageReader(socket)
             const writer = new WebSocketMessageWriter(socket)
@@ -47,27 +48,32 @@ export function webSocketStreamOpener(
                 traceJSONRPCRequests(requestTracer, reader, writer)
             }
             resolve({ reader, writer })
-        }
-        socket.onclose = (ev: CloseEvent) => {
-            if (connected && ev.code !== 1000 /* Close code: Normal */) {
-                console.error('WebSocket closed:', ev)
+        })
+        socket.on('close', code => {
+            if (connected && code !== 1000 /* Close code: Normal */) {
+                console.error('WebSocket closed:', code)
             }
             if (!connected) {
                 // Retry to connect?
                 if (deadline > Date.now()) {
                     setTimeout(
-                        () => webSocketStreamOpener(url, requestTracer, deadline - Date.now()).then(resolve, reject),
+                        () =>
+                            webSocketStreamOpener({
+                                url,
+                                requestTracer,
+                                connectionRetryTimeout: deadline - Date.now(),
+                            }).then(resolve, reject),
                         2500
                     )
                     return
                 }
 
-                reject(ev)
+                reject(code)
             }
-        }
-        socket.onerror = (e: any) => {
+        })
+        socket.on('error', (e: any) => {
             console.error('Socket error: ', e)
-        }
+        })
     })
 }
 
@@ -75,27 +81,25 @@ export function webSocketStreamOpener(
  * WebSocketMessageReader wraps a WebSocket to conform to the MessageReader interface.
  */
 class WebSocketMessageReader extends AbstractMessageReader implements MessageReader {
-    private socket: WebSocket
     private callbacks: DataCallback[] = []
 
     constructor(socket: WebSocket) {
         super()
-        this.socket = socket
 
-        socket.onmessage = (ev: MessageEvent) => {
+        socket.on('message', ev => {
             if (this.callbacks.length === 0) {
                 this.fireError(new Error('message arrived on WebSocket but there is no listener'))
                 return
             }
             try {
-                const data = JSON.parse(ev.data)
+                const data = JSON.parse(ev.toString())
                 for (const callback of this.callbacks) {
                     callback(data)
                 }
             } catch (error) {
                 this.fireError(error)
             }
-        }
+        })
     }
 
     public listen(callback: DataCallback): void {
@@ -118,13 +122,13 @@ class WebSocketMessageWriter extends AbstractMessageWriter implements MessageWri
         this.socketClosed = false
         this.errorCount = 0
 
-        socket.onclose = (ev: CloseEvent) => {
+        socket.on('close', () => {
             this.socketClosed = true
             this.fireClose()
-        }
-        socket.onerror = (ev: ErrorEvent) => {
-            this.fireError(ev.error)
-        }
+        })
+        socket.on('error', ev => {
+            this.fireError(ev)
+        })
     }
 
     public write(msg: Message): void {

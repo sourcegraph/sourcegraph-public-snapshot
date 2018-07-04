@@ -2,7 +2,7 @@
   "name": "sourcegraph-platform",
   "displayName": "Sourcegraph",
   "description": "Sourcegraph for VS Code",
-  "version": "1.0.10",
+  "version": "2.0.0",
   "publisher": "sourcegraph",
   "license": "MIT",
   "icon": "images/logo.png",
@@ -17,7 +17,7 @@
     "Other"
   ],
   "activationEvents": [
-    "onLanguage:shellscript"
+    "*"
   ],
   "main": "./out/src/extension",
   "contributes": {
@@ -40,20 +40,37 @@
     "test": "node ./node_modules/vscode/bin/test"
   },
   "devDependencies": {
+    "@sourcegraph/tsconfig": "^3.0.0",
+    "@types/graphql": "^0.13.1",
+    "@types/lodash": "^4.14.110",
     "@types/mocha": "^2.2.32",
     "@types/node": "^6.0.113",
+    "@types/request": "^2.47.1",
+    "@types/request-promise-native": "^1.0.15",
+    "@types/uuid": "^3.4.3",
+    "@types/ws": "^5.1.2",
     "mocha": "^2.3.3",
     "typescript": "^2.0.3"
   },
   "dependencies": {
+    "deepmerge": "^2.1.1",
     "execa": "^0.6.3",
+    "git-url-parse": "^9.0.1",
+    "graphql": "^0.13.2",
+    "graphql-tag": "^2.9.2",
     "isomorphic-fetch": "^2.2.1",
+    "jsonc-parser": "^2.0.1",
+    "lodash": "^4.17.10",
     "opn": "^5.0.0",
+    "request": "^2.87.0",
+    "request-promise-native": "^1.0.5",
+    "source-map-support": "^0.5.6",
     "universal-websocket-client": "^1.0.2",
     "uuid": "^3.2.1",
     "vscode": "^1.1.18",
     "vscode-jsonrpc": "^3.6.2",
     "vscode-languageclient": "^4.2.1",
-    "vscode-languageserver-types": "^3.8.2"
+    "vscode-languageserver-types": "^3.8.2",
+    "ws": "^5.2.0"
   }
 }

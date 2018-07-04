@@ -1,13 +1,15 @@
 'use strict'
 import * as vscode from 'vscode'
 
-import * as lspMain from './lsp/src/main'
+import * as lspMain from './main'
 
 // activate is called when the extension is activated.
-export function activate(context: vscode.ExtensionContext) {
-    lspMain.activate(context)
-}
-
-export function deactivate() {
-    // no-op
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    const logger = vscode.window.createOutputChannel('Sourcegraph')
+    logger.appendLine('Activating')
+    try {
+        await lspMain.activate({ context, logger })
+    } catch (e) {
+        logger.appendLine('Activation failed: ' + e)
+    }
 }

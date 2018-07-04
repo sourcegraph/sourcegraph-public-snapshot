@@ -5,27 +5,17 @@
 'use strict'
 
 import * as vscode from 'vscode'
-import * as path from 'path'
 import {
     LanguageClient,
     RevealOutputChannelOn,
     LanguageClientOptions,
     ErrorCodes,
     MessageTransports,
-    ProvideWorkspaceSymbolsSignature,
-    ShowMessageParams,
-    NotificationHandler,
     ResponseError,
     InitializeError,
 } from 'vscode-languageclient'
 import { v4 as uuidV4 } from 'uuid'
 import { MessageTrace, webSocketStreamOpener } from './connection'
-import * as log from './log'
-
-function dispose(toDispose: vscode.Disposable[]): void {
-    toDispose.forEach(disposable => disposable.dispose())
-    toDispose.length = 0
-}
 
 const REUSE_BACKEND_LANG_SERVERS = true
 
@@ -86,12 +76,21 @@ export function toRelativePath(folder: vscode.Uri, resource: vscode.Uri): string
  * languages that this client should be used to provide hovers, etc.,
  * for.
  */
-export function newClient(
-    mode: string,
-    languageIds: string[],
-    rootWithoutCommit: vscode.Uri,
+export function newClient({
+    mode,
+    languageIds,
+    rootWithoutCommit,
+    commitID,
+    endpointAuthority,
+    token,
+}: {
+    mode: string
+    languageIds: string[]
+    rootWithoutCommit: vscode.Uri
     commitID: string
-): LanguageClient {
+    endpointAuthority: string
+    token: string
+}): LanguageClient {
     if (!commitID) {
         throw new Error(`no commit ID for workspace ${rootWithoutCommit}`)
     }
@@ -120,7 +119,8 @@ export function newClient(
         },
         uriConverters: {
             code2Protocol: (value: vscode.Uri): string => {
-                const gitDirPath = vscode.workspace.getWorkspaceFolder(value).uri.fsPath
+                // ! is probably safe because the file is likely open in VS Code
+                const gitDirPath = vscode.workspace.getWorkspaceFolder(value)!.uri.fsPath
                 value = value.with({ path: value.path.slice(gitDirPath.length) })
                 if (value.scheme === 'file') {
                     return value.toString()
@@ -169,25 +169,26 @@ export function newClient(
     return new class WebSocketLanguageClient extends LanguageClient {
         // Override to use a WebSocket transport instead of a StreamInfo (which requires a
         // duplex stream).
-        protected createMessageTransports(encoding: string): Thenable<MessageTransports> {
-            const endpoint = vscode.Uri.parse(vscode.workspace.getConfiguration('sourcegraph').get<string>('URL'))
-            // const wsOrigin = endpoint.with({ scheme: endpoint.scheme === 'http' ? 'ws' : 'wss' });
-
+        protected createMessageTransports(): Thenable<MessageTransports> {
             // We include ?mode= in the url to make it easier to find the correct LSP
             // websocket connection in (e.g.) the Chrome network inspector. It does not
             // affect any behaviour.
-            const url = `ws://${endpoint.authority}/.api/lsp`
-            return webSocketStreamOpener(url, createRequestTracer(mode))
+            const url = `ws://${endpointAuthority}/.api/lsp`
+            return webSocketStreamOpener({
+                url,
+                headers: { Authorization: 'token ' + token },
+                requestTracer: createRequestTracer(mode),
+            })
         }
     }('lsp-' + mode, 'lsp-' + mode, dummy, options)
 }
 
 let traceOutputChannel: vscode.OutputChannel | undefined
 
-function createRequestTracer(languageId: string): ((trace: MessageTrace) => void) | undefined {
+function createRequestTracer(languageId: string): ((trace: MessageTrace) => void) {
     return (trace: MessageTrace) => {
         if (!vscode.workspace.getConfiguration('lsp').get<boolean>('trace')) {
-            return undefined
+            return
         }
 
         if (!traceOutputChannel) {
@@ -212,6 +213,7 @@ function createRequestTracer(languageId: string): ((trace: MessageTrace) => void
         traceOutputChannel.appendLine('')
         console.log('Request Params:', trace.request.params)
         console.log('Response:', trace.response)
+        return
     }
 }
 
