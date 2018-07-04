@@ -98,7 +98,7 @@
     "babel-preset-env": "^1.7.0",
     "babelify": "^8.0.0",
     "bluebird": "^3.5.1",
-    "browserify": "^16.0.0",
+    "browserify": "^16.2.2",
     "chai": "^4.1.2",
     "css-loader": "^1.0.0",
     "esm": "^3.0.31",
