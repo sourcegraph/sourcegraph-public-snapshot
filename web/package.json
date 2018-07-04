@@ -64,7 +64,7 @@
     "@types/graphql": "^0.13.0",
     "@types/gulp": "^4.0.5",
     "@types/highlight.js": "^9.1.10",
-    "@types/http-proxy-middleware": "^0.17.4",
+    "@types/http-proxy-middleware": "^0.17.5",
     "@types/js-base64": "^2.1.5",
     "@types/jsdom": "^11.0.4",
     "@types/lodash-es": "^4.17.0",
