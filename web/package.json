@@ -84,7 +84,7 @@
     "@types/react": "^16.4.6",
     "@types/react-dom": "^16.0.4",
     "@types/react-router": "^4.0.28",
-    "@types/react-router-dom": "^4.2.3",
+    "@types/react-router-dom": "^4.2.7",
     "@types/reactstrap": "^6.0.0",
     "@types/webpack": "^4.4.5",
     "@types/webpack-serve": "^1.0.4",
