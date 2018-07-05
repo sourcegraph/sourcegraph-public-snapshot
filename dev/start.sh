@@ -1,22 +1,5 @@
 #!/bin/bash
 
-if [ -n "$DELVE_FRONTEND" ]; then
-	export DELVE=1
-	echo 'Launching frontend with delve'
-	export EXEC_FRONTEND='dlv exec --headless --listen=:2345 --log'
-fi
-
-if [ -n "$DELVE_SEARCHER" ]; then
-	export DELVE=1
-	echo 'Launching searcher with delve'
-	export EXEC_SEARCHER='dlv exec --headless --listen=:2346 --log'
-fi
-
-if [ -n "$DELVE" ]; then
-	echo 'Due to a limitation in delve, debug binaries will not start until you attach a debugger.'
-	echo 'See https://github.com/derekparker/delve/issues/952'
-fi
-
 # set to true if unset so set -u won't break us
 : ${SOURCEGRAPH_COMBINE_CONFIG:=false}
 

@@ -45,7 +45,7 @@
       "sourceMaps": true
     },
     {
-      "name": "Attach to frontend",
+      "name": "Attach to gitserver",
       "type": "go",
       "request": "launch",
       "mode": "remote",
@@ -57,7 +57,7 @@
       "args": []
     },
     {
-      "name": "Attach to searcher",
+      "name": "Attach to indexer",
       "type": "go",
       "request": "launch",
       "mode": "remote",
@@ -67,12 +67,102 @@
       "program": "${workspaceRoot}",
       "env": {},
       "args": []
-    }
-  ],
-  "compounds": [
+    },
     {
-      "name": "Attach to all",
-      "configurations": ["frontend", "searcher"]
+      "name": "Attach to query-runner",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2347,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to repo-updater",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2348,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to searcher",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2349,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to symbols",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2350,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to github-proxy",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2351,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to lsp-proxy",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2352,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to xlang-go",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2353,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to frontend",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2354,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
     }
   ]
 }

@@ -253,13 +253,10 @@ Requires "Debugger for Chrome" extension.
 ### Go
 
 * Install [Delve](https://github.com/derekparker/delve)
-* Start the server with delve enabled for the services you want to debug
-  * e.g. `DELVE_FRONTEND=1 ./dev/start.sh`
-  * Check `./dev/start.sh` for supported configurations (it is easy to add more).
-  * Any binary that delve is attached to will not begin executing until you attach a debugger.
-* Set a breakpoint (there's a bug where setting the breakpoint after attaching results in "Unverified breakpoint")
-* Run the appropriate attach task from your editor.
-  * e.g. "Attach to frontend"
+* Run `DELVE=frontend,searcher ./dev/start.sh` (`DELVE` accepts a comma-separated list of components as specified in [../dev/Procfile](../dev/Procfile))
+* Set a breakpoint in VS Code (there's a bug where setting the breakpoint after attaching results in "Unverified breakpoint")
+* Run "Attach to $component" in the VS Code debug view
+* The process should start once the debugger is attached
 
 Known issues:
 
