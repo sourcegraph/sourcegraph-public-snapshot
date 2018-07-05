@@ -75,7 +75,7 @@ fancyconfig() {
 		echo >&2 "Note: Moving existing config_combined.json to $confpath/config_backup.json."
 		mv $confpath/config_combined.json $confpath/config_backup.json
 	fi
-	if dev/confmerge/confmerge $confpath/config_base.json $confpath/config_local.json > $confpath/config_combined.json; then
+	if dev/confmerge/confmerge $confpath/config.json $confpath/config_local.json > $confpath/config_combined.json; then
 		echo >&2 "Successfully regenerated config_combined.json."
 	else
 		echo >&2 "FATAL: failed to generate config_combined.json."
