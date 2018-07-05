@@ -1,6 +1,5 @@
-// Package slack is used to send notifications of an organization's activity to a
-// given Slack webhook. In contrast with package slackinternal, this package contains
-// notifications that external users and customers should also be able to receive.
+// Package slack is used to send notifications of an organization's activity
+// to a given Slack webhook.
 package slack
 
 import (

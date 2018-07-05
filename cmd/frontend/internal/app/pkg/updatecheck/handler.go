@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
@@ -121,6 +126,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			authProviders,
 			deployType,
 		)))
+
+		// Sync the user email in HubSpot
+		if initialAdminEmail != "" && strings.Contains(initialAdminEmail, "@") {
+			go tracking.SyncUser(initialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true})
+		}
 	}
 
 	if !hasUpdate {

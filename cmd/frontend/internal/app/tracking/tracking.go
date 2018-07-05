@@ -2,27 +2,23 @@ package tracking
 
 import (
 	"log"
-	"net/url"
-	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking/slackinternal"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
-// TrackUser handles user data logging during auth flows
-//
-// Specifically, updating user data properties in HubSpot
-func TrackUser(avatarURL string, email, event string) {
+// SyncUser handles creating or syncing a user profile in HubSpot, and if provided,
+// logs a user event.
+func SyncUser(email string, eventID string, contactParams *hubspot.ContactProperties) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("panic in tracking.TrackUser: %s", err)
+			log.Printf("panic in tracking.SyncUser: %s", err)
 		}
 	}()
 
@@ -31,58 +27,39 @@ func TrackUser(avatarURL string, email, event string) {
 		return
 	}
 
-	// Generate a single set of user parameters for HubSpot and Slack exports
-	contactParams := &hubspot.ContactProperties{
-		UserID:     email,
-		LookerLink: lookerUserLink(email),
-	}
-
 	// Update or create user contact information in HubSpot
-	hsResponse, err := trackHubSpotContact(email, event, contactParams)
+	err := syncHubSpotContact(email, eventID, contactParams)
 	if err != nil {
-		log15.Warn("trackHubSpotContact: failed to create or update HubSpot contact on auth", "source", "HubSpot", "error", err)
-	}
-
-	// Finally, post signup notification to Slack
-	if event == "SignupCompleted" {
-		err = slackinternal.NotifyOnSignup(avatarURL, email, contactParams, hsResponse)
-		if err != nil {
-			log15.Error("error sending new signup details to Slack", "error", err)
-			return
-		}
+		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
 	}
 }
 
-func trackHubSpotContact(email string, eventLabel string, params *hubspot.ContactProperties) (*hubspot.ContactResponse, error) {
+func syncHubSpotContact(email, eventID string, contactParams *hubspot.ContactProperties) error {
 	if email == "" {
-		return nil, errors.New("user must have a valid email address")
+		return errors.New("user must have a valid email address")
 	}
+
+	// Generate a single set of user parameters for HubSpot
+	if contactParams == nil {
+		contactParams = &hubspot.ContactProperties{}
+	}
+	contactParams.UserID = email
 
 	c := hubspotutil.Client()
 
-	if eventLabel == "SignupCompleted" {
-		today := time.Now().Truncate(24 * time.Hour)
-		// Convert to milliseconds
-		params.RegisteredAt = today.UTC().Unix() * 1000
-	}
-
 	// Create or update the contact
-	hsResponse, err := c.CreateOrUpdateContact(email, params)
+	_, err := c.CreateOrUpdateContact(email, contactParams)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	// Log the event if relevant (in this case, for "SignupCompleted" events)
-	if _, ok := hubspotutil.EventNameToHubSpotID[eventLabel]; ok {
-		err := c.LogEvent(email, hubspotutil.EventNameToHubSpotID[eventLabel], map[string]string{})
+	// Log the user event
+	if eventID != "" {
+		err = c.LogEvent(email, eventID, map[string]string{})
 		if err != nil {
-			return nil, errors.Wrap(err, "LogEvent")
+			return errors.Wrap(err, "LogEvent")
 		}
 	}
 
-	return hsResponse, nil
-}
-
-func lookerUserLink(email string) string {
-	return "https://sourcegraph.looker.com/dashboards/9?Email=" + url.QueryEscape(email)
+	return nil
 }

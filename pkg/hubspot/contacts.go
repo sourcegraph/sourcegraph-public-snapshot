@@ -35,15 +35,10 @@ func (c *Client) baseContactURL(email string) *url.URL {
 	}
 }
 
-// ContactProperties represent HubSpot user properties updated on
-// signup or login
+// ContactProperties represent HubSpot user properties
 type ContactProperties struct {
-	UserID     string `json:"user_id"`
-	UID        string `json:"uid"`
-	LookerLink string `json:"looker_link"`
-	// Per HubSpot API, dates should be formatted in milliseconds, in UTC
-	// http://developers.hubspot.com/docs/faq/how-should-timestamps-be-formatted-for-hubspots-apis
-	RegisteredAt int64 `json:"registered_at"`
+	UserID        string `json:"user_id"`
+	IsServerAdmin bool   `json:"is_server_admin"`
 }
 
 // ContactResponse represents HubSpot user properties returned
@@ -58,9 +53,7 @@ type ContactResponse struct {
 func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps := &apiProperties{}
 	apiProps.set("user_id", h.UserID)
-	apiProps.set("uid", h.UID)
-	apiProps.set("looker_link", h.LookerLink)
-	apiProps.set("registered_at", h.RegisteredAt)
+	apiProps.set("is_server_admin", h.IsServerAdmin)
 	return apiProps
 }
 

@@ -10,14 +10,10 @@ var HubSpotHAPIKey = env.Get("HUBSPOT_HAPI_KEY", "", "HubSpot HAPIkey for access
 
 var SurveyFormID = "a86bbac5-576d-4ca0-86c1-0c60837c3eab"
 
-// EventNameToHubSpotID is a mapping from event names provided by backend
-// or API requests to track HubSpot events
-//
+// SignupEventID is the HubSpot ID for signup events.
 // HubSpot Events and IDs are all defined in HubSpot "Events" web console:
 // https://app.hubspot.com/reports/2762526/events
-var EventNameToHubSpotID = map[string]string{
-	"SignupCompleted": "000001776813",
-}
+var SignupEventID = "000001776813"
 
 var client *hubspot.Client
 

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
@@ -129,7 +131,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 
 	// Track user data
 	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUser(usr.AvatarURL, creds.Email, "SignupCompleted")
+		go tracking.SyncUser(creds.Email, hubspotutil.SignupEventID, nil)
 	}
 }
 
@@ -181,11 +183,6 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 	if session.SetActor(w, r, actor, 0); err != nil {
 		httpLogAndError(w, "Could not create new user session", http.StatusInternalServerError)
 		return
-	}
-
-	// Track user data
-	if r.UserAgent() != "Sourcegraph e2etest-bot" {
-		go tracking.TrackUser(usr.AvatarURL, creds.Email, "SigninCompleted")
 	}
 }
 
