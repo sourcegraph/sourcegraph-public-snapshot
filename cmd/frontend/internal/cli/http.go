@@ -161,5 +161,9 @@ func isTrustedOrigin(r *http.Request) bool {
 		isCORSAllowedRequest = isAllowedOrigin(requestOrigin, strings.Fields(corsOrigin))
 	}
 
+	if appURL := strings.TrimSuffix(conf.Get().AppURL, "/"); appURL != "" && requestOrigin == appURL {
+		isCORSAllowedRequest = true
+	}
+
 	return isExtensionRequest || isCORSAllowedRequest
 }

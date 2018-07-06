@@ -7,13 +7,14 @@ import { Observable, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkupContent, Range } from 'vscode-languageserver-types'
-import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
+import { DidChangeTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, FileSpec, makeRepoURI, parseRepoURI, PositionSpec } from '../repo'
 import { ErrorLike, normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { HoverMerged, ModeSpec } from './features'
+import { webSocketSendLSPRequests } from './webSocket'
 
 /**
  * Contains the fields necessary to route the request to the correct logical LSP server process and construct the
@@ -22,7 +23,7 @@ import { HoverMerged, ModeSpec } from './features'
 export interface LSPSelector extends AbsoluteRepo, ModeSpec {}
 
 /** All of the context to send to the backend to initialize the correct server for a request. */
-interface LSPContext extends LSPSelector {
+export interface LSPContext extends LSPSelector {
     settings: ExtensionSettings | null
 }
 
@@ -31,7 +32,7 @@ interface LSPContext extends LSPSelector {
  */
 export interface LSPTextDocumentPositionParams extends LSPSelector, PositionSpec, FileSpec {}
 
-interface LSPRequest {
+export interface LSPRequest {
     method: string
     params?: any
 }
@@ -78,11 +79,11 @@ export const EMODENOTFOUND = -32000
 
 type ResponseMessages = { 0: { result: InitializeResult } } & any[]
 
-type ResponseResults = { 0: InitializeResult } & any[]
+export type ResponseResults = { 0: InitializeResult } & any[]
 
 type ResponseError = ErrorLike & { responses: ResponseMessages }
 
-const sendLSPRequests = (ctx: LSPContext, ...requests: LSPRequest[]): Observable<ResponseResults> =>
+const httpSendLSPRequests = (ctx: LSPContext, ...requests: LSPRequest[]): Observable<ResponseResults> =>
     ajax({
         method: 'POST',
         url: `/.api/xlang/${requests.map(({ method }) => method).join(',')}`,
@@ -115,6 +116,14 @@ const sendLSPRequests = (ctx: LSPContext, ...requests: LSPRequest[]): Observable
         })
     )
 
+// Run `localStorage.lspWebSocket=true;location.reload()` to use WebSockets for LSP (instead of single HTTP POST
+// requests).
+const useWebSocket = localStorage.getItem('lspWebSocket') !== null
+
+const sendLSPRequests: (ctx: LSPContext, ...requests: LSPRequest[]) => Observable<ResponseResults> = useWebSocket
+    ? webSocketSendLSPRequests
+    : httpSendLSPRequests
+
 /**
  * Sends an LSP request to the xlang API.
  * If an error is returned, the Promise is rejected with the error from the response.
@@ -139,8 +148,10 @@ export const fetchServerCapabilities = memoizeObservable(
             params: {
                 textDocument: {
                     uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+                    version: 0,
                 },
-            } as DidOpenTextDocumentParams,
+                contentChanges: [],
+            } as DidChangeTextDocumentParams,
         }).pipe(map(results => (results[0] as InitializeResult).capabilities)),
     cacheKey
 )
