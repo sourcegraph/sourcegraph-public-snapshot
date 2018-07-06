@@ -54,7 +54,7 @@ const config: webpack.Configuration = {
     },
     module: {
         rules: [
-            ((): webpack.NewUseRule => ({
+            ((): webpack.RuleSetRule => ({
                 test: /\.tsx?$/,
                 use: [
                     'babel-loader',
@@ -70,14 +70,14 @@ const config: webpack.Configuration = {
                     }))(),
                 ],
             }))(),
-            ((): webpack.NewLoaderRule => ({
+            ((): webpack.RuleSetRule => ({
                 test: /\.jsx?$/,
                 loader: 'babel-loader',
                 options: {
                     cacheDirectory: true,
                 },
             }))(),
-            ((): webpack.NewUseRule => ({
+            ((): webpack.RuleSetRule => ({
                 // sass / scss loader for webpack
                 test: /\.(css|sass|scss)$/,
                 use: ExtractTextPlugin.extract([
