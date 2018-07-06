@@ -82,7 +82,6 @@
     "@types/reactstrap": "^6.0.0",
     "@types/webpack": "^4.4.5",
     "@types/webpack-serve": "^1.0.1",
-    "abort-controller": "^1.0.2",
     "babel-core": "^6.26.0",
     "babel-loader": "^7.1.4",
     "babel-plugin-add-module-exports": "^0.2.1",
