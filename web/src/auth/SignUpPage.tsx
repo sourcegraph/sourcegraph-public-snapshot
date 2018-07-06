@@ -1,7 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import * as H from 'history'
-import { Base64 } from 'js-base64'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -25,7 +24,6 @@ export interface SignUpArgs {
 interface SignUpFormProps {
     location: H.Location
     history: H.History
-    prefilledEmail?: string
 
     /** Called to perform the signup on the server. */
     doSignUp: (args: SignUpArgs) => Promise<void>
@@ -47,7 +45,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
     constructor(props: SignUpFormProps) {
         super(props)
         this.state = {
-            email: props.prefilledEmail || '',
+            email: '',
             username: '',
             password: '',
             loading: false,
@@ -66,8 +64,8 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         onChange={this.onEmailFieldChange}
                         required={true}
                         value={this.state.email}
-                        disabled={this.state.loading || Boolean(this.props.prefilledEmail)}
-                        autoFocus={!Boolean(this.props.prefilledEmail)}
+                        disabled={this.state.loading}
+                        autoFocus={true}
                     />
                 </div>
                 <div className="form-group">
@@ -77,7 +75,6 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                         value={this.state.username}
                         required={true}
                         disabled={this.state.loading}
-                        autoFocus={Boolean(this.props.prefilledEmail)}
                     />
                 </div>
                 <div className="form-group">
@@ -158,24 +155,9 @@ interface SignUpPageProps {
     user: GQL.IUser | null
 }
 
-interface SignUpPageState {
-    prefilledEmail?: string
-}
-
-export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState> {
-    constructor(props: SignUpPageProps) {
-        super(props)
-        this.state = {
-            prefilledEmail: this.getPrefilledEmail(props),
-        }
-    }
-
+export class SignUpPage extends React.Component<SignUpPageProps> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('SignUp', {}, false)
-    }
-
-    public componentWillReceiveProps(nextProps: SignUpPageProps): void {
-        this.setState({ prefilledEmail: this.getPrefilledEmail(nextProps) })
     }
 
     public render(): JSX.Element | null {
@@ -199,26 +181,12 @@ export class SignUpPage extends React.Component<SignUpPageProps, SignUpPageState
                             <Link className="signin-signup-form__mode" to={`/sign-in?${this.props.location.search}`}>
                                 Already have an account? Sign in.
                             </Link>
-                            <SignUpForm
-                                {...this.props}
-                                prefilledEmail={this.state.prefilledEmail}
-                                doSignUp={this.doSignUp}
-                            />
+                            <SignUpForm {...this.props} doSignUp={this.doSignUp} />
                         </div>
                     }
                 />
             </div>
         )
-    }
-
-    private getPrefilledEmail(props: SignUpPageProps): string | undefined {
-        const searchParams = new URLSearchParams(props.location.search)
-        let prefilledEmail: string | undefined
-        if (searchParams.get('token')) {
-            const tokenPayload = JSON.parse(Base64.decode(searchParams.get('token')!.split('.')[1]))
-            prefilledEmail = tokenPayload.email
-        }
-        return prefilledEmail
     }
 
     private doSignUp = (args: SignUpArgs): Promise<void> =>
