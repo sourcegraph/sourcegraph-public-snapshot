@@ -145,8 +145,7 @@
     "typescript": "^2.9.2",
     "uglifyjs-webpack-plugin": "^1.2.4",
     "webpack": "^4.15.1",
-    "webpack-serve": "^1.0.3",
-    "write-file-webpack-plugin": "^4.2.0"
+    "webpack-serve": "^1.0.3"
   },
   "dependencies": {
     "@sourcegraph/codeintellify": "^1.0.0",
