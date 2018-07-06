@@ -81,6 +81,7 @@ export function newClient({
     languageIds,
     rootWithoutCommit,
     commitID,
+    scheme,
     endpointAuthority,
     token,
 }: {
@@ -88,6 +89,7 @@ export function newClient({
     languageIds: string[]
     rootWithoutCommit: vscode.Uri
     commitID: string
+    scheme: string
     endpointAuthority: string
     token: string
 }): LanguageClient {
@@ -173,7 +175,7 @@ export function newClient({
             // We include ?mode= in the url to make it easier to find the correct LSP
             // websocket connection in (e.g.) the Chrome network inspector. It does not
             // affect any behaviour.
-            const url = `ws://${endpointAuthority}/.api/lsp`
+            const url = `${scheme === 'https' ? 'wss:' : 'ws:'}//${endpointAuthority}/.api/lsp`
             return webSocketStreamOpener({
                 url,
                 headers: { Authorization: 'token ' + token },

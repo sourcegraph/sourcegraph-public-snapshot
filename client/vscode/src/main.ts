@@ -274,6 +274,7 @@ export async function activate({
                     return
                 }
                 const endpointAuthority = vscode.Uri.parse(url).authority
+                const scheme = vscode.Uri.parse(url).scheme
                 const rootWithoutCommit = await getRemoteUrl()
                 const commitID = getGitCommit()
                 if (!token) {
@@ -287,6 +288,7 @@ export async function activate({
                     languageIds: [manifest.platform.languageId],
                     rootWithoutCommit,
                     commitID,
+                    scheme,
                     endpointAuthority,
                     token,
                 })
