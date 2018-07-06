@@ -38,7 +38,7 @@
       ".ts"
     ]
   },
-  "author": "John Rothfels <john@sourcegraph.com>",
+  "author": "The Sourcegraph Team <hi@sourcegraph.com>",
   "license": "MIT",
   "devDependencies": {
     "@gql2ts/from-schema": "^1.7.2",
