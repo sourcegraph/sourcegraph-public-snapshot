@@ -34,7 +34,7 @@ func TestMiddleware(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
 		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "must access via HTTP authentication proxy\n"; got != want {
+		if got, want := rr.Body.String(), "no user"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
@@ -44,7 +44,7 @@ func TestMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 123}))
 		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "must access via HTTP authentication proxy\n"; got != want {
+		if got, want := rr.Body.String(), "user 123"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})

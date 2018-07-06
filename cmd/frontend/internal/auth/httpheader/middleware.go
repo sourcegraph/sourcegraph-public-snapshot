@@ -41,17 +41,14 @@ func Middleware(next http.Handler) http.Handler {
 		}
 
 		headerValue := r.Header.Get(authProvider.UsernameHeader)
-		if headerValue == "" {
-			// The auth proxy is expected to proxy *all* requests, so don't let any non-proxied requests
-			// proceed. Note that if an attacker can send HTTP requests directly to this server (not via
-			// the proxy), then the attacker can impersonate any user by just sending a request with a
-			// certain easy-to-construct header, so this doesn't actually provide any security.
-			http.Error(w, "must access via HTTP authentication proxy", http.StatusUnauthorized)
-			return
-		}
-
-		// Respect already authenticated actor (e.g., via access token).
-		if actor.FromContext(r.Context()).IsAuthenticated() {
+		// Continue onto next auth provider if no header is set (in case the auth proxy allows
+		// unauthenticated users to bypass it, which some do). Also respect already authenticated
+		// actors (e.g., via access token).
+		//
+		// It would NOT add any additional security to return an error here, because a user who can
+		// access this HTTP endpoint directly can just as easily supply a fake username whose
+		// identity to assume.
+		if headerValue == "" || actor.FromContext(r.Context()).IsAuthenticated() {
 			next.ServeHTTP(w, r)
 			return
 		}
