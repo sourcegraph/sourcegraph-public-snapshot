@@ -1,5 +1,5 @@
 {
-  "plugins": ["transform-new-target", "syntax-dynamic-import", "lodash"],
+  "plugins": ["syntax-dynamic-import", "lodash"],
   "presets": [
     [
       "env",
