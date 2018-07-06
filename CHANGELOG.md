@@ -17,6 +17,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * Fixed a goroutine leak which occurs when search requests are canceled.
 * Console output should have fewer spurious line breaks.
+* Fixed an issue where it was not possible to override the `StrictHostKeyChecking` SSH option in the SSH configuration.
 
 ## 2.9.1
 
