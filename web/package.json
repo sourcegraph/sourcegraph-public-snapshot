@@ -86,7 +86,7 @@
     "@types/react-router-dom": "^4.2.3",
     "@types/reactstrap": "^6.0.0",
     "@types/webpack": "^4.4.5",
-    "@types/webpack-serve": "^1.0.1",
+    "@types/webpack-serve": "^1.0.4",
     "autoprefixer": "^8.6.5",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
@@ -138,7 +138,7 @@
     "typescript": "^2.9.2",
     "uglifyjs-webpack-plugin": "^1.2.4",
     "webpack": "^4.15.1",
-    "webpack-serve": "^1.0.3"
+    "webpack-serve": "^1.0.4"
   },
   "dependencies": {
     "@sourcegraph/codeintellify": "^1.0.0",
