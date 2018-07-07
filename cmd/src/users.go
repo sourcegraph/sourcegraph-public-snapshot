@@ -47,10 +47,12 @@ fragment UserFields on User {
     username
     displayName
     siteAdmin
-    orgs {
-        id
-        name
-        displayName
+    organizations {
+		nodes {
+        	id
+        	name
+        	displayName
+		}
     }
     emails {
         email
@@ -61,13 +63,15 @@ fragment UserFields on User {
 `
 
 type User struct {
-	ID          string
-	Username    string
-	DisplayName string
-	SiteAdmin   bool
-	Orgs        []Org
-	Emails      []UserEmail
-	URL         string
+	ID            string
+	Username      string
+	DisplayName   string
+	SiteAdmin     bool
+	Organizations struct {
+		Nodes []Org
+	}
+	Emails []UserEmail
+	URL    string
 }
 
 type UserEmail struct {
