@@ -4,7 +4,7 @@ set -ex
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-HOST=${HOST-ec2-18-144-20-107.us-west-1.compute.amazonaws.com}
+HOST=${HOST-ec2-13-56-175-167.us-west-1.compute.amazonaws.com}
 HOSTDIR=cxp
 
 TMPDIR=$(mktemp -d)
