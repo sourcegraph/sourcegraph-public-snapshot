@@ -145,7 +145,7 @@
     "webpack-serve": "^1.0.4"
   },
   "dependencies": {
-    "@sourcegraph/codeintellify": "^1.0.0",
+    "@sourcegraph/codeintellify": "^1.1.0",
     "@sourcegraph/icons": "^1.15.0",
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/uuid": "^3.4.3",
