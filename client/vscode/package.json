@@ -44,7 +44,7 @@
     "@types/graphql": "^0.13.3",
     "@types/lodash": "^4.14.110",
     "@types/mocha": "^5.0.0",
-    "@types/node": "^6.0.113",
+    "@types/node": "^6.0.114",
     "@types/request": "^2.47.1",
     "@types/request-promise-native": "^1.0.15",
     "@types/uuid": "^3.4.3",
