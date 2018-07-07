@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -37,6 +38,12 @@ func (e *errorList) error() error {
 // getInitializationOptions returns the initializationOptions value to use in an LSP
 // initialize request.
 func getInitializationOptions(ctx context.Context, lang string) (map[string]interface{}, error) {
+	// HACK: if a ${lang}_bg request, strip the trailing suffix. We should really clean up the logic
+	// that handles background language servers to deal with them in a more principled fashion. In
+	// the meantime, this unbreaks background language server requests.
+	if strings.HasSuffix(lang, "_bg") {
+		lang = strings.TrimSuffix(lang, "_bg")
+	}
 	for _, ls := range conf.EnabledLangservers() {
 		if ls.Language == lang {
 			return ls.InitializationOptions, nil
