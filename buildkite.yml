@@ -1,0 +1,24 @@
+
+steps:
+  - command: |-
+      npm ci
+      npm run prettier
+      npm run tslint
+      npm run build
+    label: ':typescript:'
+
+  - command: |-
+      npm ci
+      npm test
+      npm run cover
+      bash <(curl -s https://codecov.io/bash) -t 1cdb8844-3dd0-43d7-959c-720e979d7775
+    label: ':mocha:'
+
+  - wait
+
+  - command: |-
+      npm ci
+      npm run build
+      npm run semantic-release
+    branches: master
+    label: ':npm:'

@@ -1,0 +1,31 @@
+{
+  "name": "example-client",
+  "description": "Example CXP client",
+  "dependencies": {
+    "ws": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/ws": "^5.1.2"
+  },
+  "scripts": {
+    "example-client": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' ts-node example-client.ts",
+    "example-client-simple": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' ts-node --project tsconfig.json example-client-simple.ts"
+  },
+  "cxp": {
+    "url": "ws://localhost:3777",
+    "root": "git://github.com/gorilla/mux?cb4698366aa625048f3b815af6a0dea8aef9280a",
+    "documentSelector": [
+      "*"
+    ],
+    "initializationOptions": {
+      "mode": "sample/line-colors",
+      "settings": {
+        "merged": {
+          "colors": [
+            "red"
+          ]
+        }
+      }
+    }
+  }
+}

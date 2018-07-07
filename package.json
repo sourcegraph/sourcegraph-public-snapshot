@@ -1,0 +1,78 @@
+{
+	"name": "cxp",
+	"version": "0.0.0-development",
+	"description": "Code Extension Protocol (CXP) client, server, and protocol library for JavaScript/TypeScript",
+	"author": "Sourcegraph",
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/sourcegraph/cxp-js.git"
+	},
+	"bugs": {
+		"url": "https://github.com/sourcegraph/cxp-js/issues"
+	},
+	"main": "lib/index.js",
+	"files": [
+		"lib"
+	],
+	"scripts": {
+		"commitmsg": "commitlint -e $GIT_PARAMS",
+		"semantic-release": "semantic-release",
+		"prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
+		"tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
+		"build": "tsc -p tsconfig.dist.json",
+		"test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --recursive --watch-extensions ts 'src/**/*.test.ts'",
+		"cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register mocha --recursive --timeout 10000 'src/**/*.test.ts'",
+		"watch": "tsc -p tsconfig.json -w",
+		"watch:build": "tsc -p tsconfig.dist.json -w",
+		"watch:test": "npm run test -- -w"
+	},
+	"nyc": {
+		"extension": [
+			".ts",
+			".tsx"
+		],
+		"exclude": [
+			"**/*.d.ts"
+		]
+	},
+	"commitlint": {
+		"extends": [
+			"@commitlint/config-conventional"
+		]
+	},
+	"sideEffects": false,
+	"dependencies": {
+		"minimatch": "^3.0.4",
+		"rxjs": "^6.2.1",
+		"uuid": "^3.3.2",
+		"vscode-languageserver-types": "^3.8.2"
+	},
+	"devDependencies": {
+		"@commitlint/cli": "^7.0.0",
+		"@commitlint/config-conventional": "^7.0.1",
+		"@sourcegraph/prettierrc": "^2.1.1",
+		"@sourcegraph/tsconfig": "^3.0.0",
+		"@sourcegraph/tslint-config": "^12.0.0",
+		"@types/chai": "^4.1.4",
+		"@types/minimatch": "^3.0.3",
+		"@types/mocha": "^5.2.3",
+		"@types/node": "^10.5.0",
+		"@types/sinon": "^5.0.1",
+		"@types/uuid": "^3.4.3",
+		"@types/ws": "^5.1.2",
+		"chai": "^4.1.2",
+		"husky": "^0.14.3",
+		"mocha": "^5.2.0",
+		"nyc": "^12.0.2",
+		"prettier": "^1.13.6",
+		"semantic-release": "^15.6.3",
+		"sinon": "^6.0.1",
+		"source-map-support": "^0.5.6",
+		"ts-node": "^7.0.0",
+		"tslint": "^5.10.0",
+		"tslint-language-service": "^0.9.9",
+		"typescript": "^2.9.2"
+	},
+	"optionalDependencies": {}
+}

@@ -1,0 +1,21 @@
+{
+  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "es2015",
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "declaration": true,
+    "outDir": "lib",
+    "noEmit": true,
+    "lib": ["es2018"],
+    "sourceRoot": "src",
+    "noErrorTruncation": true,
+    "skipLibCheck": true,
+    "plugins": [
+      {
+        "name": "tslint-language-service"
+      }
+    ]
+  }
+}
