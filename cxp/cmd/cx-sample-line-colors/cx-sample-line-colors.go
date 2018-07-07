@@ -106,7 +106,10 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		if len(settings.Colors) == 0 {
 			return []lspext.TextDocumentDecoration{}, nil
 		}
-		maxLines := 60
+		maxLines := 10
+		if len(settings.Colors) > maxLines {
+			maxLines = len(settings.Colors)
+		}
 		decorations := make([]lspext.TextDocumentDecoration, maxLines)
 		for i := 0; i < maxLines; i++ {
 			decorations[i] = lspext.TextDocumentDecoration{
