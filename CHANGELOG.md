@@ -25,7 +25,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed a goroutine leak which occurs when search requests are canceled.
 * Console output should have fewer spurious line breaks.
 * Fixed an issue where it was not possible to override the `StrictHostKeyChecking` SSH option in the SSH configuration.
-* Cross-repository code intelligence indexing for non-Go languages is now working again (originally broken in 2.9.0).
+* Cross-repository code intelligence indexing for non-Go languages is now working again (originally broken in 2.9.2).
 
 ## 2.9.1
 
