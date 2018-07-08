@@ -4,12 +4,19 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## Unreleased changes
 
-* The following deprecated site configuration properties have been removed: `github[].preemptivelyClone`, `gitOriginMap`, `phabricatorURL`, `githubPersonalAccessToken`, `githubEnterpriseURL`, `githubEnterpriseCert`, and `githubEnterpriseAccessToken`.
-* The `settings` field in the site config file is deprecated and will not be supported in a future release. Site admins should move those settings (if any) to global settings (in the site admin UI). Global settings are preferred to site config file settings because the former can be applied without needing to restart/redeploy the Sourcegraph server or cluster.
+### Changed
+
+### Added
+
+### Fixed
+
+## 2.9.3
 
 ### Changed
 
 * The search results page will merge duplicated lines of context.
+* The following deprecated site configuration properties have been removed: `github[].preemptivelyClone`, `gitOriginMap`, `phabricatorURL`, `githubPersonalAccessToken`, `githubEnterpriseURL`, `githubEnterpriseCert`, and `githubEnterpriseAccessToken`.
+* The `settings` field in the site config file is deprecated and will not be supported in a future release. Site admins should move those settings (if any) to global settings (in the site admin UI). Global settings are preferred to site config file settings because the former can be applied without needing to restart/redeploy the Sourcegraph server or cluster.
 
 ### Added
 
@@ -18,6 +25,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed a goroutine leak which occurs when search requests are canceled.
 * Console output should have fewer spurious line breaks.
 * Fixed an issue where it was not possible to override the `StrictHostKeyChecking` SSH option in the SSH configuration.
+* Cross-repository code intelligence indexing for non-Go languages is now working again (originally broken in 2.9.0).
 
 ## 2.9.1
 
