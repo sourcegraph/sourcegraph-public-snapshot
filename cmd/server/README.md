@@ -39,16 +39,16 @@ parts will be automated. You will need to complete four main steps.
     image you just pulled instead of the dockerhub image. Do this for both the
     old and new instructions, to ensure we don't make any bad backwards
     incompatible changes. In future this will be more automated. The `docker run` command you will use will look like:
-
-```bash
-gcloud auth configure-docker && \
-docker run \
- --publish 7080:7080 --rm \
- --volume $HOME/.sourcegraph/config:/etc/sourcegraph \
- --volume $HOME/.sourcegraph/data:/var/opt/sourcegraph \
- -v /var/run/docker.sock:/var/run/docker.sock \
- us.gcr.io/sourcegraph-dev/server:08248_2017-12-14_8dad5ab
-```
+    ```bash
+    gcloud auth configure-docker && \
+    docker run \
+     --publish 7080:7080 --rm \
+     --volume $HOME/.sourcegraph/config:/etc/sourcegraph \
+     --volume $HOME/.sourcegraph/data:/var/opt/sourcegraph \
+     -v /var/run/docker.sock:/var/run/docker.sock \
+     us.gcr.io/sourcegraph-dev/server:08248_2017-12-14_8dad5ab
+    ```
+1. `git tag` the commit used to build the image with `v$VERSION` (e.g., "2.9.3") and push this tag upstream.
 
 At this point if you've discovered an issue and plan to stop the release, you should inform everyone that there is an issue and not to do a release temporarily (e.g. in #dev-announce). You are responsible for completing the next release following these steps where you left off, or stating clearly to others where you left off in this process so that someone else can confidently continue.
 
