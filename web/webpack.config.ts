@@ -70,7 +70,6 @@ const config: webpack.Configuration = {
         extensions: ['.ts', '.tsx', '.js'],
         mainFields: ['es2015', 'module', 'browser', 'main'],
         alias: rxPaths(),
-        symlinks: false,
     },
     module: {
         rules: [
