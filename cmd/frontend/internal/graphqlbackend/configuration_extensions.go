@@ -19,7 +19,8 @@ func (r *configurationMutationResolver) UpdateExtension(ctx context.Context, arg
 	Remove      *bool
 	Edit        *configurationEdit
 }) (*updateExtensionConfigurationResult, error) {
-	if envvar.InsecureDevMode() {
+	const sleepIfUncached = false
+	if envvar.InsecureDevMode() && sleepIfUncached {
 		// Simulate latency in dev mode so that we feel the pain of our high-latency users.
 		n := rand.Intn(200)
 		time.Sleep(time.Duration(200+n) * time.Millisecond)

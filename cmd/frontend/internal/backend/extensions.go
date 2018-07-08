@@ -21,7 +21,8 @@ import (
 
 func init() {
 	// Use a caching HTTP client for communicating with the remote registry.
-	if envvar.InsecureDevMode() {
+	const sleepIfUncached = false
+	if envvar.InsecureDevMode() && sleepIfUncached {
 		// Also simulate latency in dev mode. See docs for sleepIfUncachedTransport for more information.
 		registry.HTTPClient = &http.Client{Transport: sleepIfUncachedTransport{httputil.CachingClient.Transport}}
 	} else {
