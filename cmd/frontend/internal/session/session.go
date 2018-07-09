@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -22,7 +23,6 @@ import (
 )
 
 var sessionStore sessions.Store
-var sessionStoreRedis = env.Get("SRC_SESSION_STORE_REDIS", "redis-store:6379", "redis used for storing sessions")
 var sessionCookieKey = env.Get("SRC_SESSION_COOKIE_KEY", "", "secret key used for securing the session cookies")
 
 // DefaultExpiryPeriod is the default session expiry period (if none is specified explicitly): 90 days.
@@ -46,10 +46,7 @@ func SetSessionStore(s sessions.Store) {
 
 // NewRedisStore creates a new session store backed by Redis.
 func NewRedisStore(secureCookie bool) sessions.Store {
-	if sessionStoreRedis == "" {
-		sessionStoreRedis = ":6379"
-	}
-	rstore, err := redistore.NewRediStore(10, "tcp", sessionStoreRedis, "", []byte(sessionCookieKey))
+	rstore, err := redistore.NewRediStoreWithPool(redispool.Store, []byte(sessionCookieKey))
 	if err != nil {
 		waitForRedis(rstore)
 	}

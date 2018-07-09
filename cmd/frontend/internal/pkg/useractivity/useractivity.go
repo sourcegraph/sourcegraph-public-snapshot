@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -17,7 +16,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -25,7 +24,7 @@ var (
 	gcOnce sync.Once // ensures we only have 1 redis gc goroutine
 
 	keyPrefix = "user_activity:"
-	pool      *redis.Pool
+	pool      = redispool.Store
 
 	timeNow = time.Now
 )
@@ -43,45 +42,6 @@ const (
 
 	maxStorageDays = 93
 )
-
-func init() {
-	address := env.Get("SRC_STORE_REDIS", "", "redis used for storing persistent data")
-
-	// This logic below is the behaviour used by our session store. We
-	// fallback to it since we will always be using the same redis (for
-	// now). In future we will hopefully have migrated to just using
-	// SRC_STORE_REDIS.
-	if address == "" {
-		var ok bool
-		address, ok = os.LookupEnv("SRC_SESSION_STORE_REDIS")
-		if !ok {
-			address = "redis-store:6379"
-		}
-	}
-	if address == "" {
-		address = ":6379"
-	}
-
-	pool = &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", address)
-			if err != nil {
-				return nil, err
-			}
-			// Setup our GC of active key goroutine
-			gcOnce.Do(func() {
-				go gc()
-			})
-			return c, err
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-}
 
 // MigrateUserActivityData moves all old user activity data from the DB to Redis.
 // Should only ever happen one time.
@@ -383,6 +343,11 @@ func logCodeHostIntegrationUsage(userID int32) error {
 // LogActivity logs any user activity (page view, integration usage, etc) to their "last active" time, and
 // adds their unique ID to the set of active users
 func LogActivity(isAuthenticated bool, userID int32, userCookieID string, event string) error {
+	// Setup our GC of active key goroutine
+	gcOnce.Do(func() {
+		go gc()
+	})
+
 	c := pool.Get()
 	defer c.Close()
 

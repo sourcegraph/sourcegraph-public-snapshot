@@ -1,4 +1,4 @@
-package rcache
+package redispool
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 func init() {
 	sysreq.AddCheck("Redis", func(ctx context.Context) (problem, fix string, err error) {
-		c := pool.Get()
+		c := Store.Get()
 		defer c.Close()
 
 		timeout := 5 * time.Second
@@ -27,7 +27,7 @@ func init() {
 			time.Sleep(100 * time.Millisecond)
 		}
 		return "Redis is unavailable or misconfigured",
-			fmt.Sprintf("Start a Redis server listening at port %s", redisMasterEndpoint),
+			fmt.Sprintf("Start a Redis server listening at port %s", addrStore),
 			err
 	})
 }

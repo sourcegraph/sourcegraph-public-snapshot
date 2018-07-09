@@ -8,7 +8,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	"gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -93,21 +93,6 @@ func (r *Cache) Delete(key string) {
 	}
 }
 
-func (r *Cache) Keys(pattern string) []string {
-	c := pool.Get()
-	defer c.Close()
-
-	prefix := r.rkeyPrefix()
-	keys, err := redis.Strings(c.Do("KEYS", prefix+pattern))
-	if err != nil {
-		log15.Warn("failed to execute redis command", "cmd", "KEYS", "error", err)
-	}
-	for i := range keys {
-		keys[i] = keys[i][len(prefix):]
-	}
-	return keys
-}
-
 // rkeyPrefix generates the actual key prefix we use on redis.
 func (r *Cache) rkeyPrefix() string {
 	return fmt.Sprintf("%s:%s:", globalPrefix, r.keyPrefix)
@@ -116,7 +101,17 @@ func (r *Cache) rkeyPrefix() string {
 // SetupForTest adjusts the globalPrefix and clears it out. You will have
 // conflicts if you do `t.Parallel()`
 func SetupForTest(name string) {
-	redisMasterEndpoint = "127.0.0.1:6379"
+	pool = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial("tcp", "127.0.0.1:6379")
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
 
 	globalPrefix = "__test__" + name
 	// Make mutex fails faster
@@ -135,28 +130,6 @@ end`, 0, globalPrefix+":*")
 }
 
 var (
-	pool         *redis.Pool
-	globalPrefix string
-)
-
-var redisMasterEndpoint = env.Get("REDIS_MASTER_ENDPOINT", "redis-cache:6379", "redis used for caches")
-
-func init() {
+	pool         = redispool.Cache
 	globalPrefix = dataVersion
-
-	pool = &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", redisMasterEndpoint)
-			if err != nil {
-				return nil, err
-			}
-			return c, err
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-}
+)

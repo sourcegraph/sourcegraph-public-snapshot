@@ -24,19 +24,19 @@ const (
 // defaultEnv is environment variables that will be set if not already set.
 var defaultEnv = map[string]string{
 	// Sourcegraph services running in this container
-	"SRC_GIT_SERVERS":         "127.0.0.1:3178",
-	"SEARCHER_URL":            "http://127.0.0.1:3181",
-	"REPO_UPDATER_URL":        "http://127.0.0.1:3182",
-	"SRC_SESSION_STORE_REDIS": "127.0.0.1:6379",
-	"SRC_INDEXER":             "127.0.0.1:3179",
-	"QUERY_RUNNER_URL":        "http://127.0.0.1:3183",
-	"SRC_SYNTECT_SERVER":      "http://127.0.0.1:9238",
-	"SYMBOLS_URL":             "http://127.0.0.1:3184",
-	"SRC_HTTP_ADDR":           ":7080",
-	"SRC_HTTPS_ADDR":          ":7443",
-	"SRC_FRONTEND_INTERNAL":   frontendInternalHost,
-	"GITHUB_BASE_URL":         "http://127.0.0.1:3180", // points to github-proxy
-	"LSP_PROXY":               "127.0.0.1:4388",
+	"SRC_GIT_SERVERS":       "127.0.0.1:3178",
+	"SEARCHER_URL":          "http://127.0.0.1:3181",
+	"REPO_UPDATER_URL":      "http://127.0.0.1:3182",
+	"SRC_INDEXER":           "127.0.0.1:3179",
+	"QUERY_RUNNER_URL":      "http://127.0.0.1:3183",
+	"SRC_SYNTECT_SERVER":    "http://127.0.0.1:9238",
+	"SYMBOLS_URL":           "http://127.0.0.1:3184",
+	"SRC_HTTP_ADDR":         ":7080",
+	"SRC_HTTPS_ADDR":        ":7443",
+	"SRC_FRONTEND_INTERNAL": frontendInternalHost,
+	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
+	"LSP_PROXY":             "127.0.0.1:4388",
+	"REDIS_ENDPOINT":        "127.0.0.1:6379",
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -109,8 +109,7 @@ func main() {
 
 	// Special case some convenience environment variables
 	if redis, ok := os.LookupEnv("REDIS"); ok {
-		setDefaultEnv("REDIS_MASTER_ENDPOINT", redis)
-		setDefaultEnv("SRC_SESSION_STORE_REDIS", redis)
+		setDefaultEnv("REDIS_ENDPOINT", redis)
 	}
 
 	for k, v := range defaultEnv {

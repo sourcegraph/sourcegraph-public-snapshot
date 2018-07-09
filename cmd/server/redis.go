@@ -25,8 +25,13 @@ loglevel warning
 `))
 
 func maybeRedisProcFile() (string, error) {
-	// Redis is already configured
-	if os.Getenv("SRC_SESSION_STORE_REDIS") != "" && os.Getenv("REDIS_MASTER_ENDPOINT") != "" {
+	// Redis is already configured. See envvars used in pkg/redispool.
+	if os.Getenv("REDIS_ENDPOINT") != "" {
+		return "", nil
+	}
+	store := os.Getenv("REDIS_STORE_ENDPOINT") != "" || os.Getenv("SRC_SESSION_STORE_REDIS") != ""
+	cache := os.Getenv("REDIS_CACHE_ENDPOINT") != "" || os.Getenv("REDIS_MASTER_ENDPOINT") != ""
+	if store && cache {
 		return "", nil
 	}
 
