@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go/build"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -137,12 +136,17 @@ func main() {
 	pipeline := &Pipeline{}
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
-	commit := os.Getenv("BUILDKITE_COMMIT")
-	if commit == "" {
-		commit = "1234567890123456789012345678901234567890" // for testing
+	version := os.Getenv("BUILDKITE_TAG")
+	taggedRelease := true // true if this is a semver tagged release
+	if !strings.HasPrefix(version, "v") {
+		taggedRelease = false
+		commit := os.Getenv("BUILDKITE_COMMIT")
+		if commit == "" {
+			commit = "1234567890123456789012345678901234567890" // for testing
+		}
+		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
+		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 	}
-	buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
-	version := fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 
 	addDockerImageStep := func(app string, latest bool) {
 		cmdDir := "./cmd/" + app
@@ -170,13 +174,14 @@ func main() {
 		} else {
 			cmds = append(cmds,
 				Cmd("go build github.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/godockerize"),
-				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --env VERSION=%s github.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, app)),
+				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --go-build-flags='-ldflags' --go-build-flags='-X github.com/sourcegraph/sourcegraph/pkg/version.version=%s' --env VERSION=%s github.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, version, app)),
 			)
 		}
 		cmds = append(cmds,
 			Cmd("gcloud auth configure-docker -q"),
 			Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
 		)
+		dockerLogin := Cmd("docker login -u sourcegraphci -p cf30a79c8783445f2141")
 		if latest {
 			cmds = append(cmds,
 				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", image, version, image)),
@@ -185,10 +190,17 @@ func main() {
 			if app == "server" {
 				cmds = append(cmds,
 					Cmd(fmt.Sprintf("docker tag %s:%s sourcegraph/server:insiders", image, version)),
-					Cmd("docker login -u sourcegraphci -p cf30a79c8783445f2141"),
+					dockerLogin,
 					Cmd("docker push sourcegraph/server:insiders"),
 				)
 			}
+		}
+		if taggedRelease && app == "server" {
+			cmds = append(cmds,
+				Cmd(fmt.Sprintf("docker tag %s:%s sourcegraph/server:%s", image, version, version)),
+				dockerLogin,
+				Cmd("docker push sourcegraph/server:"+version),
+			)
 		}
 		pipeline.AddStep(":docker:", cmds...)
 	}
@@ -305,28 +317,32 @@ func main() {
 	}
 
 	switch {
+	case taggedRelease:
+		latest := branch == "master"
+		allDockerImages := []string{
+			"frontend",
+			"github-proxy",
+			"gitserver",
+			"indexer",
+			"lsp-proxy",
+			"query-runner",
+			"repo-updater",
+			"searcher",
+			"server",
+			"symbols",
+			"xlang-go",
+		}
+
+		for _, dockerImage := range allDockerImages {
+			addDockerImageStep(dockerImage, latest)
+		}
+		pipeline.AddWait()
+
 	case branch == "master":
 		addDockerImageStep("frontend", true)
 		addDockerImageStep("server", true)
 		pipeline.AddWait()
 		addDeploySteps()
-
-	case strings.HasPrefix(branch, "staging/"):
-		cmds, err := ioutil.ReadDir("./cmd")
-		if err != nil {
-			panic(err)
-		}
-		for _, cmd := range cmds {
-			if cmd.Name() == "xlang-java" || cmd.Name() == "xlang-java-skinny" || cmd.Name() == "server" {
-				continue // xlang-java currently does not build successfully on CI because the CI image doesn't have mvn installed
-			}
-			addDockerImageStep(cmd.Name(), false)
-		}
-		pipeline.AddWait()
-		pipeline.AddStep(":rocket:",
-			Env("VERSION", version),
-			Cmd("./dev/ci/deploy-staging.sh"))
-		pipeline.AddWait()
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		version = version + "_patch"
@@ -336,7 +352,6 @@ func main() {
 		addDockerImageStep(branch[14:], true)
 		pipeline.AddWait()
 		addDeploySteps()
-
 	}
 
 	_, err := pipeline.WriteTo(os.Stdout)

@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
 // Status of the check for software updates for Sourcegraph.
@@ -85,7 +86,7 @@ func updateURL(ctx context.Context) string {
 	}
 
 	q := url.Values{}
-	q.Set("version", ProductVersion)
+	q.Set("version", version.Version())
 	q.Set("site", siteid.Get())
 	q.Set("auth", strings.Join(authProviderTypes(), ","))
 	q.Set("deployType", conf.DeployType())

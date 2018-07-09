@@ -7,7 +7,7 @@ set -ex
 
 GOBIN=$PWD/vendor/.bin go install ./vendor/github.com/sourcegraph/godockerize
 
-./vendor/.bin/godockerize build --base alpine:3.6 -t ${IMAGE} --env VERSION=${VERSION} \
+./vendor/.bin/godockerize build --base alpine:3.6 -t ${IMAGE} --go-build-flags="-ldflags" --go-build-flags="-X github.com/sourcegraph/sourcegraph/pkg/version.version=${VERSION}" --env VERSION=${VERSION} \
 			  github.com/sourcegraph/sourcegraph/cmd/server \
 			  github.com/sourcegraph/sourcegraph/cmd/frontend \
 			  github.com/sourcegraph/sourcegraph/cmd/github-proxy \

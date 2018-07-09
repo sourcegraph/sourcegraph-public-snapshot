@@ -11,7 +11,6 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/sourcegraphlicense"
@@ -21,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
+	"github.com/sourcegraph/sourcegraph/pkg/version"
 )
 
 const singletonSiteGQLID = "site"
@@ -123,7 +123,7 @@ func (r *siteResolver) ProductName() string { return conf.ProductName() }
 
 func (r *siteResolver) BuildVersion() string { return env.Version }
 
-func (r *siteResolver) ProductVersion() string { return updatecheck.ProductVersion }
+func (r *siteResolver) ProductVersion() string { return version.Version() }
 
 func (r *siteResolver) HasCodeIntelligence() bool {
 	return envvar.HasCodeIntelligence()

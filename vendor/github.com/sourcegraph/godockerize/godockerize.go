@@ -46,6 +46,10 @@ func main() {
 						Name:  "env",
 						Usage: "additional environment variables for the Dockerfile",
 					},
+					&cli.StringSliceFlag{
+						Name:  "go-build-flags",
+						Usage: "additional flags to pass to go build",
+					},
 					&cli.BoolFlag{
 						Name:  "dry-run",
 						Usage: "only print generated Dockerfile",
@@ -147,7 +151,13 @@ func doBuild(c *cli.Context) error {
 	if len(install) != 0 {
 		fmt.Fprintf(&dockerfile, "  RUN apk add --no-cache %s\n", strings.Join(sortedStringSet(install), " "))
 	}
-
+	if user != "" {
+		runCmds := []string{fmt.Sprintf("addgroup -S %s && adduser -S -G %s -h /home/%s %s", user, user, user, user)}
+		for _, userDir := range userDirs {
+			runCmds = append(runCmds, fmt.Sprintf("mkdir -p %s && chown -R %s:%s %s", userDir, user, user, userDir))
+		}
+		fmt.Fprintf(&dockerfile, "  RUN "+strings.Join(runCmds, " && ")+"\n")
+	}
 	for _, cmd := range run {
 		fmt.Fprintf(&dockerfile, "  RUN %s\n", cmd)
 	}
@@ -158,11 +168,6 @@ func doBuild(c *cli.Context) error {
 		fmt.Fprintf(&dockerfile, "  EXPOSE %s\n", strings.Join(sortedStringSet(expose), " "))
 	}
 	if user != "" {
-		runCmds := []string{fmt.Sprintf("addgroup -S %s && adduser -S -G %s -h /home/%s %s", user, user, user, user)}
-		for _, userDir := range userDirs {
-			runCmds = append(runCmds, fmt.Sprintf("mkdir -p %s && chown -R %s:%s %s", userDir, user, user, userDir))
-		}
-		fmt.Fprintf(&dockerfile, "  RUN "+strings.Join(runCmds, " && ")+"\n")
 		fmt.Fprintf(&dockerfile, "  USER %s\n", user)
 	}
 	fmt.Fprintf(&dockerfile, "  ENTRYPOINT [\"/sbin/tini\", \"--\", \"/usr/local/bin/%s\"]\n", path.Base(packages[0]))
@@ -184,7 +189,9 @@ func doBuild(c *cli.Context) error {
 
 	for _, importPath := range packages {
 		fmt.Printf("godockerize: Building Go binary %s...\n", path.Base(importPath))
-		cmd := exec.Command("go", "build", "-buildmode", "exe", "-tags", "dist", "-o", path.Base(importPath), importPath)
+		args := append([]string{"build"}, c.StringSlice("go-build-flags")...)
+		args = append(args, "-buildmode", "exe", "-tags", "dist", "-o", path.Base(importPath), importPath)
+		cmd := exec.Command("go", args...)
 		cmd.Dir = tmpdir
 		cmd.Env = []string{
 			"GOARCH=amd64",
@@ -210,11 +217,7 @@ func doBuild(c *cli.Context) error {
 	cmd.Dir = tmpdir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
 
 func sortedStringSet(in []string) []string {

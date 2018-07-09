@@ -1,19 +1,29 @@
 #!/bin/bash
-
-# This runs the latest version of server that has passed CI on the master branch
+# This runs a published server image.
 
 DATA=/tmp/sourcegraph
 
-echo -n "Do you want to delete $DATA and start clean? [Y/n] "
-read clean
+case $CLEAN in
+
+    "true")
+        clean=y
+        ;;
+    "false")
+        clean=n
+        ;;
+    *)
+        echo -n "Do you want to delete $DATA and start clean? [Y/n] "
+        read clean
+        ;;
+esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
     echo "deleting $DATA"
     rm -rf $DATA
 fi
 
-echo "pulling new docker image..."
 IMAGE=${IMAGE:-sourcegraph/server:insiders}
+echo "pulling docker image ${IMAGE}"
 docker pull $IMAGE
 
 echo "starting server..."

@@ -22,46 +22,52 @@ parts will be automated. You will need to complete four main steps.
 1.  Regenerate the site settings docs by running the last two commands mentioned under https://github.com/sourcegraph/website#documentation-pages
 1.  Create the PR on the website repository, but do not merge it yet.
 
-#### (2) Build a Sourcegraph Server Docker image
+#### (2) Test
 
-1.  Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
-1.  Update `../cmd/frontend/internal/app/pkg/updatecheck/handler.go`'s `ProductVersion` to the
-    semver version string of the new version (**DO NOT update `latestReleaseServerBuild` yet**).
-1.  Commit and `git push` this change directly to the `master` branch.
+1.  Run the latest container from a clean state:
 
-#### (3) Test the Sourcegraph Server Docker image
-
-1.  Wait for the build to complete [buildkite master](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=master)
-1.  `gcloud auth configure-docker && docker pull us.gcr.io/sourcegraph-dev/server:${CI_VERSION}`.
-    You can find it on the build output CI page in the last Docker build step, it should look something like
-    `08248_2017-12-14_8dad5ab`.
-1.  Run through the [https://about.sourcegraph.com/docs/server/], but using the
-    image you just pulled instead of the dockerhub image. Do this for both the
-    old and new instructions, to ensure we don't make any bad backwards
-    incompatible changes. In future this will be more automated. The `docker run` command you will use will look like:
-
-    ```bash
-    gcloud auth configure-docker && \
-    docker run \
-     --publish 7080:7080 --rm \
-     --volume $HOME/.sourcegraph/config:/etc/sourcegraph \
-     --volume $HOME/.sourcegraph/data:/var/opt/sourcegraph \
-     -v /var/run/docker.sock:/var/run/docker.sock \
-     us.gcr.io/sourcegraph-dev/server:08248_2017-12-14_8dad5ab
+    ```
+    CLEAN=true ./dev/run-server-image.sh
     ```
 
-1. `git tag` the commit used to build the image with `v$VERSION` (e.g., "2.9.3") and push this tag upstream.
+1.  Do some manual testing:
+    * Create admin account
+    * Add a repo
+    * Do a search
+    * Open a code file and see code intel working
+1.  Run the previous minor version (e.g. if releasing 2.9.0 then install 2.8.0) from a clean state:
 
-At this point if you've discovered an issue and plan to stop the release, you should inform everyone that there is an issue and not to do a release temporarily (e.g. in #dev-announce). You are responsible for completing the next release following these steps where you left off, or stating clearly to others where you left off in this process so that someone else can confidently continue.
+    ```
+    CLEAN=true IMAGE=sourcegraph/server:X.Y.0 ./dev/run-server-image.sh
+    ```
 
-#### (4) Completing the release
+1.  Do some manual testing to create state that we can ensure persists after the update:
+    * Create admin account
+    * Add a repo
+    * Do a search
+    * Open a code file and see code intel working
+1.  Stop the old container and run the new container without cleaning the data:
 
-It is important that the following steps be ran closely together, otherwise we will end up in an incomplete release state. DO NOT pause or otherwise stop once you begin the following steps.
+    ```
+    CLEAN=false ./dev/run-server-image.sh
+    ```
 
-1.  `docker tag us.gcr.io/sourcegraph-dev/server:CI_VERSION sourcegraph/server:VERSION`
-1.  `docker tag sourcegraph/server:VERSION sourcegraph/server:latest`
-1.  `docker push sourcegraph/server:VERSION`
-1.  `docker push sourcegraph/server:latest`
+1.  Verify that
+    * You don't need to recreate an admin account.
+    * The repo you added is still added.
+    * Search works.
+    * Code intelligence works.
+
+#### (3) Release the Sourcegraph Server Docker image
+
+```
+git fetch
+git tag vX.Y.Z origin/master
+git push --tags
+```
+
+#### (4) Update the public documentation
+
 1.  Merge the PR that you previously prepared to the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
 1.  Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
 1.  Update [CHANGELOG](../../CHANGELOG.md) and move any `Unreleased changes` under their own section for the new `VERSION` you have just released.
@@ -83,4 +89,4 @@ You are done! Sourcegraph Server version `VERSION` has been released!
     * Python: `git push origin master:docker-images/xlang-python`
     * Go: `git push origin master:docker-images/xlang-go`
 
-1. `./cmd/server/release-codeintel.sh $LANG $VERSION` e.g. `./cmd/server/release-codeintel.sh go 16903_2018-06-13_060942e`
+1.  `./cmd/server/release-codeintel.sh $LANG $VERSION` e.g. `./cmd/server/release-codeintel.sh go 16903_2018-06-13_060942e`
