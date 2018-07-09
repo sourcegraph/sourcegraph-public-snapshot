@@ -46,6 +46,10 @@ func main() {
 	}
 	gitserver.RegisterMetrics()
 
+	if err := gitserver.Migrate(); err != nil {
+		log.Fatal(err)
+	}
+
 	// Create Handler now since it also initializes state
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
 

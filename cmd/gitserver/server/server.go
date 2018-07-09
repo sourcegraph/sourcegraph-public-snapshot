@@ -168,6 +168,11 @@ func shortGitCommandSlow(args []string) time.Duration {
 // be run in the background.
 var longGitCommandTimeout = time.Hour
 
+// Migrate runs the migrations for s.ReposDir if needed.
+func (s *Server) Migrate() error {
+	return migrate(s.ReposDir)
+}
+
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
