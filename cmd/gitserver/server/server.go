@@ -993,7 +993,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string)
 
 	select {
 	case <-done:
-		return errors.Wrap(err, "repo "+string(repo)+":")
+		return errors.Wrapf(err, "repo %s:", repo)
 	case <-ctx.Done():
 		span.LogFields(otlog.String("event", "context canceled"))
 		return ctx.Err()
