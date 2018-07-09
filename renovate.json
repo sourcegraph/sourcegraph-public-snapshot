@@ -1,4 +1,10 @@
 {
   "extends": ["config:base", ":prNotPending", ":semanticCommitType(chore)", ":maintainLockFilesMonthly"],
-  "rangeStrategy": "bump"
+  "rangeStrategy": "bump",
+  "packageRules": [
+    {
+      "packagePatterns": ["^@types/"],
+      "automerge": true
+    }
+  ]
 }
