@@ -15,7 +15,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/juju/ratelimit"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -29,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
+	"golang.org/x/time/rate"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -41,8 +41,8 @@ var repoBlacklist = make(map[api.RepoURI]bool)
 var repoBlacklistXReferences = make(map[api.RepoURI]bool)
 
 var (
-	clientLimitReqSec      float64
-	clientLimitReqSecBurst int64
+	clientLimitReqSec      rate.Limit
+	clientLimitReqSecBurst int
 )
 
 func init() {
@@ -56,12 +56,12 @@ func init() {
 		repoBlacklistXReferences[api.RepoURI(r)] = true
 	}
 
-	var err error
-	clientLimitReqSec, err = strconv.ParseFloat(env.Get("CLIENT_LIMIT_REQ_SEC", "2", "The allowed requests a second before rate limiting. float"), 64)
+	clientLimitReqSecF, err := strconv.ParseFloat(env.Get("CLIENT_LIMIT_REQ_SEC", "2", "The allowed requests a second before rate limiting. float"), 64)
 	if err != nil {
 		log.Fatal("badly formatted CLIENT_LIMIT_REQ_SEC", err)
 	}
-	clientLimitReqSecBurst, err = strconv.ParseInt(env.Get("CLIENT_LIMIT_REQ_SEC_BURST", "50", "The maximum requests a second before rate limiting. int"), 10, 64)
+	clientLimitReqSec = rate.Limit(clientLimitReqSecF)
+	clientLimitReqSecBurst, err = strconv.Atoi(env.Get("CLIENT_LIMIT_REQ_SEC_BURST", "50", "The maximum requests a second before rate limiting. int"))
 	if err != nil {
 		log.Fatal("badly formatted CLIENT_LIMIT_REQ_SEC_BURST", err)
 	}
@@ -80,12 +80,12 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 
 		// requestLimiter rate is adjustable since reasonable values
 		// will likely change as our traffic patterns change.
-		requestLimiter: ratelimit.NewBucketWithRate(clientLimitReqSec, clientLimitReqSecBurst),
+		requestLimiter: rate.NewLimiter(clientLimitReqSec, clientLimitReqSecBurst),
 
 		// didOpenHoverLimiter is set at 1req/s. This should be more
 		// than enough for actual interactive document opens (and
 		// protect against non-interactive didOpen requests).
-		didOpenHoverLimiter: ratelimit.NewBucketWithRate(1, 1),
+		didOpenHoverLimiter: rate.NewLimiter(1, 1),
 	}
 	// jsonrpc2.NewConn spins up a goroutine to start dispatching messages
 	// to c.handle. As such we can race with c.conn being set and c.handle
@@ -289,9 +289,9 @@ type clientProxyConn struct {
 	id    clientID       // unique id for this connection
 
 	// requestLimiter is used to rate limit requests
-	requestLimiter *ratelimit.Bucket
+	requestLimiter *rate.Limiter
 	// didOpenHoverLimiter is used rate limit didOpens being converted to hovers.
-	didOpenHoverLimiter *ratelimit.Bucket
+	didOpenHoverLimiter *rate.Limiter
 
 	mu       sync.Mutex
 	context  contextID
@@ -348,7 +348,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 	// Enforce rate limiter only for requests. We can send a large amount
 	// of notifications in normal operation.
-	if !req.Notif && c.requestLimiter.TakeAvailable(1) != 1 {
+	if !req.Notif && !c.requestLimiter.Allow() {
 		clientRateLimited.Inc()
 		// This client is misbehaving rate limit wise, so we fail the request.
 		return nil, &jsonrpc2.Error{
@@ -583,7 +583,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// language servers are smart about immutable didOpen, but
 		// others may trigger overlay code / cache invalidation in the
 		// language server.
-		if c.didOpenHoverLimiter.TakeAvailable(1) != 1 {
+		if !c.didOpenHoverLimiter.Allow() {
 			// vscode sends didOpen for every result in a references result. If
 			// we send a fake hover for every didOpen it would overwhelm the
 			// language server. So we rate limit it to keep the normal perf
