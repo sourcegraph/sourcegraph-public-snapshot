@@ -181,7 +181,6 @@ func main() {
 			Cmd("gcloud auth configure-docker -q"),
 			Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
 		)
-		dockerLogin := Cmd("docker login -u sourcegraphci -p cf30a79c8783445f2141")
 		if latest {
 			cmds = append(cmds,
 				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", image, version, image)),
@@ -190,7 +189,6 @@ func main() {
 			if app == "server" {
 				cmds = append(cmds,
 					Cmd(fmt.Sprintf("docker tag %s:%s sourcegraph/server:insiders", image, version)),
-					dockerLogin,
 					Cmd("docker push sourcegraph/server:insiders"),
 				)
 			}
@@ -198,7 +196,6 @@ func main() {
 		if taggedRelease && app == "server" {
 			cmds = append(cmds,
 				Cmd(fmt.Sprintf("docker tag %s:%s sourcegraph/server:%s", image, version, version)),
-				dockerLogin,
 				Cmd("docker push sourcegraph/server:"+version),
 			)
 		}
