@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -60,6 +61,8 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 	if repoSlice != nil && repoChan != nil {
 		panic("unexpected args")
 	}
+	enqueued := 0
+	errors := 0
 
 	do := func(op repoCreateOrUpdateRequest) {
 		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op.RepoCreateOrUpdateRequest)
@@ -72,6 +75,7 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 		// the old code.
 		if NewScheduler() {
 			if createdRepo.Enabled {
+				enqueued++
 				Queue(ctx, createdRepo.URI, op.URL)
 			} else {
 				Dequeue(ctx, createdRepo.URI, op.URL)
@@ -84,12 +88,15 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 			isCloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, createdRepo.URI)
 			if err != nil {
 				log15.Warn("Error creating/checking local mirror repository for remote source repository", "repo", createdRepo.URI, "error", err)
+				errors++
 				return
 			}
 			log15.Debug("fetching repo", "repo", createdRepo.URI, "url", op.URL, "cloned", isCloned)
 			err = gitserver.DefaultClient.EnqueueRepoUpdateDeprecated(ctx, gitserver.Repo{Name: createdRepo.URI, URL: op.URL})
+			enqueued++
 			if err != nil {
 				log15.Warn("Error enqueueing Git clone/update for repository", "repo", op.RepoURI, "error", err)
+				errors++
 				return
 			}
 		}
@@ -100,6 +107,12 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 	}
 	for repo := range repoChan {
 		do(repo)
+	}
+	if honey.Enabled() {
+		ev := honey.Event("repo-updater")
+		ev.AddField("source", "create-enable-update-repos")
+		ev.AddField("fetches", enqueued)
+		ev.AddField("errors", errors)
 	}
 }
 

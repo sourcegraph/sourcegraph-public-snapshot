@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -121,7 +122,26 @@ type repoListStats struct {
 	autoQueue     int     // length of queue
 	knownRepos    int     // total number of repos known
 	loops         int     // number of times through main loop
+	errors        int     // errors encountered trying to do things
 	scale         float64 // the interval scale (repoList.intervalScale)
+}
+
+// Honey uses Honeycomb, if configured, to report the stats.
+func (s repoListStats) Honey() {
+	if !honey.Enabled() {
+		return
+	}
+	ev := honey.Event("repo-updater")
+	ev.AddField("source", "new-scheduler-stats")
+	ev.AddField("fetches", s.manualFetches+s.autoFetches)
+	ev.AddField("errors", s.errors)
+	ev.AddField("manual_fetches", s.manualFetches)
+	ev.AddField("auto_fetches", s.autoFetches)
+	ev.AddField("auto_queue", s.autoQueue)
+	ev.AddField("known_repos", s.knownRepos)
+	ev.AddField("loops", s.loops)
+	ev.AddField("scale", s.scale)
+	ev.Send()
 }
 
 // String() allows log15 to display the stats in an intelligble format.
@@ -403,6 +423,7 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
 // marked for periodic updates.
 func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateResponse, errP *error) {
 	resp := *respP
+	err := *errP
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.activeRequests--
@@ -418,6 +439,9 @@ func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateR
 	// a fetch attempt.
 	repo.manual = false
 	repo.fetchTime = now.Sub(repo.started)
+	if err != nil {
+		r.stats.errors++
+	}
 	if resp != nil {
 		if resp.QueueCap > 0 && resp.QueueCap != r.maxRequests {
 			log15.Warn("changing max requests to match gitserver", "old", r.maxRequests, "new", resp.QueueCap)
@@ -485,10 +509,12 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 			// Report some convenient stats.
 			r.stats.knownRepos = len(r.repos)
 			r.stats.scale = r.intervalScale
+			r.stats.Honey() // report also to Honeycomb
 			log15.Warn("update loop", "last", now.Sub(statTime), "stats", r.stats)
 			r.stats.manualFetches = 0
 			r.stats.autoFetches = 0
 			r.stats.loops = 0
+			r.stats.errors = 0
 			// Hourly updates.
 			nextStatTime = now.Add(60 * time.Minute)
 			statTime = now
@@ -656,13 +682,23 @@ func startRepositorySyncWorker(ctx context.Context, shutdown chan struct{}) {
 		}
 	}
 	for {
+		fetches := 0
+		errors := 0
 		for i, cfg := range configs {
 			log15.Debug("RunRepositorySyncWorker:updateRepo", "repoURL", cfg.Url, "ith", i, "total", len(configs))
 			err := updateRepo(ctx, cfg)
+			fetches++
 			if err != nil {
 				log15.Warn("error updating repo", "path", cfg.Path, "error", err)
+				errors++
 				continue
 			}
+		}
+		if honey.Enabled() {
+			ev := honey.Event("repo-updater")
+			ev.AddField("source", "repo-sync-worker")
+			ev.AddField("fetches", fetches)
+			ev.AddField("errors", errors)
 		}
 		repoListUpdateTime.Set(float64(time.Now().Unix()))
 		select {

@@ -31,6 +31,8 @@ func main() {
 
 	// Start up handler that frontend relies on
 	var repoupdater repoupdater.Server
+	// Log usage statistics
+	go repoupdater.RecordStats()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
 	log15.Info("repo-updater: listening", "addr", ":3182")
 	srv := &http.Server{Addr: ":3182", Handler: handler}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
@@ -13,12 +14,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Server is a repoupdater server.
-type Server struct{}
+type Server struct {
+	fetches int
+	errors  int
+	mu      sync.Mutex
+}
+
+// RecordStats logs activity data to Honeycomb if that's enabled.
+func (s *Server) RecordStats() {
+	if !honey.Enabled() {
+		return
+	}
+	tick := time.NewTicker(10 * time.Minute)
+	for _ = range tick.C {
+		ev := honey.Event("repo-updater")
+		ev.AddField("source", "server")
+		s.mu.Lock()
+		ev.AddField("fetches", s.fetches)
+		ev.AddField("errors", s.errors)
+		s.fetches = 0
+		s.errors = 0
+		s.mu.Unlock()
+		ev.Send()
+	}
+}
 
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
@@ -68,7 +93,13 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	err := gitserver.DefaultClient.EnqueueRepoUpdateDeprecated(r.Context(), gitserver.Repo{Name: req.Repo, URL: req.URL})
+	// It's bad form to insert things between the call and the error check, but we
+	// don't want to hold the mutex while a possibly-long thing happens.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.fetches++
 	if err != nil {
+		s.errors++
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
