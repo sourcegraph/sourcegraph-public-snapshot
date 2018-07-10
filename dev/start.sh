@@ -18,7 +18,7 @@ fi
 
 # Verify postgresql config.
 if ! psql -wc '\x' >/dev/null; then
-    echo "FAIL: postgreSQL config invalid or missing."
+    echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
     echo "You probably need, at least, PGUSER and PGPASSWORD set in the environment."
     exit 1
 fi
