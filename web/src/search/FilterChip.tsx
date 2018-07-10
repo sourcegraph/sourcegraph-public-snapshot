@@ -22,7 +22,7 @@ export class FilterChip extends React.PureComponent<Props> {
                     (this.isScopeSelected(this.props.query, this.props.value) ? ' filter-chip--selected' : '')
                 }
                 value={this.props.value}
-                data-tooltip={this.renderTooltip(this.props.value !== truncatedValue)}
+                title={this.renderTooltip(this.props.value !== truncatedValue)}
                 onMouseDown={this.onMouseDown}
                 onClick={this.onClick}
             >
@@ -45,7 +45,7 @@ export class FilterChip extends React.PureComponent<Props> {
         )
     }
 
-    private renderTooltip(valueIsTruncated: boolean): React.ReactNode {
+    private renderTooltip(valueIsTruncated: boolean): string | undefined {
         if (this.isScopeSelected(this.props.query, this.props.value)) {
             return 'Already added to query'
         }
@@ -53,7 +53,7 @@ export class FilterChip extends React.PureComponent<Props> {
         if (this.props.name || valueIsTruncated) {
             return this.props.value
         }
-        return null
+        return undefined
     }
 
     private isScopeSelected(query: string, scope: string): boolean {
