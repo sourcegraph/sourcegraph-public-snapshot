@@ -1,14 +1,25 @@
 #!/bin/bash
+GO_DIRS="cmd cxp dev pkg schema vendor xlang"
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
+
+dirs_starstar() {
+	for i; do echo "'$i/**/*.go'"; done
+}
+
+dirs_path() {
+	for i; do echo "-path $i"; done
+}
 
 useChokidar() {
 	echo >&2 "Using chokidar."
-	exec chokidar --silent "cmd/**/*.go" "pkg/**/*.go" "vendor/**/*.go" "cmd/frontend/internal/graphqlbackend/schema.graphql" "schema/*.json" -c "./dev/handle-change.sh {path}"
+	# eval so the expansion can produce quoted things, and eval can eat the
+	# quotes, so it doesn't try to expand wildcards.
+	eval exec chokidar --silent $(dirs_starstar $GO_DIRS) cmd/frontend/internal/graphqlbackend/schema.graphql "'schema/*.json'" -c "'./dev/handle-change.sh {path}'"
 }
 
 useInotifywrapper() {
 	echo >&2 "Using inotifywrapper."
-	exec dev/inotifywrapper/inotifywrapper -path vendor -path pkg -path cmd \
+	exec dev/inotifywrapper/inotifywrapper $(dirs_path $GO_DIRS) \
 		-match '\.go$' \
 		-match 'cmd/frontend/internal/graphqlbackend/schema\.graphql' \
 		-match 'schema/.*.json' \

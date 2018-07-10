@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -157,7 +156,6 @@ func main() {
 	flag.Var(&watchPaths, "path", "paths to watch")
 	flag.StringVar(&watchCmd, "cmd", "./dev/handle-change.sh", "command to run with matched paths")
 	flag.Parse()
-	fmt.Printf("wrapper: matches %s, paths %s\n", matchRegexes.String(), watchPaths.String())
 	if len(watchPaths) < 0 {
 		log.Fatal("must specify at least one path to watch [-path foo]")
 	}
