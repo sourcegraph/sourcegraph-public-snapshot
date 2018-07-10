@@ -44,12 +44,20 @@ func migrateGitDir(rootDir string) error {
 
 	return filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			return filepath.SkipDir
 		}
 
 		// We only care about directories
 		if !info.IsDir() {
 			return nil
+		}
+
+		// Take this opportunity to best-effort ensure our permissions aren't
+		// whack. We want to be able to rwx
+		// directories. https://github.com/sourcegraph/sourcegraph/issues/12234
+		if info.Mode()&0700 != 0700 {
+			os.Chmod(path, (info.Mode()&os.ModePerm)|0700)
 		}
 
 		// New style git directory layout
@@ -64,7 +72,8 @@ func migrateGitDir(rootDir string) error {
 			// HEAD doesn't exist, so keep recursing
 			return nil
 		} else if err != nil {
-			return err
+			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			return filepath.SkipDir
 		}
 
 		// path is an old style git repo since it contains HEAD. We need to do
@@ -80,17 +89,22 @@ func migrateGitDir(rootDir string) error {
 		middle := filepath.Join(tmp, filepath.Base(path))
 		log15.Info("migrating git clone location", "src", path, "dst", filepath.Join(path, ".git"))
 		if err := os.Mkdir(middle, os.ModePerm); err != nil {
-			return err
+			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			return filepath.SkipDir
 		}
+		// If something goes wrong, ensure we clean up the temporary location.
+		defer os.RemoveAll(middle)
 		if err := os.Rename(path, filepath.Join(middle, ".git")); err != nil {
-			return err
+			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			return filepath.SkipDir
 		}
 		if err := os.Rename(middle, path); err != nil {
 			// Failing here means we have renamed out the clone but not put it
-			// in place. Returning an error means we have lost the clone. This
-			// is fine since is should be rare and the clone is just a cache
-			// of the clone from the code host.
-			return err
+			// in place. So we have lost the clone. This is fine since is
+			// should be rare and the clone is just a cache of the clone from
+			// the code host.
+			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			return filepath.SkipDir
 		}
 
 		return filepath.SkipDir

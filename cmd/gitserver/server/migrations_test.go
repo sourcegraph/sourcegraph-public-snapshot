@@ -40,7 +40,15 @@ func TestMigrateGitDir(t *testing.T) {
 		// both possible locations
 		"example.gov/repo/HEAD",
 		"example.gov/repo/.git/HEAD",
+
+		// We will chmod the basedir so that HEAD can't be statted. This is to
+		// test that our migration doesn't fail due to
+		// it. https://github.com/sourcegraph/sourcegraph/issues/12234
+		"naughty.com/repo/HEAD",
 	)
+	if err := os.Chmod(filepath.Join(root, "naughty.com/repo"), 0400); err != nil {
+		t.Fatal(err)
+	}
 	if err := migrateGitDir(root); err != nil {
 		t.Fatal(err)
 	}
@@ -56,6 +64,8 @@ func TestMigrateGitDir(t *testing.T) {
 
 		"example.gov/repo/.git/HEAD",
 		"example.gov/repo/.git/.git/HEAD",
+
+		"naughty.com/repo/.git/HEAD",
 	)
 }
 
