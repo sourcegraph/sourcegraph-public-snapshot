@@ -121,7 +121,9 @@ func DeployType() string {
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
-	return "dev"
+	// Default to datacenter so that every Kubernetes deployment
+	// doesn't need to be configured with DEPLOY_TYPE.
+	return "datacenter"
 }
 
 // IsDataCenter tells if the given deployment type is "datacenter".
