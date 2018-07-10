@@ -9,6 +9,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * A once-off migration will run changing the layout of cloned repos on disk. This should only affect installations created January 2018 or before. There should be no user visible changes.
 * Experimental feature flag "updateScheduler" enables a smarter and less spammy algorithm for automatic repository updates.
 * It is no longer possible to disable code intelligence by unsetting the LSP_PROXY environment variable. Instead, code intelligence can be disabled per language on the site admin page (e.g. https://yoursourcegraph/site-admin/code-intelligence).
+* Bitbucket API requests made by Sourcegraph are now under a self-enforced API rate limit (since Bitbucket Server does not have a concept of rate limiting yet). This will reduce any chance of Sourcegraph slowing down or causing trouble for Bitbucket Server instances connected to it. The limits are: 7,200 total requests/hr, with a bucket size / maximum burst size of 500 requests.
 
 ### Added
 

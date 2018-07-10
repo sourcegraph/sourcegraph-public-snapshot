@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/time/rate"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -203,6 +204,20 @@ var bitbucketServerWorker = &worker{
 		for _, c := range bitbucketServerConnections.Get().([]*bitbucketServerConnection) {
 			go func(c *bitbucketServerConnection) {
 				for {
+					reservationTime := time.Now()
+					r := c.client.RateLimit.ReserveN(reservationTime, rateLimitReservationSize)
+					if !r.OK() {
+						log15.Error("Bitbucket worker cannot reserve requests. Is the maximum burst size lower than the reservation size?", "reservation_size", rateLimitReservationSize, "max_burst_size", rateLimitMaxBurstRequests)
+					}
+					delay := r.Delay()
+					// Since we're not actually planning to use the reservation, cancel it now.
+					// We only wanted to know the delay / availability of the reservation.
+					r.CancelAt(reservationTime)
+					if delay > time.Second {
+						log15.Warn("Bitbucket self-enforced API rate limit is almost exhausted. Waiting before doing more work", "delay", r.Delay())
+					}
+					time.Sleep(delay)
+
 					updateBitbucketServerRepos(ctx, c)
 					bitbucketServerUpdateTime.WithLabelValues(c.config.Url).Set(float64(time.Now().Unix()))
 					select {
@@ -250,6 +265,32 @@ func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnec
 	}
 }
 
+// These fields define the self-imposed Bitbucket rate limit (since Bitbucket Server does
+// not have a concept of rate limiting in HTTP response headers).
+//
+// See https://godoc.org/golang.org/x/time/rate#Limiter for an explanation of these fields.
+//
+// The limits chosen here are based on the following logic: Bitbucket Cloud restricts
+// "List all repositories" requests (which are a good portion of our requests) to 1,000/hr,
+// and they restrict "List a user or team's repositories" requests (which are roughly equal
+// to our repository lookup requests) to 1,000/hr. We peform a list repositories request
+// for every 100 repositories on Bitbucket every 1m by default, so for someone with 20,000
+// Bitbucket repositories we need 20,000/100 requests per minute (1200/hr) + overhead for
+// repository lookup requests by users. So we use a generous 7,200/hr here until we hear
+// from someone that these values do not work well for them.
+const (
+	rateLimitRequestsPerSecond = 2 // 120/min or 7200/hr
+	rateLimitMaxBurstRequests  = 500
+
+	// rateLimitReservationSize is the minimum number of requests (tokens in the bucket)
+	// that must be available for us to perform work without waiting first.
+	//
+	// We choose this number because each reservation lets us list 100 repositories, so
+	// having at least 250 lets us list 20,000 repositories and still have 50 API requests
+	// left-over to serve users.
+	rateLimitReservationSize = 250
+)
+
 func newBitbucketServerConnection(config *schema.BitbucketServerConnection) (*bitbucketServerConnection, error) {
 	baseURL, err := url.Parse(config.Url)
 	if err != nil {
@@ -270,8 +311,9 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection) (*bi
 			Username: config.Username,
 			Password: config.Password,
 			HTTPClient: &http.Client{
-				Transport: transport,
+				Transport: bitbucketserver.WithRequestCounter(transport),
 			},
+			RateLimit: rate.NewLimiter(rateLimitRequestsPerSecond, rateLimitMaxBurstRequests),
 		},
 	}, nil
 }

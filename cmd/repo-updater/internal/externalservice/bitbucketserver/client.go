@@ -7,12 +7,45 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/pkg/metrics"
 	"golang.org/x/net/context/ctxhttp"
+	"golang.org/x/time/rate"
 )
+
+var requestCounter = metrics.NewRequestCounter("bitbucket", "Total number of requests sent to the Bitbucket API.")
+
+// WithRequestCounter wraps the given transport with a request counter metric.
+func WithRequestCounter(transport http.RoundTripper) http.RoundTripper {
+	return requestCounter.Transport(transport, func(u *url.URL) string {
+		// API to URL mapping looks like this:
+		//
+		// 	Repo -> rest/api/1.0/profile/recent/repos%s
+		// 	Repos -> rest/api/1.0/projects/%s/repos/%s
+		// 	RecentRepos -> rest/api/1.0/repos%s
+		//
+		// We guess the category based on the fourth path component ("profile", "projects", "repos%s").
+		var category string
+		if parts := strings.SplitN(u.Path, "/", 3); len(parts) >= 4 {
+			category = parts[3]
+		}
+		switch {
+		case category == "profile":
+			return "Repo"
+		case category == "projects":
+			return "Repos"
+		case strings.HasPrefix(category, "repos"):
+			return "RecentRepos"
+		default:
+			// don't return category directly as that could introduce too much dimensionality
+			return "unknown"
+		}
+	})
+}
 
 // Client access a Bitbucket Server via the REST API.
 type Client struct {
@@ -30,7 +63,13 @@ type Client struct {
 
 	// HTTPClient is the client used to access Bitbucket Server. To enabled
 	// tracing, ensure the transport includes nethttp.Transport.
+	//
+	// To enable metrics, always wrap the Transport using WithRequestCounter.
 	HTTPClient *http.Client
+
+	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a concept
+	// of rate limiting in HTTP response headers).
+	RateLimit *rate.Limiter
 }
 
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
@@ -94,6 +133,9 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
+	if err := c.RateLimit.Wait(ctx); err != nil {
+		return err
+	}
 	resp, err := ctxhttp.Do(ctx, c.HTTPClient, req)
 	if err != nil {
 		return err
