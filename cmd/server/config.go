@@ -10,36 +10,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// readOrGenerateConfig supports the following cases:
-//
-// - There is an existing config file.
-// - There is a SOURCEGRAPH_CONFIG env var.
-// - There is neither a config file nor a SOURCEGRAPH_CONFIG env var.
-//
-// It returns the raw config JSON (which can have comments and trailing commas)
-// and whether the config is writable. Iff the SOURCEGRAPH_CONFIG env var is used,
-// the config is not writable.
-//
-// Any other case results in an error (such as having both a config file
-// and a SOURCEGRAPH_CONFIG env var). This is to avoid needing to merge configs
-// from multiple sources, which is complex because it's not clear which should
-// take precedence and how to edit it.
+// readOrGenerateConfig returns the raw config JSON (which can have comments and trailing commas).
+// If a config file doesn't already exist, it creates a default one.
+// It also returns if the config file is writable.
 func readOrGenerateConfig(path string) (configJSON string, writable bool, err error) {
 	fileData, err := ioutil.ReadFile(path)
 	if err != nil && !os.IsNotExist(err) {
 		return "", false, err
 	}
 	hasFile := err == nil
-
-	envData, hasEnvVar := os.LookupEnv("SOURCEGRAPH_CONFIG")
-
-	if hasFile && hasEnvVar {
-		return "", false, fmt.Errorf("multiple configuration sources are not allowed; use only one of SOURCEGRAPH_CONFIG and %s", path)
-	}
-
-	if hasEnvVar {
-		configJSON = envData
-	} else if hasFile {
+	if hasFile {
 		configJSON = string(fileData)
 		writable = true
 	} else {

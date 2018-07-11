@@ -223,22 +223,14 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 
 func (r *siteConfigurationResolver) CanUpdate() bool {
 	// We assume the is-admin check has already been performed before constructing
-	// our receiver, so we just need to check if the file itself is writable, not
-	// the viewer's authorization.
+	// our receiver.
 	//
-	// Also, we disallow updating if the site can't be auto-restarted.
-	return conf.IsWritable() && processrestart.CanRestart()
+	// Disallow updating if the site can't be auto-restarted.
+	return processrestart.CanRestart()
 }
 
 func (r *siteConfigurationResolver) Source() string {
-	if conf.FilePath() != "" {
-		s := conf.FilePath()
-		if !conf.IsWritable() {
-			s += " (read-only)"
-		}
-		return s
-	}
-	return "SOURCEGRAPH_CONFIG (environment variable)"
+	return conf.FilePath()
 }
 
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {

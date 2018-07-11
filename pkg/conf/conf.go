@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	configFilePath = os.Getenv("SOURCEGRAPH_CONFIG_FILE")
+	configFilePath string
 
 	rawMu sync.RWMutex
 	raw   string
@@ -108,6 +108,11 @@ var (
 )
 
 func init() {
+	configFilePath = os.Getenv("SOURCEGRAPH_CONFIG_FILE")
+	if configFilePath == "" {
+		configFilePath = "/etc/sourcegraph/config.json"
+	}
+
 	// Read configuration initially.
 	if err := initConfig(false); err != nil {
 		log.Fatalf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
@@ -155,14 +160,9 @@ func init() {
 }
 
 func readConfig() (string, error) {
-	v, ok := os.LookupEnv("SOURCEGRAPH_CONFIG")
-	if ok {
-		if configFilePath != "" {
-			return "", errors.New("Multiple configuration sources are not allowed. Use only one of SOURCEGRAPH_CONFIG and SOURCEGRAPH_CONFIG_FILE env vars.")
-		}
-		return v, nil
-	}
-	if configFilePath == "" {
+	_, disableConfig := os.LookupEnv("DISABLE_CONFIG")
+	if strings.HasSuffix(os.Args[0], ".test") || disableConfig {
+		// No config to load when running tests.
 		return "", nil
 	}
 	data, err := ioutil.ReadFile(configFilePath)
@@ -173,7 +173,6 @@ func readConfig() (string, error) {
 func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
 	var tmpConfig schema.SiteConfiguration
 
-	// SOURCEGRAPH_CONFIG takes lowest precedence.
 	if data != "" {
 		data, err := parseJSON(data)
 		if err != nil {
@@ -287,10 +286,6 @@ var doNotRequireRestart = []string{
 // Write writes the JSON configuration to the config file. If the file is unknown
 // or it's not editable, an error is returned.
 func Write(input string) error {
-	if !IsWritable() {
-		return errors.New("configuration is not writable")
-	}
-
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
 	after, err := parseConfig(input)
@@ -418,15 +413,9 @@ func AppendConfig(dest, src *schema.SiteConfiguration) *schema.SiteConfiguration
 	return dest
 }
 
-// IsWritable reports whether the config can be overwritten.
-func IsWritable() bool { return configFilePath != "" }
-
 // IsDirty reports whether the config has been changed since this process started.
 // This can occur when config is read from a file and the file has changed on disk.
 func IsDirty() bool {
-	if configFilePath == "" {
-		return false // env var config can't change
-	}
 	data, err := ioutil.ReadFile(configFilePath)
 	return err != nil || string(data) != raw
 }

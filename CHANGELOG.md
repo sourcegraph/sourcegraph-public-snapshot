@@ -13,6 +13,10 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+### Removed
+
+* `SOURCEGRAPH_CONFIG` environment variable has been removed. Site configuration is always read from and written to disk. You can configure the location by providing `SOURCEGRAPH_CONFIG_FILE`. The default path is `/etc/sourcegraph/config.json`.
+
 ## 2.9.3
 
 ### Changed
