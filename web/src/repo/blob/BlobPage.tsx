@@ -117,7 +117,10 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     map(props => pick(props, 'repoPath', 'commitID', 'filePath', 'isLightTheme')),
                     distinctUntilChanged((a, b) => isEqual(a, b))
                 ),
-                this.extendHighlightingTimeoutClicks.pipe(mapTo(true), startWith(false))
+                this.extendHighlightingTimeoutClicks.pipe(
+                    mapTo(true),
+                    startWith(false)
+                )
             )
                 .pipe(
                     tap(() => this.setState({ blobOrError: undefined })),

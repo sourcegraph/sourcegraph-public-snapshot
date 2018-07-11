@@ -179,7 +179,10 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         )
                         return merge(
                             result,
-                            of({ hoverOrError: LOADING }).pipe(delay(150), takeUntil(result)) // delay loading spinner to reduce jitter
+                            of({ hoverOrError: LOADING }).pipe(
+                                delay(150),
+                                takeUntil(result)
+                            ) // delay loading spinner to reduce jitter
                         ).pipe(
                             startWith<PartialStateUpdate>({ hoverOrError: undefined }) // clear old data immediately)
                         )

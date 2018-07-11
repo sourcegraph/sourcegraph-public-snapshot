@@ -37,14 +37,12 @@ export function webSocketSendLSPRequest(ctx: LSPContext, request?: LSPRequest): 
                     conn.onError(err => console.error(err))
 
                     const rootUri = `git://${ctx.repoPath}?${ctx.commitID}`
-                    conn
-                        .sendRequest(initialize, {
-                            rootUri,
-                            initializationOptions,
-                        } as InitializeParams)
-                        .then((initResult: InitializeResult) => {
-                            resolve({ conn, initializeResult: initResult })
-                        })
+                    conn.sendRequest(initialize, {
+                        rootUri,
+                        initializationOptions,
+                    } as InitializeParams).then((initResult: InitializeResult) => {
+                        resolve({ conn, initializeResult: initResult })
+                    })
                 },
             })
         })

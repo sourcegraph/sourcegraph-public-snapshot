@@ -61,7 +61,13 @@ export class RepositoryGraphOverviewPage extends React.PureComponent<Props, Stat
                             catchError(error => [error]),
                             map(c => ({ overviewOrError: c, loading: false } as PartialStateUpdate))
                         )
-                        return merge(result, of({ loading: true }).pipe(delay(250), takeUntil(result)))
+                        return merge(
+                            result,
+                            of({ loading: true }).pipe(
+                                delay(250),
+                                takeUntil(result)
+                            )
+                        )
                     })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))

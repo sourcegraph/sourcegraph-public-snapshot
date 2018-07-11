@@ -27,7 +27,10 @@ export class SourcegraphLicense extends React.Component<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.querySourcegraphLicense()
-                .pipe(catchError(err => [asError(err)]), map(v => ({ licenseOrError: v })))
+                .pipe(
+                    catchError(err => [asError(err)]),
+                    map(v => ({ licenseOrError: v }))
+                )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
     }

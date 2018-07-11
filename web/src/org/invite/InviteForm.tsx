@@ -164,22 +164,26 @@ export class InviteForm extends React.PureComponent<Props, State> {
                             tap(() => this.usernameChanges.next('')),
                             mergeMap(({ sentInvitationEmail, invitationURL }) =>
                                 // Reset email, reenable submit button, flash "invited" text
-                                of((state: State): State => ({
-                                    ...state,
-                                    loading: undefined,
-                                    error: undefined,
-                                    username: '',
-                                    invited: [
-                                        ...(state.invited || []),
-                                        { username, sentInvitationEmail, invitationURL },
-                                    ],
-                                }))
+                                of(
+                                    (state: State): State => ({
+                                        ...state,
+                                        loading: undefined,
+                                        error: undefined,
+                                        username: '',
+                                        invited: [
+                                            ...(state.invited || []),
+                                            { username, sentInvitationEmail, invitationURL },
+                                        ],
+                                    })
+                                )
                             ),
                             // Disable button while loading
-                            startWith<Update>((state: State): State => ({
-                                ...state,
-                                loading: 'inviteUserToOrganization',
-                            })),
+                            startWith<Update>(
+                                (state: State): State => ({
+                                    ...state,
+                                    loading: 'inviteUserToOrganization',
+                                })
+                            ),
                             catchError(error => [(state: State): State => ({ ...state, loading: undefined, error })])
                         )
                     )
@@ -200,18 +204,22 @@ export class InviteForm extends React.PureComponent<Props, State> {
                             tap(() => this.usernameChanges.next('')),
                             mergeMap(() =>
                                 // Reset email, reenable submit button, flash "invited" text
-                                of((state: State): State => ({
-                                    ...state,
-                                    loading: undefined,
-                                    error: undefined,
-                                    username: '',
-                                }))
+                                of(
+                                    (state: State): State => ({
+                                        ...state,
+                                        loading: undefined,
+                                        error: undefined,
+                                        username: '',
+                                    })
+                                )
                             ),
                             // Disable button while loading
-                            startWith<Update>((state: State): State => ({
-                                ...state,
-                                loading: 'addUserToOrganization',
-                            })),
+                            startWith<Update>(
+                                (state: State): State => ({
+                                    ...state,
+                                    loading: 'addUserToOrganization',
+                                })
+                            ),
                             catchError(error => [(state: State): State => ({ ...state, loading: undefined, error })])
                         )
                     )

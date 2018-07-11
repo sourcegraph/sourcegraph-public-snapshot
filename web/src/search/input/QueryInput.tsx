@@ -161,7 +161,10 @@ export class QueryInput extends React.Component<Props, State> {
                         return merge(
                             suggestionsFetch,
                             // Show a loader if the fetch takes longer than 100ms
-                            of({ loading: true }).pipe(delay(100), takeUntil(suggestionsFetch))
+                            of({ loading: true }).pipe(
+                                delay(100),
+                                takeUntil(suggestionsFetch)
+                            )
                         )
                     }),
                     // Abort suggestion display on route change or suggestion hiding

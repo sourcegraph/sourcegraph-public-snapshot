@@ -86,11 +86,17 @@ export class RepoContainer extends React.Component<Props, State> {
         )
 
         // Fetch repository.
-        const repositoryChanges = parsedRouteChanges.pipe(map(({ repoPath }) => repoPath), distinctUntilChanged())
+        const repositoryChanges = parsedRouteChanges.pipe(
+            map(({ repoPath }) => repoPath),
+            distinctUntilChanged()
+        )
         this.subscriptions.add(
             merge(
                 repositoryChanges,
-                this.repositoryAdds.pipe(withLatestFrom(repositoryChanges), map(([, repoPath]) => repoPath))
+                this.repositoryAdds.pipe(
+                    withLatestFrom(repositoryChanges),
+                    map(([, repoPath]) => repoPath)
+                )
             )
                 .pipe(
                     tap(() => this.setState({ repoOrError: undefined })),

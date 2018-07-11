@@ -53,7 +53,13 @@ export class BlameLine extends React.Component<BlameLineProps, BlameLineState> {
                             line: props.line,
                         }).pipe(catchError((error): ErrorLike[] => [asError(error)]))
 
-                        return merge(blameFetch, of(LOADING).pipe(delay(LOADER_DELAY), takeUntil(blameFetch)))
+                        return merge(
+                            blameFetch,
+                            of(LOADING).pipe(
+                                delay(LOADER_DELAY),
+                                takeUntil(blameFetch)
+                            )
+                        )
                     })
                 )
                 .subscribe(hunksOrError => {

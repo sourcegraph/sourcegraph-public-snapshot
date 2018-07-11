@@ -91,7 +91,10 @@ export class FileLocations extends React.PureComponent<Props, State> {
         const refreshRequests = new Subject<void>()
 
         // Changes to the query callback function.
-        const queryFuncChanges = this.componentUpdates.pipe(map(({ query }) => query), distinctUntilChanged())
+        const queryFuncChanges = this.componentUpdates.pipe(
+            map(({ query }) => query),
+            distinctUntilChanged()
+        )
 
         // Force updates from parent component.
         if (this.props.updates) {
@@ -116,7 +119,10 @@ export class FileLocations extends React.PureComponent<Props, State> {
 
                         return merge(
                             result,
-                            of({ loading: true }).pipe(delay(50), takeUntil(result)) // delay loading spinner to reduce jitter
+                            of({ loading: true }).pipe(
+                                delay(50),
+                                takeUntil(result)
+                            ) // delay loading spinner to reduce jitter
                         ).pipe(
                             startWith<PartialStateUpdate>({ locationsOrError: undefined, loading: false }) // clear old data immediately
                         )
@@ -214,11 +220,13 @@ function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[])
             url: toRepoURL(p.repoPath),
         },
         limitHit: false,
-        lineMatches: refs.map((ref): ILineMatch => ({
-            preview: '',
-            limitHit: false,
-            lineNumber: ref.range.start.line,
-            offsetAndLengths: [[ref.range.start.character, ref.range.end.character - ref.range.start.character]],
-        })),
+        lineMatches: refs.map(
+            (ref): ILineMatch => ({
+                preview: '',
+                limitHit: false,
+                lineNumber: ref.range.start.line,
+                offsetAndLengths: [[ref.range.start.character, ref.range.end.character - ref.range.start.character]],
+            })
+        ),
     }
 }

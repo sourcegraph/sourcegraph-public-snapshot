@@ -54,15 +54,24 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         const componentUpdates = this.componentUpdates.pipe(startWith(this.props))
 
         this.subscriptions.add(
-            componentUpdates.pipe(map(props => props.readOnly), distinctUntilChanged()).subscribe(readOnly => {
-                if (this.editor) {
-                    this.editor.updateOptions({ readOnly })
-                }
-            })
+            componentUpdates
+                .pipe(
+                    map(props => props.readOnly),
+                    distinctUntilChanged()
+                )
+                .subscribe(readOnly => {
+                    if (this.editor) {
+                        this.editor.updateOptions({ readOnly })
+                    }
+                })
         )
         this.subscriptions.add(
             componentUpdates
-                .pipe(map(props => props.isLightTheme), distinctUntilChanged(), map(isLightThemeToMonacoTheme))
+                .pipe(
+                    map(props => props.isLightTheme),
+                    distinctUntilChanged(),
+                    map(isLightThemeToMonacoTheme)
+                )
                 .subscribe(monacoTheme => {
                     if (this.monaco) {
                         this.monaco.editor.setTheme(monacoTheme)

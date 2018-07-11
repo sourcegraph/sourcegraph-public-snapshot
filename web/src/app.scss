@@ -44,7 +44,9 @@ $warning: $yellow;
 $danger: $red;
 $secondary-light: $gray-01;
 
-$theme-colors-light: ('secondary': $secondary-light);
+$theme-colors-light: (
+    'secondary': $secondary-light,
+);
 
 :root {
     --primary: #{$primary};

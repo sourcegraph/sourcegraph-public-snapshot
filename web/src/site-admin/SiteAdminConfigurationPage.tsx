@@ -95,7 +95,12 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     mergeMap(() =>
                         // wait for server to restart
                         fetchSite().pipe(
-                            retryWhen(x => x.pipe(tap(() => this.forceUpdate()), delay(500))),
+                            retryWhen(x =>
+                                x.pipe(
+                                    tap(() => this.forceUpdate()),
+                                    delay(500)
+                                )
+                            ),
                             timeout(5000)
                         )
                     ),

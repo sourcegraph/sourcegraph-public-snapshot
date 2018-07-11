@@ -99,8 +99,7 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                         submitOrError: new Error('Too many password reset requests. Try again in a few minutes.'),
                     })
                 } else {
-                    resp
-                        .text()
+                    resp.text()
                         .catch(err => null)
                         .then(text => this.setState({ submitOrError: new Error(text || 'Unknown error') }))
                         .catch(err => console.error(err))

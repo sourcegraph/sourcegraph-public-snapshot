@@ -56,12 +56,13 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
     private disableButtonClicks = new Subject<GQL.ILangServer>()
     private enableButtonClicks = new Subject<GQL.ILangServer>()
 
-    private EXPERIMENTAL_LANGUAGE_SERVER_WARNING = 'This language server is experimental and under active development. ' +
-    'Be aware that it may run arbitrary code through the package manager ' +
-    'during dependency installation for each repository. Some extensions ' +
-    'to the language server protocol such as cross-repository code ' +
-    'intelligence might not be available. Are you sure you want to ' +
-    'enable it?'
+    private EXPERIMENTAL_LANGUAGE_SERVER_WARNING =
+        'This language server is experimental and under active development. ' +
+        'Be aware that it may run arbitrary code through the package manager ' +
+        'during dependency installation for each repository. Some extensions ' +
+        'to the language server protocol such as cross-repository code ' +
+        'intelligence might not be available. Are you sure you want to ' +
+        'enable it?'
 
     public componentDidMount(): void {
         this.subscriptions.add(

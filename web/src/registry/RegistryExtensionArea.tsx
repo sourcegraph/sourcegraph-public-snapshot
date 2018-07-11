@@ -81,10 +81,16 @@ export class RegistryExtensionArea extends React.Component<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const routeMatchChanges = this.componentUpdates.pipe(map(({ match }) => match.params), distinctUntilChanged())
+        const routeMatchChanges = this.componentUpdates.pipe(
+            map(({ match }) => match.params),
+            distinctUntilChanged()
+        )
 
         // Changes to the route-matched extension ID.
-        const extensionIDChanges = routeMatchChanges.pipe(map(({ extensionID }) => extensionID), distinctUntilChanged())
+        const extensionIDChanges = routeMatchChanges.pipe(
+            map(({ extensionID }) => extensionID),
+            distinctUntilChanged()
+        )
 
         // Changes to the global extensions settings.
         const globalExtensionsSettingsChanges = this.componentUpdates.pipe(

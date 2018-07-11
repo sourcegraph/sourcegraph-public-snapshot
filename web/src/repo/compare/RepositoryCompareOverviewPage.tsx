@@ -109,7 +109,10 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                                 repo: repo.id,
                                 base: base.rev || null,
                                 head: head.rev || null,
-                            }).pipe(catchError(error => [error]), map(c => ({ rangeOrError: c } as PartialStateUpdate)))
+                            }).pipe(
+                                catchError(error => [error]),
+                                map(c => ({ rangeOrError: c } as PartialStateUpdate))
+                            )
                         )
                     })
                 )

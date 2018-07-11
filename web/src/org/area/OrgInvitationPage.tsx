@@ -42,7 +42,10 @@ export class OrgInvitationPage extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         eventLogger.logViewEvent('OrgInvitation')
 
-        const orgChanges = this.componentUpdates.pipe(distinctUntilKeyChanged('org'), map(({ org }) => org))
+        const orgChanges = this.componentUpdates.pipe(
+            distinctUntilKeyChanged('org'),
+            map(({ org }) => org)
+        )
 
         this.subscriptions.add(
             this.responses

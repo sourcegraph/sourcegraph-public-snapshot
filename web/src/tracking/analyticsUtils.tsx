@@ -24,7 +24,10 @@ export const browserExtensionMessageReceived = (document.getElementById('sourceg
     ? // If the marker exists, the extension is installed
       of(true)
     : // If not, listen for a registration event
-      fromEvent<CustomEvent>(document, 'sourcegraph:browser-extension-registration').pipe(take(1), mapTo(true))
+      fromEvent<CustomEvent>(document, 'sourcegraph:browser-extension-registration').pipe(
+          take(1),
+          mapTo(true)
+      )
 ).pipe(
     // Replay the same latest value for every subscriber
     publishReplay(1),

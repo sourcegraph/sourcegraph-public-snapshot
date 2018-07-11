@@ -46,7 +46,10 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             querySiteConfigDeprecatedSettings()
-                .pipe(catchError(error => [error]), map(c => ({ deprecatedSettingsOrError: c })))
+                .pipe(
+                    catchError(error => [error]),
+                    map(c => ({ deprecatedSettingsOrError: c }))
+                )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
     }

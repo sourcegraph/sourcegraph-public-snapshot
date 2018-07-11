@@ -38,8 +38,7 @@ export class Sparkline extends React.PureComponent<Props, State> {
 
         const strokeColor = this.props.isLightTheme ? '#cad2e2' : '#566e9f'
 
-        svg
-            .append('path')
+        svg.append('path')
             .datum(data)
             .attr('fill', 'none')
             .attr('stroke', strokeColor)
@@ -50,8 +49,7 @@ export class Sparkline extends React.PureComponent<Props, State> {
             .attr('width', width)
             .attr('height', height / 2)
             .attr('overflow', 'visible')
-        svg
-            .append('circle')
+        svg.append('circle')
             .attr('fill', strokeColor)
             .attr('cx', x(data.length - 1))
             .attr('cy', y(data[data.length - 1]))

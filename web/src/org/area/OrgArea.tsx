@@ -110,7 +110,10 @@ export class OrgArea extends React.Component<Props> {
 
     public componentDidMount(): void {
         // Changes to the route-matched org name.
-        const nameChanges = this.routeMatchChanges.pipe(map(({ name }) => name), distinctUntilChanged())
+        const nameChanges = this.routeMatchChanges.pipe(
+            map(({ name }) => name),
+            distinctUntilChanged()
+        )
 
         // Fetch organization.
         this.subscriptions.add(

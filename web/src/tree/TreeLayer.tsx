@@ -96,8 +96,17 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             commitID: props.commitID,
                             filePath: props.parentPath || '',
                             first: maxEntries,
-                        }).pipe(catchError(err => [asError(err)]), share())
-                        return merge(treeFetch, of(LOADING).pipe(delay(300), takeUntil(treeFetch)))
+                        }).pipe(
+                            catchError(err => [asError(err)]),
+                            share()
+                        )
+                        return merge(
+                            treeFetch,
+                            of(LOADING).pipe(
+                                delay(300),
+                                takeUntil(treeFetch)
+                            )
+                        )
                     })
                 )
                 .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))

@@ -27,7 +27,10 @@ export class SiteAdminCodeIntelligencePage extends React.PureComponent<{}, State
 
         this.subscriptions.add(
             this.queryLanguageServerManagementStatus()
-                .pipe(catchError(err => [asError(err)]), map(v => ({ statusOrError: v })))
+                .pipe(
+                    catchError(err => [asError(err)]),
+                    map(v => ({ statusOrError: v }))
+                )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))
         )
     }

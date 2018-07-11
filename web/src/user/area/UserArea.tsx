@@ -116,7 +116,10 @@ export class UserArea extends React.Component<Props> {
 
     public componentDidMount(): void {
         // Changes to the route-matched username.
-        const usernameChanges = this.routeMatchChanges.pipe(map(({ username }) => username), distinctUntilChanged())
+        const usernameChanges = this.routeMatchChanges.pipe(
+            map(({ username }) => username),
+            distinctUntilChanged()
+        )
 
         // Fetch user.
         this.subscriptions.add(

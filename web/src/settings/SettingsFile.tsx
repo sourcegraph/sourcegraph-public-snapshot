@@ -68,7 +68,11 @@ export class SettingsFile extends React.PureComponent<Props, State> {
 
         // Reset state upon navigation to a different subject.
         this.componentUpdates
-            .pipe(startWith(props), map(({ settings }) => settings), distinctUntilChanged())
+            .pipe(
+                startWith(props),
+                map(({ settings }) => settings),
+                distinctUntilChanged()
+            )
             .subscribe(settings => {
                 if (this.state.contents !== undefined) {
                     this.setState({ contents: undefined })

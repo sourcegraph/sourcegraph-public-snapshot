@@ -82,7 +82,10 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
         const refreshRequests = new Subject<void>()
 
         // Changes to the query callback function.
-        const queryFuncChanges = this.componentUpdates.pipe(map(({ query }) => query), distinctUntilChanged())
+        const queryFuncChanges = this.componentUpdates.pipe(
+            map(({ query }) => query),
+            distinctUntilChanged()
+        )
 
         // Force updates from parent component.
         if (this.props.updates) {
@@ -107,7 +110,10 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
 
                         return merge(
                             result,
-                            of({ loading: true }).pipe(delay(50), takeUntil(result)) // delay loading spinner to reduce jitter
+                            of({ loading: true }).pipe(
+                                delay(50),
+                                takeUntil(result)
+                            ) // delay loading spinner to reduce jitter
                         ).pipe(startWith<PartialStateUpdate>({ locationsOrError: undefined, loading: false })) // clear old data immediately
                     })
                 )

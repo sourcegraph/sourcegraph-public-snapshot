@@ -63,7 +63,10 @@ export class SettingsArea extends React.Component<Props, State> {
                 .pipe(
                     distinctUntilChanged(),
                     switchMap(([{ id }]) =>
-                        fetchSettings(id).pipe(catchError(error => [error]), map(c => ({ settingsOrError: c })))
+                        fetchSettings(id).pipe(
+                            catchError(error => [error]),
+                            map(c => ({ settingsOrError: c }))
+                        )
                     )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), err => console.error(err))

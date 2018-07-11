@@ -57,11 +57,13 @@ export const DiscussionsInput = reactive<Props>(props => {
 
     return merge(
         props.pipe(
-            map(({ submitLabel, noTitle }): Update => state => ({
-                ...state,
-                submitLabel,
-                noTitle,
-            }))
+            map(
+                ({ submitLabel, noTitle }): Update => state => ({
+                    ...state,
+                    submitLabel,
+                    noTitle,
+                })
+            )
         ),
 
         titleInputChanges.pipe(map((titleInputValue): Update => state => ({ ...state, titleInputValue }))),
@@ -81,16 +83,20 @@ export const DiscussionsInput = reactive<Props>(props => {
                 of<Update>(state => ({ ...state, submitting: true })).pipe(
                     concat(
                         props.onSubmit(titleInputValue, textAreaValue).pipe(
-                            map((): Update => state => ({
-                                ...state,
-                                submitting: false,
-                                titleInputValue: '',
-                                textAreaValue: '',
-                            })),
-                            catchError((error): Update[] => {
-                                console.error(error)
-                                return [state => ({ ...state, error, submitting: false })]
-                            })
+                            map(
+                                (): Update => state => ({
+                                    ...state,
+                                    submitting: false,
+                                    titleInputValue: '',
+                                    textAreaValue: '',
+                                })
+                            ),
+                            catchError(
+                                (error): Update[] => {
+                                    console.error(error)
+                                    return [state => ({ ...state, error, submitting: false })]
+                                }
+                            )
                         )
                     )
                 )
@@ -112,15 +118,19 @@ export const DiscussionsInput = reactive<Props>(props => {
                 of<Update>(state => ({ ...state, previewHTML: undefined, previewLoading: true })).pipe(
                     concat(
                         renderMarkdown(textAreaValue).pipe(
-                            map((previewHTML): Update => state => ({
-                                ...state,
-                                previewHTML,
-                                previewLoading: false,
-                            })),
-                            catchError((error): Update[] => {
-                                console.error(error)
-                                return [state => ({ ...state, error, previewLoading: false })]
-                            })
+                            map(
+                                (previewHTML): Update => state => ({
+                                    ...state,
+                                    previewHTML,
+                                    previewLoading: false,
+                                })
+                            ),
+                            catchError(
+                                (error): Update[] => {
+                                    console.error(error)
+                                    return [state => ({ ...state, error, previewLoading: false })]
+                                }
+                            )
                         )
                     )
                 )
