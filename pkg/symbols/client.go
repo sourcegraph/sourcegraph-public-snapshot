@@ -23,7 +23,7 @@ import (
 	"golang.org/x/net/context/ctxhttp"
 )
 
-var symbolsURL = env.Get("SYMBOLS_URL", "http://symbols:3184", "symbols service URL")
+var symbolsURL = env.Get("SYMBOLS_URL", "k8s+http://symbols:3184", "symbols service URL")
 
 // DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
 // SYMBOLS_URL environment variable.
