@@ -99,6 +99,10 @@ type Server struct {
 	// ReposDir is the path to the base directory for gitserver storage.
 	ReposDir string
 
+	// DeleteStaleRepositories when true will delete old repositories when the
+	// Janitor job runs.
+	DeleteStaleRepositories bool
+
 	// ctx is the context we use for all background jobs. It is done when the
 	// server is stopped. Do not directly call this, rather call
 	// Server.context()
@@ -180,11 +184,6 @@ func shortGitCommandSlow(args []string) time.Duration {
 // be run in the background.
 var longGitCommandTimeout = time.Hour
 
-// Migrate runs the migrations for s.ReposDir if needed.
-func (s *Server) Migrate() error {
-	return migrate(s.ReposDir)
-}
-
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
@@ -223,6 +222,18 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
 	return mux
+}
+
+// Janitor does clean up tasks over s.ReposDir.
+func (s *Server) Janitor() {
+	// We may have clones which do not live in a directory named .git. Move
+	// them.
+	migrateGitDir(s.ReposDir, s.locker)
+
+	// Sourcegraph.com we periodically delete unused repositories.
+	if s.DeleteStaleRepositories {
+		s.cleanupRepos()
+	}
 }
 
 // Stop cancels the running background jobs and returns when done.

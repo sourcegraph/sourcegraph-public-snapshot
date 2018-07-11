@@ -10,17 +10,6 @@ import (
 	"testing"
 )
 
-func TestMigrate(t *testing.T) {
-	empty, cleanup := tmpDir(t)
-	defer cleanup()
-
-	// Empty should only create the manifest
-	migrate(empty)
-	assertFiles(t, empty, "gitserver.json")
-	migrate(empty) // no-op
-	assertFiles(t, empty, "gitserver.json")
-}
-
 func TestMigrateGitDir(t *testing.T) {
 	root, cleanup := tmpDir(t)
 	defer cleanup()
@@ -49,9 +38,7 @@ func TestMigrateGitDir(t *testing.T) {
 	if err := os.Chmod(filepath.Join(root, "naughty.com/repo"), 0400); err != nil {
 		t.Fatal(err)
 	}
-	if err := migrateGitDir(root); err != nil {
-		t.Fatal(err)
-	}
+	migrateGitDir(root, &RepositoryLocker{})
 	assertFiles(t, root,
 		"github.com/foo/bar/.git/HEAD",
 		"github.com/foo/baz/.git/HEAD",

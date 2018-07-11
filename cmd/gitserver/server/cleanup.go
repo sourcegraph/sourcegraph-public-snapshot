@@ -41,9 +41,9 @@ var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
 	Help:      "number of repos removed and recloned due to age",
 })
 
-// CleanupRepos walks the repos directory and removes repositories that haven't been updated
+// cleanupRepos walks the repos directory and removes repositories that haven't been updated
 // within a certain amount of time.
-func (s *Server) CleanupRepos() {
+func (s *Server) cleanupRepos() {
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
 

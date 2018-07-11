@@ -26,7 +26,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-const repoCleanupInterval = 24 * time.Hour
+const janitorInterval = 24 * time.Hour
 
 var (
 	reposDir          = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
@@ -46,27 +46,22 @@ func main() {
 	}
 
 	gitserver := server.Server{
-		ReposDir: reposDir,
+		ReposDir:                reposDir,
+		DeleteStaleRepositories: runRepoCleanup,
 	}
 	gitserver.RegisterMetrics()
-
-	if err := gitserver.Migrate(); err != nil {
-		log.Fatal(err)
-	}
 
 	// Create Handler now since it also initializes state
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())
 
 	go debugserver.Start()
 
-	if runRepoCleanup {
-		go func() {
-			for {
-				gitserver.CleanupRepos()
-				time.Sleep(repoCleanupInterval)
-			}
-		}()
-	}
+	go func() {
+		for {
+			gitserver.Janitor()
+			time.Sleep(janitorInterval)
+		}
+	}()
 
 	log15.Info("git-server: listening", "addr", ":3178")
 	srv := &http.Server{Addr: ":3178", Handler: handler}

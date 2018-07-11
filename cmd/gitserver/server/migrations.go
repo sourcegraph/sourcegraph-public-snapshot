@@ -1,48 +1,22 @@
 package server
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"github.com/pkg/errors"
 )
 
-// migrate runs any missing migrations for gitserver rootDir. This should be
-// done before the server starts accepting requests or does background jobs.
-//
-// Migrations:
-// 1. Old directory structure to .git directory structure.
-func migrate(rootDir string) error {
-	mf, err := loadManifest(rootDir)
-	if err != nil {
-		return err
-	}
-
-	// No migration needed
-	if mf.Version == 1 {
-		return nil
-	}
-
-	if err := migrateGitDir(rootDir); err != nil {
-		return errors.Wrap(err, "failed to migrate to .git based directory structure")
-	}
-	mf.Version = 1
-
-	return storeManifest(mf, rootDir)
-}
-
-func migrateGitDir(rootDir string) error {
+func migrateGitDir(rootDir string, locker *RepositoryLocker) {
 	tmp, err := ioutil.TempDir(rootDir, "migrate-git-dir-")
 	if err != nil {
-		return err
+		log15.Warn("git clone location migration failed", "error", err)
+		return
 	}
 	defer os.RemoveAll(tmp)
 
-	return filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
 			return filepath.SkipDir
@@ -75,6 +49,13 @@ func migrateGitDir(rootDir string) error {
 			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
 			return filepath.SkipDir
 		}
+
+		lock, ok := locker.TryAcquire(path, "migrating repository clone")
+		if !ok {
+			log15.Warn("failed to acquire directory lock in git clone location migration", "path", path)
+			return filepath.SkipDir
+		}
+		defer lock.Release()
 
 		// path is an old style git repo since it contains HEAD. We need to do
 		// two renames to end up in the new directory layout since it is a
@@ -109,46 +90,8 @@ func migrateGitDir(rootDir string) error {
 
 		return filepath.SkipDir
 	})
-}
 
-// manifestName is the name of the manifest file present in the root of a gitserver DataDir
-const manifestName = "gitserver.json"
-
-// manifest holds manifest file data for gitserver.
-type manifest struct {
-	// Version is a number used to track the manifest and gitserver layout.
-	//
-	// 0. No manifest
-	// 1. Added manifest and migrated directories
-	Version int
-}
-
-// loadManifest loads the manifest for rootDir. If missing it returns an empty
-// Manifest (version 0).
-func loadManifest(rootDir string) (*manifest, error) {
-	b, err := ioutil.ReadFile(filepath.Join(rootDir, manifestName))
 	if err != nil {
-		if os.IsNotExist(err) {
-			return &manifest{}, nil
-		}
-		return nil, errors.Wrap(err, "failed to open gitserver manifest")
+		log15.Warn("git clone location migration failed", "error", err)
 	}
-
-	var m manifest
-	if err := json.Unmarshal(b, &m); err != nil {
-		return nil, errors.Wrap(err, "failed to parse gitserver manifest")
-	}
-	return &m, nil
-}
-
-// storeManifest marshalls to disk the manifest for rootDir.
-func storeManifest(m *manifest, rootDir string) error {
-	b, err := json.MarshalIndent(m, "", "  ")
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal gitserver manifest")
-	}
-	if err := ioutil.WriteFile(filepath.Join(rootDir, manifestName), b, os.ModePerm); err != nil {
-		return errors.Wrap(err, "failed to write gitserver manifest")
-	}
-	return nil
 }

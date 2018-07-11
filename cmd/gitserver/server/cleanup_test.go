@@ -24,17 +24,13 @@ func TestCleanupInactive(t *testing.T) {
 	}
 	defer os.RemoveAll(root)
 
-	repoA := path.Join(root, testRepoA)
-	os.Mkdir(repoA, os.ModePerm)
-	cmd := exec.Command("git", "--bare", "init")
-	cmd.Dir = repoA
+	repoA := path.Join(root, testRepoA, ".git")
+	cmd := exec.Command("git", "--bare", "init", repoA)
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	repoB := path.Join(root, testRepoB)
-	os.Mkdir(repoB, os.ModePerm)
-	cmd = exec.Command("git", "--bare", "init")
-	cmd.Dir = repoB
+	repoB := path.Join(root, testRepoB, ".git")
+	cmd = exec.Command("git", "--bare", "init", repoB)
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +41,7 @@ func TestCleanupInactive(t *testing.T) {
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.CleanupRepos()
+	s.cleanupRepos()
 
 	if _, err := os.Stat(repoA); os.IsNotExist(err) {
 		t.Error("expected repoA not to be removed")
@@ -62,24 +58,18 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	defer os.RemoveAll(root)
 
-	repoA := path.Join(root, testRepoA)
-	os.Mkdir(repoA, os.ModePerm)
-	cmd := exec.Command("git", "--bare", "init")
-	cmd.Dir = repoA
+	repoA := path.Join(root, testRepoA, ".git")
+	cmd := exec.Command("git", "--bare", "init", repoA)
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	repoB := path.Join(root, testRepoB)
-	os.Mkdir(repoB, os.ModePerm)
-	cmd = exec.Command("git", "--bare", "init")
-	cmd.Dir = repoB
+	repoB := path.Join(root, testRepoB, ".git")
+	cmd = exec.Command("git", "--bare", "init", repoB)
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
-	remote := path.Join(root, testRepoC)
-	os.Mkdir(remote, os.ModePerm)
-	cmd = exec.Command("git", "--bare", "init")
-	cmd.Dir = remote
+	remote := path.Join(root, testRepoC, ".git")
+	cmd = exec.Command("git", "--bare", "init", remote)
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
@@ -104,7 +94,7 @@ func TestCleanupExpired(t *testing.T) {
 
 	s := &Server{ReposDir: root}
 	s.Handler() // Handler as a side-effect sets up Server
-	s.CleanupRepos()
+	s.cleanupRepos()
 
 	fi, err := os.Stat(repoA)
 	if err != nil {
