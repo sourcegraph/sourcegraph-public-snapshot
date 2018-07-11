@@ -1,15 +1,23 @@
 {
-  "extends": ["config:base", ":prNotPending", ":semanticCommitType(chore)", ":maintainLockFilesMonthly"],
-  "rangeStrategy": "bump",
+  "extends": ["config:base"],
   "timezone": "America/Los_Angeles",
   "schedule": ["on the 1st through 7th day of the month"],
+  "lockFileMaintenance": {
+    "schedule": ["on the 1st through 7th day of the month"]
+  },
+  "updateNotScheduled": true,
+  "prCreation": "not-pending",
+  "semanticCommits": false,
+  "rangeStrategy": "replace",
   "packageRules": [
     {
       "packagePatterns": ["^@sourcegraph/"],
+      "rangeStrategy": "bump",
       "schedule": []
     },
     {
       "packagePatterns": ["^@types/"],
+      "rangeStrategy": "pin",
       "automerge": true
     }
   ]
