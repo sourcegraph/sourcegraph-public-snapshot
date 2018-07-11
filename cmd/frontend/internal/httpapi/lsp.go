@@ -70,7 +70,7 @@ func serveLSP(w http.ResponseWriter, r *http.Request) {
 	// some sort of custom response on the WebSocket connection.
 	dialCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
-	serverConn, err := (&net.Dialer{}).DialContext(dialCtx, "tcp", xlang.DefaultAddr)
+	serverConn, err := (&net.Dialer{}).DialContext(dialCtx, "tcp", xlang.DefaultAddr())
 	if err != nil {
 		proxyFailed.WithLabelValues("dial").Inc()
 		http.Error(w, "Connecting to LSP server failed.", http.StatusBadGateway)

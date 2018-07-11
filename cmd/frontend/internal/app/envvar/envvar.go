@@ -1,7 +1,6 @@
 package envvar
 
 import (
-	"os"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
@@ -28,9 +27,5 @@ func InsecureDevMode() bool { return insecureDevMode }
 
 // HasCodeIntelligence reports whether the site has enabled code intelligence.
 func HasCodeIntelligence() bool {
-	addr := os.Getenv("LSP_PROXY")
-	if addr == "" {
-		return false
-	}
 	return len(conf.EnabledLangservers()) > 0
 }

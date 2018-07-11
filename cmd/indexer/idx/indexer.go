@@ -3,7 +3,6 @@ package idx
 import (
 	"context"
 	"fmt"
-	"os"
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -12,14 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 )
-
-var LSPEnabled bool
-
-func init() {
-	if _, exists := os.LookupEnv("LSP_PROXY"); exists {
-		LSPEnabled = true
-	}
-}
 
 // index updates the cross-repo code intelligence indexes for the given repository at the given revision and enqueues
 // further repos to index if applicable.
@@ -51,7 +42,7 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 	w.enableLangservers(inv)
 
 	// Update global refs & packages index
-	if !repo.Fork() && LSPEnabled {
+	if !repo.Fork() {
 		var errs []error
 		if err := api.InternalClient.DefsRefreshIndex(w.Ctx, repo.URI, commit); err != nil {
 			errs = append(errs, fmt.Errorf("Defs.RefreshIndex failed: %s", err))
