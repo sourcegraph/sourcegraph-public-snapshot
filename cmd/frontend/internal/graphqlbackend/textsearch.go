@@ -979,7 +979,7 @@ func init() {
 		panic(fmt.Sprintf("could not connect to searcher %s: %s", searcherURL, err))
 	}
 
-	zoektHost := env.Get("ZOEKT_HOST", "", "host:port of the zoekt instance")
+	zoektHost := env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")
 	if zoektHost != "" {
 		zoektCl = zoektrpc.Client(zoektHost)
 		zoektCache = &zoektpkg.Cache{Client: zoektCl}
