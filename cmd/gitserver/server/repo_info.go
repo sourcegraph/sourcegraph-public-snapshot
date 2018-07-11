@@ -36,9 +36,7 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 		resp.URL = remoteURL
 	}
 	{
-		s.cloningMu.Lock()
-		resp.CloneProgress, resp.CloneInProgress = s.cloning[dir]
-		s.cloningMu.Unlock()
+		resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
 		if strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 			resp.CloneInProgress = true
 			resp.CloneProgress = "This will never finish cloning"

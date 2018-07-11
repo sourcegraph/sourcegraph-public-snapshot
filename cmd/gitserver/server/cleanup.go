@@ -127,8 +127,12 @@ func (s *Server) CleanupRepos() {
 			// Mark this repo as currently being cloned to prevent a race during the switchover.
 			toDelete, err := ioutil.TempDir(s.ReposDir, "tmp-cleanup-")
 			defer func() { go os.RemoveAll(toDelete) }()
-			s.setCloneLock(repoRoot)
-			defer s.releaseCloneLock(repoRoot)
+			lock, ok := s.locker.TryAcquire(repoRoot, "recloning")
+			if !ok {
+				log15.Warn("failed acquire repo lock when replacing repo", "repo", repoRoot)
+				return
+			}
+			defer lock.Release()
 			if err != nil {
 				log15.Error("error replacing repo", "error", err, "repo", repoRoot)
 				return

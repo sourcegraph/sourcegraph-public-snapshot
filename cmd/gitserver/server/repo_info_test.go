@@ -17,7 +17,10 @@ import (
 func TestServer_handleRepoInfo(t *testing.T) {
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
-	s.setCloneLock("/testroot/a")
+	_, ok := s.locker.TryAcquire("/testroot/a", "test status")
+	if !ok {
+		t.Fatal("could not acquire lock")
+	}
 
 	getRepoInfo := func(t *testing.T, repo api.RepoURI) (resp protocol.RepoInfoResponse) {
 		rr := httptest.NewRecorder()
@@ -51,7 +54,7 @@ func TestServer_handleRepoInfo(t *testing.T) {
 		repoCloned = func(dir string) bool { return false }
 		defer func() { repoCloned = origRepoCloned }()
 
-		if got, want := getRepoInfo(t, "a"), (protocol.RepoInfoResponse{CloneInProgress: true}); !reflect.DeepEqual(got, want) {
+		if got, want := getRepoInfo(t, "a"), (protocol.RepoInfoResponse{CloneInProgress: true, CloneProgress: "test status"}); !reflect.DeepEqual(got, want) {
 			t.Errorf("got %+v, want %+v", got, want)
 		}
 	})

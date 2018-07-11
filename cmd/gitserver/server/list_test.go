@@ -9,7 +9,10 @@ import (
 func TestServer_handleList(t *testing.T) {
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
-	s.setCloneLock("a")
+	_, ok := s.locker.TryAcquire("a", "test status")
+	if !ok {
+		t.Fatal("could not acquire lock")
+	}
 
 	rr := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", "/list", nil)

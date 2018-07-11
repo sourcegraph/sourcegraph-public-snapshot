@@ -108,12 +108,7 @@ type Server struct {
 	canceled bool
 	wg       sync.WaitGroup // tracks running background jobs
 
-	// cloningMu protects cloning
-	cloningMu sync.Mutex
-	// cloning tracks repositories that are in the process of being cloned
-	// by the parent directory of the .git directory they are cloned to.
-	// The value is the last line of output from the running clone command.
-	cloning map[string]string
+	locker *RepositoryLocker
 
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
 	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
@@ -193,7 +188,7 @@ func (s *Server) Migrate() error {
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
-	s.cloning = make(map[string]string)
+	s.locker = &RepositoryLocker{}
 	s.updateRepo = s.repoUpdateLoop()
 	s.repoUpdateLocks = make(map[api.RepoURI]*locks)
 
@@ -294,18 +289,6 @@ func cloneCmd(ctx context.Context, origin, dir string, progress bool) *exec.Cmd 
 	}
 	args = append(args, origin, dir)
 	return exec.CommandContext(ctx, "git", args...)
-}
-
-func (s *Server) setCloneLock(dir string) {
-	s.cloningMu.Lock()
-	s.cloning[dir] = ""
-	s.cloningMu.Unlock()
-}
-
-func (s *Server) releaseCloneLock(dir string) {
-	s.cloningMu.Lock()
-	delete(s.cloning, dir)
-	s.cloningMu.Unlock()
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
@@ -589,9 +572,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dir := path.Join(s.ReposDir, string(req.Repo))
-	s.cloningMu.Lock()
-	cloneProgress, cloneInProgress := s.cloning[dir]
-	s.cloningMu.Unlock()
+	cloneProgress, cloneInProgress := s.locker.Status(dir)
 	if strings.ToLower(string(req.Repo)) == "github.com/sourcegraphtest/alwayscloningtest" {
 		cloneInProgress = true
 		cloneProgress = "This will never finish cloning"
@@ -682,10 +663,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir string) (string, error) {
 	// PERF: Before doing the network request to check if isCloneable, lets
 	// ensure we are not already cloning.
-	s.cloningMu.Lock()
-	progress, cloneInProgress := s.cloning[dir]
-	s.cloningMu.Unlock()
-	if cloneInProgress {
+	if progress, cloneInProgress := s.locker.Status(dir); cloneInProgress {
 		return progress, nil
 	}
 
@@ -714,22 +692,20 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
 	// cloning since we released the lock. We released the lock since isCloneable is a potentially
 	// slow operation.
-	s.cloningMu.Lock()
-	progress, cloneInProgress = s.cloning[dir]
-	if cloneInProgress {
-		s.cloningMu.Unlock()
-		return progress, nil
+	lock, ok := s.locker.TryAcquire(dir, "starting clone")
+	if !ok {
+		// Someone else beat us to it
+		status, _ := s.locker.Status(dir)
+		return status, nil
 	}
-	s.cloning[dir] = "" // Mark this repo as currently being cloned.
-	s.cloningMu.Unlock()
 
 	if skipCloneForTests {
-		s.releaseCloneLock(dir)
+		lock.Release()
 		return "", nil
 	}
 
 	go func() {
-		defer s.releaseCloneLock(dir)
+		defer lock.Release()
 
 		// Create a new context because this is in a background goroutine.
 		ctx, cancel1 := s.serverContext()
@@ -749,7 +725,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 
 		pr, pw := io.Pipe()
 		defer pw.Close()
-		go s.readCloneProgress(repo, url, dir, pr)
+		go readCloneProgress(repo, url, lock, pr)
 
 		if output, err := s.runWithRemoteOpts(ctx, cmd, pw); err != nil {
 			log15.Error("clone failed", "error", err, "output", string(output))
@@ -769,8 +745,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 	return "", nil
 }
 
-// readCloneProgress scans the reader and saves the most recent line of output as progress.
-func (s *Server) readCloneProgress(repo api.RepoURI, url, dir string, pr io.Reader) {
+// readCloneProgress scans the reader and saves the most recent line of output
+// as the lock status.
+func readCloneProgress(repo api.RepoURI, url string, lock *RepositoryLock, pr io.Reader) {
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
 	redactor := newURLRedactor(url)
@@ -787,11 +764,7 @@ func (s *Server) readCloneProgress(repo api.RepoURI, url, dir string, pr io.Read
 		// fatal: repository 'http://token@github.com/foo/bar/' not found
 		redactedProgress := redactor.redact(progress)
 
-		s.cloningMu.Lock()
-		if _, ok := s.cloning[dir]; ok {
-			s.cloning[dir] = redactedProgress
-		}
-		s.cloningMu.Unlock()
+		lock.SetStatus(redactedProgress)
 	}
 	if err := scan.Err(); err != nil {
 		log15.Error("error reporting progress", "error", err)
