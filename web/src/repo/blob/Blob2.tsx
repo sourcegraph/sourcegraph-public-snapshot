@@ -1,19 +1,25 @@
-import { createHoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
+import {
+    createHoverifier,
+    findPositionsFromEvents,
+    HoveredToken,
+    HoveredTokenContext,
+    HoverOverlay,
+    HoverState,
+} from '@sourcegraph/codeintellify'
 import { getRowInCodeElement, getRowsInRange } from '@sourcegraph/codeintellify/lib/token_position'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
-import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
+import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { Position } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { ExtensionsProps, getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams, TextDocumentDecoration } from '../../backend/lsp'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toNativeEvent } from '../../util/react'
-import { isDefined, propertyIsDefined } from '../../util/types'
+import { propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
@@ -128,15 +134,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         })
         this.subscriptions.add(hoverifier)
 
-        // Get the native event objects by using fromEvent directly on the element,
-        // as React does dark magic with event objects that messes with the hoverify logic
-        // (currentTarget can have unexpected values)
-        const fromCodeElementEvent = (eventName: string) =>
-            this.codeElements.pipe(
-                filter(isDefined),
-                switchMap(codeElement => fromEvent<MouseEvent>(codeElement, eventName))
-            )
-
         const resolveContext = () => ({
             repoPath: this.props.repoPath,
             rev: this.props.rev,
@@ -145,9 +142,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         })
         this.subscriptions.add(
             hoverifier.hoverify({
-                codeMouseMoves: fromCodeElementEvent('mousemove'),
-                codeMouseOvers: fromCodeElementEvent('mouseover'),
-                codeClicks: fromCodeElementEvent('click'),
+                positionEvents: this.codeElements.pipe(findPositionsFromEvents()),
                 positionJumps: locationPositions.pipe(
                     withLatestFrom(this.codeElements, this.blobElements),
                     map(([position, codeElement, scrollElement]) => ({
@@ -156,7 +151,6 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         // so these elements are guaranteed to have been rendered.
                         codeElement: codeElement!,
                         scrollElement: scrollElement!,
-                        ...resolveContext(),
                     }))
                 ),
                 resolveContext,
@@ -314,13 +308,15 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         )
     }
 
-    private getLSPTextDocumentPositionParams(position: Position): LSPTextDocumentPositionParams {
+    private getLSPTextDocumentPositionParams(
+        position: HoveredToken & HoveredTokenContext
+    ): LSPTextDocumentPositionParams {
         return {
-            repoPath: this.props.repoPath,
-            filePath: this.props.filePath,
-            commitID: this.props.commitID,
+            repoPath: position.repoPath,
+            filePath: position.filePath,
+            commitID: position.commitID,
+            rev: position.rev,
             mode: this.props.mode,
-            rev: this.props.rev,
             position,
         }
     }
