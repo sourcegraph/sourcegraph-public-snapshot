@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
@@ -26,6 +27,7 @@ const (
 )
 
 var (
+	envNewScheduler      = env.Get("SRC_UPDATE_SCHEDULER", "", "Use updated repo-update scheduler.")
 	useNewScheduler      bool
 	useNewSchedulerMutex sync.Mutex
 )
@@ -596,6 +598,10 @@ func RunRepositorySyncWorker(ctx context.Context) {
 		sched := false
 		if ef != nil {
 			sched = ef.UpdateScheduler == "enabled"
+		}
+		// Allow direct environment override.
+		if envNewScheduler == "enabled" {
+			sched = true
 		}
 		prevSched := setNewScheduler(sched)
 
