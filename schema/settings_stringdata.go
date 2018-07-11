@@ -9,6 +9,7 @@ const SettingsSchemaJSON = `{
   "title": "Settings",
   "description": "Configuration settings for users and organizations on Sourcegraph.",
   "type": "object",
+  "additionalProperties": false,
   "properties": {
     "search.savedQueries": {
       "description": "Saved search queries",
