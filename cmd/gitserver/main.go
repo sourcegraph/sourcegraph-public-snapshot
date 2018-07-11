@@ -41,6 +41,10 @@ func main() {
 	if reposDir == "" {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
 	}
+	if err := os.MkdirAll(reposDir, os.ModePerm); err != nil {
+		log.Fatalf("Failed to create SRC_REPOS_DIR: %s", err)
+	}
+
 	gitserver := server.Server{
 		ReposDir: reposDir,
 	}
