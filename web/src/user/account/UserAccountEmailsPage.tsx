@@ -153,11 +153,6 @@ interface UserEmailConnection {
     totalCount: number
 }
 
-class FilteredUserEmailConnection extends FilteredConnection<
-    GQL.IUserEmail,
-    Pick<UserEmailNodeProps, 'user' | 'onDidUpdate'>
-> {}
-
 export class UserAccountEmailsPage extends React.Component<Props, State> {
     public state: State = {}
 
@@ -191,7 +186,7 @@ export class UserAccountEmailsPage extends React.Component<Props, State> {
                             be manually verified by a site admin.
                         </div>
                     )}
-                <FilteredUserEmailConnection
+                <FilteredConnection<GQL.IUserEmail, Pick<UserEmailNodeProps, 'user' | 'onDidUpdate'>>
                     className="list-group list-group-flush mt-3"
                     noun="email address"
                     pluralNoun="email addresses"

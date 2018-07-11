@@ -4,7 +4,6 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { FilteredConnection } from '../components/FilteredConnection'
 import { LinkOrSpan } from '../components/LinkOrSpan'
 import { Timestamp } from '../components/time/Timestamp'
 import { createAggregateError } from '../util/errors'
@@ -138,5 +137,3 @@ export const queryGitRefs = memoizeObservable(
         ),
     args => `${args.repo}:${args.first}:${args.query}:${args.type}`
 )
-
-export class FilteredGitRefConnection extends FilteredConnection<GQL.IGitRef> {}

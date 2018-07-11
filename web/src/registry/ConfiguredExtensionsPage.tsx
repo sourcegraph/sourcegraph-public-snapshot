@@ -5,7 +5,11 @@ import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { FilteredConnectionDisplayProps, FilteredConnectionFilter } from '../components/FilteredConnection'
+import {
+    FilteredConnection,
+    FilteredConnectionDisplayProps,
+    FilteredConnectionFilter,
+} from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
@@ -14,7 +18,6 @@ import {
     ConfiguredExtensionNode,
     ConfiguredExtensionNodeDisplayProps,
     ConfiguredExtensionNodeProps,
-    FilteredConfiguredExtensionConnection,
 } from './ConfiguredExtensionNode'
 
 export interface ConfiguredExtensionsListProps
@@ -68,7 +71,10 @@ class ConfiguredExtensionsList extends React.PureComponent<ConfiguredExtensionsL
         }
 
         return (
-            <FilteredConfiguredExtensionConnection
+            <FilteredConnection<
+                GQL.IConfiguredExtension,
+                Pick<ConfiguredExtensionNodeProps, 'onDidUpdate' | 'settingsURL'>
+            >
                 listClassName="list-group list-group-flush"
                 noun="extension"
                 pluralNoun="extensions"

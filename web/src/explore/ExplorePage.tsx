@@ -37,8 +37,6 @@ interface State {
     disabledRepositoriesCount?: number | null
 }
 
-class FilteredRepositoryConnection extends FilteredConnection<GQL.IRepository> {}
-
 /**
  * A page for exploring the repositories on this site.
  */
@@ -91,7 +89,7 @@ export class ExplorePage extends React.PureComponent<Props, State> {
                                 </Link>
                             </div>
                         )}
-                    <FilteredRepositoryConnection
+                    <FilteredConnection<GQL.IRepository>
                         className="mt-3"
                         listClassName="list-group list-group-flush"
                         noun="repository"

@@ -10,13 +10,11 @@ import { registryPublisherFragment, RegistryPublisherNode } from './RegistryPubl
 
 interface Props extends RouteComponentProps<{}> {}
 
-class FilteredRegistryPublisherConnection extends FilteredConnection<GQL.RegistryPublisher> {}
-
 /**
  * Displays registry publishers.
  */
 export const RegistryPublishersList: React.SFC<Props> = props => (
-    <FilteredRegistryPublisherConnection
+    <FilteredConnection<GQL.RegistryPublisher>
         listClassName="list-group list-group-flush"
         listComponent="div"
         noun="publishers"

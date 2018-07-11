@@ -63,17 +63,13 @@ interface Props extends RouteComponentProps<{}> {
     extension: Pick<GQL.IRegistryExtension, 'id' | 'viewerHasEnabled'>
 }
 
-class FilteredRegistryExtensionConfigurationSubjectConnection extends FilteredConnection<
-    GQL.ExtensionConfigurationSubject
-> {}
-
 /**
  * Displays the configuration subjects for whom an extension is enabled.
  */
 export class RegistryExtensionConfigurationSubjectsList extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <FilteredRegistryExtensionConfigurationSubjectConnection
+            <FilteredConnection<GQL.ExtensionConfigurationSubject>
                 listClassName="list-group list-group-flush"
                 listComponent="div"
                 noun="organization using this extension"

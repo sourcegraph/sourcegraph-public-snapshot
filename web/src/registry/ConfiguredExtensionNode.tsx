@@ -3,7 +3,6 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { gql } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { FilteredConnection } from '../components/FilteredConnection'
 import { RegistryExtensionConfigureButton } from './RegistryExtensionConfigureButton'
 
 export const configuredExtensionFragment = gql`
@@ -100,8 +99,3 @@ export class ConfiguredExtensionNode extends React.PureComponent<ConfiguredExten
         )
     }
 }
-
-export class FilteredConfiguredExtensionConnection extends FilteredConnection<
-    GQL.IConfiguredExtension,
-    Pick<ConfiguredExtensionNodeProps, 'onDidUpdate' | 'settingsURL'>
-> {}

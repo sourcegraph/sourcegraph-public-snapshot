@@ -101,20 +101,25 @@ interface RepositoryCompareDiffPageProps
     hoverifier: Hoverifier
 }
 
-class FilteredFileDiffConnection extends FilteredConnection<
-    GQL.IFileDiff,
-    Pick<
-        FileDiffNodeProps,
-        'base' | 'head' | 'lineNumbers' | 'className' | 'extensions' | 'location' | 'history' | 'hoverifier'
-    >
-> {}
-
 /** A page with the file diffs in the comparison. */
 export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCompareDiffPageProps> {
     public render(): JSX.Element | null {
         return (
             <div className="repository-compare-page">
-                <FilteredFileDiffConnection
+                <FilteredConnection<
+                    GQL.IFileDiff,
+                    Pick<
+                        FileDiffNodeProps,
+                        | 'base'
+                        | 'head'
+                        | 'lineNumbers'
+                        | 'className'
+                        | 'extensions'
+                        | 'location'
+                        | 'history'
+                        | 'hoverifier'
+                    >
+                >
                     listClassName="list-group list-group-flush"
                     noun="changed file"
                     pluralNoun="changed files"

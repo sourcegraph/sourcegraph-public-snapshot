@@ -133,11 +133,6 @@ interface State {
     viewerCanAdminister: boolean
 }
 
-class FilteredUserConnection extends FilteredConnection<
-    GQL.IUser,
-    Pick<UserNodeProps, 'org' | 'authenticatedUser' | 'onDidUpdate'>
-> {}
-
 /**
  * The organizations members page
  */
@@ -190,7 +185,7 @@ export class OrgMembersPage extends React.PureComponent<Props, State> {
                         onDidUpdateOrganizationMembers={this.onDidUpdateOrganizationMembers}
                     />
                 )}
-                <FilteredUserConnection
+                <FilteredConnection<GQL.IUser, Pick<UserNodeProps, 'org' | 'authenticatedUser' | 'onDidUpdate'>>
                     className="list-group list-group-flush mt-3"
                     noun="member"
                     pluralNoun="members"

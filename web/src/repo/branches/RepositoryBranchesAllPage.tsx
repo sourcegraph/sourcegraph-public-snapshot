@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
-import { FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
-import { FilteredGitRefConnection, GitRefNode, queryGitRefs } from '../GitRef'
+import { GitRefNode, queryGitRefs } from '../GitRef'
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
 
 interface Props extends RepositoryBranchesAreaPageProps, RouteComponentProps<{}> {}
@@ -19,7 +19,7 @@ export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
         return (
             <div className="repository-branches-page">
                 <PageTitle title="All branches" />
-                <FilteredGitRefConnection
+                <FilteredConnection<GQL.IGitRef>
                     className=""
                     listClassName="list-group list-group-flush"
                     noun="branch"

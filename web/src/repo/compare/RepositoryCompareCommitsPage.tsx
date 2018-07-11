@@ -4,9 +4,10 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
+import { FilteredConnection } from '../../components/FilteredConnection'
 import { createAggregateError } from '../../util/errors'
-import { GitCommitNode } from '../commits/GitCommitNode'
-import { FilteredGitCommitConnection, gitCommitFragment } from '../commits/RepositoryCommitsPage'
+import { GitCommitNode, GitCommitNodeProps } from '../commits/GitCommitNode'
+import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 function queryRepositoryComparisonCommits(args: {
@@ -84,7 +85,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
             <div className="repository-compare-page">
                 <div className="card">
                     <div className="card-header">Commits</div>
-                    <FilteredGitCommitConnection
+                    <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'repoName' | 'className' | 'compact'>>
                         listClassName="list-group list-group-flush"
                         noun="commit"
                         pluralNoun="commits"

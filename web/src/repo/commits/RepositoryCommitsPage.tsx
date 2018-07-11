@@ -101,11 +101,6 @@ interface Props {
     location: H.Location
 }
 
-export class FilteredGitCommitConnection extends FilteredConnection<
-    GQL.IGitCommit,
-    Pick<GitCommitNodeProps, 'repoName' | 'className' | 'compact'>
-> {}
-
 /** A page that shows a repository's commits at the current revision. */
 export class RepositoryCommitsPage extends React.PureComponent<Props> {
     public componentDidMount(): void {
@@ -120,7 +115,7 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="commits">Commits</RepoHeaderBreadcrumbNavItem>}
                 />
-                <FilteredGitCommitConnection
+                <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'repoName' | 'className' | 'compact'>>
                     className="repository-commits-page__content"
                     listClassName="list-group list-group-flush"
                     noun="commit"

@@ -80,11 +80,6 @@ export interface RegistryExtensionNodeProps extends RegistryExtensionNodeDisplay
     onDidUpdate: () => void
 }
 
-class FilteredRegistryExtensionConnection extends FilteredConnection<
-    GQL.IRegistryExtension,
-    Pick<RegistryExtensionNodeProps, 'subject' | 'subjectIsViewer' | 'onDidUpdate'>
-> {}
-
 /** Ways to display the list of extensions. */
 export enum ExtensionsListViewMode {
     Cards = 'cards',
@@ -143,7 +138,10 @@ export class RegistryExtensionsList extends React.PureComponent<RegistryExtensio
         }
 
         return (
-            <FilteredRegistryExtensionConnection
+            <FilteredConnection<
+                GQL.IRegistryExtension,
+                Pick<RegistryExtensionNodeProps, 'subject' | 'subjectIsViewer' | 'onDidUpdate'>
+            >
                 className="registry-extensions-list"
                 listClassName={
                     this.props.mode === ExtensionsListViewMode.Cards ? 'row mt-3' : 'list-group list-group-flush'

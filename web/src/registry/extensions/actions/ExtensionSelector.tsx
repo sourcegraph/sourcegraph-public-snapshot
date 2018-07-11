@@ -152,11 +152,6 @@ class ExtensionSelectorExtensionNode extends React.PureComponent<ExtensionNodePr
     private toggleExtensionEnabled = () => this.settingsUpdates.next({ enabled: !this.props.node.isEnabled })
 }
 
-class FilteredExtensionConnection extends FilteredConnection<
-    GQL.IConfiguredExtension,
-    Pick<ExtensionNodeProps, 'onChange'>
-> {}
-
 interface Props {
     /** Called when the set of enabled extensions changes. */
     onChange: (enabledExtensions: Extensions) => void
@@ -244,7 +239,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                 popoverKey="ExtensionSelector"
                 popoverElement={
                     <>
-                        <FilteredExtensionConnection
+                        <FilteredConnection<GQL.IConfiguredExtension, Pick<ExtensionNodeProps, 'onChange'>>
                             className="popover__content extension-selector__popover-content"
                             listClassName="list-group list-group-flush"
                             listComponent="div"

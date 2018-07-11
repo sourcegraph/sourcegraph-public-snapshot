@@ -33,8 +33,6 @@ const CommitNode: React.SFC<CommitNodeProps> = ({ node, location }) => (
     </li>
 )
 
-class FilteredCommitsConnection extends FilteredConnection<GQL.IGitCommit, Pick<CommitNodeProps, 'location'>> {}
-
 interface Props {
     repoID: GQL.ID
     rev: string | undefined
@@ -46,7 +44,7 @@ interface Props {
 export class RepoRevSidebarCommits extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
-            <FilteredCommitsConnection
+            <FilteredConnection<GQL.IGitCommit, Pick<CommitNodeProps, 'location'>>
                 className="repo-rev-sidebar-commits"
                 compact={true}
                 noun="commit"

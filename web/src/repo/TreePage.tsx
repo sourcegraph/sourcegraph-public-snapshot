@@ -15,6 +15,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
+import { FilteredConnection } from '../components/FilteredConnection'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
@@ -28,8 +29,8 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/e
 import { memoizeObservable } from '../util/memoize'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
-import { GitCommitNode } from './commits/GitCommitNode'
-import { FilteredGitCommitConnection, gitCommitFragment } from './commits/RepositoryCommitsPage'
+import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
+import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 
 const TreeEntry: React.SFC<{
     isDir: boolean
@@ -289,7 +290,10 @@ export class TreePage extends React.PureComponent<Props, State> {
                             )}
                             <div className="tree-page__section">
                                 <h3 className="tree-page__section-header">Changes</h3>
-                                <FilteredGitCommitConnection
+                                <FilteredConnection<
+                                    GQL.IGitCommit,
+                                    Pick<GitCommitNodeProps, 'repoName' | 'className' | 'compact'>
+                                >
                                     className="mt-2 tree-page__section--commits"
                                     listClassName="list-group list-group-flush"
                                     noun="commit in this tree"
