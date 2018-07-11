@@ -970,13 +970,8 @@ var searcherURLs *endpoint.Map
 
 func init() {
 	searcherURL := env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
-	if searcherURL == "" {
-		return
-	}
-	var err error
-	searcherURLs, err = endpoint.New(searcherURL)
-	if err != nil {
-		panic(fmt.Sprintf("could not connect to searcher %s: %s", searcherURL, err))
+	if searcherURL != "" {
+		searcherURLs = endpoint.New(searcherURL)
 	}
 
 	zoektHost := env.Get("ZOEKT_HOST", "indexed-search:80", "host:port of the zoekt instance")

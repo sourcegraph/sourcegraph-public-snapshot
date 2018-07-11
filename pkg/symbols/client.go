@@ -52,7 +52,7 @@ type Client struct {
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
 
-	mu       sync.Mutex
+	once     sync.Once
 	endpoint *endpoint.Map
 }
 
@@ -62,15 +62,9 @@ type key struct {
 }
 
 func (c *Client) url(key key) (string, error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	if c.endpoint == nil {
-		var err error
-		c.endpoint, err = endpoint.New(c.URL)
-		if err != nil {
-			return "", err
-		}
-	}
+	c.once.Do(func() {
+		c.endpoint = endpoint.New(c.URL)
+	})
 	return c.endpoint.Get(string(key.repo)+":"+string(key.commitID), nil)
 }
 

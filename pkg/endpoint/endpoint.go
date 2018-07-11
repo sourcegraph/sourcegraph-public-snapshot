@@ -29,6 +29,7 @@ import (
 // also fallback to static URLs if not configured for kubernetes.
 type Map struct {
 	mu   sync.Mutex
+	init func() (*hashMap, error)
 	err  error
 	urls *hashMap
 }
@@ -41,52 +42,50 @@ type Map struct {
 // http://endpoint:port/path.
 //
 // Example: rawurl is k8s+http://searcher
-func New(rawurl string) (*Map, error) {
+func New(rawurl string) *Map {
 	if !strings.HasPrefix(rawurl, "k8s+") {
 		// Non-k8s urls we return a static map
-		return &Map{urls: newConsistentHashMap([]string{rawurl})}, nil
+		return &Map{urls: newConsistentHashMap([]string{rawurl})}
 	}
 
-	u, err := parseURL(rawurl)
-	if err != nil {
-		return nil, err
-	}
-
-	cl, err := client()
-	if err != nil {
-		return nil, err
-	}
-
-	if u.Namespace == "" {
-		u.Namespace = podNamespace()
-	}
-	if u.Namespace == "" {
-		return nil, errors.Errorf("%s does not specify namespace and could not detect pod namespace", rawurl)
-	}
-
-	// Kick off setting the initial urls or err. We don't rely just on inform
-	// since it may not communicate updates. We take the Lock now to ensure
-	// the first value set is from this goroutine.
 	m := &Map{}
-	m.mu.Lock()
-	go func() {
-		defer m.mu.Unlock()
+
+	// Kick off setting the initial urls or err on first access. We don't rely
+	// just on inform since it may not communicate updates.
+	m.init = func() (*hashMap, error) {
+		u, err := parseURL(rawurl)
+		if err != nil {
+			return nil, err
+		}
+
+		cl, err := client()
+		if err != nil {
+			return nil, err
+		}
+
+		if u.Namespace == "" {
+			u.Namespace = podNamespace()
+		}
+		if u.Namespace == "" {
+			return nil, errors.Errorf("%s does not specify namespace and could not detect pod namespace", rawurl)
+		}
+
 		endpoints, err := cl.CoreV1().Endpoints(u.Namespace).List(meta_v1.ListOptions{FieldSelector: "metadata.name=" + u.Service})
 		if err != nil {
-			m.err = err
-			return
+			return nil, err
 		}
 		b := &urlMapBuilder{K8sURL: u}
 		for _, ep := range endpoints.Items {
 			b.Add(&ep)
 		}
-		m.urls, m.err = b.Build()
-	}()
 
-	// Kick off watcher in the background
-	go inform(cl, m, u)
+		// Kick off watcher in the background
+		go inform(cl, m, u)
 
-	return m, nil
+		return b.Build()
+	}
+
+	return m
 }
 
 // Get the closest URL in the hash to the provided key that is not in
@@ -97,6 +96,10 @@ func New(rawurl string) (*Map, error) {
 // URL should implement a retry strategy.
 func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 	m.mu.Lock()
+	if m.init != nil {
+		m.urls, m.err = m.init()
+		m.init = nil // prevent running again
+	}
 	urls, err := m.urls, m.err
 	m.mu.Unlock()
 
