@@ -26,6 +26,7 @@ fi
 export LIGHTSTEP_INCLUDE_SENSITIVE=true
 export PGSSLMODE=disable
 
+export SRC_LOG_LEVEL=info
 export GITHUB_BASE_URL=http://127.0.0.1:3180
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos
 export INSECURE_DEV=1
