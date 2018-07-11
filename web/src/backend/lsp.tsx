@@ -7,14 +7,14 @@ import { Observable, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkupContent, Range } from 'vscode-languageserver-types'
-import { DidChangeTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
+import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, FileSpec, makeRepoURI, parseRepoURI, PositionSpec } from '../repo'
 import { ErrorLike, normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { HoverMerged, ModeSpec } from './features'
-import { webSocketSendLSPRequests } from './webSocket'
+import { webSocketSendLSPRequest } from './webSocket'
 
 /**
  * Contains the fields necessary to route the request to the correct logical LSP server process and construct the
@@ -42,30 +42,6 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
     (Array.isArray(hover.contents) && hover.contents.length === 0) ||
     (MarkupContent.is(hover.contents) && !hover.contents.value)
 
-const wrapLSPRequests = (ctx: LSPContext, requests: LSPRequest[]): any[] => [
-    {
-        id: 0,
-        method: 'initialize',
-        params: {
-            rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
-            mode: ctx.mode,
-            initializationOptions: {
-                mode: ctx.mode,
-                settings: ctx.settings,
-            },
-        },
-    },
-    ...requests.map((req, i) => ({ id: i + 1, ...req })),
-    {
-        id: 1 + requests.length,
-        method: 'shutdown',
-    },
-    {
-        // id not included on notifications
-        method: 'exit',
-    },
-]
-
 /** JSON-RPC2 error for methods that are not found */
 const EMETHODNOTFOUND = -32601
 
@@ -83,16 +59,34 @@ export type ResponseResults = { 0: InitializeResult } & any[]
 
 type ResponseError = ErrorLike & { responses: ResponseMessages }
 
-const httpSendLSPRequests = (ctx: LSPContext, ...requests: LSPRequest[]): Observable<ResponseResults> =>
+const httpSendLSPRequest = (ctx: LSPContext, request?: LSPRequest): Observable<ResponseResults> =>
     ajax({
         method: 'POST',
-        url: `/.api/xlang/${requests.map(({ method }) => method).join(',')}`,
+        url: `/.api/xlang/${request ? request.method : 'initialize'}`,
         headers: {
             ...window.context.xhrHeaders,
             Accept: 'application/json',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(wrapLSPRequests(ctx, requests)),
+        body: JSON.stringify(
+            [
+                {
+                    id: 0,
+                    method: 'initialize',
+                    params: {
+                        rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
+                        mode: ctx.mode,
+                        initializationOptions: {
+                            mode: ctx.mode,
+                            settings: ctx.settings,
+                        },
+                    },
+                },
+                request ? { id: 1, ...request } : null,
+                { id: 2, method: 'shutdown' },
+                { method: 'exit' },
+            ].filter(m => m !== null)
+        ),
     }).pipe(
         // Workaround for https://github.com/ReactiveX/rxjs/issues/3606
         tap(response => {
@@ -118,41 +112,24 @@ const httpSendLSPRequests = (ctx: LSPContext, ...requests: LSPRequest[]): Observ
 
 // Run `localStorage.lspWebSocket=true;location.reload()` to use WebSockets for LSP (instead of single HTTP POST
 // requests).
-const useWebSocket = localStorage.getItem('lspWebSocket') !== null
-
-const sendLSPRequests: (ctx: LSPContext, ...requests: LSPRequest[]) => Observable<ResponseResults> = useWebSocket
-    ? webSocketSendLSPRequests
-    : httpSendLSPRequests
+const useSendFunc: 'websocket' | 'http' = (localStorage.getItem('cxpClient') as 'websocket' | 'http') || 'http'
 
 /**
- * Sends an LSP request to the xlang API.
- * If an error is returned, the Promise is rejected with the error from the response.
- *
- * @param req The LSP request to send
- * @param ctx Repo and revision
- * @param mode the LSP mode identifying the language server to use
- * @param path File path for determining the mode
- * @return The result of the method call
+ * Sends a sequence of LSP requests: initialize, request (the arg), shutdown, exit. The result from the request
+ * (the arg) is returned. If the request arg is not given, it is omitted and the result from initialize is
+ * returned.
  */
-const sendLSPRequest = (req: LSPRequest, ctx: LSPContext): Observable<any> =>
-    sendLSPRequests(ctx, req).pipe(map(results => results[1]))
+const sendLSPRequest: (ctx: LSPContext, request?: LSPRequest) => Observable<any> = (ctx, request) =>
+    (useSendFunc === 'websocket' ? webSocketSendLSPRequest : httpSendLSPRequest)(ctx, request).pipe(
+        map(results => results[request ? 1 : 0])
+    )
 
 /**
- * Query the server's capabilities. The filePath must be any valid file path, to avoid causing the server to
- * complain about the file not existing, even though the file itself is only used in a noop response.
+ * Query the server's capabilities.
  */
 export const fetchServerCapabilities = memoizeObservable(
     (pos: LSPContext & { filePath: string }): Observable<ServerCapabilities> =>
-        sendLSPRequests(pos, {
-            method: 'textDocument/didOpen',
-            params: {
-                textDocument: {
-                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
-                    version: 0,
-                },
-                contentChanges: [],
-            } as DidChangeTextDocumentParams,
-        }).pipe(map(results => (results[0] as InitializeResult).capabilities)),
+        sendLSPRequest(pos).pipe(map(result => (result as InitializeResult).capabilities)),
     cacheKey
 )
 
@@ -182,22 +159,19 @@ const normalizeHoverResponse = (hoverResponse: any): void => {
 
 /** Callers should use features.getHover instead. */
 export const fetchHover = memoizeObservable(
-    (pos: LSPTextDocumentPositionParams & LSPContext): Observable<Hover | null> =>
-        sendLSPRequest(
-            {
-                method: 'textDocument/hover',
-                params: {
-                    textDocument: {
-                        uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
-                    },
-                    position: {
-                        character: pos.position.character! - 1,
-                        line: pos.position.line - 1,
-                    },
+    (ctx: LSPTextDocumentPositionParams & LSPContext): Observable<Hover | null> =>
+        sendLSPRequest(ctx, {
+            method: 'textDocument/hover',
+            params: {
+                textDocument: {
+                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+                },
+                position: {
+                    character: ctx.position.character! - 1,
+                    line: ctx.position.line - 1,
                 },
             },
-            pos
-        ).pipe(
+        }).pipe(
             catchError((error: ResponseError) => {
                 // If the language server doesn't support textDocument/hover and it reported that it doesn't
                 // support it, ignore the error.
@@ -225,22 +199,19 @@ export const fetchHover = memoizeObservable(
 
 /** Callers should use features.getDefinition instead. */
 export const fetchDefinition = memoizeObservable(
-    (options: LSPTextDocumentPositionParams & LSPContext): Observable<Definition> =>
-        sendLSPRequest(
-            {
-                method: 'textDocument/definition',
-                params: {
-                    textDocument: {
-                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
-                    },
-                    position: {
-                        character: options.position.character! - 1,
-                        line: options.position.line - 1,
-                    },
+    (ctx: LSPTextDocumentPositionParams & LSPContext): Observable<Definition> =>
+        sendLSPRequest(ctx, {
+            method: 'textDocument/definition',
+            params: {
+                textDocument: {
+                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+                },
+                position: {
+                    character: ctx.position.character! - 1,
+                    line: ctx.position.line - 1,
                 },
             },
-            options
-        ),
+        }),
     cacheKey
 )
 
@@ -268,22 +239,19 @@ export function fetchJumpURL(options: LSPTextDocumentPositionParams & LSPContext
 
 /** Callers should use features.getXdefinition instead. */
 export const fetchXdefinition = memoizeObservable(
-    (options: LSPTextDocumentPositionParams & LSPContext): Observable<SymbolLocationInformation | undefined> =>
-        sendLSPRequest(
-            {
-                method: 'textDocument/xdefinition',
-                params: {
-                    textDocument: {
-                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
-                    },
-                    position: {
-                        character: options.position.character! - 1,
-                        line: options.position.line - 1,
-                    },
+    (ctx: LSPTextDocumentPositionParams & LSPContext): Observable<SymbolLocationInformation | undefined> =>
+        sendLSPRequest(ctx, {
+            method: 'textDocument/xdefinition',
+            params: {
+                textDocument: {
+                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+                },
+                position: {
+                    character: ctx.position.character! - 1,
+                    line: ctx.position.line - 1,
                 },
             },
-            options
-        ).pipe(map((result: SymbolLocationInformation[]) => result[0])),
+        }).pipe(map((result: SymbolLocationInformation[]) => result[0])),
     cacheKey
 )
 
@@ -293,46 +261,40 @@ export interface LSPReferencesParams {
 
 /** Callers should use features.getReferences instead. */
 export const fetchReferences = memoizeObservable(
-    (options: LSPTextDocumentPositionParams & LSPReferencesParams & LSPContext): Observable<Location[]> =>
-        sendLSPRequest(
-            {
-                method: 'textDocument/references',
-                params: {
-                    textDocument: {
-                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
-                    },
-                    position: {
-                        character: options.position.character! - 1,
-                        line: options.position.line - 1,
-                    },
-                    context: {
-                        includeDeclaration: options.includeDeclaration !== false, // undefined means true
-                    },
+    (ctx: LSPTextDocumentPositionParams & LSPReferencesParams & LSPContext): Observable<Location[]> =>
+        sendLSPRequest(ctx, {
+            method: 'textDocument/references',
+            params: {
+                textDocument: {
+                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+                },
+                position: {
+                    character: ctx.position.character! - 1,
+                    line: ctx.position.line - 1,
+                },
+                context: {
+                    includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
                 },
             },
-            options
-        ),
+        }),
     cacheKey
 )
 
 /** Callers should use features.getImplementation instead. */
 export const fetchImplementation = memoizeObservable(
-    (options: LSPTextDocumentPositionParams & LSPContext): Observable<Location[]> =>
-        sendLSPRequest(
-            {
-                method: 'textDocument/implementation',
-                params: {
-                    textDocument: {
-                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
-                    },
-                    position: {
-                        character: options.position.character! - 1,
-                        line: options.position.line - 1,
-                    },
+    (ctx: LSPTextDocumentPositionParams & LSPContext): Observable<Location[]> =>
+        sendLSPRequest(ctx, {
+            method: 'textDocument/implementation',
+            params: {
+                textDocument: {
+                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+                },
+                position: {
+                    character: ctx.position.character! - 1,
+                    line: ctx.position.line - 1,
                 },
             },
-            options
-        ),
+        }),
     cacheKey
 )
 
@@ -346,22 +308,22 @@ export interface XReferenceOptions extends WorkspaceReferenceParams {
 
 /** Callers should use features.getXreferences instead. */
 export const fetchXreferences = memoizeObservable(
-    (options: XReferenceOptions & LSPContext): Observable<Location[]> =>
+    (ctx: XReferenceOptions & LSPContext): Observable<Location[]> =>
         sendLSPRequest(
+            {
+                repoPath: ctx.repoPath,
+                rev: ctx.rev,
+                commitID: ctx.commitID,
+                mode: ctx.mode,
+                settings: ctx.settings,
+            },
             {
                 method: 'workspace/xreferences',
                 params: {
-                    hints: options.hints,
-                    query: options.query,
-                    limit: options.limit,
+                    hints: ctx.hints,
+                    query: ctx.query,
+                    limit: ctx.limit,
                 },
-            },
-            {
-                repoPath: options.repoPath,
-                rev: options.rev,
-                commitID: options.commitID,
-                mode: options.mode,
-                settings: options.settings,
             }
         ).pipe(map((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference))),
     options => cacheKey(options) + ':' + JSON.stringify([options.query, options.hints, options.limit])
@@ -387,18 +349,15 @@ export interface DecorationAttachmentRenderOptions {
 }
 
 export const fetchDecorations = memoizeObservable(
-    (options: LSPContext & FileSpec): Observable<TextDocumentDecoration[] | null> =>
-        sendLSPRequest(
-            {
-                method: 'textDocument/decorations',
-                params: {
-                    textDocument: {
-                        uri: `git://${options.repoPath}?${options.commitID}#${options.filePath}`,
-                    },
+    (ctx: LSPContext & FileSpec): Observable<TextDocumentDecoration[] | null> =>
+        sendLSPRequest(ctx, {
+            method: 'textDocument/decorations',
+            params: {
+                textDocument: {
+                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
                 },
             },
-            options
-        ),
+        }),
     cacheKey
 )
 

@@ -14,7 +14,7 @@ const CONNECTIONS = new Map<
     }>
 >()
 
-export function webSocketSendLSPRequests(ctx: LSPContext, ...requests: LSPRequest[]): Observable<ResponseResults> {
+export function webSocketSendLSPRequest(ctx: LSPContext, request?: LSPRequest): Observable<ResponseResults> {
     const results = new Subject<ResponseResults>()
 
     // We include ?mode= in the url to make it easier to find the correct LSP
@@ -51,12 +51,17 @@ export function webSocketSendLSPRequests(ctx: LSPContext, ...requests: LSPReques
         CONNECTIONS.set(key, conn)
     }
 
-    conn.then(({ conn, initializeResult }) =>
-        conn.sendRequest<any>(requests[0].method, requests[0].params).then(result => {
-            results.next([initializeResult, result, {}])
+    conn.then(({ conn, initializeResult }) => {
+        if (request) {
+            conn.sendRequest<any>(request.method, request.params).then(result => {
+                results.next([initializeResult, result, {}])
+                results.complete()
+            })
+        } else {
+            results.next([initializeResult, {}])
             results.complete()
-        })
-    )
+        }
+    })
 
     return results
 }

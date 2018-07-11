@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/mux"
 	libhoney "github.com/honeycombio/libhoney-go"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -127,7 +128,9 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 		return err
 	}
 
-	method = reqs[1].Method
+	if len(reqs) >= 3 {
+		method = reqs[len(reqs)-3].Method
+	}
 	span, ctx := opentracing.StartSpanFromContext(r.Context(), fmt.Sprintf("LSP HTTP gateway: %s: %s", mode, method))
 	defer func() {
 		if err != nil {
@@ -139,16 +142,19 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 
 	// Sanity check the request body. Be strict based on what we know
 	// the UI sends us.
-	if len(reqs) != 4 {
-		return fmt.Errorf("got %d jsonrpc2 requests, want exactly 4", len(reqs))
+	if l := len(reqs); l != 3 && l != 4 {
+		return fmt.Errorf("got %d jsonrpc2 requests, want exactly 3 or 4", len(reqs))
 	}
-	if reqs[0].Method != "initialize" || reqs[1].Method == "initialize" || reqs[2].Method != "shutdown" || reqs[3].Method != "exit" {
-		return fmt.Errorf("invalid jsonrpc2 request methods %q: expected initialize, anything but initialize, shutdown, exit (in that order)", []string{reqs[0].Method, reqs[1].Method, reqs[2].Method, reqs[3].Method})
+	if reqs[0].Method != "initialize" || reqs[len(reqs)-2].Method != "shutdown" || reqs[len(reqs)-1].Method != "exit" {
+		return fmt.Errorf("invalid jsonrpc2 request methods (%s, ..., %s, %s): expected (initialize, ..., shutdown, exit)", reqs[0].Method, reqs[len(reqs)-2].Method, reqs[len(reqs)-1].Method)
+	}
+	if len(reqs) == 4 && reqs[1].Method == "initialize" {
+		return fmt.Errorf("invalid jsonrpc2 request method for 2nd request: %q is not allowed", reqs[1].Method)
 	}
 	if reqs[0].Params == nil {
 		return errors.New("invalid jsonrpc2 initialize request: empty params")
 	}
-	if reqs[3].ID != (jsonrpc2.ID{}) {
+	if reqs[len(reqs)-1].ID != (jsonrpc2.ID{}) {
 		return errors.New("invalid jsonrpc2 exit request: id should NOT be present")
 	}
 	var initParams cxp.ClientProxyInitializeParams
@@ -192,8 +198,8 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	// Check consistency against the URL. The URL route params are for
 	// ease of debugging only, but it'd be confusing if they could
 	// diverge from the actual jsonrpc2 request.
-	if method != reqs[1].Method {
-		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("LSP method param in URL %q != %q method in LSP message params", method, reqs[1].Method)}
+	if v := mux.Vars(r)["LSPMethod"]; v != method {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: fmt.Errorf("LSP method param in URL %q != %q method in LSP message params", v, method)}
 	}
 
 	// Check that the user has permission to read this repo. Calling
