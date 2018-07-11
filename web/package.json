@@ -76,7 +76,7 @@
     "@types/mocha": "^5.0.0",
     "@types/mz": "0.0.32",
     "@types/node": "^8.10.21",
-    "@types/ora": "^1.3.1",
+    "@types/ora": "^1.3.4",
     "@types/p-retry": "^1.0.1",
     "@types/plugin-error": "^0.1.0",
     "@types/pretty-bytes": "^4.0.1",
