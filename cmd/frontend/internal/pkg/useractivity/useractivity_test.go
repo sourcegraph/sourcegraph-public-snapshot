@@ -11,6 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
+func init() {
+	// Prevent background GC from running
+	gcOnce.Do(func() {})
+}
+
 func TestUserActivity_None(t *testing.T) {
 	setupForTest(t)
 
