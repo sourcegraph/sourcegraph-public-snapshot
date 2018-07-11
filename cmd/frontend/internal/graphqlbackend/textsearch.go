@@ -969,7 +969,7 @@ var zoektCache *zoektpkg.Cache
 var searcherURLs *endpoint.Map
 
 func init() {
-	searcherURL := env.Get("SEARCHER_URL", "http://searcher:3181", "searcher server URL")
+	searcherURL := env.Get("SEARCHER_URL", "k8s+http://searcher:3181", "searcher server URL")
 	if searcherURL == "" {
 		return
 	}
