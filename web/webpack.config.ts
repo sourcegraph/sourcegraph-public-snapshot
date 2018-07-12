@@ -10,13 +10,18 @@ const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-modul
 
 const monacoEditorPaths = [path.resolve(__dirname, 'node_modules', 'monaco-editor')]
 
-const watching = Boolean(process.env.NODE_ENV !== 'production')
+// Never timeout idle workers when running with webpack-serve. Ideally this behavior would also
+// apply when running webpack-command with the --watch flag, but there is no general way to
+// determine whether we are in watch mode. This just means that if you use a different tool's watch
+// mode (other than webpack-serve), your workers will be reclaimed frequently and it'll be a bit
+// slower until you add support here.
+const usingWebpackServe = Boolean(process.env.WEBPACK_SERVE)
 const workerPool = {
-    poolTimeout: watching ? Infinity : 2000,
+    poolTimeout: usingWebpackServe ? Infinity : 2000,
 }
 const workerPoolSCSS = {
     workerParallelJobs: 2,
-    poolTimeout: watching ? Infinity : 2000,
+    poolTimeout: usingWebpackServe ? Infinity : 2000,
 }
 
 const config: webpack.Configuration = {
