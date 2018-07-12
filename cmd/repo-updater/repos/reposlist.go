@@ -32,7 +32,7 @@ var (
 	useNewSchedulerMutex sync.Mutex
 )
 
-// NewScheduler() indicates whether the new scheduler is active.
+// NewScheduler indicates whether the new scheduler is active.
 func NewScheduler() bool {
 	useNewSchedulerMutex.Lock()
 	defer useNewSchedulerMutex.Unlock()
@@ -146,7 +146,7 @@ func (s repoListStats) Honey() {
 	ev.Send()
 }
 
-// String() allows log15 to display the stats in an intelligble format.
+// String allows log15 to display the stats in an intelligble format.
 func (s repoListStats) String() string {
 	return fmt.Sprintf("fetches: %d manual/%d auto, repos: %d queued/%d seen, loops: %d, timescale: %.2f",
 		s.manualFetches, s.autoFetches, s.autoQueue, s.knownRepos, s.loops, s.scale)
@@ -171,8 +171,8 @@ type repoList struct {
 	maxRequests         int                  // max requests we should attempt at once
 }
 
-// this list is the common point between the sync worker and incoming
-// requests
+// This list is the common point between the sync worker and incoming
+// requests.
 var repos = repoList{
 	repos:               make(map[string]*repoData),
 	autoUpdatesDisabled: false,
@@ -180,7 +180,7 @@ var repos = repoList{
 	maxRequests:         5, // this matches a default config elsewhere
 }
 
-// recomputeScale() determines how long it'd take to do all the repo
+// recomputeScale determines how long it'd take to do all the repo
 // processing we would like to do over a given time interval, and if the
 // answer is "too much", we set a scale factor to slow this down.
 //
@@ -200,7 +200,7 @@ func (r *repoList) recomputeScale() {
 	r.intervalScale = scale
 }
 
-// baseInterval() computes a reasonable update interval to use with a
+// baseInterval computes a reasonable update interval to use with a
 // repository of a given age.
 func baseInterval(age time.Duration) time.Duration {
 	minimum := minDelay
@@ -225,7 +225,7 @@ func baseInterval(age time.Duration) time.Duration {
 	return interval
 }
 
-// interval() computes a scaled update interval; intervals will be increased
+// interval computes a scaled update interval; intervals will be increased
 // if there's enough repositories that we'd start flooding if we tried to keep
 // them all updated.
 func (r *repoList) interval(age time.Duration) time.Duration {
@@ -242,19 +242,30 @@ func (r *repoList) interval(age time.Duration) time.Duration {
 	return interval
 }
 
-// ping() attempts to wake up the main update loop if it would not already
+// ping attempts to wake up the main update loop if it would not already
 // be waking up at or before the 'due' time.
-//
-// call only if you hold the mutex.
 func (r *repoList) ping(due time.Time, s string) {
-	if r.ready {
-		if due.Before(r.nextDue) {
-			r.pingChan <- s
+	// Ping is often called when the mutex is held. If we wait for updateLoop
+	// to consume the channel send, but updateLoop is waiting on the mutex,
+	// that is a deadlock. So complete the task that wants to ping immediately,
+	// and handle the actual ping asynchronously sometime later. This could
+	// result in updateLoop running extra times when there's nothing to do,
+	// which is better than deadlocking.
+	go func() {
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		if r.ready {
+			if due.Before(r.nextDue) {
+				r.pingChan <- s
+				// Suppress additional pings until the next time the loop gets
+				// that far.
+				r.ready = false
+			}
 		}
-	}
+	}()
 }
 
-// queue() marks the named repository for automatic scheduling.
+// queue marks the named repository for automatic scheduling.
 // if the repository does not exist, it is created by calling add().
 //
 // call only when you hold the mutex.
@@ -287,7 +298,7 @@ func (r *repoList) queue(name, url string) {
 	r.ping(repo.due, repo.name)
 }
 
-// dequeue() unmarks the named repository for automatic scheduling. it does
+// dequeue unmarks the named repository for automatic scheduling. it does
 // not create the repository if the repository doesn't already exist.
 //
 // call only when you hold the mutex.
@@ -304,7 +315,7 @@ func (r *repoList) dequeue(name, url string) {
 	repo.auto = false
 }
 
-// update() marks the named repository for a manual update.
+// update marks the named repository for a manual update.
 // if the repository does not exist, it is created by calling add().
 //
 // call only when you hold the mutex.
@@ -329,7 +340,7 @@ func (r *repoList) update(name, url string) {
 	r.ping(repo.due, repo.name)
 }
 
-// add() creates the repository described, and schedules it for
+// add creates the repository described, and schedules it for
 // an initial clone sync. do not call add unless you hold the mutex
 // for repoList.
 func (r *repoList) add(name, url string, queue bool) {
@@ -567,7 +578,7 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 		r.mu.Unlock()
 		log15.Debug("updateLoop: unlocked")
 
-		// DO NOT lock r.mu during this select; that would prevent ping from
+		// DO NOT lock r.mu around this select; that would prevent ping from
 		// working.
 		select {
 		case <-time.After(waitTime):
@@ -576,6 +587,10 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 			log15.Debug("woken by ping", "s", s)
 		case <-ctx.Done():
 			log15.Info("context complete, terminating update loop.")
+			r.mu.Lock()
+			// prevent ping deadlocks.
+			r.ready = false
+			r.mu.Unlock()
 			return
 		case <-shutdown:
 			log15.Info("shutdown received. scheduler should be restarted soon.")
