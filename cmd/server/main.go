@@ -47,6 +47,7 @@ var defaultEnv = map[string]string{
 	"DEPLOY_TYPE": "server",
 
 	// enables the debug proxy (/-/debug)
+	"SRC_PROF_HTTP": "",
 	"SRC_PROF_SERVICES": `
 [
   { "Name": "frontend", "Host": "127.0.0.1:6060" },

@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	addr = env.Get("SRC_PROF_HTTP", "", "net/http/pprof http bind address.")
+	addr = env.Get("SRC_PROF_HTTP", ":6060", "net/http/pprof http bind address.")
 )
 
 func init() {
