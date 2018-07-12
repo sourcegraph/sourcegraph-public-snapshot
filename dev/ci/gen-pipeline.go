@@ -147,6 +147,8 @@ func main() {
 		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 	}
+	// exclude irrelevant tests for renovate PRs
+	renovate := strings.HasPrefix(branch, "renovate/")
 
 	addDockerImageStep := func(app string, latest bool) {
 		cmdDir := "./cmd/" + app
@@ -258,23 +260,25 @@ func main() {
 		Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
 		Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
 
-	pipeline.AddStep(":go:",
-		Cmd("dev/check/go-dep.sh"))
+	if !renovate {
+		pipeline.AddStep(":go:",
+			Cmd("dev/check/go-dep.sh"))
 
-	pipeline.AddStep(":postgres:",
-		Cmd("./dev/ci/ci-db-backcompat.sh"))
+		pipeline.AddStep(":postgres:",
+			Cmd("./dev/ci/ci-db-backcompat.sh"))
 
-	for _, path := range pkgs() {
-		coverageFile := path + "/coverage.txt"
-		stepOpts := []StepOpt{
-			Cmd("go test ./" + path + " -v -race -i"),
-			Cmd("go test ./" + path + " -v -race -coverprofile=" + coverageFile + " -covermode=atomic -coverpkg=github.com/sourcegraph/sourcegraph/..."),
-			ArtifactPaths(coverageFile),
+		for _, path := range pkgs() {
+			coverageFile := path + "/coverage.txt"
+			stepOpts := []StepOpt{
+				Cmd("go test ./" + path + " -v -race -i"),
+				Cmd("go test ./" + path + " -v -race -coverprofile=" + coverageFile + " -covermode=atomic -coverpkg=github.com/sourcegraph/sourcegraph/..."),
+				ArtifactPaths(coverageFile),
+			}
+			if path == "cmd/frontend/internal/db" {
+				stepOpts = append([]StepOpt{Cmd("./dev/ci/reset-test-db.sh || true")}, stepOpts...)
+			}
+			pipeline.AddStep(":go:", stepOpts...)
 		}
-		if path == "cmd/frontend/internal/db" {
-			stepOpts = append([]StepOpt{Cmd("./dev/ci/reset-test-db.sh || true")}, stepOpts...)
-		}
-		pipeline.AddStep(":go:", stepOpts...)
 	}
 
 	pipeline.AddWait()
