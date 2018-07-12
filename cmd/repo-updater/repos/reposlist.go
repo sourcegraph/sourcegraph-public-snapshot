@@ -499,6 +499,7 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 	// a minute should be long enough to get the repo list somewhat populated.
 	nextStatTime := statTime.Add(1 * time.Minute)
 	for {
+		log15.Debug("updateLoop: locking")
 		r.mu.Lock()
 		log15.Debug("updateLoop", "repos", len(r.repos), "queue", len(r.heap))
 		now := time.Now()
@@ -564,16 +565,20 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 		r.ready = true
 		r.nextDue = now.Add(waitTime)
 		r.mu.Unlock()
+		log15.Debug("updateLoop: unlocked")
 
 		// DO NOT lock r.mu during this select; that would prevent ping from
 		// working.
 		select {
 		case <-time.After(waitTime):
+			log15.Debug("woke up after time", "interval", waitTime)
 		case s := <-r.pingChan:
 			log15.Debug("woken by ping", "s", s)
 		case <-ctx.Done():
+			log15.Info("context complete, terminating update loop.")
 			return
 		case <-shutdown:
+			log15.Info("shutdown received. scheduler should be restarted soon.")
 			// Drop any existing lists; they'll get recreated by periodic updates later
 			// if the scheduler gets reenabled.
 			r.mu.Lock()
