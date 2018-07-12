@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -723,7 +722,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 		defer cancel1()
 		ctx, cancel2, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
-			log.Println("unexpected error while acquiring clone limiter:", err)
+			log15.Error("unexpected error while acquiring clone limiter:", "error", err)
 			return
 		}
 		defer cancel2()
@@ -732,7 +731,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 
 		path := filepath.Join(dir, ".git")
 		cmd := cloneCmd(ctx, url, path, true)
-		log15.Debug("cloning repo", "repo", repo, "url", url, "dir", dir)
+		log15.Info("cloning repo", "repo", repo, "url", url, "dir", dir)
 
 		pr, pw := io.Pipe()
 		defer pw.Close()
@@ -745,7 +744,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 			}
 			return
 		}
-		log15.Debug("repo cloned", "repo", repo)
+		log15.Info("repo cloned", "repo", repo)
 
 		// Update the last-changed stamp.
 		if err := setLastChanged(dir); err != nil {
@@ -764,7 +763,6 @@ func readCloneProgress(repo api.RepoURI, url string, lock *RepositoryLock, pr io
 	redactor := newURLRedactor(url)
 	for scan.Scan() {
 		progress := scan.Text()
-		log15.Debug("clone progress", "repo", repo, "url", url, "progress", progress)
 
 		// 🚨 SECURITY: The output could include the clone url with may contain a sensitive token.
 		// Redact the full url and any found HTTP credentials to be safe.
