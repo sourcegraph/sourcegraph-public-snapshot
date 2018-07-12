@@ -17,7 +17,6 @@
     },
     {
       "packagePatterns": ["^@types/"],
-      "rangeStrategy": "pin",
       "automerge": true
     }
   ]
