@@ -12,6 +12,14 @@ case "$BUILDKITE_BRANCH" in
         CONTAINER="gitserver-1"
         ;;
 
+    docker-images/xlang-*)
+        DEPLOYMENT=$(echo $BUILDKITE_BRANCH | awk -F '/' '{printf $2}')
+        CONTAINER=$DEPLOYMENT
+        # All of the language servers managed in this repo have a background deployment.
+        DEPLOYMENT_BG=$DEPLOYMENT-bg
+        CONTAINER_BG=$DEPLOYMENT_BG
+        ;;
+
     docker-images/*)
         DEPLOYMENT=$(echo $BUILDKITE_BRANCH | awk -F '/' '{printf $2}')
         CONTAINER=$DEPLOYMENT
@@ -26,3 +34,8 @@ IMAGE=$(kubectl get deployment "--namespace=$NAMESPACE" "--context=$CONTEXT" -o 
 
 kubectl "--namespace=$NAMESPACE" "--context=$CONTEXT" set image "deployment/$DEPLOYMENT" "$CONTAINER=$IMAGE:$VERSION"
 kubectl "--namespace=$NAMESPACE" "--context=$CONTEXT" rollout status "deployment/$DEPLOYMENT"
+
+if [ -n "$DEPLOYMENT_BG" ]; then
+    kubectl "--namespace=$NAMESPACE" "--context=$CONTEXT" set image "deployment/$DEPLOYMENT_BG" "$CONTAINER_BG=$IMAGE:$VERSION"
+    kubectl "--namespace=$NAMESPACE" "--context=$CONTEXT" rollout status "deployment/$DEPLOYMENT_BG"
+fi
