@@ -777,7 +777,7 @@ func (c *serverProxyConn) didRemove() {
 	serverConnsAliveDuration.WithLabelValues(c.id.mode).Observe(stats.Last.Sub(stats.Created).Seconds())
 	recordClosedServerConn(c.id, stats)
 	if LogServerStats {
-		logInfo("Removed serverProxyConn", c.id.contextID, "stats", stats)
+		logDebug("Removed serverProxyConn", c.id.contextID, "stats", stats)
 	}
 }
 
