@@ -284,8 +284,8 @@ func main() {
 	pipeline.AddWait()
 
 	pipeline.AddStep(":codecov:",
-		Cmd("buildkite-agent artifact download '*/coverage.txt' ."),
-		Cmd("buildkite-agent artifact download '*/coverage-final.json' ."),
+		Cmd("buildkite-agent artifact download '*/coverage.txt' . || true"), // ignore error when no report exists
+		Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
 		Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
 
 	addDeploySteps := func() {
