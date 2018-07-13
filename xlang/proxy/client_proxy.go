@@ -469,31 +469,18 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// We don't send the full initialize response down the wire, instead
 		// we whitelist the response. This is needed so we don't expose
 		// capabilities our lsp-proxy does not support.
-		caps := initResult.Capabilities
-		return &lsp.InitializeResult{
-			Capabilities: lsp.ServerCapabilities{
-				// We only return the capabilities which make sense for
-				// read-only documents.
-				HoverProvider:                caps.HoverProvider,
-				DefinitionProvider:           caps.DefinitionProvider,
-				ReferencesProvider:           caps.ReferencesProvider,
-				DocumentHighlightProvider:    caps.DocumentHighlightProvider,
-				DocumentSymbolProvider:       caps.DocumentSymbolProvider,
-				WorkspaceSymbolProvider:      caps.WorkspaceSymbolProvider,
-				ImplementationProvider:       caps.ImplementationProvider,
-				XWorkspaceReferencesProvider: caps.XWorkspaceReferencesProvider,
-				XDefinitionProvider:          caps.XDefinitionProvider,
-				XWorkspaceSymbolByProperties: caps.XWorkspaceSymbolByProperties,
+		if c.context.session == "" {
+			// Remove capabilities relating to state mutation (such as TextDocumentSync), i.e., that
+			// are not relevant for immutable sessions.
+			initResult.Capabilities.TextDocumentSync = nil
 
-				// The LSP proxy might not support these experimental capabilities, but pass them
-				// through anyway. (If an unsupported request method is used, the client will still
-				// get an error and understand why.)
-				Experimental: caps.Experimental,
-
-				// Intentionally left out TextDocumentSync since no value
-				// means no syncing
-			},
-		}, nil
+			// Note: We leave caps.Experimental alone, even though it may contain state
+			// mutation-related capabilities or other capabilities that the LSP proxy doesn't
+			// support. This is because it's safe to assume that the client and server understand
+			// that experimental capabilities may not work. If an unsupported request method is
+			// used, the client will still get an error and understand why.
+		}
+		return &initResult, nil
 
 	case "initialized":
 		if err := ensureInitialized(); err != nil {

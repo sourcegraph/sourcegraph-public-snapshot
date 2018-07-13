@@ -24,7 +24,7 @@ type configuredExtensionResolver struct {
 
 	// cache result because it is used by multiple fields
 	once       sync.Once
-	initResult *lsp.InitializeResult
+	initResult *cxp.InitializeResult
 	err        error
 }
 
@@ -38,8 +38,8 @@ func (r *configuredExtensionResolver) Subject() *configurationSubject { return r
 
 func (r *configuredExtensionResolver) IsEnabled() bool { return r.enabled }
 
-func (r *configuredExtensionResolver) getInitializeResult(ctx context.Context) (*lsp.InitializeResult, error) {
-	do := func() (*lsp.InitializeResult, error) {
+func (r *configuredExtensionResolver) getInitializeResult(ctx context.Context) (*cxp.InitializeResult, error) {
+	do := func() (*cxp.InitializeResult, error) {
 		mergedSettings, err := r.viewerMergedSettings(ctx)
 		if err != nil {
 			return nil, err
@@ -59,7 +59,7 @@ func (r *configuredExtensionResolver) getInitializeResult(ctx context.Context) (
 		}
 		defer c.Close()
 
-		var result lsp.InitializeResult
+		var result cxp.InitializeResult
 		err = c.Call(ctx, "initialize", cxp.ClientProxyInitializeParams{
 			ClientProxyInitializeParams: lspext.ClientProxyInitializeParams{
 				InitializeParams: lsp.InitializeParams{
@@ -107,11 +107,7 @@ func (r *configuredExtensionResolver) Contributions(ctx context.Context) (*jsonV
 	if err != nil {
 		return nil, err
 	}
-	var contributions interface{}
-	if m, ok := result.Capabilities.Experimental.(map[string]interface{}); ok {
-		contributions, _ = m["contributions"]
-	}
-	return &jsonValue{value: contributions}, nil
+	return &jsonValue{value: result.Capabilities.Contributions}, nil
 }
 
 func (r *configuredExtensionResolver) viewerMergedSettings(ctx context.Context) (*schema.ExtensionSettings, error) {

@@ -52,22 +52,20 @@ func handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (re
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		cap, err := cxp.ParseExperimentalClientCapabilities(*req.Params)
+		cap, err := cxp.ParseClientCapabilities(*req.Params)
 		if err != nil {
 			return nil, err
 		}
 		if !cap.Exec {
 			return nil, errors.New("client does not support exec")
 		}
-		if !cap.Decorations {
+		if cap.Decorations == nil || !cap.Decorations.Static {
 			return nil, errors.New("client does not support decorations")
 		}
 
-		return lsp.InitializeResult{
-			Capabilities: lsp.ServerCapabilities{
-				Experimental: cxp.ExperimentalServerCapabilities{
-					DecorationsProvider: true,
-				},
+		return cxp.InitializeResult{
+			Capabilities: cxp.ServerCapabilities{
+				DecorationsProvider: &cxp.DecorationsProviderServerCapabilities{DecorationsCapabilityOptions: cxp.DecorationsCapabilityOptions{Static: true}},
 			},
 		}, nil
 

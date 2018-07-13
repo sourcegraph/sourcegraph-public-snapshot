@@ -20,11 +20,11 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/xlang"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -310,7 +310,7 @@ func authorizeInitialize(ctx context.Context, req *jsonrpc2.Request) (*trackedIn
 		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 	}
 
-	var params lspext.ClientProxyInitializeParams
+	var params cxp.ClientProxyInitializeParams
 	if err := json.Unmarshal(*req.Params, &params); err != nil {
 		return nil, err
 	}

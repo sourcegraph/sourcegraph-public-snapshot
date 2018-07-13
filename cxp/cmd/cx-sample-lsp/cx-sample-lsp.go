@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/cxp/pkg/cxpmain"
 )
 
@@ -36,11 +37,13 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		h.initRaw = buf.Bytes()
 		h.mu.Unlock()
 
-		return lsp.InitializeResult{
-			Capabilities: lsp.ServerCapabilities{
-				HoverProvider:      true,
-				DefinitionProvider: true,
-				ReferencesProvider: true,
+		return cxp.InitializeResult{
+			Capabilities: cxp.ServerCapabilities{
+				ServerCapabilities: lsp.ServerCapabilities{
+					HoverProvider:      true,
+					DefinitionProvider: true,
+					ReferencesProvider: true,
+				},
 			},
 		}, nil
 

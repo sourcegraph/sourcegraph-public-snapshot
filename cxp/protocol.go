@@ -3,6 +3,8 @@ package cxp
 import (
 	"encoding/json"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -13,6 +15,7 @@ import (
 // field.
 type ClientProxyInitializeParams struct {
 	InitializationOptions ClientProxyInitializationOptions `json:"initializationOptions"`
+	Capabilities          ClientCapabilities               `json:"capabilities"`
 	lspext.ClientProxyInitializeParams
 }
 
@@ -29,6 +32,7 @@ type ClientProxyInitializationOptions struct {
 // It is lspext.InitializeParams with an added nested initializationOptions.settings field.
 type InitializeParams struct {
 	InitializationOptions *InitializationOptions `json:"initializationOptions,omitempty"`
+	Capabilities          ClientCapabilities     `json:"capabilities"`
 	lspext.InitializeParams
 }
 
@@ -77,4 +81,56 @@ func (o InitializationOptions) MarshalJSON() ([]byte, error) {
 // ExtensionSettings contains the global/organization/user settings for an extension.
 type ExtensionSettings struct {
 	Merged *json.RawMessage `json:"merged,omitempty"`
+}
+
+type ClientCapabilities struct {
+	lsp.ClientCapabilities
+
+	Decorations *DecorationsCapabilityOptions `json:"decorations,omitempty"`
+
+	// TODO(sqs): add this to cxp-js
+	Exec bool `json:"exec"`
+}
+
+type InitializeResult struct {
+	Capabilities ServerCapabilities `json:"capabilities"`
+	lsp.InitializeResult
+}
+
+type ServerCapabilities struct {
+	lsp.ServerCapabilities
+
+	DecorationsProvider *DecorationsProviderServerCapabilities `json:"decorationsProvider,omitempty"`
+
+	Contributions *Contributions `json:"contributions,omitempty"`
+}
+
+type DecorationsCapabilityOptions struct {
+	Static  bool `json:"static,omitempty"`
+	Dynamic bool `json:"dynamic,omitempty"`
+}
+
+type DecorationsProviderServerCapabilities struct {
+	DecorationsCapabilityOptions
+}
+
+type TextDocumentPublishDecorationsParams struct {
+	TextDocument lsp.TextDocumentIdentifier      `json:"textDocument"`
+	Decorations  []lspext.TextDocumentDecoration `json:"decorations"`
+}
+
+// ParseClientCapabilities parses the client capabilities from the client's initialize message.
+func ParseClientCapabilities(initializeParams []byte) (*ClientCapabilities, error) {
+	var params struct {
+		Capabilities ClientCapabilities `json:"capabilities"`
+	}
+	if err := json.Unmarshal(initializeParams, &params); err != nil {
+		return nil, err
+	}
+	return &params.Capabilities, nil
+}
+
+type ConfigurationUpdateParams struct {
+	Path  jsonx.Path  `json:"path"`
+	Value interface{} `json:"value"`
 }

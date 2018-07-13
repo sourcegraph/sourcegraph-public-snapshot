@@ -66,14 +66,14 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		cap, err := cxp.ParseExperimentalClientCapabilities(*req.Params)
+		cap, err := cxp.ParseClientCapabilities(*req.Params)
 		if err != nil {
 			return nil, err
 		}
 		if !cap.Exec {
 			return nil, errors.New("client does not support exec")
 		}
-		if !cap.Decorations {
+		if cap.Decorations == nil || !cap.Decorations.Static {
 			return nil, errors.New("client does not support decorations")
 		}
 
@@ -97,25 +97,27 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		h.settings = settings
 		h.mu.Unlock()
 
-		return lsp.InitializeResult{
-			Capabilities: lsp.ServerCapabilities{
-				HoverProvider: true,
-				Experimental: cxp.ExperimentalServerCapabilities{
-					DecorationsProvider: true,
-					Contributions: &cxp.Contributions{
-						Commands: []*cxp.CommandContribution{
-							{
-								Command: toggleHoverHeatmapID,
-								Title:   "Toggle hover heatmap",
-								ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
-									Path:        jsonx.PropertyPath("hide"),
-									CycleValues: []interface{}{false, true},
-								},
+		return cxp.InitializeResult{
+			Capabilities: cxp.ServerCapabilities{
+				ServerCapabilities: lsp.ServerCapabilities{
+					HoverProvider: true,
+				},
+				DecorationsProvider: &cxp.DecorationsProviderServerCapabilities{
+					DecorationsCapabilityOptions: cxp.DecorationsCapabilityOptions{Dynamic: true},
+				},
+				Contributions: &cxp.Contributions{
+					Commands: []*cxp.CommandContribution{
+						{
+							Command: toggleHoverHeatmapID,
+							Title:   "Toggle hover heatmap",
+							ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
+								Path:        jsonx.PropertyPath("hide"),
+								CycleValues: []interface{}{false, true},
 							},
 						},
-						Menus: &cxp.MenuContributions{
-							EditorTitle: []*cxp.MenuItemContribution{{Command: toggleHoverHeatmapID}},
-						},
+					},
+					Menus: &cxp.MenuContributions{
+						EditorTitle: []*cxp.MenuItemContribution{{Command: toggleHoverHeatmapID}},
 					},
 				},
 			},

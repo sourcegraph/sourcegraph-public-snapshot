@@ -64,7 +64,7 @@ type serverProxyConn struct {
 	// goroutines wait until the 1st goroutine completes those tasks.
 	initOnce sync.Once
 	// initResult and initErr are only safe to write inside initOnce.Do(...), only safe to read after calling initOnce.Do(...)
-	initResult *lsp.InitializeResult
+	initResult *cxp.InitializeResult
 	initErr    error
 
 	mu          sync.Mutex
@@ -220,7 +220,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 
 // getServerConn returns an existing connection to the specified
 // server or creates one if none exists.
-func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyConn, initResult *lsp.InitializeResult, err error) {
+func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyConn, initResult *cxp.InitializeResult, err error) {
 	// Check for an already established connection.
 	p.mu.Lock()
 	for cc := range p.servers {
@@ -416,7 +416,7 @@ func (p *Proxy) shouldStripBGMode(mode string) bool {
 // initializeServer will ensure we either have an open connection or will open
 // one to ID. It returns the initializeResult as a json.RawMessage. If it
 // fails, it will return a non-nil error.
-func (p *Proxy) initializeServer(ctx context.Context, id serverID) (*lsp.InitializeResult, error) {
+func (p *Proxy) initializeServer(ctx context.Context, id serverID) (*cxp.InitializeResult, error) {
 	_, initResult, err := p.getServerConn(ctx, id)
 	return initResult, err
 }
@@ -465,7 +465,7 @@ func (p *Proxy) clientForwardFunc(id contextID) func(context.Context, *jsonrpc2.
 	}
 }
 
-func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeResult, error) {
+func (c *serverProxyConn) lspInitialize(ctx context.Context) (*cxp.InitializeResult, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: initialize",
 		opentracing.Tags{"mode": c.id.mode, "rootURI": c.id.rootURI.String()},
 	)
@@ -481,27 +481,28 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 			InitializeParams: lsp.InitializeParams{
 				RootPath: "/",
 				RootURI:  "file:///",
-				Capabilities: lsp.ClientCapabilities{
-					XFilesProvider:   true,
-					XContentProvider: true,
-					XCacheProvider:   true,
-
-					// NOTE: These may not accurately represent the end client's (e.g., the Sourcegraph
-					// web frontend's, or a VS Code extension client's) capabilities. This is because it
-					// was designed for the case where multiple true clients are sharing the same
-					// backend, and it doesn't make sense to arbitrarily choose (e.g.) the first client's
-					// capabilities.
-					//
-					// TODO: If the session is not shared, then we can pass through the end client's
-					// capabilities.
-					Experimental: cxp.ExperimentalClientCapabilities{
-						Decorations: true,
-						Exec:        true,
-					},
-				},
 			},
 			OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
 			Mode:            c.id.mode,
+		},
+
+		// NOTE: These may not accurately represent the end client's (e.g., the Sourcegraph
+		// web frontend's, or a VS Code extension client's) capabilities. This is because it
+		// was designed for the case where multiple true clients are sharing the same
+		// backend, and it doesn't make sense to arbitrarily choose (e.g.) the first client's
+		// capabilities.
+		//
+		// TODO(sqs): If the session is not shared, then we can pass through the end client's
+		// capabilities. That will require supporting a "direct" mode for lsp-proxy where there is a
+		// 1-to-1 correspondence between clientProxyConn <-> serverProxyConn.
+		Capabilities: cxp.ClientCapabilities{
+			ClientCapabilities: lsp.ClientCapabilities{
+				XFilesProvider:   true,
+				XContentProvider: true,
+				XCacheProvider:   true,
+			},
+			Decorations: &cxp.DecorationsCapabilityOptions{Static: true, Dynamic: true},
+			Exec:        true,
 		},
 	}
 
@@ -519,7 +520,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 		Settings: cxp.ExtensionSettings{Merged: mergedSettings},
 	}
 
-	var res lsp.InitializeResult
+	var res cxp.InitializeResult
 	err = c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
 	if err != nil {
 		if errors.Cause(err) == context.DeadlineExceeded {
