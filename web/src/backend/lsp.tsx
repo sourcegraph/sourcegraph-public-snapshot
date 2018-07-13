@@ -14,7 +14,6 @@ import { ErrorLike, normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { HoverMerged, ModeSpec } from './features'
-import { webSocketSendLSPRequest } from './webSocket'
 
 /**
  * Contains the fields necessary to route the request to the correct logical LSP server process and construct the
@@ -110,19 +109,13 @@ const httpSendLSPRequest = (ctx: LSPContext, request?: LSPRequest): Observable<R
         })
     )
 
-// Run `localStorage.lspWebSocket=true;location.reload()` to use WebSockets for LSP (instead of single HTTP POST
-// requests).
-const useSendFunc: 'websocket' | 'http' = (localStorage.getItem('cxpClient') as 'websocket' | 'http') || 'http'
-
 /**
  * Sends a sequence of LSP requests: initialize, request (the arg), shutdown, exit. The result from the request
  * (the arg) is returned. If the request arg is not given, it is omitted and the result from initialize is
  * returned.
  */
 const sendLSPRequest: (ctx: LSPContext, request?: LSPRequest) => Observable<any> = (ctx, request) =>
-    (useSendFunc === 'websocket' ? webSocketSendLSPRequest : httpSendLSPRequest)(ctx, request).pipe(
-        map(results => results[request ? 1 : 0])
-    )
+    httpSendLSPRequest(ctx, request).pipe(map(results => results[request ? 1 : 0]))
 
 /**
  * Query the server's capabilities.

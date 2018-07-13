@@ -66,11 +66,6 @@ const config: webpack.Configuration = {
             // tslint: true,
         }),
     ],
-    node: {
-        // To suppress errors when importing vscode-jsonrpc. Recommended at
-        // https://github.com/TypeFox/vscode-ws-jsonrpc/issues/2.
-        net: 'empty',
-    },
     resolve: {
         extensions: ['.ts', '.tsx', '.js'],
         mainFields: ['es2015', 'module', 'browser', 'main'],
