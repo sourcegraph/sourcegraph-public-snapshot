@@ -9,8 +9,8 @@ import {
     NotificationHandler,
     RequestHandler,
 } from '../jsonrpc2/handlers'
-import { NotificationType, RequestType } from '../jsonrpc2/messages'
 import { Message, MessageType as RPCMessageType, ResponseError } from '../jsonrpc2/messages'
+import { NotificationType, RequestType } from '../jsonrpc2/messages'
 import { Trace, Tracer } from '../jsonrpc2/trace'
 import {
     InitializedNotification,
@@ -59,10 +59,10 @@ export interface ClientOptions {
     initializationFailedHandler?: InitializationFailedHandler
     errorHandler?: ErrorHandler
     middleware?: Middleware
-    createMessageTransports: (
-        id: string,
-        clientOptions: ClientOptions
-    ) => MessageTransports | Promise<MessageTransports>
+
+    /** Called to create the connection to the server. */
+    createMessageTransports: () => MessageTransports | Promise<MessageTransports>
+
     environment: ObservableEnvironment
 }
 
@@ -254,8 +254,8 @@ export class Client implements Unsubscribable {
         const closeHandler = () => {
             this.handleConnectionClosed()
         }
-        return Promise.resolve(this.clientOptions.createMessageTransports(this.id, this.clientOptions)).then(
-            transports => createConnection(transports, errorHandler, closeHandler)
+        return Promise.resolve(this.clientOptions.createMessageTransports()).then(transports =>
+            createConnection(transports, errorHandler, closeHandler)
         )
     }
 

@@ -15,6 +15,7 @@ import { TextDocumentHoverFeature } from '../client/features/hover'
 import { WindowLogMessagesFeature } from '../client/features/logMessages'
 import { WindowShowMessagesFeature } from '../client/features/showMessages'
 import { TextDocumentDidOpenFeature } from '../client/features/textDocuments'
+import { MessageTransports } from '../jsonrpc2/connection'
 import { Trace } from '../jsonrpc2/trace'
 import {
     ConfigurationUpdateParams,
@@ -83,10 +84,11 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     public readonly configurationUpdates: Observable<ConfigurationUpdate> = this._configurationUpdates
 
     constructor(
-        private clientOptions: Pick<
-            ClientOptions,
-            'createMessageTransports' | 'middleware' | 'initializationFailedHandler' | 'errorHandler'
-        >
+        private clientOptions: Pick<ClientOptions, 'middleware' | 'initializationFailedHandler' | 'errorHandler'>,
+        private createMessageTransports: (
+            extension: X,
+            clientOptions: ClientOptions
+        ) => MessageTransports | Promise<MessageTransports>
     ) {
         this.subscriptions.add(() => {
             for (const c of this.clients) {
@@ -123,18 +125,28 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
                 nextClients.push(oldClient)
             }
         }
+        // Remove clients that are no longer in use.
         for (const unusedClient of unusedClients) {
             unusedClient.unsubscribe()
         }
+        // Create new clients.
         for (const { key } of newClients) {
-            // Create new clients.
-            const client = new Client(key.id, key.id, {
+            // Find the extension that this client is for.
+            const extension = environment.extensions!.find(x => x.id === key.id)
+            if (!extension) {
+                throw new Error(`extension not found: ${key.id}`)
+            }
+
+            const clientOptions: ClientOptions = {
                 ...this.clientOptions,
                 root: key.root,
                 initializationOptions: { ...key.initializationOptions }, // key is immutable so we can diff it
                 documentSelector: ['*'],
                 environment: this.environment,
-            })
+                createMessageTransports: () => this.createMessageTransports(extension, clientOptions),
+            }
+            const client = new Client(key.id, key.id, clientOptions)
+
             const settings = this._environment.pipe(
                 map(({ extensions }) => (extensions ? extensions.find(x => x.id === key.id) : null)),
                 filter((x): x is X => !!x),
@@ -207,7 +219,7 @@ interface ClientInit {
     settings: ExtensionSettings
 }
 
-function computeClients(environment: Environment): ClientInit[] {
+function computeClients<X extends Extension>(environment: Environment<X>): ClientInit[] {
     const clients: ClientInit[] = []
     if (!environment.root || !environment.extensions) {
         return clients
