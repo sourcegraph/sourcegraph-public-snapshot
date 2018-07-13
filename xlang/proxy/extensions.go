@@ -28,6 +28,12 @@ func allowExtensionTarget(allowedPatterns []string, target string) bool {
 	return false
 }
 
+var (
+	// errExtensionBundlePlatformNotSupported occurs when attempting to execute an extension that
+	// specifies a source bundle. These are typically executed on the client, not on the server.
+	errExtensionBundlePlatformNotSupported = errors.New("extension bundle platform target is not supported")
+)
+
 // 🚨 SECURITY: This lets users on the Sourcegraph site create extensions and cause Sourcegraph to
 // communicate with external hosts/URLs specified in INSECURE_ALLOW_EXTENSION_TARGETS (or, when
 // INSECURE_EXTENSION_EXEC is true, run arbitrary commands).
@@ -67,6 +73,8 @@ func lookupExtension(ctx context.Context, extensionID string) (jsonrpc2.ObjectSt
 			return execServer(manifest.Platform.Exec.Command, nil)()
 		}
 		return nil, fmt.Errorf("unable to use extension %q: exec is disabled", extensionID)
+	case manifest.Platform.Bundle != nil:
+		return nil, errors.WithMessage(errExtensionBundlePlatformNotSupported, fmt.Sprintf("unable to use extension %q", extensionID))
 	default:
 		return nil, fmt.Errorf("unable to use extension %q: no supported platform in manifest (supported platforms are: exec tcp websocket)", extensionID)
 	}

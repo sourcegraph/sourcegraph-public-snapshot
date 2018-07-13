@@ -2,10 +2,12 @@ import { ClientOptions } from 'cxp/lib/client/client'
 import { Controller } from 'cxp/lib/environment/controller'
 import { MessageTransports } from 'cxp/lib/jsonrpc2/connection'
 import { createWebSocketMessageTransports } from 'cxp/lib/jsonrpc2/transports/browserWebSocket'
+import { createWebWorkerMessageTransports } from 'cxp/lib/jsonrpc2/transports/webWorker'
 import { catchError, mergeMap } from 'rxjs/operators'
 import { toGQLKeyPath, updateUserExtensionSettings } from '../registry/backend'
 import { isErrorLike } from '../util/errors'
 import { CXPExtensionWithManifest } from './CXPEnvironment'
+import { importScriptsBlobURL } from './webWorker'
 
 /**
  * The global CXP controller, which handles all CXP communication between the React app and CXP extension.
@@ -36,6 +38,22 @@ function createMessageTransports(
                 extension.manifest.message
             }`
         )
+    }
+    if (extension.manifest.platform.type === 'bundle') {
+        const APPLICATION_JSON_MIME_TYPE = 'application/json'
+        if (
+            typeof extension.manifest.platform.contentType === 'string' &&
+            extension.manifest.platform.contentType !== APPLICATION_JSON_MIME_TYPE
+        ) {
+            // Until these are supported, prevent people from
+            throw new Error(
+                `unable to run extension ${JSON.stringify(extension.id)} bundle: content type ${JSON.stringify(
+                    extension.manifest.platform.contentType
+                )} is not supported (use ${JSON.stringify(APPLICATION_JSON_MIME_TYPE)})`
+            )
+        }
+        const worker = new Worker(importScriptsBlobURL(extension.id, extension.manifest.platform.url))
+        return Promise.resolve(createWebWorkerMessageTransports(worker))
     }
 
     // Include ?mode=&repo= in the url to make it easier to find the correct WebSocket connection in (e.g.) the

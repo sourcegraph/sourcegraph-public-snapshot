@@ -50,8 +50,14 @@ func connectToServer(ctx context.Context, mode string) (jsonrpc2.ObjectStream, e
 	conn, err := lookupExtension(ctx, mode)
 	if conn != nil || err != nil {
 		if err != nil {
+			var code int64
+			if errors.Cause(err) == errExtensionBundlePlatformNotSupported {
+				code = CodePlatformNotSupported
+			} else {
+				code = CodeModeNotFound
+			}
 			err = &jsonrpc2.Error{
-				Code:    CodeModeNotFound,
+				Code:    code,
 				Message: err.Error(),
 			}
 		}

@@ -79,6 +79,13 @@ type BuiltinAuthProvider struct {
 	Type        string `json:"type"`
 }
 
+// BundleTarget description: A JavaScript file that is run as a Web Worker to provide this extension's functionality.
+type BundleTarget struct {
+	ContentType string `json:"contentType,omitempty"`
+	Type        string `json:"type"`
+	Url         string `json:"url"`
+}
+
 // DockerTarget description: A specification of how to run a Docker container to provide this extension's functionality.
 type DockerTarget struct {
 	Image string `json:"image"`
@@ -104,6 +111,7 @@ type ExperimentalFeatures struct {
 
 // ExtensionPlatform description: The platform targeted by this extension.
 type ExtensionPlatform struct {
+	Bundle    *BundleTarget
 	Docker    *DockerTarget
 	Websocket *WebSocketTarget
 	Tcp       *TCPTarget
@@ -111,6 +119,9 @@ type ExtensionPlatform struct {
 }
 
 func (v ExtensionPlatform) MarshalJSON() ([]byte, error) {
+	if v.Bundle != nil {
+		return json.Marshal(v.Bundle)
+	}
 	if v.Docker != nil {
 		return json.Marshal(v.Docker)
 	}
@@ -133,6 +144,8 @@ func (v *ExtensionPlatform) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
+	case "bundle":
+		return json.Unmarshal(data, &v.Bundle)
 	case "docker":
 		return json.Unmarshal(data, &v.Docker)
 	case "exec":
@@ -142,7 +155,7 @@ func (v *ExtensionPlatform) UnmarshalJSON(data []byte) error {
 	case "websocket":
 		return json.Unmarshal(data, &v.Websocket)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"docker", "websocket", "tcp", "exec"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"bundle", "docker", "websocket", "tcp", "exec"})
 }
 
 // ExtensionSettings description: Settings for an extension.

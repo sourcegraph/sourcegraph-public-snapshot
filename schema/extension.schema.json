@@ -46,10 +46,11 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["docker", "websocket", "tcp", "exec"]
+          "enum": ["bundle", "docker", "websocket", "tcp", "exec"]
         }
       },
       "oneOf": [
+        { "$ref": "#/definitions/BundleTarget" },
         { "$ref": "#/definitions/DockerTarget" },
         { "$ref": "#/definitions/WebSocketTarget" },
         { "$ref": "#/definitions/TCPTarget" },
@@ -57,6 +58,31 @@
       ],
       "!go": {
         "taggedUnionType": true
+      }
+    },
+    "BundleTarget": {
+      "description": "A JavaScript file that is run as a Web Worker to provide this extension's functionality.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "bundle",
+          "enum": ["bundle"]
+        },
+        "contentType": {
+          "description":
+            "The MIME type of the source code. Only \"application/javascript\" (the default) is supported.",
+          "type": "string",
+          "const": "application/javascript",
+          "default": "application/javascript"
+        },
+        "url": {
+          "description": "A URL to a file containing the JavaScript source code to execute for this extension.",
+          "type": "string",
+          "format": "uri"
+        }
       }
     },
     "DockerTarget": {

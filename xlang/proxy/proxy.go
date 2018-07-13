@@ -22,6 +22,10 @@ const (
 	// requested to initialize a session for a mode (language ID, such as "go") that no
 	// servers are registered to handle.
 	CodeModeNotFound = -32000
+
+	// CodePlatformNotSupported is the JSON-RPC 2.0 error code that indicates that the extension
+	// manifest specified an execution platform that is not supported.
+	CodePlatformNotSupported = -32001
 )
 
 // IsModeNotFound returns whether err (or err's underlying cause) is a JSON-RPC 2.0

@@ -1,6 +1,10 @@
 // Polyfill URL because Chrome and Firefox are not spec-compliant
 // Hostnames of URIs with custom schemes (e.g. git) are not parsed out
 import { URL, URLSearchParams } from 'whatwg-url'
+// The polyfill does not expose createObjectURL, which we need for creating data: URIs for Web
+// Workers. So retain it.
+//
+// tslint:disable-next-line:no-unbound-method
 const createObjectURL = window.URL ? window.URL.createObjectURL : null
 Object.assign(window, { URL, URLSearchParams })
 ;(window.URL.createObjectURL as any) = createObjectURL
