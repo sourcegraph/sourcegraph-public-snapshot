@@ -38,7 +38,10 @@ func TestMigrateGitDir(t *testing.T) {
 	if err := os.Chmod(filepath.Join(root, "naughty.com/repo"), 0400); err != nil {
 		t.Fatal(err)
 	}
-	migrateGitDir(root, &RepositoryLocker{})
+	(&Server{
+		ReposDir: root,
+		locker:   &RepositoryLocker{},
+	}).migrateGitDir()
 	assertFiles(t, root,
 		"github.com/foo/bar/.git/HEAD",
 		"github.com/foo/baz/.git/HEAD",

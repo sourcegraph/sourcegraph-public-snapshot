@@ -1,25 +1,31 @@
 package server
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func migrateGitDir(rootDir string, locker *RepositoryLocker) {
-	tmp, err := ioutil.TempDir(rootDir, "migrate-git-dir-")
+func (s *Server) migrateGitDir() {
+	tmp, err := s.tempDir("migrate-git-dir-")
 	if err != nil {
 		log15.Warn("git clone location migration failed", "error", err)
 		return
 	}
 	defer os.RemoveAll(tmp)
 
-	err = filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(s.ReposDir, func(path string, info os.FileInfo, err error) error {
+		if s.ignorePath(path) {
+			if info.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		if err != nil {
 			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
-			return filepath.SkipDir
+			return nil
 		}
 
 		// We only care about directories
@@ -50,7 +56,7 @@ func migrateGitDir(rootDir string, locker *RepositoryLocker) {
 			return filepath.SkipDir
 		}
 
-		lock, ok := locker.TryAcquire(path, "migrating repository clone")
+		lock, ok := s.locker.TryAcquire(path, "migrating repository clone")
 		if !ok {
 			log15.Warn("failed to acquire directory lock in git clone location migration", "path", path)
 			return filepath.SkipDir

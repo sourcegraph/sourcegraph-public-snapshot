@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -114,5 +115,93 @@ func TestCleanupExpired(t *testing.T) {
 	ti := time.Now().Add(-repoTTL)
 	if fi.ModTime().Before(ti) {
 		t.Error("expected repoB to be recloned during clean up")
+	}
+}
+
+func TestSetupAndClearTmp(t *testing.T) {
+	root, cleanup := tmpDir(t)
+	defer cleanup()
+
+	s := &Server{ReposDir: root}
+
+	// All non .git paths should become .git
+	mkFiles(t, root,
+		"github.com/foo/baz/.git/HEAD",
+		"example.org/repo/.git/HEAD",
+
+		// Needs to be deleted
+		".tmp/foo",
+		".tmp/baz/bam",
+
+		// Older tmp cleanups that failed
+		".tmp-old123/foo",
+	)
+
+	tmp, err := s.SetupAndClearTmp()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Straight after cleaning .tmp should be empty
+	assertFiles(t, filepath.Join(root, ".tmp"))
+
+	// tmp should exist
+	if info, err := os.Stat(tmp); err != nil {
+		t.Fatal(err)
+	} else if !info.IsDir() {
+		t.Fatal("tmpdir is not a dir")
+	}
+
+	// tmp should be on the same mount as root, ie root is parent.
+	if filepath.Dir(tmp) != root {
+		t.Fatalf("tmp is not under root: tmp=%s root=%s", tmp, root)
+	}
+
+	// Wait until async cleaning is done
+	for i := 0; i < 1000; i++ {
+		found := false
+		files, err := ioutil.ReadDir(s.ReposDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, f := range files {
+			found = found || strings.HasPrefix(f.Name(), ".tmp-old")
+		}
+		if !found {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	// Only files should be the repo files
+	assertFiles(t, root,
+		"github.com/foo/baz/.git/HEAD",
+		"example.org/repo/.git/HEAD")
+}
+
+func TestSetupAndClearTmp_Empty(t *testing.T) {
+	root, cleanup := tmpDir(t)
+	defer cleanup()
+
+	s := &Server{ReposDir: root}
+
+	tmp, err := s.SetupAndClearTmp()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// No files, just the empty .tmp dir should exist
+	assertFiles(t, root)
+
+	// tmp should exist
+	if info, err := os.Stat(tmp); err != nil {
+		t.Fatal(err)
+	} else if !info.IsDir() {
+		t.Fatal("tmpdir is not a dir")
+	}
+
+	// tmp should be on the same mount as root, ie root is parent.
+	if filepath.Dir(tmp) != root {
+		t.Fatalf("tmp is not under root: tmp=%s root=%s", tmp, root)
 	}
 }

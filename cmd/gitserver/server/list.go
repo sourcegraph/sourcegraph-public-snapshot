@@ -70,12 +70,19 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 
 	case query("cloned"):
 		err := filepath.Walk(s.ReposDir, func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
 			if ctx.Err() != nil {
 				return ctx.Err()
+			}
+
+			if s.ignorePath(path) {
+				if info.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
+
+			if err != nil {
+				return nil
 			}
 
 			// We only care about directories

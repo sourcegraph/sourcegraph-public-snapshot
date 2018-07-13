@@ -52,6 +52,13 @@ func (s *Server) cleanupRepos() {
 			return nil
 		}
 
+		if s.ignorePath(p) {
+			if fi.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
 		// Find each git repo root by looking for its HEAD file.
 		if fi.IsDir() || !strings.HasSuffix(p, "/HEAD") {
 			return nil
@@ -85,7 +92,7 @@ func (s *Server) cleanupRepos() {
 		if time.Since(initTime) > repoTTL {
 			log15.Info("recloning expired repo", "repo", repoRoot)
 			uri := protocol.NormalizeRepo(api.RepoURI(strings.TrimPrefix(repoRoot, s.ReposDir+"/")))
-			tmp, err := ioutil.TempDir(s.ReposDir, "tmp-clone-")
+			tmp, err := s.tempDir("cleanup-clone-")
 			tmpCloneRoot := path.Join(tmp, path.Base(repoRoot))
 			if err != nil {
 				log15.Error("error replacing repo", "error", err, "repo", repoRoot)
@@ -125,7 +132,7 @@ func (s *Server) cleanupRepos() {
 				return
 			}
 			// Mark this repo as currently being cloned to prevent a race during the switchover.
-			toDelete, err := ioutil.TempDir(s.ReposDir, "tmp-cleanup-")
+			toDelete, err := s.tempDir("cleanup-delete-")
 			defer func() { go os.RemoveAll(toDelete) }()
 			lock, ok := s.locker.TryAcquire(repoRoot, "recloning")
 			if !ok {
@@ -159,10 +166,11 @@ func (s *Server) cleanupRepos() {
 // to avoid leaving partial state in the event of server
 // restart or concurrent modifications to the directory.
 func (s *Server) removeAll(dir string) error {
-	tmpDir, err := ioutil.TempDir(s.ReposDir, "tmp-cleanup-")
+	tmpDir, err := s.tempDir("removeAll-")
 	if err != nil {
 		return err
 	}
+	defer os.RemoveAll(tmpDir)
 	tmpName := strings.Replace(dir, string(os.PathSeparator), "-", -1)
 	tmpRoot := path.Join(tmpDir, tmpName)
 	if err := os.Rename(dir, tmpRoot); err != nil {
@@ -198,4 +206,56 @@ func (s *Server) cleanTmpFiles(dir string) {
 		log15.Error("error removing tmp_pack_* files", "error", err)
 	}
 	return
+}
+
+// SetupAndClearTmp sets up the the tempdir for ReposDir as well as clearing it
+// out. It returns the temporary directory location.
+func (s *Server) SetupAndClearTmp() (string, error) {
+	// Additionally we create directories with the prefix .tmp-old which are
+	// asynchronously removed. We do not remove in place since it may be a
+	// slow operation to block on. Our tmp dir will be ${s.ReposDir}/.tmp
+	dir := filepath.Join(s.ReposDir, tempDirName) // .tmp
+	oldPrefix := tempDirName + "-old"
+	if _, err := os.Stat(dir); err == nil {
+		// Rename the current tmp file so we can asynchronously remove it. Use
+		// a consistent pattern so if we get interrupted, we can clean it
+		// another time.
+		oldTmp, err := ioutil.TempDir(s.ReposDir, oldPrefix)
+		if err != nil {
+			return "", err
+		}
+		// oldTmp dir exists, so we need to use a child of oldTmp as the
+		// rename target.
+		if err := os.Rename(dir, filepath.Join(oldTmp, tempDirName)); err != nil {
+			return "", err
+		}
+	}
+
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return "", err
+	}
+
+	// Asynchronously remove old temporary directories
+	go func() {
+		files, err := ioutil.ReadDir(s.ReposDir)
+		if err != nil {
+			log15.Error("failed to do tmp cleanup", "error", err)
+			return
+		}
+
+		for _, f := range files {
+			// Remove older .tmp directories as well as our older tmp-
+			// directories we would place into ReposDir. In September 2018 we
+			// can remove support for removing tmp- directories.
+			if !strings.HasPrefix(f.Name(), oldPrefix) && !strings.HasPrefix(f.Name(), "tmp-") {
+				continue
+			}
+			path := filepath.Join(s.ReposDir, f.Name())
+			if err := os.RemoveAll(path); err != nil {
+				log15.Error("failed to remove old temporary directory", "path", path, "error", err)
+			}
+		}
+	}()
+
+	return dir, nil
 }

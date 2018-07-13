@@ -42,7 +42,7 @@ func main() {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
 	}
 	if err := os.MkdirAll(reposDir, os.ModePerm); err != nil {
-		log.Fatalf("Failed to create SRC_REPOS_DIR: %s", err)
+		log.Fatalf("failed to create SRC_REPOS_DIR: %s", err)
 	}
 
 	gitserver := server.Server{
@@ -50,6 +50,14 @@ func main() {
 		DeleteStaleRepositories: runRepoCleanup,
 	}
 	gitserver.RegisterMetrics()
+
+	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
+		log.Fatalf("failed to setup temporary directory: %s", err)
+	} else {
+		// Additionally set TMP_DIR so other temporary files we may accidently
+		// create are on the faster RepoDir mount.
+		os.Setenv("TMP_DIR", tmpDir)
+	}
 
 	// Create Handler now since it also initializes state
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), gitserver.Handler())

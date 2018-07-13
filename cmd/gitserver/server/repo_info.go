@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -89,7 +88,7 @@ func (s *Server) deleteRepo(repo api.RepoURI) error {
 	}
 
 	// Rename out of the location so we can atomically stop using the repo.
-	tmp, err := ioutil.TempDir(s.ReposDir, "tmp-delete")
+	tmp, err := s.tempDir("delete-repo")
 	if err != nil {
 		return err
 	}

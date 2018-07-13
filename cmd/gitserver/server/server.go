@@ -43,6 +43,9 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+// tempDirName is the name used for the temporary directory under ReposDir.
+const tempDirName = ".tmp"
+
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
 // logs to stderr
 var traceLogs bool
@@ -227,7 +230,7 @@ func (s *Server) Handler() http.Handler {
 func (s *Server) Janitor() {
 	// We may have clones which do not live in a directory named .git. Move
 	// them.
-	migrateGitDir(s.ReposDir, s.locker)
+	s.migrateGitDir()
 
 	// Sourcegraph.com we periodically delete unused repositories.
 	if s.DeleteStaleRepositories {
@@ -290,6 +293,30 @@ func (s *Server) acquireCloneableLimiter(ctx context.Context) (context.Context, 
 	lsRemoteQueue.Inc()
 	defer lsRemoteQueue.Dec()
 	return s.cloneableLimiter.Acquire(ctx)
+}
+
+// tempDir is a wrapper around ioutil.TempDir, but using the server's
+// temporary directory filepath.Join(s.ReposDir, tempDirName).
+//
+// This directory is cleaned up by gitserver and will be ignored by repository
+// listing operations.
+func (s *Server) tempDir(prefix string) (name string, err error) {
+	dir := filepath.Join(s.ReposDir, tempDirName)
+
+	// Create tmpdir directory if doesn't exist yet.
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		return "", err
+	}
+
+	return ioutil.TempDir(dir, prefix)
+}
+
+func (s *Server) ignorePath(path string) bool {
+	// We ignore any path which starts with .tmp in ReposDir
+	if filepath.Dir(path) != s.ReposDir {
+		return false
+	}
+	return strings.HasPrefix(filepath.Base(path), tempDirName)
 }
 
 func cloneCmd(ctx context.Context, origin, dir string, progress bool) *exec.Cmd {

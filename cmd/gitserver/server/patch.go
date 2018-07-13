@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -38,7 +37,7 @@ func (s *Server) handleCreateCommitFromPatch(w http.ResponseWriter, r *http.Requ
 	ref := req.TargetRef
 
 	// Ensure tmp directory exists
-	tmpRepoDir, err := ioutil.TempDir(s.ReposDir, "tmp-repo-")
+	tmpRepoDir, err := s.tempDir("patch-repo-")
 	if err != nil {
 		http.Error(w, "gitserver: make tmp repo - "+err.Error(), http.StatusInternalServerError)
 		return
