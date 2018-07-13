@@ -1,0 +1,39 @@
+.repo-rev-sidebar-history {
+    &__header {
+        background: $color-light-bg-3;
+        padding: 0.5rem;
+        font-weight: bold;
+    }
+    &__code {
+        padding-top: 1rem;
+        font-family: SFMono-Regular, Consolas, Menlo, DejaVu Sans Mono, monospace;
+        font-size: 12px;
+        line-height: 16px;
+
+        &:hover {
+            text-decoration: none;
+        }
+    }
+    &__empty {
+        padding: 0.325rem 0.75rem;
+        opacity: 0.7;
+    }
+
+    &__contents {
+        white-space: normal;
+    }
+
+    &__list-item {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    &__item-info {
+        display: flex;
+    }
+
+    &__symbol-title {
+        font-weight: bold;
+    }
+}

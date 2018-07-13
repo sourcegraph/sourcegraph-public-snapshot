@@ -10,9 +10,10 @@ import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
+import { RepoRevSidebarHistory } from './RepoRevSidebarHistory'
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
-type SidebarTabID = 'files' | 'symbols'
+type SidebarTabID = 'files' | 'symbols' | 'history'
 
 interface Props extends AbsoluteRepoFile {
     repoID: GQL.ID
@@ -27,6 +28,8 @@ interface State {
     showSidebar: boolean
 }
 
+const enableSymbolHistory = localStorage.getItem('symbolHistory') === 'true'
+
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
  */
@@ -34,7 +37,9 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     private static LAST_TAB_STORAGE_KEY = 'repo-rev-sidebar-last-tab'
     private static HIDDEN_STORAGE_KEY = 'repo-rev-sidebar-hidden'
 
-    private static TABS: Tab<SidebarTabID>[] = [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }]
+    private static TABS: Tab<SidebarTabID>[] = enableSymbolHistory
+        ? [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }, { id: 'history', label: 'History' }]
+        : [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }]
 
     public state: State = {
         showSidebar: localStorage.getItem(RepoRevSidebar.HIDDEN_STORAGE_KEY) === null,
@@ -118,6 +123,16 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             history={this.props.history}
                             location={this.props.location}
                         />
+                        {enableSymbolHistory ? (
+                            <RepoRevSidebarHistory
+                                key="history"
+                                location={this.props.location}
+                                history={this.props.history}
+                                commitID={this.props.commitID}
+                            />
+                        ) : (
+                            <div />
+                        )}
                     </TabsWithLocalStorageViewStatePersistence>
                 }
             />
