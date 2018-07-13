@@ -336,12 +336,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
         `
         ).pipe(
             map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.viewerConfiguredExtensions ||
-                    !data.viewerConfiguredExtensions.nodes ||
-                    (errors && errors.length > 0)
-                ) {
+                if (!data || !data.viewerConfiguredExtensions || !data.viewerConfiguredExtensions.nodes) {
                     throw createAggregateError(errors)
                 }
                 return data.viewerConfiguredExtensions.nodes
