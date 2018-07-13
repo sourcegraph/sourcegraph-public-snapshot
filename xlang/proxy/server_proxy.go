@@ -52,9 +52,13 @@ type serverProxyConn struct {
 
 	id serverID
 
-	// clientBroadcast is used to forward incoming requests from servers
-	// to clients.
+	// clientBroadcast is used to forward incoming notifications from the server to all clients
+	// connected to it.
 	clientBroadcast func(context.Context, *jsonrpc2.Request)
+
+	// clientForward is used to forward incoming requests from the server to a single client
+	// connected to it.
+	clientForward func(context.Context, *jsonrpc2.Request) (result interface{}, err error)
 
 	// initOnce ensures we only connect and initialize once, and other
 	// goroutines wait until the 1st goroutine completes those tasks.
@@ -67,7 +71,7 @@ type serverProxyConn struct {
 	rootFS      FileSystem // the workspace's file system
 	stats       serverProxyConnStats
 	diagnostics map[diagnosticsKey][]lsp.Diagnostic // saved diagnostics
-	messages    []lsp.ShowMessageParams             // saved messages
+	messages    []json.RawMessage                   // saved messages (lsp.{Log,Show}MessageParams)
 }
 
 // serverProxyConnStats contains statistics for a proxied connection to a server.
@@ -236,6 +240,7 @@ func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyC
 			id:              id,
 			done:            make(chan struct{}),
 			clientBroadcast: p.clientBroadcastFunc(id.contextID),
+			clientForward:   p.clientForwardFunc(id.contextID),
 			stats: serverProxyConnStats{
 				Created: time.Now(),
 				Last:    time.Now(),
@@ -416,7 +421,7 @@ func (p *Proxy) initializeServer(ctx context.Context, id serverID) (*lsp.Initial
 	return initResult, err
 }
 
-// clientBroadcastFunc returns a function which will broadcast a request to
+// clientBroadcastFunc returns a function which will broadcast a notification to
 // all active clients for id.
 func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc2.Request) {
 	return func(ctx context.Context, req *jsonrpc2.Request) {
@@ -429,6 +434,32 @@ func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc
 			}
 		}
 		p.mu.Unlock()
+	}
+}
+
+// clientForwardFunc returns a function which will forward a request to a single active client for
+// id.
+func (p *Proxy) clientForwardFunc(id contextID) func(context.Context, *jsonrpc2.Request) (result interface{}, err error) {
+	return func(ctx context.Context, req *jsonrpc2.Request) (result interface{}, err error) {
+		// Find the single client to forward to.
+		var target *clientProxyConn
+		p.mu.Lock()
+		for cc := range p.clients {
+			if cc.context == id {
+				if target != nil {
+					// More than 1 client is connected, in which case showMessage{,Request} wouldn't
+					// make sense.
+					return nil, fmt.Errorf("unable to forward %q request to a single client from shared server %q", req.Method, id.mode)
+				}
+				target = cc
+			}
+		}
+		p.mu.Unlock()
+
+		if target == nil {
+			return nil, fmt.Errorf("unable to forward %q request from server %q: no clients found", req.Method, id.mode)
+		}
+		return target.handleFromServer(ctx, target.conn, req)
 	}
 }
 
@@ -616,41 +647,42 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		return c.handleFS(ctx, req.Method, path)
 
-	case "window/showMessage":
-		// We pass through messages from language servers to ALL clients. We assume that 99.9% of `window/showMessage`
-		// requests from the server will be applicable to all clients. Currently, this is true, because not that many
-		// language servers issue `window/showMessage` requests, but this assumption may need to change in the future.
-		//
-		// Messages with the `Save` field true are saved to be displayed to any new client that connects using the same
-		// server connection.
-
-		var params lsp.ShowMessageParams
-		if err := json.Unmarshal(*req.Params, &params); err != nil {
-			return nil, err
-		}
-
-		// When we start using stateful connections to the client again, we
-		// should consider the save + broadcast below.
-		// c.saveMessage(params)
-		// c.clientBroadcast(ctx, req)
-
-		logWithLevel(int(params.Type), "window/showMessage "+params.Message, c.id.contextID, "method", req.Method, "id", req.ID)
-		return nil, nil
-
-	case "window/logMessage":
+	case "window/logMessage", "window/showMessage", "window/showMessageRequest":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var m lsp.LogMessageParams
-		if err := json.Unmarshal(*req.Params, &m); err != nil {
-			return nil, err
+		{
+			// lsp.ShowMessage{,Request}Params shares LogMessageParams' "message" and "type" JSON
+			// properties, so just unmarshal into LogMessageParams here. (We only use this for logging,
+			// so it's OK to ignore the other fields.)
+			var params lsp.LogMessageParams
+			if err := json.Unmarshal(*req.Params, &params); err != nil {
+				return nil, err
+			}
+			logWithLevel(int(params.Type), req.Method+" "+params.Message, c.id.contextID, "method", req.Method, "id", req.ID)
 		}
-		logWithLevel(int(m.Type), "window/logMessage "+m.Message, c.id.contextID, "method", req.Method, "id", req.ID)
-		// Log to the span for the server, not for this specific
-		// request.
+
+		// Log to the span for the server, not for this specific request.
 		if span := opentracing.SpanFromContext(ctx); span != nil {
-			span.LogFields(otlog.Object("window/logMessage", m))
+			span.LogFields(otlog.Object(req.Method, *req.Params))
 		}
+
+		switch req.Method {
+		case "window/logMessage", "window/showMessage":
+			// Forward these notifications to all clients and save for future clients.
+			//
+			// We pass through the window/logMessage and window/showMessage notifications from language
+			// servers to ALL clients because we assume that they're relevant. This assumption may need
+			// to change in the future. Note that this does not hold for window/showMessageRequest,
+			// which only makes sense soliciting the response from a single client.
+			c.saveMessage(*req.Params)
+			c.clientBroadcast(ctx, req)
+
+		case "window/showMessageRequest":
+			// Forward to a single client and return the response.
+			return c.clientForward(ctx, req)
+		}
+
 		return nil, nil
 
 	case "textDocument/publishDiagnostics":
@@ -823,11 +855,12 @@ func (c *serverProxyConn) saveDiagnostics(diagnostics lsp.PublishDiagnosticsPara
 	c.diagnostics[diagnosticsKey{serverID: c.id, documentURI: diagnostics.URI}] = diagnostics.Diagnostics
 }
 
-// saveMessage saves a message to publish to clients that connect after the message was sent. Certain messages (e.g.,
-// build errors) should be shown to all clients, but the language server does not have a way of sending these to newly
-// connected clients, because the LSP proxy abstracts client connections away from the language server. Unlike
-// saveDiagnostics, saveMessage appends to the existing array of messages.
-func (c *serverProxyConn) saveMessage(message lsp.ShowMessageParams) {
+// saveMessage saves a window/{log,show}Message message to publish to clients that connect after the
+// message was sent. Certain messages (e.g., build errors) should be shown to all clients, but the
+// language server does not have a way of sending these to newly connected clients, because the LSP
+// proxy abstracts client connections away from the language server. Unlike saveDiagnostics,
+// saveMessage appends to the existing array of messages.
+func (c *serverProxyConn) saveMessage(message json.RawMessage /* lsp.{Log,Show}MessageParams */) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.messages = append(c.messages, message)

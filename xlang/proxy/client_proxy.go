@@ -736,7 +736,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		}
 		return nil, nil
 
-	case "window/showMessage":
+	case "window/logMessage", "window/showMessage":
 		if err := conn.Notify(ctx, req.Method, req.Params); err != nil {
 			if err == jsonrpc2.ErrClosed || strings.Contains(err.Error(), "use of closed network connection") {
 				err = nil // suppress worthless "notification handling error" log messages when the client has hung up
@@ -744,6 +744,12 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 			return nil, err
 		}
 		return nil, nil
+
+	case "window/showMessageRequest":
+		// Pass these through verbatim.
+		var result interface{}
+		err := conn.Call(ctx, req.Method, req.Params, &result)
+		return result, err
 
 	case "$/partialResult":
 		if req.Params == nil {

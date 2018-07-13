@@ -209,7 +209,7 @@ func (p *Proxy) getSavedDiagnostics(id serverID, documentURI lsp.DocumentURI) []
 
 // getSavedMessages returns the saved messages for the specified
 // server proxy. The slice returned should not be mutated.
-func (p *Proxy) getSavedMessages(id serverID) []lsp.ShowMessageParams {
+func (p *Proxy) getSavedMessages(id serverID) []json.RawMessage /* lsp.{Log,Show}MessageParams */ {
 	var c *serverProxyConn
 	p.mu.Lock()
 	for cc := range p.servers {
