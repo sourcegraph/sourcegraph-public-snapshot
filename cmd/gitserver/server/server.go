@@ -71,9 +71,16 @@ func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
 
+// runCommandMock is set by tests. When non-nil it is run instead of
+// runCommand
+var runCommandMock func(context.Context, *exec.Cmd) (error, int)
+
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-var runCommand = func(ctx context.Context, cmd *exec.Cmd) (err error, exitCode int) { // mocked by tests
+func runCommand(ctx context.Context, cmd *exec.Cmd) (err error, exitCode int) {
+	if runCommandMock != nil {
+		return runCommandMock(ctx, cmd)
+	}
 	span, _ := opentracing.StartSpanFromContext(ctx, "runCommand")
 	span.SetTag("path", cmd.Path)
 	span.SetTag("args", cmd.Args)
@@ -94,7 +101,6 @@ var runCommand = func(ctx context.Context, cmd *exec.Cmd) (err error, exitCode i
 	}
 	return err, exitStatus
 }
-var skipCloneForTests = false // set by tests
 
 // Server is a gitserver server.
 type Server struct {
@@ -104,6 +110,9 @@ type Server struct {
 	// DeleteStaleRepositories when true will delete old repositories when the
 	// Janitor job runs.
 	DeleteStaleRepositories bool
+
+	// skipCloneForTests is set by tests to avoid clones.
+	skipCloneForTests bool
 
 	// ctx is the context we use for all background jobs. It is done when the
 	// server is stopped. Do not directly call this, rather call
@@ -391,7 +400,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := path.Join(s.ReposDir, string(req.Repo))
-	if !repoCloned(dir) && !skipCloneForTests {
+	if !repoCloned(dir) && !s.skipCloneForTests {
 		// optimistically, we assume that our cloning attempt might
 		// succeed.
 		resp.CloneInProgress = true
@@ -400,7 +409,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 			defer cancel1()
 			ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 			defer cancel2()
-			_, err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
+			_, err := s.cloneRepo(ctx, req.Repo, req.URL)
 			if err != nil {
 				log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			}
@@ -456,11 +465,11 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 	defer cancel2()
 	resp.QueueCap, resp.QueueLen = s.queryCloneLimiter()
-	if !repoCloned(dir) && !skipCloneForTests {
+	if !repoCloned(dir) && !s.skipCloneForTests {
 		// optimistically, we assume that our cloning attempt might
 		// succeed.
 		resp.CloneInProgress = true
-		_, err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
+		_, err := s.cloneRepo(ctx, req.Repo, req.URL)
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			resp.Error = err.Error()
@@ -624,7 +633,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !repoCloned(dir) {
-		cloneProgress, err := s.cloneRepo(ctx, req.Repo, req.URL, dir)
+		cloneProgress, err := s.cloneRepo(ctx, req.Repo, req.URL)
 		if err != nil {
 			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
 			status = "repo-not-found"
@@ -697,7 +706,9 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 
 // cloneRepo issues a non-blocking git clone command for the given repo to the given directory.
 // The repository will be cloned to ${dir}/.git.
-func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir string) (string, error) {
+func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string) (string, error) {
+	dir := filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))
+
 	// PERF: Before doing the network request to check if isCloneable, lets
 	// ensure we are not already cloning.
 	if progress, cloneInProgress := s.locker.Status(dir); cloneInProgress {
@@ -736,11 +747,14 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 		return status, nil
 	}
 
-	if skipCloneForTests {
+	if s.skipCloneForTests {
 		lock.Release()
 		return "", nil
 	}
 
+	// Actually do the clone asynchronously. We clone to a temporary location
+	// first to avoid having incomplete clones in the repo tree. This also
+	// avoids leaving behind corrupt clones if the clone is interrupted.
 	go func() {
 		defer lock.Release()
 
@@ -756,27 +770,48 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url, dir strin
 		ctx, cancel3 := context.WithTimeout(ctx, longGitCommandTimeout)
 		defer cancel3()
 
-		path := filepath.Join(dir, ".git")
-		cmd := cloneCmd(ctx, url, path, true)
-		log15.Info("cloning repo", "repo", repo, "url", url, "dir", dir)
+		// We clone to a temporary directory first, so avoid wasting resources
+		// if the directory already exists.
+		dstPath := filepath.Join(dir, ".git")
+		if _, err := os.Stat(dstPath); err == nil {
+			log15.Error("failed to clone repo since destination already exists", "path", dstPath)
+			return
+		}
+
+		tmpPath, err := s.tempDir("clone-")
+		if err != nil {
+			log15.Error("failed to clone repo", "repo", repo, "error", err)
+			return
+		}
+		defer os.RemoveAll(tmpPath)
+		tmpPath = filepath.Join(tmpPath, ".git")
+
+		cmd := cloneCmd(ctx, url, tmpPath, true)
+		log15.Info("cloning repo", "repo", repo, "url", url, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()
 		defer pw.Close()
 		go readCloneProgress(repo, url, lock, pr)
 
 		if output, err := s.runWithRemoteOpts(ctx, cmd, pw); err != nil {
-			log15.Error("clone failed", "error", err, "output", string(output))
-			if err := s.removeAll(path); err != nil {
-				log15.Error("failed to clean up after clone", "path", path, "error", err)
-			}
+			log15.Error("clone failed", "repo", repo, "error", err, "output", string(output))
 			return
 		}
-		log15.Info("repo cloned", "repo", repo)
 
 		// Update the last-changed stamp.
-		if err := setLastChanged(dir); err != nil {
+		if err := setLastChanged(tmpPath); err != nil {
 			log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
 		}
+
+		if err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm); err != nil {
+			log15.Error("clone failed doing mkdirall", "repo", repo, "error", err)
+		}
+		if err := os.Rename(tmpPath, dstPath); err != nil {
+			log15.Error("clone failed doing rename", "repo", repo, "tmp", tmpPath, "dst", dstPath, "error", err)
+			return
+		}
+
+		log15.Info("repo cloned", "repo", repo)
 	}()
 
 	return "", nil

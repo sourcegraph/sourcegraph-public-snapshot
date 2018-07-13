@@ -14,6 +14,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 )
 
 type Test struct {
@@ -99,7 +102,7 @@ func TestRequest(t *testing.T) {
 		},
 	}
 
-	s := &Server{ReposDir: "/testroot"}
+	s := &Server{ReposDir: "/testroot", skipCloneForTests: true}
 	h := s.Handler()
 
 	repoCloned = func(dir string) bool {
@@ -116,7 +119,7 @@ func TestRequest(t *testing.T) {
 		testRepoExists = nil
 	}()
 
-	runCommand = func(ctx context.Context, cmd *exec.Cmd) (error, int) {
+	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (error, int) {
 		switch cmd.Args[1] {
 		case "testcommand":
 			cmd.Stdout.Write([]byte("teststdout"))
@@ -127,10 +130,7 @@ func TestRequest(t *testing.T) {
 		}
 		return nil, 0
 	}
-	skipCloneForTests = true
-	defer func() {
-		skipCloneForTests = false
-	}()
+	defer func() { runCommandMock = nil }()
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -298,5 +298,68 @@ func TestUrlRedactor(t *testing.T) {
 		if actual := newURLRedactor(testCase.url).redact(testCase.message); actual != testCase.redacted {
 			t.Errorf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
 		}
+	}
+}
+
+func TestCloneRepo(t *testing.T) {
+	remote, cleanup1 := tmpDir(t)
+	defer cleanup1()
+
+	repo := remote
+	cmd := func(name string, arg ...string) string {
+		t.Helper()
+		c := exec.Command(name, arg...)
+		c.Dir = repo
+		c.Env = []string{
+			"GIT_COMMITTER_NAME=a",
+			"GIT_COMMITTER_EMAIL=a@a.com",
+			"GIT_AUTHOR_NAME=a",
+			"GIT_AUTHOR_EMAIL=a@a.com",
+		}
+		b, err := c.Output()
+		if err != nil {
+			t.Fatalf("%s %s failed: %s", name, strings.Join(arg, " "), err)
+		}
+		return string(b)
+	}
+
+	// Setup a repo with a commit so we can see if we can clone it.
+	cmd("git", "init", ".")
+	cmd("sh", "-c", "echo hello world > hello.txt")
+	cmd("git", "add", "hello.txt")
+	cmd("git", "commit", "-m", "hello")
+	wantCommit := cmd("git", "rev-parse", "HEAD")
+
+	reposDir, cleanup2 := tmpDir(t)
+	defer cleanup2()
+
+	s := &Server{
+		ReposDir:         reposDir,
+		ctx:              context.Background(),
+		locker:           &RepositoryLocker{},
+		cloneLimiter:     mutablelimiter.New(1),
+		cloneableLimiter: mutablelimiter.New(1),
+	}
+	_, err := s.cloneRepo(context.Background(), "example.com/foo/bar", remote)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait until the clone is done. Please do not use this code snippet
+	// outside of a test. We only know this works since our test only starts
+	// one clone and will have nothing else attempt to lock.
+	dst := filepath.Join(s.ReposDir, "example.com/foo/bar")
+	for i := 0; i < 1000; i++ {
+		_, cloning := s.locker.Status(dst)
+		if !cloning {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	repo = dst
+	gotCommit := cmd("git", "rev-parse", "HEAD")
+	if wantCommit != gotCommit {
+		t.Fatal("failed to clone")
 	}
 }
