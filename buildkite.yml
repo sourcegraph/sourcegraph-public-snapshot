@@ -11,6 +11,7 @@ steps:
       npm ci
       npm test
       npm run cover
+      ./node_modules/.bin/nyc report --reporter json
       bash <(curl -s https://codecov.io/bash) -t 1cdb8844-3dd0-43d7-959c-720e979d7775
     label: ':mocha:'
 
