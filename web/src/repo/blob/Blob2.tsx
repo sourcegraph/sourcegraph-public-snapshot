@@ -50,7 +50,7 @@ interface BlobState extends HoverState {
     blameLineIDs: { [key: number]: string }
 
     /** The decorations to display in the blob. */
-    decorationsOrError?: TextDocumentDecoration[] | ErrorLike
+    decorationsOrError?: TextDocumentDecoration[] | null | ErrorLike
 }
 
 const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
@@ -312,10 +312,38 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         }
 
                         for (const d of decorations) {
-                            const lineElement = getRowInCodeElement(codeElement, d.range.start.line + 1)
-                            if (lineElement && d.backgroundColor) {
-                                lineElement.style.backgroundColor = d.backgroundColor
-                                decoratedElements.push(lineElement)
+                            const line = d.range.start.line + 1
+                            const lineElement = getRowInCodeElement(codeElement, line)
+                            if (lineElement) {
+                                let decorated = false
+                                if (d.background) {
+                                    lineElement.style.background = d.background
+                                    decorated = true
+                                }
+                                if (d.backgroundColor) {
+                                    lineElement.style.backgroundColor = d.backgroundColor
+                                    decorated = true
+                                }
+                                if (d.border) {
+                                    lineElement.style.border = d.border
+                                    decorated = true
+                                }
+                                if (d.borderColor) {
+                                    lineElement.style.borderColor = d.borderColor
+                                    decorated = true
+                                }
+                                if (d.borderWidth) {
+                                    lineElement.style.borderWidth = d.borderWidth
+                                    decorated = true
+                                }
+                                if (decorated) {
+                                    decoratedElements.push(lineElement)
+                                }
+
+                                if (d.after) {
+                                    const codeCell = lineElement.cells[1]!
+                                    this.createBlameDomNode(line, codeCell)
+                                }
                             }
                         }
                     } else {
