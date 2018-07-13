@@ -160,7 +160,11 @@ export class RepoRevSidebarHistory extends React.Component<HistoryProps, History
 
         this.subscriptions.add(
             this.filterQueryUpdates
-                .pipe(distinctUntilChanged(), debounceTime(200), startWith(this.state.filter))
+                .pipe(
+                    distinctUntilChanged(),
+                    debounceTime(200),
+                    startWith(this.state.filter)
+                )
                 .subscribe(query => this.setState({ filter: query }))
         )
         this.componentUpdates.next(this.props)
