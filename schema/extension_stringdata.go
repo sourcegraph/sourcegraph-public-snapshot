@@ -72,7 +72,8 @@ const ExtensionSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "const": "docker"
+          "const": "docker",
+          "enum": ["docker"]
         },
         "image": {
           "description": "The Docker image to run.",
@@ -88,7 +89,8 @@ const ExtensionSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "const": "websocket"
+          "const": "websocket",
+          "enum": ["websocket"]
         },
         "url": {
           "description": "The WebSocket URL to communicate with.",
@@ -106,7 +108,8 @@ const ExtensionSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "const": "tcp"
+          "const": "tcp",
+          "enum": ["tcp"]
         },
         "address": {
           "description": "The TCP address (` + "`" + `host:port` + "`" + `) of the server to communicate with.",
@@ -123,7 +126,8 @@ const ExtensionSchemaJSON = `{
       "properties": {
         "type": {
           "type": "string",
-          "const": "exec"
+          "const": "exec",
+          "enum": ["exec"]
         },
         "command": {
           "description": "The path to the executable to run.",
