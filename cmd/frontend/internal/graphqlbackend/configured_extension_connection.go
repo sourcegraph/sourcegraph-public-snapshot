@@ -5,6 +5,8 @@ import (
 	"sort"
 	"sync"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -101,11 +103,14 @@ func (r *configuredExtensionConnectionResolver) compute(ctx context.Context) ([]
 
 		for extensionID, s := range settings.Extensions {
 			if !r.args.Invalid {
-				if _, err := getExtensionByExtensionID(ctx, extensionID); errcode.IsNotFound(err) || registry.IsRemoteRegistryError(err) {
+				if _, err := getExtensionByExtensionID(ctx, extensionID); err != nil {
+					if errcode.IsNotFound(err) || registry.IsRemoteRegistryError(err) {
+						// No need to log.
+					} else {
+						// More unexpected error, so log it.
+						log15.Warn("Omitting configured extension due to error.", "extensionID", extensionID, "err", err)
+					}
 					continue // omit
-				} else if err != nil {
-					r.err = err
-					return
 				}
 			}
 
