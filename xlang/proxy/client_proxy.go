@@ -494,6 +494,8 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 	case "textDocument/definition", "textDocument/hover", "textDocument/references", "textDocument/documentHighlight", "textDocument/documentLink", "documentLink/resolve", "textDocument/implementation", "textDocument/typeDefinition", "textDocument/documentSymbol", "workspace/symbol",
 		"textDocument/decorations",
+		"workspace/didChangeConfiguration",
+		"workspace/executeCommand",
 		"textDocument/xdefinition", "workspace/xreferences", "workspace/xdependencies", "workspace/xpackages":
 		if err := ensureInitialized(); err != nil {
 			return nil, err
@@ -521,8 +523,14 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			}()
 		}
 
-		var respObj interface{}
-		if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, &respObj); err != nil {
+		var (
+			respObj    interface{}
+			respObjPtr interface{}
+		)
+		if !req.Notif {
+			respObjPtr = &respObj
+		}
+		if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, respObjPtr); err != nil {
 			logError(req.Method+" failed: "+err.Error(), c.context, "method", req.Method, "id", req.ID, "error", err.Error())
 			return nil, err
 		}
@@ -701,11 +709,11 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 	}
 
 	switch req.Method {
-	case "textDocument/publishDiagnostics":
+	case "textDocument/publishDiagnostics", "textDocument/publishDecorations":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var paramsObj lsp.PublishDiagnosticsParams
+		var paramsObj interface{}
 		if err := json.Unmarshal(*req.Params, &paramsObj); err != nil {
 			return nil, err
 		}
@@ -713,7 +721,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		// Rewrite paths from server->client and send rewritten
 		// notification to client.
 		var walkErr error
-		lspext.WalkURIFields(&paramsObj, nil, func(uriStr lsp.DocumentURI) lsp.DocumentURI {
+		lspext.WalkURIFields(paramsObj, nil, func(uriStr lsp.DocumentURI) lsp.DocumentURI {
 			newURI, err := absWorkspaceURI(c.context.rootURI, string(uriStr))
 			if err != nil {
 				walkErr = err
@@ -741,7 +749,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		}
 		return nil, nil
 
-	case "window/showMessageRequest":
+	case "window/showMessageRequest", "configuration/update":
 		// Pass these through verbatim.
 		var result interface{}
 		err := conn.Call(ctx, req.Method, req.Params, &result)

@@ -688,7 +688,11 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 
 		return nil, nil
 
-	case "textDocument/publishDiagnostics":
+	case "configuration/update":
+		// Pass these through verbatim.
+		return c.clientForward(ctx, req)
+
+	case "textDocument/publishDiagnostics", "textDocument/publishDecorations":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
@@ -696,7 +700,7 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// Save for clients that connect later (who would not
 		// otherwise receive the diagnostics, since the lang server
 		// has no way to know to resend them).
-		if proxySaveDiagnostics {
+		if proxySaveDiagnostics && req.Method == "textDocument/publishDiagnostics" {
 			var params lsp.PublishDiagnosticsParams
 			if err := json.Unmarshal(*req.Params, &params); err != nil {
 				return nil, err
@@ -760,7 +764,7 @@ func isFSMethod(method string) bool {
 // user. These are methods related to telemetry/logging/etc. Generally these
 // are not useful to log.
 func isInfraMethod(method string) bool {
-	return method == "telemetry/event" || method == "window/logMessage" || method == "textDocument/publishDiagnostics"
+	return method == "telemetry/event" || method == "window/logMessage" || method == "textDocument/publishDiagnostics" || method == "textDocument/publishDecorations"
 }
 
 // didRemove records statistics when shutting down server. It should only be
