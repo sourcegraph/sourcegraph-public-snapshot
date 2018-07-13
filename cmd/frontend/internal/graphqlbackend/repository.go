@@ -99,6 +99,12 @@ func (r *repositoryResolver) ViewerCanAdminister(ctx context.Context) (bool, err
 }
 
 func (r *repositoryResolver) CloneInProgress(ctx context.Context) (bool, error) {
+	// Asking gitserver may trigger a clone of the repo, so ensure it is
+	// enabled.
+	if !r.repo.Enabled {
+		return false, nil
+	}
+
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
@@ -108,6 +114,12 @@ type repositoryCommitArgs struct {
 }
 
 func (r *repositoryResolver) Commit(ctx context.Context, args *repositoryCommitArgs) (*gitCommitResolver, error) {
+	// Asking gitserver may trigger a clone of the repo, so ensure it is
+	// enabled.
+	if !r.repo.Enabled {
+		return nil, nil
+	}
+
 	commitID, err := backend.Repos.ResolveRev(ctx, r.repo, args.Rev)
 	if err != nil {
 		if git.IsRevisionNotFound(err) {
@@ -140,6 +152,12 @@ func (r *repositoryResolver) LastIndexedRevOrLatest(ctx context.Context) (*gitCo
 }
 
 func (r *repositoryResolver) DefaultBranch(ctx context.Context) (*gitRefResolver, error) {
+	// Asking gitserver may trigger a clone of the repo, so ensure it is
+	// enabled.
+	if !r.repo.Enabled {
+		return nil, nil
+	}
+
 	refBytes, _, exitCode, err := git.ExecSafe(ctx, backend.CachedGitRepo(r.repo), []string{"symbolic-ref", "HEAD"})
 	refName := string(bytes.TrimSpace(refBytes))
 

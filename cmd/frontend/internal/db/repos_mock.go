@@ -52,7 +52,7 @@ func (s *MockRepos) MockGetByURI(t *testing.T, want api.RepoURI, repo api.RepoID
 			t.Errorf("got repo URI %q, want %q", uri, want)
 			return nil, &repoNotFoundErr{URI: uri}
 		}
-		return &types.Repo{ID: repo, URI: uri}, nil
+		return &types.Repo{ID: repo, URI: uri, Enabled: true}, nil
 	}
 	return
 }
