@@ -22,12 +22,6 @@ case "$BUILDKITE_BRANCH" in
         exit 1
 esac
 
-case "$DEPLOYMENT" in
-    xlang-javascript-typescript)
-        DEPLOYMENT="xlang-typescript"
-        ;;
-esac
-
 IMAGE=$(kubectl get deployment "--namespace=$NAMESPACE" "--context=$CONTEXT" -o 'jsonpath={.spec.template.spec.containers[?(@.name=="'"$CONTAINER"'")].image}' "$DEPLOYMENT" | awk -F ':' '{printf $1}')
 
 kubectl "--namespace=$NAMESPACE" "--context=$CONTEXT" set image "deployment/$DEPLOYMENT" "$CONTAINER=$IMAGE:$VERSION"
