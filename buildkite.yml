@@ -1,4 +1,7 @@
 
+env:
+  FORCE_COLOR: '1'
+
 steps:
   - command: |-
       npm ci
