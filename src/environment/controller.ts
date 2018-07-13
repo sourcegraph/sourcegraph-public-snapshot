@@ -55,8 +55,8 @@ type ConfigurationUpdate = ConfigurationUpdateParams & MessageSource & PromiseCa
 /**
  * The controller for the environment.
  */
-export class Controller implements Unsubscribable {
-    private _environment = new BehaviorSubject<Environment>(EMPTY_ENVIRONMENT)
+export class Controller<X extends Extension = Extension> implements Unsubscribable {
+    private _environment = new BehaviorSubject<Environment<X>>(EMPTY_ENVIRONMENT)
 
     private clients: ClientEntry[] = []
 
@@ -95,7 +95,7 @@ export class Controller implements Unsubscribable {
         })
     }
 
-    public setEnvironment(nextEnvironment: Environment): void {
+    public setEnvironment(nextEnvironment: Environment<X>): void {
         if (isEqual(this._environment.value, nextEnvironment)) {
             return // no change
         }
@@ -137,7 +137,7 @@ export class Controller implements Unsubscribable {
             })
             const settings = this._environment.pipe(
                 map(({ extensions }) => (extensions ? extensions.find(x => x.id === key.id) : null)),
-                filter((x): x is Extension => !!x),
+                filter((x): x is X => !!x),
                 map(x => x.settings),
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
@@ -189,7 +189,7 @@ export class Controller implements Unsubscribable {
         )
     }
 
-    public readonly environment: ObservableEnvironment = createObservableEnvironment(this._environment)
+    public readonly environment: ObservableEnvironment<X> = createObservableEnvironment<X>(this._environment)
 
     public set trace(value: Trace) {
         for (const client of this.clients) {

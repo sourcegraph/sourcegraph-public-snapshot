@@ -10,8 +10,10 @@ import { Extension } from './extension'
  *
  * This models the state of editor-like tools that display documents, allow selections and scrolling in documents,
  * and support extension configuration.
+ *
+ * @template X extension type, to support storing additional properties on extensions
  */
-export interface Environment {
+export interface Environment<X extends Extension = Extension> {
     /**
      * The root URI of the environment, or null if there is none (which means the extension is unable to access any
      * documents in the environment).
@@ -26,11 +28,11 @@ export interface Environment {
     readonly component: Component | null
 
     /** The active extensions, or null if there are none. */
-    readonly extensions: Extension[] | null
+    readonly extensions: X[] | null
 }
 
 /** An empty CXP environment. */
-export const EMPTY_ENVIRONMENT: Environment = { root: null, component: null, extensions: null }
+export const EMPTY_ENVIRONMENT: Environment<any> = { root: null, component: null, extensions: null }
 
 /** An application component that displays a [TextDocument](#TextDocument). */
 export interface Component {
@@ -52,9 +54,9 @@ export interface Component {
  *
  * Includes derived observables for convenience.
  */
-export interface ObservableEnvironment {
+export interface ObservableEnvironment<X extends Extension = Extension> {
     /** The environment (and changes to it). */
-    readonly environment: Observable<Environment> & { readonly value: Environment }
+    readonly environment: Observable<Environment<X>> & { readonly value: Environment<X> }
 
     /** The environment's root URI (and changes to it). */
     readonly root: Observable<URI | null>
@@ -67,16 +69,16 @@ export interface ObservableEnvironment {
 }
 
 /** An ObservableEnvironment that always represents the empty environment and never emits changes. */
-export const EMPTY_OBSERVABLE_ENVIRONMENT: ObservableEnvironment = {
+export const EMPTY_OBSERVABLE_ENVIRONMENT: ObservableEnvironment<any> = {
     environment: { ...of(EMPTY_ENVIRONMENT), value: EMPTY_ENVIRONMENT } as ObservableEnvironment['environment'],
     root: of(null),
     component: of(null),
     textDocument: of(null),
 }
 
-export function createObservableEnvironment(
-    environment: Observable<Environment> & { readonly value: Environment }
-): ObservableEnvironment {
+export function createObservableEnvironment<X extends Extension>(
+    environment: Observable<Environment<X>> & { readonly value: Environment<X> }
+): ObservableEnvironment<X> {
     const component = environment.pipe(
         map(({ component }) => component),
         distinctUntilChanged((a, b) => isEqual(a, b))
