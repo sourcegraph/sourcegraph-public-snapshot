@@ -15,6 +15,57 @@ import { getModeFromPath } from '../util'
 import { asError, ErrorLike } from '../util/errors'
 import { fetchHighlightedFileLines } from './backend'
 
+const highlightCodeSafe = (code: string, language?: string): string => {
+    try {
+        if (language) {
+            return highlight(language, code, true).value
+        }
+        return highlightAuto(code).value
+    } catch (err) {
+        console.warn('Error syntax-highlighting hover markdown code block', err)
+        return escape(code)
+    }
+}
+
+const hoverContentsToString = (contents: (MarkupContent | MarkedString)[]): string[] => {
+    const contentList = []
+    const hoverContents = contents
+    for (let content of hoverContents) {
+        let sig
+        if (typeof content === 'string') {
+            const hold = content
+            content = { kind: MarkupKind.Markdown, value: hold }
+        }
+        if (MarkupContent.is(content)) {
+            if (content.kind === MarkupKind.Markdown) {
+                try {
+                    const rendered = marked(content.value, {
+                        gfm: true,
+                        breaks: true,
+                        sanitize: true,
+                        highlight: (code, language) => '<code>' + highlightCodeSafe(code, language) + '</code>',
+                    })
+                    sig = rendered
+                } catch (err) {
+                    sig = 'errored'
+                }
+            } else {
+                sig = content.value
+            }
+        } else {
+            sig = highlightCodeSafe(content.value, content.language)
+        }
+        contentList.push(sig)
+    }
+
+    return contentList
+}
+
+const getSymbolSignature = (contents: (MarkupContent | MarkedString)[]): string => {
+    const symbolSignature = [contents[0]]
+    return hoverContentsToString(symbolSignature)[0]
+}
+
 interface HistoryProps {
     location: H.Location
     history: H.History
@@ -257,55 +308,4 @@ export class RepoRevSidebarHistory extends React.Component<HistoryProps, History
             </>
         )
     }
-}
-
-const highlightCodeSafe = (code: string, language?: string): string => {
-    try {
-        if (language) {
-            return highlight(language, code, true).value
-        }
-        return highlightAuto(code).value
-    } catch (err) {
-        console.warn('Error syntax-highlighting hover markdown code block', err)
-        return escape(code)
-    }
-}
-
-const hoverContentsToString = (contents: (MarkupContent | MarkedString)[]): string[] => {
-    const contentList = []
-    const hoverContents = contents
-    for (let content of hoverContents) {
-        let sig
-        if (typeof content === 'string') {
-            const hold = content
-            content = { kind: MarkupKind.Markdown, value: hold }
-        }
-        if (MarkupContent.is(content)) {
-            if (content.kind === MarkupKind.Markdown) {
-                try {
-                    const rendered = marked(content.value, {
-                        gfm: true,
-                        breaks: true,
-                        sanitize: true,
-                        highlight: (code, language) => '<code>' + highlightCodeSafe(code, language) + '</code>',
-                    })
-                    sig = rendered
-                } catch (err) {
-                    sig = 'errored'
-                }
-            } else {
-                sig = content.value
-            }
-        } else {
-            sig = highlightCodeSafe(content.value, content.language)
-        }
-        contentList.push(sig)
-    }
-
-    return contentList
-}
-
-const getSymbolSignature = (contents: (MarkupContent | MarkedString)[]): string => {
-    const symbolSignature = [contents[0]]
-    return hoverContentsToString(symbolSignature)[0]
 }
