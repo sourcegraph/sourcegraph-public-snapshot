@@ -34,7 +34,7 @@ var repoLargeSubstr = strings.Fields(env.Get("REPO_LARGE_SUBSTR", "", "repo subs
 // serverID identifies a lang/build server by the minimal state
 // necessary to reinitialize it. At most one lang/build server per
 // serverID will be used; if two clients issue requests that route to
-// the same serverID, their requests will be sent to the same
+// the same serverID (and contextID.share is true), their requests will be sent to the same
 // lang/build server.
 type serverID struct {
 	contextID
@@ -441,17 +441,19 @@ func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc
 // id.
 func (p *Proxy) clientForwardFunc(id contextID) func(context.Context, *jsonrpc2.Request) (result interface{}, err error) {
 	return func(ctx context.Context, req *jsonrpc2.Request) (result interface{}, err error) {
+		if !id.share {
+			// More than 1 client is connected, in which case showMessage{,Request} wouldn't
+			// make sense.
+			return nil, fmt.Errorf("unable to forward %q request to a single client from shared server %q", req.Method, id.mode)
+		}
+
 		// Find the single client to forward to.
 		var target *clientProxyConn
 		p.mu.Lock()
 		for cc := range p.clients {
 			if cc.context == id {
-				if target != nil {
-					// More than 1 client is connected, in which case showMessage{,Request} wouldn't
-					// make sense.
-					return nil, fmt.Errorf("unable to forward %q request to a single client from shared server %q", req.Method, id.mode)
-				}
 				target = cc
+				break
 			}
 		}
 		p.mu.Unlock()

@@ -2,6 +2,8 @@ package proxy
 
 import (
 	"context"
+	cryptorand "crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -215,20 +217,15 @@ type contextID struct {
 
 	// session is the unique ID identifying this session, used when it
 	// shouldn't be shared by all users viewing the same rootURI and
-	// mode (e.g., for Zap and/or when textDocument/didChange, etc.,
+	// mode (e.g., for textDocument/didChange, etc.,
 	// should be enabled).
 	//
-	// NOTE: Session are not currently used, but may be in the future when we
-	// explore mutable workspaces again.
-	//
-	// 🚨 SECURITY: The session isolation that this provides is dependent 🚨
-	// on how difficult to guess this value is. Currently it is chosen
-	// by the client (and only used for Zap). E.g., if the client
-	// picks "foo", then anyone else could probably guess "foo". If
-	// the client guesses a long unique string, then nobody will be
-	// able to guess it. When we expose isolated session functionality
-	// to users, we should guarantee that session is always chosen
-	// externally so that sufficiently unguessable values are used.
+	// 🚨 SECURITY: The session isolation that this provides is dependent on how difficult to
+	// guess this value is. Currently it is chosen by the client. E.g., if the client picks "foo",
+	// then anyone else could probably guess "foo". If the client guesses a long unique string, then
+	// nobody will be able to guess it. When we expose isolated session functionality to users, we
+	// should guarantee that session is always chosen externally so that sufficiently unguessable
+	// values are used.
 	session string
 
 	// initOpts is the (ideally canonical) JSON representation of the client InitializeRequest's
@@ -236,6 +233,8 @@ type contextID struct {
 	// initializationOptions will have their requests served by different servers, each of which is
 	// provided with those initializationOptions.
 	initOpts string
+
+	share bool // if true, allow sharing server connections among multiple clients (with equal contextID values)
 }
 
 func (id contextID) String() string {
@@ -434,6 +433,16 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.rootURI = *rootURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
+		isolated := c.context.session == "cxp" // special value "cxp" yields a server-side generated unique session value
+		c.context.share = !isolated
+		if isolated {
+			// Randomize session for unshared (isolated) connections to avoid collisions.
+			var b [20]byte
+			if _, err := cryptorand.Read(b[:]); err != nil {
+				return nil, err
+			}
+			c.context.session = base64.StdEncoding.EncodeToString(b[:])
+		}
 		if c.init.InitializationOptions.Settings.Merged != nil {
 			c.context.initOpts = string(*c.init.InitializationOptions.Settings.Merged)
 		}

@@ -190,10 +190,14 @@ func (p *Proxy) Close(ctx context.Context) error {
 }
 
 func (p *Proxy) getSavedDiagnostics(id serverID, documentURI lsp.DocumentURI) []lsp.Diagnostic {
+	if !id.share {
+		return nil
+	}
+
 	var c *serverProxyConn
 	p.mu.Lock()
 	for cc := range p.servers {
-		if cc.id == id {
+		if cc.id.share && cc.id == id {
 			c = cc
 			break
 		}
@@ -210,10 +214,14 @@ func (p *Proxy) getSavedDiagnostics(id serverID, documentURI lsp.DocumentURI) []
 // getSavedMessages returns the saved messages for the specified
 // server proxy. The slice returned should not be mutated.
 func (p *Proxy) getSavedMessages(id serverID) []json.RawMessage /* lsp.{Log,Show}MessageParams */ {
+	if !id.share {
+		return nil
+	}
+
 	var c *serverProxyConn
 	p.mu.Lock()
 	for cc := range p.servers {
-		if cc.id == id {
+		if cc.id.share && cc.id == id {
 			c = cc
 			break
 		}
