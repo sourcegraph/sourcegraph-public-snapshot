@@ -1,8 +1,11 @@
+import { HoverMerged } from 'cxp/lib/types/hover'
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { compact, flatten } from 'lodash'
 import { forkJoin, Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import { Definition, Hover, Location, MarkedString, MarkupContent, Range } from 'vscode-languageserver-types'
+import { Definition, Location } from 'vscode-languageserver-types'
+import { CONTROLLER } from '../cxp/controller'
+import { USE_CXP } from '../cxp/CXPEnvironment'
 import { ConfiguredExtension, ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, AbsoluteRepoFile } from '../repo'
 import {
@@ -44,25 +47,7 @@ export interface ExtensionsChangeProps {
     onExtensionsChange: (enabledExtensions: Extensions) => void
 }
 
-/** A hover that is merged from multiple Hover results and normalized. */
-export type HoverMerged = Pick<Hover, Exclude<keyof Hover, 'contents'>> & {
-    /** Also allows MarkupContent[]. */
-    contents: (MarkupContent | MarkedString)[]
-}
-
-export namespace HoverMerged {
-    /** Reports whether the value conforms to the HoverMerged interface. */
-    export function is(value: any): value is HoverMerged {
-        // Based on Hover.is from vscode-languageserver-types.
-        return (
-            value !== null &&
-            typeof value === 'object' &&
-            Array.isArray(value.contents) &&
-            (value.contents as any[]).every(c => MarkupContent.is(c) || MarkedString.is(c)) &&
-            (value.range === undefined || Range.is(value.range))
-        )
-    }
-}
+export { HoverMerged } // reexport to avoid needing to change all import sites - TODO(sqs): actually go change all them
 
 /**
  * Fetches hover information for the given location.
@@ -71,24 +56,17 @@ export namespace HoverMerged {
  * @return hover for the location
  */
 export function getHover(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<HoverMerged | null> {
-    return forkJoin(getModes(ctx, extensions).map(({ mode, settings }) => fetchHover({ ...ctx, mode, settings }))).pipe(
-        map(results => {
-            const contents: HoverMerged['contents'] = []
-            let range: HoverMerged['range']
-            for (const result of results) {
-                if (result) {
-                    if (Array.isArray(result.contents)) {
-                        contents.push(...result.contents)
-                    } else {
-                        contents.push(result.contents)
-                    }
-                    if (result.range && !range) {
-                        range = result.range
-                    }
-                }
-            }
-            return contents.length === 0 ? null : { contents, range }
+    if (USE_CXP) {
+        return CONTROLLER.registries.textDocumentHover.getHover({
+            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+            position: {
+                character: ctx.position.character - 1,
+                line: ctx.position.line - 1,
+            },
         })
+    }
+    return forkJoin(getModes(ctx, extensions).map(({ mode, settings }) => fetchHover({ ...ctx, mode, settings }))).pipe(
+        map(HoverMerged.from)
     )
 }
 
@@ -99,6 +77,7 @@ export function getHover(ctx: LSPTextDocumentPositionParams, extensions: Extensi
  * @return definitions of the symbol at the location
  */
 export function getDefinition(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<Definition> {
+    // TODO!(sqs): add definition provider
     return forkJoin(
         getModes(ctx, extensions).map(({ mode, settings }) => fetchDefinition({ ...ctx, mode, settings }))
     ).pipe(map(results => flatten(compact(results))))
@@ -187,7 +166,12 @@ export function getXreferences(
 export function getDecorations(
     ctx: AbsoluteRepoFile & LSPSelector,
     extensions: Extensions
-): Observable<TextDocumentDecoration[]> {
+): Observable<TextDocumentDecoration[] | null> {
+    if (USE_CXP) {
+        return CONTROLLER.registries.textDocumentDecorations.getDecorations({
+            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+        })
+    }
     return forkJoin(
         getModes(ctx, extensions).map(({ mode, settings }) =>
             fetchDecorations({ ...ctx, mode, settings }).pipe(

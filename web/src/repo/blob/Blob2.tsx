@@ -6,15 +6,17 @@ import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { Position } from 'vscode-languageserver-types'
+import { Position, Range } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { ExtensionsProps, getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams, TextDocumentDecoration } from '../../backend/lsp'
+import { CXPComponent, CXPComponentProps } from '../../cxp/CXPComponent'
+import { USE_CXP } from '../../cxp/CXPEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toNativeEvent } from '../../util/react'
 import { isDefined, propertyIsDefined } from '../../util/types'
-import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
+import { LineOrPositionOrRange, lprToRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
@@ -25,7 +27,7 @@ import { locateTarget } from './tooltips'
  */
 const toPortalID = (line: number) => `blame-portal-${line}`
 
-interface BlobProps extends AbsoluteRepoFile, ModeSpec, ExtensionsProps {
+interface BlobProps extends AbsoluteRepoFile, ModeSpec, ExtensionsProps, CXPComponentProps {
     /** The trusted syntax-highlighted code as HTML */
     html: string
 
@@ -242,7 +244,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         /** Emits the extensions when they change. */
         const extensionsChanges = this.componentUpdates.pipe(
             map(({ extensions }) => extensions),
-            distinctUntilChanged(isEqual),
+            distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
         )
 
@@ -257,7 +259,16 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined
         const decorations: Observable<TextDocumentDecoration[] | undefined> = combineLatest(
             modelChanges,
-            extensionsChanges
+
+            // Only trigger on extensions being enabled/disabled, not just when settings change (because extensions
+            // dynamically react to that).
+            //
+            // TODO!(sqs): how to handle static decorations extensions that do NOT dynamically react to that?
+            extensionsChanges.pipe(
+                distinctUntilChanged((a, b) =>
+                    isEqual(a.map(({ extensionID }) => extensionID), b.map(({ extensionID }) => extensionID))
+                )
+            )
         ).pipe(
             switchMap(([model, extensions]) => {
                 const modelChanged = !isEqual(model, lastModel)
@@ -423,6 +434,22 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             {...this.props}
                         />
                     )}
+                {USE_CXP && (
+                    <CXPComponent
+                        component={{
+                            document: {
+                                uri: `git://${this.props.repoPath}?${this.props.commitID}#${this.props.filePath}`,
+                                languageId: this.props.mode,
+                            },
+                            selections:
+                                this.state.selectedPosition && this.state.selectedPosition.line
+                                    ? [{ ...(lprToRange(this.state.selectedPosition) as Range), isReversed: false }]
+                                    : [],
+                            visibleRanges: [], // TODO!(sqs): fill these in
+                        }}
+                        cxpOnComponentChange={this.props.cxpOnComponentChange}
+                    />
+                )}
             </div>
         )
     }

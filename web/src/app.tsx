@@ -1,7 +1,9 @@
 // Polyfill URL because Chrome and Firefox are not spec-compliant
 // Hostnames of URIs with custom schemes (e.g. git) are not parsed out
 import { URL, URLSearchParams } from 'whatwg-url'
+const createObjectURL = window.URL ? window.URL.createObjectURL : null
 Object.assign(window, { URL, URLSearchParams })
+;(window.URL.createObjectURL as any) = createObjectURL
 
 // Load only a subset of the highlight.js languages
 import { registerLanguage } from 'highlight.js/lib/highlight'
@@ -29,6 +31,8 @@ registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
+import { Component as CXPComponent, EMPTY_ENVIRONMENT as CXP_EMPTY_ENVIRONMENT } from 'cxp/lib/environment/environment'
+import { URI } from 'cxp/lib/types/textDocument'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
@@ -41,6 +45,8 @@ import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
+import { CONTROLLER } from './cxp/controller'
+import { CXPEnvironmentProps, CXPProps } from './cxp/CXPEnvironment'
 import { LinkExtension } from './extension/Link'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
@@ -50,7 +56,7 @@ import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { eventLogger } from './tracking/eventLogger'
 
-interface LayoutProps extends RouteComponentProps<any>, ExtensionsProps, ExtensionsChangeProps {
+interface LayoutProps extends RouteComponentProps<any>, ExtensionsProps, ExtensionsChangeProps, CXPProps {
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
@@ -114,7 +120,7 @@ const Layout: React.SFC<LayoutProps> = props => {
     )
 }
 
-interface AppState extends ExtensionsProps {
+interface AppState extends ExtensionsProps, CXPEnvironmentProps {
     error?: Error
     user?: GQL.IUser | null
 
@@ -143,6 +149,7 @@ class App extends React.Component<{}, AppState> {
         navbarSearchQuery: '',
         showHelpPopover: false,
         extensions: [],
+        cxpEnvironment: CXP_EMPTY_ENVIRONMENT,
     }
 
     private subscriptions = new Subscription()
@@ -221,6 +228,9 @@ class App extends React.Component<{}, AppState> {
             onHelpPopoverToggle={this.onHelpPopoverToggle}
             extensions={this.state.extensions}
             onExtensionsChange={this.onExtensionsChange}
+            cxpEnvironment={this.state.cxpEnvironment}
+            cxpOnComponentChange={this.cxpOnComponentChange}
+            cxpOnRootChange={this.cxpOnRootChange}
         />
     )
 
@@ -247,7 +257,37 @@ class App extends React.Component<{}, AppState> {
     }
 
     private onExtensionsChange = (extensions: Extensions): void => {
-        this.setState(prevState => (isEqual(prevState.extensions, extensions) ? null : { extensions }))
+        this.setState(
+            prevState =>
+                isEqual(prevState.extensions, extensions)
+                    ? null
+                    : {
+                          extensions,
+                          cxpEnvironment: {
+                              ...prevState.cxpEnvironment,
+                              extensions: extensions.map(x => ({
+                                  id: x.extensionID,
+                                  settings: x.settings,
+                                  manifest: x.manifest,
+                              })),
+                          },
+                      },
+            () => CONTROLLER.setEnvironment(this.state.cxpEnvironment)
+        )
+    }
+
+    private cxpOnComponentChange = (component: CXPComponent | null): void => {
+        this.setState(
+            prevState => ({ cxpEnvironment: { ...prevState.cxpEnvironment, component } }),
+            () => CONTROLLER.setEnvironment(this.state.cxpEnvironment)
+        )
+    }
+
+    private cxpOnRootChange = (root: URI | null): void => {
+        this.setState(
+            prevState => ({ cxpEnvironment: { ...prevState.cxpEnvironment, root } }),
+            () => CONTROLLER.setEnvironment(this.state.cxpEnvironment)
+        )
     }
 }
 

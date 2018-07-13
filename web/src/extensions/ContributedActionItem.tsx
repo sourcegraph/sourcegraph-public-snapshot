@@ -1,12 +1,14 @@
 import { findNodeAtLocation, getNodeValue, parseTree } from '@sqs/jsonc-parser'
 import { isEqual } from 'lodash'
 import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
-import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+import { from, Subject, Subscription } from 'rxjs'
+import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
+import { ExecuteCommandParams } from 'vscode-languageserver-protocol'
 import { currentUser } from '../auth'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
-import { updateUserExtensionSettings } from '../registry/backend'
+import { CONTROLLER } from '../cxp/controller'
+import { toGQLKeyPath, updateUserExtensionSettings } from '../registry/backend'
 import { asError, ErrorLike } from '../util/errors'
 import { CommandContribution } from './contributions'
 
@@ -27,6 +29,7 @@ export class ContributedActionItem extends React.PureComponent<Props> {
     public state: State = { actionOrError: null }
 
     private settingsUpdates = new Subject<Pick<GQL.IUpdateExtensionOnConfigurationMutationArguments, 'edit'>>()
+    private commandExecutions = new Subject<ExecuteCommandParams>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -35,7 +38,7 @@ export class ContributedActionItem extends React.PureComponent<Props> {
         this.subscriptions.add(
             this.settingsUpdates
                 .pipe(
-                    switchMap(args =>
+                    mergeMap(args =>
                         updateUserExtensionSettings({
                             extensionID: this.props.extensionID,
                             ...args,
@@ -64,6 +67,21 @@ export class ContributedActionItem extends React.PureComponent<Props> {
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )
+
+        this.subscriptions.add(
+            this.commandExecutions
+                .pipe(
+                    mergeMap(params =>
+                        from(CONTROLLER.registries.commands.executeCommand(params)).pipe(
+                            mapTo(null),
+                            catchError(error => [asError(error)]),
+                            map(c => ({ actionOrError: c })),
+                            startWith<Pick<State, 'actionOrError'>>({ actionOrError: LOADING })
+                        )
+                    )
+                )
+                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
+        )
     }
 
     public componentWillUnmount(): void {
@@ -75,7 +93,7 @@ export class ContributedActionItem extends React.PureComponent<Props> {
             <button
                 type="button"
                 className="btn btn-link btn-sm composite-container__header-action"
-                data-tooltip={this.props.contribution.title}
+                data-tooltip={this.props.contribution.iconURL ? this.props.contribution.title : undefined}
                 disabled={this.state.actionOrError === LOADING}
                 onClick={this.runAction}
             >
@@ -94,10 +112,8 @@ export class ContributedActionItem extends React.PureComponent<Props> {
             return
         }
 
-        let edit: GQL.IConfigurationEdit
         if (this.props.contribution.experimentalSettingsAction) {
             const { path: keyPath, cycleValues, prompt } = this.props.contribution.experimentalSettingsAction
-
             let value: any
             if (cycleValues !== undefined) {
                 if (cycleValues.length === 0) {
@@ -119,17 +135,13 @@ export class ContributedActionItem extends React.PureComponent<Props> {
                     return
                 }
             }
-            edit = {
+            const edit: GQL.IConfigurationEdit = {
                 keyPath: toGQLKeyPath(this.props.contribution.experimentalSettingsAction.path),
                 value,
             }
+            this.settingsUpdates.next({ edit })
         } else {
-            throw new Error('nothing to do')
+            this.commandExecutions.next({ command: this.props.contribution.command })
         }
-        this.settingsUpdates.next({ edit })
     }
-}
-
-function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
-    return keyPath.map(v => (typeof v === 'string' ? { property: v } : { index: v }))
 }

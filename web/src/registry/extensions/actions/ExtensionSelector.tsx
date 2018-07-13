@@ -330,6 +330,11 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                             extensionID
                             contributions
                             mergedSettings
+                            extension {
+                                manifest {
+                                    raw
+                                }
+                            }
                         }
                     }
             }
@@ -339,7 +344,14 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                 if (!data || !data.viewerConfiguredExtensions || !data.viewerConfiguredExtensions.nodes) {
                     throw createAggregateError(errors)
                 }
-                return data.viewerConfiguredExtensions.nodes
+                return data.viewerConfiguredExtensions.nodes.map(
+                    ({ extensionID, contributions, mergedSettings, extension }) => ({
+                        extensionID,
+                        contributions,
+                        mergedSettings,
+                        rawManifest: extension && extension.manifest ? extension.manifest.raw : null,
+                    })
+                )
             })
         )
 

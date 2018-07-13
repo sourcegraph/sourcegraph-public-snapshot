@@ -5,10 +5,14 @@ import * as React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
+import { makeRepoURI } from '.'
 import { ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
+import { CXPComponentProps } from '../cxp/CXPComponent'
+import { USE_CXP } from '../cxp/CXPEnvironment'
+import { CXPRoot, CXPRootProps } from '../cxp/CXPRoot'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
@@ -30,7 +34,7 @@ import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './Reposito
 import { RevisionsPopover } from './RevisionsPopover'
 import { TreePage } from './TreePage'
 
-interface RepoRevContainerProps extends RouteComponentProps<{}>, ExtensionsProps {
+interface RepoRevContainerProps extends RouteComponentProps<{}>, ExtensionsProps, CXPComponentProps, CXPRootProps {
     repo: GQL.IRepository
     rev: string
     user: GQL.IUser | null
@@ -311,6 +315,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         filePath={routeComponentProps.match.params.filePath || ''}
                                                         mode={mode}
                                                         extensions={this.props.extensions}
+                                                        cxpOnComponentChange={this.props.cxpOnComponentChange}
                                                         location={this.props.location}
                                                         history={this.props.history}
                                                         isLightTheme={this.props.isLightTheme}
@@ -391,6 +396,17 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         />
                     }
                 />
+                {USE_CXP &&
+                    this.props.resolvedRevOrError &&
+                    !isErrorLike(this.props.resolvedRevOrError) && (
+                        <CXPRoot
+                            root={makeRepoURI({
+                                repoPath: this.props.repo.uri,
+                                commitID: this.props.resolvedRevOrError.commitID,
+                            })}
+                            cxpOnRootChange={this.props.cxpOnRootChange}
+                        />
+                    )}
             </div>
         )
     }

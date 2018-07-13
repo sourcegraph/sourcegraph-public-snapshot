@@ -103,6 +103,10 @@ export function updateUserExtensionSettings(
     )
 }
 
+export function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
+    return keyPath.map(v => (typeof v === 'string' ? { property: v } : { index: v }))
+}
+
 export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Observable<void> {
     return of(window.confirm('Really delete this extension from the extension registry?')).pipe(
         switchMap(ok => {
