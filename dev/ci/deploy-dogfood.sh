@@ -7,6 +7,10 @@ case "$BUILDKITE_BRANCH" in
         CONTAINER=frontend
         ;;
 
+    docker-images/gitserver)
+        DEPLOYMENT="gitserver-1"
+        CONTAINER="gitserver-1"
+
     docker-images/*)
         DEPLOYMENT=$(echo $BUILDKITE_BRANCH | awk -F '/' '{printf $2}')
         CONTAINER=$DEPLOYMENT
@@ -18,10 +22,6 @@ case "$BUILDKITE_BRANCH" in
 esac
 
 case "$DEPLOYMENT" in
-    gitserver)
-        DEPLOYMENT="gitserver-1"
-        ;;
-
     xlang-javascript-typescript)
         DEPLOYMENT="xlang-typescript"
         ;;
