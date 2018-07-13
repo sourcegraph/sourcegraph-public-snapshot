@@ -72,7 +72,7 @@ describe('e2e test suite', () => {
                 await mkdirp(SCREENSHOT_DIRECTORY)
                 const filePath = path.join(
                     SCREENSHOT_DIRECTORY,
-                    this.currentTest.fullTitle().replace(/ /g, '_') + '.png'
+                    this.currentTest.fullTitle().replace(/\W/g, '_') + '.png'
                 )
                 await page.screenshot({ path: filePath })
                 if (process.env.CI) {
