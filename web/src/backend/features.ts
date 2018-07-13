@@ -3,7 +3,7 @@ import { compact, flatten } from 'lodash'
 import { forkJoin, Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkedString, MarkupContent, Range } from 'vscode-languageserver-types'
-import { Extension, ExtensionSettings } from '../extensions/extension'
+import { ConfiguredExtension, ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, AbsoluteRepoFile } from '../repo'
 import {
     fetchDecorations,
@@ -31,7 +31,7 @@ export interface ModeSpec {
 }
 
 /** The extensions in use. */
-export type Extensions = Extension[]
+export type Extensions = ConfiguredExtension[]
 
 /** Extended by React prop types that carry extensions. */
 export interface ExtensionsProps {

@@ -15,7 +15,7 @@ import { gql, queryGraphQL } from '../../../backend/graphql'
 import * as GQL from '../../../backend/graphqlschema'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PopoverButton } from '../../../components/PopoverButton'
-import { fromRawExtension, RawExtension } from '../../../extensions/extension'
+import { fromRawExtension, RawConfiguredExtension } from '../../../extensions/extension'
 import { currentConfiguration } from '../../../settings/configuration'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { updateUserExtensionSettings } from '../../backend'
@@ -171,7 +171,7 @@ interface State {
     changed: any
 
     /** The viewer's extensions, undefined while loading, or an error. */
-    viewerExtensionsOrError: RawExtension[] | typeof LOADING | ErrorLike
+    viewerExtensionsOrError: RawConfiguredExtension[] | typeof LOADING | ErrorLike
 
     /** The list of configured extensions, undefined while loading, or an error. */
     extensionConnectionOrError: Pick<GQL.IConfiguredExtensionConnection, 'nodes'> | undefined | ErrorLike
@@ -321,7 +321,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
      * Unlike queryConfiguredExtensions, this includes (1) only enabled extensions and (2) all extensions (not just
      * the first N).
      */
-    private queryAllEnabledExtensions = (): Observable<RawExtension[]> =>
+    private queryAllEnabledExtensions = (): Observable<RawConfiguredExtension[]> =>
         queryGraphQL(
             gql`
             query ViewerAllEnabledExtensions() {
