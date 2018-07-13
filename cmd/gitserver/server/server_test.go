@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
@@ -16,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 )
 
@@ -340,7 +340,7 @@ func TestCloneRepo(t *testing.T) {
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
 	}
-	_, err := s.cloneRepo(context.Background(), "example.com/foo/bar", remote)
+	_, err := s.cloneRepo(context.Background(), "example.com/foo/bar", remote, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -359,6 +359,30 @@ func TestCloneRepo(t *testing.T) {
 
 	repo = dst
 	gotCommit := cmd("git", "rev-parse", "HEAD")
+	if wantCommit != gotCommit {
+		t.Fatal("failed to clone")
+	}
+
+	// Test blocking with a failure (already exists since we didn't specify overwrite)
+	_, err = s.cloneRepo(context.Background(), "example.com/foo/bar", remote, &cloneOptions{Block: true})
+	if !os.IsExist(errors.Cause(err)) {
+		t.Fatalf("expected clone repo to fail with already exists: %s", err)
+	}
+
+	// Test blocking with overwrite. First add random file to GIT_DIR. If the
+	// file is missing after cloning we know the directory was replaced
+	mkFiles(t, dst, ".git/HELLO")
+	_, err = s.cloneRepo(context.Background(), "example.com/foo/bar", remote, &cloneOptions{Block: true, Overwrite: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := os.Stat(filepath.Join(dst, ".git/HELLO")); !os.IsNotExist(err) {
+		t.Fatalf("expected clone to be overwritten: %s", err)
+	}
+
+	repo = dst
+	gotCommit = cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone")
 	}

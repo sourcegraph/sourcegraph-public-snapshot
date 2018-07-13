@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"path"
 	"strings"
 	"unicode/utf8"
 
@@ -10,6 +11,7 @@ import (
 func NormalizeRepo(input api.RepoURI) api.RepoURI {
 	repo := string(input)
 	repo = strings.TrimSuffix(repo, ".git")
+	repo = path.Clean(repo)
 
 	// Check if we need to do lowercasing. If we don't we can avoid the
 	// allocations we do later in the function.

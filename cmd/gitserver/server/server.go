@@ -409,7 +409,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 			defer cancel1()
 			ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 			defer cancel2()
-			_, err := s.cloneRepo(ctx, req.Repo, req.URL)
+			_, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
 			if err != nil {
 				log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			}
@@ -469,7 +469,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// optimistically, we assume that our cloning attempt might
 		// succeed.
 		resp.CloneInProgress = true
-		_, err := s.cloneRepo(ctx, req.Repo, req.URL)
+		_, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			resp.Error = err.Error()
@@ -633,7 +633,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !repoCloned(dir) {
-		cloneProgress, err := s.cloneRepo(ctx, req.Repo, req.URL)
+		cloneProgress, err := s.cloneRepo(ctx, req.Repo, req.URL, nil)
 		if err != nil {
 			log15.Debug("error cloning repo", "repo", req.Repo, "err", err)
 			status = "repo-not-found"
@@ -704,9 +704,21 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Exec-Stderr", string(stderr))
 }
 
-// cloneRepo issues a non-blocking git clone command for the given repo to the given directory.
-// The repository will be cloned to ${dir}/.git.
-func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string) (string, error) {
+// cloneOptions specify optional behaviour for the cloneRepo function.
+type cloneOptions struct {
+	// Block will wait for the clone to finish before returning. If the clone
+	// fails, the error will be returned. The passed in context is
+	// respected. When not blocking the clone is done with a server background
+	// context.
+	Block bool
+
+	// Overwrite will overwrite the existing clone.
+	Overwrite bool
+}
+
+// cloneRepo issues a git clone command for the given repo. It is
+// non-blocking.
+func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string, opts *cloneOptions) (string, error) {
 	dir := filepath.Join(s.ReposDir, string(protocol.NormalizeRepo(repo)))
 
 	// PERF: Before doing the network request to check if isCloneable, lets
@@ -752,36 +764,37 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string) (s
 		return "", nil
 	}
 
-	// Actually do the clone asynchronously. We clone to a temporary location
-	// first to avoid having incomplete clones in the repo tree. This also
-	// avoids leaving behind corrupt clones if the clone is interrupted.
-	go func() {
+	// We clone to a temporary location first to avoid having incomplete
+	// clones in the repo tree. This also avoids leaving behind corrupt clones
+	// if the clone is interrupted.
+	doClone := func(ctx context.Context) error {
 		defer lock.Release()
 
-		// Create a new context because this is in a background goroutine.
-		ctx, cancel1 := s.serverContext()
-		defer cancel1()
-		ctx, cancel2, err := s.acquireCloneLimiter(ctx)
+		ctx, cancel1, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
-			log15.Error("unexpected error while acquiring clone limiter:", "error", err)
-			return
+			return err
 		}
+		defer cancel1()
+		ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
 		defer cancel2()
-		ctx, cancel3 := context.WithTimeout(ctx, longGitCommandTimeout)
-		defer cancel3()
 
-		// We clone to a temporary directory first, so avoid wasting resources
-		// if the directory already exists.
 		dstPath := filepath.Join(dir, ".git")
-		if _, err := os.Stat(dstPath); err == nil {
-			log15.Error("failed to clone repo since destination already exists", "path", dstPath)
-			return
+		overwrite := opts != nil && opts.Overwrite
+		if !overwrite {
+			// We clone to a temporary directory first, so avoid wasting resources
+			// if the directory already exists.
+			if _, err := os.Stat(dstPath); err == nil {
+				return &os.PathError{
+					Op:   "cloneRepo",
+					Path: dstPath,
+					Err:  os.ErrExist,
+				}
+			}
 		}
 
 		tmpPath, err := s.tempDir("clone-")
 		if err != nil {
-			log15.Error("failed to clone repo", "repo", repo, "error", err)
-			return
+			return err
 		}
 		defer os.RemoveAll(tmpPath)
 		tmpPath = filepath.Join(tmpPath, ".git")
@@ -794,24 +807,49 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string) (s
 		go readCloneProgress(repo, url, lock, pr)
 
 		if output, err := s.runWithRemoteOpts(ctx, cmd, pw); err != nil {
-			log15.Error("clone failed", "repo", repo, "error", err, "output", string(output))
-			return
+			return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 		}
 
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmpPath); err != nil {
-			log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
+			return errors.Wrapf(err, "failed to update last changed time")
+		}
+
+		if overwrite {
+			// remove the current repo by putting it into our temporary directory
+			err := os.Rename(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
+			if err != nil && !os.IsNotExist(err) {
+				return errors.Wrapf(err, "failed to remove old clone")
+			}
 		}
 
 		if err := os.MkdirAll(filepath.Dir(dstPath), os.ModePerm); err != nil {
-			log15.Error("clone failed doing mkdirall", "repo", repo, "error", err)
+			return err
 		}
 		if err := os.Rename(tmpPath, dstPath); err != nil {
-			log15.Error("clone failed doing rename", "repo", repo, "tmp", tmpPath, "dst", dstPath, "error", err)
-			return
+			return err
 		}
 
 		log15.Info("repo cloned", "repo", repo)
+
+		return nil
+	}
+
+	if opts != nil && opts.Block {
+		// We are blocking, so use the passed in context.
+		if err := doClone(ctx); err != nil {
+			return "", errors.Wrapf(err, "failed to clone %s", repo)
+		}
+		return "", nil
+	}
+
+	go func() {
+		// Create a new context because this is in a background goroutine.
+		ctx, cancel := s.serverContext()
+		defer cancel()
+		if err := doClone(ctx); err != nil {
+			log15.Error("failed to clone repo", "repo", repo, "error", err)
+		}
 	}()
 
 	return "", nil

@@ -12,4 +12,7 @@ func TestNormalizeRepo(t *testing.T) {
 	if NormalizeRepo("myServer.Com/FooBar.git") != "myserver.com/FooBar" {
 		t.Fail()
 	}
+	if NormalizeRepo("myServer.Com/FooBar/.git") != "myserver.com/FooBar" {
+		t.Fail()
+	}
 }
