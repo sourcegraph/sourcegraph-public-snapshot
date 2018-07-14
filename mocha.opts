@@ -1,0 +1,4 @@
+ --recursive
+ --watch-extensions ts
+ --timeout 200
+ src/**/*.test.ts

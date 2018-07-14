@@ -21,8 +21,8 @@
 		"prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
 		"tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
 		"build": "tsc -p tsconfig.dist.json",
-		"test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --recursive --watch-extensions ts 'src/**/*.test.ts'",
-		"cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register --all mocha --recursive --timeout 10000 'src/**/*.test.ts'",
+		"test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --opts mocha.opts",
+		"cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",
 		"watch": "tsc -p tsconfig.json -w",
 		"watch:build": "tsc -p tsconfig.dist.json -w",
 		"watch:test": "npm run test -- -w"
