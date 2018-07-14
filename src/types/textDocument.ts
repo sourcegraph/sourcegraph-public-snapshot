@@ -30,10 +30,7 @@ export function match(
 function isSingleDocumentSelector(
     value: DocumentSelector | IterableIterator<DocumentSelector>
 ): value is DocumentSelector {
-    return (
-        ('length' in value && value.length === 0) ||
-        (Array.isArray(value) && (typeof value[0] === 'string' || isDocumentSelectorElement(value[0])))
-    )
+    return Array.isArray(value) && (value.length === 0 || isDocumentSelectorElement(value[0]))
 }
 
 function isDocumentSelectorElement(value: any): value is DocumentSelector[0] {
@@ -73,38 +70,36 @@ function score1(selector: DocumentSelector[0], candidateUri: string, candidateLa
         } else {
             return 0
         }
-    } else if (selector) {
-        const { language, scheme, pattern } = selector
-        let ret = 0
-        if (scheme) {
-            if (candidateUri.startsWith(scheme + ':')) {
-                ret = 10
-            } else if (scheme === '*') {
-                ret = 5
-            } else {
-                return 0
-            }
-        }
-        if (language) {
-            if (language === candidateLanguage) {
-                ret = 10
-            } else if (language === '*') {
-                ret = Math.max(ret, 5)
-            } else {
-                return 0
-            }
-        }
-        if (pattern) {
-            if (pattern === candidateUri || candidateUri.endsWith(pattern) || minimatch(candidateUri, pattern)) {
-                ret = 10
-            } else if (minimatch(candidateUri, '**/' + pattern)) {
-                ret = 5
-            } else {
-                return 0
-            }
-        }
-        return ret
-    } else {
-        return 0
     }
+
+    const { language, scheme, pattern } = selector
+    let ret = 0
+    if (scheme) {
+        if (candidateUri.startsWith(scheme + ':')) {
+            ret = 10
+        } else if (scheme === '*') {
+            ret = 5
+        } else {
+            return 0
+        }
+    }
+    if (language) {
+        if (language === candidateLanguage) {
+            ret = 10
+        } else if (language === '*') {
+            ret = Math.max(ret, 5)
+        } else {
+            return 0
+        }
+    }
+    if (pattern) {
+        if (pattern === candidateUri || candidateUri.endsWith(pattern) || minimatch(candidateUri, pattern)) {
+            ret = 10
+        } else if (minimatch(candidateUri, '**/' + pattern)) {
+            ret = 5
+        } else {
+            return 0
+        }
+    }
+    return ret
 }

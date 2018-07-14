@@ -1,15 +1,45 @@
 import * as assert from 'assert'
-import { score } from './textDocument'
+import { TextDocument } from 'vscode-languageserver-types'
+import { DocumentSelector } from './document'
+import { match, score } from './textDocument'
+
+describe('match', () => {
+    it('reports true if any selectors match', () => {
+        assert.ok(match([{ language: 'x' }, '*'], { languageId: 'l' } as TextDocument))
+    })
+
+    it('reports false if no selectors match', () => {
+        assert.strictEqual(match(['x'], { languageId: 'l' } as TextDocument), false)
+        assert.strictEqual(match([], { languageId: 'l' } as TextDocument), false)
+    })
+
+    it('supports iterators for the document selectors', () => {
+        let i = 0
+        const iterator = {
+            [Symbol.iterator](): IterableIterator<DocumentSelector> {
+                return { [Symbol.iterator]: iterator[Symbol.iterator], next: () => ({ value: ['*'], done: i++ === 1 }) }
+            },
+        }
+        assert.ok(match(iterator as IterableIterator<DocumentSelector>, { languageId: 'l' } as TextDocument))
+    })
+})
 
 describe('score', () => {
     it('matches', () => {
-        assert.strictEqual(score(['*'], 'file:///f', 'l'), 5)
-        assert.strictEqual(score([{ scheme: 'file' }], 'file:///f', 'l'), 10)
         assert.strictEqual(score(['l'], 'file:///f', 'l'), 10)
+        assert.strictEqual(score(['*'], 'file:///f', 'l'), 5)
+        assert.strictEqual(score(['x'], 'file:///f', 'l'), 0)
+        assert.strictEqual(score([{ scheme: 'file' }], 'file:///f', 'l'), 10)
+        assert.strictEqual(score([{ scheme: '*' }], 'file:///f', 'l'), 5)
+        assert.strictEqual(score([{ scheme: 'x' }], 'file:///f', 'l'), 0)
         assert.strictEqual(score([{ pattern: 'file:///*.txt' }], 'file:///f.txt', 'l'), 10)
         assert.strictEqual(score([{ pattern: '**/*.txt' }], 'file:///f.txt', 'l'), 10)
         assert.strictEqual(score([{ pattern: '*.txt' }], 'file:///f.txt', 'l'), 5)
         assert.strictEqual(score([{ pattern: 'f.txt' }], 'file:///f.txt', 'l'), 10)
+        assert.strictEqual(score([{ pattern: 'x' }], 'file:///f.txt', 'l'), 0)
         assert.strictEqual(score([{ pattern: 'f.txt', language: 'x' }], 'file:///f.txt', 'l'), 0)
+        assert.strictEqual(score([{ language: 'x' }], 'file:///f.txt', 'l'), 0)
+        assert.strictEqual(score([{ language: 'l' }], 'file:///f.txt', 'l'), 10)
+        assert.strictEqual(score([{ language: '*' }], 'file:///f.txt', 'l'), 5)
     })
 })
