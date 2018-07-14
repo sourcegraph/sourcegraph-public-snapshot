@@ -1,4 +1,4 @@
-import { combineLatest, from, Observable } from 'rxjs'
+import { combineLatest, from, Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Hover } from 'vscode-languageserver-types'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
@@ -13,7 +13,7 @@ export class TextDocumentHoverProviderRegistry extends TextDocumentFeatureProvid
     ProvideTextDocumentHoverSignature
 > {
     public getHover(params: TextDocumentPositionParams): Observable<HoverMerged | null> {
-        return getHover(this.providersSnapshot, params)
+        return getHover(of(this.providersSnapshot), params)
     }
 }
 

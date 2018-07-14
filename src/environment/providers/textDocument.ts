@@ -1,5 +1,5 @@
 import { BehaviorSubject, Observable, TeardownLogic } from 'rxjs'
-import { first, map } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 
 /** A registry entry for a registered provider. */
@@ -35,7 +35,9 @@ export abstract class TextDocumentFeatureProviderRegistry<O extends TextDocument
      * The current set of providers. Used by callers that do not need to react to providers being registered or
      * unregistered.
      */
-    public readonly providersSnapshot = this.providers.pipe(first())
+    public get providersSnapshot(): P[] {
+        return this.entries.value.map(({ provider }) => provider)
+    }
 }
 
 /** An empty provider registry, mainly useful in tests and example code. */
