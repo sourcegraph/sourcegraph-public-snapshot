@@ -28,7 +28,7 @@ import {
     ResponseMessage,
 } from './messages'
 import { LogTraceNotification, SetTraceNotification, Trace, Tracer } from './trace'
-import { DataCallback, MessageReader, MessageWriter } from './transports'
+import { DataCallback, MessageReader, MessageWriter } from './transport'
 
 // Copied from vscode-languageserver to avoid adding extraneous dependencies.
 

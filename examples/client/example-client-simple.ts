@@ -2,7 +2,7 @@ import * as NodeWebSocket from 'ws'
 import { createMessageConnection } from '../../src/jsonrpc2/connection'
 import { createWebSocketMessageTransports } from '../../src/jsonrpc2/transports/nodeWebSocket'
 import { InitializeParams, InitializeRequest, InitializeResult } from '../../src/protocol'
-import { TextDocumentDecorationsParams, TextDocumentDecorationsRequest } from '../../src/protocol/decorations'
+import { TextDocumentDecorationsParams, TextDocumentDecorationsRequest } from '../../src/protocol/decoration'
 import config from './config'
 
 async function run(): Promise<void> {

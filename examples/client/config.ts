@@ -1,4 +1,4 @@
-import { DocumentSelector } from '../../src/types/documents'
+import { DocumentSelector } from '../../src/types/document'
 
 export default require('./package.json').cxp as {
     url: string

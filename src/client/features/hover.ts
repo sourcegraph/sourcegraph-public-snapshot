@@ -10,7 +10,7 @@ import {
     TextDocumentPositionParams,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { DocumentSelector } from '../../types/documents'
+import { DocumentSelector } from '../../types/document'
 import { NextSignature } from '../../types/middleware'
 import { Client } from '../client'
 import { ensure, TextDocumentFeature } from './common'

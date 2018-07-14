@@ -1,6 +1,6 @@
 import { MessageTransports } from '../connection'
 import { Message } from '../messages'
-import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transports'
+import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transport'
 
 // Copied subset of WebSocket from the TypeScript "dom" core library to avoid needing to add that lib to
 // tsconfig.json.

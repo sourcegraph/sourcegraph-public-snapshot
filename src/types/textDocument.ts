@@ -1,6 +1,6 @@
 import * as minimatch from 'minimatch'
 import { Range, TextDocument } from 'vscode-languageserver-types'
-import { DocumentFilter, DocumentSelector } from './documents'
+import { DocumentFilter, DocumentSelector } from './document'
 
 export type URI = string
 

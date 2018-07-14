@@ -1,6 +1,6 @@
-import { Emitter, Event } from '../jsonrpc2/events'
-import { Message } from '../jsonrpc2/messages'
 import { isFunction } from '../util'
+import { Emitter, Event } from './events'
+import { Message } from './messages'
 
 // Copied from vscode-jsonrpc to avoid adding extraneous dependencies.
 

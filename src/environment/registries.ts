@@ -1,4 +1,4 @@
-import { CommandRegistry } from '../client/features/commands'
+import { CommandRegistry } from '../client/features/command'
 import { TextDocumentDecorationsProviderRegistry } from './providers/decoration'
 import { TextDocumentHoverProviderRegistry } from './providers/hover'
 

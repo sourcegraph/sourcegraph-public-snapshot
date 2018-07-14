@@ -1,6 +1,6 @@
 import { createWebWorkerMessageTransports, Worker } from '../../src/jsonrpc2/transports/webWorker'
 import { InitializeResult } from '../../src/protocol'
-import { TextDocumentDecoration, TextDocumentDecorationsParams } from '../../src/protocol/decorations'
+import { TextDocumentDecoration, TextDocumentDecorationsParams } from '../../src/protocol/decoration'
 import { Connection, createConnection } from '../../src/server/server'
 
 declare var self: Worker

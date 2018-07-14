@@ -1,6 +1,6 @@
 import { Socket } from 'net'
 import { Message } from '../messages'
-import { AbstractMessageWriter, MessageWriter } from '../transports'
+import { AbstractMessageWriter, MessageWriter } from '../transport'
 import { ContentLength, CRLF, StreamMessageReader } from './stream'
 
 export class SocketMessageReader extends StreamMessageReader {

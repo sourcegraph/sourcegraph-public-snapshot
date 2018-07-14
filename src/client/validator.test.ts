@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import { Position, Range } from 'vscode-languageserver-types'
-import { TextDocumentDecoration } from '../protocol/decorations'
+import { TextDocumentDecoration } from '../protocol/decoration'
 import { createValidator } from './validator'
 
 const validator = createValidator()

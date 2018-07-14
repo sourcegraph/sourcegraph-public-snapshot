@@ -1,20 +1,20 @@
 import { BehaviorSubject, Observable, Subject, Subscription, SubscriptionLike, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { Client, ClientOptions } from '../client/client'
-import { ExecuteCommandFeature } from '../client/features/commands'
+import { ExecuteCommandFeature } from '../client/features/command'
 import {
-    ConfigurationChangeNotificationsFeature,
+    ConfigurationChangeNotificationFeature,
     ConfigurationFeature,
     ConfigurationUpdateFeature,
 } from '../client/features/configuration'
 import {
     TextDocumentDynamicDecorationsFeature,
     TextDocumentStaticDecorationsFeature,
-} from '../client/features/decorations'
+} from '../client/features/decoration'
 import { TextDocumentHoverFeature } from '../client/features/hover'
-import { WindowLogMessagesFeature } from '../client/features/logMessages'
-import { WindowShowMessagesFeature } from '../client/features/showMessages'
-import { TextDocumentDidOpenFeature } from '../client/features/textDocuments'
+import { WindowLogMessageFeature } from '../client/features/logMessage'
+import { WindowShowMessageFeature } from '../client/features/message'
+import { TextDocumentDidOpenFeature } from '../client/features/textDocument'
 import { MessageTransports } from '../jsonrpc2/connection'
 import { Trace } from '../jsonrpc2/trace'
 import {
@@ -164,7 +164,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     }
 
     private registerClientFeatures(client: Client, settings: Observable<ExtensionSettings>): void {
-        client.registerFeature(new ConfigurationChangeNotificationsFeature(client, settings))
+        client.registerFeature(new ConfigurationChangeNotificationFeature(client, settings))
         client.registerFeature(new ConfigurationFeature(client, settings))
         client.registerFeature(
             new ConfigurationUpdateFeature(
@@ -185,12 +185,12 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
             new TextDocumentDynamicDecorationsFeature(client, this.registries.textDocumentDecorations)
         )
         client.registerFeature(
-            new WindowLogMessagesFeature(client, (params: LogMessageParams) =>
+            new WindowLogMessageFeature(client, (params: LogMessageParams) =>
                 this._logMessages.next({ ...params, extension: client.id })
             )
         )
         client.registerFeature(
-            new WindowShowMessagesFeature(
+            new WindowShowMessageFeature(
                 client,
                 (params: ShowMessageParams) => this._showMessages.next({ ...params, extension: client.id }),
                 (params: ShowMessageRequestParams) =>

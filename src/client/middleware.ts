@@ -3,7 +3,7 @@ import { NextSignature } from '../types/middleware'
 import {
     HandleTextDocumentDecorationsMiddleware,
     ProvideTextDocumentDecorationsMiddleware,
-} from './features/decorations'
+} from './features/decoration'
 import { ProvideTextDocumentHoverMiddleware } from './features/hover'
 
 export interface Middleware {

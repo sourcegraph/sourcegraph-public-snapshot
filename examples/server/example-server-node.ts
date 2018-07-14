@@ -4,7 +4,7 @@ import * as WebSocket from 'ws'
 import { createWebSocketMessageTransports } from '../../src/jsonrpc2/transports/nodeWebSocket'
 import { StreamMessageReader, StreamMessageWriter } from '../../src/jsonrpc2/transports/stream'
 import { InitializeResult } from '../../src/protocol'
-import { TextDocumentDecoration, TextDocumentDecorationsParams } from '../../src/protocol/decorations'
+import { TextDocumentDecoration, TextDocumentDecorationsParams } from '../../src/protocol/decoration'
 import { Connection, createConnection } from '../../src/server/server'
 
 function register(connection: Connection): void {

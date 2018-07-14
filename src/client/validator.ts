@@ -1,4 +1,4 @@
-import { TextDocumentDecoration } from '../protocol/decorations'
+import { TextDocumentDecoration } from '../protocol/decoration'
 
 export interface Validator {
     asTextDocumentDecoration(value: TextDocumentDecoration): TextDocumentDecoration

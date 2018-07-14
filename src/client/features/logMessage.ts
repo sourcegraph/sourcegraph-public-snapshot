@@ -5,7 +5,7 @@ import { StaticFeature } from './common'
 /**
  * Support for server log messages (window/logMessage notifications from the server).
  */
-export class WindowLogMessagesFeature implements StaticFeature {
+export class WindowLogMessageFeature implements StaticFeature {
     constructor(
         private client: Client,
         /** Called when the client receives a window/logMessage notification. */

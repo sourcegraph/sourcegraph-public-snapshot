@@ -20,7 +20,7 @@ import { DynamicFeature, ensure, RegistrationData, StaticFeature } from './commo
  * Support for extension settings managed by the client (workspace/didChangeConfiguration notifications to the
  * server).
  */
-export class ConfigurationChangeNotificationsFeature implements DynamicFeature<undefined> {
+export class ConfigurationChangeNotificationFeature implements DynamicFeature<undefined> {
     private subscriptions = new Subscription()
     private listener: Subscription | null = null
 

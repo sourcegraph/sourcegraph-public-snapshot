@@ -1,7 +1,7 @@
 import * as NodeWebSocket from 'ws'
 import { MessageTransports } from '../connection'
 import { Message } from '../messages'
-import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transports'
+import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transport'
 
 class WebSocketMessageReader extends AbstractMessageReader implements MessageReader {
     private pending: Message[] = []

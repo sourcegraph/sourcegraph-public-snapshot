@@ -12,7 +12,7 @@ import { StaticFeature } from './common'
  * Support for server messages intended for display to the user (window/showMessages notifications and
  * window/showMessageRequest requests from the server).
  */
-export class WindowShowMessagesFeature implements StaticFeature {
+export class WindowShowMessageFeature implements StaticFeature {
     constructor(
         private client: Client,
         /** Called when the client receives a window/showMessage notification. */

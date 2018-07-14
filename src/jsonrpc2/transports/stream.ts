@@ -1,5 +1,5 @@
 import { Message } from '../messages'
-import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transports'
+import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transport'
 
 const DefaultSize = 8192
 const CR: number = Buffer.from('\r', 'ascii')[0]

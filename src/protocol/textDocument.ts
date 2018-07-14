@@ -12,7 +12,7 @@ import {
     VersionedTextDocumentIdentifier,
 } from 'vscode-languageserver-types'
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
-import { DocumentSelector } from '../types/documents'
+import { DocumentSelector } from '../types/document'
 /**
  * A parameter literal used in requests to pass a text document and a position inside that
  * document.

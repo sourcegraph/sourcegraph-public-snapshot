@@ -22,7 +22,7 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../protocol'
-import { DocumentSelector } from '../types/documents'
+import { DocumentSelector } from '../types/document'
 import { URI } from '../types/textDocument'
 import { isFunction } from '../util'
 import { Connection, createConnection } from './connection'

@@ -10,7 +10,7 @@ import {
     ServerCapabilities,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { DocumentSelector } from '../../types/documents'
+import { DocumentSelector } from '../../types/document'
 import { NextSignature } from '../../types/middleware'
 import { match } from '../../types/textDocument'
 import { Client } from '../client'

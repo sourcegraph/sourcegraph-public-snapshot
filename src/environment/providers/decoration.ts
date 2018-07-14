@@ -1,7 +1,7 @@
 import { combineLatest, Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { TextDocumentRegistrationOptions } from '../../protocol'
-import { TextDocumentDecoration, TextDocumentDecorationsParams } from '../../protocol/decorations'
+import { TextDocumentDecoration, TextDocumentDecorationsParams } from '../../protocol/decoration'
 import { compact, flatten } from '../../util'
 import { TextDocumentFeatureProviderRegistry } from './textDocument'
 

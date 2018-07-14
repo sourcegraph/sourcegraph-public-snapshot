@@ -6,7 +6,7 @@ import {
     ServerCapabilities,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { DocumentSelector } from '../../types/documents'
+import { DocumentSelector } from '../../types/document'
 import { isFunction } from '../../util'
 import { Client } from '../client'
 

@@ -1,6 +1,6 @@
 import { MessageTransports } from '../connection'
 import { Message } from '../messages'
-import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transports'
+import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transport'
 
 // TODO: use transferable objects in postMessage for perf
 

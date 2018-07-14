@@ -1,7 +1,7 @@
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
 import { URI } from '../types/textDocument'
 import { ClientCapabilities, ServerCapabilities } from './capabilities'
-import { WorkspaceFoldersInitializeParams } from './workspaceFolders'
+import { WorkspaceFoldersInitializeParams } from './workspaceFolder'
 
 /**
  * The initialize request is sent from the client to the server. It is sent once as the request after starting up

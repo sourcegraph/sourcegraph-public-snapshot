@@ -10,8 +10,8 @@ import {
     TextDocumentDecorationsRequest,
     TextDocumentPublishDecorationsNotification,
     TextDocumentPublishDecorationsParams,
-} from '../../protocol/decorations'
-import { DocumentSelector } from '../../types/documents'
+} from '../../protocol/decoration'
+import { DocumentSelector } from '../../types/document'
 import { NextSignature } from '../../types/middleware'
 import { Client } from '../client'
 import { ensure, TextDocumentFeature } from './common'
