@@ -6,7 +6,7 @@ import { TextDocumentStaticDecorationsFeature } from '../../src/client/features/
 import { TextDocumentHoverFeature } from '../../src/client/features/hover'
 import { TextDocumentDidOpenFeature } from '../../src/client/features/textDocuments'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment } from '../../src/environment/environment'
-import { NoopProviderRegistry } from '../../src/environment/providers'
+import { NoopProviderRegistry } from '../../src/environment/providers/textDocument'
 import { createWebSocketMessageTransports } from '../../src/jsonrpc2/transports/nodeWebSocket'
 import { TextDocumentDecorationsParams, TextDocumentDecorationsRequest } from '../../src/protocol/decorations'
 import config from './config'

@@ -1,10 +1,8 @@
 import { BehaviorSubject, from, Observable, TeardownLogic } from 'rxjs'
 import * as uuidv4 from 'uuid/v4'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
-import {
-    ProvideTextDocumentDecorationsSignature,
-    TextDocumentFeatureProviderRegistry,
-} from '../../environment/providers'
+import { ProvideTextDocumentDecorationsSignature } from '../../environment/providers/decoration'
+import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'
 import { ClientCapabilities, ServerCapabilities, TextDocumentRegistrationOptions } from '../../protocol'
 import {
     TextDocumentDecoration,

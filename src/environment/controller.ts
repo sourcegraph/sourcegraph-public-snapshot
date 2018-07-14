@@ -28,7 +28,7 @@ import {
 import { isEqual } from '../util'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment, ObservableEnvironment } from './environment'
 import { Extension, ExtensionSettings } from './extension'
-import { Registries } from './providers'
+import { Registries } from './registries'
 
 interface ClientKey extends Pick<InitializeParams, 'root' | 'initializationOptions'> {
     id: string
