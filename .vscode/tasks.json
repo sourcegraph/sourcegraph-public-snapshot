@@ -6,6 +6,12 @@
       "script": "watch",
       "problemMatcher": ["$tsc-watch"],
       "isBackground": true
+    },
+    {
+      "type": "npm",
+      "script": "watch:cover",
+      "problemMatcher": ["$tsc-watch"],
+      "isBackground": true
     }
   ]
 }

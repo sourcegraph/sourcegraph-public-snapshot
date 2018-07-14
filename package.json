@@ -25,7 +25,8 @@
 		"cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",
 		"watch": "tsc -p tsconfig.json -w",
 		"watch:build": "tsc -p tsconfig.dist.json -w",
-		"watch:test": "npm run test -- -w"
+		"watch:test": "npm run test -- -w",
+		"watch:cover":"nodemon --watch src/ --ext ts,js,json --watch package.json --exec 'npm run cover || exit 1'"
 	},
 	"nyc": {
 		"extension": [
@@ -72,6 +73,7 @@
 		"chai": "^4.1.2",
 		"husky": "^0.14.3",
 		"mocha": "^5.2.0",
+		"nodemon": "^1.18.2",
 		"nyc": "^12.0.2",
 		"prettier": "^1.13.6",
 		"semantic-release": "^15.6.3",
