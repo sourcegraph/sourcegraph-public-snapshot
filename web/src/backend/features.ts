@@ -77,7 +77,6 @@ export function getHover(ctx: LSPTextDocumentPositionParams, extensions: Extensi
  * @return definitions of the symbol at the location
  */
 export function getDefinition(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<Definition> {
-    // TODO!(sqs): add definition provider
     return forkJoin(
         getModes(ctx, extensions).map(({ mode, settings }) => fetchDefinition({ ...ctx, mode, settings }))
     ).pipe(map(results => flatten(compact(results))))
