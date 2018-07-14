@@ -38,23 +38,19 @@ export function compact<T>(array: (T | null | undefined | false | '' | 0)[]): T[
     return result
 }
 
-/** Reports whether the two values are equal, using a deep comparison. */
+/** Reports whether the two values are equal, using a strict deep comparison. */
 export function isEqual<T>(a: T, b: T): boolean {
     if (a === b) {
         return true
     }
     // tslint:disable-next-line:triple-equals
-    if (a == null || b == null || (!isObjectLike(a) && !isObjectLike(b))) {
-        return a !== a && b !== b
+    if (!a || !b || (typeof a !== 'object' && typeof b !== 'object')) {
+        return a === b
     }
     return equalObjects(a, b)
 }
 
 function equalObjects<T extends { [key: string]: any }>(a: T, b: T): boolean {
-    if (isUndefinedOrNull(a) || isUndefinedOrNull(b)) {
-        return false
-    }
-
     const ka = Object.keys(a)
     const kb = Object.keys(b)
     if (ka.length !== kb.length) {
@@ -74,12 +70,4 @@ function equalObjects<T extends { [key: string]: any }>(a: T, b: T): boolean {
         }
     }
     return typeof a === typeof b
-}
-
-function isObjectLike(value: any): value is object {
-    return typeof value === 'object' && value !== null
-}
-
-function isUndefinedOrNull(value: any): value is undefined | null {
-    return value === null || value === undefined
 }
