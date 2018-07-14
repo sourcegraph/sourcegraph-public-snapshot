@@ -10,6 +10,7 @@ import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
 import { CXPComponentProps } from '../../cxp/CXPComponent'
+import { CXPControllerProps } from '../../cxp/CXPEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
@@ -74,7 +75,7 @@ const fetchBlob = memoizeObservable(
     fetchBlobCacheKey
 )
 
-interface Props extends AbsoluteRepoFile, ModeSpec, ExtensionsProps, CXPComponentProps {
+interface Props extends AbsoluteRepoFile, ModeSpec, ExtensionsProps, CXPComponentProps, CXPControllerProps {
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -219,6 +220,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                                 rev={this.props.rev}
                                 mode={this.props.mode}
                                 extensions={this.props.extensions}
+                                cxpController={this.props.cxpController}
                                 cxpOnComponentChange={this.props.cxpOnComponentChange}
                                 wrapCode={this.state.wrapCode}
                                 renderMode={renderMode}
@@ -231,6 +233,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                                 repoPath={this.props.repoPath}
                                 commitID={this.props.commitID}
                                 extensions={this.props.extensions}
+                                cxpController={this.props.cxpController}
                                 position={
                                     lprToRange(parseHash(this.props.location.hash))
                                         ? lprToRange(parseHash(this.props.location.hash))!.start

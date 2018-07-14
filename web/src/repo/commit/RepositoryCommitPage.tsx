@@ -12,6 +12,7 @@ import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { CXPControllerProps } from '../../cxp/CXPEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -56,7 +57,7 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props extends RouteComponentProps<{ revspec: string }>, ExtensionsProps {
+interface Props extends RouteComponentProps<{ revspec: string }>, ExtensionsProps, CXPControllerProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
@@ -120,8 +121,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             ),
             pushHistory: path => this.props.history.push(path),
             logTelemetryEvent,
-            fetchHover: hoveredToken =>
-                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props.extensions),
+            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             fetchJumpURL: hoveredToken =>
                 getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props.extensions),
         })

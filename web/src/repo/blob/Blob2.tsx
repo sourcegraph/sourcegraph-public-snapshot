@@ -11,7 +11,7 @@ import { AbsoluteRepoFile, RenderMode } from '..'
 import { ExtensionsProps, getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams, TextDocumentDecoration } from '../../backend/lsp'
 import { CXPComponent, CXPComponentProps } from '../../cxp/CXPComponent'
-import { USE_CXP } from '../../cxp/CXPEnvironment'
+import { CXPControllerProps, USE_CXP } from '../../cxp/CXPEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toNativeEvent } from '../../util/react'
@@ -27,7 +27,7 @@ import { locateTarget } from './tooltips'
  */
 const toPortalID = (line: number) => `blame-portal-${line}`
 
-interface BlobProps extends AbsoluteRepoFile, ModeSpec, ExtensionsProps, CXPComponentProps {
+interface BlobProps extends AbsoluteRepoFile, ModeSpec, ExtensionsProps, CXPComponentProps, CXPControllerProps {
     /** The trusted syntax-highlighted code as HTML */
     html: string
 
@@ -124,7 +124,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             ),
             pushHistory: path => this.props.history.push(path),
             logTelemetryEvent,
-            fetchHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props.extensions),
+            fetchHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
             fetchJumpURL: position =>
                 getJumpURL(this.getLSPTextDocumentPositionParams(position), this.props.extensions),
         })
@@ -276,7 +276,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
                 // Only clear decorations if the model changed. If only the extensions changed, keep
                 // the old decorations until the new ones are available, to avoid UI jitter.
-                return merge(modelChanged ? [undefined] : [], getDecorations(model, extensions))
+                return merge(modelChanged ? [undefined] : [], getDecorations(model, this.props))
             }),
             share()
         )

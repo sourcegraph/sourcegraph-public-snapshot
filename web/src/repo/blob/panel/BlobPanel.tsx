@@ -32,6 +32,7 @@ import {
 } from '../../../backend/features'
 import * as GQL from '../../../backend/graphqlschema'
 import { fetchServerCapabilities, isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
+import { CXPControllerProps } from '../../../cxp/CXPEnvironment'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -47,7 +48,7 @@ import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
 import { FileLocationsTree } from './FileLocationsTree'
 
-interface Props extends AbsoluteRepoFile, Partial<PositionSpec>, ModeSpec, ExtensionsProps {
+interface Props extends AbsoluteRepoFile, Partial<PositionSpec>, ModeSpec, ExtensionsProps, CXPControllerProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
@@ -172,7 +173,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 ...(subject as Pick<typeof subject, Exclude<keyof typeof subject, 'extensions'>>),
                                 position,
                             },
-                            subject.extensions
+                            { extensions: subject.extensions, cxpController: this.props.cxpController }
                         ).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ hoverOrError: c } as PartialStateUpdate))

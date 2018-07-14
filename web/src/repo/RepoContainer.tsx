@@ -10,6 +10,7 @@ import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { CXPComponentProps } from '../cxp/CXPComponent'
+import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { CXPRootProps } from '../cxp/CXPRoot'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
@@ -38,7 +39,8 @@ interface Props
         ExtensionsProps,
         ExtensionsChangeProps,
         CXPComponentProps,
-        CXPRootProps {
+        CXPRootProps,
+        CXPControllerProps {
     user: GQL.IUser | null
     onHelpPopoverToggle: () => void
     isLightTheme: boolean
@@ -200,6 +202,7 @@ export class RepoContainer extends React.Component<Props, State> {
             extensions: this.props.extensions,
             cxpOnComponentChange: this.props.cxpOnComponentChange,
             cxpOnRootChange: this.props.cxpOnRootChange,
+            cxpController: this.props.cxpController,
         }
 
         const isSettingsPage =
@@ -214,6 +217,7 @@ export class RepoContainer extends React.Component<Props, State> {
                     className="repo-composite-container__header"
                     extensions={this.props.extensions}
                     onExtensionsChange={this.props.onExtensionsChange}
+                    cxpController={this.props.cxpController}
                     location={this.props.location}
                     history={this.props.history}
                 />

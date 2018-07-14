@@ -1,9 +1,10 @@
 import * as React from 'react'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
+import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { ContributedActionItem, ContributedActionItemProps } from './ContributedActionItem'
 import { ContributableMenu } from './contributions'
 
-interface Props extends ExtensionsProps, ExtensionsChangeProps {
+interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPControllerProps {
     menu: ContributableMenu
 }
 
@@ -31,6 +32,7 @@ export const ContributedActions: React.SFC<Props> = props => {
                     {...item}
                     extensions={props.extensions}
                     onExtensionsChange={props.onExtensionsChange}
+                    cxpController={props.cxpController}
                 />
             ))}
         </>

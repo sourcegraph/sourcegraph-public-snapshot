@@ -7,7 +7,7 @@ import { ExecuteCommandParams } from 'vscode-languageserver-protocol'
 import { currentUser } from '../auth'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
-import { CONTROLLER } from '../cxp/controller'
+import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { toGQLKeyPath, updateUserExtensionSettings } from '../registry/backend'
 import { asError, ErrorLike } from '../util/errors'
 import { CommandContribution } from './contributions'
@@ -16,7 +16,7 @@ export interface ContributedActionItemProps extends Pick<GQL.IConfiguredExtensio
     contribution: CommandContribution
 }
 
-interface Props extends ContributedActionItemProps, ExtensionsProps, ExtensionsChangeProps {}
+interface Props extends ContributedActionItemProps, ExtensionsProps, ExtensionsChangeProps, CXPControllerProps {}
 
 const LOADING: 'loading' = 'loading'
 
@@ -72,7 +72,7 @@ export class ContributedActionItem extends React.PureComponent<Props> {
             this.commandExecutions
                 .pipe(
                     mergeMap(params =>
-                        from(CONTROLLER.registries.commands.executeCommand(params)).pipe(
+                        from(this.props.cxpController.registries.commands.executeCommand(params)).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
                             map(c => ({ actionOrError: c })),

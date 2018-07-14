@@ -11,6 +11,7 @@ import { ExtensionsProps, getHover, getJumpURL } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
+import { CXPControllerProps } from '../../cxp/CXPEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
 import { toNativeEvent } from '../../util/react'
@@ -30,7 +31,7 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{ spec: string }>, ExtensionsProps {
+interface Props extends RouteComponentProps<{ spec: string }>, ExtensionsProps, CXPControllerProps {
     repo: GQL.IRepository
 }
 
@@ -102,8 +103,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
             ),
             pushHistory: path => this.props.history.push(path),
             logTelemetryEvent,
-            fetchHover: hoveredToken =>
-                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props.extensions),
+            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
             fetchJumpURL: hoveredToken =>
                 getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props.extensions),
         })

@@ -8,6 +8,7 @@ import { AbsoluteRepoFile } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
+import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { RepoRevSidebarHistory } from './RepoRevSidebarHistory'
@@ -15,7 +16,7 @@ import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
 
-interface Props extends AbsoluteRepoFile {
+interface Props extends AbsoluteRepoFile, CXPControllerProps {
     repoID: GQL.ID
     isDir: boolean
     defaultBranch: string
@@ -129,6 +130,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 location={this.props.location}
                                 history={this.props.history}
                                 commitID={this.props.commitID}
+                                cxpController={this.props.cxpController}
                             />
                         ) : (
                             <div />

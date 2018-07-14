@@ -11,6 +11,7 @@ import { parseBrowserRepoURL } from '.'
 import { getHover, HoverMerged } from '../backend/features'
 import { EMODENOTFOUND } from '../backend/lsp'
 import { displayRepoPath } from '../components/RepoFileLink'
+import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { getModeFromPath } from '../util'
 import { asError, ErrorLike } from '../util/errors'
 import { fetchHighlightedFileLines } from './backend'
@@ -66,7 +67,7 @@ const getSymbolSignature = (contents: (MarkupContent | MarkedString)[]): string 
     return hoverContentsToString(symbolSignature)[0]
 }
 
-interface HistoryProps {
+interface HistoryProps extends CXPControllerProps {
     location: H.Location
     history: H.History
     commitID: string
@@ -144,7 +145,7 @@ export class RepoRevSidebarHistory extends React.Component<HistoryProps, History
                                         position: loc.position,
                                         mode,
                                     },
-                                    []
+                                    { extensions: [], cxpController: this.props.cxpController }
                                 ).pipe(
                                     catchError(error => {
                                         if (error && error.code === EMODENOTFOUND) {

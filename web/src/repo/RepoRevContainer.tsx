@@ -11,7 +11,7 @@ import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
 import { CXPComponentProps } from '../cxp/CXPComponent'
-import { USE_CXP } from '../cxp/CXPEnvironment'
+import { CXPControllerProps, USE_CXP } from '../cxp/CXPEnvironment'
 import { CXPRoot, CXPRootProps } from '../cxp/CXPRoot'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
@@ -34,7 +34,12 @@ import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './Reposito
 import { RevisionsPopover } from './RevisionsPopover'
 import { TreePage } from './TreePage'
 
-interface RepoRevContainerProps extends RouteComponentProps<{}>, ExtensionsProps, CXPComponentProps, CXPRootProps {
+interface RepoRevContainerProps
+    extends RouteComponentProps<{}>,
+        ExtensionsProps,
+        CXPComponentProps,
+        CXPRootProps,
+        CXPControllerProps {
     repo: GQL.IRepository
     rev: string
     user: GQL.IUser | null
@@ -301,6 +306,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                             }
                                             history={this.props.history}
                                             location={this.props.location}
+                                            cxpController={this.props.cxpController}
                                         />
                                         {!hideRepoRevContent && (
                                             <div className="repo-rev-container__content">
@@ -316,6 +322,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         mode={mode}
                                                         extensions={this.props.extensions}
                                                         cxpOnComponentChange={this.props.cxpOnComponentChange}
+                                                        cxpController={this.props.cxpController}
                                                         location={this.props.location}
                                                         history={this.props.history}
                                                         isLightTheme={this.props.isLightTheme}

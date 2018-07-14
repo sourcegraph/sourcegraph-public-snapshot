@@ -8,6 +8,7 @@ import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
+import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { ContributedActions } from '../extensions/ContributedActions'
 import { ContributableMenu } from '../extensions/contributions'
 import { ErrorLike, isErrorLike } from '../util/errors'
@@ -29,7 +30,7 @@ interface RepoHeaderAction {
     element: React.ReactElement<any>
 }
 
-interface Props extends ExtensionsProps, ExtensionsChangeProps {
+interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPControllerProps {
     /**
      * The repository that this header is for.
      */
@@ -227,6 +228,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         menu={ContributableMenu.EditorTitle}
                         extensions={this.props.extensions}
                         onExtensionsChange={this.props.onExtensionsChange}
+                        cxpController={this.props.cxpController}
                     />
                     {this.state.rightActions &&
                         this.state.rightActions.map((a, i) => (

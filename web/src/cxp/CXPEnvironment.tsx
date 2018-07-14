@@ -1,3 +1,4 @@
+import { Controller as CXPController } from 'cxp/lib/environment/controller'
 import { Environment as CXPEnvironment } from 'cxp/lib/environment/environment'
 import { Extension as CXPExtension } from 'cxp/lib/environment/extension'
 import { ConfiguredExtension } from '../extensions/extension'
@@ -21,5 +22,17 @@ export interface CXPEnvironmentProps {
     cxpEnvironment: CXPEnvironment<CXPExtensionWithManifest>
 }
 
+/**
+ * React props or state containing the CXP controller. There should be only a single CXP controller for the whole
+ * application.
+ */
+export interface CXPControllerProps {
+    /**
+     * The CXP controller, which is used to communicate with the extensions and manages extensions based on the CXP
+     * environment.
+     */
+    cxpController: CXPController<CXPExtensionWithManifest>
+}
+
 /** React props for components in the CXP environment. */
-export interface CXPProps extends CXPEnvironmentProps, CXPComponentProps, CXPRootProps {}
+export interface CXPProps extends CXPEnvironmentProps, CXPControllerProps, CXPComponentProps, CXPRootProps {}

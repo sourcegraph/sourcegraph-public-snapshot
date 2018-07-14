@@ -49,8 +49,8 @@ import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
-import { CONTROLLER } from './cxp/controller'
-import { CXPEnvironmentProps, CXPProps } from './cxp/CXPEnvironment'
+import { createController as createCXPController } from './cxp/controller'
+import { CXPControllerProps, CXPEnvironmentProps, CXPProps } from './cxp/CXPEnvironment'
 import { LinkExtension } from './extension/Link'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
@@ -124,7 +124,7 @@ const Layout: React.SFC<LayoutProps> = props => {
     )
 }
 
-interface AppState extends ExtensionsProps, CXPEnvironmentProps {
+interface AppState extends ExtensionsProps, CXPEnvironmentProps, CXPControllerProps {
     error?: Error
     user?: GQL.IUser | null
 
@@ -154,6 +154,7 @@ class App extends React.Component<{}, AppState> {
         showHelpPopover: false,
         extensions: [],
         cxpEnvironment: CXP_EMPTY_ENVIRONMENT,
+        cxpController: createCXPController(),
     }
 
     private subscriptions = new Subscription()
@@ -235,6 +236,7 @@ class App extends React.Component<{}, AppState> {
             cxpEnvironment={this.state.cxpEnvironment}
             cxpOnComponentChange={this.cxpOnComponentChange}
             cxpOnRootChange={this.cxpOnRootChange}
+            cxpController={this.state.cxpController}
         />
     )
 
@@ -276,21 +278,21 @@ class App extends React.Component<{}, AppState> {
                               })),
                           },
                       },
-            () => CONTROLLER.setEnvironment(this.state.cxpEnvironment)
+            () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
         )
     }
 
     private cxpOnComponentChange = (component: CXPComponent | null): void => {
         this.setState(
             prevState => ({ cxpEnvironment: { ...prevState.cxpEnvironment, component } }),
-            () => CONTROLLER.setEnvironment(this.state.cxpEnvironment)
+            () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
         )
     }
 
     private cxpOnRootChange = (root: URI | null): void => {
         this.setState(
             prevState => ({ cxpEnvironment: { ...prevState.cxpEnvironment, root } }),
-            () => CONTROLLER.setEnvironment(this.state.cxpEnvironment)
+            () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
         )
     }
 }

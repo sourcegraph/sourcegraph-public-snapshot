@@ -4,8 +4,7 @@ import { compact, flatten } from 'lodash'
 import { forkJoin, Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Definition, Location } from 'vscode-languageserver-types'
-import { CONTROLLER } from '../cxp/controller'
-import { USE_CXP } from '../cxp/CXPEnvironment'
+import { CXPControllerProps, USE_CXP } from '../cxp/CXPEnvironment'
 import { ConfiguredExtension, ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, AbsoluteRepoFile } from '../repo'
 import {
@@ -42,6 +41,12 @@ export interface ExtensionsProps {
     extensions: Extensions
 }
 
+/**
+ * Contains the props needed by this file's getXyz functions to communicate with extensions (using the new CXP
+ * implementation) or with language servers (using the old LSP HTTP POST implementation).
+ */
+interface ExtensionsAndCXPControllerProps extends ExtensionsProps, CXPControllerProps {}
+
 /** Extended by React prop types for components that need to signal a change to extensions. */
 export interface ExtensionsChangeProps {
     onExtensionsChange: (enabledExtensions: Extensions) => void
@@ -55,9 +60,12 @@ export { HoverMerged } // reexport to avoid needing to change all import sites -
  * @param ctx the location
  * @return hover for the location
  */
-export function getHover(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<HoverMerged | null> {
+export function getHover(
+    ctx: LSPTextDocumentPositionParams,
+    { extensions, cxpController }: ExtensionsAndCXPControllerProps
+): Observable<HoverMerged | null> {
     if (USE_CXP) {
-        return CONTROLLER.registries.textDocumentHover.getHover({
+        return cxpController.registries.textDocumentHover.getHover({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
                 character: ctx.position.character - 1,
@@ -164,10 +172,10 @@ export function getXreferences(
  */
 export function getDecorations(
     ctx: AbsoluteRepoFile & LSPSelector,
-    extensions: Extensions
+    { extensions, cxpController }: ExtensionsAndCXPControllerProps
 ): Observable<TextDocumentDecoration[] | null> {
     if (USE_CXP) {
-        return CONTROLLER.registries.textDocumentDecorations.getDecorations({
+        return cxpController.registries.textDocumentDecorations.getDecorations({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
         })
     }
