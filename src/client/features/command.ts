@@ -1,6 +1,6 @@
-import { BehaviorSubject, from, Observable, Subscription, TeardownLogic, throwError } from 'rxjs'
-import { first, map } from 'rxjs/operators'
+import { Subscription } from 'rxjs'
 import * as uuidv4 from 'uuid/v4'
+import { CommandRegistry } from '../../environment/providers/command'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
@@ -11,56 +11,6 @@ import {
 } from '../../protocol'
 import { Client } from '../client'
 import { DynamicFeature, ensure, RegistrationData } from './common'
-
-export type ExecuteCommandSignature = (params: ExecuteCommandParams) => Promise<any>
-
-interface CommandEntry {
-    /** The command ID (conventionally, e.g., "myextension.mycommand"). */
-    command: string
-
-    run: (...args: any[]) => Promise<any>
-}
-
-export class CommandRegistry {
-    private entries = new BehaviorSubject<CommandEntry[]>([])
-
-    public registerCommand(entry: CommandEntry): TeardownLogic {
-        // Enforce uniqueness of command IDs.
-        for (const e of this.entries.value) {
-            if (e.command === entry.command) {
-                throw new Error(`command is already registered: ${JSON.stringify(entry.command)}`)
-            }
-        }
-
-        this.entries.next([...this.entries.value, entry])
-        return () => {
-            this.entries.next(this.entries.value.filter(e => e !== entry))
-        }
-    }
-
-    public executeCommand(params: ExecuteCommandParams): Promise<any> {
-        return this.commandsSnapshot
-            .pipe(
-                map(commands => {
-                    const command = commands.find(c => c.command === params.command)
-                    if (!command) {
-                        return throwError(new Error(`command not found: ${JSON.stringify(params.command)}`))
-                    }
-                    return from(command.run(...(params.arguments || [])))
-                })
-            )
-            .toPromise()
-    }
-
-    /** All commands, emitted whenever the set of registered commands changed. */
-    public readonly commands: Observable<CommandEntry[]> = this.entries
-
-    /**
-     * The current set of commands. Used by callers that do not need to react to commands being registered or
-     * unregistered.
-     */
-    public readonly commandsSnapshot = this.commands.pipe(first())
-}
 
 /**
  * Support for the commands executed on the server by the client (workspace/executeCommand requests to the server).
