@@ -2,6 +2,7 @@ import { BehaviorSubject, Observable, TeardownLogic } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 
+/** A registry entry for a registered provider. */
 interface Entry<O extends TextDocumentRegistrationOptions, P> {
     registrationOptions: O
     provider: P
@@ -10,6 +11,12 @@ interface Entry<O extends TextDocumentRegistrationOptions, P> {
 /** Base class for provider registries for text document features. */
 export abstract class TextDocumentFeatureProviderRegistry<O extends TextDocumentRegistrationOptions, P> {
     private entries = new BehaviorSubject<Entry<O, P>[]>([])
+
+    public constructor(initialEntries?: Entry<O, P>[]) {
+        if (initialEntries) {
+            this.entries.next(initialEntries)
+        }
+    }
 
     public registerProvider(registrationOptions: O, provider: P): TeardownLogic {
         const entry: Entry<O, P> = { registrationOptions, provider }

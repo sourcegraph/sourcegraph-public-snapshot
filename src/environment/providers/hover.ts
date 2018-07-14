@@ -13,21 +13,38 @@ export class TextDocumentHoverProviderRegistry extends TextDocumentFeatureProvid
     ProvideTextDocumentHoverSignature
 > {
     public getHover(params: TextDocumentPositionParams): Observable<HoverMerged | null> {
-        return this.providersSnapshot
-            .pipe(
-                switchMap(providers =>
-                    combineLatest(
-                        providers.map(provider =>
-                            from(provider(params)).pipe(
-                                catchError(error => {
-                                    console.error(error)
-                                    return [null]
-                                })
-                            )
+        return getHover(this.providersSnapshot, params)
+    }
+}
+
+/**
+ * Returns an observable that emits all providers' hovers whenever any of the last-emitted set of providers emits
+ * hovers.
+ *
+ * Most callers should use TextDocumentHoverProviderRegistry, which sources hovers from the current set of
+ * registered providers (and then completes).
+ */
+export function getHover(
+    providers: Observable<ProvideTextDocumentHoverSignature[]>,
+    params: TextDocumentPositionParams
+): Observable<HoverMerged | null> {
+    return providers
+        .pipe(
+            switchMap(providers => {
+                if (providers.length === 0) {
+                    return [[null]]
+                }
+                return combineLatest(
+                    providers.map(provider =>
+                        from(provider(params)).pipe(
+                            catchError(error => {
+                                console.error(error)
+                                return [null]
+                            })
                         )
                     )
                 )
-            )
-            .pipe(map(HoverMerged.from))
-    }
+            })
+        )
+        .pipe(map(HoverMerged.from))
 }

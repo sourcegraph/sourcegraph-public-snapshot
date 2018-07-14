@@ -24,7 +24,7 @@ export namespace HoverMerged {
                 }
             }
         }
-        return contents.length === 0 ? null : { contents, range }
+        return contents.length === 0 ? null : range ? { contents, range } : { contents }
     }
 
     /** Reports whether the value conforms to the HoverMerged interface. */
