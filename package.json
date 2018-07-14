@@ -37,6 +37,11 @@
 			"**/*.d.ts",
 			"**/*.test.ts",
 			"**/*.js"
+		],
+		"cache": true,
+		"reporter": [
+			"text",
+			"lcovonly"
 		]
 	},
 	"commitlint": {
