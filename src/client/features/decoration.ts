@@ -1,13 +1,13 @@
 import { BehaviorSubject, from, Observable, TeardownLogic } from 'rxjs'
 import * as uuidv4 from 'uuid/v4'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
-import { ProvideTextDocumentDecorationsSignature } from '../../environment/providers/decoration'
+import { ProvideTextDocumentDecorationSignature } from '../../environment/providers/decoration'
 import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'
 import { ClientCapabilities, ServerCapabilities, TextDocumentRegistrationOptions } from '../../protocol'
 import {
     TextDocumentDecoration,
-    TextDocumentDecorationsParams,
-    TextDocumentDecorationsRequest,
+    TextDocumentDecorationParams,
+    TextDocumentDecorationRequest,
     TextDocumentPublishDecorationsNotification,
     TextDocumentPublishDecorationsParams,
 } from '../../protocol/decoration'
@@ -16,32 +16,32 @@ import { NextSignature } from '../../types/middleware'
 import { Client } from '../client'
 import { ensure, TextDocumentFeature } from './common'
 
-export type ProvideTextDocumentDecorationsMiddleware = NextSignature<
-    TextDocumentDecorationsParams,
+export type ProvideTextDocumentDecorationMiddleware = NextSignature<
+    TextDocumentDecorationParams,
     Observable<TextDocumentDecoration[] | null>
 >
 
 /**
- * Support for static text document decorations requested by the client (textDocument/decorations requests to the
+ * Support for static text document decorations requested by the client (textDocument/decoration requests to the
  * server).
  */
-export class TextDocumentStaticDecorationsFeature extends TextDocumentFeature<TextDocumentRegistrationOptions> {
+export class TextDocumentStaticDecorationFeature extends TextDocumentFeature<TextDocumentRegistrationOptions> {
     constructor(
         client: Client,
         private registry: TextDocumentFeatureProviderRegistry<
             TextDocumentRegistrationOptions,
-            ProvideTextDocumentDecorationsSignature
+            ProvideTextDocumentDecorationSignature
         >
     ) {
-        super(client, TextDocumentDecorationsRequest.type)
+        super(client, TextDocumentDecorationRequest.type)
     }
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
-        ensure(capabilities, 'decorations')!.static = true
+        ensure(capabilities, 'decoration')!.static = true
     }
 
     public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-        if (!capabilities.decorationsProvider || !capabilities.decorationsProvider.static || !documentSelector) {
+        if (!capabilities.decorationProvider || !capabilities.decorationProvider.static || !documentSelector) {
             return
         }
         this.register(this.messages, {
@@ -52,20 +52,20 @@ export class TextDocumentStaticDecorationsFeature extends TextDocumentFeature<Te
 
     protected registerProvider(options: TextDocumentRegistrationOptions): TeardownLogic {
         const client = this.client
-        const provideTextDocumentDecorations: ProvideTextDocumentDecorationsSignature = params =>
-            from(client.sendRequest(TextDocumentDecorationsRequest.type, params))
+        const provideTextDocumentDecoration: ProvideTextDocumentDecorationSignature = params =>
+            from(client.sendRequest(TextDocumentDecorationRequest.type, params))
         const middleware = client.clientOptions.middleware!
         return this.registry.registerProvider(
             options,
-            (params: TextDocumentDecorationsParams): Observable<TextDocumentDecoration[] | null> =>
-                middleware.provideTextDocumentDecorations
-                    ? middleware.provideTextDocumentDecorations(params, provideTextDocumentDecorations)
-                    : provideTextDocumentDecorations(params)
+            (params: TextDocumentDecorationParams): Observable<TextDocumentDecoration[] | null> =>
+                middleware.provideTextDocumentDecoration
+                    ? middleware.provideTextDocumentDecoration(params, provideTextDocumentDecoration)
+                    : provideTextDocumentDecoration(params)
         )
     }
 }
 
-export type HandleTextDocumentDecorationsMiddleware = NextSignature<
+export type HandleTextDocumentDecorationMiddleware = NextSignature<
     TextDocumentPublishDecorationsParams,
     Observable<TextDocumentDecoration[] | null>
 >
@@ -74,7 +74,7 @@ export type HandleTextDocumentDecorationsMiddleware = NextSignature<
  * Support for dynamic text document decorations published by the server (textDocument/publishDecorations
  * notifications from the server).
  */
-export class TextDocumentDynamicDecorationsFeature extends TextDocumentFeature<TextDocumentRegistrationOptions> {
+export class TextDocumentDynamicDecorationFeature extends TextDocumentFeature<TextDocumentRegistrationOptions> {
     /** Map of document URI to its decorations (last published by the server). */
     private decorations = new Map<string, BehaviorSubject<TextDocumentDecoration[] | null>>()
 
@@ -82,18 +82,18 @@ export class TextDocumentDynamicDecorationsFeature extends TextDocumentFeature<T
         client: Client,
         private registry: TextDocumentFeatureProviderRegistry<
             TextDocumentRegistrationOptions,
-            ProvideTextDocumentDecorationsSignature
+            ProvideTextDocumentDecorationSignature
         >
     ) {
         super(client, TextDocumentPublishDecorationsNotification.type)
     }
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
-        ensure(capabilities, 'decorations')!.dynamic = true
+        ensure(capabilities, 'decoration')!.dynamic = true
     }
 
     public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-        if (!capabilities.decorationsProvider || !capabilities.decorationsProvider.dynamic || !documentSelector) {
+        if (!capabilities.decorationProvider || !capabilities.decorationProvider.dynamic || !documentSelector) {
             return
         }
         this.register(this.messages, {
@@ -108,15 +108,15 @@ export class TextDocumentDynamicDecorationsFeature extends TextDocumentFeature<T
 
     protected registerProvider(options: TextDocumentRegistrationOptions): TeardownLogic {
         const client = this.client
-        const provideTextDocumentDecorations: ProvideTextDocumentDecorationsSignature = params =>
+        const provideTextDocumentDecoration: ProvideTextDocumentDecorationSignature = params =>
             this.getDecorationsSubject(params.textDocument)
         const middleware = client.clientOptions.middleware!
         return this.registry.registerProvider(
             options,
-            (params: TextDocumentDecorationsParams): Observable<TextDocumentDecoration[] | null> =>
-                middleware.provideTextDocumentDecorations
-                    ? middleware.provideTextDocumentDecorations(params, provideTextDocumentDecorations)
-                    : provideTextDocumentDecorations(params)
+            (params: TextDocumentDecorationParams): Observable<TextDocumentDecoration[] | null> =>
+                middleware.provideTextDocumentDecoration
+                    ? middleware.provideTextDocumentDecoration(params, provideTextDocumentDecoration)
+                    : provideTextDocumentDecoration(params)
         )
     }
 

@@ -4,7 +4,7 @@ import { ExecuteCommandOptions } from './command'
 import { CompletionOptions } from './completion'
 import { ConfigurationClientCapabilities } from './configuration'
 import { ContributionsClientCapabilities, ContributionsServerCapabilities } from './contribution'
-import { DecorationsClientCapabilities, DecorationsServerCapabilities } from './decoration'
+import { DecorationClientCapabilities, DecorationServerCapabilities } from './decoration'
 import { DocumentLinkOptions } from './documentLink'
 import { ImplementationClientCapabilities, ImplementationServerCapabilities } from './implementation'
 import { SignatureHelpOptions } from './signatureHelp'
@@ -41,7 +41,7 @@ export type ClientCapabilities = _ClientCapabilities &
     ConfigurationClientCapabilities &
     ColorClientCapabilities &
     ContributionsClientCapabilities &
-    DecorationsClientCapabilities
+    DecorationClientCapabilities
 
 /**
  * Defines the capabilities provided by a language
@@ -139,4 +139,4 @@ export type ServerCapabilities = _ServerCapabilities &
     WorkspaceFoldersServerCapabilities &
     ColorServerCapabilities &
     ContributionsServerCapabilities &
-    DecorationsServerCapabilities
+    DecorationServerCapabilities

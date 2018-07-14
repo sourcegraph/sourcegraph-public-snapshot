@@ -2,7 +2,7 @@ import * as NodeWebSocket from 'ws'
 import { createMessageConnection } from '../../src/jsonrpc2/connection'
 import { createWebSocketMessageTransports } from '../../src/jsonrpc2/transports/nodeWebSocket'
 import { InitializeParams, InitializeRequest, InitializeResult } from '../../src/protocol'
-import { TextDocumentDecorationsParams, TextDocumentDecorationsRequest } from '../../src/protocol/decoration'
+import { TextDocumentDecorationParams, TextDocumentDecorationRequest } from '../../src/protocol/decoration'
 import config from './config'
 
 async function run(): Promise<void> {
@@ -22,7 +22,7 @@ async function run(): Promise<void> {
         const initResult: InitializeResult = await connection.sendRequest(InitializeRequest.type, {
             root: config.root,
             initializationOptions: config.initializationOptions,
-            capabilities: { decorations: { static: true } },
+            capabilities: { decoration: { static: true } },
         } as InitializeParams)
         console.log('Initialized:', initResult)
     } catch (err) {
@@ -43,9 +43,9 @@ async function run(): Promise<void> {
 
     console.log('textDocument/decorations...')
     try {
-        const result = await connection.sendRequest(TextDocumentDecorationsRequest.type, {
+        const result = await connection.sendRequest(TextDocumentDecorationRequest.type, {
             textDocument: { uri: `${config.root}#mux.go` },
-        } as TextDocumentDecorationsParams)
+        } as TextDocumentDecorationParams)
         console.log('textDocument/decorations result:', result)
     } catch (err) {
         console.error('textDocument/decorations failed:', err.message)

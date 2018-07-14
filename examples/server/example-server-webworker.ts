@@ -1,6 +1,6 @@
 import { createWebWorkerMessageTransports, Worker } from '../../src/jsonrpc2/transports/webWorker'
 import { InitializeResult } from '../../src/protocol'
-import { TextDocumentDecoration, TextDocumentDecorationsParams } from '../../src/protocol/decoration'
+import { TextDocumentDecoration, TextDocumentDecorationParams } from '../../src/protocol/decoration'
 import { Connection, createConnection } from '../../src/server/server'
 
 declare var self: Worker
@@ -9,13 +9,13 @@ function register(connection: Connection): void {
     connection.onInitialize(
         params =>
             ({
-                capabilities: { decorationsProvider: { static: true } },
+                capabilities: { decorationProvider: { static: true } },
             } as InitializeResult)
     )
 
     connection.onRequest(
-        'textDocument/decorations',
-        (params: TextDocumentDecorationsParams): TextDocumentDecoration[] =>
+        'textDocument/decoration',
+        (params: TextDocumentDecorationParams): TextDocumentDecoration[] =>
             ['cyan', 'magenta', 'yellow', 'black', 'cyan', 'magenta', 'yellow', 'black'].map(
                 (color, i) =>
                     ({

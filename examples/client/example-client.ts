@@ -2,13 +2,13 @@ import { BehaviorSubject } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import * as WebSocket from 'ws'
 import { Client, ClientState } from '../../src/client/client'
-import { TextDocumentStaticDecorationsFeature } from '../../src/client/features/decoration'
+import { TextDocumentStaticDecorationFeature } from '../../src/client/features/decoration'
 import { TextDocumentHoverFeature } from '../../src/client/features/hover'
 import { TextDocumentDidOpenFeature } from '../../src/client/features/textDocument'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment } from '../../src/environment/environment'
 import { NoopProviderRegistry } from '../../src/environment/providers/textDocument'
 import { createWebSocketMessageTransports } from '../../src/jsonrpc2/transports/nodeWebSocket'
-import { TextDocumentDecorationsParams, TextDocumentDecorationsRequest } from '../../src/protocol/decoration'
+import { TextDocumentDecorationParams, TextDocumentDecorationRequest } from '../../src/protocol/decoration'
 import config from './config'
 
 const environment = new BehaviorSubject<Environment>(EMPTY_ENVIRONMENT)
@@ -27,7 +27,7 @@ const client = new Client('', '', {
 })
 client.registerFeature(new TextDocumentDidOpenFeature(client))
 client.registerFeature(new TextDocumentHoverFeature(client, new NoopProviderRegistry()))
-client.registerFeature(new TextDocumentStaticDecorationsFeature(client, new NoopProviderRegistry()))
+client.registerFeature(new TextDocumentStaticDecorationFeature(client, new NoopProviderRegistry()))
 client.state.subscribe(state => console.log('Client state:', ClientState[state]))
 client.start()
 const onReady = client.state.pipe(filter(state => state === ClientState.Running))
@@ -46,9 +46,9 @@ async function run(): Promise<void> {
 
     console.log('textDocument/decorations...')
     try {
-        const result = await client.sendRequest(TextDocumentDecorationsRequest.type, {
+        const result = await client.sendRequest(TextDocumentDecorationRequest.type, {
             textDocument: { uri: `${config.root}#mux.go` },
-        } as TextDocumentDecorationsParams)
+        } as TextDocumentDecorationParams)
         console.log('textDocument/decorations result:', result)
     } catch (err) {
         console.error('textDocument/decorations failed:', err.message)

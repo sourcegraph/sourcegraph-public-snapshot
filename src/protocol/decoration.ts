@@ -3,11 +3,11 @@ import { NotificationHandler, RequestHandler } from '../jsonrpc2/handlers'
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
 import { TextDocumentRegistrationOptions } from './textDocument'
 
-export interface DecorationsClientCapabilities {
-    decorations?: DecorationsCapabilityOptions
+export interface DecorationClientCapabilities {
+    decoration?: DecorationCapabilityOptions
 }
 
-export interface DecorationsCapabilityOptions {
+export interface DecorationCapabilityOptions {
     /**
      * Whether the server supports static decorations (i.e., decorations that the client requests using
      * textDocument/decorations).
@@ -21,11 +21,11 @@ export interface DecorationsCapabilityOptions {
     dynamic?: boolean
 }
 
-export interface DecorationsProviderOptions extends DecorationsCapabilityOptions {}
+export interface DecorationProviderOptions extends DecorationCapabilityOptions {}
 
-export interface DecorationsServerCapabilities {
-    /** The server's support for decorations. */
-    decorationsProvider?: DecorationsProviderOptions | (DecorationsProviderOptions & TextDocumentRegistrationOptions)
+export interface DecorationServerCapabilities {
+    /** The server's support for decoration. */
+    decorationProvider?: DecorationProviderOptions | (DecorationProviderOptions & TextDocumentRegistrationOptions)
 }
 
 export interface TextDocumentDecoration {
@@ -50,18 +50,18 @@ export interface DecorationAttachmentRenderOptions {
     linkURL?: string
 }
 
-export interface TextDocumentDecorationsParams {
+export interface TextDocumentDecorationParams {
     textDocument: TextDocumentIdentifier
 }
 
-export namespace TextDocumentDecorationsRequest {
+export namespace TextDocumentDecorationRequest {
     export const type = new RequestType<
-        TextDocumentDecorationsParams,
+        TextDocumentDecorationParams,
         TextDocumentDecoration[] | null,
         void,
         TextDocumentRegistrationOptions
-    >('textDocument/decorations')
-    export type HandlerSignature = RequestHandler<TextDocumentDecorationsParams, TextDocumentDecoration[] | null, void>
+    >('textDocument/decoration')
+    export type HandlerSignature = RequestHandler<TextDocumentDecorationParams, TextDocumentDecoration[] | null, void>
 }
 
 export interface TextDocumentPublishDecorationsParams {

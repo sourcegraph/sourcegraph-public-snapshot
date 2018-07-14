@@ -8,8 +8,8 @@ import {
     ConfigurationUpdateFeature,
 } from '../client/features/configuration'
 import {
-    TextDocumentDynamicDecorationsFeature,
-    TextDocumentStaticDecorationsFeature,
+    TextDocumentDynamicDecorationFeature,
+    TextDocumentStaticDecorationFeature,
 } from '../client/features/decoration'
 import { TextDocumentHoverFeature } from '../client/features/hover'
 import { WindowLogMessageFeature } from '../client/features/logMessage'
@@ -178,12 +178,8 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         client.registerFeature(new ExecuteCommandFeature(client, this.registries.commands))
         client.registerFeature(new TextDocumentDidOpenFeature(client))
         client.registerFeature(new TextDocumentHoverFeature(client, this.registries.textDocumentHover))
-        client.registerFeature(
-            new TextDocumentStaticDecorationsFeature(client, this.registries.textDocumentDecorations)
-        )
-        client.registerFeature(
-            new TextDocumentDynamicDecorationsFeature(client, this.registries.textDocumentDecorations)
-        )
+        client.registerFeature(new TextDocumentStaticDecorationFeature(client, this.registries.textDocumentDecoration))
+        client.registerFeature(new TextDocumentDynamicDecorationFeature(client, this.registries.textDocumentDecoration))
         client.registerFeature(
             new WindowLogMessageFeature(client, (params: LogMessageParams) =>
                 this._logMessages.next({ ...params, extension: client.id })

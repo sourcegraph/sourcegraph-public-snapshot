@@ -1,20 +1,20 @@
 import { combineLatest, Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { TextDocumentRegistrationOptions } from '../../protocol'
-import { TextDocumentDecoration, TextDocumentDecorationsParams } from '../../protocol/decoration'
+import { TextDocumentDecoration, TextDocumentDecorationParams } from '../../protocol/decoration'
 import { compact, flatten } from '../../util'
 import { TextDocumentFeatureProviderRegistry } from './textDocument'
 
-export type ProvideTextDocumentDecorationsSignature = (
-    params: TextDocumentDecorationsParams
+export type ProvideTextDocumentDecorationSignature = (
+    params: TextDocumentDecorationParams
 ) => Observable<TextDocumentDecoration[] | null>
 
 /** Provides text document decorations from all extensions. */
-export class TextDocumentDecorationsProviderRegistry extends TextDocumentFeatureProviderRegistry<
+export class TextDocumentDecorationProviderRegistry extends TextDocumentFeatureProviderRegistry<
     TextDocumentRegistrationOptions,
-    ProvideTextDocumentDecorationsSignature
+    ProvideTextDocumentDecorationSignature
 > {
-    public getDecorations(params: TextDocumentDecorationsParams): Observable<TextDocumentDecoration[] | null> {
+    public getDecorations(params: TextDocumentDecorationParams): Observable<TextDocumentDecoration[] | null> {
         return this.providers
             .pipe(
                 switchMap(providers =>

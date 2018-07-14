@@ -32,7 +32,7 @@ describe('Connection', () => {
 
         const initParams: InitializeParams = {
             root: null,
-            capabilities: { decorations: { static: true } },
+            capabilities: { decoration: { static: true } },
             workspaceFolders: null,
         }
         const initResult: InitializeResult = { capabilities: { contributions: { commands: [{ command: 'c' }] } } }
