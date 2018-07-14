@@ -65,7 +65,7 @@ export interface ObservableEnvironment<X extends Extension = Extension> {
     readonly component: Observable<Component | null>
 
     /** The active component's text document (and changes to it). */
-    readonly textDocument: Observable<TextDocument | null>
+    readonly textDocument: Observable<Pick<TextDocument, 'uri' | 'languageId'> | null>
 }
 
 /** An ObservableEnvironment that always represents the empty environment and never emits changes. */

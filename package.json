@@ -33,10 +33,10 @@
 			".tsx"
 		],
 		"exclude": [
-      "examples/",
+			"examples/",
 			"**/*.d.ts",
-      "**/*.test.ts",
-      "**/*.js"
+			"**/*.test.ts",
+			"**/*.js"
 		]
 	},
 	"commitlint": {
@@ -75,7 +75,7 @@
 		"ts-node": "^7.0.0",
 		"tslint": "^5.10.0",
 		"tslint-language-service": "^0.9.9",
-		"typescript": "^2.9.2"
+		"typescript": "^3.0.0-dev.20180712"
 	},
 	"optionalDependencies": {}
 }
