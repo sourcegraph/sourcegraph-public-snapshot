@@ -1,7 +1,7 @@
 import { TeardownLogic } from 'rxjs'
 import * as uuidv4 from 'uuid/v4'
 import { Definition } from 'vscode-languageserver-types'
-import { ProvideTextDocumentDefinitionSignature } from '../../environment/providers/definition'
+import { ProvideTextDocumentLocationSignature } from '../../environment/providers/location'
 import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'
 import {
     ClientCapabilities,
@@ -28,7 +28,7 @@ export class TextDocumentDefinitionFeature extends TextDocumentFeature<TextDocum
         client: Client,
         private registry: TextDocumentFeatureProviderRegistry<
             TextDocumentRegistrationOptions,
-            ProvideTextDocumentDefinitionSignature
+            ProvideTextDocumentLocationSignature
         >
     ) {
         super(client, DefinitionRequest.type)
@@ -51,7 +51,7 @@ export class TextDocumentDefinitionFeature extends TextDocumentFeature<TextDocum
 
     protected registerProvider(options: TextDocumentRegistrationOptions): TeardownLogic {
         const client = this.client
-        const provideTextDocumentDefinition: ProvideTextDocumentDefinitionSignature = params =>
+        const provideTextDocumentDefinition: ProvideTextDocumentLocationSignature = params =>
             client.sendRequest(DefinitionRequest.type, params)
         const middleware = client.clientOptions.middleware!
         return this.registry.registerProvider(

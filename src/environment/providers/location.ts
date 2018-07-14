@@ -5,27 +5,31 @@ import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../
 import { TextDocumentFeatureProviderRegistry } from './textDocument'
 import { flattenAndCompact } from './util'
 
-export type ProvideTextDocumentDefinitionSignature = (params: TextDocumentPositionParams) => Promise<Definition | null>
+/**
+ * Function signature for retrieving related locations given a location (e.g., definition, implementation, and type
+ * definition).
+ */
+export type ProvideTextDocumentLocationSignature = (params: TextDocumentPositionParams) => Promise<Definition | null>
 
-/** Provides definition results from all extensions. */
-export class TextDocumentDefinitionProviderRegistry extends TextDocumentFeatureProviderRegistry<
+/** Provides location results from all extensions for definition, implementation, and type definition requests. */
+export class TextDocumentLocationProviderRegistry extends TextDocumentFeatureProviderRegistry<
     TextDocumentRegistrationOptions,
-    ProvideTextDocumentDefinitionSignature
+    ProvideTextDocumentLocationSignature
 > {
-    public getDefinition(params: TextDocumentPositionParams): Observable<Definition | null> {
-        return getDefinition(of(this.providersSnapshot), params)
+    public getLocation(params: TextDocumentPositionParams): Observable<Definition | null> {
+        return getLocation(of(this.providersSnapshot), params)
     }
 }
 
 /**
- * Returns an observable that emits all providers' definition results whenever any of the last-emitted set of
+ * Returns an observable that emits all providers' location results whenever any of the last-emitted set of
  * providers emits hovers.
  *
- * Most callers should use TextDocumentDefinitionProviderRegistry, which sources definitions from the current set
- * of registered providers (and then completes).
+ * Most callers should use the TextDocumentLocationProviderRegistry class, which sources results from the current
+ * set of registered providers (and then completes).
  */
-export function getDefinition(
-    providers: Observable<ProvideTextDocumentDefinitionSignature[]>,
+export function getLocation(
+    providers: Observable<ProvideTextDocumentLocationSignature[]>,
     params: TextDocumentPositionParams
 ): Observable<Definition | null> {
     return providers

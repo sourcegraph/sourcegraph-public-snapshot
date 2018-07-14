@@ -1,16 +1,16 @@
 import * as assert from 'assert'
-import { TextDocumentDefinitionProviderRegistry } from '../../environment/providers/definition'
+import { TextDocumentLocationProviderRegistry } from '../../environment/providers/location'
 import { ClientCapabilities } from '../../protocol'
 import { Client } from '../client'
 import { TextDocumentDefinitionFeature } from './definition'
 
 const create = (): {
     client: Client
-    registry: TextDocumentDefinitionProviderRegistry
+    registry: TextDocumentLocationProviderRegistry
     feature: TextDocumentDefinitionFeature
 } => {
     const client = { clientOptions: { middleware: {} } } as Client
-    const registry = new TextDocumentDefinitionProviderRegistry()
+    const registry = new TextDocumentLocationProviderRegistry()
     const feature = new TextDocumentDefinitionFeature(client, registry)
     return { client, registry, feature }
 }
