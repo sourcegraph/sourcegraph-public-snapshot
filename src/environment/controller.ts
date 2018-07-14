@@ -11,6 +11,7 @@ import {
     TextDocumentDynamicDecorationFeature,
     TextDocumentStaticDecorationFeature,
 } from '../client/features/decoration'
+import { TextDocumentDefinitionFeature } from '../client/features/definition'
 import { TextDocumentHoverFeature } from '../client/features/hover'
 import { WindowLogMessageFeature } from '../client/features/logMessage'
 import { WindowShowMessageFeature } from '../client/features/message'
@@ -177,6 +178,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         )
         client.registerFeature(new ExecuteCommandFeature(client, this.registries.commands))
         client.registerFeature(new TextDocumentDidOpenFeature(client))
+        client.registerFeature(new TextDocumentDefinitionFeature(client, this.registries.textDocumentDefinition))
         client.registerFeature(new TextDocumentHoverFeature(client, this.registries.textDocumentHover))
         client.registerFeature(new TextDocumentStaticDecorationFeature(client, this.registries.textDocumentDecoration))
         client.registerFeature(new TextDocumentDynamicDecorationFeature(client, this.registries.textDocumentDecoration))
