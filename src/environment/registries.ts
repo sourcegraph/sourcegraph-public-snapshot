@@ -7,6 +7,8 @@ import { TextDocumentLocationProviderRegistry } from './providers/location'
 export class Registries {
     public readonly commands = new CommandRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
+    public readonly textDocumentImplementation = new TextDocumentLocationProviderRegistry()
+    public readonly textDocumentTypeDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
 }
