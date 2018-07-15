@@ -82,7 +82,7 @@
 		"ts-node": "^7.0.0",
 		"tslint": "^5.10.0",
 		"tslint-language-service": "^0.9.9",
-		"typescript": "^3.0.0-dev.20180712"
+		"typescript": "^3.0.1-insiders"
 	},
 	"optionalDependencies": {}
 }
