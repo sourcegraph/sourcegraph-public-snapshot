@@ -15,6 +15,7 @@ import { TextDocumentHoverFeature } from '../client/features/hover'
 import {
     TextDocumentDefinitionFeature,
     TextDocumentImplementationFeature,
+    TextDocumentReferencesFeature,
     TextDocumentTypeDefinitionFeature,
 } from '../client/features/location'
 import { WindowLogMessageFeature } from '../client/features/logMessage'
@@ -184,6 +185,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         client.registerFeature(new TextDocumentDidOpenFeature(client))
         client.registerFeature(new TextDocumentDefinitionFeature(client, this.registries.textDocumentDefinition))
         client.registerFeature(new TextDocumentImplementationFeature(client, this.registries.textDocumentDefinition))
+        client.registerFeature(new TextDocumentReferencesFeature(client, this.registries.textDocumentReferences))
         client.registerFeature(new TextDocumentTypeDefinitionFeature(client, this.registries.textDocumentDefinition))
         client.registerFeature(new TextDocumentHoverFeature(client, this.registries.textDocumentHover))
         client.registerFeature(new TextDocumentStaticDecorationFeature(client, this.registries.textDocumentDecoration))

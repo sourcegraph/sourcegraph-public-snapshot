@@ -1,7 +1,7 @@
 import { combineLatest, from, Observable, of } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
-import { Definition } from 'vscode-languageserver-types'
-import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
+import { Location } from 'vscode-languageserver-types'
+import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { TextDocumentFeatureProviderRegistry } from './textDocument'
 import { flattenAndCompact } from './util'
 
@@ -9,15 +9,21 @@ import { flattenAndCompact } from './util'
  * Function signature for retrieving related locations given a location (e.g., definition, implementation, and type
  * definition).
  */
-export type ProvideTextDocumentLocationSignature = (params: TextDocumentPositionParams) => Promise<Definition | null>
+export type ProvideTextDocumentLocationSignature<
+    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    L extends Location = Location
+> = (params: P) => Promise<L | L[] | null>
 
 /** Provides location results from all extensions for definition, implementation, and type definition requests. */
-export class TextDocumentLocationProviderRegistry extends TextDocumentFeatureProviderRegistry<
+export class TextDocumentLocationProviderRegistry<
+    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    L extends Location = Location
+> extends TextDocumentFeatureProviderRegistry<
     TextDocumentRegistrationOptions,
-    ProvideTextDocumentLocationSignature
+    ProvideTextDocumentLocationSignature<P, L>
 > {
-    public getLocation(params: TextDocumentPositionParams): Observable<Definition | null> {
-        return getLocation(of(this.providersSnapshot), params)
+    public getLocation(params: P): Observable<L | L[] | null> {
+        return getLocation<P, L>(of(this.providersSnapshot), params)
     }
 }
 
@@ -28,27 +34,58 @@ export class TextDocumentLocationProviderRegistry extends TextDocumentFeaturePro
  * Most callers should use the TextDocumentLocationProviderRegistry class, which sources results from the current
  * set of registered providers (and then completes).
  */
-export function getLocation(
-    providers: Observable<ProvideTextDocumentLocationSignature[]>,
-    params: TextDocumentPositionParams
-): Observable<Definition | null> {
-    return providers
-        .pipe(
-            switchMap(providers => {
-                if (providers.length === 0) {
-                    return [null]
-                }
-                return combineLatest(
-                    providers.map(provider =>
-                        from(provider(params)).pipe(
-                            catchError(error => {
-                                console.error(error)
-                                return [null]
-                            })
-                        )
+export function getLocation<
+    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    L extends Location = Location
+>(providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>, params: P): Observable<L | L[] | null> {
+    return getLocations(providers, params).pipe(
+        map(results => {
+            if (results !== null && results.length === 1) {
+                return results[0]
+            }
+            return results
+        })
+    )
+}
+
+/**
+ * Like getLocation, except the returned observable never emits singular values, always either an array or null.
+ */
+export function getLocations<
+    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    L extends Location = Location
+>(providers: Observable<ProvideTextDocumentLocationSignature<P, L>[]>, params: P): Observable<L[] | null> {
+    return providers.pipe(
+        switchMap(providers => {
+            if (providers.length === 0) {
+                return [null]
+            }
+            return combineLatest(
+                providers.map(provider =>
+                    from(provider(params)).pipe(
+                        catchError(error => {
+                            console.error(error)
+                            return [null]
+                        })
                     )
                 )
-            })
-        )
-        .pipe(map(flattenAndCompact))
+            )
+        }),
+        map(flattenAndCompact)
+    )
+}
+
+/**
+ * Provides reference results from all extensions.
+ *
+ * Reference results are always an array or null, unlike results from other location providers (e.g., from
+ * textDocument/definition), which can be a single item, an array, or null.
+ */
+export class TextDocumentReferencesProviderRegistry extends TextDocumentLocationProviderRegistry<ReferenceParams> {
+    /** Gets reference locations from all extensions. */
+    public getLocation(params: ReferenceParams): Observable<Location[] | null> {
+        // References are always an array (unlike other locations, which can be returned as L | L[] |
+        // null).
+        return getLocations(of(this.providersSnapshot), params)
+    }
 }

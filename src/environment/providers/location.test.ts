@@ -1,15 +1,17 @@
 import * as assert from 'assert'
 import { of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { Definition, Position, Range } from 'vscode-languageserver-types'
-import { getLocation, ProvideTextDocumentLocationSignature } from './location'
+import { Location, Position, Range } from 'vscode-languageserver-types'
+import { getLocation, getLocations, ProvideTextDocumentLocationSignature } from './location'
 import { FIXTURE } from './textDocument.test'
 
 const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
 
-const FIXTURE_RESULT: Definition | null = [
-    { uri: 'file:///f', range: Range.create(Position.create(1, 2), Position.create(3, 4)) },
-]
+const FIXTURE_LOCATION: Location = {
+    uri: 'file:///f',
+    range: Range.create(Position.create(1, 2), Position.create(3, 4)),
+}
+const FIXTURE_LOCATIONS: Location | Location[] | null = [FIXTURE_LOCATION, FIXTURE_LOCATION]
 
 describe('getLocation', () => {
     describe('0 providers', () => {
@@ -39,17 +41,31 @@ describe('getLocation', () => {
                 })
             ))
 
-        it('returns result from provider', () =>
+        it('returns result array from provider', () =>
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     getLocation(
                         cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_RESULT)],
+                            a: [() => of(FIXTURE_LOCATIONS)],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
                 ).toBe('-a-|', {
-                    a: FIXTURE_RESULT,
+                    a: FIXTURE_LOCATIONS,
+                })
+            ))
+
+        it('returns single result from provider', () =>
+            scheduler().run(({ cold, expectObservable }) =>
+                expectObservable(
+                    getLocation(
+                        cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
+                            a: [() => of(FIXTURE_LOCATION)],
+                        }),
+                        FIXTURE.TextDocumentPositionParams
+                    )
+                ).toBe('-a-|', {
+                    a: FIXTURE_LOCATION,
                 })
             ))
     })
@@ -74,12 +90,12 @@ describe('getLocation', () => {
                 expectObservable(
                     getLocation(
                         cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_RESULT), () => of(null)],
+                            a: [() => of(FIXTURE_LOCATIONS), () => of(null)],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
                 ).toBe('-a-|', {
-                    a: FIXTURE_RESULT,
+                    a: FIXTURE_LOCATIONS,
                 })
             ))
 
@@ -88,12 +104,12 @@ describe('getLocation', () => {
                 expectObservable(
                     getLocation(
                         cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_RESULT), () => throwError('error')],
+                            a: [() => of(FIXTURE_LOCATIONS), () => throwError('error')],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
                 ).toBe('-a-|', {
-                    a: FIXTURE_RESULT,
+                    a: FIXTURE_LOCATIONS,
                 })
             ))
 
@@ -138,15 +154,45 @@ describe('getLocation', () => {
                 expectObservable(
                     getLocation(
                         cold<ProvideTextDocumentLocationSignature[]>('-a-b-|', {
-                            a: [() => of(FIXTURE_RESULT)],
+                            a: [() => of(FIXTURE_LOCATIONS)],
                             b: [() => of(null)],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
                 ).toBe('-a-b-|', {
-                    a: FIXTURE_RESULT,
+                    a: FIXTURE_LOCATIONS,
                     b: null,
                 })
             ))
     })
+})
+
+describe('getLocations', () => {
+    it('wraps single result in array', () =>
+        scheduler().run(({ cold, expectObservable }) =>
+            expectObservable(
+                getLocations(
+                    cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
+                        a: [() => of(FIXTURE_LOCATION)],
+                    }),
+                    FIXTURE.TextDocumentPositionParams
+                )
+            ).toBe('-a-|', {
+                a: [FIXTURE_LOCATION],
+            })
+        ))
+
+    it('preserves array results', () =>
+        scheduler().run(({ cold, expectObservable }) =>
+            expectObservable(
+                getLocations(
+                    cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
+                        a: [() => of(FIXTURE_LOCATIONS)],
+                    }),
+                    FIXTURE.TextDocumentPositionParams
+                )
+            ).toBe('-a-|', {
+                a: FIXTURE_LOCATIONS,
+            })
+        ))
 })

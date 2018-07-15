@@ -1,11 +1,12 @@
 import { TeardownLogic } from 'rxjs'
 import * as uuidv4 from 'uuid/v4'
-import { Definition } from 'vscode-languageserver-types'
+import { Location } from 'vscode-languageserver-types'
 import { ProvideTextDocumentLocationSignature } from '../../environment/providers/location'
 import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'
 import {
     ClientCapabilities,
     DefinitionRequest,
+    ReferenceParams,
     ServerCapabilities,
     TextDocumentPositionParams,
     TextDocumentRegistrationOptions,
@@ -16,21 +17,24 @@ import { Client } from '../client'
 import { Middleware } from '../middleware'
 import { ensure, TextDocumentFeature } from './common'
 
-export type ProvideTextDocumentLocationMiddleware = NextSignature<
-    TextDocumentPositionParams,
-    Promise<Definition | null>
->
+export type ProvideTextDocumentLocationMiddleware<
+    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    L extends Location = Location
+> = NextSignature<P, Promise<L | L[] | null>>
 
 /**
  * Support for requests that retrieve a list of locations (e.g., textDocument/definition,
  * textDocument/implementation, and textDocument/typeDefinition).
  */
-export abstract class TextDocumentLocationFeature extends TextDocumentFeature<TextDocumentRegistrationOptions> {
+export abstract class TextDocumentLocationFeature<
+    P extends TextDocumentPositionParams = TextDocumentPositionParams,
+    L extends Location = Location
+> extends TextDocumentFeature<TextDocumentRegistrationOptions> {
     constructor(
         client: Client,
         private registry: TextDocumentFeatureProviderRegistry<
             TextDocumentRegistrationOptions,
-            ProvideTextDocumentLocationSignature
+            ProvideTextDocumentLocationSignature<P, L>
         >
     ) {
         super(client, DefinitionRequest.type)
@@ -43,7 +47,7 @@ export abstract class TextDocumentLocationFeature extends TextDocumentFeature<Te
     protected abstract isSupported(capabilities: ServerCapabilities): boolean
 
     /** Override to return the middleware for this feature. */
-    protected abstract getMiddleware?(midleware: Middleware): ProvideTextDocumentLocationMiddleware | undefined
+    protected abstract getMiddleware?(midleware: Middleware): ProvideTextDocumentLocationMiddleware<P, L> | undefined
 
     public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
         if (!this.isSupported(capabilities) || !documentSelector) {
@@ -57,12 +61,12 @@ export abstract class TextDocumentLocationFeature extends TextDocumentFeature<Te
 
     protected registerProvider(options: TextDocumentRegistrationOptions): TeardownLogic {
         const client = this.client
-        const provideTextDocumentLocation: ProvideTextDocumentLocationSignature = params =>
+        const provideTextDocumentLocation: ProvideTextDocumentLocationSignature<P, L> = params =>
             client.sendRequest(this.messages, params)
         const middleware = this.getMiddleware ? this.getMiddleware(client.clientOptions.middleware!) : undefined
         return this.registry.registerProvider(
             options,
-            (params: TextDocumentPositionParams): Promise<Definition | null> =>
+            (params: P): Promise<L | L[] | null> =>
                 middleware ? middleware(params, provideTextDocumentLocation) : provideTextDocumentLocation(params)
         )
     }
@@ -81,7 +85,9 @@ export class TextDocumentDefinitionFeature extends TextDocumentLocationFeature {
         return !!capabilities.definitionProvider
     }
 
-    protected getMiddleware(middleware: Middleware): ProvideTextDocumentLocationMiddleware | undefined {
+    protected getMiddleware(
+        middleware: Middleware
+    ): ProvideTextDocumentLocationMiddleware<TextDocumentPositionParams, Location> | undefined {
         return middleware.provideTextDocumentDefinition
     }
 }
@@ -99,7 +105,9 @@ export class TextDocumentImplementationFeature extends TextDocumentLocationFeatu
         return !!capabilities.implementationProvider
     }
 
-    protected getMiddleware(middleware: Middleware): ProvideTextDocumentLocationMiddleware | undefined {
+    protected getMiddleware(
+        middleware: Middleware
+    ): ProvideTextDocumentLocationMiddleware<TextDocumentPositionParams, Location> | undefined {
         return middleware.provideTextDocumentImplementation
     }
 }
@@ -117,7 +125,29 @@ export class TextDocumentTypeDefinitionFeature extends TextDocumentLocationFeatu
         return !!capabilities.typeDefinitionProvider
     }
 
-    protected getMiddleware(middleware: Middleware): ProvideTextDocumentLocationMiddleware | undefined {
+    protected getMiddleware(
+        middleware: Middleware
+    ): ProvideTextDocumentLocationMiddleware<TextDocumentPositionParams, Location> | undefined {
         return middleware.provideTextDocumentTypeDefinition
+    }
+}
+
+/**
+ * Support for references requests (textDocument/references requests to the server).
+ */
+export class TextDocumentReferencesFeature extends TextDocumentLocationFeature<ReferenceParams, Location> {
+    public fillClientCapabilities(capabilities: ClientCapabilities): void {
+        const capability = ensure(ensure(capabilities, 'textDocument')!, 'references')!
+        capability.dynamicRegistration = true
+    }
+
+    protected isSupported(capabilities: ServerCapabilities): boolean {
+        return !!capabilities.referencesProvider
+    }
+
+    protected getMiddleware(
+        middleware: Middleware
+    ): ProvideTextDocumentLocationMiddleware<ReferenceParams> | undefined {
+        return middleware.provideTextDocumentReferences
     }
 }
