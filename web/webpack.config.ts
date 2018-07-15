@@ -94,7 +94,10 @@ const config: webpack.Configuration = {
             }))(),
             ((): webpack.RuleSetRule => ({
                 test: /\.js$/,
-                include: path.resolve(__dirname, 'src'), // exclude monaco-editor and other node_modules for build perf
+                // Only run on dependencies where it is necessary, to speed up builds.
+                //
+                // codemirror: https://github.com/sourcegraph/sourcegraph/issues/12303
+                include: ['codemirror'].map(module => path.resolve(__dirname, 'node_modules', module)),
                 use: [
                     { loader: 'thread-loader', options: workerPool },
                     {
