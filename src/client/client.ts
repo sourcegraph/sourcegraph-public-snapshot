@@ -175,6 +175,8 @@ export class Client implements Unsubscribable {
     }
 
     private initialize(connection: Connection): Promise<void> {
+        connection.trace(this._trace, this._tracer)
+
         const initParams: InitializeParams = {
             root: this.clientOptions.root,
             capabilities: {},
