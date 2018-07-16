@@ -89,7 +89,7 @@ export class TextDocumentDidOpenFeature extends TextDocumentNotificationFeature<
             client,
             client.clientOptions.environment.textDocument.pipe(filter((v): v is TextDocument => v !== null)),
             DidOpenTextDocumentNotification.type,
-            client.clientOptions.middleware!.didOpen,
+            client.clientOptions.middleware.didOpen,
             textDocument =>
                 ({
                     textDocument: {

@@ -53,13 +53,11 @@ export class TextDocumentHoverFeature extends TextDocumentFeature<TextDocumentRe
         const client = this.client
         const provideTextDocumentHover: ProvideTextDocumentHoverSignature = params =>
             client.sendRequest(HoverRequest.type, params)
-        const middleware = client.clientOptions.middleware!
+        const middleware = client.clientOptions.middleware.provideTextDocumentHover
         return this.registry.registerProvider(
             options,
             (params: TextDocumentPositionParams): Promise<Hover | null> =>
-                middleware.provideTextDocumentHover
-                    ? middleware.provideTextDocumentHover(params, provideTextDocumentHover)
-                    : provideTextDocumentHover(params)
+                middleware ? middleware(params, provideTextDocumentHover) : provideTextDocumentHover(params)
         )
     }
 }
