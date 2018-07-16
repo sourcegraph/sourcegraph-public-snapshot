@@ -18,6 +18,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Fixed
 
 * Fixed a bug in the API console that caused it to display as a blank page in some cases.
+* Fixed cases where GitHub rate limit wasn't being respected.
 
 ### Removed
 

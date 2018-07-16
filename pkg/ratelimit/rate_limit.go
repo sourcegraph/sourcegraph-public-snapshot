@@ -37,7 +37,7 @@ func (c *Monitor) Get() (remaining int, reset time.Duration, known bool) {
 //
 // For example, suppose the rate limit resets to 5,000 points in 30 minutes and currently 1,500 points remain. You
 // want to perform a cost-500 operation. Only 4 more cost-500 operations are allowed in the next 30 minutes (per
-// the rate limit), so a recommended wait time would be N.
+// the rate limit):
 //
 //                          -500         -500         -500
 //         Now   |------------*------------*------------*------------| 30 min from now
@@ -60,7 +60,7 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 	// If our rate limit info is out of date, assume it was reset.
 	limitRemaining := float64(c.remaining)
 	resetAt := c.reset
-	if time.Now().Before(c.reset) {
+	if time.Now().After(c.reset) {
 		limitRemaining = float64(c.limit)
 		resetAt = time.Now().Add(1 * time.Hour)
 	}
@@ -71,7 +71,7 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 
 	n := limitRemaining / float64(cost) // number of times this op can run before exhausting rate limit
 	if n < 1 {
-		n = 1 // no point in waiting beyond the reset
+		return timeRemaining
 	}
 	if n > 500 {
 		return 0
@@ -79,7 +79,11 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 	if n > 250 {
 		return 200 * time.Millisecond
 	}
-	return (timeRemaining / time.Duration(n)).Round(time.Second)
+	// N is limitRemaining / cost. timeRemaining / N is thus
+	// timeRemaining / (limitRemaining / cost). However, time.Duration is
+	// an integer type, and drops fractions. We get more accurate
+	// calculations computing this the other way around:
+	return timeRemaining * time.Duration(cost) / time.Duration(limitRemaining)
 }
 
 // Update updates the monitor's rate limit information based on the HTTP response headers.

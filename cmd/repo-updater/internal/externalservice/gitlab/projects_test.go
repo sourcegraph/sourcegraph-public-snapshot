@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/pkg/ratelimit"
+	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
