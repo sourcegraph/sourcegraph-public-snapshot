@@ -19,6 +19,8 @@ export interface Worker {
         type: K,
         listener: (this: Worker, ev: WorkerEventMap[K]) => any
     ): void
+    close?(): void
+    terminate?(): void
 }
 
 class WebWorkerMessageReader extends AbstractMessageReader implements MessageReader {
@@ -35,7 +37,15 @@ class WebWorkerMessageReader extends AbstractMessageReader implements MessageRea
                 this.fireError(err)
             }
         })
-        worker.addEventListener('error', err => this.fireError(err))
+        worker.addEventListener('error', err => {
+            this.fireError(err)
+            if (worker.terminate) {
+                worker.terminate() // in window (worker parent) scope
+            } else if (worker.close) {
+                worker.close() // in worker scope
+            }
+            this.fireClose()
+        })
     }
 
     private processMessage(e: MessageEvent): void {
