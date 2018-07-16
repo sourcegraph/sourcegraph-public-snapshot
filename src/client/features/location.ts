@@ -6,10 +6,13 @@ import { TextDocumentFeatureProviderRegistry } from '../../environment/providers
 import {
     ClientCapabilities,
     DefinitionRequest,
+    ImplementationRequest,
     ReferenceParams,
+    ReferencesRequest,
     ServerCapabilities,
     TextDocumentPositionParams,
     TextDocumentRegistrationOptions,
+    TypeDefinitionRequest,
 } from '../../protocol'
 import { DocumentSelector } from '../../types/document'
 import { NextSignature } from '../../types/middleware'
@@ -37,7 +40,7 @@ export abstract class TextDocumentLocationFeature<
             ProvideTextDocumentLocationSignature<P, L>
         >
     ) {
-        super(client, DefinitionRequest.type)
+        super(client)
     }
 
     /** Override to modify the client capabilities object before sending to report support for this feature. */
@@ -76,6 +79,8 @@ export abstract class TextDocumentLocationFeature<
  * Support for definition requests (textDocument/definition requests to the server).
  */
 export class TextDocumentDefinitionFeature extends TextDocumentLocationFeature {
+    public readonly messages = DefinitionRequest.type
+
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         const capability = ensure(ensure(capabilities, 'textDocument')!, 'definition')!
         capability.dynamicRegistration = true
@@ -96,6 +101,8 @@ export class TextDocumentDefinitionFeature extends TextDocumentLocationFeature {
  * Support for implementation requests (textDocument/implementation requests to the server).
  */
 export class TextDocumentImplementationFeature extends TextDocumentLocationFeature {
+    public readonly messages = ImplementationRequest.type
+
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         const capability = ensure(ensure(capabilities, 'textDocument')!, 'implementation')!
         capability.dynamicRegistration = true
@@ -116,6 +123,8 @@ export class TextDocumentImplementationFeature extends TextDocumentLocationFeatu
  * Support for type definition requests (textDocument/typeDefinition requests to the server).
  */
 export class TextDocumentTypeDefinitionFeature extends TextDocumentLocationFeature {
+    public readonly messages = TypeDefinitionRequest.type
+
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         const capability = ensure(ensure(capabilities, 'textDocument')!, 'typeDefinition')!
         capability.dynamicRegistration = true
@@ -136,6 +145,8 @@ export class TextDocumentTypeDefinitionFeature extends TextDocumentLocationFeatu
  * Support for references requests (textDocument/references requests to the server).
  */
 export class TextDocumentReferencesFeature extends TextDocumentLocationFeature<ReferenceParams, Location> {
+    public readonly messages = ReferencesRequest.type
+
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         const capability = ensure(ensure(capabilities, 'textDocument')!, 'references')!
         capability.dynamicRegistration = true

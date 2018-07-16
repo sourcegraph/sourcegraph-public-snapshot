@@ -50,11 +50,9 @@ export abstract class TextDocumentFeature<T extends TextDocumentRegistrationOpti
     private subscriptions = new Subscription()
     private subscriptionsByID = new Map<string, Subscription>()
 
-    constructor(protected client: Client, private _message: RPCMessageType) {}
+    constructor(protected client: Client) {}
 
-    public get messages(): RPCMessageType {
-        return this._message
-    }
+    public abstract get messages(): RPCMessageType
 
     public register(message: RPCMessageType, data: RegistrationData<T>): void {
         if (message.method !== this.messages.method) {

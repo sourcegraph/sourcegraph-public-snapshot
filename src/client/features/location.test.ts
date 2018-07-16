@@ -1,6 +1,12 @@
 import * as assert from 'assert'
 import { TextDocumentLocationProviderRegistry } from '../../environment/providers/location'
-import { ClientCapabilities, ReferenceParams, ServerCapabilities, TextDocumentPositionParams } from '../../protocol'
+import {
+    ClientCapabilities,
+    DefinitionRequest,
+    ReferenceParams,
+    ServerCapabilities,
+    TextDocumentPositionParams,
+} from '../../protocol'
 import { Client } from '../client'
 import {
     ProvideTextDocumentLocationMiddleware,
@@ -30,6 +36,7 @@ describe('TextDocumentLocationFeature', () => {
         it('registers the provider if the server has support', () => {
             const { registry, feature } = create(
                 class extends TextDocumentLocationFeature {
+                    public readonly messages = DefinitionRequest.type
                     public fillClientCapabilities(): void {
                         /* noop */
                     }
@@ -49,6 +56,7 @@ describe('TextDocumentLocationFeature', () => {
         it('does not register the provider if the server lacks support', () => {
             const { registry, feature } = create(
                 class extends TextDocumentLocationFeature {
+                    public readonly messages = DefinitionRequest.type
                     public fillClientCapabilities(): void {
                         /* noop */
                     }

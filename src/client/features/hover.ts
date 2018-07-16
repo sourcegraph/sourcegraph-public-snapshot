@@ -28,8 +28,10 @@ export class TextDocumentHoverFeature extends TextDocumentFeature<TextDocumentRe
             ProvideTextDocumentHoverSignature
         >
     ) {
-        super(client, HoverRequest.type)
+        super(client)
     }
+
+    public readonly messages = HoverRequest.type
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         const hoverCapability = ensure(ensure(capabilities, 'textDocument')!, 'hover')!

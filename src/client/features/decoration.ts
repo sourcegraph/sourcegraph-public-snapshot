@@ -33,8 +33,10 @@ export class TextDocumentStaticDecorationFeature extends TextDocumentFeature<Tex
             ProvideTextDocumentDecorationSignature
         >
     ) {
-        super(client, TextDocumentDecorationRequest.type)
+        super(client)
     }
+
+    public readonly messages = TextDocumentDecorationRequest.type
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         ensure(capabilities, 'decoration')!.static = true
@@ -85,8 +87,10 @@ export class TextDocumentDynamicDecorationFeature extends TextDocumentFeature<Te
             ProvideTextDocumentDecorationSignature
         >
     ) {
-        super(client, TextDocumentPublishDecorationsNotification.type)
+        super(client)
     }
+
+    public readonly messages = TextDocumentPublishDecorationsNotification.type
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         ensure(capabilities, 'decoration')!.dynamic = true
