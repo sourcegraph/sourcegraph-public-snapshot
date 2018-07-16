@@ -226,6 +226,10 @@ export class Client implements Unsubscribable {
             // Unsubscribing a connection could fail if error cases.
         }
 
+        this.connectionPromise = null
+        this.connection = null
+        this.cleanUp()
+
         let action: Promise<CloseAction> = Promise.resolve(CloseAction.DoNotRestart)
         try {
             action = Promise.resolve(this.clientOptions.errorHandler.closed())
@@ -236,10 +240,6 @@ export class Client implements Unsubscribable {
         action
             .catch(() => CloseAction.DoNotRestart) // ignore async errors from the error handler
             .then(action => {
-                this.connectionPromise = null
-                this.connection = null
-                this.cleanUp()
-
                 if (action === CloseAction.DoNotRestart) {
                     this._state.next(ClientState.Stopped)
                 } else if (action === CloseAction.Restart) {
@@ -268,7 +268,6 @@ export class Client implements Unsubscribable {
         }
         this._state.next(ClientState.Stopping)
         this.cleanUp()
-        // unkook listeners
         return (this.onStop = this.resolveConnection().then(connection =>
             connection.shutdown().then(() => {
                 connection.exit()
@@ -283,11 +282,8 @@ export class Client implements Unsubscribable {
 
     private cleanUp(): void {
         for (const handler of this._dynamicFeatures.values()) {
-            handler.unsubscribe()
+            handler.unregisterAll()
         }
-        this._dynamicFeatures.clear()
-        this._features = []
-        this._method2Message.clear()
     }
 
     public sendRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, params: P): Promise<R>

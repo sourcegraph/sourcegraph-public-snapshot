@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, TeardownLogic } from 'rxjs'
+import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { ExecuteCommandParams } from '../../protocol'
 
 export type ExecuteCommandSignature = (params: ExecuteCommandParams) => Promise<any>
@@ -16,7 +16,7 @@ export interface CommandEntry {
 export class CommandRegistry {
     private entries = new BehaviorSubject<CommandEntry[]>([])
 
-    public registerCommand(entry: CommandEntry): TeardownLogic {
+    public registerCommand(entry: CommandEntry): Unsubscribable {
         // Enforce uniqueness of command IDs.
         for (const e of this.entries.value) {
             if (e.command === entry.command) {
@@ -25,8 +25,10 @@ export class CommandRegistry {
         }
 
         this.entries.next([...this.entries.value, entry])
-        return () => {
-            this.entries.next(this.entries.value.filter(e => e !== entry))
+        return {
+            unsubscribe: () => {
+                this.entries.next(this.entries.value.filter(e => e !== entry))
+            },
         }
     }
 

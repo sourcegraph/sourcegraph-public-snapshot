@@ -63,7 +63,7 @@ export class ExecuteCommandFeature implements DynamicFeature<ExecuteCommandRegis
         this.commands.delete(id)
     }
 
-    public unsubscribe(): void {
+    public unregisterAll(): void {
         for (const sub of this.commands.values()) {
             sub.unsubscribe()
         }

@@ -1,4 +1,4 @@
-import { BehaviorSubject, from, Observable, TeardownLogic } from 'rxjs'
+import { BehaviorSubject, from, Observable, Unsubscribable } from 'rxjs'
 import * as uuidv4 from 'uuid/v4'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { ProvideTextDocumentDecorationSignature } from '../../environment/providers/decoration'
@@ -52,7 +52,7 @@ export class TextDocumentStaticDecorationFeature extends TextDocumentFeature<Tex
         })
     }
 
-    protected registerProvider(options: TextDocumentRegistrationOptions): TeardownLogic {
+    protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
         const client = this.client
         const provideTextDocumentDecoration: ProvideTextDocumentDecorationSignature = params =>
             from(client.sendRequest(TextDocumentDecorationRequest.type, params))
@@ -108,7 +108,7 @@ export class TextDocumentDynamicDecorationFeature extends TextDocumentFeature<Te
         })
     }
 
-    protected registerProvider(options: TextDocumentRegistrationOptions): TeardownLogic {
+    protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
         const client = this.client
         const provideTextDocumentDecoration: ProvideTextDocumentDecorationSignature = params =>
             this.getDecorationsSubject(params.textDocument)

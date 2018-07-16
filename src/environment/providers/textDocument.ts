@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, TeardownLogic } from 'rxjs'
+import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 
@@ -18,11 +18,13 @@ export abstract class TextDocumentFeatureProviderRegistry<O extends TextDocument
         }
     }
 
-    public registerProvider(registrationOptions: O, provider: P): TeardownLogic {
+    public registerProvider(registrationOptions: O, provider: P): Unsubscribable {
         const entry: Entry<O, P> = { registrationOptions, provider }
         this.entries.next([...this.entries.value, entry])
-        return () => {
-            this.entries.next(this.entries.value.filter(e => e !== entry))
+        return {
+            unsubscribe: () => {
+                this.entries.next(this.entries.value.filter(e => e !== entry))
+            },
         }
     }
 

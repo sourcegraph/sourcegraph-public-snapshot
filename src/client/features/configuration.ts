@@ -21,17 +21,15 @@ import { DynamicFeature, ensure, RegistrationData, StaticFeature } from './commo
  * server).
  */
 export class ConfigurationChangeNotificationFeature implements DynamicFeature<undefined> {
-    private subscriptions = new Subscription()
-    private listener: Subscription | null = null
+    private subscriptionsByID = new Map<string, Subscription>()
 
     constructor(private client: Client, private settings: Observable<ExtensionSettings>) {}
 
     public readonly messages = DidChangeConfigurationNotification.type
 
     public fillInitializeParams(params: InitializeParams): void {
-        // This runs synchronously because this.settings' root source is a
-        // BehaviorSubject (which has an initial value). Confirm it is synchronous just in case, because a bug here
-        // would be hard to diagnose.
+        // This runs synchronously because this.settings' root source is a BehaviorSubject (which has an initial
+        // value). Confirm it is synchronous just in case, because a bug here would be hard to diagnose.
         let sync = false
         this.settings
             .pipe(first())
@@ -54,10 +52,11 @@ export class ConfigurationChangeNotificationFeature implements DynamicFeature<un
     }
 
     public register(message: RPCMessageType, data: RegistrationData<undefined>): void {
-        if (this.listener) {
-            throw new Error('already registered')
+        if (this.subscriptionsByID.has(data.id)) {
+            throw new Error(`registration already exists with ID ${data.id}`)
         }
-        this.listener = this.subscriptions.add(
+        this.subscriptionsByID.set(
+            data.id,
             this.settings.subscribe(settings =>
                 this.client.sendNotification(DidChangeConfigurationNotification.type, { settings })
             )
@@ -65,16 +64,18 @@ export class ConfigurationChangeNotificationFeature implements DynamicFeature<un
     }
 
     public unregister(id: string): void {
-        if (!this.listener) {
-            throw new Error('not subscribed')
+        const sub = this.subscriptionsByID.get(id)
+        if (!sub) {
+            throw new Error(`no registration with ID ${id}`)
         }
-        this.listener.unsubscribe()
-        this.subscriptions.remove(this.listener)
-        this.listener = null
+        this.subscriptionsByID.delete(id)
     }
 
-    public unsubscribe(): void {
-        this.subscriptions.unsubscribe()
+    public unregisterAll(): void {
+        for (const sub of this.subscriptionsByID.values()) {
+            sub.unsubscribe()
+        }
+        this.subscriptionsByID.clear()
     }
 }
 

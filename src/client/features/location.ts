@@ -1,4 +1,4 @@
-import { TeardownLogic } from 'rxjs'
+import { Unsubscribable } from 'rxjs'
 import * as uuidv4 from 'uuid/v4'
 import { Location } from 'vscode-languageserver-types'
 import { ProvideTextDocumentLocationSignature } from '../../environment/providers/location'
@@ -62,7 +62,7 @@ export abstract class TextDocumentLocationFeature<
         })
     }
 
-    protected registerProvider(options: TextDocumentRegistrationOptions): TeardownLogic {
+    protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
         const client = this.client
         const provideTextDocumentLocation: ProvideTextDocumentLocationSignature<P, L> = params =>
             client.sendRequest(this.messages, params)

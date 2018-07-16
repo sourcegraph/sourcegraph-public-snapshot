@@ -1,4 +1,4 @@
-import { Subscription, TeardownLogic, Unsubscribable } from 'rxjs'
+import { Unsubscribable } from 'rxjs'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
@@ -21,13 +21,19 @@ export interface StaticFeature {
     initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector | undefined): void
 }
 
-export interface DynamicFeature<T> extends Unsubscribable {
+export interface DynamicFeature<T> {
     messages: RPCMessageType | RPCMessageType[]
     fillInitializeParams?: (params: InitializeParams) => void
     fillClientCapabilities(capabilities: ClientCapabilities): void
     initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector | undefined): void
     register(message: RPCMessageType, data: RegistrationData<T>): void
     unregister(id: string): void
+
+    /**
+     * Unregisters all static and dynamic registrations and prepares the feature to be reused for a new CXP
+     * connection.
+     */
+    unregisterAll(): void
 }
 
 export namespace DynamicFeature {
@@ -40,15 +46,14 @@ export namespace DynamicFeature {
             // tslint:disable-next-line:no-unbound-method
             isFunction(candidate.unregister) &&
             // tslint:disable-next-line:no-unbound-method
-            isFunction(candidate.unsubscribe) &&
+            isFunction(candidate.unregisterAll) &&
             candidate.messages !== void 0
         )
     }
 }
 
 export abstract class TextDocumentFeature<T extends TextDocumentRegistrationOptions> implements DynamicFeature<T> {
-    private subscriptions = new Subscription()
-    private subscriptionsByID = new Map<string, Subscription>()
+    private subscriptionsByID = new Map<string, Unsubscribable>()
 
     constructor(protected client: Client) {}
 
@@ -65,14 +70,13 @@ export abstract class TextDocumentFeature<T extends TextDocumentRegistrationOpti
         if (!data.registerOptions.documentSelector) {
             return
         }
-        const provider = this.registerProvider(data.registerOptions)
-        if (provider) {
-            const sub = this.subscriptions.add(provider)
-            this.subscriptionsByID.set(data.id, sub)
+        if (this.subscriptionsByID.has(data.id)) {
+            throw new Error(`registration already exists with ID ${data.id}`)
         }
+        this.subscriptionsByID.set(data.id, this.registerProvider(data.registerOptions))
     }
 
-    protected abstract registerProvider(options: T): TeardownLogic
+    protected abstract registerProvider(options: T): Unsubscribable
 
     public abstract fillClientCapabilities(capabilities: ClientCapabilities): void
 
@@ -80,13 +84,16 @@ export abstract class TextDocumentFeature<T extends TextDocumentRegistrationOpti
 
     public unregister(id: string): void {
         const sub = this.subscriptionsByID.get(id)
-        if (sub) {
-            this.subscriptions.remove(sub)
+        if (!sub) {
+            throw new Error(`no registration with ID ${id}`)
         }
+        this.subscriptionsByID.delete(id)
     }
 
-    public unsubscribe(): void {
-        this.subscriptions.unsubscribe()
+    public unregisterAll(): void {
+        for (const sub of this.subscriptionsByID.values()) {
+            sub.unsubscribe()
+        }
         this.subscriptionsByID.clear()
     }
 }

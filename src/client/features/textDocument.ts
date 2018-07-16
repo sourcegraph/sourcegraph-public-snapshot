@@ -19,7 +19,7 @@ import { DynamicFeature, ensure, RegistrationData } from './common'
 type CreateParamsSignature<E, P> = (data: E) => P
 
 export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFeature<TextDocumentRegistrationOptions> {
-    private subscriptions: Subscription | null = null
+    private subscription: Subscription | null = null
 
     protected selectors = new Map<string, DocumentSelector>()
 
@@ -42,9 +42,12 @@ export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFe
         if (!data.registerOptions.documentSelector) {
             return
         }
+        if (this.selectors.has(data.id)) {
+            throw new Error(`registration already exists with ID ${data.id}`)
+        }
         this.selectors.set(data.id, data.registerOptions.documentSelector)
-        if (!this.subscriptions) {
-            this.subscriptions = this.observable.subscribe(data => this.callback(data))
+        if (!this.subscription) {
+            this.subscription = this.observable.subscribe(data => this.callback(data))
         }
     }
 
@@ -64,18 +67,21 @@ export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFe
     }
 
     public unregister(id: string): void {
+        if (!this.selectors.delete(id)) {
+            throw new Error(`no registration with ID ${id}`)
+        }
         this.selectors.delete(id)
-        if (this.selectors.size === 0 && this.subscriptions) {
-            this.subscriptions.unsubscribe()
-            this.subscriptions = null
+        if (this.selectors.size === 0 && this.subscription) {
+            this.subscription.unsubscribe()
+            this.subscription = null
         }
     }
 
-    public unsubscribe(): void {
+    public unregisterAll(): void {
         this.selectors.clear()
-        if (this.subscriptions) {
-            this.subscriptions.unsubscribe()
-            this.subscriptions = null
+        if (this.subscription) {
+            this.subscription.unsubscribe()
+            this.subscription = null
         }
     }
 }

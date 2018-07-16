@@ -1,4 +1,4 @@
-import { TeardownLogic } from 'rxjs'
+import { Unsubscribable } from 'rxjs'
 import * as uuidv4 from 'uuid/v4'
 import { Hover, MarkupKind } from 'vscode-languageserver-types'
 import { ProvideTextDocumentHoverSignature } from '../../environment/providers/hover'
@@ -49,7 +49,7 @@ export class TextDocumentHoverFeature extends TextDocumentFeature<TextDocumentRe
         })
     }
 
-    protected registerProvider(options: TextDocumentRegistrationOptions): TeardownLogic {
+    protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
         const client = this.client
         const provideTextDocumentHover: ProvideTextDocumentHoverSignature = params =>
             client.sendRequest(HoverRequest.type, params)
