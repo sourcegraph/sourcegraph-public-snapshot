@@ -125,8 +125,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             pushHistory: path => this.props.history.push(path),
             logTelemetryEvent,
             fetchHover: position => getHover(this.getLSPTextDocumentPositionParams(position), this.props),
-            fetchJumpURL: position =>
-                getJumpURL(this.getLSPTextDocumentPositionParams(position), this.props.extensions),
+            fetchJumpURL: position => getJumpURL(this.getLSPTextDocumentPositionParams(position), this.props),
         })
         this.subscriptions.add(hoverifier)
 

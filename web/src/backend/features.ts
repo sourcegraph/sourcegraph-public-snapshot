@@ -6,13 +6,13 @@ import { catchError, map } from 'rxjs/operators'
 import { Definition, Location } from 'vscode-languageserver-types'
 import { CXPControllerProps, USE_CXP } from '../cxp/CXPEnvironment'
 import { ConfiguredExtension, ExtensionSettings } from '../extensions/extension'
-import { AbsoluteRepo, AbsoluteRepoFile } from '../repo'
+import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
+import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import {
     fetchDecorations,
     fetchDefinition,
     fetchHover,
     fetchImplementation,
-    fetchJumpURL,
     fetchReferences,
     fetchXdefinition,
     fetchXreferences,
@@ -84,7 +84,19 @@ export function getHover(
  * @param ctx the location
  * @return definitions of the symbol at the location
  */
-export function getDefinition(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<Definition> {
+export function getDefinition(
+    ctx: LSPTextDocumentPositionParams,
+    { extensions, cxpController }: ExtensionsAndCXPControllerProps
+): Observable<Definition> {
+    if (USE_CXP) {
+        return cxpController.registries.textDocumentDefinition.getLocation({
+            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+            position: {
+                character: ctx.position.character - 1,
+                line: ctx.position.line - 1,
+            },
+        })
+    }
     return forkJoin(
         getModes(ctx, extensions).map(({ mode, settings }) => fetchDefinition({ ...ctx, mode, settings }))
     ).pipe(map(results => flatten(compact(results))))
@@ -99,10 +111,28 @@ export function getDefinition(ctx: LSPTextDocumentPositionParams, extensions: Ex
  * @param ctx the location containing the token whose definition to jump to
  * @return destination URL
  */
-export function getJumpURL(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<string | null> {
-    return forkJoin(
-        getModes(ctx, extensions).map(({ mode, settings }) => fetchJumpURL({ ...ctx, mode, settings }))
-    ).pipe(map(results => results.find(v => v !== null) || null))
+export function getJumpURL(
+    ctx: LSPTextDocumentPositionParams,
+    extensions: ExtensionsAndCXPControllerProps
+): Observable<string | null> {
+    return getDefinition(ctx, extensions).pipe(
+        map(def => {
+            const defArray = Array.isArray(def) ? def : [def]
+            def = defArray[0]
+            if (!def) {
+                return null
+            }
+
+            const uri = parseRepoURI(def.uri) as LSPTextDocumentPositionParams
+            uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+            if (uri.repoPath === ctx.repoPath && uri.commitID === ctx.commitID) {
+                // Use pretty rev from the current context for same-repo J2D.
+                uri.rev = ctx.rev
+                return toPrettyBlobURL(uri)
+            }
+            return toAbsoluteBlobURL(uri)
+        })
+    )
 }
 
 /**
@@ -123,6 +153,19 @@ export function getXdefinition(
 }
 
 /**
+ * Wrap the value in an array. Unlike Lodash's castArray, it maps null to [] (not [null]).
+ */
+function castArray<T>(value: null | T | T[]): T[] {
+    if (value === null) {
+        return []
+    }
+    if (!Array.isArray(value)) {
+        return [value]
+    }
+    return value
+}
+
+/**
  * Fetches references (in the same repository) to the symbol at the given location.
  *
  * @param ctx the location
@@ -130,8 +173,22 @@ export function getXdefinition(
  */
 export function getReferences(
     ctx: LSPTextDocumentPositionParams & LSPReferencesParams,
-    extensions: Extensions
+    { extensions, cxpController }: ExtensionsAndCXPControllerProps
 ): Observable<Location[]> {
+    if (USE_CXP) {
+        return cxpController.registries.textDocumentReferences
+            .getLocation({
+                textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+                position: {
+                    character: ctx.position.character - 1,
+                    line: ctx.position.line - 1,
+                },
+                context: {
+                    includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
+                },
+            })
+            .pipe(map(castArray))
+    }
     return forkJoin(
         getModes(ctx, extensions).map(({ mode, settings }) => fetchReferences({ ...ctx, mode, settings }))
     ).pipe(map(results => flatten(results)))
@@ -143,7 +200,21 @@ export function getReferences(
  * @param ctx the location
  * @return implementations of the symbol at the location
  */
-export function getImplementations(ctx: LSPTextDocumentPositionParams, extensions: Extensions): Observable<Location[]> {
+export function getImplementations(
+    ctx: LSPTextDocumentPositionParams,
+    { extensions, cxpController }: ExtensionsAndCXPControllerProps
+): Observable<Location[]> {
+    if (USE_CXP) {
+        return cxpController.registries.textDocumentImplementation
+            .getLocation({
+                textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+                position: {
+                    character: ctx.position.character - 1,
+                    line: ctx.position.line - 1,
+                },
+            })
+            .pipe(map(castArray))
+    }
     return forkJoin(
         getModes(ctx, extensions).map(({ mode, settings }) => fetchImplementation({ ...ctx, mode, settings }))
     ).pipe(map(results => flatten(results)))
@@ -175,7 +246,7 @@ export function getDecorations(
     { extensions, cxpController }: ExtensionsAndCXPControllerProps
 ): Observable<TextDocumentDecoration[] | null> {
     if (USE_CXP) {
-        return cxpController.registries.textDocumentDecorations.getDecorations({
+        return cxpController.registries.textDocumentDecoration.getDecorations({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
         })
     }

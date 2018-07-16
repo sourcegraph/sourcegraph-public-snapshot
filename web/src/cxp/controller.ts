@@ -1,13 +1,81 @@
 import { ClientOptions } from 'cxp/lib/client/client'
+import {
+    CloseAction,
+    ErrorAction,
+    ErrorHandler as CXPErrorHandler,
+    InitializationFailedHandler,
+} from 'cxp/lib/client/errorHandler'
 import { Controller } from 'cxp/lib/environment/controller'
 import { MessageTransports } from 'cxp/lib/jsonrpc2/connection'
+import { Message, ResponseError } from 'cxp/lib/jsonrpc2/messages'
 import { createWebSocketMessageTransports } from 'cxp/lib/jsonrpc2/transports/browserWebSocket'
 import { createWebWorkerMessageTransports } from 'cxp/lib/jsonrpc2/transports/webWorker'
+import { InitializeError } from 'cxp/lib/protocol'
 import { catchError, mergeMap } from 'rxjs/operators'
 import { toGQLKeyPath, updateUserExtensionSettings } from '../registry/backend'
 import { isErrorLike } from '../util/errors'
 import { CXPExtensionWithManifest } from './CXPEnvironment'
 import { importScriptsBlobURL } from './webWorker'
+
+interface CXPInitializationFailedHandler {
+    initializationFailed: InitializationFailedHandler
+}
+
+/** The CXP client initializion-failed and error handler. */
+class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
+    private lastRestart = 0
+
+    public constructor(private extensionID: string) {}
+
+    public error(err: Error, message: Message, count: number): ErrorAction {
+        log(
+            'error',
+            `${this.extensionID}${count > 1 ? ` (count: ${count})` : ''}`,
+            err,
+            message ? { message } : undefined
+        )
+
+        if (err.message && err.message.includes('got unsubscribed')) {
+            return ErrorAction.Shutdown
+        }
+
+        // Always keep connection open after routine errors, since errors can be "expected" (e.g., if you know you
+        // haven't configured the extension correctly yet and you are testing it).
+        return typeof count === 'number' ? ErrorAction.Continue : ErrorAction.Shutdown
+    }
+
+    private computeDelayBeforeRetry(): number {
+        const lastRestart = this.lastRestart
+        const now = Date.now()
+        this.lastRestart = now
+
+        const diff = now - lastRestart
+        if (diff <= 10 * 1000) {
+            // If the connection last closed less than 10 seconds ago, wait longer to restart to avoid excessive
+            // attempts.
+            return 2500
+        }
+        // Otherwise restart after a shorter period.
+        return 500
+    }
+
+    public initializationFailed(err: ResponseError<InitializeError> | Error | any): boolean | Promise<boolean> {
+        log('error', this.extensionID, err)
+        const EINVALIDREQUEST = -32600 // JSON-RPC 2.0 error code
+        if (
+            isResponseError(err) &&
+            ((err.message.includes('dial tcp') && err.message.includes('connect: connection refused')) ||
+                (err.code === EINVALIDREQUEST && err.message.includes('client proxy handler is already initialized')))
+        ) {
+            return false
+        }
+        return delayed(true, this.computeDelayBeforeRetry())
+    }
+
+    public closed(): CloseAction | Promise<CloseAction> {
+        return delayed(CloseAction.Restart, this.computeDelayBeforeRetry())
+    }
+}
 
 /**
  * Creates the CXP controller, which handles all CXP communication between the React app and CXP extension.
@@ -19,15 +87,14 @@ import { importScriptsBlobURL } from './webWorker'
  * React components via its registries and the showMessages, etc., observables.
  */
 export function createController(): Controller<CXPExtensionWithManifest> {
-    const controller = new Controller<CXPExtensionWithManifest>(
-        {
-            initializationFailedHandler: err => {
-                console.error('Initialization failed:', err)
-                return false
-            },
+    const controller = new Controller<CXPExtensionWithManifest>({
+        createMessageTransports,
+        initializationFailedHandler: (extension: CXPExtensionWithManifest) => {
+            const handler = new ErrorHandler(extension.id)
+            return err => handler.initializationFailed(err)
         },
-        createMessageTransports
-    )
+        errorHandler: (extension: CXPExtensionWithManifest) => new ErrorHandler(extension.id),
+    })
 
     controller.showMessages.subscribe(({ message }) => alert(message))
     controller.showMessageRequests.subscribe(({ message, actions, resolve }) => {
@@ -62,27 +129,17 @@ export function createController(): Controller<CXPExtensionWithManifest> {
 
     // Print window/logMessage log messages to the browser devtools console.
     controller.logMessages.subscribe(({ message, extension }) => {
-        console.log(
-            '%c CXP %s %c %s',
-            'font-weight:bold;background-color:#eee',
-            extension,
-            'font-weight:normal;background-color:unset',
-            message
-        )
+        log('info', extension, message)
     })
 
     // Debug helpers.
     const DEBUG = true
     if (DEBUG) {
         // Debug helper: log environment changes.
-        controller.environment.environment.subscribe(environment =>
-            console.log(
-                '%c CXP env %c %o',
-                'font-weight:bold;background-color:#999;color:white',
-                'background-color:unset;color:unset;font-weight:unset',
-                environment
-            )
-        )
+        const LOG_ENVIRONMENT = false
+        if (LOG_ENVIRONMENT) {
+            controller.environment.environment.subscribe(environment => log('info', 'env', environment))
+        }
 
         // Debug helpers: e.g., just run `cxp` in devtools to get a reference to this controller. (If multiple
         // controllers are created, this points to the last one created.)
@@ -134,4 +191,37 @@ function createMessageTransports(
         extension.id
     }&rootUri=${clientOptions.root}`
     return createWebSocketMessageTransports(new WebSocket(url))
+}
+
+function isResponseError(err: any): err is ResponseError<InitializeError> {
+    return 'code' in err && 'message' in err
+}
+
+function delayed<T>(value: T, msec: number): Promise<T> {
+    return new Promise(resolve => {
+        setTimeout(() => resolve(value), msec)
+    })
+}
+
+function log(level: 'info' | 'error', subject: string, message: any, other?: { [name: string]: any }): void {
+    let f: typeof console.log
+    let color: string
+    let backgroundColor: string
+    if (level === 'info') {
+        f = console.log
+        color = '#000'
+        backgroundColor = '#eee'
+    } else {
+        f = console.error
+        color = 'white'
+        backgroundColor = 'red'
+    }
+    f(
+        '%c CXP %s %c',
+        `font-weight:bold;background-color:${backgroundColor};color:${color}`,
+        subject,
+        'font-weight:normal;background-color:unset',
+        message,
+        other || ''
+    )
 }

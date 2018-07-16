@@ -399,15 +399,14 @@ export class BlobPanel extends React.PureComponent<Props, State> {
     private onSelectLocation = (tab: BlobPanelTabID): void => eventLogger.log('BlobPanelLocationSelected', { tab })
 
     private queryDefinition = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        getDefinition(this.props as LSPTextDocumentPositionParams, this.props.extensions).pipe(
+        getDefinition(this.props as LSPTextDocumentPositionParams, this.props).pipe(
             map(locations => ({ loading: false, locations: locations ? castArray(locations) : [] }))
         )
 
     private queryReferencesLocal = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        getReferences(
-            { ...(this.props as LSPTextDocumentPositionParams), includeDeclaration: false },
-            this.props.extensions
-        ).pipe(map(c => ({ loading: false, locations: c })))
+        getReferences({ ...(this.props as LSPTextDocumentPositionParams), includeDeclaration: false }, this.props).pipe(
+            map(c => ({ loading: false, locations: c }))
+        )
 
     private queryReferencesExternal = (): Observable<{ loading: boolean; locations: Location[] }> =>
         fetchExternalReferences(this.props as LSPTextDocumentPositionParams, this.props.extensions).pipe(
@@ -424,7 +423,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         )
 
     private queryImplementation = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        getImplementations(this.props as LSPTextDocumentPositionParams, this.props.extensions).pipe(
+        getImplementations(this.props as LSPTextDocumentPositionParams, this.props).pipe(
             map(c => ({ loading: false, locations: c }))
         )
 }

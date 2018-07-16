@@ -64,7 +64,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		if err != nil {
 			return nil, err
 		}
-		if cap.Decorations == nil || !cap.Decorations.Static {
+		if cap.Decoration == nil || !cap.Decoration.Static {
 			return nil, errors.New("client does not support decorations")
 		}
 
@@ -93,7 +93,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 
 		return cxp.InitializeResult{
 			Capabilities: cxp.ServerCapabilities{
-				DecorationsProvider: &cxp.DecorationsProviderServerCapabilities{DecorationsCapabilityOptions: cxp.DecorationsCapabilityOptions{Static: true}},
+				DecorationProvider: &cxp.DecorationProviderServerCapabilities{DecorationCapabilityOptions: cxp.DecorationCapabilityOptions{Static: true}},
 			},
 		}, nil
 
@@ -107,7 +107,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params lspext.TextDocumentDecorationsParams
+		var params lspext.TextDocumentDecorationParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}

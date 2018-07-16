@@ -1,21 +1,21 @@
-# `decorations` LSP extension
+# `decoration` LSP extension
 
-The LSP `decorations` extension allows the client to request decorations for a text document from
+The LSP `decoration` extension allows the client to request decorations for a text document from
 the server.
 
 Future plans:
 
 * Supporting server push of decorations (e.g., when another user adds a comment to a line, the server preemptively notifies the client of a new decoration indicating the presence of the comment).
 
-### Text Document Decorations Request
+### Text Document Decoration Request
 
 _Request_:
 
-* method: 'textDocument/decorations'
-* params: `TextDocumentDecorationsParams` defined as follows:
+* method: 'textDocument/decoration'
+* params: `TextDocumentDecorationParams` defined as follows:
 
 ```typescript
-interface TextDocumentDecorationsParams {
+interface TextDocumentDecorationParams {
   /**
    * The text document.
    */

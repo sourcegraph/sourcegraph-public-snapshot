@@ -390,10 +390,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 
-		if params.InitializationOptions.RootURI != nil {
-			params.RootURI = *params.InitializationOptions.RootURI
-		}
-
 		// DEPRECATED: Handle clients that send initialization params with the old Mode field.
 		if params.InitializationOptions.Mode == "" {
 			params.InitializationOptions.Mode = params.Mode
@@ -408,9 +404,16 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// months.
 		params.RootPath = ""
 
-		rootURI, err := uri.Parse(string(params.RootURI))
+		// 🚨 SECURITY: Make all current and deprecated root fields consistent, to avoid bugs or
+		// vulnerabilities where we (e.g.) authorize the user for one of the roots but serve content
+		// for another.
+		params.RootURI = params.RootOrRootURI()
+		params.Root = params.RootOrRootURI()
+		params.InitializationOptions.RootURI = nil
+
+		rootURI, err := uri.Parse(string(params.RootOrRootURI()))
 		if err != nil {
-			return nil, fmt.Errorf("invalid rootUri %q: %s", params.RootURI, err)
+			return nil, fmt.Errorf("invalid rootUri %q: %s", params.RootOrRootURI(), err)
 		}
 		if params.InitializationOptions.Mode == "" {
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)

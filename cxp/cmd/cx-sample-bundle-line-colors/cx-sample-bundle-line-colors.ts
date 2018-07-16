@@ -7,12 +7,12 @@ const connection = createConnection(createWebWorkerMessageTransports(self as Ded
 connection.onInitialize(
     () =>
         ({
-            capabilities: { decorationsProvider: { static: true } },
+            capabilities: { decorationProvider: { static: true } },
         } as InitializeResult)
 )
 
 connection.onRequest(
-    'textDocument/decorations',
+    'textDocument/decoration',
     (): TextDocumentDecoration[] =>
         ['cyan', 'magenta', 'yellow', 'black'].map(
             (color, i) =>

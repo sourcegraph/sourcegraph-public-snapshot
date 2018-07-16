@@ -9,10 +9,9 @@ import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkupContent, Range } from 'vscode-languageserver-types'
 import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { ExtensionSettings } from '../extensions/extension'
-import { AbsoluteRepo, FileSpec, makeRepoURI, parseRepoURI, PositionSpec } from '../repo'
+import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
 import { ErrorLike, normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
-import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import { HoverMerged, ModeSpec } from './features'
 
 /**
@@ -207,28 +206,6 @@ export const fetchDefinition = memoizeObservable(
         }),
     cacheKey
 )
-
-/** Callers should use features.getJumpURL instead. */
-export function fetchJumpURL(options: LSPTextDocumentPositionParams & LSPContext): Observable<string | null> {
-    return fetchDefinition(options).pipe(
-        map(def => {
-            const defArray = Array.isArray(def) ? def : [def]
-            def = defArray[0]
-            if (!def) {
-                return null
-            }
-
-            const uri = parseRepoURI(def.uri) as LSPTextDocumentPositionParams
-            uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
-            if (uri.repoPath === options.repoPath && uri.commitID === options.commitID) {
-                // Use pretty rev from the current context for same-repo J2D.
-                uri.rev = options.rev
-                return toPrettyBlobURL(uri)
-            }
-            return toAbsoluteBlobURL(uri)
-        })
-    )
-}
 
 /** Callers should use features.getXdefinition instead. */
 export const fetchXdefinition = memoizeObservable(

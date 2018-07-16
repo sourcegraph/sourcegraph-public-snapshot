@@ -14,9 +14,22 @@ import (
 // It is lspext.ClientProxyInitializeParams with an added nested initializationOptions.settings
 // field.
 type ClientProxyInitializeParams struct {
+	Root                  lsp.DocumentURI                  `json:"root"`
 	InitializationOptions ClientProxyInitializationOptions `json:"initializationOptions"`
 	Capabilities          ClientCapabilities               `json:"capabilities"`
 	lspext.ClientProxyInitializeParams
+}
+
+// RootOrRootURI returns the "root" (CXP), "initializationOptions.rootUri" (LSP backcompat), or
+// "rootUri" (LSP backcompat) property value.
+func (p ClientProxyInitializeParams) RootOrRootURI() lsp.DocumentURI {
+	if p.Root != "" {
+		return p.Root
+	}
+	if p.InitializationOptions.ClientProxyInitializationOptions.RootURI != nil {
+		return *p.InitializationOptions.ClientProxyInitializationOptions.RootURI
+	}
+	return p.RootURI
 }
 
 // ClientProxyInitializeParams contains the initialization options for the client's "initialize"
@@ -31,9 +44,18 @@ type ClientProxyInitializationOptions struct {
 //
 // It is lspext.InitializeParams with an added nested initializationOptions.settings field.
 type InitializeParams struct {
+	Root                  lsp.DocumentURI        `json:"root"`
 	InitializationOptions *InitializationOptions `json:"initializationOptions,omitempty"`
 	Capabilities          ClientCapabilities     `json:"capabilities"`
 	lspext.InitializeParams
+}
+
+// RootOrRootURI returns the "root" (CXP) or "rootUri" (LSP backcompat) property value.
+func (p InitializeParams) RootOrRootURI() lsp.DocumentURI {
+	if p.Root != "" {
+		return p.Root
+	}
+	return p.RootURI
 }
 
 // InitializationOptions contains arbitrary initialization options at the top level, plus extension
@@ -86,7 +108,7 @@ type ExtensionSettings struct {
 type ClientCapabilities struct {
 	lsp.ClientCapabilities
 
-	Decorations *DecorationsCapabilityOptions `json:"decorations,omitempty"`
+	Decoration *DecorationCapabilityOptions `json:"decorations,omitempty"`
 
 	// TODO(sqs): add this to cxp-js
 	Exec bool `json:"exec"`
@@ -100,18 +122,18 @@ type InitializeResult struct {
 type ServerCapabilities struct {
 	lsp.ServerCapabilities
 
-	DecorationsProvider *DecorationsProviderServerCapabilities `json:"decorationsProvider,omitempty"`
+	DecorationProvider *DecorationProviderServerCapabilities `json:"decorationProvider,omitempty"`
 
 	Contributions *Contributions `json:"contributions,omitempty"`
 }
 
-type DecorationsCapabilityOptions struct {
+type DecorationCapabilityOptions struct {
 	Static  bool `json:"static,omitempty"`
 	Dynamic bool `json:"dynamic,omitempty"`
 }
 
-type DecorationsProviderServerCapabilities struct {
-	DecorationsCapabilityOptions
+type DecorationProviderServerCapabilities struct {
+	DecorationCapabilityOptions
 }
 
 type TextDocumentPublishDecorationsParams struct {

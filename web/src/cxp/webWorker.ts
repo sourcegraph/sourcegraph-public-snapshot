@@ -3,6 +3,11 @@
  * script at the given URL.
  */
 export function importScriptsBlobURL(id: string, scriptURL: string): string {
-    const b = new Blob([`importScripts('${new URL(scriptURL).toString()}')`], { type: 'application/javascript' })
+    const b = new Blob(
+        [`try{importScripts('${new URL(scriptURL).toString()}')}catch(err){console.error(err);throw err}`],
+        {
+            type: 'application/javascript',
+        }
+    )
     return window.URL.createObjectURL(b) + `#${id}`
 }

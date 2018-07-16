@@ -122,8 +122,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             pushHistory: path => this.props.history.push(path),
             logTelemetryEvent,
             fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
-            fetchJumpURL: hoveredToken =>
-                getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props.extensions),
+            fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState

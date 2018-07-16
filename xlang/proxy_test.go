@@ -777,8 +777,8 @@ func TestProxy_connections(t *testing.T) {
 			XContentProvider: true,
 			XCacheProvider:   true,
 		},
-		Decorations: &cxp.DecorationsCapabilityOptions{Static: true, Dynamic: true},
-		Exec:        true,
+		Decoration: &cxp.DecorationCapabilityOptions{Static: true, Dynamic: true},
+		Exec:       true,
 	}
 
 	// Start the test client C1.

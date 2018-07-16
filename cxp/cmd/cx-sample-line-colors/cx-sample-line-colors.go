@@ -57,7 +57,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		if err != nil {
 			return nil, err
 		}
-		if cap.Decorations == nil || (!cap.Decorations.Static && !cap.Decorations.Dynamic) {
+		if cap.Decoration == nil || (!cap.Decoration.Static && !cap.Decoration.Dynamic) {
 			return nil, errors.New("client does not support decorations")
 		}
 
@@ -95,7 +95,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 						Commands: []string{cycleColorsCommandID, promptColorsCommandID},
 					},
 				},
-				DecorationsProvider: &cxp.DecorationsProviderServerCapabilities{DecorationsCapabilityOptions: cxp.DecorationsCapabilityOptions{Static: true, Dynamic: true}},
+				DecorationProvider: &cxp.DecorationProviderServerCapabilities{DecorationCapabilityOptions: cxp.DecorationCapabilityOptions{Static: true, Dynamic: true}},
 				Contributions: &cxp.Contributions{
 					Commands: []*cxp.CommandContribution{
 						{

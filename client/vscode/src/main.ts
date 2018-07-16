@@ -111,7 +111,7 @@ process.on('unhandledRejection', (error: any) => {
 
 const registerLSPExtensions = ({ client, context }: { client: LanguageClient; context: vscode.ExtensionContext }) => {
     const decorate = async () => {
-        if (!lodash.get(client, 'initializeResult.capabilities.experimental.decorationsProvider', false)) {
+        if (!lodash.get(client, 'initializeResult.capabilities.experimental.decorationProvider', false)) {
             return
         }
 
@@ -126,7 +126,7 @@ const registerLSPExtensions = ({ client, context }: { client: LanguageClient; co
         const isTrackedFile = [0, undefined].indexOf(systemSync('git ls-files --error-unmatch ' + path).status) !== -1
 
         if (isGitDir && isTrackedFile) {
-            const decorations: any = await client.sendRequest('textDocument/decorations', {
+            const decorations: any = await client.sendRequest('textDocument/decoration', {
                 textDocument: {
                     uri: vscode.Uri.file(vscode.workspace.asRelativePath(path)).toString(),
                 },
@@ -301,7 +301,7 @@ export async function activate({
         client.registerFeature({
             fillClientCapabilities: capabilities => {
                 lodash.set(capabilities, 'experimental.exec', true)
-                lodash.set(capabilities, 'experimental.decorations', true)
+                lodash.set(capabilities, 'decorations', { static: true })
             },
             initialize: () => {},
             fillInitializeParams: params => {

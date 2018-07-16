@@ -315,7 +315,7 @@ func authorizeInitialize(ctx context.Context, req *jsonrpc2.Request) (*trackedIn
 		return nil, err
 	}
 
-	rootURI, err := uri.Parse(string(params.RootURI))
+	rootURI, err := uri.Parse(string(params.RootOrRootURI()))
 	if err != nil {
 		return nil, err
 	}

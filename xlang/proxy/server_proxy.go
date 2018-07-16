@@ -501,8 +501,8 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*cxp.InitializeRes
 				XContentProvider: true,
 				XCacheProvider:   true,
 			},
-			Decorations: &cxp.DecorationsCapabilityOptions{Static: true, Dynamic: true},
-			Exec:        true,
+			Decoration: &cxp.DecorationCapabilityOptions{Static: true, Dynamic: true},
+			Exec:       true,
 		},
 	}
 

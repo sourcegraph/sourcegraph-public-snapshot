@@ -18,7 +18,7 @@ import (
 // called after a change (to configuration or the open files) that may require decorations to
 // change.
 func publishDecorationsForOpenDocuments(ctx context.Context, conn *jsonrpc2.Conn, clientCap *cxp.ClientCapabilities, settings extensionSettings, rootURI *uri.URI, openDocuments map[lsp.DocumentURI]struct{}) error {
-	if !clientCap.Decorations.Dynamic {
+	if !clientCap.Decoration.Dynamic {
 		return nil
 	}
 
