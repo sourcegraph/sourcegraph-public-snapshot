@@ -1,6 +1,7 @@
 import { BehaviorSubject, Observable, Subject, Subscription, SubscriptionLike, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { Client, ClientOptions } from '../client/client'
+import { ErrorHandler, InitializationFailedHandler } from '../client/errorHandler'
 import { ExecuteCommandFeature } from '../client/features/command'
 import {
     ConfigurationChangeNotificationFeature,
@@ -59,6 +60,21 @@ type ShowMessageRequest = ShowMessageRequestParams & MessageSource & PromiseCall
 
 type ConfigurationUpdate = ConfigurationUpdateParams & MessageSource & PromiseCallback<void>
 
+/** Options for creating the controller. */
+export interface ControllerOptions<X extends Extension> extends Pick<ClientOptions, 'middleware'> {
+    /** Creates transports to pass to the client to communicate with the given extension. */
+    createMessageTransports: (
+        extension: X,
+        clientOptions: ClientOptions
+    ) => MessageTransports | Promise<MessageTransports>
+
+    /** Creates an error handler for a client for the given extension. */
+    errorHandler?: (extension: X) => ErrorHandler
+
+    /** Creates an initialization failure handler for a client for the given extension. */
+    initializationFailedHandler?: (extension: X) => InitializationFailedHandler
+}
+
 /**
  * The controller for the environment.
  */
@@ -89,13 +105,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     /** Configuration updates from extensions. */
     public readonly configurationUpdates: Observable<ConfigurationUpdate> = this._configurationUpdates
 
-    constructor(
-        private clientOptions: Pick<ClientOptions, 'middleware' | 'initializationFailedHandler' | 'errorHandler'>,
-        private createMessageTransports: (
-            extension: X,
-            clientOptions: ClientOptions
-        ) => MessageTransports | Promise<MessageTransports>
-    ) {
+    constructor(private options: ControllerOptions<X>) {
         this.subscriptions.add(() => {
             for (const c of this.clients) {
                 c.unsubscribe()
@@ -144,12 +154,15 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
             }
 
             const clientOptions: ClientOptions = {
-                ...this.clientOptions,
+                ...this.options,
                 root: key.root,
                 initializationOptions: { ...key.initializationOptions }, // key is immutable so we can diff it
                 documentSelector: ['*'],
                 environment: this.environment,
-                createMessageTransports: () => this.createMessageTransports(extension, clientOptions),
+                createMessageTransports: () => this.options.createMessageTransports(extension, clientOptions),
+                initializationFailedHandler:
+                    this.options.initializationFailedHandler && this.options.initializationFailedHandler(extension),
+                errorHandler: this.options.errorHandler && this.options.errorHandler(extension),
             }
             const client = new Client(key.id, key.id, clientOptions)
 
