@@ -6,6 +6,8 @@ import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { CXPStatusPopover } from '../cxp/components/CXPStatus'
+import { CXPControllerProps, CXPEnvironmentProps, USE_CXP } from '../cxp/CXPEnvironment'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { ExtensionSelector } from '../registry/extensions/actions/ExtensionSelector'
 import { eventLogger } from '../tracking/eventLogger'
@@ -13,7 +15,7 @@ import { platformEnabled } from '../user/tags'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
-interface Props extends ExtensionsProps, ExtensionsChangeProps {
+interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPEnvironmentProps, CXPControllerProps {
     location: H.Location
     history: H.History
     user: GQL.IUser | null
@@ -64,6 +66,14 @@ export class NavLinks extends React.PureComponent<Props> {
                             }
                             history={this.props.history}
                             location={this.props.location}
+                        />
+                    )}
+                {this.props.user &&
+                    platformEnabled(this.props.user) &&
+                    USE_CXP && (
+                        <CXPStatusPopover
+                            cxpEnvironment={this.props.cxpEnvironment}
+                            cxpController={this.props.cxpController}
                         />
                     )}
                 {this.props.user && (

@@ -5,11 +5,12 @@ import { Subscription } from 'rxjs'
 import { authRequired } from '../auth'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
+import { CXPControllerProps, CXPEnvironmentProps } from '../cxp/CXPEnvironment'
 import { parseSearchURLQuery, SearchOptions } from '../search/index'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { NavLinks } from './NavLinks'
 
-interface Props extends ExtensionsProps, ExtensionsChangeProps {
+interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPEnvironmentProps, CXPControllerProps {
     history: H.History
     location: H.Location
     user: GQL.IUser | null

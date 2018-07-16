@@ -1,6 +1,6 @@
 import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import * as React from 'react'
-import Popover from 'reactstrap/lib/Popover'
+import Popover, { PopoverProps } from 'reactstrap/lib/Popover'
 import { Subscription } from 'rxjs'
 import { Key } from 'ts-key-enum'
 import { LinkOrSpan } from './LinkOrSpan'
@@ -30,6 +30,12 @@ interface Props {
      * Hide the popover when this prop changes.
      */
     hideOnChange?: any
+
+    /** Popover placement. */
+    placement?: PopoverProps['placement']
+
+    /** Force open, if true. */
+    open?: boolean
 }
 
 interface State {
@@ -71,10 +77,12 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactFragment {
+        const isOpen = this.state.open || this.props.open
+
         const popoverAnchor = this.rootRef && (
             <Popover
-                placement="auto-start"
-                isOpen={this.state.open}
+                placement={this.props.placement || 'auto-start'}
+                isOpen={isOpen}
                 toggle={this.onPopoverVisibilityToggle}
                 target={this.rootRef}
                 className="popover-button__popover"
@@ -84,8 +92,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         )
         return (
             <div
-                className={`popover-button ${this.state.open ? 'popover-button--open' : ''} ${this.props.className ||
-                    ''} ${
+                className={`popover-button ${isOpen ? 'popover-button--open' : ''} ${this.props.className || ''} ${
                     this.props.link ? 'popover-button__container' : 'popover-button__btn popover-button__anchor'
                 }`}
                 ref={this.setRootRef}
