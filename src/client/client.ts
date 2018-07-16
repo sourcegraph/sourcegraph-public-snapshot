@@ -64,11 +64,25 @@ interface ResolvedClientOptions extends ClientOptions {
 
 /** The possible states of a client. */
 export enum ClientState {
+    /** The initial state of the client. It has not yet been started. */
     Initial,
+
+    /** The client is establishing the connection to the server and sending the "initialize" message. */
     Starting,
+
+    /** The client encountered an error while starting. */
     StartFailed,
-    Running,
+
+    /** The connection is established and the client is handling the server's "initialize" result. */
+    Initializing,
+
+    /** The client has finished initialization and is in operation. */
+    Active,
+
+    /** The client is stopping. */
     Stopping,
+
+    /** The client is stopped (after having previously been started). */
     Stopped,
 }
 
@@ -114,11 +128,18 @@ export class Client implements Unsubscribable {
     }
 
     private isConnectionActive(): boolean {
-        return this._state.value === ClientState.Running && this.connection !== null
+        return (
+            (this._state.value === ClientState.Initializing || this._state.value === ClientState.Active) &&
+            this.connection !== null
+        )
     }
 
     public needsStop(): boolean {
-        return this._state.value === ClientState.Starting || this._state.value === ClientState.Running
+        return (
+            this._state.value === ClientState.Starting ||
+            this._state.value === ClientState.Initializing ||
+            this._state.value === ClientState.Active
+        )
     }
 
     public start(): SubscriptionLike {
@@ -181,7 +202,8 @@ export class Client implements Unsubscribable {
             .then(result => {
                 this.connection = connection
                 this._initializeResult = result
-                this._state.next(ClientState.Running)
+
+                this._state.next(ClientState.Initializing)
 
                 connection.onRequest(RegistrationRequest.type, params => this.handleRegistrationRequest(params))
                 connection.onRequest(UnregistrationRequest.type, params => this.handleUnregistrationRequest(params))
@@ -192,6 +214,8 @@ export class Client implements Unsubscribable {
                 for (const feature of this._features) {
                     feature.initialize(result.capabilities, this.clientOptions.documentSelector)
                 }
+
+                this._state.next(ClientState.Active)
             })
             .then(null, err =>
                 Promise.resolve(this.clientOptions.initializationFailedHandler(err)).then(restart => {
@@ -326,7 +350,7 @@ export class Client implements Unsubscribable {
         this._trace = value
         this._state
             .pipe(
-                filter(state => state === ClientState.Running),
+                filter(state => state === ClientState.Initializing || state === ClientState.Active),
                 first(),
                 switchMap(() => from(this.resolveConnection())),
                 map(connection => connection.trace(value, this._tracer))

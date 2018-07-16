@@ -30,7 +30,7 @@ client.registerFeature(new TextDocumentHoverFeature(client, new NoopProviderRegi
 client.registerFeature(new TextDocumentStaticDecorationFeature(client, new NoopProviderRegistry()))
 client.state.subscribe(state => console.log('Client state:', ClientState[state]))
 client.start()
-const onReady = client.state.pipe(filter(state => state === ClientState.Running))
+const onActive = client.state.pipe(filter(state => state === ClientState.Active))
 
 async function run(): Promise<void> {
     console.log('textDocument/hover...')
@@ -68,7 +68,7 @@ async function run(): Promise<void> {
     })
 }
 
-onReady.subscribe(async () => {
+onActive.subscribe(async () => {
     await run()
     await client.stop()
     process.exit(0)

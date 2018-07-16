@@ -81,7 +81,12 @@ export interface ControllerOptions<X extends Extension> extends Pick<ClientOptio
 export class Controller<X extends Extension = Extension> implements Unsubscribable {
     private _environment = new BehaviorSubject<Environment<X>>(EMPTY_ENVIRONMENT)
 
-    private clients: ClientEntry[] = []
+    private _clients = new BehaviorSubject<ClientEntry[]>([])
+
+    /** An observable that emits whenever the set of clients managed by this controller changes. */
+    public get clients(): Observable<Client[]> {
+        return this._clients.pipe(map(entries => entries.map(({ client }) => client)))
+    }
 
     private subscriptions = new Subscription()
 
@@ -107,7 +112,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
 
     constructor(private options: ControllerOptions<X>) {
         this.subscriptions.add(() => {
-            for (const c of this.clients) {
+            for (const c of this._clients.value) {
                 c.unsubscribe()
             }
         })
@@ -129,7 +134,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         const newClients = computeClients(environment)
         const nextClients: ClientEntry[] = []
         const unusedClients: ClientEntry[] = []
-        for (const oldClient of this.clients) {
+        for (const oldClient of this._clients.value) {
             const newIndex = newClients.findIndex(({ key }) => isEqual(oldClient.key as ClientKey, key as ClientKey))
             if (newIndex === -1) {
                 // Client is no longer needed.
@@ -179,7 +184,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
                 ...client.start(), // SubscriptionLike
             })
         }
-        this.clients = nextClients
+        this._clients.next(nextClients)
     }
 
     private registerClientFeatures(client: Client, settings: Observable<ExtensionSettings>): void {
@@ -227,7 +232,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     public readonly environment: ObservableEnvironment<X> = createObservableEnvironment<X>(this._environment)
 
     public set trace(value: Trace) {
-        for (const client of this.clients) {
+        for (const client of this._clients.value) {
             client.client.trace = value
         }
     }
