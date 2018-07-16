@@ -31,6 +31,9 @@ interface Props {
      */
     hideOnChange?: any
 
+    /** If set, pressing this key toggles the popover's open state. */
+    globalKeyBinding?: string
+
     /** Popover placement. */
     placement?: PopoverProps['placement']
 
@@ -54,8 +57,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     private rootRef: HTMLElement | null = null
 
     public componentDidMount(): void {
-        this.setGlobalListeners(true)
-        this.subscriptions.add(() => this.setGlobalListeners(false))
+        window.addEventListener('keydown', this.onGlobalKeyDown)
     }
 
     public componentWillReceiveProps(props: Props): void {
@@ -66,14 +68,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
-    }
-
-    private setGlobalListeners(add: boolean): void {
-        if (add) {
-            window.addEventListener('keydown', this.onGlobalKeyDown, { capture: true })
-        } else {
-            window.removeEventListener('keydown', this.onGlobalKeyDown, { capture: true })
-        }
+        window.removeEventListener('keydown', this.onGlobalKeyDown)
     }
 
     public render(): React.ReactFragment {
@@ -127,16 +122,32 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     }
 
     private onGlobalKeyDown = (event: KeyboardEvent) => {
-        switch (event.key) {
-            case Key.Escape: {
-                event.preventDefault()
-                this.setState({ open: false })
-                break
-            }
+        // Don't interfere with user keyboard input.
+        if (isInputLike(event.target as HTMLElement)) {
+            return
+        }
+
+        if (event.key === Key.Escape) {
+            event.preventDefault()
+            this.setState({ open: false })
+        } else if (
+            this.props.globalKeyBinding &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            !event.metaKey &&
+            event.key === this.props.globalKeyBinding
+        ) {
+            event.preventDefault()
+            this.onPopoverVisibilityToggle()
         }
     }
 
     private setRootRef = (e: HTMLElement | null) => (this.rootRef = e)
 
     private onPopoverVisibilityToggle = () => this.setState(prevState => ({ open: !prevState.open }))
+}
+
+/** Reports whether elem is a field that accepts user keyboard input.  */
+function isInputLike(elem: HTMLElement): boolean {
+    return elem.tagName === 'INPUT' || elem.tagName === 'TEXTAREA' || elem.tagName === 'SELECT'
 }

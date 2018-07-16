@@ -16,6 +16,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 * The `log.sentry.dsn` field in the site config makes Sourcegraph log application errors to a Sentry instance.
+* Two new repository page hotkeys were added: <kbd>r</kbd> to open the repositories menu and <kbd>v</kbd> to open the revision selector.
 
 ### Fixed
 

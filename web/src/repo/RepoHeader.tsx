@@ -176,6 +176,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 <div className="navbar-nav">
                     <PopoverButton
                         className="repo-header__section-btn repo-header__repo"
+                        globalKeyBinding="r"
                         link={
                             this.props.resolvedRev && !isErrorLike(this.props.resolvedRev)
                                 ? this.props.resolvedRev.rootTreeURL

@@ -193,6 +193,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         <PopoverButton
                             key="repo-rev"
                             className="repo-header__section-btn repo-header__rev"
+                            globalKeyBinding="v"
                             popoverElement={
                                 <RevisionsPopover
                                     repo={this.props.repo.id}

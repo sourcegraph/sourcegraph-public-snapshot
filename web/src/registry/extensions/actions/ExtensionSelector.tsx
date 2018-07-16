@@ -234,9 +234,9 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
         return (
             <PopoverButton
                 className={`extension-selector ${this.props.className}`}
-                data-tooltip="Extensions"
                 hideOnChange={this.state.changed}
                 placement="auto-end"
+                globalKeyBinding="x"
                 popoverElement={
                     <>
                         <FilteredConnection<GQL.IConfiguredExtension, Pick<ExtensionNodeProps, 'onChange'>>
