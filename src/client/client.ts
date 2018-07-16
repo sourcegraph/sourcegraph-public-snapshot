@@ -350,6 +350,10 @@ export class Client implements Unsubscribable {
         this.connection!.onNotification(type, handler)
     }
 
+    public get trace(): Trace {
+        return this._trace
+    }
+
     public set trace(value: Trace) {
         this._trace = value
         this._state
