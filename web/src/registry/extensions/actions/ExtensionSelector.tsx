@@ -236,7 +236,6 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                 className={`extension-selector ${this.props.className}`}
                 data-tooltip="Extensions"
                 hideOnChange={this.state.changed}
-                popoverKey="ExtensionSelector"
                 popoverElement={
                     <>
                         <FilteredConnection<GQL.IConfiguredExtension, Pick<ExtensionNodeProps, 'onChange'>>

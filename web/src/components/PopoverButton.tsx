@@ -1,8 +1,9 @@
 import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
-import { Subject, Subscription } from 'rxjs'
+import Popover from 'reactstrap/lib/Popover'
+import { Subscription } from 'rxjs'
 import { Key } from 'ts-key-enum'
+import { LinkOrSpan } from './LinkOrSpan'
 
 interface Props {
     /**
@@ -26,15 +27,9 @@ interface Props {
     popoverElement: React.ReactElement<any>
 
     /**
-     * A unique key for the popover, used to ensure that only one popover is visible
-     * at a time on the page.
-     */
-    popoverKey: string
-
-    /**
      * Hide the popover when this prop changes.
      */
-    hideOnChange: any
+    hideOnChange?: any
 }
 
 interface State {
@@ -46,47 +41,20 @@ interface State {
  * A button that toggles the visibility of a popover.
  */
 export class PopoverButton extends React.PureComponent<Props, State> {
-    private static opens = new Subject<string>()
-
     public state: State = { open: false }
-
-    private hides = new Subject<void>()
 
     private subscriptions = new Subscription()
 
     private rootRef: HTMLElement | null = null
-    private popoverRef: HTMLDivElement | null = null
-
-    constructor(props: Props) {
-        super(props)
-
-        this.subscriptions.add(() => this.setGlobalListeners(false))
-    }
 
     public componentDidMount(): void {
-        this.subscriptions.add(
-            PopoverButton.opens.subscribe(popoverKey => {
-                if (this.props.popoverKey === popoverKey) {
-                    this.setState({ open: true })
-                } else if (this.state.open) {
-                    // Another popover was opened; close this one.
-                    this.setState({ open: false })
-                }
-            })
-        )
-
-        this.subscriptions.add(this.hides.subscribe(() => this.setState({ open: false })))
+        this.setGlobalListeners(true)
+        this.subscriptions.add(() => this.setGlobalListeners(false))
     }
 
     public componentWillReceiveProps(props: Props): void {
         if (props.hideOnChange !== this.props.hideOnChange) {
-            this.hides.next()
-        }
-    }
-
-    public componentWillUpdate(props: Props, state: State): void {
-        if (state.open !== this.state.open) {
-            this.setGlobalListeners(state.open)
+            this.setState({ open: false })
         }
     }
 
@@ -96,27 +64,23 @@ export class PopoverButton extends React.PureComponent<Props, State> {
 
     private setGlobalListeners(add: boolean): void {
         if (add) {
-            window.addEventListener('click', this.onGlobalClick, { capture: true })
             window.addEventListener('keydown', this.onGlobalKeyDown, { capture: true })
         } else {
-            window.removeEventListener('click', this.onGlobalClick, { capture: true })
             window.removeEventListener('keydown', this.onGlobalKeyDown, { capture: true })
         }
     }
 
-    private onGlobalClick = (e: MouseEvent): void => {
-        if (!this.rootRef || !elementIsDescendent(e.target as HTMLElement, this.rootRef)) {
-            // Clicks outside of the popover close it.
-            this.hides.next()
-        }
-    }
-
     public render(): React.ReactFragment {
-        const C = this.props.link ? Link : (props: any) => <div {...props} />
-        const popoverAnchor = (
-            <div ref={this.setPopoverRef} className="popover-button__popover">
-                {this.state.open && this.props.popoverElement}
-            </div>
+        const popoverAnchor = this.rootRef && (
+            <Popover
+                placement="auto-start"
+                isOpen={this.state.open}
+                toggle={this.onPopoverVisibilityToggle}
+                target={this.rootRef}
+                className="popover-button__popover"
+            >
+                {this.props.popoverElement}
+            </Popover>
         )
         return (
             <div
@@ -126,21 +90,21 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                 }`}
                 ref={this.setRootRef}
             >
-                <C
+                <LinkOrSpan
                     className={
                         this.props.link ? 'popover-button__btn popover-button__btn--link' : 'popover-button__container'
                     }
                     to={this.props.link}
-                    onClick={this.props.link ? this.onClickLink : this.onClick}
+                    onClick={this.props.link ? this.onClickLink : this.onPopoverVisibilityToggle}
                 >
                     {this.props.children}{' '}
                     {!this.props.link && <CaretDownIcon className="icon-inline popover-button__icon" />}
-                </C>
+                </LinkOrSpan>
                 {this.props.link ? (
                     <div className="popover-button__anchor">
                         <CaretDownIcon
                             className="icon-inline popover-button__icon popover-button__icon--outside"
-                            onClick={this.onClick}
+                            onClick={this.onPopoverVisibilityToggle}
                         />
                         {popoverAnchor}
                     </div>
@@ -151,46 +115,21 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         )
     }
 
-    private onClick = (e: React.MouseEvent<HTMLElement>): void => {
-        if (this.state.open) {
-            // Clicking within the popover element should not hide.
-            if (this.popoverRef && !elementIsDescendent(e.target as HTMLElement, this.popoverRef, this.rootRef)) {
-                this.hides.next()
-            }
-        } else {
-            PopoverButton.opens.next(this.props.popoverKey)
-        }
-    }
-
     private onClickLink = (e: React.MouseEvent<HTMLElement>): void => {
-        this.hides.next()
+        this.setState({ open: false })
     }
 
     private onGlobalKeyDown = (event: KeyboardEvent) => {
         switch (event.key) {
             case Key.Escape: {
                 event.preventDefault()
-                this.hides.next()
+                this.setState({ open: false })
                 break
             }
         }
     }
 
     private setRootRef = (e: HTMLElement | null) => (this.rootRef = e)
-    private setPopoverRef = (e: HTMLDivElement | null) => (this.popoverRef = e)
-}
 
-function elementIsDescendent(
-    candidate: HTMLElement,
-    candidateAncestor: HTMLElement,
-    boundary?: HTMLElement | null
-): boolean {
-    let e: HTMLElement | null = candidate
-    while (e && e !== boundary) {
-        if (e === candidateAncestor) {
-            return true
-        }
-        e = e.parentElement
-    }
-    return false
+    private onPopoverVisibilityToggle = () => this.setState(prevState => ({ open: !prevState.open }))
 }

@@ -84,7 +84,9 @@ const GitRefPopoverNode: React.SFC<GitRefPopoverNodeProps> = ({ node, defaultBra
             url={replaceRevisionInURL(location.pathname + location.search + location.hash, node.abbrevName)}
             rootIsLink={true}
         >
-            {isCurrent && <CircleChevronLeft className="icon-inline popover__node-link-icon" data-tooltip="Current" />}
+            {isCurrent && (
+                <CircleChevronLeft className="icon-inline connection-popover__node-link-icon" data-tooltip="Current" />
+            )}
         </GitRefNode>
     )
 }
@@ -100,11 +102,11 @@ interface GitCommitNodeProps {
 const GitCommitNode: React.SFC<GitCommitNodeProps> = ({ node, currentCommitID, location }) => {
     const isCurrent = currentCommitID === (node.oid as string)
     return (
-        <li key={node.oid} className="popover__node revisions-popover-git-commit-node">
+        <li key={node.oid} className="connection-popover__node revisions-popover-git-commit-node">
             <Link
                 to={replaceRevisionInURL(location.pathname + location.search + location.hash, node.oid as string)}
-                className={`popover__node-link ${
-                    isCurrent ? 'popover__node-link--active' : ''
+                className={`connection-popover__node-link ${
+                    isCurrent ? 'connection-popover__node-link--active' : ''
                 } revisions-popover-git-commit-node__link`}
             >
                 <code className="revisions-popover-git-commit-node__oid" title={node.oid}>
@@ -113,7 +115,7 @@ const GitCommitNode: React.SFC<GitCommitNodeProps> = ({ node, currentCommitID, l
                 <span className="revisions-popover-git-commit-node__message">{(node.subject || '').slice(0, 200)}</span>
                 {isCurrent && (
                     <CircleChevronLeft
-                        className="icon-inline popover__node-link-icon revisions-popover-git-commit-node__icon"
+                        className="icon-inline connection-popover__node-link-icon revisions-popover-git-commit-node__icon"
                         data-tooltip="Current commit"
                     />
                 )}
@@ -175,7 +177,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="revisions-popover popover">
+            <div className="revisions-popover connection-popover">
                 <TabsWithLocalStorageViewStatePersistence
                     tabs={RevisionsPopover.TABS}
                     storageKey={RevisionsPopover.LAST_TAB_STORAGE_KEY}
@@ -186,8 +188,8 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                             tab.type ? (
                                 <FilteredGitRefConnection
                                     key={tab.id}
-                                    className="popover__content"
-                                    showMoreClassName="popover__show-more"
+                                    className="connection-popover__content"
+                                    showMoreClassName="connection-popover__show-more"
                                     compact={true}
                                     noun={tab.noun}
                                     pluralNoun={tab.pluralNoun}
@@ -214,7 +216,7 @@ export class RevisionsPopover extends React.PureComponent<Props> {
                             ) : (
                                 <FilteredGitCommitConnection
                                     key={tab.id}
-                                    className="popover__content"
+                                    className="connection-popover__content"
                                     compact={true}
                                     noun={tab.noun}
                                     pluralNoun={tab.pluralNoun}

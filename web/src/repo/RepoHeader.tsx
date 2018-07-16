@@ -188,7 +188,6 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                                 location={this.props.location}
                             />
                         }
-                        popoverKey="repo"
                         hideOnChange={this.props.repo.uri}
                     >
                         {repoDir ? `${repoDir}/` : ''}

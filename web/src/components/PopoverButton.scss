@@ -1,4 +1,4 @@
-@import './Popover';
+@import './ConnectionPopover';
 
 .popover-button {
     &__container {
@@ -30,7 +30,7 @@
         }
     }
     &__btn:hover,
-    &--open &__btn:not(&__btn--link) {
+    &--open#{&}__btn:not(&__btn--link) {
         border-color: $color-border;
     }
 
@@ -55,31 +55,23 @@
     }
 
     &__popover {
-        position: absolute;
-        top: 100%;
-        left: -1px; // flush with button border
-        width: auto;
-
         background-color: $color-bg-1;
-        border-radius: 0.25rem;
         border: solid 1px $color-border;
-        border-top-left-radius: 0;
 
         box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 
         z-index: 100;
 
-        visibility: hidden;
-
-        // Reset styles from <button>.
-        text-align: initial;
+        // Align with button (when possible).
+        //
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-left: 1px;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-top: -1px;
     }
     &--open {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
-    }
-    &--open &__popover {
-        visibility: visible;
     }
 }
 
@@ -88,7 +80,7 @@
         color: $color-light-text-5;
 
         &__btn:hover,
-        &--open .popover-button__btn:not(.popover-button__btn--link) {
+        &--open.popover-button__btn:not(.popover-button__btn--link) {
             border-color: $color-light-border;
         }
 

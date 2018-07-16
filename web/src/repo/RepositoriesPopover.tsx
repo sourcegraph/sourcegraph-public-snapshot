@@ -44,13 +44,17 @@ interface RepositoryNodeProps {
 }
 
 const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node, currentRepo }) => (
-    <li key={node.id} className="popover__node">
+    <li key={node.id} className="connection-popover__node">
         <Link
             to={`/${node.uri}`}
-            className={`popover__node-link ${node.id === currentRepo ? 'popover__node-link--active' : ''}`}
+            className={`connection-popover__node-link ${
+                node.id === currentRepo ? 'connection-popover__node-link--active' : ''
+            }`}
         >
             {displayRepoPath(node.uri)}
-            {node.id === currentRepo && <CircleChevronLeft className="icon-inline popover__node-link-icon" />}
+            {node.id === currentRepo && (
+                <CircleChevronLeft className="icon-inline connection-popover__node-link-icon" />
+            )}
         </Link>
     </li>
 )
@@ -79,10 +83,10 @@ export class RepositoriesPopover extends React.PureComponent<Props> {
         const nodeProps: Pick<RepositoryNodeProps, 'currentRepo'> = { currentRepo: this.props.currentRepo }
 
         return (
-            <div className="repositories-popover popover">
+            <div className="repositories-popover connection-popover">
                 <FilteredRepositoryConnection
-                    className="popover__content"
-                    showMoreClassName="popover__show-more"
+                    className="connection-popover__content"
+                    showMoreClassName="connection-popover__show-more"
                     compact={true}
                     noun="repository"
                     pluralNoun="repositories"
