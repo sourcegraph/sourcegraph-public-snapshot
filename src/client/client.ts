@@ -292,10 +292,12 @@ export class Client implements Unsubscribable {
         if (this._state.value === ClientState.Stopping && this.onStop) {
             return this.onStop
         }
+        const wasConnectionInitialized =
+            this._state.value === ClientState.Initializing || this._state.value === ClientState.Active
         this._state.next(ClientState.Stopping)
         this.cleanUp()
         return (this.onStop = this.resolveConnection().then(connection =>
-            connection.shutdown().then(() => {
+            (wasConnectionInitialized ? connection.shutdown() : Promise.resolve()).then(() => {
                 connection.exit()
                 connection.unsubscribe()
                 this._state.next(ClientState.Stopped)
