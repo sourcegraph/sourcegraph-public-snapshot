@@ -9,12 +9,11 @@ import {
     NotificationHandler,
     RequestHandler,
 } from '../jsonrpc2/handlers'
-import { Message, MessageType as RPCMessageType, ResponseError } from '../jsonrpc2/messages'
+import { Message, MessageType as RPCMessageType } from '../jsonrpc2/messages'
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
 import { Trace, Tracer } from '../jsonrpc2/trace'
 import {
     InitializedNotification,
-    InitializeError,
     InitializeParams,
     InitializeResult,
     RegistrationParams,
@@ -26,38 +25,27 @@ import { DocumentSelector } from '../types/document'
 import { URI } from '../types/textDocument'
 import { isFunction } from '../util'
 import { Connection, createConnection } from './connection'
+import {
+    CloseAction,
+    DefaultErrorHandler,
+    ErrorAction,
+    ErrorHandler,
+    InitializationFailedHandler,
+} from './errorHandler'
 import { DynamicFeature, RegistrationData, StaticFeature } from './features/common'
 import { Middleware } from './middleware'
-
-export type InitializationFailedHandler = (error: ResponseError<InitializeError> | Error | any) => boolean
-
-/**
- * A pluggable error handler that is invoked when the connection is either
- * producing errors or got closed.
- */
-export interface ErrorHandler {
-    /**
-     * An error has occurred while writing or reading from the connection.
-     *
-     * @param error - the error received
-     * @param message - the message to be delivered to the server if know.
-     * @param count - a count indicating how often an error is received. Will
-     *  be reset if a message got successfully send or received.
-     */
-    error(error: Error, message: Message, count: number): ErrorAction
-
-    /**
-     * The connection to the server got closed.
-     */
-    closed(): CloseAction
-}
 
 export interface ClientOptions {
     root: URI | null
     documentSelector?: DocumentSelector
     initializationOptions?: any | (() => any)
+
+    /** Called when initialization fails to determine how to proceed. */
     initializationFailedHandler?: InitializationFailedHandler
+
+    /** Called when an error or close occurs to determine how to proceed. */
     errorHandler?: ErrorHandler
+
     middleware?: Middleware
 
     /** Called to create the connection to the server. */
@@ -73,48 +61,6 @@ export enum ClientState {
     Running,
     Stopping,
     Stopped,
-}
-
-/** An action to be performed when the connection is producing errors. */
-export enum ErrorAction {
-    /** Continue running the server. */
-    Continue = 1,
-    /** Shut down the server. */
-    Shutdown = 2,
-}
-/** An action to be performed when the connection to a server is closed. */
-export enum CloseAction {
-    /** Don't restart the server. The connection remains closed. */
-    DoNotRestart = 1,
-    /** Restart the server. */
-    Restart = 2,
-}
-
-class DefaultErrorHandler implements ErrorHandler {
-    private restarts: number[] = []
-
-    public error(_error: Error, _message: Message, count: number): ErrorAction {
-        if (count && count <= 3) {
-            return ErrorAction.Continue
-        }
-        return ErrorAction.Shutdown
-    }
-
-    public closed(): CloseAction {
-        this.restarts.push(Date.now())
-        if (this.restarts.length < 5) {
-            return CloseAction.Restart
-        } else {
-            const diff = this.restarts[this.restarts.length - 1] - this.restarts[0]
-            if (diff <= 3 * 60 * 1000) {
-                // The server crashed 5 times in the last 3 minutes. The server will not be restarted.
-                return CloseAction.DoNotRestart
-            } else {
-                this.restarts.shift()
-                return CloseAction.Restart
-            }
-        }
-    }
 }
 
 export class Client implements Unsubscribable {
