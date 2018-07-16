@@ -3,7 +3,9 @@
 package main
 
 import (
+	"bytes"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -111,6 +113,7 @@ func main() {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		defer resp.Body.Close()
 
 		if limit := resp.Header.Get("X-Ratelimit-Remaining"); limit != "" {
 			limit, _ := strconv.Atoi(limit)
@@ -127,8 +130,13 @@ func main() {
 			w.Header()[k] = v
 		}
 		w.WriteHeader(resp.StatusCode)
-		io.Copy(w, resp.Body)
-		resp.Body.Close()
+		if resp.StatusCode < 400 || !logRequests {
+			io.Copy(w, resp.Body)
+			return
+		}
+		b, err := ioutil.ReadAll(resp.Body)
+		log15.Warn("proxy error", "status", resp.StatusCode, "body", string(b), "bodyErr", err)
+		io.Copy(w, bytes.NewReader(b))
 	})
 	if logRequests {
 		h = handlers.LoggingHandler(os.Stdout, h)

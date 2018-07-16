@@ -49,6 +49,11 @@ type Client struct {
 	RateLimit *ratelimit.Monitor // the API rate limit monitor
 }
 
+type abuseRateLimit struct {
+	Message          string
+	DocumentationURL string `json:"documentation_url"`
+}
+
 // NewClient creates a new GitHub API client with an optional personal access token to authenticate
 // requests.
 //
@@ -128,7 +133,21 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	defer resp.Body.Close()
 	c.RateLimit.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
-		return errors.Wrap(httpError(resp.StatusCode), fmt.Sprintf("unexpected response from GitHub API (%s)", req.URL))
+		var status string
+		// Special case handling to try to diagnose github rate limiting.
+		if resp.StatusCode == 403 {
+			var a abuseRateLimit
+			err := json.NewDecoder(resp.Body).Decode(&a)
+			if err != nil {
+				if a.Message != "" {
+					status = fmt.Sprintf("possible rate-limit: %s", a.Message)
+				}
+			}
+		}
+		if status == "" {
+			status = fmt.Sprintf("unexpected response from GitHub API (%s)", req.URL)
+		}
+		return errors.Wrap(httpError(resp.StatusCode), status)
 	}
 	return json.NewDecoder(resp.Body).Decode(result)
 }
