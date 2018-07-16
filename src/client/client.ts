@@ -35,6 +35,7 @@ import {
 import { DynamicFeature, RegistrationData, StaticFeature } from './features/common'
 import { Middleware } from './middleware'
 
+/** Options for creating a new client. */
 export interface ClientOptions {
     root: URI | null
     documentSelector?: DocumentSelector
@@ -54,6 +55,14 @@ export interface ClientOptions {
     environment: ObservableEnvironment
 }
 
+/** The client options, after defaults have been set that make certain fields required. */
+interface ResolvedClientOptions extends ClientOptions {
+    initializationFailedHandler: InitializationFailedHandler
+    errorHandler: ErrorHandler
+    middleware: Middleware
+}
+
+/** The possible states of a client. */
 export enum ClientState {
     Initial,
     Starting,
@@ -63,7 +72,12 @@ export enum ClientState {
     Stopped,
 }
 
+/**
+ * The client communicates with a CXP server.
+ */
 export class Client implements Unsubscribable {
+    public readonly clientOptions: ResolvedClientOptions
+
     private _initializeResult: InitializeResult | null = null
     public get initializeResult(): InitializeResult | null {
         return this._initializeResult
@@ -84,16 +98,12 @@ export class Client implements Unsubscribable {
 
     private subscriptions = new Subscription()
 
-    public constructor(
-        public readonly id: string,
-        public readonly name: string,
-        public readonly clientOptions: ClientOptions
-    ) {
-        if (!this.clientOptions.middleware) {
-            this.clientOptions.middleware = {}
-        }
-        if (!this.clientOptions.errorHandler) {
-            this.clientOptions.errorHandler = new DefaultErrorHandler()
+    public constructor(public readonly id: string, public readonly name: string, clientOptions: ClientOptions) {
+        this.clientOptions = {
+            ...clientOptions,
+            initializationFailedHandler: clientOptions.initializationFailedHandler || (() => Promise.resolve(false)),
+            errorHandler: clientOptions.errorHandler || new DefaultErrorHandler(),
+            middleware: clientOptions.middleware || {},
         }
 
         this._tracer = {
@@ -183,25 +193,23 @@ export class Client implements Unsubscribable {
                     feature.initialize(result.capabilities, this.clientOptions.documentSelector)
                 }
             })
-            .then(null, err => {
-                if (this.clientOptions.initializationFailedHandler) {
-                    if (this.clientOptions.initializationFailedHandler(err)) {
+            .then(null, err =>
+                Promise.resolve(this.clientOptions.initializationFailedHandler(err)).then(restart => {
+                    if (restart) {
                         return this.initialize(connection)
                     }
-                }
-                return this.stop()
-            })
+                    return this.stop()
+                })
+            )
     }
 
     private createConnection(): Promise<Connection> {
-        const errorHandler = (error: Error, message: Message | undefined, count: number | undefined) => {
-            this.handleConnectionError(error, message, count)
-        }
-        const closeHandler = () => {
-            this.handleConnectionClosed()
-        }
         return Promise.resolve(this.clientOptions.createMessageTransports()).then(transports =>
-            createConnection(transports, errorHandler, closeHandler)
+            createConnection(
+                transports,
+                (error, message, count) => this.handleConnectionError(error, message, count),
+                () => this.handleConnectionClosed()
+            )
         )
     }
 
@@ -218,28 +226,32 @@ export class Client implements Unsubscribable {
             // Unsubscribing a connection could fail if error cases.
         }
 
-        let action = CloseAction.DoNotRestart
+        let action: Promise<CloseAction> = Promise.resolve(CloseAction.DoNotRestart)
         try {
-            action = this.clientOptions.errorHandler!.closed()
+            action = Promise.resolve(this.clientOptions.errorHandler.closed())
         } catch (error) {
-            // Ignore errors coming from the error handler.
+            // Ignore sync errors from the error handler.
         }
+        // tslint:disable-next-line:no-floating-promises
+        action
+            .catch(() => CloseAction.DoNotRestart) // ignore async errors from the error handler
+            .then(action => {
+                this.connectionPromise = null
+                this.connection = null
+                this.cleanUp()
 
-        this.connectionPromise = null
-        this.connection = null
-        this.cleanUp()
-
-        if (action === CloseAction.DoNotRestart) {
-            this._state.next(ClientState.Stopped)
-        } else if (action === CloseAction.Restart) {
-            this._state.next(ClientState.Initial)
-            this.start()
-        }
+                if (action === CloseAction.DoNotRestart) {
+                    this._state.next(ClientState.Stopped)
+                } else if (action === CloseAction.Restart) {
+                    this._state.next(ClientState.Initial)
+                    this.start()
+                }
+            })
     }
 
     private handleConnectionError(error: Error, message: Message | undefined, count: number | undefined): void {
         // Casts to any are required because the ErrorHandler interface is not using strictNullTypes.
-        const action = this.clientOptions.errorHandler!.error(error, message as any, count as any)
+        const action = this.clientOptions.errorHandler.error(error, message, count)
         if (action === ErrorAction.Shutdown) {
             this.stop().then(null, err => console.error(err))
         }

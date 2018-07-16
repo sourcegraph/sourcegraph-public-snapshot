@@ -1,11 +1,13 @@
 import { Message, ResponseError } from '../jsonrpc2/messages'
 import { InitializeError } from '../protocol'
 
-export type InitializationFailedHandler = (error: ResponseError<InitializeError> | Error | any) => boolean
+/** Called by the client when initialization fails to determine how to proceed. */
+export type InitializationFailedHandler = (
+    error: ResponseError<InitializeError> | Error | any
+) => boolean | Promise<boolean>
 
 /**
- * A pluggable error handler that is invoked when the connection is either
- * producing errors or got closed.
+ * A pluggable error handler that is invoked when the connection is either producing errors or got closed.
  */
 export interface ErrorHandler {
     /**
@@ -13,15 +15,15 @@ export interface ErrorHandler {
      *
      * @param error - the error received
      * @param message - the message to be delivered to the server if know.
-     * @param count - a count indicating how often an error is received. Will
-     *  be reset if a message got successfully send or received.
+     * @param count - a count indicating how often an error is received. Will be reset if a message got
+     *                successfully send or received.
      */
-    error(error: Error, message: Message, count: number): ErrorAction
+    error(error: Error, message: Message | undefined, count: number | undefined): ErrorAction
 
     /**
      * The connection to the server got closed.
      */
-    closed(): CloseAction
+    closed(): CloseAction | Promise<CloseAction>
 }
 
 /** An action to be performed when the connection is producing errors. */
