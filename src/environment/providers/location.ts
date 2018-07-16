@@ -1,4 +1,4 @@
-import { combineLatest, from, Observable, of } from 'rxjs'
+import { combineLatest, from, Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Location } from 'vscode-languageserver-types'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
@@ -23,7 +23,7 @@ export class TextDocumentLocationProviderRegistry<
     ProvideTextDocumentLocationSignature<P, L>
 > {
     public getLocation(params: P): Observable<L | L[] | null> {
-        return getLocation<P, L>(of(this.providersSnapshot), params)
+        return getLocation<P, L>(this.providers, params)
     }
 }
 
@@ -31,8 +31,7 @@ export class TextDocumentLocationProviderRegistry<
  * Returns an observable that emits all providers' location results whenever any of the last-emitted set of
  * providers emits hovers.
  *
- * Most callers should use the TextDocumentLocationProviderRegistry class, which sources results from the current
- * set of registered providers (and then completes).
+ * Most callers should use the TextDocumentLocationProviderRegistry class, which uses the registered providers.
  */
 export function getLocation<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
@@ -86,6 +85,6 @@ export class TextDocumentReferencesProviderRegistry extends TextDocumentLocation
     public getLocation(params: ReferenceParams): Observable<Location[] | null> {
         // References are always an array (unlike other locations, which can be returned as L | L[] |
         // null).
-        return getLocations(of(this.providersSnapshot), params)
+        return getLocations(this.providers, params)
     }
 }

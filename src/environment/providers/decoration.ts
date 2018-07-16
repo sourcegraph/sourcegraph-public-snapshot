@@ -23,8 +23,7 @@ export class TextDocumentDecorationProviderRegistry extends TextDocumentFeatureP
  * Returns an observable that emits all decorations whenever any of the last-emitted set of providers emits
  * decorations.
  *
- * Most callers should use TextDocumentDecorationProviderRegistry, which sources decorations from the set of
- * registered providers.
+ * Most callers should use TextDocumentDecorationProviderRegistry, which uses the registered decoration providers.
  */
 export function getDecorations(
     providers: Observable<ProvideTextDocumentDecorationSignature[]>,

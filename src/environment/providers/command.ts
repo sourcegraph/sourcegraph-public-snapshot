@@ -49,11 +49,9 @@ export class CommandRegistry {
 }
 
 /**
- * Returns an observable that emits all providers' hovers whenever any of the last-emitted set of providers emits
- * hovers.
+ * Executes the command (in the commands list) specified in params.
  *
- * Most callers should use TextDocumentHoverProviderRegistry, which sources hovers from the current set of
- * registered providers (and then completes).
+ * Most callers should use CommandRegistry's getHover method, which uses the registered commands.
  */
 export function executeCommand(commands: CommandEntry[], params: ExecuteCommandParams): Promise<any> {
     const command = commands.find(c => c.command === params.command)

@@ -1,4 +1,4 @@
-import { combineLatest, from, Observable, of } from 'rxjs'
+import { combineLatest, from, Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 import { Hover } from 'vscode-languageserver-types'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
@@ -13,7 +13,7 @@ export class TextDocumentHoverProviderRegistry extends TextDocumentFeatureProvid
     ProvideTextDocumentHoverSignature
 > {
     public getHover(params: TextDocumentPositionParams): Observable<HoverMerged | null> {
-        return getHover(of(this.providersSnapshot), params)
+        return getHover(this.providers, params)
     }
 }
 
@@ -21,8 +21,8 @@ export class TextDocumentHoverProviderRegistry extends TextDocumentFeatureProvid
  * Returns an observable that emits all providers' hovers whenever any of the last-emitted set of providers emits
  * hovers.
  *
- * Most callers should use TextDocumentHoverProviderRegistry, which sources hovers from the current set of
- * registered providers (and then completes).
+ * Most callers should use TextDocumentHoverProviderRegistry's getHover method, which uses the registered hover
+ * providers.
  */
 export function getHover(
     providers: Observable<ProvideTextDocumentHoverSignature[]>,
