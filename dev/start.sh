@@ -95,6 +95,8 @@ fi
 
 if ! [ -z "${ZOEKT-}" ]; then
 	export ZOEKT_HOST=localhost:6070
+else
+	export ZOEKT_HOST=
 fi
 
 # WebApp
