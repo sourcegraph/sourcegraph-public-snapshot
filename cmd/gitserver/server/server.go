@@ -1331,7 +1331,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) error {
 	return nil
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev, repoDir string) bool {
+func (s *Server) ensureRevision(ctx context.Context, repo api.RepoURI, url, rev, repoDir string) (didUpdate bool) {
 	if rev == "" || rev == "HEAD" {
 		return false
 	}
