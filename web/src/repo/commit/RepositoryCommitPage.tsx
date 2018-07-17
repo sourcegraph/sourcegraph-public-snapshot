@@ -1,4 +1,11 @@
-import { createHoverifier, HoveredTokenContext, Hoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
+import {
+    createHoverifier,
+    HoveredToken,
+    HoveredTokenContext,
+    Hoverifier,
+    HoverOverlay,
+    HoverState,
+} from '@sourcegraph/codeintellify'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
@@ -17,9 +24,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
-import { toNativeEvent } from '../../util/react'
 import { propertyIsDefined } from '../../util/types'
-import { HoveredToken } from '../blob/tooltips'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FileDiffNode, FileDiffNodeProps } from '../compare/FileDiffNode'
@@ -93,12 +98,12 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
         this.repositoryCommitPageElements.next(element)
 
     /** Emits when the go to definition button was clicked */
-    private goToDefinitionClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => this.goToDefinitionClicks.next(event)
+    private goToDefinitionClicks = new Subject<MouseEvent>()
+    private nextGoToDefinitionClick = (event: MouseEvent) => this.goToDefinitionClicks.next(event)
 
     /** Emits when the close button was clicked */
-    private closeButtonClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCloseButtonClick = (event: React.MouseEvent<HTMLElement>) => this.closeButtonClicks.next(event)
+    private closeButtonClicks = new Subject<MouseEvent>()
+    private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier
@@ -106,15 +111,15 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.hoverifier = createHoverifier({
-            closeButtonClicks: this.closeButtonClicks.pipe(map(toNativeEvent)),
-            goToDefinitionClicks: this.goToDefinitionClicks.pipe(map(toNativeEvent)),
+            closeButtonClicks: this.closeButtonClicks,
+            goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.repositoryCommitPageElements),
                 map(([, hoverOverlayElement, repositoryCommitPageElement]) => ({
                     hoverOverlayElement,
                     // The root component element is guaranteed to be rendered after a componentDidUpdate
-                    scrollElement: repositoryCommitPageElement!,
+                    relativeElement: repositoryCommitPageElement!,
                 })),
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))

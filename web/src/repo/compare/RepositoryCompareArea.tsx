@@ -1,4 +1,11 @@
-import { createHoverifier, HoveredTokenContext, Hoverifier, HoverOverlay, HoverState } from '@sourcegraph/codeintellify'
+import {
+    createHoverifier,
+    HoveredToken,
+    HoveredTokenContext,
+    Hoverifier,
+    HoverOverlay,
+    HoverState,
+} from '@sourcegraph/codeintellify'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { isEqual, upperFirst } from 'lodash'
@@ -14,10 +21,8 @@ import { HeroPage } from '../../components/HeroPage'
 import { CXPControllerProps } from '../../cxp/CXPEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
-import { toNativeEvent } from '../../util/react'
 import { propertyIsDefined } from '../../util/types'
 import { escapeRevspecForURL } from '../../util/url'
-import { HoveredToken } from '../blob/tooltips'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
@@ -75,12 +80,12 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
         this.repositoryCompareAreaElements.next(element)
 
     /** Emits when the go to definition button was clicked */
-    private goToDefinitionClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => this.goToDefinitionClicks.next(event)
+    private goToDefinitionClicks = new Subject<MouseEvent>()
+    private nextGoToDefinitionClick = (event: MouseEvent) => this.goToDefinitionClicks.next(event)
 
     /** Emits when the close button was clicked */
-    private closeButtonClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCloseButtonClick = (event: React.MouseEvent<HTMLElement>) => this.closeButtonClicks.next(event)
+    private closeButtonClicks = new Subject<MouseEvent>()
+    private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     private subscriptions = new Subscription()
     private hoverifier: Hoverifier
@@ -88,15 +93,15 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.hoverifier = createHoverifier({
-            closeButtonClicks: this.closeButtonClicks.pipe(map(toNativeEvent)),
-            goToDefinitionClicks: this.goToDefinitionClicks.pipe(map(toNativeEvent)),
+            closeButtonClicks: this.closeButtonClicks,
+            goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.repositoryCompareAreaElements),
                 map(([, hoverOverlayElement, repositoryCompareAreaElement]) => ({
                     hoverOverlayElement,
                     // The root component element is guaranteed to be rendered after a componentDidUpdate
-                    scrollElement: repositoryCompareAreaElement!,
+                    relativeElement: repositoryCompareAreaElement!,
                 })),
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))

@@ -6,7 +6,7 @@ import {
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
-import { getRowInCodeElement, getRowsInRange } from '@sourcegraph/codeintellify/lib/token_position'
+import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
@@ -21,13 +21,11 @@ import { CXPComponent, CXPComponentProps } from '../../cxp/CXPComponent'
 import { CXPControllerProps, USE_PLATFORM } from '../../cxp/CXPEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
-import { toNativeEvent } from '../../util/react'
 import { propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, lprToRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
-import { locateTarget } from './tooltips'
 
 /**
  * toPortalID builds an ID that will be used for the blame portal containers.
@@ -66,13 +64,42 @@ interface BlobState extends HoverState {
 const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
 const LinkComponent = (props: LinkProps) => <Link {...props} />
 
+const domFunctions = {
+    getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
+        const row = target.closest('tr')
+        if (!row) {
+            return null
+        }
+        return row.cells[1]
+    },
+    getCodeElementFromLineNumber: (codeView: HTMLElement, line: number): HTMLTableCellElement | null => {
+        const table = codeView.firstElementChild as HTMLTableElement
+        const row = table.rows[line - 1]
+        if (!row) {
+            return null
+        }
+        return row.cells[1]
+    },
+    getLineNumberFromCodeElement: (codeCell: HTMLElement): number => {
+        const row = codeCell.closest('tr')
+        if (!row) {
+            throw new Error('Could not find closest row for codeCell')
+        }
+        const numberCell = row.cells[0]
+        if (!numberCell || !numberCell.dataset.line) {
+            throw new Error('Could not find line number')
+        }
+        return parseInt(numberCell.dataset.line, 10)
+    },
+}
+
 export class Blob2 extends React.Component<BlobProps, BlobState> {
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
     private componentUpdates = new Subject<BlobProps>()
 
     /** Emits whenever the ref callback for the code element is called */
-    private codeElements = new Subject<HTMLElement | null>()
-    private nextCodeElement = (element: HTMLElement | null) => this.codeElements.next(element)
+    private codeViewElements = new Subject<HTMLElement | null>()
+    private nextCodeViewElement = (element: HTMLElement | null) => this.codeViewElements.next(element)
 
     /** Emits whenever the ref callback for the blob element is called */
     private blobElements = new Subject<HTMLElement | null>()
@@ -98,12 +125,12 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
     private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => this.codeClicks.next(event)
 
     /** Emits when the go to definition button was clicked */
-    private goToDefinitionClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextGoToDefinitionClick = (event: React.MouseEvent<HTMLElement>) => this.goToDefinitionClicks.next(event)
+    private goToDefinitionClicks = new Subject<MouseEvent>()
+    private nextGoToDefinitionClick = (event: MouseEvent) => this.goToDefinitionClicks.next(event)
 
     /** Emits when the close button was clicked */
-    private closeButtonClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCloseButtonClick = (event: React.MouseEvent<HTMLElement>) => this.closeButtonClicks.next(event)
+    private closeButtonClicks = new Subject<MouseEvent>()
+    private nextCloseButtonClick = (event: MouseEvent) => this.closeButtonClicks.next(event)
 
     /** Subscriptions to be disposed on unmout */
     private subscriptions = new Subscription()
@@ -122,13 +149,13 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         )
 
         const hoverifier = createHoverifier({
-            closeButtonClicks: this.closeButtonClicks.pipe(map(toNativeEvent)),
-            goToDefinitionClicks: this.goToDefinitionClicks.pipe(map(toNativeEvent)),
+            closeButtonClicks: this.closeButtonClicks,
+            goToDefinitionClicks: this.goToDefinitionClicks,
             hoverOverlayElements: this.hoverOverlayElements,
             hoverOverlayRerenders: this.componentUpdates.pipe(
                 withLatestFrom(this.hoverOverlayElements, this.blobElements),
                 // After componentDidUpdate, the blob element is guaranteed to have been rendered
-                map(([, hoverOverlayElement, blobElement]) => ({ hoverOverlayElement, scrollElement: blobElement! })),
+                map(([, hoverOverlayElement, blobElement]) => ({ hoverOverlayElement, relativeElement: blobElement! })),
                 // Can't reposition HoverOverlay if it wasn't rendered
                 filter(propertyIsDefined('hoverOverlayElement'))
             ),
@@ -147,18 +174,19 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
         })
         this.subscriptions.add(
             hoverifier.hoverify({
-                positionEvents: this.codeElements.pipe(findPositionsFromEvents()),
+                positionEvents: this.codeViewElements.pipe(findPositionsFromEvents(domFunctions)),
                 positionJumps: locationPositions.pipe(
-                    withLatestFrom(this.codeElements, this.blobElements),
-                    map(([position, codeElement, scrollElement]) => ({
+                    withLatestFrom(this.codeViewElements, this.blobElements),
+                    map(([position, codeView, scrollElement]) => ({
                         position,
                         // locationPositions is derived from componentUpdates,
                         // so these elements are guaranteed to have been rendered.
-                        codeElement: codeElement!,
+                        codeView: codeView!,
                         scrollElement: scrollElement!,
                     }))
                 ),
                 resolveContext,
+                dom: domFunctions,
             })
         )
         this.subscriptions.add(
@@ -173,10 +201,10 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                 .pipe(
                     // Ignore click events caused by the user selecting text
                     filter(() => window.getSelection().toString() === ''),
-                    withLatestFrom(this.codeElements),
+                    withLatestFrom(this.codeViewElements),
                     map(([event, codeElement]) => ({
                         event,
-                        position: locateTarget(event.target as HTMLElement, codeElement!, false),
+                        position: locateTarget(event.target as HTMLElement, domFunctions),
                     }))
                 )
                 .subscribe(({ event, position }) => {
@@ -211,26 +239,30 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
         // LOCATION CHANGES
         this.subscriptions.add(
-            locationPositions.pipe(withLatestFrom(this.codeElements)).subscribe(([position, codeElement]) => {
-                codeElement = codeElement! // locationPositions is derived from componentUpdates, so this is guaranteed to exist
-                const rows = getRowsInRange(codeElement, position)
+            locationPositions.pipe(withLatestFrom(this.codeViewElements)).subscribe(([position, codeView]) => {
+                codeView = codeView! // locationPositions is derived from componentUpdates, so this is guaranteed to exist
+                const codeCells = getCodeElementsInRange({
+                    codeView,
+                    position,
+                    getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
+                })
                 // Remove existing highlighting
-                for (const selected of codeElement.querySelectorAll('.selected')) {
+                for (const selected of codeView.querySelectorAll('.selected')) {
                     selected.classList.remove('selected')
                 }
-                for (const { line, element } of rows) {
-                    const codeCell = element.cells[1]!
-                    this.createBlameDomNode(line, codeCell)
+                for (const { line, element } of codeCells) {
+                    this.createBlameDomNode(line, element)
                     // Highlight row
                     element.classList.add('selected')
                 }
 
                 // Update overlay position for discussions gutter icon.
-                if (rows.length > 0) {
-                    const blobBounds = codeElement.parentElement!.getBoundingClientRect()
-                    const targetBounds = rows[0].element.cells[0].getBoundingClientRect()
+                if (codeCells.length > 0) {
+                    const blobBounds = codeView.parentElement!.getBoundingClientRect()
+                    const row = codeCells[0].element.parentElement as HTMLTableRowElement
+                    const targetBounds = row.cells[0].getBoundingClientRect()
                     const left = targetBounds.left - blobBounds.left
-                    const top = targetBounds.top + codeElement.parentElement!.scrollTop - blobBounds.top
+                    const top = targetBounds.top + codeView.parentElement!.scrollTop - blobBounds.top
                     this.setState({ discussionsGutterOverlayPosition: { left, top } })
                 }
             })
@@ -296,57 +328,57 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                         return [[] as TextDocumentDecoration[]]
                     })
                 ),
-                this.codeElements
-            )
-                .pipe(map(([decorations, codeElement]) => ({ decorations, codeElement })))
-                .subscribe(({ decorations, codeElement }) => {
-                    if (codeElement) {
-                        if (decoratedElements) {
-                            // Clear previous decorations.
-                            for (const e of decoratedElements) {
-                                e.style.backgroundColor = null
-                            }
+                this.codeViewElements
+            ).subscribe(([decorations, codeView]) => {
+                if (codeView) {
+                    if (decoratedElements) {
+                        // Clear previous decorations.
+                        for (const element of decoratedElements) {
+                            element.style.backgroundColor = null
                         }
-
-                        for (const d of decorations) {
-                            const line = d.range.start.line + 1
-                            const lineElement = getRowInCodeElement(codeElement, line)
-                            if (lineElement) {
-                                let decorated = false
-                                if (d.background) {
-                                    lineElement.style.background = d.background
-                                    decorated = true
-                                }
-                                if (d.backgroundColor) {
-                                    lineElement.style.backgroundColor = d.backgroundColor
-                                    decorated = true
-                                }
-                                if (d.border) {
-                                    lineElement.style.border = d.border
-                                    decorated = true
-                                }
-                                if (d.borderColor) {
-                                    lineElement.style.borderColor = d.borderColor
-                                    decorated = true
-                                }
-                                if (d.borderWidth) {
-                                    lineElement.style.borderWidth = d.borderWidth
-                                    decorated = true
-                                }
-                                if (decorated) {
-                                    decoratedElements.push(lineElement)
-                                }
-
-                                if (d.after) {
-                                    const codeCell = lineElement.cells[1]!
-                                    this.createBlameDomNode(line, codeCell)
-                                }
-                            }
-                        }
-                    } else {
-                        decoratedElements = []
                     }
-                })
+
+                    for (const decoration of decorations) {
+                        const line = decoration.range.start.line + 1
+                        const codeCell = domFunctions.getCodeElementFromLineNumber(codeView, line)
+                        if (!codeCell) {
+                            continue
+                        }
+                        const row = codeCell.parentElement as HTMLTableRowElement
+                        let decorated = false
+                        if (decoration.background) {
+                            row.style.background = decoration.background
+                            decorated = true
+                        }
+                        if (decoration.backgroundColor) {
+                            row.style.backgroundColor = decoration.backgroundColor
+                            decorated = true
+                        }
+                        if (decoration.border) {
+                            row.style.border = decoration.border
+                            decorated = true
+                        }
+                        if (decoration.borderColor) {
+                            row.style.borderColor = decoration.borderColor
+                            decorated = true
+                        }
+                        if (decoration.borderWidth) {
+                            row.style.borderWidth = decoration.borderWidth
+                            decorated = true
+                        }
+                        if (decorated) {
+                            decoratedElements.push(row)
+                        }
+
+                        if (decoration.after) {
+                            const codeCell = row.cells[1]!
+                            this.createBlameDomNode(line, codeCell)
+                        }
+                    }
+                } else {
+                    decoratedElements = []
+                }
+            })
         )
     }
 
@@ -410,7 +442,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
             <div className={`blob2 ${this.props.className}`} ref={this.nextBlobElement}>
                 <code
                     className={`blob2__code ${this.props.wrapCode ? ' blob2__code--wrapped' : ''} e2e-blob`}
-                    ref={this.nextCodeElement}
+                    ref={this.nextCodeViewElement}
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                     onClick={this.nextCodeClick}
                     onMouseOver={this.nextCodeMouseOver}
