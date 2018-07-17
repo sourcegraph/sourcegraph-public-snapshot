@@ -23,7 +23,11 @@ interface CXPInitializationFailedHandler {
 
 /** The CXP client initializion-failed and error handler. */
 class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
-    private lastRestart = 0
+    /** The number of connection times to record. */
+    private static MAX_CONNECTION_TIMESTAMPS = 4
+
+    /** The timestamps of the last connection initiation times, with the 0th element being the oldest. */
+    private connectionTimestamps: number[] = [Date.now()]
 
     public constructor(private extensionID: string) {}
 
@@ -36,22 +40,30 @@ class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
         )
 
         if (err.message && err.message.includes('got unsubscribed')) {
-            return ErrorAction.Shutdown
+            return ErrorAction.ShutDown
         }
 
-        // Always keep connection open after routine errors, since errors can be "expected" (e.g., if you know you
-        // haven't configured the extension correctly yet and you are testing it).
-        return typeof count === 'number' ? ErrorAction.Continue : ErrorAction.Shutdown
+        // Language servers differ in when they decide to return an error vs. just return an empty result. This
+        // constant here is a guess that should be adjusted.
+        if (count && count <= 5) {
+            return ErrorAction.Continue
+        }
+        return ErrorAction.ShutDown
     }
 
     private computeDelayBeforeRetry(): number {
-        const lastRestart = this.lastRestart
+        const lastRestart: number | undefined = this.connectionTimestamps[this.connectionTimestamps.length - 1]
         const now = Date.now()
-        this.lastRestart = now
 
-        const diff = now - lastRestart
+        // Bound the size of the array.
+        if (this.connectionTimestamps.length === ErrorHandler.MAX_CONNECTION_TIMESTAMPS) {
+            this.connectionTimestamps.shift()
+        }
+        this.connectionTimestamps.push(now)
+
+        const diff = now - (lastRestart || 0)
         if (diff <= 10 * 1000) {
-            // If the connection last closed less than 10 seconds ago, wait longer to restart to avoid excessive
+            // If the connection was created less than 10 seconds ago, wait longer to restart to avoid excessive
             // attempts.
             return 2500
         }
@@ -61,7 +73,9 @@ class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
 
     public initializationFailed(err: ResponseError<InitializeError> | Error | any): boolean | Promise<boolean> {
         log('error', this.extensionID, err)
+
         const EINVALIDREQUEST = -32600 // JSON-RPC 2.0 error code
+
         if (
             isResponseError(err) &&
             ((err.message.includes('dial tcp') && err.message.includes('connect: connection refused')) ||
@@ -69,11 +83,21 @@ class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
         ) {
             return false
         }
-        return delayed(true, this.computeDelayBeforeRetry())
+
+        const retry = isResponseError(err) && !!err.data && err.data.retry && this.connectionTimestamps.length === 0
+        return delayed(retry, this.computeDelayBeforeRetry())
     }
 
     public closed(): CloseAction | Promise<CloseAction> {
-        return delayed(CloseAction.Restart, this.computeDelayBeforeRetry())
+        if (this.connectionTimestamps.length === ErrorHandler.MAX_CONNECTION_TIMESTAMPS) {
+            const diff = this.connectionTimestamps[this.connectionTimestamps.length - 1] - this.connectionTimestamps[0]
+            if (diff <= 60 * 1000) {
+                // Stop restarting the server if it has restarted n times in the last minute.
+                return CloseAction.DoNotReconnect
+            }
+        }
+
+        return delayed(CloseAction.Reconnect, this.computeDelayBeforeRetry())
     }
 }
 
@@ -156,7 +180,7 @@ export function createController(): Controller<CXPExtensionWithManifest> {
 
 function createMessageTransports(
     extension: CXPExtensionWithManifest,
-    clientOptions: ClientOptions
+    options: ClientOptions
 ): Promise<MessageTransports> {
     if (!extension.manifest) {
         throw new Error(`unable to connect to extension ${JSON.stringify(extension.id)}: no manifest found`)
@@ -189,7 +213,7 @@ function createMessageTransports(
     // Chrome network inspector. It does not affect any behaviour.
     const url = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/.api/lsp?mode=${
         extension.id
-    }&rootUri=${clientOptions.root}`
+    }&rootUri=${options.root}`
     return createWebSocketMessageTransports(new WebSocket(url))
 }
 

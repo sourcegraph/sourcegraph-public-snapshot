@@ -110,7 +110,7 @@ export class CXPStatus extends React.PureComponent<Props, State> {
                                             <button
                                                 className="btn btn-sm btn-outline-success p-0 ml-1"
                                                 // tslint:disable-next-line:jsx-no-lambda
-                                                onClick={() => this.onClientStartClick(client)}
+                                                onClick={() => this.onClientActivateClick(client)}
                                                 data-tooltip="Start client"
                                             >
                                                 <RefreshIcon className="icon-inline" />
@@ -120,8 +120,8 @@ export class CXPStatus extends React.PureComponent<Props, State> {
                                             <button
                                                 className="btn btn-sm btn-outline-warning p-0 ml-1"
                                                 // tslint:disable-next-line:jsx-no-lambda
-                                                onClick={() => this.onClientRestartClick(client)}
-                                                data-tooltip="Restart client"
+                                                onClick={() => this.onClientResetClick(client)}
+                                                data-tooltip="Reset client"
                                             >
                                                 <RefreshIcon className="icon-inline" />
                                             </button>
@@ -149,14 +149,14 @@ export class CXPStatus extends React.PureComponent<Props, State> {
 
     private onClientStopClick = (client: CXPClient) => client.stop()
 
-    private onClientStartClick = (client: CXPClient) => client.start()
+    private onClientActivateClick = (client: CXPClient) => client.activate()
 
-    private onClientRestartClick = (client: CXPClient) => {
+    private onClientResetClick = (client: CXPClient) => {
         let p = Promise.resolve<void>(void 0)
         if (client.needsStop()) {
             p = client.stop()
         }
-        p.then(() => client.start(), err => console.error(err))
+        p.then(() => client.activate(), err => console.error(err))
     }
 }
 
@@ -164,15 +164,15 @@ function clientStateBadgeClass(state: CXPClientState): string {
     switch (state) {
         case CXPClientState.Initial:
             return 'secondary'
-        case CXPClientState.Starting:
+        case CXPClientState.Connecting:
             return 'info'
-        case CXPClientState.StartFailed:
-            return 'danger'
         case CXPClientState.Initializing:
             return 'info'
+        case CXPClientState.ActivateFailed:
+            return 'danger'
         case CXPClientState.Active:
             return 'success'
-        case CXPClientState.Stopping:
+        case CXPClientState.ShuttingDown:
             return 'warning'
         case CXPClientState.Stopped:
             return 'danger'
