@@ -94,13 +94,13 @@ export function createThread(input: GQL.IDiscussionThreadCreateInput): Observabl
 /**
  * Fetches discussion threads.
  */
-export function fetchDiscussionThreads(
-    first?: number,
-    threadID?: GQL.ID,
-    authorUserID?: GQL.ID,
-    targetRepositoryID?: GQL.ID,
+export function fetchDiscussionThreads(opts: {
+    first?: number
+    threadID?: GQL.ID
+    authorUserID?: GQL.ID
+    targetRepositoryID?: GQL.ID
     targetRepositoryPath?: string
-): Observable<GQL.IDiscussionThreadConnection> {
+}): Observable<GQL.IDiscussionThreadConnection> {
     return queryGraphQL(
         gql`
             query DiscussionThreads(
@@ -131,7 +131,7 @@ export function fetchDiscussionThreads(
             }
             ${discussionThreadFieldsFragment}
         `,
-        { first, threadID, authorUserID, targetRepositoryID, targetRepositoryPath }
+        opts
     ).pipe(
         map(({ data, errors }) => {
             if (!data || !data.discussionThreads) {
