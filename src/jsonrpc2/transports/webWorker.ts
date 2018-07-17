@@ -27,7 +27,7 @@ class WebWorkerMessageReader extends AbstractMessageReader implements MessageRea
     private pending: Message[] = []
     private callback: DataCallback | null = null
 
-    constructor(worker: Worker) {
+    constructor(private worker: Worker) {
         super()
 
         worker.addEventListener('message', (e: MessageEvent) => {
@@ -39,11 +39,7 @@ class WebWorkerMessageReader extends AbstractMessageReader implements MessageRea
         })
         worker.addEventListener('error', err => {
             this.fireError(err)
-            if (worker.terminate) {
-                worker.terminate() // in window (worker parent) scope
-            } else if (worker.close) {
-                worker.close() // in worker scope
-            }
+            terminateWorker(worker)
             this.fireClose()
         })
     }
@@ -67,8 +63,10 @@ class WebWorkerMessageReader extends AbstractMessageReader implements MessageRea
         }
     }
 
-    public stop(): void {
+    public unsubscribe(): void {
+        super.unsubscribe()
         this.callback = null
+        terminateWorker(this.worker)
     }
 }
 
@@ -85,6 +83,19 @@ class WebWorkerMessageWriter extends AbstractMessageWriter implements MessageWri
         } catch (error) {
             this.fireError(error, message, ++this.errorCount)
         }
+    }
+
+    public unsubscribe(): void {
+        super.unsubscribe()
+        terminateWorker(this.worker)
+    }
+}
+
+function terminateWorker(worker: Worker): void {
+    if (worker.terminate) {
+        worker.terminate() // in window (worker parent) scope
+    } else if (worker.close) {
+        worker.close() // in worker scope
     }
 }
 
