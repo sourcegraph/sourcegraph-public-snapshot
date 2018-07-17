@@ -201,7 +201,7 @@
   branch = "master"
   name = "github.com/getsentry/raven-go"
   packages = ["."]
-  revision = "d1470f50d3a3a38533355a9fab7393e25a3b4226"
+  revision = "ed7bcb39ff10f39ab08e317ce16df282845852fa"
 
 [[projects]]
   name = "github.com/ghodss/yaml"

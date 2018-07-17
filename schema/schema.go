@@ -239,6 +239,11 @@ type Links struct {
 	Tree       string `json:"tree,omitempty"`
 }
 
+// Log description: Configuration for logging and alerting, including to external services.
+type Log struct {
+	Sentry *Sentry `json:"sentry,omitempty"`
+}
+
 // Metadata description: Language server metadata. Used to populate various UI elements.
 type Metadata struct {
 	DocsURL      string `json:"docsURL,omitempty"`
@@ -315,6 +320,11 @@ type SearchScope struct {
 	Value       string `json:"value"`
 }
 
+// Sentry description: Configuration for Sentry
+type Sentry struct {
+	Dsn string `json:"dsn,omitempty"`
+}
+
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
 	Extensions             map[string]ExtensionSettings `json:"extensions,omitempty"`
@@ -365,6 +375,7 @@ type SiteConfiguration struct {
 	Langservers                       []*Langservers               `json:"langservers,omitempty"`
 	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
 	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
+	Log                               *Log                         `json:"log,omitempty"`
 	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
 	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
 	OidcClientID                      string                       `json:"oidcClientID,omitempty"`

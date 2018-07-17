@@ -101,6 +101,15 @@
   ],
   "update.channel": "release",
   "corsOrigin": "https://github.com https://phabricator.sgdev.org",
+
+  // Uncomment to enable Sentry (dev project)
+  //
+  // "log": {
+  //   "sentry": {
+  //     "dsn": "https://db92555619b44699bae746b25062d04f:ac28d23769104c86b5418cd60560692e@sentry.io/1243424"
+  //   },
+  // },
+
   "auth.providers": [
     // AUTHENTICATION
     //

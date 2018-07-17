@@ -17,6 +17,26 @@
         }
       }
     },
+    "log": {
+      "description": "Configuration for logging and alerting, including to external services.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sentry": {
+          "description": "Configuration for Sentry",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "dsn": {
+              "description":
+                "Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.",
+              "type": "string",
+              "pattern": "^https?://"
+            }
+          }
+        }
+      }
+    },
     "siteID": {
       "description":
         "The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.",

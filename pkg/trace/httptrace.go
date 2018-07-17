@@ -2,6 +2,7 @@ package trace
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -10,11 +11,13 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/felixge/httpsnoop"
+	raven "github.com/getsentry/raven-go"
 	"github.com/gorilla/mux"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/repotrackutil"
 )
 
@@ -40,9 +43,26 @@ var requestHeartbeat = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 	Help:      "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
+var sentryDSN string
+
 func init() {
 	prometheus.MustRegister(requestDuration)
 	prometheus.MustRegister(requestHeartbeat)
+
+	conf.Watch(func() {
+		if conf.Get().Log == nil {
+			return
+		}
+		if conf.Get().Log.Sentry == nil {
+			return
+		}
+		if conf.Get().Log.Sentry.Dsn == "" {
+			return
+		}
+
+		sentryDSN = conf.Get().Log.Sentry.Dsn
+		raven.SetDSN(sentryDSN)
+	})
 }
 
 // Middleware captures and exports metrics to Prometheus, etc.
@@ -103,6 +123,20 @@ func Middleware(next http.Handler) http.Handler {
 			"code", m.Code,
 			"duration", m.Duration,
 		)
+
+		// If status code is not 2xx, notify Sentry
+		if m.Code/100 != 2 && m.Code/100 != 3 {
+			raven.CaptureError(&httpErr{status: m.Code, method: r.Method, path: r.URL.Path}, map[string]string{
+				"method":        r.Method,
+				"url":           r.URL.String(),
+				"routename":     routeName,
+				"userAgent":     r.UserAgent(),
+				"user":          fmt.Sprintf("%d", userID),
+				"xForwardedFor": r.Header.Get("X-Forwarded-For"),
+				"written":       fmt.Sprintf("%d", m.Written),
+				"duration":      m.Duration.String(),
+			})
+		}
 	})
 }
 
@@ -129,4 +163,14 @@ func SetRouteName(r *http.Request, routeName string) {
 	if p, ok := r.Context().Value(routeNameKey).(*string); ok {
 		*p = routeName
 	}
+}
+
+type httpErr struct {
+	status int
+	method string
+	path   string
+}
+
+func (e *httpErr) Error() string {
+	return fmt.Sprintf("HTTP status %d, %s %s", e.status, e.method, e.path)
 }

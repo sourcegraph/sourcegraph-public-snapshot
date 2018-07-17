@@ -15,6 +15,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
+* The `log.sentry.dsn` field in the site config makes Sourcegraph log application errors to a Sentry instance.
+
 ### Fixed
 
 * Fixed a bug in the API console that caused it to display as a blank page in some cases.
