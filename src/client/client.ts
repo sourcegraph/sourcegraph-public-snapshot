@@ -179,7 +179,7 @@ export class Client implements Unsubscribable {
         }
 
         // Fill initialize params and client capabilities from features.
-        for (const feature of this._features) {
+        for (const feature of this.features) {
             if (isFunction(feature.fillClientCapabilities)) {
                 feature.fillClientCapabilities(initParams.capabilities)
             }
@@ -202,7 +202,7 @@ export class Client implements Unsubscribable {
                 connection.sendNotification(InitializedNotification.type, {})
 
                 // Initialize features.
-                for (const feature of this._features) {
+                for (const feature of this.features) {
                     feature.initialize(result.capabilities, this.clientOptions.documentSelector)
                 }
 
@@ -364,34 +364,36 @@ export class Client implements Unsubscribable {
         console.info(message, data)
     }
 
-    private _features: (StaticFeature | DynamicFeature<any>)[] = []
+    protected readonly features: (StaticFeature | DynamicFeature<any>)[] = []
     private readonly _method2Message: Map<string, RPCMessageType> = new Map<string, RPCMessageType>()
     private readonly _dynamicFeatures: Map<string, DynamicFeature<any>> = new Map<string, DynamicFeature<any>>()
 
     public registerFeature(feature: StaticFeature | DynamicFeature<any>): void {
-        this._features.push(feature)
         if (DynamicFeature.is(feature)) {
-            const messages = feature.messages
-            if (Array.isArray(messages)) {
-                for (const message of messages) {
-                    this._method2Message.set(message.method, message)
-                    this._dynamicFeatures.set(message.method, feature)
+            const messages = Array.isArray(feature.messages) ? feature.messages : [feature.messages]
+            for (const message of messages) {
+                if (this._method2Message.has(message.method)) {
+                    throw new Error(
+                        `dynamic feature is already registered for method ${JSON.stringify(message.method)}`
+                    )
                 }
-            } else {
-                this._method2Message.set(messages.method, messages)
-                this._dynamicFeatures.set(messages.method, feature)
+                this._method2Message.set(message.method, message)
+                this._dynamicFeatures.set(message.method, feature)
             }
         }
+        this.features.push(feature)
     }
 
-    private handleRegistrationRequest(params: RegistrationParams): void {
+    protected handleRegistrationRequest(params: RegistrationParams): void {
         for (const registration of params.registrations) {
             const feature = this._dynamicFeatures.get(registration.method)
             if (!feature) {
-                throw new Error(`No feature implementation for ${registration.method} found. Registration failed.`)
+                throw new Error(`dynamic feature not found: ${JSON.stringify(registration.method)}`)
             }
             const options = registration.registerOptions || {}
-            options.documentSelector = options.documentSelector || this.clientOptions.documentSelector
+            if (!options.documentSelector && this.clientOptions.documentSelector) {
+                options.documentSelector = this.clientOptions.documentSelector
+            }
             const data: RegistrationData<any> = {
                 id: registration.id,
                 registerOptions: options,
@@ -400,11 +402,11 @@ export class Client implements Unsubscribable {
         }
     }
 
-    private handleUnregistrationRequest(params: UnregistrationParams): void {
+    protected handleUnregistrationRequest(params: UnregistrationParams): void {
         for (const unregistration of params.unregisterations) {
             const feature = this._dynamicFeatures.get(unregistration.method)
             if (!feature) {
-                throw new Error(`No feature implementation for ${unregistration.method} found. Unregistration failed.`)
+                throw new Error(`dynamic feature not found: ${JSON.stringify(unregistration.method)}`)
             }
             feature.unregister(unregistration.id)
         }
