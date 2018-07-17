@@ -12,6 +12,7 @@
   "packageRules": [
     {
       "packagePatterns": ["^@sourcegraph/"],
+      "packageNames": ["cxp"],
       "rangeStrategy": "bump",
       "schedule": []
     },
