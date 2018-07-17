@@ -236,6 +236,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                 className={`extension-selector ${this.props.className}`}
                 data-tooltip="Extensions"
                 hideOnChange={this.state.changed}
+                placement="auto-end"
                 popoverElement={
                     <>
                         <FilteredConnection<GQL.IConfiguredExtension, Pick<ExtensionNodeProps, 'onChange'>>
@@ -251,6 +252,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                             nodeComponentProps={nodeProps}
                             defaultFirst={50}
                             hideSearch={true}
+                            updates={this.refreshRequests}
                             history={this.props.history}
                             location={this.props.location}
                             noSummaryIfAllNodesVisible={true}
@@ -278,7 +280,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                                         className="btn btn-link w-100 d-flex px-2 border-top rounded-0"
                                         onClick={this.dismissPopover}
                                     >
-                                        <GearIcon className="icon-inline mr-2" /> Configure
+                                        <GearIcon className="icon-inline mr-2" /> Configure extensions
                                     </Link>
                                 )}
                                 <Link
@@ -286,7 +288,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                                     className="btn btn-link w-100 d-flex px-2 border-top rounded-0"
                                     onClick={this.dismissPopover}
                                 >
-                                    <MoreIcon className="icon-inline mr-2" /> Extension registry
+                                    <MoreIcon className="icon-inline mr-2" /> Browse extensions in registry
                                 </Link>
                             </>
                         )}
@@ -294,7 +296,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                 }
             >
                 <Link to="/registry" onClick={this.onLabelClick} className="extension-selector__label">
-                    <PuzzleIcon className="icon-inline" /> <span className="d-none d-lg-inline">Extensions</span>
+                    <PuzzleIcon className="icon-inline" />
                 </Link>
             </PopoverButton>
         )
@@ -308,7 +310,6 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
     }
 
     private onChange = (): void => {
-        this.dismissPopover()
         this.refreshRequests.next()
     }
 

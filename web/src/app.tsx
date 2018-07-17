@@ -53,6 +53,7 @@ import { createController as createCXPController } from './cxp/controller'
 import { CXPControllerProps, CXPEnvironmentProps, CXPProps } from './cxp/CXPEnvironment'
 import { LinkExtension } from './extension/Link'
 import { GlobalAlerts } from './global/GlobalAlerts'
+import { GlobalDebug } from './global/GlobalDebug'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { updateUserSessionStores } from './marketing/util'
 import { GlobalNavbar } from './nav/GlobalNavbar'
@@ -120,6 +121,7 @@ const Layout: React.SFC<LayoutProps> = props => {
                     )
                 })}
             </Switch>
+            <GlobalDebug {...props} />
         </div>
     )
 }

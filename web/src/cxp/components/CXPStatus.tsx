@@ -182,6 +182,6 @@ function clientStateBadgeClass(state: CXPClientState): string {
 /** A button that toggles the visibility of the CXPStatus element in a popover. */
 export const CXPStatusPopover: React.SFC<Props> = props => (
     <PopoverButton placement="auto-end" popoverElement={<CXPStatus {...props} />}>
-        CXP
+        <span className="text-muted">CXP</span>
     </PopoverButton>
 )

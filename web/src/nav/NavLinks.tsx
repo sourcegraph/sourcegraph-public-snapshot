@@ -2,20 +2,15 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { CXPStatusPopover } from '../cxp/components/CXPStatus'
-import { CXPControllerProps, CXPEnvironmentProps, USE_CXP } from '../cxp/CXPEnvironment'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
-import { ExtensionSelector } from '../registry/extensions/actions/ExtensionSelector'
 import { eventLogger } from '../tracking/eventLogger'
-import { platformEnabled } from '../user/tags'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
-interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPEnvironmentProps, CXPControllerProps {
+interface Props {
     location: H.Location
     history: H.History
     user: GQL.IUser | null
@@ -55,27 +50,6 @@ export class NavLinks extends React.PureComponent<Props> {
                         Install <span className="nav-links__widescreen-only">Sourcegraph</span>
                     </a>
                 )}
-                {this.props.user &&
-                    platformEnabled(this.props.user) && (
-                        <ExtensionSelector
-                            key="extension-selector"
-                            className="ml-2 mr-0"
-                            onChange={this.props.onExtensionsChange}
-                            configuredExtensionsURL={
-                                (this.props.user && this.props.user.configuredExtensions.url) || undefined
-                            }
-                            history={this.props.history}
-                            location={this.props.location}
-                        />
-                    )}
-                {this.props.user &&
-                    platformEnabled(this.props.user) &&
-                    USE_CXP && (
-                        <CXPStatusPopover
-                            cxpEnvironment={this.props.cxpEnvironment}
-                            cxpController={this.props.cxpController}
-                        />
-                    )}
                 {this.props.user && (
                     <Link to="/search/searches" className="nav-links__link">
                         Searches
