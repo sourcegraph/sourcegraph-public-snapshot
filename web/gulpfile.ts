@@ -79,6 +79,8 @@ export async function webpackServe(): Promise<void> {
 
                                 // Avoid crashing on "read ECONNRESET".
                                 onError: err => console.error(err),
+                                onProxyReqWs: (_proxyReq, _req, socket) =>
+                                    socket.on('error', err => console.error('WebSocket proxy error:', err)),
                             })
                         )
                     )
