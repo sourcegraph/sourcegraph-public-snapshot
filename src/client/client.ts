@@ -22,7 +22,7 @@ import {
 } from '../protocol'
 import { DocumentSelector } from '../types/document'
 import { URI } from '../types/textDocument'
-import { isFunction } from '../util'
+import { isFunction, tryCatchPromise } from '../util'
 import { Connection, createConnection } from './connection'
 import {
     CloseAction,
@@ -124,7 +124,7 @@ export class Client implements Unsubscribable {
         }
     }
 
-    private isConnectionActive(): boolean {
+    private get isConnectionActive(): boolean {
         return (
             (this._state.value === ClientState.Initializing || this._state.value === ClientState.Active) &&
             this.connection !== null
@@ -148,17 +148,30 @@ export class Client implements Unsubscribable {
      */
     public activate(): void {
         this._state.next(ClientState.Connecting)
+        let activateConnection: Connection | null = null // track so we know if we're dealing with the same value upon error
         this.resolveConnection()
             .then(connection => {
+                activateConnection = connection
                 connection.listen()
                 return this.initialize(connection)
             })
-            .then(null, () => this._state.next(ClientState.ActivateFailed))
+            .then(null, () => {
+                // Only update state if it pertains to the same connection we started with.
+                if (activateConnection === this.connection && this._state.value !== ClientState.Stopped) {
+                    this._state.next(ClientState.ActivateFailed)
+                }
+            })
     }
 
     private resolveConnection(): Promise<Connection> {
         if (!this.connectionPromise) {
-            this.connectionPromise = this.createConnection()
+            this.connectionPromise = tryCatchPromise(this.options.createMessageTransports).then(transports =>
+                createConnection(
+                    transports,
+                    (error, message, count) => this.handleConnectionError(error, message, count),
+                    () => this.handleConnectionClosed()
+                )
+            )
         }
         return this.connectionPromise
     }
@@ -213,24 +226,18 @@ export class Client implements Unsubscribable {
                     if (reinitialize) {
                         return this.initialize(connection)
                     }
-                    return this.stop()
+                    return this.stopAtState(ClientState.ActivateFailed)
                 })
             )
     }
 
-    private createConnection(): Promise<Connection> {
-        return Promise.resolve(this.options.createMessageTransports()).then(transports =>
-            createConnection(
-                transports,
-                (error, message, count) => this.handleConnectionError(error, message, count),
-                () => this.handleConnectionClosed()
-            )
-        )
-    }
-
     protected handleConnectionClosed(): void {
         // Check whether this is a normal shutdown in progress or the client stopped normally.
-        if (this._state.value === ClientState.ShuttingDown || this._state.value === ClientState.Stopped) {
+        if (
+            this._state.value === ClientState.ShuttingDown ||
+            this._state.value === ClientState.Stopped ||
+            this._state.value === ClientState.ActivateFailed
+        ) {
             return
         }
         try {
@@ -267,7 +274,10 @@ export class Client implements Unsubscribable {
     private handleConnectionError(error: Error, message: Message | undefined, count: number | undefined): void {
         const action = this.options.errorHandler.error(error, message, count)
         if (action === ErrorAction.ShutDown) {
-            this.stop().then(null, err => console.error(err))
+            this.stopAtState(this.isConnectionActive ? ClientState.Stopped : ClientState.ActivateFailed).then(
+                null,
+                err => console.error(err)
+            )
         }
     }
 
@@ -278,6 +288,10 @@ export class Client implements Unsubscribable {
      * @returns a promise that resolves when shutdown completes, or immediately if the client is not connected
      */
     public stop(): Promise<void> {
+        return this.stopAtState(ClientState.Stopped)
+    }
+
+    public stopAtState(endState: ClientState.Stopped | ClientState.ActivateFailed): Promise<void> {
         this._initializeResult = null
         if (!this.connectionPromise) {
             this._state.next(ClientState.Stopped)
@@ -286,20 +300,47 @@ export class Client implements Unsubscribable {
         if (this._state.value === ClientState.ShuttingDown && this.onStop) {
             return this.onStop
         }
-        const wasConnectionInitialized =
-            this._state.value === ClientState.Initializing || this._state.value === ClientState.Active
-        this._state.next(ClientState.ShuttingDown)
-        this.cleanUp()
-        return (this.onStop = this.resolveConnection().then(connection =>
-            (wasConnectionInitialized ? connection.shutdown() : Promise.resolve()).then(() => {
-                connection.exit()
+
+        const closeConnection = (connection: Connection) => {
+            // It's possible for the connection to be alive and this.isConnectionActive === false (e.g., if we're
+            // still waiting to hear back from the server), so make sure we close it.
+            if (connection) {
                 connection.unsubscribe()
-                this._state.next(ClientState.Stopped)
-                this.onStop = null
-                this.connectionPromise = null
-                this.connection = null
-            })
-        ))
+            }
+
+            if (connection !== this.connection) {
+                // Another connection was created while we were preparing this one to close. Don't modify any state
+                // because the state reflects the new connection now.
+                return
+            }
+
+            if (this._state.value !== endState) {
+                this._state.next(endState)
+            }
+            this.onStop = null
+            this.connectionPromise = null
+            this.connection = null
+        }
+
+        // If we are connected to a server, then shut down gracefully. Otherwise (if we aren't connected to a
+        // server, including if the connection never succeeded), just close the connection (if any) immediately.
+        if (this.isConnectionActive) {
+            this._state.next(ClientState.ShuttingDown)
+        } else {
+            this._state.next(endState)
+        }
+        this.cleanUp()
+        if (this.isConnectionActive) {
+            // Shut down gracefully before closing the connection.
+            const connection = this.connection!
+            return (this.onStop = connection.shutdown().then(() => {
+                connection.exit()
+                closeConnection(connection)
+            }))
+        }
+        // Otherwise, just close the connection.
+        closeConnection(this.connection!)
+        return Promise.resolve()
     }
 
     private cleanUp(): void {
@@ -311,7 +352,7 @@ export class Client implements Unsubscribable {
     public sendRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, params: P): Promise<R>
     public sendRequest<R>(method: string, params?: any): Promise<R>
     public sendRequest<R>(type: string | RPCMessageType, ...params: any[]): Promise<R> {
-        if (!this.isConnectionActive()) {
+        if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
         return Promise.resolve(this.connection!.sendRequest<R>(type, ...params))
@@ -320,7 +361,7 @@ export class Client implements Unsubscribable {
     public onRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, handler: RequestHandler<P, R, E>): void
     public onRequest<R, E>(method: string, handler: GenericRequestHandler<R, E>): void
     public onRequest<R, E>(type: string | RPCMessageType, handler: GenericRequestHandler<R, E>): void {
-        if (!this.isConnectionActive()) {
+        if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
         this.connection!.onRequest(type, handler)
@@ -329,7 +370,7 @@ export class Client implements Unsubscribable {
     public sendNotification<P, RO>(type: NotificationType<P, RO>, params?: P): void
     public sendNotification(method: string, params?: any): void
     public sendNotification<P>(type: string | RPCMessageType, params?: P): void {
-        if (!this.isConnectionActive()) {
+        if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
         this.connection!.sendNotification(type, params)
@@ -338,7 +379,7 @@ export class Client implements Unsubscribable {
     public onNotification<P, RO>(type: NotificationType<P, RO>, handler: NotificationHandler<P>): void
     public onNotification(method: string, handler: GenericNotificationHandler): void
     public onNotification(type: string | RPCMessageType, handler: GenericNotificationHandler): void {
-        if (!this.isConnectionActive()) {
+        if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
         this.connection!.onNotification(type, handler)

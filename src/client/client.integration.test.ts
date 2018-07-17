@@ -3,7 +3,8 @@ import { MessageTransports } from '../jsonrpc2/connection'
 import { Trace } from '../jsonrpc2/trace'
 import { ClientCapabilities, InitializeParams, InitializeRequest, InitializeResult } from '../protocol'
 import { Connection as ServerConnection, createConnection as createServerConnection } from '../server/server'
-import { clientStateIsActive, createMessageTransports, getClientState } from '../test/integration/helpers'
+import { clientStateIsActive, getClientState } from '../test/helpers'
+import { createMessageTransports } from '../test/integration/helpers'
 import { Client, ClientState } from './client'
 
 const createClientTransportsForTestServer = (registerServer: (server: ServerConnection) => void): MessageTransports => {

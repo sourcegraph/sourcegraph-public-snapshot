@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { compact, flatten, isEqual, isFunction } from './util'
+import { compact, flatten, isEqual, isFunction, tryCatchPromise } from './util'
 
 describe('isFunction', () => {
     it('reports true for functions', () => {
@@ -57,4 +57,35 @@ describe('isEqual', () => {
             assert.strictEqual(isEqual(a, b), want)
         })
     }
+})
+
+describe('tryCatchPromise', () => {
+    it('returns a resolved promise with the synchronous result', async () =>
+        assert.strictEqual(await tryCatchPromise(() => 1), 1))
+
+    it('returns a resolved promise with the asynchronous result', async () =>
+        assert.strictEqual(await tryCatchPromise(() => Promise.resolve(1)), 1))
+
+    const ERROR = new Error('x')
+    it('returns a rejected promise with the synchronous exception', () => {
+        const p = tryCatchPromise(() => {
+            throw ERROR
+        })
+        let resolved: any
+        let rejected: any
+        return p.then(v => (resolved = v), v => (rejected = v)).then(() => {
+            assert.strictEqual(rejected, ERROR)
+        })
+    })
+
+    it('returns a rejected promise with the asynchronous error', () => {
+        const p = tryCatchPromise(
+            () => Promise.reject(ERROR) // tslint:disable-line:no-floating-promises
+        )
+        let resolved: any
+        let rejected: any
+        return p.then(v => (resolved = v), v => (rejected = v)).then(() => {
+            assert.strictEqual(rejected, ERROR)
+        })
+    })
 })

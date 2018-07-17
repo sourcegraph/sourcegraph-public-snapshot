@@ -1,16 +1,19 @@
 import * as assert from 'assert'
 import { MessageType as RPCMessageType } from '../jsonrpc2/messages'
 import { ClientCapabilities, InitializeParams, RegistrationParams, UnregistrationParams } from '../protocol'
-import { Client } from './client'
+import { clientStateIs, getClientState } from '../test/helpers'
+import { Client, ClientOptions, ClientState } from './client'
 import { DynamicFeature, RegistrationData, StaticFeature } from './features/common'
 
+const DEFAULT_CREATE_MESSAGE_TRANSPORTS = () => {
+    throw new Error('connection is not used in unit test')
+}
+
 class TestClient extends Client {
-    constructor() {
+    constructor(createMessageTransports: ClientOptions['createMessageTransports'] = DEFAULT_CREATE_MESSAGE_TRANSPORTS) {
         super('', '', {
             root: null,
-            createMessageTransports: () => {
-                throw new Error('connection is not used in unit test')
-            },
+            createMessageTransports,
         })
     }
 
@@ -102,6 +105,64 @@ describe('Client', () => {
                     client.handleUnregistrationRequest({ unregisterations: [{ id: 'a', method: 'x' }] })
                 )
             })
+        })
+    })
+
+    describe('lifecycle', () => {
+        it('stops immediately when in ClientState.Initial', async () => {
+            const client = new TestClient()
+            const stop = client.stop()
+            assert.strictEqual(getClientState(client), ClientState.Stopped)
+            await stop
+            assert.strictEqual(getClientState(client), ClientState.Stopped)
+        })
+
+        it('enters ClientState.ActivateFailed when connection fails synchronously', async () => {
+            const client = new TestClient(() => DEFAULT_CREATE_MESSAGE_TRANSPORTS())
+            client.activate()
+            await clientStateIs(client, ClientState.ActivateFailed, [ClientState.Stopped])
+        })
+
+        it('enters ClientState.ActivateFailed when connection fails asynchronously', async () => {
+            // Use async createMessageTransports that throws so that the client proceeds beyond the synchronous
+            // portion of activation.
+            const client = new TestClient(async () => DEFAULT_CREATE_MESSAGE_TRANSPORTS())
+            client.activate()
+            await clientStateIs(client, ClientState.ActivateFailed, [ClientState.Stopped])
+        })
+
+        it('enters ClientState.Stopped when stopped with connection that fails synchronously', async () => {
+            const client = new TestClient(() => DEFAULT_CREATE_MESSAGE_TRANSPORTS())
+            client.activate()
+            const stop = client.stop()
+            assert.strictEqual(getClientState(client), ClientState.Stopped)
+            await stop
+            assert.strictEqual(getClientState(client), ClientState.Stopped)
+        })
+
+        it('enters ClientState.Stopped when stopped with connection that fails asynchronously', async () => {
+            // Use async createMessageTransports that throws so that the client proceeds beyond the synchronous
+            // portion of activation.
+            const client = new TestClient(async () => DEFAULT_CREATE_MESSAGE_TRANSPORTS())
+            client.activate()
+            const stop = client.stop()
+            assert.strictEqual(getClientState(client), ClientState.Stopped)
+            await stop
+            assert.strictEqual(getClientState(client), ClientState.Stopped)
+        })
+
+        it('stops while in ClientState.Connecting', async () => {
+            // Delay the resolution of createMessageTransports forever so that we are "stuck" in the connecting
+            // state.
+            let reject!: () => void
+            const client = new TestClient(() => new Promise<any>((_resolve, reject2) => (reject = reject2)))
+            client.activate()
+            assert.strictEqual(getClientState(client), ClientState.Connecting)
+            const stop = client.stop()
+            assert.strictEqual(getClientState(client), ClientState.Stopped)
+            await stop
+            assert.strictEqual(getClientState(client), ClientState.Stopped)
+            reject()
         })
     })
 })

@@ -1,7 +1,4 @@
-import { throwError } from 'rxjs'
-import { first, switchMap } from 'rxjs/operators'
 import { Duplex } from 'stream'
-import { Client, ClientState } from '../../client/client'
 import { MessageTransports } from '../../jsonrpc2/connection'
 import { StreamMessageReader, StreamMessageWriter } from '../../jsonrpc2/transports/stream'
 
@@ -27,47 +24,4 @@ export function createMessageTransports(): [MessageTransports, MessageTransports
         { reader: new StreamMessageReader(up), writer: new StreamMessageWriter(down) },
         { reader: new StreamMessageReader(down), writer: new StreamMessageWriter(up) },
     ]
-}
-
-/** Reports the client's current state. */
-export function getClientState(client: Client): ClientState {
-    let clientState: ClientState | undefined
-    client.state
-        .pipe(first())
-        .subscribe(state => (clientState = state))
-        .unsubscribe()
-    if (clientState === undefined) {
-        // This should never happen, because client.state is implemented by a BehaviorSubject that always has a
-        // current value.
-        throw new Error('client state is not synchronously available')
-    }
-    return clientState
-}
-
-/**
- * Returns a Promise that resolves when the client enters ClientState.Active and rejects if it enters a client
- * state that indicates an error.
- */
-export function clientStateIsActive(client: Client): Promise<void> {
-    return client.state
-        .pipe(
-            switchMap(state => {
-                switch (state) {
-                    case ClientState.Initial:
-                    case ClientState.Connecting:
-                    case ClientState.Initializing:
-                        return []
-
-                    case ClientState.Active:
-                        return [void 0]
-
-                    case ClientState.ActivateFailed:
-                    case ClientState.ShuttingDown:
-                    case ClientState.Stopped:
-                        return throwError(new Error(`client entered unexpected state ${ClientState[state]}`))
-                }
-            }),
-            first()
-        )
-        .toPromise()
 }
