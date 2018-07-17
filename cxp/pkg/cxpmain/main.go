@@ -83,7 +83,7 @@ func Main(name string, handler func() jsonrpc2.Handler) {
 				span.Finish()
 			}()
 
-			conn, err := (&websocket.Upgrader{}).Upgrade(w, r, nil)
+			conn, err := (&websocket.Upgrader{CheckOrigin: func(*http.Request) bool { return true }}).Upgrade(w, r, nil)
 			if err != nil {
 				log15.Error("Error upgrading HTTP request to WebSocket CXP session.", "error", err)
 				return
