@@ -10,17 +10,20 @@ import { DocumentSelector } from '../../types/document'
 import { isFunction } from '../../util'
 import { Client } from '../client'
 
-export interface RegistrationData<T> {
-    id: string
-    registerOptions: T
-}
-
+/** A client feature that exposes functionality that is always enabled. */
 export interface StaticFeature {
     fillInitializeParams?: (params: InitializeParams) => void
     fillClientCapabilities?: (capabilities: ClientCapabilities) => void
     initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector | undefined): void
 }
 
+/** Common arguments used when registering a dynamic feature. */
+export interface RegistrationData<T> {
+    id: string
+    registerOptions: T
+}
+
+/** A client feature that exposes functionality that the server can enable, configure, and disable. */
 export interface DynamicFeature<T> {
     messages: RPCMessageType | RPCMessageType[]
     fillInitializeParams?: (params: InitializeParams) => void
@@ -37,6 +40,7 @@ export interface DynamicFeature<T> {
 }
 
 export namespace DynamicFeature {
+    /** Reports whether the value is a DynamicFeature. */
     export function is<T>(value: any): value is DynamicFeature<T> {
         const candidate: DynamicFeature<T> = value
         return (
@@ -52,6 +56,7 @@ export namespace DynamicFeature {
     }
 }
 
+/** Common base class for client features that operate on text documents. */
 export abstract class TextDocumentFeature<T extends TextDocumentRegistrationOptions> implements DynamicFeature<T> {
     private subscriptionsByID = new Map<string, Unsubscribable>()
 
