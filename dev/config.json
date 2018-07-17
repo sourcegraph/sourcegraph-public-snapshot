@@ -34,7 +34,7 @@
     }
   ],
   // To test with Gitolite, set up SSH authentication for gitolite.sgdev.org using
-  // this private key: https://sourcegraph.sgdev.org/github.com/sourcegraph/infrastructure/-/blob/on-prem/dogfood/id_rsa.
+  // this private key: https://sourcegraph.sgdev.org/github.com/sourcegraph/infrastructure/-/blob/datacenter/dogfood/id_rsa
   //
   // "gitolite": [
   //   {
