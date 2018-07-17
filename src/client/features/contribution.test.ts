@@ -1,0 +1,78 @@
+import * as assert from 'assert'
+import { ContributionRegistry } from '../../environment/providers/contribution'
+import { ClientCapabilities } from '../../protocol'
+import { Client } from '../client'
+import { ContributionFeature } from './contribution'
+
+const create = (): {
+    client: Client
+    registry: ContributionRegistry
+    feature: ContributionFeature
+} => {
+    const client = {} as Client
+    const registry = new ContributionRegistry()
+    const feature = new ContributionFeature(registry)
+    return { client, registry, feature }
+}
+
+describe('ContributionFeature', () => {
+    it('reports client capabilities', () => {
+        const capabilities: ClientCapabilities = {}
+        create().feature.fillClientCapabilities(capabilities)
+        assert.deepStrictEqual(capabilities, {
+            window: { contribution: { dynamicRegistration: true } },
+        } as ClientCapabilities)
+    })
+
+    describe('upon initialization', () => {
+        it('registers contributions if the server reports any', () => {
+            const { registry, feature } = create()
+            feature.initialize({ contributions: {} })
+            assert.strictEqual(registry.entries.value.length, 1)
+        })
+
+        it('does not register contributions if the server lacks any', () => {
+            const { registry, feature } = create()
+            feature.initialize({ contributions: undefined })
+            assert.strictEqual(registry.entries.value.length, 0)
+        })
+    })
+
+    describe('registration', () => {
+        it('supports dynamic registration and unregistration', () => {
+            const { registry, feature } = create()
+            feature.register(feature.messages, { id: 'a', registerOptions: {} })
+            assert.strictEqual(registry.entries.value.length, 1)
+            feature.unregister('a')
+            assert.strictEqual(registry.entries.value.length, 0)
+        })
+
+        it('supports multiple dynamic registrations and unregistrations', () => {
+            const { registry, feature } = create()
+            feature.register(feature.messages, { id: 'a', registerOptions: {} })
+            assert.strictEqual(registry.entries.value.length, 1)
+            feature.register(feature.messages, { id: 'b', registerOptions: {} })
+            assert.strictEqual(registry.entries.value.length, 2)
+            feature.unregister('b')
+            assert.strictEqual(registry.entries.value.length, 1)
+            feature.unregister('a')
+            assert.strictEqual(registry.entries.value.length, 0)
+        })
+
+        it('prevents registration with conflicting IDs', () => {
+            const { registry, feature } = create()
+            feature.register(feature.messages, { id: 'a', registerOptions: {} })
+            assert.strictEqual(registry.entries.value.length, 1)
+            assert.throws(() => {
+                feature.register(feature.messages, { id: 'a', registerOptions: {} })
+            })
+            assert.strictEqual(registry.entries.value.length, 1)
+        })
+
+        it('throws an error if ID to unregister is not registered', () => {
+            const { registry, feature } = create()
+            assert.throws(() => feature.unregister('a'))
+            assert.strictEqual(registry.entries.value.length, 0)
+        })
+    })
+})

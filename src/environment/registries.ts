@@ -1,5 +1,6 @@
 import { ReferenceParams } from '../protocol'
 import { CommandRegistry } from './providers/command'
+import { ContributionRegistry } from './providers/contribution'
 import { TextDocumentDecorationProviderRegistry } from './providers/decoration'
 import { TextDocumentHoverProviderRegistry } from './providers/hover'
 import { TextDocumentLocationProviderRegistry } from './providers/location'
@@ -7,6 +8,7 @@ import { TextDocumentLocationProviderRegistry } from './providers/location'
 /** Registries is a container for all provider registries. */
 export class Registries {
     public readonly commands = new CommandRegistry()
+    public readonly contribution = new ContributionRegistry()
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentImplementation = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()

@@ -3,7 +3,7 @@ import { ColorClientCapabilities, ColorServerCapabilities } from './color'
 import { ExecuteCommandOptions } from './command'
 import { CompletionOptions } from './completion'
 import { ConfigurationClientCapabilities } from './configuration'
-import { ContributionsClientCapabilities, ContributionsServerCapabilities } from './contribution'
+import { ContributionClientCapabilities, ContributionServerCapabilities } from './contribution'
 import { DecorationClientCapabilities, DecorationServerCapabilities } from './decoration'
 import { DocumentLinkOptions } from './documentLink'
 import { ImplementationClientCapabilities, ImplementationServerCapabilities } from './implementation'
@@ -40,7 +40,7 @@ export type ClientCapabilities = _ClientCapabilities &
     WorkspaceFoldersClientCapabilities &
     ConfigurationClientCapabilities &
     ColorClientCapabilities &
-    ContributionsClientCapabilities &
+    ContributionClientCapabilities &
     DecorationClientCapabilities
 
 /**
@@ -138,5 +138,5 @@ export type ServerCapabilities = _ServerCapabilities &
     TypeDefinitionServerCapabilities &
     WorkspaceFoldersServerCapabilities &
     ColorServerCapabilities &
-    ContributionsServerCapabilities &
+    ContributionServerCapabilities &
     DecorationServerCapabilities

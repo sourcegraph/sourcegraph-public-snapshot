@@ -7,6 +7,7 @@ import {
     ConfigurationFeature,
     ConfigurationUpdateFeature,
 } from '../client/features/configuration'
+import { ContributionFeature } from '../client/features/contribution'
 import {
     TextDocumentDynamicDecorationFeature,
     TextDocumentStaticDecorationFeature,
@@ -206,6 +207,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
                     )
             )
         )
+        client.registerFeature(new ContributionFeature(this.registries.contribution))
         client.registerFeature(new ExecuteCommandFeature(client, this.registries.commands))
         client.registerFeature(new TextDocumentDidOpenFeature(client, this.environment))
         client.registerFeature(new TextDocumentDefinitionFeature(client, this.registries.textDocumentDefinition))

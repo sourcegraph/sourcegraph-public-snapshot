@@ -1,8 +1,18 @@
-export interface ContributionsClientCapabilities {
-    // TODO: let the client specify which contributions it supports
+/** Partial contribution-related client capabilities. */
+export interface ContributionClientCapabilities {
+    /** The window client capabilities. */
+    window?: {
+        /** Contribution-related client capabilities. */
+        contribution?: {
+            /** Whether the client supports dynamic registration of contributions. */
+            dynamicRegistration?: boolean
+        }
+    }
 }
 
-export interface ContributionsServerCapabilities {
+/** Partial contribution-related server capabilities. */
+export interface ContributionServerCapabilities {
+    /** The contributions provided by the server. */
     contributions?: Contributions
 }
 
@@ -58,25 +68,25 @@ interface CommandContributionSettingsAction {
 }
 
 export enum ContributableMenu {
+    /** The global command palette. */
+    CommandPalette = 'commandPalette',
+
+    /** The global navigation bar in the application. */
+    GlobalNav = 'global/nav',
+
+    /** The title bar for the current document. */
     EditorTitle = 'editor/title',
 }
 
 /**
  * MenuContributions describes the menu items contributed by an extension.
  */
-interface MenuContributions extends Record<ContributableMenu, MenuItemContribution[]> {}
+export interface MenuContributions extends Partial<Record<ContributableMenu, MenuItemContribution[]>> {}
 
 /**
  * MenuItemContribution is a menu item contributed by an extension.
  */
-interface MenuItemContribution {
+export interface MenuItemContribution {
     /** The command to execute when selected (== (CommandContribution).command). */
     command: string
-
-    /**
-     * Whether the item is hidden.
-     *
-     * TODO: will be replaced w/ more general contextKey/when-like API
-     */
-    hidden?: boolean
 }
