@@ -25,7 +25,7 @@ const create = <P extends TextDocumentPositionParams, F extends TextDocumentLoca
     registry: TextDocumentLocationProviderRegistry<P>
     feature: F
 } => {
-    const client = { clientOptions: { middleware: {} } } as Client
+    const client = { options: { middleware: {} } } as Client
     const registry = new RegistryClass()
     const feature = new FeatureClass(client, registry)
     return { client, registry, feature }

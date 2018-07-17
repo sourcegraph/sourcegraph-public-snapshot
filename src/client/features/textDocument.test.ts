@@ -80,7 +80,7 @@ describe('TextDocumentDidOpenFeature', () => {
         feature: TextDocumentDidOpenFeature & { readonly selectors: Map<string, DocumentSelector> }
     } => {
         const environment = new BehaviorSubject<Environment>(EMPTY_ENVIRONMENT)
-        const client = { clientOptions: { middleware: {} } } as Client
+        const client = { options: { middleware: {} } } as Client
         const feature = new class extends TextDocumentDidOpenFeature {
             public readonly selectors!: Map<string, DocumentSelector>
         }(client, createObservableEnvironment(environment))

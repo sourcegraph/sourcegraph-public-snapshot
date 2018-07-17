@@ -17,7 +17,7 @@ describe('TextDocumentStaticDecorationFeature', () => {
         registry: TextDocumentDecorationProviderRegistry
         feature: TextDocumentStaticDecorationFeature
     } => {
-        const client = { clientOptions: { middleware: {} } } as Client
+        const client = { options: { middleware: {} } } as Client
         const registry = new TextDocumentDecorationProviderRegistry()
         const feature = new TextDocumentStaticDecorationFeature(client, registry)
         return { client, registry, feature }
@@ -52,7 +52,7 @@ describe('TextDocumentDynamicDecorationFeature', () => {
         registry: TextDocumentDecorationProviderRegistry
         feature: TextDocumentDynamicDecorationFeature
     } => {
-        const client = { clientOptions: { middleware: {} } } as Client
+        const client = { options: { middleware: {} } } as Client
         const registry = new TextDocumentDecorationProviderRegistry()
         const feature = new TextDocumentDynamicDecorationFeature(client, registry)
         return { client, registry, feature }

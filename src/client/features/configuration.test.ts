@@ -10,7 +10,7 @@ const create = (): {
     settings: Subject<ExtensionSettings>
     feature: ConfigurationChangeNotificationFeature
 } => {
-    const client = { clientOptions: { middleware: {} } } as Client
+    const client = { options: { middleware: {} } } as Client
     const settings = new Subject<ExtensionSettings>()
     const feature = new ConfigurationChangeNotificationFeature(client, settings)
     return { client, settings, feature }

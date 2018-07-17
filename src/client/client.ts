@@ -46,7 +46,7 @@ export interface ClientOptions {
     /** Called when an error or close occurs to determine how to proceed. */
     errorHandler?: ErrorHandler
 
-    middleware?: Middleware
+    middleware?: Readonly<Middleware>
 
     /** Called to create the connection to the server. */
     createMessageTransports: () => MessageTransports | Promise<MessageTransports>
@@ -56,7 +56,7 @@ export interface ClientOptions {
 interface ResolvedClientOptions extends ClientOptions {
     initializationFailedHandler: InitializationFailedHandler
     errorHandler: ErrorHandler
-    middleware: Middleware
+    middleware: Readonly<Middleware>
 }
 
 /** The possible states of a client. */
@@ -89,7 +89,7 @@ export enum ClientState {
  * The client communicates with a CXP server.
  */
 export class Client implements Unsubscribable {
-    public readonly clientOptions: ResolvedClientOptions
+    public readonly options: Readonly<ResolvedClientOptions>
 
     private _initializeResult: InitializeResult | null = null
     public get initializeResult(): InitializeResult | null {
@@ -110,7 +110,7 @@ export class Client implements Unsubscribable {
     private _tracer: Tracer
 
     public constructor(public readonly id: string, public readonly name: string, clientOptions: ClientOptions) {
-        this.clientOptions = {
+        this.options = {
             ...clientOptions,
             initializationFailedHandler: clientOptions.initializationFailedHandler || (() => Promise.resolve(false)),
             errorHandler: clientOptions.errorHandler || new DefaultErrorHandler(),
@@ -167,13 +167,13 @@ export class Client implements Unsubscribable {
         connection.trace(this._trace, this._tracer)
 
         const initParams: InitializeParams = {
-            root: this.clientOptions.root,
+            root: this.options.root,
             capabilities: {},
-            initializationOptions: isFunction(this.clientOptions.initializationOptions)
-                ? this.clientOptions.initializationOptions()
-                : this.clientOptions.initializationOptions,
-            workspaceFolders: this.clientOptions.root
-                ? [{ name: basename(this.clientOptions.root), uri: this.clientOptions.root }]
+            initializationOptions: isFunction(this.options.initializationOptions)
+                ? this.options.initializationOptions()
+                : this.options.initializationOptions,
+            workspaceFolders: this.options.root
+                ? [{ name: basename(this.options.root), uri: this.options.root }]
                 : null,
             trace: Trace.toString(this._trace),
         }
@@ -203,13 +203,13 @@ export class Client implements Unsubscribable {
 
                 // Initialize features.
                 for (const feature of this.features) {
-                    feature.initialize(result.capabilities, this.clientOptions.documentSelector)
+                    feature.initialize(result.capabilities, this.options.documentSelector)
                 }
 
                 this._state.next(ClientState.Active)
             })
             .then(null, err =>
-                Promise.resolve(this.clientOptions.initializationFailedHandler(err)).then(reinitialize => {
+                Promise.resolve(this.options.initializationFailedHandler(err)).then(reinitialize => {
                     if (reinitialize) {
                         return this.initialize(connection)
                     }
@@ -219,7 +219,7 @@ export class Client implements Unsubscribable {
     }
 
     private createConnection(): Promise<Connection> {
-        return Promise.resolve(this.clientOptions.createMessageTransports()).then(transports =>
+        return Promise.resolve(this.options.createMessageTransports()).then(transports =>
             createConnection(
                 transports,
                 (error, message, count) => this.handleConnectionError(error, message, count),
@@ -247,7 +247,7 @@ export class Client implements Unsubscribable {
 
         let action: Promise<CloseAction> = Promise.resolve(CloseAction.DoNotReconnect)
         try {
-            action = Promise.resolve(this.clientOptions.errorHandler.closed())
+            action = Promise.resolve(this.options.errorHandler.closed())
         } catch (error) {
             // Ignore sync errors from the error handler.
         }
@@ -265,7 +265,7 @@ export class Client implements Unsubscribable {
     }
 
     private handleConnectionError(error: Error, message: Message | undefined, count: number | undefined): void {
-        const action = this.clientOptions.errorHandler.error(error, message, count)
+        const action = this.options.errorHandler.error(error, message, count)
         if (action === ErrorAction.ShutDown) {
             this.stop().then(null, err => console.error(err))
         }
@@ -391,8 +391,8 @@ export class Client implements Unsubscribable {
                 throw new Error(`dynamic feature not found: ${JSON.stringify(registration.method)}`)
             }
             const options = registration.registerOptions || {}
-            if (!options.documentSelector && this.clientOptions.documentSelector) {
-                options.documentSelector = this.clientOptions.documentSelector
+            if (!options.documentSelector && this.options.documentSelector) {
+                options.documentSelector = this.options.documentSelector
             }
             const data: RegistrationData<any> = {
                 id: registration.id,

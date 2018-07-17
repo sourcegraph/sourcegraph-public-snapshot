@@ -66,7 +66,7 @@ export abstract class TextDocumentLocationFeature<
         const client = this.client
         const provideTextDocumentLocation: ProvideTextDocumentLocationSignature<P, L> = params =>
             client.sendRequest(this.messages, params)
-        const middleware = this.getMiddleware ? this.getMiddleware(client.clientOptions.middleware) : undefined
+        const middleware = this.getMiddleware ? this.getMiddleware(client.options.middleware) : undefined
         return this.registry.registerProvider(
             options,
             (params: P): Promise<L | L[] | null> =>

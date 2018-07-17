@@ -56,7 +56,7 @@ export class TextDocumentStaticDecorationFeature extends TextDocumentFeature<Tex
         const client = this.client
         const provideTextDocumentDecoration: ProvideTextDocumentDecorationSignature = params =>
             from(client.sendRequest(TextDocumentDecorationRequest.type, params))
-        const middleware = client.clientOptions.middleware.provideTextDocumentDecoration
+        const middleware = client.options.middleware.provideTextDocumentDecoration
         return this.registry.registerProvider(
             options,
             (params: TextDocumentDecorationParams): Observable<TextDocumentDecoration[] | null> =>
@@ -112,7 +112,7 @@ export class TextDocumentDynamicDecorationFeature extends TextDocumentFeature<Te
         const client = this.client
         const provideTextDocumentDecoration: ProvideTextDocumentDecorationSignature = params =>
             this.getDecorationsSubject(params.textDocument)
-        const middleware = client.clientOptions.middleware.provideTextDocumentDecoration
+        const middleware = client.options.middleware.provideTextDocumentDecoration
         return this.registry.registerProvider(
             options,
             (params: TextDocumentDecorationParams): Observable<TextDocumentDecoration[] | null> =>

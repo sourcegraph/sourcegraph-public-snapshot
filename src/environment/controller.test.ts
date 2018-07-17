@@ -41,10 +41,9 @@ const FIXTURE_ENVIRONMENT: Environment = {
 describe('Controller', () => {
     it('creates clients for the environment', () => {
         const controller = create(FIXTURE_ENVIRONMENT)
-        assert.deepStrictEqual(
-            controller.clients.value.map(client => ({ id: client.id, root: client.clientOptions.root })),
-            [{ id: 'x', root: 'file:///' }]
-        )
+        assert.deepStrictEqual(controller.clients.value.map(client => ({ id: client.id, root: client.options.root })), [
+            { id: 'x', root: 'file:///' },
+        ])
     })
 
     it('creates no clients if the environment needs none', () => {
