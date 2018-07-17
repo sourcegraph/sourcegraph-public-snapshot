@@ -23,9 +23,8 @@ const client = new Client('', '', {
                 headers: { Authorization: `token ${config.accessToken}` },
             })
         ),
-    environment: createObservableEnvironment(environment),
 })
-client.registerFeature(new TextDocumentDidOpenFeature(client))
+client.registerFeature(new TextDocumentDidOpenFeature(client, createObservableEnvironment(environment)))
 client.registerFeature(new TextDocumentHoverFeature(client, new NoopProviderRegistry()))
 client.registerFeature(new TextDocumentStaticDecorationFeature(client, new NoopProviderRegistry()))
 client.state.subscribe(state => console.log('Client state:', ClientState[state]))

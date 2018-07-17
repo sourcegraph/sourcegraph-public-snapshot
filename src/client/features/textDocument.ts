@@ -2,6 +2,7 @@ import { Observable, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import * as uuidv4 from 'uuid/v4'
 import { TextDocument } from 'vscode-languageserver-types'
+import { ObservableEnvironment } from '../../environment/environment'
 import { MessageType as RPCMessageType, NotificationType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
@@ -90,10 +91,10 @@ export class TextDocumentDidOpenFeature extends TextDocumentNotificationFeature<
     DidOpenTextDocumentParams,
     TextDocument
 > {
-    constructor(client: Client) {
+    constructor(client: Client, environment: ObservableEnvironment) {
         super(
             client,
-            client.clientOptions.environment.textDocument.pipe(filter((v): v is TextDocument => v !== null)),
+            environment.textDocument.pipe(filter((v): v is TextDocument => v !== null)),
             DidOpenTextDocumentNotification.type,
             client.clientOptions.middleware.didOpen,
             textDocument =>

@@ -163,7 +163,6 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
                 root: key.root,
                 initializationOptions: { ...key.initializationOptions }, // key is immutable so we can diff it
                 documentSelector: ['*'],
-                environment: this.environment,
                 createMessageTransports: () => this.options.createMessageTransports(extension, clientOptions),
                 initializationFailedHandler:
                     this.options.initializationFailedHandler && this.options.initializationFailedHandler(extension),
@@ -200,7 +199,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
             )
         )
         client.registerFeature(new ExecuteCommandFeature(client, this.registries.commands))
-        client.registerFeature(new TextDocumentDidOpenFeature(client))
+        client.registerFeature(new TextDocumentDidOpenFeature(client, this.environment))
         client.registerFeature(new TextDocumentDefinitionFeature(client, this.registries.textDocumentDefinition))
         client.registerFeature(
             new TextDocumentImplementationFeature(client, this.registries.textDocumentImplementation)

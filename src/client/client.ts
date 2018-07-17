@@ -1,7 +1,6 @@
 import { basename } from 'path'
 import { BehaviorSubject, from, Observable, Subscription, SubscriptionLike, Unsubscribable } from 'rxjs'
 import { filter, first, map, switchMap } from 'rxjs/operators'
-import { ObservableEnvironment } from '../environment/environment'
 import { MessageTransports } from '../jsonrpc2/connection'
 import {
     GenericNotificationHandler,
@@ -51,8 +50,6 @@ export interface ClientOptions {
 
     /** Called to create the connection to the server. */
     createMessageTransports: () => MessageTransports | Promise<MessageTransports>
-
-    environment: ObservableEnvironment
 }
 
 /** The client options, after defaults have been set that make certain fields required. */
