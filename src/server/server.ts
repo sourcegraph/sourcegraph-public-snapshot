@@ -680,7 +680,7 @@ export function createConnection<PConsole = _, PTracer = _, PTelemetry = _, PCli
 
         sendNotification: (type: string | RPCMessageType, param?: any): void => {
             const method = typeof type === 'string' ? type : type.method
-            if (arguments.length === 1) {
+            if (param === undefined) {
                 connection.sendNotification(method)
             } else {
                 connection.sendNotification(method, param)
