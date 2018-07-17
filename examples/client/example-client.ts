@@ -28,7 +28,7 @@ client.registerFeature(new TextDocumentDidOpenFeature(client, createObservableEn
 client.registerFeature(new TextDocumentHoverFeature(client, new NoopProviderRegistry()))
 client.registerFeature(new TextDocumentStaticDecorationFeature(client, new NoopProviderRegistry()))
 client.state.subscribe(state => console.log('Client state:', ClientState[state]))
-client.start()
+client.activate()
 const onActive = client.state.pipe(filter(state => state === ClientState.Active))
 
 async function run(): Promise<void> {

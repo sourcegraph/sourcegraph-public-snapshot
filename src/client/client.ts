@@ -1,5 +1,5 @@
 import { basename } from 'path'
-import { BehaviorSubject, from, Observable, Subscription, SubscriptionLike, Unsubscribable } from 'rxjs'
+import { BehaviorSubject, from, Observable, Unsubscribable } from 'rxjs'
 import { filter, first, map, switchMap } from 'rxjs/operators'
 import { MessageTransports } from '../jsonrpc2/connection'
 import {
@@ -61,25 +61,27 @@ interface ResolvedClientOptions extends ClientOptions {
 
 /** The possible states of a client. */
 export enum ClientState {
-    /** The initial state of the client. It has not yet been started. */
+    /** The initial state of the client. It has never been activated. */
     Initial,
 
     /** The client is establishing the connection to the server and sending the "initialize" message. */
-    Starting,
+    Connecting,
 
-    /** The client encountered an error while starting. */
-    StartFailed,
-
-    /** The connection is established and the client is handling the server's "initialize" result. */
+    /**
+     * The connection is established and the client is waiting for and handling the server's "initialize" result.
+     */
     Initializing,
+
+    /** The client encountered an error while activating. */
+    ActivateFailed,
 
     /** The client has finished initialization and is in operation. */
     Active,
 
-    /** The client is stopping. */
-    Stopping,
+    /** The client is gracefully shutting down the connection. */
+    ShuttingDown,
 
-    /** The client is stopped (after having previously been started). */
+    /** The client is deactivated (after having previously been activated). */
     Stopped,
 }
 
@@ -107,8 +109,6 @@ export class Client implements Unsubscribable {
     private _trace: Trace = Trace.Off
     private _tracer: Tracer
 
-    private subscriptions = new Subscription()
-
     public constructor(public readonly id: string, public readonly name: string, clientOptions: ClientOptions) {
         this.clientOptions = {
             ...clientOptions,
@@ -133,35 +133,27 @@ export class Client implements Unsubscribable {
 
     public needsStop(): boolean {
         return (
-            this._state.value === ClientState.Starting ||
+            this._state.value === ClientState.Connecting ||
             this._state.value === ClientState.Initializing ||
             this._state.value === ClientState.Active
         )
     }
 
-    public start(): SubscriptionLike {
-        this._state.next(ClientState.Starting)
+    /**
+     * Activates the client, which causes it to start connecting (and to reestablish the connection when it drops,
+     * as directed by the initializationFailedHandler).
+     *
+     * To watch client state, use Client#state. To log client errors, provide an initializationFailedHandler and
+     * errorHandler in ClientOptions.
+     */
+    public activate(): void {
+        this._state.next(ClientState.Connecting)
         this.resolveConnection()
             .then(connection => {
                 connection.listen()
                 return this.initialize(connection)
             })
-            .then(null, err => {
-                this._state.next(ClientState.StartFailed)
-                throw err
-            })
-
-        const c = this
-        return {
-            unsubscribe: () => {
-                if (this.needsStop()) {
-                    this.stop().then(null, err => console.error(err))
-                }
-            },
-            get closed(): boolean {
-                return c.needsStop()
-            },
-        }
+            .then(null, () => this._state.next(ClientState.ActivateFailed))
     }
 
     private resolveConnection(): Promise<Connection> {
@@ -217,8 +209,8 @@ export class Client implements Unsubscribable {
                 this._state.next(ClientState.Active)
             })
             .then(null, err =>
-                Promise.resolve(this.clientOptions.initializationFailedHandler(err)).then(restart => {
-                    if (restart) {
+                Promise.resolve(this.clientOptions.initializationFailedHandler(err)).then(reinitialize => {
+                    if (reinitialize) {
                         return this.initialize(connection)
                     }
                     return this.stop()
@@ -238,7 +230,7 @@ export class Client implements Unsubscribable {
 
     protected handleConnectionClosed(): void {
         // Check whether this is a normal shutdown in progress or the client stopped normally.
-        if (this._state.value === ClientState.Stopping || this._state.value === ClientState.Stopped) {
+        if (this._state.value === ClientState.ShuttingDown || this._state.value === ClientState.Stopped) {
             return
         }
         try {
@@ -253,7 +245,7 @@ export class Client implements Unsubscribable {
         this.connection = null
         this.cleanUp()
 
-        let action: Promise<CloseAction> = Promise.resolve(CloseAction.DoNotRestart)
+        let action: Promise<CloseAction> = Promise.resolve(CloseAction.DoNotReconnect)
         try {
             action = Promise.resolve(this.clientOptions.errorHandler.closed())
         } catch (error) {
@@ -261,37 +253,42 @@ export class Client implements Unsubscribable {
         }
         // tslint:disable-next-line:no-floating-promises
         action
-            .catch(() => CloseAction.DoNotRestart) // ignore async errors from the error handler
+            .catch(() => CloseAction.DoNotReconnect) // ignore async errors from the error handler
             .then(action => {
-                if (action === CloseAction.DoNotRestart) {
+                if (action === CloseAction.DoNotReconnect) {
                     this._state.next(ClientState.Stopped)
-                } else if (action === CloseAction.Restart) {
+                } else if (action === CloseAction.Reconnect) {
                     this._state.next(ClientState.Initial)
-                    this.start()
+                    this.activate()
                 }
             })
     }
 
     private handleConnectionError(error: Error, message: Message | undefined, count: number | undefined): void {
-        // Casts to any are required because the ErrorHandler interface is not using strictNullTypes.
         const action = this.clientOptions.errorHandler.error(error, message, count)
-        if (action === ErrorAction.Shutdown) {
+        if (action === ErrorAction.ShutDown) {
             this.stop().then(null, err => console.error(err))
         }
     }
 
+    /**
+     * Stops the client, which causes it to gracefully shut down the current connection (if any) and remain
+     * disconnected until a subsequent call to Client#activate.
+     *
+     * @returns a promise that resolves when shutdown completes, or immediately if the client is not connected
+     */
     public stop(): Promise<void> {
         this._initializeResult = null
         if (!this.connectionPromise) {
             this._state.next(ClientState.Stopped)
             return Promise.resolve()
         }
-        if (this._state.value === ClientState.Stopping && this.onStop) {
+        if (this._state.value === ClientState.ShuttingDown && this.onStop) {
             return this.onStop
         }
         const wasConnectionInitialized =
             this._state.value === ClientState.Initializing || this._state.value === ClientState.Active
-        this._state.next(ClientState.Stopping)
+        this._state.next(ClientState.ShuttingDown)
         this.cleanUp()
         return (this.onStop = this.resolveConnection().then(connection =>
             (wasConnectionInitialized ? connection.shutdown() : Promise.resolve()).then(() => {
@@ -414,6 +411,8 @@ export class Client implements Unsubscribable {
     }
 
     public unsubscribe(): void {
-        this.subscriptions.unsubscribe()
+        if (this.needsStop()) {
+            this.stop().then(null, err => console.error(err))
+        }
     }
 }

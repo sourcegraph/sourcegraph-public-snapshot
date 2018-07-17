@@ -15,7 +15,7 @@ const createClientTransportsForTestServer = (registerServer: (server: ServerConn
 }
 
 describe('Client', () => {
-    it('registers features, starts, initializes, stops, and restarts', async () => {
+    it('registers features, activates, initializes, stops, and reactivates', async () => {
         const initResult: InitializeResult = { capabilities: { hoverProvider: true } }
         const testNotificationParams = { a: 1 }
         const testRequestParams = { b: 2 }
@@ -68,7 +68,7 @@ describe('Client', () => {
             })
 
         const checkClient = async (client: Client): Promise<void> => {
-            assert.strictEqual(getClientState(client), ClientState.Starting)
+            assert.strictEqual(getClientState(client), ClientState.Connecting)
 
             await Promise.all([clientStateIsActive(client), serverInitialized])
             assert.deepStrictEqual(client.initializeResult, initResult)
@@ -97,8 +97,8 @@ describe('Client', () => {
         })
         assert.strictEqual(getClientState(client), ClientState.Initial)
 
-        // Start client.
-        client.start()
+        // Activate client.
+        client.activate()
         assert.strictEqual(client.initializeResult, null)
         await checkClient(client)
 
@@ -111,8 +111,8 @@ describe('Client', () => {
         await client.stop()
         assert.strictEqual(getClientState(client), ClientState.Stopped)
 
-        // Restart client.
-        client.start()
+        // Reactivate client.
+        client.activate()
         await checkClient(client)
 
         client.unsubscribe()

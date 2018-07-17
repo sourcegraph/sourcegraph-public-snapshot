@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, Subject, Subscription, SubscriptionLike, Unsubscribable } from 'rxjs'
+import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { Client, ClientOptions } from '../client/client'
 import { ErrorHandler, InitializationFailedHandler } from '../client/errorHandler'
@@ -41,7 +41,7 @@ interface ClientKey extends Pick<InitializeParams, 'root' | 'initializationOptio
     id: string
 }
 
-interface ClientEntry extends SubscriptionLike {
+interface ClientEntry {
     key: ClientKey
     client: Client
 }
@@ -113,7 +113,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     constructor(private options: ControllerOptions<X>) {
         this.subscriptions.add(() => {
             for (const c of this._clients.value) {
-                c.unsubscribe()
+                c.client.unsubscribe()
             }
         })
     }
@@ -148,7 +148,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         }
         // Remove clients that are no longer in use.
         for (const unusedClient of unusedClients) {
-            unusedClient.unsubscribe()
+            unusedClient.client.unsubscribe()
         }
         // Create new clients.
         for (const { key } of newClients) {
@@ -177,10 +177,10 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
             this.registerClientFeatures(client, settings)
+            client.activate()
             nextClients.push({
                 key,
                 client,
-                ...client.start(), // SubscriptionLike
             })
         }
         this._clients.next(nextClients)

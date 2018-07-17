@@ -54,15 +54,15 @@ export function clientStateIsActive(client: Client): Promise<void> {
             switchMap(state => {
                 switch (state) {
                     case ClientState.Initial:
-                    case ClientState.Starting:
+                    case ClientState.Connecting:
                     case ClientState.Initializing:
                         return []
 
                     case ClientState.Active:
                         return [void 0]
 
-                    case ClientState.StartFailed:
-                    case ClientState.Stopping:
+                    case ClientState.ActivateFailed:
+                    case ClientState.ShuttingDown:
                     case ClientState.Stopped:
                         return throwError(new Error(`client entered unexpected state ${ClientState[state]}`))
                 }
