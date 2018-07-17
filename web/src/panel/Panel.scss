@@ -53,6 +53,7 @@
     overflow-y: hidden;
     &__tabs {
         flex: 1;
+        min-height: 0; /* needed for Firefox for content scrolling to work properly; See sourcegraph/sourcegraph#12340 and https://codepen.io/slimsag/pen/mjPXyN */
         &-content {
             flex: 1;
             &--scroll {
