@@ -191,7 +191,7 @@ func (t *discussionThreads) List(ctx context.Context, opts *DiscussionThreadsLis
 		return nil, errors.New("options must not be nil")
 	}
 	conds := t.getListSQL(opts)
-	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opts.LimitOffset.SQL())
+	q := sqlf.Sprintf("WHERE %s ORDER BY id DESC %s", sqlf.Join(conds, "AND"), opts.LimitOffset.SQL())
 	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
