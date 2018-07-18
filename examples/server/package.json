@@ -6,7 +6,9 @@
   },
   "devDependencies": {
     "@types/ws": "^5.1.2",
-    "parcel-bundler": "^1.9.6"
+    "parcel-bundler": "^1.9.6",
+    "ts-node": "^7.0.0",
+    "typescript": "^3.0.1-insiders"
   },
   "scripts": {
     "example-server-node": "CX_MODE=websocket CX_ADDR=localhost:3877 TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' ts-node --project tsconfig.json example-server-node.ts",

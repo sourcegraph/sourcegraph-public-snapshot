@@ -5,7 +5,9 @@
     "ws": "^5.2.1"
   },
   "devDependencies": {
-    "@types/ws": "^5.1.2"
+    "@types/ws": "^5.1.2",
+    "ts-node": "^7.0.0",
+    "typescript": "^3.0.1-insiders"
   },
   "scripts": {
     "example-client": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' ts-node example-client.ts",
