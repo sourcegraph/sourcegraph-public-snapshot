@@ -239,9 +239,9 @@ func sendOrgInvitationNotification(ctx context.Context, org *types.Org, sender *
 
 	var fromName string
 	if sender.DisplayName != "" {
-		fromName = fmt.Sprintf("%s (%s on Sourcegraph)", sender.DisplayName, sender.Username)
+		fromName = sender.DisplayName
 	} else {
-		fromName = fmt.Sprintf("%s (on Sourcegraph)", sender.Username)
+		fromName = sender.Username
 	}
 
 	return txemail.Send(ctx, txemail.Message{
