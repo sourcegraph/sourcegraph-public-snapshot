@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
 	"github.com/sourcegraph/sourcegraph/schema"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // ListSynthesizedRegistryExtensions returns a list registry extensions that are synthesized from
@@ -40,11 +42,20 @@ var (
 func init() {
 	// Synthesize extensions for language server in the site config "langservers" property, and keep
 	// them in sync.
+	var lastEnabledLangServers []*schema.Langservers
 	conf.Watch(func() {
+		enabledLangServers := conf.EnabledLangservers()
+
+		// Nothing to do if the relevant config value didn't change.
+		if reflect.DeepEqual(enabledLangServers, lastEnabledLangServers) {
+			return
+		}
+		lastEnabledLangServers = enabledLangServers
+
 		backcompatLangServerExtensionsMu.Lock()
 		defer backcompatLangServerExtensionsMu.Unlock()
-
-		for _, ls := range conf.EnabledLangservers() {
+		backcompatLangServerExtensions = make([]*registry.Extension, 0, len(enabledLangServers))
+		for _, ls := range enabledLangServers {
 			info := langservers.StaticInfo[ls.Language]
 
 			lang := ls.Language
@@ -90,7 +101,8 @@ func init() {
 			}
 			data, err := json.MarshalIndent(x, "", "  ")
 			if err != nil {
-				panic(err)
+				log15.Error("Parsing the JSON manifest for builtin language server failed. Omitting.", "lang", lang, "err", err)
+				continue
 			}
 			dataStr := string(data)
 
