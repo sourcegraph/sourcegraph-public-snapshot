@@ -47,6 +47,19 @@ func init() {
 	prometheus.MustRegister(rateLimitRemainingGauge)
 }
 
+// list obtained from httputil of headers not to forward.
+var hopHeaders = map[string]struct{}{
+	"Connection":          struct{}{},
+	"Proxy-Connection":    struct{}{}, // non-standard but still sent by libcurl and rejected by e.g. google
+	"Keep-Alive":          struct{}{},
+	"Proxy-Authenticate":  struct{}{},
+	"Proxy-Authorization": struct{}{},
+	"Te":                struct{}{}, // canonicalized version of "TE"
+	"Trailer":           struct{}{}, // not Trailers per URL above; http://www.rfc-editor.org/errata_search.php?eid=4522
+	"Transfer-Encoding": struct{}{},
+	"Upgrade":           struct{}{},
+}
+
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
@@ -101,11 +114,10 @@ func main() {
 		}
 
 		h2 := make(http.Header)
-		h2.Set("User-Agent", r.Header.Get("User-Agent"))
-		h2.Set("Accept", r.Header.Get("Accept"))
-		h2.Set("Content-Type", r.Header.Get("Content-Type"))
-		if r.Header.Get("Authorization") != "" {
-			h2.Set("Authorization", r.Header.Get("Authorization"))
+		for k, v := range r.Header {
+			if _, found := hopHeaders[k]; !found {
+				h2[k] = v
+			}
 		}
 
 		// Authenticate for higher rate limits.
