@@ -27,3 +27,14 @@ $list-group-action-active-bg: $color-bg-5;
         }
     }
 }
+
+// .list-group-item-$color is too light in the dark theme. Recreate these styles to have colors with less
+// brightness.
+.theme-dark {
+    @each $color, $value in $theme-colors {
+        @include list-group-item-variant($color, theme-color-level($color, 6), theme-color-level($color, -9));
+        a.list-group-item-#{$color}:hover {
+            color: var(--link-hover-color);
+        }
+    }
+}
