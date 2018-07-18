@@ -8,6 +8,7 @@ steps:
       npm run prettier
       npm run tslint
       npm run build
+      npm run build:all
     label: ':typescript:'
 
   - command: |-
