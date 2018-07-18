@@ -71,6 +71,11 @@ export interface ControllerOptions<X extends Extension> {
         ClientOptions,
         'middleware' | 'createMessageTransports' | 'errorHandler' | 'initializationFailedHandler' | 'trace' | 'tracer'
     >
+
+    /**
+     * Called before applying the next environment in Controller#setEnvironment. It should have no side effects.
+     */
+    environmentFilter?: (nextEnvironment: Environment<X>) => Environment<X>
 }
 
 /**
@@ -117,6 +122,10 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     }
 
     public setEnvironment(nextEnvironment: Environment<X>): void {
+        if (this.options.environmentFilter) {
+            nextEnvironment = this.options.environmentFilter(nextEnvironment)
+        }
+
         if (isEqual(this._environment.value, nextEnvironment)) {
             return // no change
         }
