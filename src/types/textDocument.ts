@@ -1,5 +1,5 @@
 import minimatch from 'minimatch'
-import { Range, TextDocument } from 'vscode-languageserver-types'
+import { Range, TextDocumentItem } from 'vscode-languageserver-types'
 import { DocumentFilter, DocumentSelector } from './document'
 
 export type URI = string
@@ -17,7 +17,7 @@ export interface Selection extends Readonly<Range> {
 
 export function match(
     selectors: DocumentSelector | IterableIterator<DocumentSelector>,
-    document: TextDocument
+    document: TextDocumentItem
 ): boolean {
     for (const selector of isSingleDocumentSelector(selectors) ? [selectors] : selectors) {
         if (match1(selector, document)) {
@@ -37,7 +37,7 @@ function isDocumentSelectorElement(value: any): value is DocumentSelector[0] {
     return typeof value === 'string' || DocumentFilter.is(value)
 }
 
-function match1(selector: DocumentSelector, document: TextDocument): boolean {
+function match1(selector: DocumentSelector, document: TextDocumentItem): boolean {
     return score(selector, document.uri, document.languageId) !== 0
 }
 

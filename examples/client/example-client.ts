@@ -60,6 +60,8 @@ async function run(): Promise<void> {
             document: {
                 uri: `${config.root}#mux.go`,
                 languageId: 'go',
+                version: 1,
+                text: '',
             },
             selections: [],
             visibleRanges: [],

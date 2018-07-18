@@ -1,16 +1,18 @@
 import * as assert from 'assert'
-import { TextDocument } from 'vscode-languageserver-types'
+import { TextDocumentItem } from 'vscode-languageserver-types'
 import { DocumentSelector } from './document'
 import { match, score } from './textDocument'
 
+const FIXTURE_TEXT_DOCUMENT: TextDocumentItem = { uri: 'file:///f', languageId: 'l', version: 1, text: '' }
+
 describe('match', () => {
     it('reports true if any selectors match', () => {
-        assert.ok(match([{ language: 'x' }, '*'], { languageId: 'l' } as TextDocument))
+        assert.ok(match([{ language: 'x' }, '*'], FIXTURE_TEXT_DOCUMENT))
     })
 
     it('reports false if no selectors match', () => {
-        assert.strictEqual(match(['x'], { languageId: 'l' } as TextDocument), false)
-        assert.strictEqual(match([], { languageId: 'l' } as TextDocument), false)
+        assert.strictEqual(match(['x'], FIXTURE_TEXT_DOCUMENT), false)
+        assert.strictEqual(match([], FIXTURE_TEXT_DOCUMENT), false)
     })
 
     it('supports iterators for the document selectors', () => {
@@ -20,7 +22,7 @@ describe('match', () => {
                 return { [Symbol.iterator]: iterator[Symbol.iterator], next: () => ({ value: ['*'], done: i++ === 1 }) }
             },
         }
-        assert.ok(match(iterator as IterableIterator<DocumentSelector>, { languageId: 'l' } as TextDocument))
+        assert.ok(match(iterator as IterableIterator<DocumentSelector>, FIXTURE_TEXT_DOCUMENT))
     })
 })
 

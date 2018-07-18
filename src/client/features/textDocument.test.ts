@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import { BehaviorSubject, Subject } from 'rxjs'
-import { TextDocument } from 'vscode-languageserver-types'
+import { TextDocumentItem } from 'vscode-languageserver-types'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment } from '../../environment/environment'
 import { NotificationType } from '../../jsonrpc2/messages'
 import {
@@ -134,7 +134,12 @@ describe('TextDocumentDidOpenFeature', () => {
             const { client, environment, feature } = create()
             feature.initialize({ textDocumentSync: { openClose: true } }, ['l'])
 
-            const textDocument = TextDocument.create('file:///f', 'l', 1, 't')
+            const textDocument: TextDocumentItem = {
+                uri: 'file:///f',
+                languageId: 'l',
+                version: 1,
+                text: '',
+            }
 
             function mockSendNotification(method: string, params: any): void
             function mockSendNotification(
@@ -149,14 +154,7 @@ describe('TextDocumentDidOpenFeature', () => {
                     typeof type === 'string' ? type : type.method,
                     DidOpenTextDocumentNotification.type.method
                 )
-                assert.deepStrictEqual(params, {
-                    textDocument: {
-                        uri: textDocument.uri,
-                        languageId: textDocument.languageId,
-                        version: textDocument.version,
-                        text: textDocument.getText(),
-                    },
-                } as DidOpenTextDocumentParams)
+                assert.deepStrictEqual(params, { textDocument } as DidOpenTextDocumentParams)
                 done()
             }
             client.sendNotification = mockSendNotification

@@ -1,6 +1,6 @@
 import { Observable, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { Range, TextDocument } from 'vscode-languageserver-types'
+import { Range, TextDocument, TextDocumentItem } from 'vscode-languageserver-types'
 import { Selection, URI } from '../types/textDocument'
 import { isEqual } from '../util'
 import { Extension } from './extension'
@@ -37,7 +37,7 @@ export const EMPTY_ENVIRONMENT: Environment<any> = { root: null, component: null
 /** An application component that displays a [TextDocument](#TextDocument). */
 export interface Component {
     /** The document displayed by the component. */
-    readonly document: Pick<TextDocument, 'uri' | 'languageId'>
+    readonly document: TextDocumentItem
 
     /**
      * The selections in this component's document. If empty, there are no selections. The first element is

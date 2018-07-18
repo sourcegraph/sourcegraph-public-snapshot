@@ -32,7 +32,7 @@ const create = (environment?: Environment): TestController => {
 const FIXTURE_ENVIRONMENT: Environment = {
     root: 'file:///',
     component: {
-        document: { uri: 'file:///f', languageId: 'l' },
+        document: { uri: 'file:///f', languageId: 'l', version: 1, text: '' },
         selections: [],
         visibleRanges: [],
     },

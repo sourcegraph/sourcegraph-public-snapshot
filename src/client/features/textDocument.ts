@@ -1,7 +1,7 @@
 import { Observable, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import uuidv4 from 'uuid/v4'
-import { TextDocument } from 'vscode-languageserver-types'
+import { TextDocumentItem } from 'vscode-languageserver-types'
 import { ObservableEnvironment } from '../../environment/environment'
 import { MessageType as RPCMessageType, NotificationType } from '../../jsonrpc2/messages'
 import {
@@ -90,23 +90,17 @@ export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFe
 
 export class TextDocumentDidOpenFeature extends TextDocumentNotificationFeature<
     DidOpenTextDocumentParams,
-    TextDocument
+    TextDocumentItem
 > {
     constructor(client: Client, environment: ObservableEnvironment) {
         super(
             client,
-            environment.textDocument.pipe(filter((v): v is TextDocument => v !== null)),
+            environment.textDocument.pipe(filter((v): v is TextDocumentItem => v !== null)),
             DidOpenTextDocumentNotification.type,
             client.options.middleware.didOpen,
             textDocument =>
                 ({
-                    textDocument: {
-                        uri: textDocument.uri,
-                        languageId: textDocument.languageId,
-                        version: textDocument.version,
-                        // TODO(sqs): add support for contents
-                        text: 'getText' in textDocument ? textDocument.getText() : null,
-                    },
+                    textDocument,
                 } as DidOpenTextDocumentParams),
             match
         )
