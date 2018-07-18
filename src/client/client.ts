@@ -109,12 +109,12 @@ export class Client implements Unsubscribable {
     private _trace: Trace = Trace.Off
     private _tracer: Tracer
 
-    public constructor(public readonly id: string, public readonly name: string, clientOptions: ClientOptions) {
+    public constructor(public readonly id: string, public readonly name: string, options: ClientOptions) {
         this.options = {
-            ...clientOptions,
-            initializationFailedHandler: clientOptions.initializationFailedHandler || (() => Promise.resolve(false)),
-            errorHandler: clientOptions.errorHandler || new DefaultErrorHandler(),
-            middleware: clientOptions.middleware || {},
+            ...options,
+            initializationFailedHandler: options.initializationFailedHandler || (() => Promise.resolve(false)),
+            errorHandler: options.errorHandler || new DefaultErrorHandler(),
+            middleware: options.middleware || {},
         }
 
         this._tracer = {
