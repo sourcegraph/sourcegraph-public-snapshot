@@ -27,7 +27,7 @@ import {
     ResponseError,
     ResponseMessage,
 } from './messages'
-import { LogTraceNotification, SetTraceNotification, Trace, Tracer } from './trace'
+import { LogTraceNotification, noopTracer, SetTraceNotification, Trace, Tracer } from './trace'
 import { DataCallback, MessageReader, MessageWriter } from './transport'
 
 // Copied from vscode-languageserver to avoid adding extraneous dependencies.
@@ -103,7 +103,6 @@ export interface MessageConnection extends Unsubscribable {
     onUnhandledNotification: Event<NotificationMessage>
     listen(): void
     onUnsubscribe: Event<void>
-    inspect(): void
 }
 
 export interface MessageTransports {
@@ -123,8 +122,15 @@ export function createMessageConnection(
 }
 
 interface ResponsePromise {
+    /** The request's method. */
     method: string
+
+    /** Only set in Trace.Verbose mode. */
+    request?: RequestMessage
+
+    /** The timestamp when the request was received. */
     timerStart: number
+
     resolve: (response: any) => void
     reject: (error: any) => void
 }
@@ -167,7 +173,7 @@ function _createMessageConnection(
     let requestTokens: { [id: string]: CancellationTokenSource } = Object.create(null)
 
     let trace: Trace = Trace.Off
-    let tracer: Tracer | undefined
+    let tracer: Tracer = noopTracer
 
     let state: ConnectionState = ConnectionState.New
     const errorEmitter = new Emitter<[Error, Message | undefined, number | undefined]>()
@@ -272,8 +278,8 @@ function _createMessageConnection(
 
     const callback: DataCallback = message => {
         try {
-            // We have received a cancellation message. Check if the message is still in the queue
-            // and cancel it if allowed to do so.
+            // We have received a cancellation message. Check if the message is still in the queue and cancel it if
+            // allowed to do so.
             if (isNotificationMessage(message) && message.method === CancelNotification.type.method) {
                 const key = createRequestQueueKey((message.params as CancelParams).id)
                 const toCancel = messageQueue.get(key)
@@ -285,7 +291,7 @@ function _createMessageConnection(
                     if (response && (response.error !== undefined || response.result !== undefined)) {
                         messageQueue.delete(key)
                         response.id = toCancel.id
-                        traceSendingResponse(response, message.method, Date.now())
+                        tracer.responseCanceled(response, toCancel, message)
                         transports.writer.write(response)
                         return
                     }
@@ -304,7 +310,9 @@ function _createMessageConnection(
             return
         }
 
-        function reply(resultOrError: any | ResponseError<any>, method: string, startTime: number): void {
+        const startTime = Date.now()
+
+        function reply(resultOrError: any | ResponseError<any>): void {
             const message: ResponseMessage = {
                 jsonrpc: version,
                 id: requestMessage.id,
@@ -314,19 +322,19 @@ function _createMessageConnection(
             } else {
                 message.result = resultOrError === undefined ? null : resultOrError
             }
-            traceSendingResponse(message, method, startTime)
+            tracer.responseSent(message, requestMessage, startTime)
             transports.writer.write(message)
         }
-        function replyError(error: ResponseError<any>, method: string, startTime: number): void {
+        function replyError(error: ResponseError<any>): void {
             const message: ResponseMessage = {
                 jsonrpc: version,
                 id: requestMessage.id,
                 error: error.toJson(),
             }
-            traceSendingResponse(message, method, startTime)
+            tracer.responseSent(message, requestMessage, startTime)
             transports.writer.write(message)
         }
-        function replySuccess(result: any, method: string, startTime: number): void {
+        function replySuccess(result: any): void {
             // The JSON RPC defines that a response must either have a result or an error
             // So we can't treat undefined as a valid response result.
             if (result === undefined) {
@@ -337,15 +345,14 @@ function _createMessageConnection(
                 id: requestMessage.id,
                 result,
             }
-            traceSendingResponse(message, method, startTime)
+            tracer.responseSent(message, requestMessage, startTime)
             transports.writer.write(message)
         }
 
-        traceReceivedRequest(requestMessage)
+        tracer.requestReceived(requestMessage)
 
         const element = requestHandlers[requestMessage.method]
         const requestHandler: GenericRequestHandler<any, any> | undefined = element && element.handler
-        const startTime = Date.now()
         if (requestHandler || starRequestHandler) {
             const cancellationSource = new CancellationTokenSource()
             const tokenKey = String(requestMessage.id)
@@ -359,25 +366,23 @@ function _createMessageConnection(
                 const promise = handlerResult as Promise<any | ResponseError<any>>
                 if (!handlerResult) {
                     delete requestTokens[tokenKey]
-                    replySuccess(handlerResult, requestMessage.method, startTime)
+                    replySuccess(handlerResult)
                 } else if (promise.then) {
                     promise.then(
                         (resultOrError): any | ResponseError<any> => {
                             delete requestTokens[tokenKey]
-                            reply(resultOrError, requestMessage.method, startTime)
+                            reply(resultOrError)
                         },
                         error => {
                             delete requestTokens[tokenKey]
                             if (error instanceof ResponseError) {
-                                replyError(error as ResponseError<any>, requestMessage.method, startTime)
+                                replyError(error as ResponseError<any>)
                             } else if (error && typeof error.message === 'string') {
                                 replyError(
                                     new ResponseError<void>(
                                         ErrorCodes.InternalError,
                                         `Request ${requestMessage.method} failed with message: ${error.message}`
-                                    ),
-                                    requestMessage.method,
-                                    startTime
+                                    )
                                 )
                             } else {
                                 replyError(
@@ -386,47 +391,37 @@ function _createMessageConnection(
                                         `Request ${
                                             requestMessage.method
                                         } failed unexpectedly without providing any details.`
-                                    ),
-                                    requestMessage.method,
-                                    startTime
+                                    )
                                 )
                             }
                         }
                     )
                 } else {
                     delete requestTokens[tokenKey]
-                    reply(handlerResult, requestMessage.method, startTime)
+                    reply(handlerResult)
                 }
             } catch (error) {
                 delete requestTokens[tokenKey]
                 if (error instanceof ResponseError) {
-                    reply(error as ResponseError<any>, requestMessage.method, startTime)
+                    reply(error as ResponseError<any>)
                 } else if (error && typeof error.message === 'string') {
                     replyError(
                         new ResponseError<void>(
                             ErrorCodes.InternalError,
                             `Request ${requestMessage.method} failed with message: ${error.message}`
-                        ),
-                        requestMessage.method,
-                        startTime
+                        )
                     )
                 } else {
                     replyError(
                         new ResponseError<void>(
                             ErrorCodes.InternalError,
                             `Request ${requestMessage.method} failed unexpectedly without providing any details.`
-                        ),
-                        requestMessage.method,
-                        startTime
+                        )
                     )
                 }
             }
         } else {
-            replyError(
-                new ResponseError<void>(ErrorCodes.MethodNotFound, `Unhandled method ${requestMessage.method}`),
-                requestMessage.method,
-                startTime
-            )
+            replyError(new ResponseError<void>(ErrorCodes.MethodNotFound, `Unhandled method ${requestMessage.method}`))
         }
     }
 
@@ -451,8 +446,12 @@ function _createMessageConnection(
         } else {
             const key = String(responseMessage.id)
             const responsePromise = responsePromises[key]
-            traceReceivedResponse(responseMessage, responsePromise)
             if (responsePromise) {
+                tracer.responseReceived(
+                    responseMessage,
+                    responsePromise.request || responsePromise.method,
+                    responsePromise.timerStart
+                )
                 delete responsePromises[key]
                 try {
                     if (responseMessage.error) {
@@ -472,6 +471,8 @@ function _createMessageConnection(
                         logger.error(`Response handler '${responsePromise.method}' failed unexpectedly.`)
                     }
                 }
+            } else {
+                tracer.unknownResponseReceived(responseMessage)
             }
         }
     }
@@ -498,7 +499,7 @@ function _createMessageConnection(
         }
         if (notificationHandler || starNotificationHandler) {
             try {
-                traceReceivedNotification(message)
+                tracer.notificationReceived(message)
                 notificationHandler
                     ? notificationHandler(message.params)
                     : starNotificationHandler!(message.method, message.params)
@@ -534,108 +535,6 @@ function _createMessageConnection(
             if (responseHandler) {
                 responseHandler.reject(new Error('The received response has neither a result nor an error property.'))
             }
-        }
-    }
-
-    function traceSendingRequest(message: RequestMessage): void {
-        if (trace === Trace.Off || !tracer) {
-            return
-        }
-        let data: string | undefined
-        if (trace === Trace.Verbose && message.params) {
-            data = `Params: ${JSON.stringify(message.params, null, 4)}\n\n`
-        }
-        tracer.log(`Sending request '${message.method} - (${message.id})'.`, data)
-    }
-
-    function traceSendNotification(message: NotificationMessage): void {
-        if (trace === Trace.Off || !tracer) {
-            return
-        }
-        let data: string | undefined
-        if (trace === Trace.Verbose) {
-            if (message.params) {
-                data = `Params: ${JSON.stringify(message.params, null, 4)}\n\n`
-            } else {
-                data = 'No parameters provided.\n\n'
-            }
-        }
-        tracer.log(`Sending notification '${message.method}'.`, data)
-    }
-
-    function traceSendingResponse(message: ResponseMessage, method: string, startTime: number): void {
-        if (trace === Trace.Off || !tracer) {
-            return
-        }
-        let data: string | undefined
-        if (trace === Trace.Verbose) {
-            if (message.error && message.error.data) {
-                data = `Error data: ${JSON.stringify(message.error.data, null, 4)}\n\n`
-            } else {
-                if (message.result) {
-                    data = `Result: ${JSON.stringify(message.result, null, 4)}\n\n`
-                } else if (message.error === undefined) {
-                    data = 'No result returned.\n\n'
-                }
-            }
-        }
-        tracer.log(
-            `Sending response '${method} - (${message.id})'. Processing request took ${Date.now() - startTime}ms`,
-            data
-        )
-    }
-
-    function traceReceivedRequest(message: RequestMessage): void {
-        if (trace === Trace.Off || !tracer) {
-            return
-        }
-        let data: string | undefined
-        if (trace === Trace.Verbose && message.params) {
-            data = `Params: ${JSON.stringify(message.params, null, 4)}\n\n`
-        }
-        tracer.log(`Received request '${message.method} - (${message.id})'.`, data)
-    }
-
-    function traceReceivedNotification(message: NotificationMessage): void {
-        if (trace === Trace.Off || !tracer || message.method === LogTraceNotification.type.method) {
-            return
-        }
-        let data: string | undefined
-        if (trace === Trace.Verbose) {
-            if (message.params) {
-                data = `Params: ${JSON.stringify(message.params, null, 4)}\n\n`
-            } else {
-                data = 'No parameters provided.\n\n'
-            }
-        }
-        tracer.log(`Received notification '${message.method}'.`, data)
-    }
-
-    function traceReceivedResponse(message: ResponseMessage, responsePromise: ResponsePromise): void {
-        if (trace === Trace.Off || !tracer) {
-            return
-        }
-        let data: any
-        if (trace === Trace.Verbose) {
-            if (message.error && message.error.data) {
-                data = message.error.data
-            } else {
-                if (message.result) {
-                    data = message.result
-                } else if (message.error === undefined) {
-                    data = 'No result returned.\n\n'
-                }
-            }
-        }
-        if (responsePromise) {
-            const error = message.error ? ` Request failed: ${message.error.message} (${message.error.code}).` : ''
-            tracer.log(
-                `RESP ${responsePromise.method} - (${message.id}) in ${Date.now() -
-                    responsePromise.timerStart}ms.${error}`,
-                data
-            )
-        } else {
-            tracer.log(`Received response ${message.id} without active response promise.`, data)
         }
     }
 
@@ -675,7 +574,7 @@ function _createMessageConnection(
                 method,
                 params,
             }
-            traceSendNotification(notificationMessage)
+            tracer.notificationSent(notificationMessage)
             transports.writer.write(notificationMessage)
         },
         onNotification: (
@@ -715,11 +614,12 @@ function _createMessageConnection(
                 }
                 let responsePromise: ResponsePromise | null = {
                     method,
+                    request: trace === Trace.Verbose ? requestMessage : undefined,
                     timerStart: Date.now(),
                     resolve,
                     reject,
                 }
-                traceSendingRequest(requestMessage)
+                tracer.requestSent(requestMessage)
                 try {
                     transports.writer.write(requestMessage)
                 } catch (e) {
@@ -759,7 +659,7 @@ function _createMessageConnection(
         trace: (_value: Trace, _tracer: Tracer, sendNotification = false) => {
             trace = _value
             if (trace === Trace.Off) {
-                tracer = undefined
+                tracer = noopTracer
             } else {
                 tracer = _tracer
             }
@@ -801,15 +701,9 @@ function _createMessageConnection(
             state = ConnectionState.Listening
             transports.reader.listen(callback)
         },
-        inspect: (): void => {
-            console.log('inspect')
-        },
     }
 
     connection.onNotification(LogTraceNotification.type, params => {
-        if (trace === Trace.Off || !tracer) {
-            return
-        }
         tracer.log(params.message, trace === Trace.Verbose ? params.verbose : undefined)
     })
 

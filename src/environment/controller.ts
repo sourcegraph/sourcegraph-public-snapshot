@@ -1,7 +1,6 @@
 import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { Client, ClientOptions } from '../client/client'
-import { ErrorHandler, InitializationFailedHandler } from '../client/errorHandler'
 import { ExecuteCommandFeature } from '../client/features/command'
 import {
     ConfigurationChangeNotificationFeature,
@@ -22,7 +21,6 @@ import {
 import { WindowLogMessageFeature } from '../client/features/logMessage'
 import { WindowShowMessageFeature } from '../client/features/message'
 import { TextDocumentDidOpenFeature } from '../client/features/textDocument'
-import { MessageTransports } from '../jsonrpc2/connection'
 import { Trace } from '../jsonrpc2/trace'
 import {
     ConfigurationUpdateParams,
@@ -37,13 +35,15 @@ import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment, Observable
 import { Extension, ExtensionSettings } from './extension'
 import { Registries } from './registries'
 
-interface ClientKey extends Pick<InitializeParams, 'root' | 'initializationOptions'> {
+/** The minimal unique identifier for a client. */
+export interface ClientKey extends Pick<InitializeParams, 'root' | 'initializationOptions'> {
     id: string
 }
 
-interface ClientEntry {
-    key: ClientKey
+/** A client and its unique identifier (key). */
+export interface ClientEntry {
     client: Client
+    key: ClientKey
 }
 
 /** The source of a message (used with LogMessageParams, ShowMessageParams, ShowMessageRequestParams). */
@@ -61,18 +61,16 @@ type ShowMessageRequest = ShowMessageRequestParams & MessageSource & PromiseCall
 type ConfigurationUpdate = ConfigurationUpdateParams & MessageSource & PromiseCallback<void>
 
 /** Options for creating the controller. */
-export interface ControllerOptions<X extends Extension> extends Pick<ClientOptions, 'middleware'> {
-    /** Creates transports to pass to the client to communicate with the given extension. */
-    createMessageTransports: (
-        extension: X,
-        clientOptions: ClientOptions
-    ) => MessageTransports | Promise<MessageTransports>
-
-    /** Creates an error handler for a client for the given extension. */
-    errorHandler?: (extension: X) => ErrorHandler
-
-    /** Creates an initialization failure handler for a client for the given extension. */
-    initializationFailedHandler?: (extension: X) => InitializationFailedHandler
+export interface ControllerOptions<X extends Extension> {
+    /** Returns additional options to use when creating a client. */
+    clientOptions: (
+        key: ClientKey,
+        options: ClientOptions,
+        extension: X
+    ) => Pick<
+        ClientOptions,
+        'middleware' | 'createMessageTransports' | 'errorHandler' | 'initializationFailedHandler' | 'trace' | 'tracer'
+    >
 }
 
 /**
@@ -81,11 +79,11 @@ export interface ControllerOptions<X extends Extension> extends Pick<ClientOptio
 export class Controller<X extends Extension = Extension> implements Unsubscribable {
     private _environment = new BehaviorSubject<Environment<X>>(EMPTY_ENVIRONMENT)
 
-    private _clients = new BehaviorSubject<ClientEntry[]>([])
+    private _clientEntries = new BehaviorSubject<ClientEntry[]>([])
 
     /** An observable that emits whenever the set of clients managed by this controller changes. */
-    public get clients(): Observable<Client[]> {
-        return this._clients.pipe(map(entries => entries.map(({ client }) => client)))
+    public get clientEntries(): Observable<ClientEntry[]> {
+        return this._clientEntries
     }
 
     private subscriptions = new Subscription()
@@ -112,7 +110,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
 
     constructor(private options: ControllerOptions<X>) {
         this.subscriptions.add(() => {
-            for (const c of this._clients.value) {
+            for (const c of this._clientEntries.value) {
                 c.client.unsubscribe()
             }
         })
@@ -134,7 +132,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         const newClients = computeClients(environment)
         const nextClients: ClientEntry[] = []
         const unusedClients: ClientEntry[] = []
-        for (const oldClient of this._clients.value) {
+        for (const oldClient of this._clientEntries.value) {
             const newIndex = newClients.findIndex(({ key }) => isEqual(oldClient.key as ClientKey, key as ClientKey))
             if (newIndex === -1) {
                 // Client is no longer needed.
@@ -158,18 +156,17 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
                 throw new Error(`extension not found: ${key.id}`)
             }
 
+            // Construct client.
             const clientOptions: ClientOptions = {
-                ...this.options,
                 root: key.root,
                 initializationOptions: { ...key.initializationOptions }, // key is immutable so we can diff it
                 documentSelector: ['*'],
-                createMessageTransports: () => this.options.createMessageTransports(extension, clientOptions),
-                initializationFailedHandler:
-                    this.options.initializationFailedHandler && this.options.initializationFailedHandler(extension),
-                errorHandler: this.options.errorHandler && this.options.errorHandler(extension),
+                createMessageTransports: null as any, // will be overwritten by Object.assign call below
             }
+            Object.assign(clientOptions, this.options.clientOptions(key, clientOptions, extension))
             const client = new Client(key.id, key.id, clientOptions)
 
+            // Register client features.
             const settings = this._environment.pipe(
                 map(({ extensions }) => (extensions ? extensions.find(x => x.id === key.id) : null)),
                 filter((x): x is X => !!x),
@@ -177,13 +174,15 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
                 distinctUntilChanged((a, b) => isEqual(a, b))
             )
             this.registerClientFeatures(client, settings)
+
+            // Activate client.
             client.activate()
             nextClients.push({
                 key,
                 client,
             })
         }
-        this._clients.next(nextClients)
+        this._clientEntries.next(nextClients)
     }
 
     private registerClientFeatures(client: Client, settings: Observable<ExtensionSettings>): void {
@@ -231,7 +230,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     public readonly environment: ObservableEnvironment<X> = createObservableEnvironment<X>(this._environment)
 
     public set trace(value: Trace) {
-        for (const client of this._clients.value) {
+        for (const client of this._clientEntries.value) {
             client.client.trace = value
         }
     }

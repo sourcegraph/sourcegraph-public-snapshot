@@ -1,6 +1,5 @@
 import { basename } from 'path'
-import { BehaviorSubject, from, Observable, Unsubscribable } from 'rxjs'
-import { filter, first, map, switchMap } from 'rxjs/operators'
+import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { MessageTransports } from '../jsonrpc2/connection'
 import {
     GenericNotificationHandler,
@@ -10,7 +9,7 @@ import {
 } from '../jsonrpc2/handlers'
 import { Message, MessageType as RPCMessageType } from '../jsonrpc2/messages'
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
-import { Trace, Tracer } from '../jsonrpc2/trace'
+import { noopTracer, Trace, Tracer } from '../jsonrpc2/trace'
 import {
     InitializedNotification,
     InitializeParams,
@@ -50,13 +49,20 @@ export interface ClientOptions {
 
     /** Called to create the connection to the server. */
     createMessageTransports: () => MessageTransports | Promise<MessageTransports>
+
+    /** Trace log level. The tracer must also be set. */
+    trace?: Trace
+
+    /** Logs messages sent to and received from the server, and trace log messages sent from the server. */
+    tracer?: Tracer
 }
 
 /** The client options, after defaults have been set that make certain fields required. */
-interface ResolvedClientOptions extends ClientOptions {
+interface ResolvedClientOptions extends Pick<ClientOptions, Exclude<keyof ClientOptions, 'trace'>> {
     initializationFailedHandler: InitializationFailedHandler
     errorHandler: ErrorHandler
     middleware: Readonly<Middleware>
+    tracer: Tracer
 }
 
 /** The possible states of a client. */
@@ -106,22 +112,17 @@ export class Client implements Unsubscribable {
 
     private onStop: Promise<void> | null = null
 
-    private _trace: Trace = Trace.Off
-    private _tracer: Tracer
+    private _trace: Trace
 
-    public constructor(public readonly id: string, public readonly name: string, options: ClientOptions) {
+    public constructor(public readonly id: string, public readonly name: string, { trace, ...options }: ClientOptions) {
         this.options = {
             ...options,
             initializationFailedHandler: options.initializationFailedHandler || (() => Promise.resolve(false)),
             errorHandler: options.errorHandler || new DefaultErrorHandler(),
             middleware: options.middleware || {},
+            tracer: options.tracer || noopTracer,
         }
-
-        this._tracer = {
-            log: (message: string, data?: string) => {
-                this.logTrace(message, data)
-            },
-        }
+        this._trace = trace || Trace.Off
     }
 
     private get isConnectionActive(): boolean {
@@ -177,7 +178,7 @@ export class Client implements Unsubscribable {
     }
 
     private initialize(connection: Connection): Promise<void> {
-        connection.trace(this._trace, this._tracer)
+        connection.trace(this._trace, this.options.tracer)
 
         const initParams: InitializeParams = {
             root: this.options.root,
@@ -391,18 +392,9 @@ export class Client implements Unsubscribable {
 
     public set trace(value: Trace) {
         this._trace = value
-        this._state
-            .pipe(
-                filter(state => state === ClientState.Initializing || state === ClientState.Active),
-                first(),
-                switchMap(() => from(this.resolveConnection())),
-                map(connection => connection.trace(value, this._tracer))
-            )
-            .subscribe()
-    }
-
-    private logTrace(message: string, data?: any): void {
-        console.info(message, data)
+        if (this.connection) {
+            this.connection.trace(value, this.options.tracer)
+        }
     }
 
     protected readonly features: (StaticFeature | DynamicFeature<any>)[] = []
