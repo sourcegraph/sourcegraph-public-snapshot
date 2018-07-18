@@ -1,5 +1,5 @@
 import { combineLatest, from, Observable } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import { Hover } from 'vscode-languageserver-types'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { HoverMerged } from '../../types/hover'
@@ -34,16 +34,7 @@ export function getHover(
                 if (providers.length === 0) {
                     return [[null]]
                 }
-                return combineLatest(
-                    providers.map(provider =>
-                        from(provider(params)).pipe(
-                            catchError(error => {
-                                console.error(error)
-                                return [null]
-                            })
-                        )
-                    )
-                )
+                return combineLatest(providers.map(provider => from(provider(params))))
             })
         )
         .pipe(map(HoverMerged.from))

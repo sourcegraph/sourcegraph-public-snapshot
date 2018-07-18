@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { of, throwError } from 'rxjs'
+import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Position } from 'vscode-languageserver-types'
 import { TextDocumentDecoration, TextDocumentDecorationParams } from '../../protocol'
@@ -86,20 +86,6 @@ describe('getDecorations', () => {
                     getDecorations(
                         cold<ProvideTextDocumentDecorationSignature[]>('-a-|', {
                             a: [() => of(FIXTURE_RESULT), () => of(null)],
-                        }),
-                        FIXTURE.TextDocumentDecorationParams
-                    )
-                ).toBe('-a-|', {
-                    a: FIXTURE_RESULT,
-                })
-            ))
-
-        it('skips errors from providers', () =>
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getDecorations(
-                        cold<ProvideTextDocumentDecorationSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_RESULT), () => throwError('error')],
                         }),
                         FIXTURE.TextDocumentDecorationParams
                     )

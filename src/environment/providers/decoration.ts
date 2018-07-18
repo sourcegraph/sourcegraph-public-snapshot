@@ -1,5 +1,5 @@
 import { combineLatest, Observable } from 'rxjs'
-import { catchError, map, switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 import { TextDocumentDecoration, TextDocumentDecorationParams } from '../../protocol/decoration'
 import { TextDocumentFeatureProviderRegistry } from './textDocument'
@@ -35,16 +35,7 @@ export function getDecorations(
                 if (providers.length === 0) {
                     return [null]
                 }
-                return combineLatest(
-                    providers.map(provider =>
-                        provider(params).pipe(
-                            catchError(error => {
-                                console.error(error)
-                                return [null]
-                            })
-                        )
-                    )
-                )
+                return combineLatest(providers.map(provider => provider(params)))
             })
         )
         .pipe(map(flattenAndCompact))

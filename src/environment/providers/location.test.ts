@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { of, throwError } from 'rxjs'
+import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Location, Position, Range } from 'vscode-languageserver-types'
 import { getLocation, getLocations, ProvideTextDocumentLocationSignature } from './location'
@@ -91,20 +91,6 @@ describe('getLocation', () => {
                     getLocation(
                         cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
                             a: [() => of(FIXTURE_LOCATIONS), () => of(null)],
-                        }),
-                        FIXTURE.TextDocumentPositionParams
-                    )
-                ).toBe('-a-|', {
-                    a: FIXTURE_LOCATIONS,
-                })
-            ))
-
-        it('skips errors from providers', () =>
-            scheduler().run(({ cold, expectObservable }) =>
-                expectObservable(
-                    getLocation(
-                        cold<ProvideTextDocumentLocationSignature[]>('-a-|', {
-                            a: [() => of(FIXTURE_LOCATIONS), () => throwError('error')],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )
