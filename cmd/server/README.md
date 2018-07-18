@@ -18,7 +18,7 @@ parts will be automated. You will need to complete four main steps.
 
 1.  Check out a new branch in the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
 1.  Ensure documentation is up-to-date with everything listed under the `Unreleased changes` section in the [CHANGELOG](../../CHANGELOG.md). Do not edit the `CHANGELOG.md` file yet.
-1.  Update every old version number in the documentation to be the version number you are releasing. [Use search to do this](https://sourcegraph.sgdev.org/search?q=repo:%5Egithub%5C.com/sourcegraph/website%24+server%5C:2).
+1.  Update the old version number in the documentation to be the version number you are releasing [by editing this React component](https://github.com/sourcegraph/website/blob/master/src/components/ServerVersionNumber.tsx).
 1.  Regenerate the site settings docs by running the last two commands mentioned under https://github.com/sourcegraph/website#documentation-pages
 1.  Create the PR on the website repository, but do not merge it yet.
 
