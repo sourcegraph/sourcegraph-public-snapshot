@@ -328,7 +328,6 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                     viewerConfiguredExtensions(enabled: true, disabled: false, invalid: false) {
                         nodes {
                             extensionID
-                            contributions
                             mergedSettings
                             extension {
                                 manifest {
