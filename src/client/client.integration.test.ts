@@ -33,6 +33,7 @@ describe('Client', () => {
                         try {
                             assert.deepStrictEqual(params, {
                                 root: null,
+                                rootUri: null,
                                 capabilities: { experimental: 'test' },
                                 trace: Trace.toString(Trace.Off),
                                 workspaceFolders: null,
