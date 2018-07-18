@@ -115,6 +115,10 @@ func (o *Options) SetDefaults() {
 			o.CTags = ctags
 		}
 	}
+
+	// Sourcegraph modification: We never want to run ctags
+	o.CTags = ""
+
 	if o.Parallelism == 0 {
 		o.Parallelism = 1
 	}
