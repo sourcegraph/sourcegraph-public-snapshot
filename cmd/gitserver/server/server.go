@@ -156,12 +156,12 @@ func shortGitCommandTimeout(args []string) time.Duration {
 	}
 	switch args[0] {
 	case "archive":
-		// 10 minutes is a long time, but this never blocks a user request for
-		// this long. Even repos that are not that large can take a long time,
-		// for example a search over all repos in an organization may have
-		// several large repos. All of those repos will be competing for IO =>
-		// we need a larger timeout.
-		return 10 * time.Minute
+		// This is a long time, but this never blocks a user request for this
+		// long. Even repos that are not that large can take a long time, for
+		// example a search over all repos in an organization may have several
+		// large repos. All of those repos will be competing for IO => we need
+		// a larger timeout.
+		return longGitCommandTimeout
 
 	case "ls-remote":
 		return 5 * time.Second
