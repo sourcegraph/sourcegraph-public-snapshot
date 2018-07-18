@@ -45,6 +45,10 @@ npm install
 npm test
 ```
 
+## Implementation
+
+This library does not depend on [Microsoft/vscode-languageserver-node](https://github.com/Microsoft/vscode-languageserver-node) (except for the types) because [Microsoft/vscode-languageserver-node](https://github.com/Microsoft/vscode-languageserver-node) uses Node.js APIs that are not available in the browser and its footprint is rather large (1+ MB).
+
 ## Acknowledgments
 
 The CXP protocol is based on the [Language Server Protocol (LSP)](https://microsoft.github.io/language-server-protocol/). This library is based on the [Microsoft/vscode-languageserver-node](https://github.com/Microsoft/vscode-languageserver-node) implementation of LSP.
