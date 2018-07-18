@@ -325,13 +325,14 @@ export class Client implements Unsubscribable {
 
         // If we are connected to a server, then shut down gracefully. Otherwise (if we aren't connected to a
         // server, including if the connection never succeeded), just close the connection (if any) immediately.
+        const wasConnectionActive = this.isConnectionActive
         if (this.isConnectionActive) {
             this._state.next(ClientState.ShuttingDown)
         } else {
             this._state.next(endState)
         }
         this.cleanUp()
-        if (this.isConnectionActive) {
+        if (wasConnectionActive) {
             // Shut down gracefully before closing the connection.
             const connection = this.connection!
             return (this.onStop = connection.shutdown().then(() => {
