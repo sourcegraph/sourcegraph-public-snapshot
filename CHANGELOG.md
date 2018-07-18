@@ -24,6 +24,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed cases where GitHub rate limit wasn't being respected.
 * Fixed a bug where scrolling in references, history, etc. file panels was not possible in Firefox.
 * Fixed cases where gitserver directory structure migration could fail/crash.
+* Fixed "Generate access token" link on user settings page. Previously, this link would 404.
 
 ### Removed
 
