@@ -8,10 +8,12 @@ import {
     DidOpenTextDocumentNotification,
     DidOpenTextDocumentParams,
     TextDocumentRegistrationOptions,
+    TextDocumentSyncKind,
 } from '../../protocol'
 import { DocumentSelector } from '../../types/document'
 import { Client } from '../client'
 import {
+    resolveTextDocumentSync,
     TextDocumentDidOpenFeature,
     TextDocumentNotificationFeature as AbstractTextDocumentNotificationFeature,
 } from './textDocument'
@@ -107,6 +109,24 @@ describe('TextDocumentDidOpenFeature', () => {
             feature.initialize({ textDocumentSync: { openClose: false } }, ['*'])
             assert.strictEqual(feature.selectors.size, 0)
         })
+
+        it('does not register the provider if the server omits mention of support for text document sync', () => {
+            const { feature } = create()
+            feature.initialize({}, ['*'])
+            assert.strictEqual(feature.selectors.size, 0)
+        })
+
+        it('registers the provider if the server supports text document sync (backcompat for non-TextDocumentSyncOptions value)', () => {
+            const { feature } = create()
+            feature.initialize({ textDocumentSync: TextDocumentSyncKind.Incremental }, ['*'])
+            assert.strictEqual(feature.selectors.size, 1)
+        })
+
+        it('does not register the provider if the server omits mention of support for text document sync (backcompat for non-TextDocumentSyncOptions value)', () => {
+            const { feature } = create()
+            feature.initialize({ textDocumentSync: TextDocumentSyncKind.None }, ['*'])
+            assert.strictEqual(feature.selectors.size, 0)
+        })
     })
 
     describe('when a text document is opened', () => {
@@ -146,5 +166,24 @@ describe('TextDocumentDidOpenFeature', () => {
                 component: { document: textDocument, selections: [], visibleRanges: [] },
             })
         })
+    })
+})
+
+describe('resolveTextDocumentSync', () => {
+    it('resolves to TextDocumentSyncOptions', () => {
+        assert.deepStrictEqual(resolveTextDocumentSync(undefined), undefined)
+        assert.deepStrictEqual(resolveTextDocumentSync(null as any), undefined)
+        assert.deepStrictEqual(resolveTextDocumentSync(TextDocumentSyncKind.None), undefined)
+        assert.deepStrictEqual(resolveTextDocumentSync(TextDocumentSyncKind.Incremental), {
+            openClose: true,
+            change: TextDocumentSyncKind.Incremental,
+            save: { includeText: false },
+        })
+        assert.deepStrictEqual(resolveTextDocumentSync(TextDocumentSyncKind.Full), {
+            openClose: true,
+            change: TextDocumentSyncKind.Full,
+            save: { includeText: false },
+        })
+        assert.deepStrictEqual({ openClose: true }, { openClose: true })
     })
 })
