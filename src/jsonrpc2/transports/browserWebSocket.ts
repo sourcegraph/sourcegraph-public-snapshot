@@ -15,6 +15,7 @@ interface WebSocketEventMap {
 }
 interface WebSocket {
     readonly readyState: number
+    close(code?: number, reason?: string): void
     send(data: string): void
     addEventListener<K extends keyof WebSocketEventMap>(
         type: K,
@@ -31,7 +32,7 @@ class WebSocketMessageReader extends AbstractMessageReader implements MessageRea
     private pending: Message[] = []
     private callback: DataCallback | null = null
 
-    constructor(socket: WebSocket) {
+    constructor(private socket: WebSocket) {
         super()
 
         socket.addEventListener('message', (e: MessageEvent) => {
@@ -64,8 +65,10 @@ class WebSocketMessageReader extends AbstractMessageReader implements MessageRea
         }
     }
 
-    public stop(): void {
+    public unsubscribe(): void {
+        super.unsubscribe()
         this.callback = null
+        closeIfOpen(this.socket)
     }
 }
 
@@ -83,6 +86,19 @@ class WebSocketMessageWriter extends AbstractMessageWriter implements MessageWri
         } catch (err) {
             this.fireError(err, message, ++this.errorCount)
         }
+    }
+
+    public unsubscribe(): void {
+        super.unsubscribe()
+        closeIfOpen(this.socket)
+    }
+}
+
+function closeIfOpen(socket: WebSocket): void {
+    if (socket.readyState === socket.OPEN) {
+        // 1000 means normal closure. See
+        // https://www.iana.org/assignments/websocket/websocket.xml#close-code-number.
+        socket.close(1000)
     }
 }
 
