@@ -1,6 +1,6 @@
 import { BehaviorSubject } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import * as WebSocket from 'ws'
+import WebSocket from 'ws'
 import { Client, ClientState } from '../../src/client/client'
 import { TextDocumentStaticDecorationFeature } from '../../src/client/features/decoration'
 import { TextDocumentHoverFeature } from '../../src/client/features/hover'

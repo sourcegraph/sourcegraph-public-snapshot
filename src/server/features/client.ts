@@ -1,5 +1,5 @@
 import { Unsubscribable } from 'rxjs'
-import * as uuidv4 from 'uuid/v4'
+import uuidv4 from 'uuid/v4'
 import { MessageType as RPCMessageType, NotificationType, RequestType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,

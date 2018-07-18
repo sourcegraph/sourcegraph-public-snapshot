@@ -1,5 +1,5 @@
 import { Unsubscribable } from 'rxjs'
-import * as uuidv4 from 'uuid/v4'
+import uuidv4 from 'uuid/v4'
 import { Location } from 'vscode-languageserver-types'
 import { ProvideTextDocumentLocationSignature } from '../../environment/providers/location'
 import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'

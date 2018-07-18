@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import assert from 'assert'
 import { Duplex } from 'stream'
 import { inherits } from 'util'
 import { CancellationTokenSource } from './cancel'

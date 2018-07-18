@@ -1,6 +1,6 @@
 import { Observable, Subscription } from 'rxjs'
 import { first, map } from 'rxjs/operators'
-import * as uuidv4 from 'uuid/v4'
+import uuidv4 from 'uuid/v4'
 import { ExtensionSettings } from '../../environment/extension'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {

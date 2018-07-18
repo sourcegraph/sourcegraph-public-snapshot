@@ -12,6 +12,8 @@
     "sourceRoot": "src",
     "noErrorTruncation": true,
     "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "plugins": [
       {
         "name": "tslint-language-service"

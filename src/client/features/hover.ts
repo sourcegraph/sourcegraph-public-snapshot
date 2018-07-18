@@ -1,5 +1,5 @@
 import { Unsubscribable } from 'rxjs'
-import * as uuidv4 from 'uuid/v4'
+import uuidv4 from 'uuid/v4'
 import { Hover, MarkupKind } from 'vscode-languageserver-types'
 import { ProvideTextDocumentHoverSignature } from '../../environment/providers/hover'
 import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'

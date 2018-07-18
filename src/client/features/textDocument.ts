@@ -1,6 +1,6 @@
 import { Observable, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import * as uuidv4 from 'uuid/v4'
+import uuidv4 from 'uuid/v4'
 import { TextDocument } from 'vscode-languageserver-types'
 import { ObservableEnvironment } from '../../environment/environment'
 import { MessageType as RPCMessageType, NotificationType } from '../../jsonrpc2/messages'

@@ -1,5 +1,5 @@
 import { BehaviorSubject, from, Observable, Unsubscribable } from 'rxjs'
-import * as uuidv4 from 'uuid/v4'
+import uuidv4 from 'uuid/v4'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { ProvideTextDocumentDecorationSignature } from '../../environment/providers/decoration'
 import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'

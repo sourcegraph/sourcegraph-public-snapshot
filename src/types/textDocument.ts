@@ -1,4 +1,4 @@
-import * as minimatch from 'minimatch'
+import minimatch from 'minimatch'
 import { Range, TextDocument } from 'vscode-languageserver-types'
 import { DocumentFilter, DocumentSelector } from './document'
 

@@ -1,5 +1,5 @@
 import { Subscription } from 'rxjs'
-import * as uuidv4 from 'uuid/v4'
+import uuidv4 from 'uuid/v4'
 import { CommandRegistry } from '../../environment/providers/command'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
