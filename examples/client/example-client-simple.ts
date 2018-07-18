@@ -1,4 +1,4 @@
-import * as NodeWebSocket from 'ws'
+import NodeWebSocket from 'ws'
 import { createMessageConnection } from '../../src/jsonrpc2/connection'
 import { createWebSocketMessageTransports } from '../../src/jsonrpc2/transports/nodeWebSocket'
 import { InitializeParams, InitializeRequest, InitializeResult } from '../../src/protocol'

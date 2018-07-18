@@ -1,4 +1,4 @@
-import * as NodeWebSocket from 'ws'
+import NodeWebSocket from 'ws'
 import { MessageTransports } from '../connection'
 import { Message } from '../messages'
 import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transport'
