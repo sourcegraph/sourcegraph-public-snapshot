@@ -23,6 +23,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 * Fixed a bug in the API console that caused it to display as a blank page in some cases.
 * Fixed cases where GitHub rate limit wasn't being respected.
 * Fixed a bug where scrolling in references, history, etc. file panels was not possible in Firefox.
+* Fixed cases where gitserver directory structure migration could fail/crash.
 
 ### Removed
 

@@ -16,15 +16,15 @@ func (s *Server) migrateGitDir() {
 	defer os.RemoveAll(tmp)
 
 	err = filepath.Walk(s.ReposDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			return nil
+		}
+
 		if s.ignorePath(path) {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
-			return nil
-		}
-
-		if err != nil {
-			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
 			return nil
 		}
 
