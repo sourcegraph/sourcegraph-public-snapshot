@@ -227,6 +227,9 @@ export class Client implements Unsubscribable {
                     if (reinitialize) {
                         return this.initialize(connection)
                     }
+                    if (connection) {
+                        connection.unsubscribe()
+                    }
                     return this.stopAtState(ClientState.ActivateFailed)
                 })
             )
