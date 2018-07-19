@@ -241,10 +241,8 @@ func (s *Server) Janitor() {
 	// them.
 	s.migrateGitDir()
 
-	// Sourcegraph.com we periodically delete unused repositories.
-	if s.DeleteStaleRepositories {
-		s.cleanupRepos()
-	}
+	// Other janitorial tasks
+	s.cleanupRepos()
 }
 
 // Stop cancels the running background jobs and returns when done.

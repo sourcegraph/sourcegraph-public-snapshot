@@ -3,12 +3,17 @@ package server
 import (
 	"context"
 	"io/ioutil"
+	"math/rand"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 
@@ -31,7 +36,7 @@ var reposRemoved = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "src",
 	Subsystem: "gitserver",
 	Name:      "repos_removed",
-	Help:      "number of repos removed during cleanup due to inactivity",
+	Help:      "number of repos removed during cleanup",
 })
 var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
 	Namespace: "src",
@@ -40,13 +45,90 @@ var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
 	Help:      "number of repos removed and recloned due to age",
 })
 
-// cleanupRepos walks the repos directory and removes repositories that haven't been updated
-// within a certain amount of time.
+// cleanupRepos walks the repos directory and performs maintenance tasks:
+//
+// 1. Remove inactive repos on sourcegraph.com
+// 2. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
 
-	filepath.Walk(s.ReposDir, func(gitDir string, fi os.FileInfo, fileErr error) (rtnErr error) {
+	maybeRemoveCorrupt := func(gitDir string) (done bool, err error) {
+		// We treat repositories missing HEAD to be corrupt. Both our cloning
+		// and fetching ensure there is a HEAD file.
+		_, err = os.Stat(filepath.Join(gitDir, "HEAD"))
+		if !os.IsNotExist(err) {
+			return false, err
+		}
+
+		log15.Info("removing corrupt repo", "repo", gitDir)
+		if err := s.removeAll(gitDir); err != nil {
+			return true, err
+		}
+		reposRemoved.Inc()
+		return true, nil
+	}
+
+	maybeRemoveInactive := func(gitDir string) (done bool, err error) {
+		// We rewrite the HEAD file whenever we update a repo, and repos are
+		// updated in response to user traffic. Check to see the last time
+		// HEAD was rewritten to determine whether to consider this repo
+		// inactive. Note: This is only accurate for installations which set
+		// disableAutoGitUpdates=true. This is true for sourcegraph.com and
+		// maybeRemoveInactive should only be run for sourcegraph.com
+		head, err := os.Stat(filepath.Join(gitDir, "HEAD"))
+		if err != nil {
+			return false, err
+		}
+		lastUpdated := head.ModTime()
+		if time.Since(lastUpdated) <= inactiveRepoTTL {
+			return false, nil
+		}
+
+		log15.Info("removing inactive repo", "repo", gitDir)
+		if err := s.removeAll(gitDir); err != nil {
+			return true, err
+		}
+		reposRemoved.Inc()
+		return true, nil
+	}
+
+	maybeReclone := func(gitDir string) (done bool, err error) {
+		recloneTime, err := getRecloneTime(gitDir)
+		if err != nil {
+			return false, err
+		}
+
+		// Add a jitter to spread out recloning of repos cloned at the same
+		// time.
+		if time.Since(recloneTime) <= repoTTL+randDuration(repoTTL/4) {
+			return false, nil
+		}
+
+		ctx, cancel := context.WithTimeout(bCtx, longGitCommandTimeout)
+		defer cancel()
+
+		// name is the relative path to ReposDir, but without the .git suffix.
+		repo := protocol.NormalizeRepo(api.RepoURI(strings.TrimPrefix(filepath.Dir(gitDir), s.ReposDir+"/")))
+		log15.Info("recloning expired repo", "repo", repo)
+
+		remoteURL := OriginMap(repo)
+		if remoteURL == "" {
+			var err error
+			remoteURL, err = repoRemoteURL(ctx, gitDir)
+			if err != nil {
+				return false, errors.Wrap(err, "failed to get remote URL")
+			}
+		}
+
+		if _, err := s.cloneRepo(ctx, repo, remoteURL, &cloneOptions{Block: true, Overwrite: true}); err != nil {
+			return true, err
+		}
+		reposRecloned.Inc()
+		return true, nil
+	}
+
+	filepath.Walk(s.ReposDir, func(gitDir string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			return nil
 		}
@@ -63,65 +145,39 @@ func (s *Server) cleanupRepos() {
 			return nil
 		}
 
-		rtnErr = filepath.SkipDir
-		// We rewrite the HEAD file whenever we update a repo, and repos are updated
-		// in response to user traffic. Check to see the last time HEAD was rewritten
-		// to determine whether to consider this repo inactive.
-		head, err := os.Stat(filepath.Join(gitDir, "HEAD"))
+		// Do some sanity checks on the repository.
+		done, err := maybeRemoveCorrupt(gitDir)
 		if err != nil {
-			log15.Warn("GIT_DIR missing HEAD", "path", gitDir, "error", err)
-			return
+			log15.Error("error removing corrupt repo", "repo", gitDir, "error", err)
 		}
-		lastUpdated := head.ModTime()
-		if time.Since(lastUpdated) > inactiveRepoTTL {
-			log15.Info("removing inactive repo", "repo", gitDir)
-			if err := s.removeAll(gitDir); err != nil {
+		if done {
+			return filepath.SkipDir
+		}
+
+		// Sourcegraph.com can potentially clone all of github.com, so we
+		// delete repos which have not been used for a period of
+		// time. s.DeleteStaleRepositories should only be true for
+		// sourcegraph.com.
+		if s.DeleteStaleRepositories {
+			done, err = maybeRemoveInactive(gitDir)
+			if err != nil {
 				log15.Error("error removing inactive repo", "repo", gitDir, "error", err)
-				return
 			}
-			reposRemoved.Inc()
-			return
+			if done {
+				return filepath.SkipDir
+			}
 		}
 
 		// Old git clones accumulate loose git objects that waste space and
 		// slow down git operations. Periodically do a fresh clone to avoid
 		// these problems. git gc is slow and resource intensive. It is
 		// cheaper and faster to just reclone the repository.
-		//
-		// The config file of a repo shouldn't be edited after the repo is
-		// cloned for the first time, so its modification time is used to
-		// check for the repo's original clone date.
-		cfg, err := os.Stat(filepath.Join(gitDir, "config"))
+		_, err = maybeReclone(gitDir)
 		if err != nil {
-			return
+			log15.Error("error recloning repo", "repo", gitDir, "error", err)
 		}
-		initTime := cfg.ModTime()
-		if time.Since(initTime) > repoTTL {
-			ctx, cancel := context.WithTimeout(bCtx, longGitCommandTimeout)
-			defer cancel()
 
-			// name is the relative path to ReposDir, but without the .git suffix.
-			repo := protocol.NormalizeRepo(api.RepoURI(strings.TrimPrefix(filepath.Dir(gitDir), s.ReposDir+"/")))
-			log15.Info("recloning expired repo", "repo", repo)
-
-			remoteURL := OriginMap(repo)
-			if remoteURL == "" {
-				var err error
-				remoteURL, err = repoRemoteURL(ctx, gitDir)
-				if err != nil {
-					log15.Error("error getting remote URL", "error", err, "repo", repo)
-					return
-				}
-			}
-
-			if _, err := s.cloneRepo(ctx, repo, remoteURL, &cloneOptions{Block: true, Overwrite: true}); err != nil {
-				log15.Error("reclone failed", "repo", repo, "error", err)
-				return
-			}
-			reposRecloned.Inc()
-			return
-		}
-		return
+		return filepath.SkipDir
 	})
 }
 
@@ -222,4 +278,62 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 	}()
 
 	return dir, nil
+}
+
+// getRecloneTime returns an approximate time a repository is cloned. If the
+// value is not stored in the repository, the reclone time for the repository
+// is set to now.
+func getRecloneTime(gitDir string) (time.Time, error) {
+	// We store the time we recloned the repository. If the value is missing,
+	// we store the current time. This decouples this timestamp from the
+	// different ways a clone can appear in gitserver.
+	update := func() (time.Time, error) {
+		now := time.Now()
+		cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(time.Now().Unix(), 10))
+		cmd.Dir = gitDir
+		if err := cmd.Run(); err != nil {
+			return now, errors.Wrap(wrapCmdError(cmd, err), "failed to update recloneTimestamp")
+		}
+		return now, nil
+	}
+
+	cmd := exec.Command("git", "config", "--get", "sourcegraph.recloneTimestamp")
+	cmd.Dir = gitDir
+	out, err := cmd.Output()
+	if err != nil {
+		// Exit code 1 means the key is not set.
+		if ee, ok := err.(*exec.ExitError); ok && ee.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
+			return update()
+		}
+		return time.Unix(0, 0), errors.Wrap(wrapCmdError(cmd, err), "failed to determine clone timestamp")
+	}
+
+	sec, err := strconv.ParseInt(strings.TrimSpace(string(out)), 10, 0)
+	if err != nil {
+		// If the value is bad update it to the current time
+		now, err2 := update()
+		if err2 != nil {
+			err = err2
+		}
+		return now, err
+	}
+
+	return time.Unix(sec, 0), nil
+}
+
+// randDuration returns a psuedo-random duration between [0, d)
+func randDuration(d time.Duration) time.Duration {
+	return time.Duration(rand.Int63n(int64(d)))
+}
+
+// wrapCmdError will wrap errors for cmd to include the arguments. If the
+// error is an exec.ExitError it will also include the stderr it captures.
+func wrapCmdError(cmd *exec.Cmd, err error) error {
+	if err == nil {
+		return nil
+	}
+	if ee, ok := err.(*exec.ExitError); ok {
+		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(ee.Stderr))
+	}
+	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
 }

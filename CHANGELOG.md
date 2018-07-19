@@ -17,6 +17,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 * The `log.sentry.dsn` field in the site config makes Sourcegraph log application errors to a Sentry instance.
 * Two new repository page hotkeys were added: <kbd>r</kbd> to open the repositories menu and <kbd>v</kbd> to open the revision selector.
+* Repositories are periodically (~45 days) recloned from the codehost. The codehost can be relied on to give an efficient packing. This is an alternative to running a memory and CPU intensive git gc and git prune.
 
 ### Fixed
 
