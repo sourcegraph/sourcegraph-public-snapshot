@@ -8,6 +8,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -89,21 +90,23 @@ func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
-	_, err = db.DiscussionComments.Create(ctx, &types.DiscussionComment{
+	newComment := &types.DiscussionComment{
 		ThreadID:     threadID,
 		AuthorUserID: currentUser.user.ID,
 		Contents:     args.Contents,
-	})
+	}
+	_, err = db.DiscussionComments.Create(ctx, newComment)
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionComments.Create")
 	}
 
 	// Fetch and return the updated thread object.
-	thread, err := db.DiscussionThreads.Get(ctx, threadID)
+	updatedThread, err := db.DiscussionThreads.Get(ctx, threadID)
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.Get")
 	}
-	return &discussionThreadResolver{t: thread}, nil
+	discussions.NotifyNewComment(updatedThread, newComment)
+	return &discussionThreadResolver{t: updatedThread}, nil
 }
 
 // discussionCommentsConnectionResolver resolves a list of discussion comments.

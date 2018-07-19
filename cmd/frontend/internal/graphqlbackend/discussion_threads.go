@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -106,14 +107,16 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 	}
 
 	// Create the first comment in the thread.
-	_, err = db.DiscussionComments.Create(ctx, &types.DiscussionComment{
+	newComment := &types.DiscussionComment{
 		ThreadID:     newThread.ID,
 		AuthorUserID: currentUser.user.ID,
 		Contents:     args.Input.Contents,
-	})
+	}
+	_, err = db.DiscussionComments.Create(ctx, newComment)
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionComments.Create")
 	}
+	discussions.NotifyNewThread(newThread, newComment)
 	return &discussionThreadResolver{t: thread}, nil
 }
 
