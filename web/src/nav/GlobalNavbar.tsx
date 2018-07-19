@@ -57,6 +57,15 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
         this.subscriptions.add(authRequired.subscribe(authRequired => this.setState({ authRequired })))
     }
 
+    public componentDidUpdate(prevProps: Props): void {
+        if (prevProps.location.search !== this.props.location.search) {
+            const options = parseSearchURLQuery(this.props.location.search || '')
+            if (options) {
+                this.props.onNavbarQueryChange(options.query)
+            }
+        }
+    }
+
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
