@@ -21,6 +21,10 @@
       "packagePatterns": ["^@types/"],
       "rangeStrategy": "pin",
       "automerge": true
+    },
+    {
+      "packageNames": ["cxp"],
+      "assignees": ["sqs"]
     }
   ]
 }
