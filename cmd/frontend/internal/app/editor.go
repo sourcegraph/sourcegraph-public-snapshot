@@ -128,13 +128,13 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-// protocolRegExp is a regular expression that matches any URL that looks like it has a protocol
-var protocolRegExp = regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9+.-]*:")
+// gitProtocolRegExp is a regular expression that matches any URL that looks like it has a git protocol
+var gitProtocolRegExp = regexp.MustCompile("^(git|(git+)?(https?|ssh))://")
 
 // guessRepoURIFromRemoteURL return a guess at the repo URI for the given remote URL. For example, given
 // "https://github.com/foo/bar.git" it returns "github.com/foo/bar".
 func guessRepoURIFromRemoteURL(urlStr string) api.RepoURI {
-	if !protocolRegExp.MatchString(urlStr) {
+	if !gitProtocolRegExp.MatchString(urlStr) {
 		urlStr = "ssh://" + strings.Replace(strings.TrimPrefix(urlStr, "git@"), ":", "/", 1)
 	}
 	urlStr = strings.TrimSuffix(urlStr, ".git")

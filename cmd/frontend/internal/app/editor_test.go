@@ -8,6 +8,9 @@ import (
 
 func TestGuessRepoURIFromRemoteURL(t *testing.T) {
 	tests := map[string]api.RepoURI{
+		"github.com:a/b":                  "github.com/a/b",
+		"github.com:a/b.git":              "github.com/a/b",
+		"git@github.com:a/b":              "github.com/a/b",
 		"git@github.com:a/b.git":          "github.com/a/b",
 		"ssh://git@github.com/a/b.git":    "github.com/a/b",
 		"ssh://github.com/a/b.git":        "github.com/a/b",
