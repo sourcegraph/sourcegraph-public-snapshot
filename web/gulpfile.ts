@@ -105,7 +105,6 @@ export async function graphQLTypes(): Promise<void> {
     const schemaStr = await readFile(GRAPHQL_SCHEMA_PATH, 'utf8')
     const schema = buildSchema(schemaStr)
     const result = (await graphql(schema, introspectionQuery)) as { data: IntrospectionQuery }
-    const json = JSON.stringify(result, null, 2)
 
     const formatOptions = (await resolveConfig(__dirname, { config: __dirname + '/../prettier.config.js' }))!
     const typings =
@@ -130,10 +129,7 @@ export async function graphQLTypes(): Promise<void> {
                 postProcessor: (code: string) => format(code, { ...formatOptions, parser: 'typescript' }),
             }
         )
-    await Promise.all([
-        writeFile(__dirname + '/graphqlschema.json', json),
-        writeFile(__dirname + '/src/backend/graphqlschema.ts', typings),
-    ])
+    await writeFile(__dirname + '/src/backend/graphqlschema.ts', typings)
 }
 
 /** Generates the TypeScript types for the JSON schemas */

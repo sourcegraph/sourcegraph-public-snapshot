@@ -1,6 +1,5 @@
 .nyc_output/
 coverage/
-graphqlschema.json
 node_modules/
 npm-debug.log
 out/

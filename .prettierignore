@@ -9,7 +9,6 @@ ui/assets/
 vendor/
 web/.nyc_output/
 web/coverage/
-web/graphqlschema.json
 web/out/
 web/src/backend/graphqlschema.ts
 web/src/schema/
