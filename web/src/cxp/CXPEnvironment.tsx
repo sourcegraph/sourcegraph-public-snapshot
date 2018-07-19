@@ -5,8 +5,8 @@ import { ConfiguredExtension } from '../extensions/extension'
 import { CXPComponentProps } from './CXPComponent'
 import { CXPRootProps } from './CXPRoot'
 
-/** Feature flag for using the new CXP controller and environment. */
-export const USE_CXP = localStorage.getItem('cxp') !== null
+/** Client-side feature flag for using the new CXP controller and environment. */
+export const USE_PLATFORM = localStorage.getItem('platform') !== null
 
 /**
  * Adds the manifest to CXP extensions in the CXP environment, so we can consult it in the createMessageTransports

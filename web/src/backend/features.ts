@@ -4,7 +4,7 @@ import { compact, flatten } from 'lodash'
 import { forkJoin, Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Definition, Location } from 'vscode-languageserver-types'
-import { CXPControllerProps, USE_CXP } from '../cxp/CXPEnvironment'
+import { CXPControllerProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
 import { ConfiguredExtension, ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
@@ -64,7 +64,7 @@ export function getHover(
     ctx: LSPTextDocumentPositionParams,
     { extensions, cxpController }: ExtensionsAndCXPControllerProps
 ): Observable<HoverMerged | null> {
-    if (USE_CXP) {
+    if (USE_PLATFORM) {
         return cxpController.registries.textDocumentHover.getHover({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
@@ -88,7 +88,7 @@ export function getDefinition(
     ctx: LSPTextDocumentPositionParams,
     { extensions, cxpController }: ExtensionsAndCXPControllerProps
 ): Observable<Definition> {
-    if (USE_CXP) {
+    if (USE_PLATFORM) {
         return cxpController.registries.textDocumentDefinition.getLocation({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
@@ -175,7 +175,7 @@ export function getReferences(
     ctx: LSPTextDocumentPositionParams & LSPReferencesParams,
     { extensions, cxpController }: ExtensionsAndCXPControllerProps
 ): Observable<Location[]> {
-    if (USE_CXP) {
+    if (USE_PLATFORM) {
         return cxpController.registries.textDocumentReferences
             .getLocation({
                 textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
@@ -204,7 +204,7 @@ export function getImplementations(
     ctx: LSPTextDocumentPositionParams,
     { extensions, cxpController }: ExtensionsAndCXPControllerProps
 ): Observable<Location[]> {
-    if (USE_CXP) {
+    if (USE_PLATFORM) {
         return cxpController.registries.textDocumentImplementation
             .getLocation({
                 textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
@@ -245,7 +245,7 @@ export function getDecorations(
     ctx: AbsoluteRepoFile & LSPSelector,
     { extensions, cxpController }: ExtensionsAndCXPControllerProps
 ): Observable<TextDocumentDecoration[] | null> {
-    if (USE_CXP) {
+    if (USE_PLATFORM) {
         return cxpController.registries.textDocumentDecoration.getDecorations({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
         })

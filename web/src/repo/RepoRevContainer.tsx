@@ -11,7 +11,7 @@ import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
 import { CXPComponentProps } from '../cxp/CXPComponent'
-import { CXPControllerProps, USE_CXP } from '../cxp/CXPEnvironment'
+import { CXPControllerProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
 import { CXPRoot, CXPRootProps } from '../cxp/CXPRoot'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
@@ -403,7 +403,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                         />
                     }
                 />
-                {USE_CXP &&
+                {USE_PLATFORM &&
                     this.props.resolvedRevOrError &&
                     !isErrorLike(this.props.resolvedRevOrError) && (
                         <CXPRoot

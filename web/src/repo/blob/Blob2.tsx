@@ -18,7 +18,7 @@ import { AbsoluteRepoFile, RenderMode } from '..'
 import { ExtensionsProps, getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams, TextDocumentDecoration } from '../../backend/lsp'
 import { CXPComponent, CXPComponentProps } from '../../cxp/CXPComponent'
-import { CXPControllerProps, USE_CXP } from '../../cxp/CXPEnvironment'
+import { CXPControllerProps, USE_PLATFORM } from '../../cxp/CXPEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { toNativeEvent } from '../../util/react'
@@ -461,7 +461,7 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             {...this.props}
                         />
                     )}
-                {USE_CXP && (
+                {USE_PLATFORM && (
                     <CXPComponent
                         component={{
                             document: {
