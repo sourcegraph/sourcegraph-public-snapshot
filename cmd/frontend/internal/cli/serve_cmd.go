@@ -253,8 +253,10 @@ func Main() error {
 		srv.GoServe(l, &http.Server{
 			Handler:     internalHandler,
 			ReadTimeout: 75 * time.Second,
-			// Higher since for internal RPCs which can have large responses (eg git archive)
-			WriteTimeout: 10 * time.Minute,
+			// Higher since for internal RPCs which can have large responses
+			// (eg git archive). Should match the timeout used for git archive
+			// in gitserver.
+			WriteTimeout: time.Hour,
 		})
 	}
 
