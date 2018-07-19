@@ -19,10 +19,10 @@ import {
     toArray,
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
+import { SearchOptions } from '..'
 import { eventLogger } from '../../tracking/eventLogger'
 import { scrollIntoView } from '../../util'
 import { fetchSuggestions } from '../backend'
-import { SearchOptions } from '..'
 import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
 
 /**

@@ -1,12 +1,12 @@
 import { isEqual } from 'lodash'
 import { Observable } from 'rxjs'
 import { distinctUntilChanged, map, mergeMap } from 'rxjs/operators'
+import { SearchOptions } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { mutateConfigurationGraphQL } from '../configuration/backend'
 import { currentConfiguration } from '../settings/configuration'
 import { createAggregateError } from '../util/errors'
-import { SearchOptions } from '.'
 
 export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
     return queryGraphQL(

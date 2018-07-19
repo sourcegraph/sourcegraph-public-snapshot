@@ -13,9 +13,9 @@ import { Tooltip } from '../../components/tooltip/Tooltip'
 import { routes } from '../../routes'
 import { currentConfiguration } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
-import { submitSearch, toggleSearchFilter } from '../helpers'
 import { fetchSearchScopes } from '../backend'
 import { FilterChip } from '../FilterChip'
+import { submitSearch, toggleSearchFilter } from '../helpers'
 
 interface Props {
     location: H.Location

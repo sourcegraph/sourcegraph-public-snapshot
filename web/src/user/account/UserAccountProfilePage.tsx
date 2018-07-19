@@ -15,6 +15,7 @@ import {
     switchMap,
     tap,
 } from 'rxjs/operators'
+import { USER_DISPLAY_NAME_MAX_LENGTH, userURL } from '..'
 import { refreshCurrentUser } from '../../auth'
 import { UsernameInput } from '../../auth/SignInSignUpCommon'
 import { gql, queryGraphQL } from '../../backend/graphql'
@@ -24,7 +25,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { enableUserArea, UserAreaPageProps } from '../area/UserArea'
-import { USER_DISPLAY_NAME_MAX_LENGTH, userURL } from '..'
 import { UserAvatar } from '../UserAvatar'
 import { updateUser } from './backend'
 

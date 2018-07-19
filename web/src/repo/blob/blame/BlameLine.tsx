@@ -6,8 +6,8 @@ import { Link } from 'react-router-dom'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, switchMap, takeUntil } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { AbsoluteRepoFile } from '../..'
+import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { fetchBlameFile2 } from './backend'
 
 const LOADING: 'loading' = 'loading'

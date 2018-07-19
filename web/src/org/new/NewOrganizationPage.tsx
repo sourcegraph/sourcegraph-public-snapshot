@@ -4,11 +4,11 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
+import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
-import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 
 interface Props {
     history: H.History

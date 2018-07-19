@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 import { pickBy } from 'lodash'
-import { createTestBundle } from '../util/unit-test-utils'
 import * as _repo from '.'
+import { createTestBundle } from '../util/unit-test-utils'
 
 /** Remove undefined values from an object */
 const compact = (obj: any) => pickBy(obj, (val: any) => val !== undefined)

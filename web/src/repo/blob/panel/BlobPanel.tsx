@@ -21,6 +21,7 @@ import {
 } from 'rxjs/operators'
 import { Location, MarkupContent, Position } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
+import { AbsoluteRepoFile, PositionSpec } from '../..'
 import {
     ExtensionsProps,
     getDefinition,
@@ -38,7 +39,6 @@ import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
-import { AbsoluteRepoFile, PositionSpec } from '../..'
 import { RepoHeaderActionPortal } from '../../RepoHeaderActionPortal'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { ToggleDiscussionsPanel } from '../actions/ToggleDiscussions'

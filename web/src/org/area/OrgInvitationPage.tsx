@@ -14,8 +14,8 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { OrgAreaPageProps } from './OrgArea'
 import { OrgAvatar } from '../OrgAvatar'
+import { OrgAreaPageProps } from './OrgArea'
 
 interface Props extends OrgAreaPageProps {
     /** Called when the viewer responds to the invitation. */

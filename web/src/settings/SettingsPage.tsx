@@ -2,9 +2,9 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { concat, mergeMap } from 'rxjs/operators'
 import { overwriteSettings } from '../configuration/backend'
-import { SettingsFile } from './SettingsFile'
 import { refreshConfiguration } from '../user/settings/backend'
 import { SettingsAreaPageProps } from './SettingsArea'
+import { SettingsFile } from './SettingsFile'
 
 interface Props extends SettingsAreaPageProps, Pick<RouteComponentProps<{}>, 'history' | 'location'> {
     isLightTheme: boolean

@@ -19,10 +19,10 @@ import {
     tap,
 } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
-import { RadioButtons } from './RadioButtons'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { pluralize } from '../util/strings'
 import { Form } from './Form'
+import { RadioButtons } from './RadioButtons'
 
 /** Checks if the passed value satisfies the GraphQL Node interface */
 const hasID = (obj: any): obj is { id: GQL.ID } => obj && typeof obj.id === 'string'

@@ -4,9 +4,9 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { debounceTime, map, startWith, switchMap, withLatestFrom } from 'rxjs/operators'
+import { buildSearchURLQuery } from '..'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchSearchResultStats } from '../backend'
-import { buildSearchURLQuery } from '..'
 import { Sparkline } from './Sparkline'
 
 interface Props {

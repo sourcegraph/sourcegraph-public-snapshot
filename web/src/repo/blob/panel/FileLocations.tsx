@@ -7,12 +7,12 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
 import { isError } from 'util'
 import { Location } from 'vscode-languageserver-types'
+import { parseRepoURI } from '../..'
 import { FileMatch, IFileMatch, ILineMatch } from '../../../components/FileMatch'
 import { VirtualList } from '../../../components/VirtualList'
 import { asError } from '../../../util/errors'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { toPrettyBlobURL, toRepoURL } from '../../../util/url'
-import { parseRepoURI } from '../..'
 
 export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
     <div className="file-locations__error alert alert-danger m-2">

@@ -2,9 +2,9 @@ import ViewIcon from '@sourcegraph/icons/lib/View'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { RenderMode } from '../..'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { RenderMode } from '../..'
 
 interface Props {
     location: H.Location

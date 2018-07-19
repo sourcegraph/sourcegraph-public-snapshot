@@ -7,10 +7,10 @@ import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxj
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
 import { isError } from 'util'
 import { Location } from 'vscode-languageserver-types'
+import { parseRepoURI } from '../..'
 import { Resizable } from '../../../components/Resizable'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { asError } from '../../../util/errors'
-import { parseRepoURI } from '../..'
 import { RepoLink } from '../../RepoLink'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 

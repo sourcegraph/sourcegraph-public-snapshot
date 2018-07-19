@@ -1,5 +1,5 @@
-import { count } from '../util/strings'
 import { SearchOptions } from '.'
+import { count } from '../util/strings'
 
 export function queryTelemetryData(opt: SearchOptions): { [key: string]: any } {
     return {

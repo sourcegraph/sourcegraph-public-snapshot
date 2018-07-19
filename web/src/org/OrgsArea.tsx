@@ -3,8 +3,8 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
-import { NewOrganizationPage } from './new/NewOrganizationPage'
 import { OrgArea } from './area/OrgArea'
+import { NewOrganizationPage } from './new/NewOrganizationPage'
 
 const NotFoundPage = () => (
     <HeroPage

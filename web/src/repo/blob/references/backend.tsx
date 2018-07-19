@@ -1,12 +1,12 @@
 import { from, Observable } from 'rxjs'
 import { bufferCount, catchError, concatMap, filter, map, mergeMap, tap } from 'rxjs/operators'
 import { Location } from 'vscode-languageserver-types'
+import { makeRepoURI } from '../..'
 import { Extensions, getXdefinition, getXreferences } from '../../../backend/features'
 import { gql, queryGraphQL } from '../../../backend/graphql'
 import * as GQL from '../../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { memoizeObservable } from '../../../util/memoize'
-import { makeRepoURI } from '../..'
 
 const fetchDependencyReferences = memoizeObservable(
     (ctx: LSPTextDocumentPositionParams): Observable<GQL.IDependencyReferences | null> =>
