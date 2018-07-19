@@ -8,7 +8,7 @@ import { ExtensionSelector } from '../registry/extensions/actions/ExtensionSelec
 import { platformEnabled } from '../user/tags'
 
 /** The global debug toolbar is shown when localStorage.debug is truthy. */
-const SHOW_GLOBAL_DEBUG = localStorage.getItem('debug') !== null
+const SHOW_GLOBAL_DEBUG = localStorage.getItem('debug') !== null || USE_CXP
 
 interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPEnvironmentProps, CXPControllerProps {
     user: GQL.IUser | null
