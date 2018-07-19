@@ -23,7 +23,7 @@ func (s *Server) migrateGitDir() {
 			// ignore because we would've ignored this directory a few lines
 			// below here anyway.
 			if os.IsNotExist(err) && s.ignorePath(path) {
-				log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+				log15.Warn("(1) ignoring path in git clone location migration", "path", path, "error", err)
 			}
 			return nil
 		}
@@ -59,7 +59,7 @@ func (s *Server) migrateGitDir() {
 			// HEAD doesn't exist, so keep recursing
 			return nil
 		} else if err != nil {
-			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			log15.Warn("(2) ignoring path in git clone location migration", "path", path, "error", err)
 			return filepath.SkipDir
 		}
 
@@ -83,13 +83,13 @@ func (s *Server) migrateGitDir() {
 		middle := filepath.Join(tmp, filepath.Base(path))
 		log15.Info("migrating git clone location", "src", path, "dst", filepath.Join(path, ".git"))
 		if err := os.Mkdir(middle, os.ModePerm); err != nil {
-			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			log15.Warn("(3) ignoring path in git clone location migration", "path", path, "error", err)
 			return filepath.SkipDir
 		}
 		// If something goes wrong, ensure we clean up the temporary location.
 		defer os.RemoveAll(middle)
 		if err := os.Rename(path, filepath.Join(middle, ".git")); err != nil {
-			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			log15.Warn("(4) ignoring path in git clone location migration", "path", path, "error", err)
 			return filepath.SkipDir
 		}
 		if err := os.Rename(middle, path); err != nil {
@@ -97,7 +97,7 @@ func (s *Server) migrateGitDir() {
 			// in place. So we have lost the clone. This is fine since is
 			// should be rare and the clone is just a cache of the clone from
 			// the code host.
-			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			log15.Warn("(5) ignoring path in git clone location migration", "path", path, "error", err)
 			return filepath.SkipDir
 		}
 
