@@ -22,7 +22,7 @@ func (s *Server) migrateGitDir() {
 			// sees it initially but it has been deleted). This is safe to
 			// ignore because we would've ignored this directory a few lines
 			// below here anyway.
-			if os.IsNotExist(err) && s.ignorePath(path) {
+			if !os.IsNotExist(err) && s.ignorePath(path) {
 				log15.Warn("(1) ignoring path in git clone location migration", "path", path, "error", err)
 			}
 			return nil
