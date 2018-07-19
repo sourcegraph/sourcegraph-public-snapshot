@@ -11,11 +11,10 @@ export class RepositoryGraphAction extends React.PureComponent<{ repo: string; r
         return (
             <Link
                 to={`/${encodeRepoRev(this.props.repo, this.props.rev)}/-/graph`}
-                className="composite-container__header-action"
+                className="nav-link"
                 data-tooltip="Repository graph"
             >
-                <GlobeIcon className="icon-inline" />
-                <span className="composite-container__header-action-text">Graph</span>
+                <GlobeIcon className="icon-inline" /> <span className="d-md-none d-lg-inline">Graph</span>
             </Link>
         )
     }

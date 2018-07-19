@@ -210,11 +210,10 @@ export class RepoContainer extends React.Component<Props, State> {
             location.pathname.startsWith(`${repoMatchURL}/-/settings/`)
 
         return (
-            <div className="repo-composite-container composite-container">
+            <div className="repo-container w-100 d-flex flex-column">
                 <RepoHeader
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
-                    className="repo-composite-container__header"
                     extensions={this.props.extensions}
                     onExtensionsChange={this.props.onExtensionsChange}
                     cxpController={this.props.cxpController}

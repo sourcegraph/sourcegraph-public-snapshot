@@ -5,9 +5,19 @@
 
 .repo-header {
     flex: none;
+    padding-top: 0.125rem;
+    padding-bottom: 0.05rem;
+    border-style: solid;
+    border-width: 0 0 1px;
 
     .navbar-nav {
         white-space: nowrap;
+
+        // Less padding above, below, and between actions.
+        .nav-item .nav-link {
+            padding: 0.425rem 0.175rem;
+            user-select: none;
+        }
     }
 
     &__repo {
@@ -40,5 +50,17 @@
 
     &__spacer {
         flex: 1 1 0;
+    }
+}
+
+.theme-dark {
+    .repo-header {
+        border-color: #233043;
+    }
+}
+
+.theme-light {
+    .repo-header {
+        border-color: $color-light-border;
     }
 }

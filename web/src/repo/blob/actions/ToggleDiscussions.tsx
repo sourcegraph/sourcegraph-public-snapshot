@@ -67,13 +67,14 @@ export class ToggleDiscussionsPanel extends React.PureComponent<{
     public render(): JSX.Element | null {
         const visible = ToggleDiscussionsPanel.isVisible(this.props.location)
         return (
-            <button
-                className="btn btn-link btn-sm composite-container__header-action"
+            <a
+                className="nav-link"
+                tabIndex={0}
                 onClick={this.onClick}
                 data-tooltip={`${visible ? 'Hide' : 'Show'} discussions (Alt+D/Opt+D)`}
             >
                 <ChatIcon className="icon-inline" />
-            </button>
+            </a>
         )
     }
 

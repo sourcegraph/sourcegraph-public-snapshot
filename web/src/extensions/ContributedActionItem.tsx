@@ -92,15 +92,15 @@ export class ContributedActionItem extends React.PureComponent<Props> {
         return (
             <button
                 type="button"
-                className="btn btn-link btn-sm composite-container__header-action"
+                className="btn btn-link nav-link"
                 data-tooltip={this.props.contribution.iconURL ? this.props.contribution.title : undefined}
                 disabled={this.state.actionOrError === LOADING}
                 onClick={this.runAction}
             >
                 {this.props.contribution.iconURL ? (
-                    <img src={this.props.contribution.iconURL} className="composite-container__header-action-icon" />
+                    <img src={this.props.contribution.iconURL} className="nav-link-icon" />
                 ) : (
-                    <span className="composite-container__header-action-text">{this.props.contribution.title}</span>
+                    <span className="d-md-none d-lg-inline">{this.props.contribution.title}</span>
                 )}
             </button>
         )

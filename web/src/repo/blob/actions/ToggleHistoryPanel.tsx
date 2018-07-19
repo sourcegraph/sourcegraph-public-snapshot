@@ -67,13 +67,14 @@ export class ToggleHistoryPanel extends React.PureComponent<{
     public render(): JSX.Element | null {
         const visible = ToggleHistoryPanel.isVisible(this.props.location)
         return (
-            <button
-                className="btn btn-link btn-sm composite-container__header-action"
+            <a
+                className="nav-link"
+                tabIndex={0}
                 onClick={this.onClick}
                 data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
             >
                 <HistoryIcon className="icon-inline" />
-            </button>
+            </a>
         )
     }
 

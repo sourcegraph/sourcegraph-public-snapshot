@@ -69,13 +69,14 @@ export class ToggleLineWrap extends React.PureComponent<
 
     public render(): JSX.Element | null {
         return (
-            <button
-                className="btn btn-link btn-sm composite-container__header-action"
+            <a
+                className="nav-link"
+                tabIndex={0}
                 onClick={this.onClick}
                 data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
             >
                 {this.state.value ? <UnwrapIcon className="icon-inline" /> : <WrapIcon className="icon-inline" />}
-            </button>
+            </a>
         )
     }
 

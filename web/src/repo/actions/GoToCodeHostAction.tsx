@@ -110,12 +110,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         }
 
         return (
-            <a
-                className="btn btn-link btn-sm composite-container__header-action"
-                onClick={onClick}
-                href={url}
-                data-tooltip={`View on ${displayName}`}
-            >
+            <a className="nav-link" tabIndex={0} onClick={onClick} href={url} data-tooltip={`View on ${displayName}`}>
                 <Icon className="icon-inline" />
             </a>
         )

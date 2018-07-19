@@ -50,11 +50,6 @@ interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPControllerPro
     /** Information about the revision of the repository. */
     resolvedRev: ResolvedRev | ErrorLike | undefined
 
-    /**
-     * An optional class name to add to the element.
-     */
-    className?: string
-
     location: H.Location
     history: H.History
 }
@@ -170,9 +165,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.repo.uri))
         return (
-            <nav
-                className={`repo-header composite-container__header navbar navbar-expand ${this.props.className || ''}`}
-            >
+            <nav className="repo-header navbar navbar-expand">
                 <div className="navbar-nav">
                     <PopoverButton
                         className="repo-header__section-btn repo-header__repo"

@@ -142,12 +142,13 @@ export class CodeIntelStatusIndicator extends React.Component<
     public render(): React.ReactNode {
         return (
             <div className="code-intel-status-indicator">
-                <button
-                    className={`btn btn-link btn-sm composite-container__header-action ${this.getButtonColorCSSClass()}`}
+                <a
+                    className={`code-intel-status-indicator__icon nav-link ${this.getButtonColorCSSClass()}`}
+                    tabIndex={0}
                 >
                     <PowerPlugIcon className="icon-inline" />
-                </button>
-                <div className="code-intel-status-indicator__popover card">
+                </a>
+                <div className="code-intel-status-indicator__popover card" tabIndex={-1}>
                     <div className="card-body">
                         {this.state.langServerOrError === undefined ? (
                             <div className="text-center">

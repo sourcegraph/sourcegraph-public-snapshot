@@ -671,14 +671,12 @@ describe('e2e test suite', () => {
                     { waitUntil: 'domcontentloaded' }
                 )
                 await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.composite-container__header-action[href*="https://github"]')
+                await page.waitForSelector('.nav-link[href*="https://github"]')
                 await retry(async () =>
                     assert.equal(
                         await page.evaluate(
                             () =>
-                                (document.querySelector(
-                                    '.composite-container__header-action[href*="https://github"]'
-                                ) as HTMLAnchorElement).href
+                                (document.querySelector('.nav-link[href*="https://github"]') as HTMLAnchorElement).href
                         ),
                         'https://github.com/sourcegraph/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go#L19'
                     )
