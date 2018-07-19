@@ -94,7 +94,7 @@ func init() {
 						Address: strings.TrimPrefix(ls.Address, "tcp://"),
 					},
 				},
-				ActivationEvents: []string{"*"},
+				ActivationEvents: []string{"onLanguage:" + ls.Language},
 			}
 			if ls.InitializationOptions != nil {
 				x.Args = &ls.InitializationOptions

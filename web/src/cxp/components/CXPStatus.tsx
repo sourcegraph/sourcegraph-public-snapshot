@@ -3,18 +3,20 @@ import InfoIcon from '@sourcegraph/icons/lib/Info'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RefreshIcon from '@sourcegraph/icons/lib/Refresh'
 import { Client as CXPClient, ClientState as CXPClientState } from 'cxp/lib/client/client'
+import { ClientKey as CXPClientKey } from 'cxp/lib/environment/controller'
 import { Trace } from 'cxp/lib/jsonrpc2/trace'
 import * as React from 'react'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { PopoverButton } from '../../components/PopoverButton'
+import { updateSavedClientTrace } from '../client'
 import { CXPControllerProps, CXPEnvironmentProps } from '../CXPEnvironment'
 
 interface Props extends CXPEnvironmentProps, CXPControllerProps {}
 
 interface State {
     /** The CXP clients, or undefined while loading. */
-    clients?: { client: CXPClient; state: CXPClientState }[]
+    clients?: { client: CXPClient; key: CXPClientKey; state: CXPClientState }[]
 }
 
 export class CXPStatus extends React.PureComponent<Props, State> {
@@ -33,16 +35,16 @@ export class CXPStatus extends React.PureComponent<Props, State> {
             cxpController
                 .pipe(
                     switchMap(cxpController =>
-                        cxpController.clients.pipe(
+                        cxpController.clientEntries.pipe(
                             switchMap(
-                                clients =>
-                                    clients.length === 0
+                                clientEntries =>
+                                    clientEntries.length === 0
                                         ? of([])
                                         : combineLatest(
-                                              clients.map(client =>
+                                              clientEntries.map(({ client, key }) =>
                                                   client.state.pipe(
                                                       distinctUntilChanged(),
-                                                      map(state => ({ state, client }))
+                                                      map(state => ({ state, client, key }))
                                                   )
                                               )
                                           )
@@ -72,13 +74,13 @@ export class CXPStatus extends React.PureComponent<Props, State> {
                 {this.state.clients ? (
                     this.state.clients.length > 0 ? (
                         <div className="list-group list-group-flush">
-                            {this.state.clients.map(({ client, state }, i) => (
+                            {this.state.clients.map(({ client, key, state }, i) => (
                                 <div
                                     key={i}
                                     className="cxp-status__client list-group-item d-flex align-items-center justify-content-between py-2"
                                 >
                                     <span className="d-flex align-items-center">
-                                        {client.id}
+                                        <span data-tooltip={key.root || 'no root'}>{client.id}</span>
                                         <span className={`badge badge-${clientStateBadgeClass(state)} ml-1`}>
                                             {CXPClientState[state]}
                                         </span>
@@ -89,10 +91,10 @@ export class CXPStatus extends React.PureComponent<Props, State> {
                                                 client.trace === Trace.Off ? 'outline-' : ''
                                             }info p-0`}
                                             // tslint:disable-next-line:jsx-no-lambda
-                                            onClick={() => this.onClientTraceClick(client)}
+                                            onClick={() => this.onClientTraceClick(client, key)}
                                             data-tooltip={`${
                                                 client.trace === Trace.Off ? 'Enable' : 'Disable'
-                                            } trace logging in devtools console`}
+                                            } trace in console`}
                                         >
                                             <InfoIcon className="icon-inline" />
                                         </button>
@@ -101,7 +103,7 @@ export class CXPStatus extends React.PureComponent<Props, State> {
                                                 className="btn btn-sm btn-outline-danger p-0 ml-1"
                                                 // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.onClientStopClick(client)}
-                                                data-tooltip="Stop client"
+                                                data-tooltip="Stop"
                                             >
                                                 <BrowserStopIcon className="icon-inline" />
                                             </button>
@@ -111,7 +113,7 @@ export class CXPStatus extends React.PureComponent<Props, State> {
                                                 className="btn btn-sm btn-outline-success p-0 ml-1"
                                                 // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.onClientActivateClick(client)}
-                                                data-tooltip="Start client"
+                                                data-tooltip="Start"
                                             >
                                                 <RefreshIcon className="icon-inline" />
                                             </button>
@@ -121,7 +123,7 @@ export class CXPStatus extends React.PureComponent<Props, State> {
                                                 className="btn btn-sm btn-outline-warning p-0 ml-1"
                                                 // tslint:disable-next-line:jsx-no-lambda
                                                 onClick={() => this.onClientResetClick(client)}
-                                                data-tooltip="Reset client"
+                                                data-tooltip="Restart"
                                             >
                                                 <RefreshIcon className="icon-inline" />
                                             </button>
@@ -142,8 +144,9 @@ export class CXPStatus extends React.PureComponent<Props, State> {
         )
     }
 
-    private onClientTraceClick = (client: CXPClient) => {
+    private onClientTraceClick = (client: CXPClient, key: CXPClientKey) => {
         client.trace = client.trace === Trace.Verbose ? Trace.Off : Trace.Verbose
+        updateSavedClientTrace(key, client.trace)
         this.forceUpdate()
     }
 

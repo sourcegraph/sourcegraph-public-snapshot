@@ -30,7 +30,8 @@ const ExtensionSchemaJSON = `{
       "type": "array",
       "items": {
         "type": "string",
-        "enum": ["*"]
+        "pattern": "^(\\*|onLanguage:\\w+)$",
+        "examples": ["onLanguage:javascript", "onLanguage:python", "*"]
       }
     },
     "args": {

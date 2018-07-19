@@ -5,15 +5,18 @@ import {
     ErrorHandler as CXPErrorHandler,
     InitializationFailedHandler,
 } from 'cxp/lib/client/errorHandler'
-import { Controller } from 'cxp/lib/environment/controller'
+import { ClientKey, Controller } from 'cxp/lib/environment/controller'
+import { Environment } from 'cxp/lib/environment/environment'
 import { MessageTransports } from 'cxp/lib/jsonrpc2/connection'
 import { Message, ResponseError } from 'cxp/lib/jsonrpc2/messages'
+import { BrowserConsoleTracer } from 'cxp/lib/jsonrpc2/trace'
 import { createWebSocketMessageTransports } from 'cxp/lib/jsonrpc2/transports/browserWebSocket'
 import { createWebWorkerMessageTransports } from 'cxp/lib/jsonrpc2/transports/webWorker'
 import { InitializeError } from 'cxp/lib/protocol'
 import { catchError, mergeMap } from 'rxjs/operators'
 import { toGQLKeyPath, updateUserExtensionSettings } from '../registry/backend'
 import { isErrorLike } from '../util/errors'
+import { getSavedClientTrace } from './client'
 import { CXPExtensionWithManifest } from './CXPEnvironment'
 import { importScriptsBlobURL } from './webWorker'
 
@@ -102,6 +105,33 @@ class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
 }
 
 /**
+ * Filter the environment to omit extensions that should not be activated (based on their manifest's
+ * activationEvents).
+ */
+function environmentFilter(
+    nextEnvironment: Environment<CXPExtensionWithManifest>
+): Environment<CXPExtensionWithManifest> {
+    return {
+        ...nextEnvironment,
+        extensions:
+            nextEnvironment.extensions &&
+            nextEnvironment.extensions.filter(x => {
+                try {
+                    const component = nextEnvironment.component
+                    if (x.manifest && !isErrorLike(x.manifest) && x.manifest.activationEvents && component) {
+                        return x.manifest.activationEvents.some(
+                            e => e === '*' || e === `onLanguage:${component.document.languageId}`
+                        )
+                    }
+                } catch (err) {
+                    console.error(err)
+                }
+                return false
+            }),
+    }
+}
+
+/**
  * Creates the CXP controller, which handles all CXP communication between the React app and CXP extension.
  *
  * There should only be a single controller for the entire application. The controller's environment represents all
@@ -111,13 +141,18 @@ class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
  * React components via its registries and the showMessages, etc., observables.
  */
 export function createController(): Controller<CXPExtensionWithManifest> {
-    const controller = new Controller<CXPExtensionWithManifest>({
-        createMessageTransports,
-        initializationFailedHandler: (extension: CXPExtensionWithManifest) => {
-            const handler = new ErrorHandler(extension.id)
-            return err => handler.initializationFailed(err)
+    const controller = new Controller({
+        clientOptions: (key: ClientKey, options: ClientOptions, extension: CXPExtensionWithManifest) => {
+            const errorHandler = new ErrorHandler(extension.id)
+            return {
+                createMessageTransports: () => createMessageTransports(extension, options),
+                initializationFailedHandler: err => errorHandler.initializationFailed(err),
+                errorHandler,
+                trace: getSavedClientTrace(key),
+                tracer: new BrowserConsoleTracer(extension.id),
+            }
         },
-        errorHandler: (extension: CXPExtensionWithManifest) => new ErrorHandler(extension.id),
+        environmentFilter,
     })
 
     controller.showMessages.subscribe(({ message }) => alert(message))

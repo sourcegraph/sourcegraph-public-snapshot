@@ -47,6 +47,7 @@ const fetchBlob = memoizeObservable(
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
+                                content
                                 richHTML
                                 highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
                                     aborted
@@ -216,6 +217,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                                 repoPath={this.props.repoPath}
                                 commitID={this.props.commitID}
                                 filePath={this.props.filePath}
+                                content={this.state.blobOrError.content}
                                 html={this.state.blobOrError.highlight.html}
                                 rev={this.props.rev}
                                 mode={this.props.mode}

@@ -35,6 +35,9 @@ import { locateTarget } from './tooltips'
 const toPortalID = (line: number) => `blame-portal-${line}`
 
 interface BlobProps extends AbsoluteRepoFile, ModeSpec, ExtensionsProps, CXPComponentProps, CXPControllerProps {
+    /** The raw content of the blob. */
+    content: string
+
     /** The trusted syntax-highlighted code as HTML */
     html: string
 
@@ -464,6 +467,8 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
                             document: {
                                 uri: `git://${this.props.repoPath}?${this.props.commitID}#${this.props.filePath}`,
                                 languageId: this.props.mode,
+                                version: 0,
+                                text: this.props.content,
                             },
                             selections:
                                 this.state.selectedPosition && this.state.selectedPosition.line
