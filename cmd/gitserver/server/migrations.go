@@ -17,7 +17,14 @@ func (s *Server) migrateGitDir() {
 
 	err = filepath.Walk(s.ReposDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			// The directory may not exist if it is a path we want to ignore
+			// (as e.g. tmp dirs may be created in a race where filepath.Walk
+			// sees it initially but it has been deleted). This is safe to
+			// ignore because we would've ignored this directory a few lines
+			// below here anyway.
+			if os.IsNotExist(err) && s.ignorePath(path) {
+				log15.Warn("ignoring path in git clone location migration", "path", path, "error", err)
+			}
 			return nil
 		}
 
