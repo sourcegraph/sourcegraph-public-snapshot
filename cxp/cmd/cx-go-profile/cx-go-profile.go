@@ -103,7 +103,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 	case "textDocument/hover":
 		return nil, nil
 
-	case "textDocument/decorations":
+	case "textDocument/decoration":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}

@@ -321,7 +321,7 @@ export interface DecorationAttachmentRenderOptions {
 export const fetchDecorations = memoizeObservable(
     (ctx: LSPContext & FileSpec): Observable<TextDocumentDecoration[] | null> =>
         sendLSPRequest(ctx, {
-            method: 'textDocument/decorations',
+            method: 'textDocument/decoration',
             params: {
                 textDocument: {
                     uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,

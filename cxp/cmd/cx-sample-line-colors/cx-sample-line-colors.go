@@ -240,7 +240,7 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 		}
 		return nil, nil
 
-	case "textDocument/decorations":
+	case "textDocument/decoration":
 		if len(openDocuments) > 0 {
 			return nil, nil
 		}

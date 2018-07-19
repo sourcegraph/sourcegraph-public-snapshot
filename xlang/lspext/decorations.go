@@ -2,7 +2,7 @@ package lspext
 
 import "github.com/sourcegraph/go-langserver/pkg/lsp"
 
-// TextDocumentDecorationParams contains the parameters to the textDocument/decorations method.
+// TextDocumentDecorationParams contains the parameters to the textDocument/decoration method.
 type TextDocumentDecorationParams struct {
 	TextDocument lsp.TextDocumentIdentifier `json:"textDocument"`
 }

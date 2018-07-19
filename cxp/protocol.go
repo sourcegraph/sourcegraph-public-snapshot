@@ -108,7 +108,7 @@ type ExtensionSettings struct {
 type ClientCapabilities struct {
 	lsp.ClientCapabilities
 
-	Decoration *DecorationCapabilityOptions `json:"decorations,omitempty"`
+	Decoration *DecorationCapabilityOptions `json:"decoration,omitempty"`
 
 	// TODO(sqs): add this to cxp-js
 	Exec bool `json:"exec"`
