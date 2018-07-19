@@ -7,7 +7,7 @@ import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { Position, Range } from 'vscode-languageserver-types'
 import * as GQL from '../../backend/graphqlschema'
-import { eventLogger } from '../../tracking/eventLogger'
+import { ActionItem } from '../../components/ActionItem'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { fetchFileExternalLinks } from '../backend'
 
@@ -110,15 +110,16 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         }
 
         return (
-            <a className="nav-link" tabIndex={0} onClick={onClick} href={url} data-tooltip={`View on ${displayName}`}>
+            <ActionItem
+                to={url}
+                target="_self"
+                data-tooltip={`View on ${displayName}`}
+                logEvent="OpenInCodeHostClicked"
+            >
                 <Icon className="icon-inline" />
-            </a>
+            </ActionItem>
         )
     }
-}
-
-function onClick(): void {
-    eventLogger.log('OpenInCodeHostClicked')
 }
 
 function serviceTypeDisplayNameAndIcon(

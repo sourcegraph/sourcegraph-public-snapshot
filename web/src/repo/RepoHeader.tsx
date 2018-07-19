@@ -2,10 +2,10 @@ import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Subject, Subscription, Unsubscribable } from 'rxjs'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
+import { ActionItem } from '../components/ActionItem'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { CXPControllerProps } from '../cxp/CXPEnvironment'
@@ -231,14 +231,10 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         ))}
                     {this.props.repo.viewerCanAdminister && (
                         <li className="nav-item">
-                            <Link
-                                to={`/${this.props.repo.uri}/-/settings`}
-                                className="nav-link composite-container__header-action"
-                                data-tooltip="Repository settings"
-                            >
-                                <GearIcon className="icon-inline" />
-                                <span className="composite-container__header-action-text">Settings</span>
-                            </Link>
+                            <ActionItem to={`/${this.props.repo.uri}/-/settings`} data-tooltip="Repository settings">
+                                <GearIcon className="icon-inline" />{' '}
+                                <span className="d-md-none d-lg-inline">Settings</span>
+                            </ActionItem>
                         </li>
                     )}
                 </ul>

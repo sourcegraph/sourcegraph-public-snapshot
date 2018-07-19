@@ -3,6 +3,7 @@ import WrapIcon from '@sourcegraph/icons/lib/Wrap'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+import { ActionItem } from '../../../components/ActionItem'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -69,18 +70,14 @@ export class ToggleLineWrap extends React.PureComponent<
 
     public render(): JSX.Element | null {
         return (
-            <a
-                className="nav-link"
-                tabIndex={0}
-                onClick={this.onClick}
+            <ActionItem
+                onSelect={this.onClick}
                 data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
             >
                 {this.state.value ? <UnwrapIcon className="icon-inline" /> : <WrapIcon className="icon-inline" />}
-            </a>
+            </ActionItem>
         )
     }
 
-    private onClick: React.MouseEventHandler<HTMLElement> = () => {
-        this.updates.next(!this.state.value)
-    }
+    private onClick = () => this.updates.next(!this.state.value)
 }

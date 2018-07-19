@@ -1,10 +1,9 @@
 import ViewIcon from '@sourcegraph/icons/lib/View'
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { RenderMode } from '../..'
+import { ActionItem } from '../../../components/ActionItem'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
     location: H.Location
@@ -52,19 +51,14 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
         const otherMode: RenderMode = this.props.mode === 'code' ? 'rendered' : 'code'
 
         return (
-            <Link
+            <ActionItem
                 to={ToggleRenderedFileMode.getURLForMode(this.props.location, otherMode)}
-                className="nav-link"
-                onClick={this.onClick}
+                logEvent="ViewButtonClicked"
                 data-tooltip={otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}
             >
                 <ViewIcon className="icon-inline" />{' '}
                 <span className="d-md-none d-lg-inline">{otherMode === 'code' ? 'Raw' : 'Formatted'}</span>
-            </Link>
+            </ActionItem>
         )
-    }
-
-    private onClick: React.MouseEventHandler<HTMLAnchorElement> = () => {
-        eventLogger.log('ViewButtonClicked')
     }
 }

@@ -7,6 +7,7 @@ import { ExecuteCommandParams } from 'vscode-languageserver-protocol/lib/main'
 import { currentUser } from '../auth'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
+import { ActionItem } from '../components/ActionItem'
 import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { toGQLKeyPath, updateUserExtensionSettings } from '../registry/backend'
 import { asError, ErrorLike } from '../util/errors'
@@ -90,19 +91,17 @@ export class ContributedActionItem extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <button
-                type="button"
-                className="btn btn-link nav-link"
+            <ActionItem
                 data-tooltip={this.props.contribution.iconURL ? this.props.contribution.title : undefined}
                 disabled={this.state.actionOrError === LOADING}
-                onClick={this.runAction}
+                onSelect={this.runAction}
             >
                 {this.props.contribution.iconURL ? (
                     <img src={this.props.contribution.iconURL} className="nav-link-icon" />
                 ) : (
                     <span className="d-md-none d-lg-inline">{this.props.contribution.title}</span>
                 )}
-            </button>
+            </ActionItem>
         )
     }
 

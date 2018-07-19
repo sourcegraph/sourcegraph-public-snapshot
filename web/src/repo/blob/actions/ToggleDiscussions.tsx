@@ -3,6 +3,7 @@ import * as H from 'history'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
+import { ActionItem } from '../../../components/ActionItem'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { lprToRange, parseHash, toPositionOrRangeHash, toViewStateHashComponent } from '../../../util/url'
@@ -67,16 +68,11 @@ export class ToggleDiscussionsPanel extends React.PureComponent<{
     public render(): JSX.Element | null {
         const visible = ToggleDiscussionsPanel.isVisible(this.props.location)
         return (
-            <a
-                className="nav-link"
-                tabIndex={0}
-                onClick={this.onClick}
-                data-tooltip={`${visible ? 'Hide' : 'Show'} discussions (Alt+D/Opt+D)`}
-            >
+            <ActionItem onSelect={this.onClick} data-tooltip={`${visible ? 'Hide' : 'Show'} discussions (Alt+D/Opt+D)`}>
                 <ChatIcon className="icon-inline" />
-            </a>
+            </ActionItem>
         )
     }
 
-    private onClick: React.MouseEventHandler<HTMLElement> = () => this.toggles.next()
+    private onClick = () => this.toggles.next()
 }

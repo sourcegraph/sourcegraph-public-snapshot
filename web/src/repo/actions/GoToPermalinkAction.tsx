@@ -1,11 +1,10 @@
 import LinkIcon from '@sourcegraph/icons/lib/Link'
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { replaceRevisionInURL } from '..'
-import { eventLogger } from '../../tracking/eventLogger'
+import { ActionItem } from '../../components/ActionItem'
 
 /**
  * A repository header action that replaces the revision in the URL with the canonical 40-character
@@ -57,14 +56,13 @@ export class GoToPermalinkAction extends React.PureComponent<{
         }
 
         return (
-            <Link
-                className="nav-link"
-                onClick={this.onClick}
+            <ActionItem
                 to={this.permalinkURL}
                 data-tooltip="Permalink (with full Git commit SHA)"
+                logEvent="GoToPermalinkClicked"
             >
                 <LinkIcon className="icon-inline" />
-            </Link>
+            </ActionItem>
         )
     }
 
@@ -74,6 +72,4 @@ export class GoToPermalinkAction extends React.PureComponent<{
             this.props.commitID
         )
     }
-
-    private onClick = (): void => eventLogger.log('OpenInCodeHostClicked')
 }
