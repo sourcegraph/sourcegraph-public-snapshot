@@ -15,11 +15,12 @@ import (
 // RunGitoliteRepositorySyncWorker runs the worker that syncs repositories from gitolite hosts to Sourcegraph
 func RunGitoliteRepositorySyncWorker(ctx context.Context) {
 	for {
+		start := time.Now()
 		log15.Debug("RunGitoliteRepositorySyncWorker:GitoliteUpdateRepos")
 		if err := api.InternalClient.GitoliteUpdateRepos(context.Background()); err != nil {
 			log15.Error("Error updating Gitolite repositories.", "err", err)
 		} else {
-			log15.Debug("Updated Gitolite repositories.")
+			log15.Info("Updated Gitolite repositories.", "duration", time.Now().Sub(start))
 		}
 		gitoliteUpdateTime.Set(float64(time.Now().Unix()))
 		time.Sleep(getUpdateInterval())
