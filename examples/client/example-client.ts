@@ -43,14 +43,14 @@ async function run(): Promise<void> {
         console.error('textDocument/hover failed:', err.message)
     }
 
-    console.log('textDocument/decorations...')
+    console.log('textDocument/decoration...')
     try {
         const result = await client.sendRequest(TextDocumentDecorationRequest.type, {
             textDocument: { uri: `${config.root}#mux.go` },
         } as TextDocumentDecorationParams)
-        console.log('textDocument/decorations result:', result)
+        console.log('textDocument/decoration result:', result)
     } catch (err) {
-        console.error('textDocument/decorations failed:', err.message)
+        console.error('textDocument/decoration failed:', err.message)
     }
 
     console.log('textDocument/didOpen...')

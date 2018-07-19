@@ -10,7 +10,7 @@ export interface DecorationClientCapabilities {
 export interface DecorationCapabilityOptions {
     /**
      * Whether the server supports static decorations (i.e., decorations that the client requests using
-     * textDocument/decorations).
+     * textDocument/decoration).
      */
     static?: boolean
 
