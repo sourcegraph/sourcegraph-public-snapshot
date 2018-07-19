@@ -5,7 +5,7 @@ import { map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
-import { RegistryExtensionNodeCard } from '../registry/RegistryExtensionNodeCard'
+import { RegistryExtensionNodeCard } from './RegistryExtensionNodeCard'
 import { createAggregateError } from '../util/errors'
 import { RegistryExtensionNodeRow } from './RegistryExtensionNodeRow'
 

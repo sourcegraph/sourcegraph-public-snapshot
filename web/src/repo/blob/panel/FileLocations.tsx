@@ -12,7 +12,7 @@ import { VirtualList } from '../../../components/VirtualList'
 import { asError } from '../../../util/errors'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { toPrettyBlobURL, toRepoURL } from '../../../util/url'
-import { parseRepoURI } from '../../index'
+import { parseRepoURI } from '../..'
 
 export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
     <div className="file-locations__error alert alert-danger m-2">

@@ -15,11 +15,11 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { lprToRange, parseHash } from '../../util/url'
-import { AbsoluteRepoFile, makeRepoURI, ParsedRepoURI } from '../index'
+import { AbsoluteRepoFile, makeRepoURI, ParsedRepoURI } from '..'
 import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
-import { Blob2 } from './Blob2'
+import { Blob } from './Blob'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
@@ -212,7 +212,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                 {renderAs === 'code' &&
                     !this.state.blobOrError.highlight.aborted && (
                         <>
-                            <Blob2
+                            <Blob
                                 className="blob-page__blob"
                                 repoPath={this.props.repoPath}
                                 commitID={this.props.commitID}

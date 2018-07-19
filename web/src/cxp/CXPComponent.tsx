@@ -10,7 +10,7 @@ export interface CXPComponentProps {
 }
 
 interface Props extends CXPComponentProps {
-    /** A description of the parent component (e.g., Blob2) that is presenting the document. */
+    /** A description of the parent component (e.g., Blob) that is presenting the document. */
     component: Component | null
 }
 

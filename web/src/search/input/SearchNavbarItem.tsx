@@ -4,7 +4,7 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, skip, startWith } from 'rxjs/operators'
 import { Form } from '../../components/Form'
 import { submitSearch } from '../helpers'
-import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from '../index'
+import { parseSearchURLQuery, SearchOptions, searchOptionsEqual } from '..'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 

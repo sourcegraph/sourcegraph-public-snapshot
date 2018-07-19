@@ -1,8 +1,8 @@
 import * as React from 'react'
 import ReactDOM from 'react-dom'
+import { AbsoluteRepoFile } from '..'
 import { DecorationAttachmentRenderOptions } from '../../backend/lsp'
 import { LinkOrSpan } from '../../components/LinkOrSpan'
-import { AbsoluteRepoFile } from '../index'
 
 interface LineDecorationAttachmentProps extends AbsoluteRepoFile {
     line: number
@@ -10,7 +10,7 @@ interface LineDecorationAttachmentProps extends AbsoluteRepoFile {
     attachment: DecorationAttachmentRenderOptions
 }
 
-/** Displays text after a line in Blob2. */
+/** Displays text after a line in Blob. */
 export class LineDecorationAttachment extends React.PureComponent<LineDecorationAttachmentProps> {
     private portal: Element | null = null
 

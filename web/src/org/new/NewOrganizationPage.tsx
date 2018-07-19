@@ -8,7 +8,7 @@ import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createOrganization } from '../backend'
-import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '../index'
+import { ORG_NAME_MAX_LENGTH, VALID_ORG_NAME_REGEXP } from '..'
 
 interface Props {
     history: H.History

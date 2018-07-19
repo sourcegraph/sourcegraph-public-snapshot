@@ -18,7 +18,7 @@ import {
 } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { fetchTreeEntries } from '../repo/backend'
-import { AbsoluteRepo } from '../repo/index'
+import { AbsoluteRepo } from '../repo'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { TreeNode } from './Tree'
 

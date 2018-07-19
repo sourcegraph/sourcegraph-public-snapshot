@@ -6,7 +6,7 @@ import { gql, queryGraphQL } from '../../../backend/graphql'
 import * as GQL from '../../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { memoizeObservable } from '../../../util/memoize'
-import { makeRepoURI } from '../../index'
+import { makeRepoURI } from '../..'
 
 const fetchDependencyReferences = memoizeObservable(
     (ctx: LSPTextDocumentPositionParams): Observable<GQL.IDependencyReferences | null> =>

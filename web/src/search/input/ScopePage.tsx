@@ -17,9 +17,9 @@ import { currentConfiguration } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchReposByQuery } from '../backend'
 import { submitSearch } from '../helpers'
-import { queryUpdates } from '../input/QueryInput'
-import { QueryInput } from '../input/QueryInput'
-import { SearchButton } from '../input/SearchButton'
+import { queryUpdates } from './QueryInput'
+import { QueryInput } from './QueryInput'
+import { SearchButton } from './SearchButton'
 
 const ScopeNotFound = () => (
     <HeroPage

@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Tooltip } from '../../../components/tooltip/Tooltip'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { RenderMode } from '../../index'
+import { RenderMode } from '../..'
 
 interface Props {
     location: H.Location

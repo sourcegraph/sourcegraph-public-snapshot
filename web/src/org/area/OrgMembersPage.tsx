@@ -11,7 +11,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { OrgAreaPageProps } from '../area/OrgArea'
+import { OrgAreaPageProps } from './OrgArea'
 import { removeUserFromOrganization } from '../backend'
 import { InviteForm } from '../invite/InviteForm'
 

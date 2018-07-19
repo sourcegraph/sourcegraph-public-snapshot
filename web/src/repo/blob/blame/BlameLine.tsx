@@ -7,7 +7,7 @@ import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, switchMap, takeUntil } from 'rxjs/operators'
 
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
-import { AbsoluteRepoFile } from '../../index'
+import { AbsoluteRepoFile } from '../..'
 import { fetchBlameFile2 } from './backend'
 
 const LOADING: 'loading' = 'loading'

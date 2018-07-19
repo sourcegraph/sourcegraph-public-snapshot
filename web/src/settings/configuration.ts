@@ -1,4 +1,4 @@
-import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser/lib/main'
+import { parse, ParseError, ParseErrorCode } from '@sqs/jsonc-parser'
 import { Observable, ReplaySubject } from 'rxjs'
 import { map } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'

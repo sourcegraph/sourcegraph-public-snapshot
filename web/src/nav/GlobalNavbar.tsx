@@ -6,7 +6,7 @@ import { authRequired } from '../auth'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { CXPControllerProps, CXPEnvironmentProps } from '../cxp/CXPEnvironment'
-import { parseSearchURLQuery, SearchOptions } from '../search/index'
+import { parseSearchURLQuery, SearchOptions } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { NavLinks } from './NavLinks'
 

@@ -10,7 +10,7 @@ import { Location } from 'vscode-languageserver-types'
 import { Resizable } from '../../../components/Resizable'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { asError } from '../../../util/errors'
-import { parseRepoURI } from '../../index'
+import { parseRepoURI } from '../..'
 import { RepoLink } from '../../RepoLink'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 

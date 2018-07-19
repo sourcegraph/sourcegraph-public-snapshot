@@ -93,7 +93,7 @@ const domFunctions = {
     },
 }
 
-export class Blob2 extends React.Component<BlobProps, BlobState> {
+export class Blob extends React.Component<BlobProps, BlobState> {
     /** Emits with the latest Props on every componentDidUpdate and on componentDidMount */
     private componentUpdates = new Subject<BlobProps>()
 
@@ -439,9 +439,9 @@ export class Blob2 extends React.Component<BlobProps, BlobState> {
 
     public render(): React.ReactNode {
         return (
-            <div className={`blob2 ${this.props.className}`} ref={this.nextBlobElement}>
+            <div className={`blob ${this.props.className}`} ref={this.nextBlobElement}>
                 <code
-                    className={`blob2__code ${this.props.wrapCode ? ' blob2__code--wrapped' : ''} e2e-blob`}
+                    className={`blob__code ${this.props.wrapCode ? ' blob__code--wrapped' : ''} e2e-blob`}
                     ref={this.nextCodeViewElement}
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
                     onClick={this.nextCodeClick}

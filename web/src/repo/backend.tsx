@@ -4,7 +4,7 @@ import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { createAggregateError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
-import { AbsoluteRepoFile, makeRepoURI, RepoRev } from './index'
+import { AbsoluteRepoFile, makeRepoURI, RepoRev } from '.'
 
 // We don't subclass Error because Error is not subclassable in ES5.
 // Use the internal factory functions and check for the error code on callsites.

@@ -6,7 +6,7 @@ import { Subject, Subscription } from 'rxjs'
 import { debounceTime, map, startWith, switchMap, withLatestFrom } from 'rxjs/operators'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchSearchResultStats } from '../backend'
-import { buildSearchURLQuery } from '../index'
+import { buildSearchURLQuery } from '..'
 import { Sparkline } from './Sparkline'
 
 interface Props {

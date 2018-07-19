@@ -6,7 +6,7 @@ import * as GQL from '../backend/graphqlschema'
 import { mutateConfigurationGraphQL } from '../configuration/backend'
 import { currentConfiguration } from '../settings/configuration'
 import { createAggregateError } from '../util/errors'
-import { SearchOptions } from './index'
+import { SearchOptions } from '.'
 
 export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
     return queryGraphQL(
