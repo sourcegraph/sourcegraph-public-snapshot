@@ -295,7 +295,7 @@ export class Client implements Unsubscribable {
         return this.stopAtState(ClientState.Stopped)
     }
 
-    public stopAtState(endState: ClientState.Stopped | ClientState.ActivateFailed): Promise<void> {
+    private stopAtState(endState: ClientState.Stopped | ClientState.ActivateFailed): Promise<void> {
         this._initializeResult = null
         if (!this.connectionPromise) {
             this._state.next(ClientState.Stopped)
@@ -338,10 +338,15 @@ export class Client implements Unsubscribable {
         if (wasConnectionActive) {
             // Shut down gracefully before closing the connection.
             const connection = this.connection!
-            return (this.onStop = connection.shutdown().then(() => {
-                connection.exit()
-                closeConnection(connection)
-            }))
+            return (this.onStop = connection
+                .shutdown()
+                .catch(() => {
+                    /* Ignore shutdown errors from server. */
+                })
+                .then(() => {
+                    connection.exit()
+                    closeConnection(connection)
+                }))
         }
         // Otherwise, just close the connection.
         closeConnection(this.connection!)
