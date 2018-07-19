@@ -155,6 +155,8 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
             eventLogger.log('SidebarSymbolsTabSelected')
         } else if (tab === 'files') {
             eventLogger.log('SidebarFilesTabSelected')
+        } else if (tab === 'history') {
+            eventLogger.log('SidebarHistoryTabSelected')
         }
     }
 }
