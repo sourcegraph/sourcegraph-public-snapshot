@@ -136,12 +136,16 @@
             color: $red;
         }
     }
+    .execute-button {
+        border-radius: 17px;
+    }
     .execute-button,
     .doc-category .show-btn {
         @extend .btn-primary;
         background: $blue;
         border-color: $blue;
         fill: white;
+        padding: 0;
         &.error {
             background: $blue;
         }
