@@ -23,6 +23,8 @@ func TestExpand(t *testing.T) {
 		`{"a": [true, {"b": "a${v}c$vd e"}]}`:     {`{"a":[true,{"b":"a1c e"}]}`, []string{"v", "vd"}},
 		`{"a": [true, {"b": {"c": "a${v}c$v"}}]}`: {`{"a":[true,{"b":{"c":"a1c1"}}]}`, []string{"v"}},
 		`"a${v}${v1}c"`:                           {`"a1c"`, []string{"v", "v1"}},
+		`{"a": "$v"}`:                             {`{"a":"1"}`, []string{"v"}},
+		`{"a": "$$v"}`:                            {`{"a":"$v"}`, []string{}},
 	}
 	for data, want := range tests {
 		t.Run(data, func(t *testing.T) {

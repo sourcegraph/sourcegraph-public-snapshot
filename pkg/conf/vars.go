@@ -44,6 +44,9 @@ func expand(data []byte, mapping func(string) string) (interpolatedData []byte, 
 	seenVarsMap := map[string]struct{}{}
 	expand := func(s string) string {
 		return os.Expand(s, func(name string) string {
+			if name == "$" {
+				return "$"
+			}
 			seenVarsMap[name] = struct{}{}
 			return mapping(name)
 		})
