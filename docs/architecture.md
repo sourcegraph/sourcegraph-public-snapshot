@@ -70,9 +70,9 @@ Mirrors repositories from their code host. All other Sourcegraph services talk t
 
 The indexer has a few responsibilities:
 
-* It keeps the cross-repo code intelligence indexes for repositories up to date.
-* It makes sure the appropriate language servers are enabled (Sourcegraph Server only).
-* It is how the frontend enqueues repositories for updating when (e.g. a user visits a repository).
+- It keeps the cross-repo code intelligence indexes for repositories up to date.
+- It makes sure the appropriate language servers are enabled (Sourcegraph Server only).
+- It is how the frontend enqueues repositories for updating when (e.g. a user visits a repository).
 
 ### lsp-proxy ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/lsp-proxy))
 

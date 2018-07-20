@@ -88,15 +88,15 @@ These real-time events get loaded into the `telligent.events` table in BigQuery,
 
 Every 3 hours, a series of [Sourcegraph-managed ETL jobs](https://github.com/KattMingMing/SGMetricsPipeline) run, enhancing the raw data. These jobs:
 
-* Filter out junk data (from bots, frontend bugs, and more).
-* Analyze all events to stitch together a consistent concept of a user, across sessions, products (e.g. web vs. browser extensions), and devices. This is based on Sourcegraph.com user profiles, where possible.
-* Perform higher-level analyses through data aggregation.
+- Filter out junk data (from bots, frontend bugs, and more).
+- Analyze all events to stitch together a consistent concept of a user, across sessions, products (e.g. web vs. browser extensions), and devices. This is based on Sourcegraph.com user profiles, where possible.
+- Perform higher-level analyses through data aggregation.
 
 These jobs generate a series of tables that can be accessed and analyzed, including:
 
-* `events_users`: a clone of the raw events table, but with junk data filtered, and user-level properties (i.e., in addition to the event-level properties) appended to each row
-* `users`: a smaller table with a row for each uniquely identified user
-* `sessions`: a table with a row for each user session
-* `daily_engagement`: a table with a row for each day-user pair, used for x/7 DWAU calculations
-* `orgs` and `memberships`: tables for linking users to Sourcegraph organizations
-* and more...
+- `events_users`: a clone of the raw events table, but with junk data filtered, and user-level properties (i.e., in addition to the event-level properties) appended to each row
+- `users`: a smaller table with a row for each uniquely identified user
+- `sessions`: a table with a row for each user session
+- `daily_engagement`: a table with a row for each day-user pair, used for x/7 DWAU calculations
+- `orgs` and `memberships`: tables for linking users to Sourcegraph organizations
+- and more...

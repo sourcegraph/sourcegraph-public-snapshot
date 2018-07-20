@@ -12,14 +12,14 @@ development environment.
 
 For Linux users or if you don't want to use Homebrew on macOS.
 
-* [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-* [Go](https://golang.org/doc/install) (v1.10.0 or higher)
-* [Node JS](https://nodejs.org/en/download/) (v7.0.0 or higher)
-* [make](https://www.gnu.org/software/make/)
-* [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
-  * if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
-* [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
-* [Redis](http://redis.io/) (v3.0.7 or higher)
+- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [Go](https://golang.org/doc/install) (v1.10.0 or higher)
+- [Node JS](https://nodejs.org/en/download/) (v7.0.0 or higher)
+- [make](https://www.gnu.org/software/make/)
+- [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
+  - if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
+- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
+- [Redis](http://redis.io/) (v3.0.7 or higher)
 
 ### Homebrew setup for macOS
 
@@ -240,30 +240,30 @@ How to debug our code with Visual Studio Code.
 
 Requires "Debugger for Chrome" extension.
 
-* Quit Chrome
-* Launch Chrome (Canary) from the command line with a remote debugging port:
-  * Mac OS: `/Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary --remote-debugging-port=9222`
-  * Windows: `start chrome.exe –remote-debugging-port=9222`
-  * Linux: `chromium-browser --remote-debugging-port=9222`
-* Go to http://localhost:3080
-* Open the Debugger in VSCode: "View" > "Debug"
-* Launch the `(ui) http://localhost:3080/*` debug configuration
-* Set breakpoints, enjoy
+- Quit Chrome
+- Launch Chrome (Canary) from the command line with a remote debugging port:
+  - Mac OS: `/Applications/Google\ Chrome\ Canary.app/Contents/MacOS/Google\ Chrome\ Canary --remote-debugging-port=9222`
+  - Windows: `start chrome.exe –remote-debugging-port=9222`
+  - Linux: `chromium-browser --remote-debugging-port=9222`
+- Go to http://localhost:3080
+- Open the Debugger in VSCode: "View" > "Debug"
+- Launch the `(ui) http://localhost:3080/*` debug configuration
+- Set breakpoints, enjoy
 
 ### Go
 
-* Install [Delve](https://github.com/derekparker/delve)
-* Run `DELVE=frontend,searcher ./dev/start.sh` (`DELVE` accepts a comma-separated list of components as specified in [../dev/Procfile](../dev/Procfile))
-* Set a breakpoint in VS Code (there's a bug where setting the breakpoint after attaching results in "Unverified breakpoint")
-* Run "Attach to $component" in the VS Code debug view
-* The process should start once the debugger is attached
+- Install [Delve](https://github.com/derekparker/delve)
+- Run `DELVE=frontend,searcher ./dev/start.sh` (`DELVE` accepts a comma-separated list of components as specified in [../dev/Procfile](../dev/Procfile))
+- Set a breakpoint in VS Code (there's a bug where setting the breakpoint after attaching results in "Unverified breakpoint")
+- Run "Attach to $component" in the VS Code debug view
+- The process should start once the debugger is attached
 
 Known issues:
 
-* At the time of writing there is an issue with homebrew formula so workarounds are required.
-  * Use homebrew and then google any errors you encounter.
-* There doesn't seem to be a clean way to stop debugging (https://github.com/derekparker/delve/issues/1057).
-  * The workaround is to manually kill the process when you are done.
+- At the time of writing there is an issue with homebrew formula so workarounds are required.
+  - Use homebrew and then google any errors you encounter.
+- There doesn't seem to be a clean way to stop debugging (https://github.com/derekparker/delve/issues/1057).
+  - The workaround is to manually kill the process when you are done.
 
 ## govendor
 
@@ -274,9 +274,9 @@ The Sourcegraph repository uses
 
 The Sourcegraph repository relies on code generation triggered by `go generate`. Code generation is used for a variety of tasks:
 
-* generating code for mocking interfaces
-* generate wrappers for interfaces (e.g., `./server/internal/middleware/*` packages)
-* pack app templates and assets into binaries
+- generating code for mocking interfaces
+- generate wrappers for interfaces (e.g., `./server/internal/middleware/*` packages)
+- pack app templates and assets into binaries
 
 Then run:
 
@@ -288,10 +288,10 @@ Also, sometimes there are erroneous diffs. This occurs for a few
 reasons, none of which are legitimate (i.e., they are tech debt items
 we need to address):
 
-* The codegen tool might emit code that depends on system configuration,
+- The codegen tool might emit code that depends on system configuration,
   such as the system timezone or packages you have in your GOPATH. We
   need to submit PRs to the tools to eliminate these issues.
-* You might have existing but gitignored files that the codegen tools
+- You might have existing but gitignored files that the codegen tools
   read on your disk that other developers don't have. (This occurs for
   app assets especially.)
 
@@ -310,13 +310,13 @@ Read more about our style in [docs/style.md](style.md).
 Windows support for Sourcegraph is currently in alpha. A few extra
 steps are required to run Sourcegraph in a Windows environment:
 
-* Sourcegraph depends on some GNU and open-source command line tools
+- Sourcegraph depends on some GNU and open-source command line tools
   like `make`, `sh`, and `find`. Install Cygwin from
   http://cygwin.org/ (tested with 2.2.1 x32).
-* Install Git from http://git-scm.com rather than use Cygwin's
+- Install Git from http://git-scm.com rather than use Cygwin's
   default Git, which does not properly handle local repositories.
-* Configure your Git to use Unix-style line endings.
-* Unix symlinks must be converted to Windows symlimks. This does not
+- Configure your Git to use Unix-style line endings.
+- Unix symlinks must be converted to Windows symlimks. This does not
   happen automatically (see
   http://stackoverflow.com/questions/5917249/git-symlinks-in-windows).
   After checking out Sourcegraph, run `bash dev/git-windows-aliases.sh` to install the git aliases needed to do

@@ -6,16 +6,16 @@
 
 ## Core docs
 
-* [Dev](./docs/dev.md): set up your development environment, build, test, etc.
-* [Deploy](./docs/deployment.md): deploy and release instructions
-* [Architecture](./docs/architecture.md): high-level architecture
-* [Web app](./web/README.md): web app docs
-* [Analytics](./docs/analytics.md): user analytics pipeline
-* [Glossary](./docs/glossary.md): glossary of common terms
-* [Infrastructure](https://github.com/sourcegraph/infrastructure): configuration, scripts, resource descriptions and secrets for running and managing sourcegraph.com and other internal/developer services.
-* [Style guide](./docs/style.md)
+- [Dev](./docs/dev.md): set up your development environment, build, test, etc.
+- [Deploy](./docs/deployment.md): deploy and release instructions
+- [Architecture](./docs/architecture.md): high-level architecture
+- [Web app](./web/README.md): web app docs
+- [Analytics](./docs/analytics.md): user analytics pipeline
+- [Glossary](./docs/glossary.md): glossary of common terms
+- [Infrastructure](https://github.com/sourcegraph/infrastructure): configuration, scripts, resource descriptions and secrets for running and managing sourcegraph.com and other internal/developer services.
+- [Style guide](./docs/style.md)
 
 ## Other docs
 
-* [SAML ADFS](./docs/saml-adfs.md): setting up SAML to work on Microsoft ADFS
-* [GraphQL API](./docs/api.md): useful tips when modifying the GraphQL API
+- [SAML ADFS](./docs/saml-adfs.md): setting up SAML to work on Microsoft ADFS
+- [GraphQL API](./docs/api.md): useful tips when modifying the GraphQL API

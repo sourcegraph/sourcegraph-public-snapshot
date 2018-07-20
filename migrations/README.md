@@ -69,25 +69,25 @@ backward-compatible.
 
 In case the customer must run a down migration, they will need to do the following steps:
 
-* Roll back Sourcegraph to the previous version. On startup, the frontend pods will log a migration
+- Roll back Sourcegraph to the previous version. On startup, the frontend pods will log a migration
   warning stating that the schema has been migrated to a newer version. This warning should **NOT**
   indicate that the database is dirty.
-* Verify that the schema is not dirty by running the following:
+- Verify that the schema is not dirty by running the following:
   ```
   kubectl exec $(kubectl get pod -l app=pgsql -o jsonpath='{.items[0].metadata.name}') -- psql -U sg -c 'SELECT * FROM schema_migrations'
   ```
   If it is dirty, refer to the section below on "Dirty DB schema".
-* Determine the two commits that correspond to the previous and new versions of Sourcegraph. Check
+- Determine the two commits that correspond to the previous and new versions of Sourcegraph. Check
   out each commit and run `ls -1` in the `migrations` directory. The order of the migrations is the
   same as the alphabetical order of the migration scripts, so take the diff between the two `ls -1`s to determine which migrations should be run.
-* Apply the down migration scripts in **reverse chronological order**. Wrap each down migration in a
+- Apply the down migration scripts in **reverse chronological order**. Wrap each down migration in a
   transaction block. If there are any errors, stop and resolve the issue before proceeding with the
   next down migration.
-* After all down migrations have been applied, run `update schema_migrations set version=$VERSION;`,
+- After all down migrations have been applied, run `update schema_migrations set version=$VERSION;`,
   where `$VERSION` is the numerical prefix of the migration script corresponding to the first
   migration you _didn't_ just apply. In other words, it is the numerical prefix of the last
   migration script as of the rolled-back-to commit.
-* Restart frontend frontend pods. On restart, they should spin up successfully.
+- Restart frontend frontend pods. On restart, they should spin up successfully.
 
 #### Dirty DB schema
 
@@ -98,9 +98,9 @@ made to the DB that conflict with the current migration stage.
 
 If the schema is dirty, do the following:
 
-* Figure out what change was made to cause the migration to fail midway through.
-* Run the necessary SQL commands to make the schema consistent with some version `$VERSION` of the
+- Figure out what change was made to cause the migration to fail midway through.
+- Run the necessary SQL commands to make the schema consistent with some version `$VERSION` of the
   schema. `$VERSION` is the numerical prefix of the last up migration script run to produce this
   version of the schema.
-* Run `update schema_migrations set version=$VERSION, dirty=false;`
-* Restart frontend pods.
+- Run `update schema_migrations set version=$VERSION, dirty=false;`
+- Restart frontend pods.

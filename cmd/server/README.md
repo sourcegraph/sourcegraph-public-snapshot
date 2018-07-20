@@ -3,8 +3,8 @@
 The user-facing documentation lives in
 [sourcegraph/website](https://github.com/sourcegraph/website). Quick links:
 
-* https://github.com/sourcegraph/website/blob/master/data/docs/server/docs.md
-* https://about.sourcegraph.com/docs/server/
+- https://github.com/sourcegraph/website/blob/master/data/docs/server/docs.md
+- https://about.sourcegraph.com/docs/server/
 
 This file documents information relevant to developers at Sourcegraph.
 
@@ -31,10 +31,10 @@ parts will be automated. You will need to complete four main steps.
     ```
 
 1.  Do some manual testing:
-    * Create admin account
-    * Add a repo
-    * Do a search
-    * Open a code file and see code intel working
+    - Create admin account
+    - Add a repo
+    - Do a search
+    - Open a code file and see code intel working
 1.  Run the previous minor version (e.g. if releasing 2.9.0 then install 2.8.0) from a clean state:
 
     ```
@@ -42,10 +42,10 @@ parts will be automated. You will need to complete four main steps.
     ```
 
 1.  Do some manual testing to create state that we can ensure persists after the update:
-    * Create admin account
-    * Add a repo
-    * Do a search
-    * Open a code file and see code intel working
+    - Create admin account
+    - Add a repo
+    - Do a search
+    - Open a code file and see code intel working
 1.  Stop the old container and run the new container without cleaning the data:
 
     ```
@@ -53,10 +53,10 @@ parts will be automated. You will need to complete four main steps.
     ```
 
 1.  Verify that
-    * You don't need to recreate an admin account.
-    * The repo you added is still added.
-    * Search works.
-    * Code intelligence works.
+    - You don't need to recreate an admin account.
+    - The repo you added is still added.
+    - Search works.
+    - Code intelligence works.
 
 #### (3) Release the Sourcegraph Server Docker image
 
@@ -82,11 +82,11 @@ You are done! Sourcegraph Server version `VERSION` has been released!
 1.  Ensure that the latest version of the language server is uploaded
     to `us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION`.
 
-    * Java: `sourcegraph/sourcegraph/cmd/xlang-java/build-and-upload.sh`
-    * Java (skinny): `sourcegraph/sourcegraph/cmd/xlang-java-skinny/build-and-upload.sh`
-    * JS/TS: Automatically build and uploaded in CI when you commit to master in `sourcegraph/javascript-typescript-buildserver`
-    * PHP: Automatically build and uploaded in CI when you commit to master in `sourcegraph/php-buildserver`
-    * Python: `git push origin master:docker-images/xlang-python`
-    * Go: `git push origin master:docker-images/xlang-go`
+    - Java: `sourcegraph/sourcegraph/cmd/xlang-java/build-and-upload.sh`
+    - Java (skinny): `sourcegraph/sourcegraph/cmd/xlang-java-skinny/build-and-upload.sh`
+    - JS/TS: Automatically build and uploaded in CI when you commit to master in `sourcegraph/javascript-typescript-buildserver`
+    - PHP: Automatically build and uploaded in CI when you commit to master in `sourcegraph/php-buildserver`
+    - Python: `git push origin master:docker-images/xlang-python`
+    - Go: `git push origin master:docker-images/xlang-go`
 
 1.  `./cmd/server/release-codeintel.sh $LANG $VERSION` e.g. `./cmd/server/release-codeintel.sh go 16903_2018-06-13_060942e`

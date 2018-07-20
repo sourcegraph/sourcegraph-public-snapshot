@@ -6,14 +6,14 @@ Comments starting with `#!` in [schema.graphql](../cmd/frontend/internal/graphql
 
 When changing the GraphQL schema, try to make changes that cause the API to ["grow"](https://youtu.be/oyLBGkS5ICk?t=19m49s), such as:
 
-* Providing more: adding a new field to a return type, marking a field in a return type as non-nullable (e.g. `String!`)
-* Requiring less: marking a parameter (or field in an input object) as nullable
+- Providing more: adding a new field to a return type, marking a field in a return type as non-nullable (e.g. `String!`)
+- Requiring less: marking a parameter (or field in an input object) as nullable
 
 Avoid "shrinking" the API with changes such as:
 
-* Removing fields in a return type
-* Marking fields in a return type as nullable
-* Marking a parameter as non-nullable
+- Removing fields in a return type
+- Marking fields in a return type as nullable
+- Marking a parameter as non-nullable
 
 ## Changing the return type of a field
 
@@ -55,5 +55,5 @@ When the new type is not a superclass of the old one (e.g. `String` -> `User`), 
 
 Try to avoid making breaking changes, but if you have to, be sure to give clients time to migrate. This usually involves splitting the change into 2 parts. For example, if you want to rename a field in the return type of a query:
 
-* Add a new field with a different name, deprecate the old field, and communicate the deprecation in the changelog
-* Give clients time to migrate (2 release cycles is a common guideline), remove the old deprecated field, and communicate the removal in the changelog
+- Add a new field with a different name, deprecate the old field, and communicate the deprecation in the changelog
+- Give clients time to migrate (2 release cycles is a common guideline), remove the old deprecated field, and communicate the removal in the changelog
