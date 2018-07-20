@@ -1,6 +1,7 @@
 package server
 
 import (
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -42,7 +43,7 @@ func TestMigrateGitDir(t *testing.T) {
 		ReposDir: root,
 		locker:   &RepositoryLocker{},
 	}).migrateGitDir()
-	assertFiles(t, root,
+	assertPaths(t, root,
 		"github.com/foo/bar/.git/HEAD",
 		"github.com/foo/baz/.git/HEAD",
 
@@ -56,6 +57,8 @@ func TestMigrateGitDir(t *testing.T) {
 		"example.gov/repo/.git/.git/HEAD",
 
 		"naughty.com/repo/.git/HEAD",
+
+		".tmp",
 	)
 }
 
@@ -84,15 +87,8 @@ func mkFiles(t *testing.T, root string, paths ...string) {
 	}
 }
 
-func assertFiles(t *testing.T, root string, want ...string) {
-	t.Helper()
-	assertPaths(t, func(info os.FileInfo) bool {
-		// exclude directories
-		return info.IsDir()
-	}, root, want...)
-}
-
-func assertPaths(t *testing.T, filter func(os.FileInfo) bool, root string, want ...string) {
+// assertPaths checks that all paths under want exist. It excludes non-empty directories
+func assertPaths(t *testing.T, root string, want ...string) {
 	t.Helper()
 	notfound := make(map[string]struct{})
 	for _, p := range want {
@@ -103,8 +99,12 @@ func assertPaths(t *testing.T, filter func(os.FileInfo) bool, root string, want 
 		if err != nil {
 			return err
 		}
-		if filter != nil && filter(info) {
-			return nil
+		if info.IsDir() {
+			if empty, err := isEmptyDir(path); err != nil {
+				t.Fatal(err)
+			} else if !empty {
+				return nil
+			}
 		}
 		rel, err := filepath.Rel(root, path)
 		if err != nil {
@@ -133,4 +133,18 @@ func assertPaths(t *testing.T, filter func(os.FileInfo) bool, root string, want 
 		sort.Strings(unwanted)
 		t.Errorf("found unexpected paths: %s", strings.Join(unwanted, " "))
 	}
+}
+
+func isEmptyDir(path string) (bool, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return false, err
+	}
+	defer f.Close()
+
+	_, err = f.Readdirnames(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err
 }

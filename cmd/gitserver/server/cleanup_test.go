@@ -149,7 +149,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 	}
 
 	// Straight after cleaning .tmp should be empty
-	assertFiles(t, filepath.Join(root, ".tmp"))
+	assertPaths(t, filepath.Join(root, ".tmp"), ".")
 
 	// tmp should exist
 	if info, err := os.Stat(tmp); err != nil {
@@ -180,9 +180,11 @@ func TestSetupAndClearTmp(t *testing.T) {
 	}
 
 	// Only files should be the repo files
-	assertFiles(t, root,
+	assertPaths(t, root,
 		"github.com/foo/baz/.git/HEAD",
-		"example.org/repo/.git/HEAD")
+		"example.org/repo/.git/HEAD",
+		".tmp",
+	)
 }
 
 func TestSetupAndClearTmp_Empty(t *testing.T) {
@@ -191,25 +193,13 @@ func TestSetupAndClearTmp_Empty(t *testing.T) {
 
 	s := &Server{ReposDir: root}
 
-	tmp, err := s.SetupAndClearTmp()
+	_, err := s.SetupAndClearTmp()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// No files, just the empty .tmp dir should exist
-	assertFiles(t, root)
-
-	// tmp should exist
-	if info, err := os.Stat(tmp); err != nil {
-		t.Fatal(err)
-	} else if !info.IsDir() {
-		t.Fatal("tmpdir is not a dir")
-	}
-
-	// tmp should be on the same mount as root, ie root is parent.
-	if filepath.Dir(tmp) != root {
-		t.Fatalf("tmp is not under root: tmp=%s root=%s", tmp, root)
-	}
+	assertPaths(t, root, ".tmp")
 }
 
 func TestRemoveRepoDirectory(t *testing.T) {
@@ -237,14 +227,9 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		}
 	}
 
-	assertPaths(t, nil, root,
+	assertPaths(t, root,
 		"github.com/foo/survior/.git/HEAD",
-		"github.com/foo/survior/.git",
-		"github.com/foo/survior",
-		"github.com/foo",
-		"github.com",
 		".tmp",
-		".",
 	)
 }
 
@@ -263,8 +248,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	assertPaths(t, nil, root,
+	assertPaths(t, root,
 		".tmp",
-		".",
 	)
 }
