@@ -23,22 +23,12 @@ func RunRepositoryPurgeWorker(ctx context.Context) {
 		return
 	}
 
-	// Explicitly must enable while we are testing this out on dogfood and
-	// sourcegraph.com.
-	if enabled, _ := strconv.ParseBool(os.Getenv("ENABLE_REPO_PURGE")); !enabled {
-		log15.Debug("repository purger is not enabled via env ENABLE_REPO_PURGE")
-		return
-	}
-
 	for {
 		err := purge(ctx)
 		if err != nil {
 			log15.Error("failed to run repository clone purge", "error", err)
-			// Sleep for longer to avoid spamming if we have a consistent
-			// failure.
-			time.Sleep(10 * time.Minute)
 		}
-		randSleep(time.Minute, 10*time.Second)
+		randSleep(10*time.Minute, time.Minute)
 	}
 }
 
@@ -68,11 +58,29 @@ func purge(ctx context.Context) error {
 
 	success := 0
 	failed := 0
+	skipped := 0
 
 	// remove repositories that are in cloned but not in enabled
 	for _, repoStr := range cloned {
 		repo := protocol.NormalizeRepo(api.RepoURI(repoStr))
 		if _, ok := enabled[repo]; ok {
+			continue
+		}
+
+		// We skip repositories that have been cloned in the last 12
+		// hours. This is to give time for a user to enable a repository they
+		// manually placed directly into gitserver's repository directory.
+		if info, err := gitserver.DefaultClient.RepoInfo(ctx, repo); err != nil {
+			// Do not fail at this point, just log so we can remove other
+			// repos.
+			log15.Error("Failed to remove disabled repository", "repo", repo, "error", err)
+			purgeFailed.Inc()
+			failed++
+			continue
+		} else if info.CloneTime != nil && time.Since(*info.CloneTime) < 12*time.Hour {
+			log15.Info("Skipping repository in purge since it was cloned less than 12 hours ago", "repo", repo, "age", time.Since(*info.CloneTime))
+			purgeSkipped.Inc()
+			skipped++
 			continue
 		}
 
@@ -98,7 +106,7 @@ func purge(ctx context.Context) error {
 	if success > 0 || failed > 0 {
 		logger = log15.Root().Info
 	}
-	logger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed)
+	logger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed, "skipped", skipped)
 
 	return nil
 }

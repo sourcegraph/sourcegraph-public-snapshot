@@ -47,6 +47,12 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 		} else {
 			resp.LastFetched = &mtime
 		}
+
+		if cloneTime, err := getRecloneTime(dir); err != nil {
+			log15.Warn("error getting reclone time", "repo", req.Repo, "err", err)
+		} else {
+			resp.CloneTime = &cloneTime
+		}
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {

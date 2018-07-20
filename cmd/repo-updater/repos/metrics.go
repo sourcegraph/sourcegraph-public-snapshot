@@ -65,6 +65,12 @@ var (
 		Name:      "purge_failed",
 		Help:      "Incremented each time we try and fail to remove a repository clone.",
 	})
+	purgeSkipped = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "purge_skipped",
+		Help:      "Incremented each time we skip a repository clone to remove.",
+	})
 )
 
 func init() {
@@ -77,4 +83,5 @@ func init() {
 	prometheus.MustRegister(repoListUpdateTime)
 	prometheus.MustRegister(purgeSuccess)
 	prometheus.MustRegister(purgeFailed)
+	prometheus.MustRegister(purgeSkipped)
 }
