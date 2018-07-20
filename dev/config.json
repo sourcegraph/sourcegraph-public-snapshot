@@ -40,7 +40,8 @@
   //   {
   //     "host": "git@gitolite.sgdev.org",
   //     "prefix": "gitolite.sgdev.org/",
-  //     "blacklist": "blacklist"
+  //     "blacklist": "blacklist",
+  //     "phabricatorMetadataCommand": "echo $$REPO | tr -cd '[A-Za-z]' | tail -c 4 | tr [a-z] [A-Z]"
   //   }
   // ],
   "github": [
