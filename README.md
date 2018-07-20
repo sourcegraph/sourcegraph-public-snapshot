@@ -1,6 +1,6 @@
 # EXPERIMENTAL: Code Extension Protocol (CXP) support for JavaScript/TypeScript
 
-[![build](https://badge.buildkite.com/2eb2e1c2cca148c26ce8d9571f4a8a1d21e3989d10c518feb9.svg)](https://buildkite.com/sourcegraph/cxp-js)
+[![build](https://travis-ci.org/sourcegraph/cxp-js.svg?branch=master)](https://travis-ci.org/sourcegraph/cxp-js)
 [![codecov](https://codecov.io/gh/sourcegraph/cxp-js/branch/master/graph/badge.svg?token=SLtdKY3zQx)](https://codecov.io/gh/sourcegraph/cxp-js)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![sourcegraph: search](https://img.shields.io/badge/sourcegraph-search-brightgreen.svg)](https://sourcegraph.com/github.com/sourcegraph/cxp-js)
