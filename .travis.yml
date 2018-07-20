@@ -2,13 +2,13 @@
 language: node_js
 node_js: '10'
 
-env:
-  global:
-    - FORCE_COLOR=1
-
 cache:
   directories:
     - ~/.npm
+
+env:
+  global:
+    - FORCE_COLOR=1
 
 script:
   - npm run prettier
