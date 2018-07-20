@@ -27,9 +27,10 @@ func writeJSON(w http.ResponseWriter, v interface{}) error {
 	return json.NewEncoder(w).Encode(v)
 }
 
-// tryUpdateGitolitePhabricatorMetadata attempts to update Phabricator metadata for a Gitolite-sourced repository, if it
-// is appropriate to do so.
-func tryUpdateGitolitePhabricatorMetadata(ctx context.Context, gconf *schema.GitoliteConnection, repoURI api.RepoURI, repoName string) {
+// tryUpdateGitolitePhabricatorMetadataDeprecated attempts to update Phabricator metadata for a Gitolite-sourced repository, if it
+// is appropriate to do so. This function is part of a deprecated call path, and should be removed once everyone has
+// migrated to a newer repo-updater which handles GitoliteUpdateRepos internally.
+func tryUpdateGitolitePhabricatorMetadataDeprecated(ctx context.Context, gconf *schema.GitoliteConnection, repoURI api.RepoURI, repoName string) {
 	if gconf.PhabricatorMetadataCommand == "" {
 		return
 	}

@@ -40,7 +40,11 @@ func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
+// serveGitoliteUpdateReposDeprecated is an obsolete endpoint that was used to
+// request that all configured Gitolite repos get fetched. It's now handled
+// internally to repo-updater. This endpoint still needs to exist until
+// everyone's upgraded to a more recent repo-updater.
+func serveGitoliteUpdateReposDeprecated(w http.ResponseWriter, r *http.Request) error {
 	// Get complete list of Gitolite repositories
 	log15.Debug("serveGitoliteUpdateRepos")
 
@@ -91,7 +95,7 @@ func serveGitoliteUpdateRepos(w http.ResponseWriter, r *http.Request) error {
 			}
 
 			if gconf.PhabricatorMetadataCommand != "" {
-				tryUpdateGitolitePhabricatorMetadata(ctx, gconf, uri, entry)
+				tryUpdateGitolitePhabricatorMetadataDeprecated(ctx, gconf, uri, entry)
 			}
 		}
 	}
