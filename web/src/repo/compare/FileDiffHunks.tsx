@@ -84,7 +84,7 @@ const DiffHunk: React.SFC<{
                                         <td
                                             className="diff-hunk__num"
                                             data-line={oldLine - 1}
-                                            data-part="head"
+                                            data-part="base"
                                             id={oldAnchor}
                                             // tslint:disable-next-line:jsx-no-lambda need access to props
                                             onClick={() => history.push({ hash: oldAnchor })}
@@ -96,7 +96,7 @@ const DiffHunk: React.SFC<{
                                         <td
                                             className="diff-hunk__num"
                                             data-line={newLine - 1}
-                                            data-part="base"
+                                            data-part="head"
                                             id={newAnchor}
                                             // tslint:disable-next-line:jsx-no-lambda need access to props
                                             onClick={() => history.push({ hash: newAnchor })}
