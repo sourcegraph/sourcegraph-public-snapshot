@@ -82,7 +82,12 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			}
 		}
 
-		rootURI, err := uri.Parse(string(params.OriginalRootURI))
+		var rootURI *uri.URI
+		if params.OriginalRootURI != "" {
+			rootURI, err = uri.Parse(string(params.OriginalRootURI))
+		} else {
+			rootURI, err = uri.Parse(string(params.RootOrRootURI()))
+		}
 		if err != nil {
 			return nil, err
 		}

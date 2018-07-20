@@ -44,7 +44,16 @@ func getDecorations(ctx context.Context, settings extensionSettings, root *uri.U
 	if err != nil {
 		return nil, err
 	}
-	coverage, err := getCoverageForFile(ctx, settings.Token, string(root.Repo()), root.Rev(), strings.TrimPrefix(docURI.Path, "/"))
+
+	var path string
+	switch docURI.Scheme {
+	case "file":
+		path = strings.TrimPrefix(docURI.Path, "/")
+	case "git":
+		path = docURI.Fragment
+	}
+
+	coverage, err := getCoverageForFile(ctx, settings.Token, string(root.Repo()), root.Rev(), path)
 	if err != nil {
 		return nil, err
 	}
