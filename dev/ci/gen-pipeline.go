@@ -146,6 +146,9 @@ func main() {
 		}
 		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
+	} else {
+		// The Git branch "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
+		version = strings.TrimPrefix(version, "v")
 	}
 
 	addDockerImageStep := func(app string, latest bool) {
