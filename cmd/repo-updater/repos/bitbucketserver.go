@@ -241,7 +241,7 @@ func RunBitbucketServerRepositorySyncWorker(ctx context.Context) {
 func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnection) {
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
-	go createEnableUpdateRepos(ctx, nil, repoChan)
+	go createEnableUpdateRepos(ctx, fmt.Sprintf("bitbucket:%s", conn.config.Username), repoChan)
 	for r := range conn.listAllRepos(ctx) {
 		if r.State != "AVAILABLE" {
 			continue

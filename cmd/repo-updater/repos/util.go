@@ -52,34 +52,35 @@ func cachedTransportWithCertTrusted(cert string) (http.RoundTripper, error) {
 	}, nil
 }
 
+// A repoCreateOrUpdateRequest is a RepoCreateOrUpdateRequest, from the API,
+// plus a specific URL we'd like to use for it.
 type repoCreateOrUpdateRequest struct {
 	api.RepoCreateOrUpdateRequest
 	URL string // the repository's Git remote URL
 }
 
-func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdateRequest, repoChan <-chan repoCreateOrUpdateRequest) {
-	if repoSlice != nil && repoChan != nil {
-		panic("unexpected args")
-	}
+// createEnableUpdateRepos receives requests on the provided channel. The
+// source argument should be a distinctive string identifying the configuration
+// being updated, so repo-updater can detect when repositories are dropped from
+// a given source.
+func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan repoCreateOrUpdateRequest) {
 	enqueued := 0
+	dequeued := 0
 	errors := 0
+	newList := make(sourceRepoList)
 
 	do := func(op repoCreateOrUpdateRequest) {
 		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op.RepoCreateOrUpdateRequest)
 		if err != nil {
 			log15.Warn("Error creating or updating repository", "repo", op.RepoURI, "error", err)
+			errors++
 			return
 		}
 
 		// if newScheduler is set (controlled by feature flag), do this instead of running
 		// the old code.
 		if NewScheduler() {
-			if createdRepo.Enabled {
-				enqueued++
-				Queue(ctx, createdRepo.URI, op.URL)
-			} else {
-				Dequeue(ctx, createdRepo.URI, op.URL)
-			}
+			newList[string(createdRepo.URI)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
 			return
 		}
 		if createdRepo.Enabled {
@@ -101,17 +102,17 @@ func createEnableUpdateRepos(ctx context.Context, repoSlice []repoCreateOrUpdate
 			}
 		}
 	}
-
-	for _, repo := range repoSlice {
-		do(repo)
-	}
 	for repo := range repoChan {
 		do(repo)
+	}
+	if NewScheduler() {
+		enqueued, dequeued = repos.updateSource(source, newList)
 	}
 	if honey.Enabled() {
 		ev := honey.Event("repo-updater")
 		ev.AddField("source", "create-enable-update-repos")
 		ev.AddField("fetches", enqueued)
+		ev.AddField("dequeued", dequeued)
 		ev.AddField("errors", errors)
 	}
 }

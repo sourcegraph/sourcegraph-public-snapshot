@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	minDelay = 15 * time.Second
+	minDelay = 45 * time.Second
 	maxDelay = 8 * time.Hour
 )
 
@@ -152,24 +152,38 @@ func (s repoListStats) String() string {
 		s.manualFetches, s.autoFetches, s.autoQueue, s.knownRepos, s.loops, s.scale)
 }
 
-// RepoList is a list of repositories we're tracking. we keep them indexed
+// repoList is a list of repositories we're tracking. we keep them indexed
 // both as a map, so we can look them up by name, and as a heap sorted by
 // next-due timestamp.
 type repoList struct {
-	heap                repoHeap             // a priority queue, actually sorted on timestamps
-	autoUpdatesDisabled bool                 // should we do auto-updates?
-	repos               map[string]*repoData // reponame lookup
-	bumped              []*repoData          // manual updates that get priority
-	mu                  sync.Mutex           // locking to avoid races
-	pingChan            chan string          // send reason-for-ping as a string here to ping the update worker
-	confRepos           map[string]string    // a map of configured repositories used to notice config changes
-	ready               bool                 // whether we're ready for pings
-	intervalScale       float64              // how much to scale intervals by
-	nextDue             time.Time            // next time we expect a thing to be ready
-	stats               repoListStats        // usage stats so we can observe usage
-	activeRequests      int                  // current active requests
-	maxRequests         int                  // max requests we should attempt at once
+	heap                repoHeap                  // a priority queue, actually sorted on timestamps
+	autoUpdatesDisabled bool                      // should we do auto-updates?
+	repos               map[string]*repoData      // reponame lookup
+	bumped              []*repoData               // manual updates that get priority
+	mu                  sync.Mutex                // locking to avoid races
+	pingChan            chan string               // send reason-for-ping as a string here to ping the update worker
+	confRepos           map[string]sourceRepoList // list of configured repos from each source
+	ready               bool                      // whether we're ready for pings
+	intervalScale       float64                   // how much to scale intervals by
+	nextDue             time.Time                 // next time we expect a thing to be ready
+	stats               repoListStats             // usage stats so we can observe usage
+	activeRequests      int                       // current active requests
+	maxRequests         int                       // max requests we should attempt at once
 }
+
+// A configuredRepo represents the configuration data for a given repo from
+// a configuration source, such as information retrieved from GitHub for a
+// given GitHubConnection. The URI isn't present because it's the key used
+// to look the repo up in a sourceRepoList.
+type configuredRepo struct {
+	url     string
+	enabled bool
+}
+
+// a sourceRepoList represents the set of repositories associated with a
+// specific source, such as a given GitHubConnection, or the main sourcegraph
+// config file.
+type sourceRepoList map[string]configuredRepo
 
 // This list is the common point between the sync worker and incoming
 // requests.
@@ -212,9 +226,9 @@ func baseInterval(age time.Duration) time.Duration {
 		// each additional day => one more minute
 		interval = time.Duration(3+hours/24) * time.Minute
 	} else {
-		// roughly hours/10 minutes, so 48 ~= 4.8 minutes, which is to
-		// say 6 seconds per hour, plus the 15-second minimum
-		interval = time.Duration(15+hours*6) * time.Second
+		// roughly hours/12 minutes, so 48 ~= 4 minutes, which is to
+		// say 5 seconds per hour, plus the 45-second minimum
+		interval = time.Duration(45+hours*5) * time.Second
 	}
 	if interval < minimum {
 		interval = minimum
@@ -276,6 +290,8 @@ func (r *repoList) queue(name, url string) {
 		r.add(name, url, true)
 		return
 	}
+	// Possibly update the URL for future updates.
+	repo.url = url
 	if repo.auto && repo.heapIndex >= 0 {
 		// already done
 		return
@@ -308,6 +324,8 @@ func (r *repoList) dequeue(name, url string) {
 		// nothing to do
 		return
 	}
+	// Possibly update the URL for future updates.
+	repo.url = url
 	// remove from automatic schedule
 	if repo.heapIndex >= 0 {
 		heap.Remove(&r.heap, repo.heapIndex)
@@ -325,6 +343,8 @@ func (r *repoList) update(name, url string) {
 		r.add(name, url, false)
 		return
 	}
+	// Possibly update the URL for future updates.
+	repo.url = url
 	if repo.manual || repo.working {
 		// already scheduled
 		return
@@ -386,14 +406,16 @@ func (r *repoList) startUpdate(ctx context.Context, nextUp *repoData, auto bool)
 	} else {
 		r.stats.manualFetches++
 	}
-	go r.doUpdate(ctx, nextUp)
+	go r.doUpdate(ctx, nextUp, nextUp.url)
 }
 
-// doUpdate() attempts the actual update for a repo, calling r.requeue()
-// when done.
+// doUpdate attempts the actual update for a repo, calling r.requeue()
+// when done. The URL is provided as an explicit argument so it's safe
+// to modify the repo's URL while this function is running; it will
+// use the URL configured when it was called.
 //
 // safe to run when not holding mutex.
-func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
+func (r *repoList) doUpdate(ctx context.Context, repo *repoData, url string) {
 	log15.Debug("doUpdate", "repo", repo.name)
 	name := repo.name
 	var resp *gitserverprotocol.RepoUpdateResponse
@@ -424,7 +446,7 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
 	// We request an update if auto updates are enabled, or if the repo isn't
 	// cloned, or the manual flag is set.
 	if !cloned || repo.manual || !r.autoUpdatesDisabled {
-		resp, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: api.RepoURI(name), URL: repo.url}, repo.interval)
+		resp, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: api.RepoURI(name), URL: url}, repo.interval)
 		if err != nil {
 			log15.Warn("error requesting repo update", "repo", name, "err", err)
 			return
@@ -608,6 +630,39 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 	}
 }
 
+// updateSource updates the list of configured repos associated with the given
+// source.
+func (r *repoList) updateSource(source string, newList sourceRepoList) (enqueued, dequeued int) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.confRepos == nil {
+		r.confRepos = make(map[string]sourceRepoList)
+	}
+	if r.confRepos[source] == nil {
+		r.confRepos[source] = make(sourceRepoList)
+	}
+	oldList := r.confRepos[source]
+	for name, value := range oldList {
+		_, ok := newList[name]
+		if !ok {
+			dequeued++
+			r.dequeue(name, value.url)
+			delete(oldList, name)
+		}
+	}
+	for name, value := range newList {
+		oldList[name] = value
+		if value.enabled {
+			enqueued++
+			r.queue(name, value.url)
+		} else {
+			dequeued++
+			r.dequeue(name, value.url)
+		}
+	}
+	return enqueued, dequeued
+}
+
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
 func RunRepositorySyncWorker(ctx context.Context) {
 	shutdown := make(chan struct{})
@@ -649,17 +704,12 @@ func RunRepositorySyncWorker(ctx context.Context) {
 	})
 }
 
-// updateConfig() responds to changes in the configured list of repositories;
+// updateConfig responds to changes in the configured list of repositories;
 // this is specifically the list of repositories directly configured, as opposed
 // to repositories found by looking up keys from various services.
 func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repository) {
 	log15.Debug("repolist updateConfig")
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	oldConfRepos := r.confRepos
-	newConfRepos := make(map[string]string, len(configs))
-	createConfRepos := make(map[string]string)
-	deleteConfRepos := make(map[string]string)
+	newList := make(sourceRepoList, 0)
 	for _, cfg := range configs {
 		if cfg.Type == "" {
 			cfg.Type = "git"
@@ -667,29 +717,9 @@ func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repositor
 		if cfg.Type != "git" {
 			continue
 		}
-		name := cfg.Path
-		url := cfg.Url
-		newConfRepos[name] = url
-		// add repos if not in the old list
-		if oldConfRepos[name] == "" {
-			createConfRepos[name] = url
-		}
-		// remove the name from the old list
-		delete(oldConfRepos, name)
+		newList[cfg.Path] = configuredRepo{url: cfg.Url, enabled: true}
 	}
-	// anything in oldConfRepos that hasn't been deleted is a repo
-	// we used to have but now don't.
-	for name, url := range oldConfRepos {
-		deleteConfRepos[name] = url
-	}
-	// update state to reflect the changes we just made
-	r.confRepos = newConfRepos
-	for name, url := range deleteConfRepos {
-		r.dequeue(name, url)
-	}
-	for name, url := range createConfRepos {
-		r.queue(name, url)
-	}
+	r.updateSource("internalConfig", newList)
 }
 
 func startRepositorySyncWorker(ctx context.Context, shutdown chan struct{}) {

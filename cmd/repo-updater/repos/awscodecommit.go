@@ -183,7 +183,8 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 	repos := conn.listAllRepositories(ctx)
 
 	repoChan := make(chan repoCreateOrUpdateRequest)
-	go createEnableUpdateRepos(ctx, nil, repoChan)
+	defer close(repoChan)
+	go createEnableUpdateRepos(ctx, fmt.Sprintf("aws:%s", conn.config.AccessKeyID), repoChan)
 	for repo := range repos {
 		// log15.Debug("awscodecommit sync: create/enable/update repo", "repo", repo.Name)
 		remoteURL, err := conn.authenticatedRemoteURL(repo)
@@ -201,7 +202,6 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 			URL: remoteURL,
 		}
 	}
-	close(repoChan)
 }
 
 func newAWSCodeCommitConnection(config *schema.AWSCodeCommitConnection) (*awsCodeCommitConnection, error) {

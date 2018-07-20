@@ -294,7 +294,8 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 	repos := conn.listAllRepositories(ctx)
 
 	repoChan := make(chan repoCreateOrUpdateRequest)
-	go createEnableUpdateRepos(ctx, nil, repoChan)
+	defer close(repoChan)
+	go createEnableUpdateRepos(ctx, fmt.Sprintf("github:%s", conn.config.Token), repoChan)
 	for repo := range repos {
 		// log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
 		repoChan <- repoCreateOrUpdateRequest{
@@ -308,7 +309,6 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 			URL: conn.authenticatedRemoteURL(repo),
 		}
 	}
-	close(repoChan)
 }
 
 func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, error) {

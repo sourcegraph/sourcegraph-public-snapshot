@@ -212,7 +212,8 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 	projs := conn.listAllProjects(ctx)
 
 	repoChan := make(chan repoCreateOrUpdateRequest)
-	go createEnableUpdateRepos(ctx, nil, repoChan)
+	defer close(repoChan)
+	go createEnableUpdateRepos(ctx, fmt.Sprintf("gitlab:%s", conn.config.Token), repoChan)
 	for proj := range projs {
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
@@ -225,7 +226,6 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 			URL: conn.authenticatedRemoteURL(proj),
 		}
 	}
-	close(repoChan)
 }
 
 func newGitLabConnection(config *schema.GitLabConnection) (*gitlabConnection, error) {
