@@ -1,0 +1,25 @@
+
+language: node_js
+node_js: '10'
+
+env:
+  global:
+    - FORCE_COLOR=1
+
+cache:
+  directories:
+    - ~/.npm
+
+script:
+  - npm run prettier
+  - npm run tslint
+  - npm run build
+  - npm run build:all
+  - npm run cover
+  - ./node_modules/.bin/nyc report --reporter json
+  - bash <(curl -s https://codecov.io/bash)
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: npm run semantic-release
