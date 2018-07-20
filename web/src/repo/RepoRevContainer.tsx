@@ -32,7 +32,10 @@ import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
 import { RepoRevSidebar } from './RepoRevSidebar'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
+import { SymbolHistoryContainer } from './SymbolHistoryContainer'
 import { TreePage } from './TreePage'
+
+const enableSymbolHistory = localStorage.getItem('symbolHistory') === 'true'
 
 interface RepoRevContainerProps
     extends RouteComponentProps<{}>,
@@ -293,21 +296,41 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                 )}
                                             </>
                                         )}
-                                        <RepoRevSidebar
-                                            className="repo-rev-container__sidebar"
-                                            repoID={this.props.repo.id}
-                                            repoPath={this.props.repo.uri}
-                                            rev={this.props.rev}
-                                            commitID={(this.props.resolvedRevOrError as ResolvedRev).commitID}
-                                            filePath={routeComponentProps.match.params.filePath || ''}
-                                            isDir={objectType === 'tree'}
-                                            defaultBranch={
-                                                (this.props.resolvedRevOrError as ResolvedRev).defaultBranch || 'HEAD'
-                                            }
-                                            history={this.props.history}
-                                            location={this.props.location}
-                                            cxpController={this.props.cxpController}
-                                        />
+                                        {enableSymbolHistory ? (
+                                            <SymbolHistoryContainer
+                                                className="repo-rev-container__sidebar"
+                                                repoID={this.props.repo.id}
+                                                repoPath={this.props.repo.uri}
+                                                rev={this.props.rev}
+                                                commitID={(this.props.resolvedRevOrError as ResolvedRev).commitID}
+                                                filePath={routeComponentProps.match.params.filePath || ''}
+                                                isDir={objectType === 'tree'}
+                                                defaultBranch={
+                                                    (this.props.resolvedRevOrError as ResolvedRev).defaultBranch ||
+                                                    'HEAD'
+                                                }
+                                                history={this.props.history}
+                                                location={this.props.location}
+                                                cxpController={this.props.cxpController}
+                                            />
+                                        ) : (
+                                            <RepoRevSidebar
+                                                className="repo-rev-container__sidebar"
+                                                repoID={this.props.repo.id}
+                                                repoPath={this.props.repo.uri}
+                                                rev={this.props.rev}
+                                                commitID={(this.props.resolvedRevOrError as ResolvedRev).commitID}
+                                                filePath={routeComponentProps.match.params.filePath || '' || ''}
+                                                isDir={objectType === 'tree'}
+                                                defaultBranch={
+                                                    (this.props.resolvedRevOrError as ResolvedRev).defaultBranch ||
+                                                    'HEAD'
+                                                }
+                                                history={this.props.history}
+                                                location={this.props.location}
+                                                cxpController={this.props.cxpController}
+                                            />
+                                        )}
                                         {!hideRepoRevContent && (
                                             <div className="repo-rev-container__content">
                                                 {objectType === 'blob' ? (

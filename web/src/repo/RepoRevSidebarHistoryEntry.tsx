@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Mode, SymbolHistoryEntry } from './RepoRevSidebarHistory'
+import { SymbolHistoryEntry } from './history/utils'
+import { Mode } from './RepoRevSidebarHistory'
 
 interface HistoryEntryProps {
     symbolHistoryEntry: SymbolHistoryEntry
@@ -23,7 +24,10 @@ export class RepoRevSidebarHistoryEntry extends React.Component<HistoryEntryProp
             <div key={this.props.symbolHistoryEntry.url + this.props.index}>
                 {this.props.symbolHistoryEntry.filePath !== this.props.prevFile && (
                     <div className="repo-rev-sidebar-history__header">
-                        {this.props.symbolHistoryEntry.repoPath} - {this.props.symbolHistoryEntry.filePath}
+                        <div className="repo-rev-sidebar-history__text text-muted small">
+                            {this.props.symbolHistoryEntry.repoPath}
+                        </div>
+                        <div className="repo-rev-sidebar-history__text"> {this.props.symbolHistoryEntry.filePath}</div>
                     </div>
                 )}
                 <div
@@ -38,17 +42,15 @@ export class RepoRevSidebarHistoryEntry extends React.Component<HistoryEntryProp
                         <li className="repo-rev-sidebar-history__list-item-content">
                             {this.props.mode === 'DOC' ? (
                                 <>
-                                    <span
-                                        className="repo-rev-sidebar-history__symbol-title"
+                                    <div
+                                        className="repo-rev-sidebar-history__symbol-title repo-rev-sidebar-history__text"
                                         dangerouslySetInnerHTML={{ __html: this.props.symbolHistoryEntry.name }}
                                     />
-                                    <span>
-                                        <small className="repo-rev-sidebar-history__item-info text-muted">{`
+                                    <div className="repo-rev-sidebar-history__text text-muted small">{`
                                             ${this.props.symbolHistoryEntry.repoPath} - ${
-                                            this.props.symbolHistoryEntry.filePath
-                                        } ${this.props.symbolHistoryEntry.lineNumber &&
-                                            `- L${this.props.symbolHistoryEntry.lineNumber}`}`}</small>
-                                    </span>
+                                        this.props.symbolHistoryEntry.filePath
+                                    } ${this.props.symbolHistoryEntry.lineNumber &&
+                                        `- L${this.props.symbolHistoryEntry.lineNumber}`}`}</div>
                                     {this.props.symbolHistoryEntry.hoverContents[0] && (
                                         <div
                                             className="repo-rev-sidebar-history__contents"

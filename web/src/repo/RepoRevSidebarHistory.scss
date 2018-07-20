@@ -4,6 +4,13 @@
         padding: 0.5rem;
         font-weight: bold;
     }
+
+    &__text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     &__code {
         padding-top: 0.5rem;
         overflow: auto;
@@ -33,11 +40,9 @@
 
         &-content {
             display: block;
+            white-space: nowrap;
+            overflow: hidden;
         }
-    }
-
-    &__item-info {
-        display: flex;
     }
 
     &__symbol-title {

@@ -11,6 +11,7 @@ import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersisten
 import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
+import { SymbolHistoryEntry } from './history/utils'
 import { RepoRevSidebarHistory } from './RepoRevSidebarHistory'
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
@@ -23,6 +24,8 @@ interface Props extends AbsoluteRepoFile, CXPControllerProps {
     className: string
     history: H.History
     location: H.Location
+    /** List of history entries to render in the symbol history sidebar. */
+    historyListToRender?: SymbolHistoryEntry[]
 }
 
 interface State {
@@ -131,6 +134,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                 history={this.props.history}
                                 commitID={this.props.commitID}
                                 cxpController={this.props.cxpController}
+                                historyListToRender={this.props.historyListToRender || []}
                             />
                         ) : (
                             <div />
