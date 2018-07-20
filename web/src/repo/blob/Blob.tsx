@@ -253,7 +253,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 for (const { line, element } of codeCells) {
                     this.createBlameDomNode(line, element)
                     // Highlight row
-                    element.classList.add('selected')
+                    const row = element.parentElement as HTMLTableRowElement
+                    row.classList.add('selected')
                 }
 
                 // Update overlay position for discussions gutter icon.
