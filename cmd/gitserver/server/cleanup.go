@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -62,7 +61,7 @@ func (s *Server) cleanupRepos() {
 		}
 
 		log15.Info("removing corrupt repo", "repo", gitDir)
-		if err := s.removeAll(gitDir); err != nil {
+		if err := s.removeRepoDirectory(gitDir); err != nil {
 			return true, err
 		}
 		reposRemoved.Inc()
@@ -86,7 +85,7 @@ func (s *Server) cleanupRepos() {
 		}
 
 		log15.Info("removing inactive repo", "repo", gitDir)
-		if err := s.removeAll(gitDir); err != nil {
+		if err := s.removeRepoDirectory(gitDir); err != nil {
 			return true, err
 		}
 		reposRemoved.Inc()
@@ -181,22 +180,72 @@ func (s *Server) cleanupRepos() {
 	})
 }
 
-// removeAll removes the entire directory.
-// It first moves the directory to a temporary location
-// to avoid leaving partial state in the event of server
-// restart or concurrent modifications to the directory.
-func (s *Server) removeAll(dir string) error {
-	tmpDir, err := s.tempDir("removeAll-")
+// removeRepoDirectory atomically removes a directory from s.ReposDir.
+//
+// It first moves the directory to a temporary location to avoid leaving
+// partial state in the event of server restart or concurrent modifications to
+// the directory.
+//
+// Additionally it removes parent empty directories up until s.ReposDir.
+func (s *Server) removeRepoDirectory(dir string) error {
+	// Rename out of the location so we can atomically stop using the repo.
+	tmp, err := s.tempDir("delete-repo")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tmpDir)
-	tmpName := strings.Replace(dir, string(os.PathSeparator), "-", -1)
-	tmpRoot := path.Join(tmpDir, tmpName)
-	if err := os.Rename(dir, tmpRoot); err != nil {
+	defer os.RemoveAll(tmp)
+	if err := os.Rename(dir, filepath.Join(tmp, "repo")); err != nil {
 		return err
 	}
-	return os.RemoveAll(tmpRoot)
+
+	// Everything after this point is just cleanup, so any error that occurs
+	// should not be returned, just logged.
+
+	// Cleanup empty parent directories. We just attempt to remove and if we
+	// have a failure we assume it's due to the directory having other
+	// children. If we checked first we could race with someone else adding a
+	// new clone.
+	rootInfo, err := os.Stat(s.ReposDir)
+	if err != nil {
+		log15.Warn("Failed to stat ReposDir", "error", err)
+		return nil
+	}
+	current := dir
+	for {
+		parent := filepath.Dir(current)
+		if parent == current {
+			// This shouldn't happen, but protecting against escaping
+			// ReposDir.
+			break
+		}
+		current = parent
+		info, err := os.Stat(current)
+		if os.IsNotExist(err) {
+			// Someone else beat us to it.
+			break
+		}
+		if err != nil {
+			log15.Warn("failed to stat parent directory", "dir", current, "error", err)
+			return nil
+		}
+		if os.SameFile(rootInfo, info) {
+			// Stop, we are at the parent.
+			break
+		}
+
+		if err := os.Remove(current); err != nil {
+			// Stop, we assume remove failed due to current not being empty.
+			break
+		}
+	}
+
+	// Delete the atomically renamed dir. We do this last since if it fails we
+	// will rely on a janitor job to clean up for us.
+	if err := os.RemoveAll(filepath.Join(tmp, "repo")); err != nil {
+		log15.Warn("failed to cleanup after removing dir", "dir", dir, "error", err)
+	}
+
+	return nil
 }
 
 // cleanTmpFiles tries to remove tmp_pack_* files from .git/objects/pack.

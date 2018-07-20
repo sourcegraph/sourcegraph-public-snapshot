@@ -86,6 +86,14 @@ func mkFiles(t *testing.T, root string, paths ...string) {
 
 func assertFiles(t *testing.T, root string, want ...string) {
 	t.Helper()
+	assertPaths(t, func(info os.FileInfo) bool {
+		// exclude directories
+		return info.IsDir()
+	}, root, want...)
+}
+
+func assertPaths(t *testing.T, filter func(os.FileInfo) bool, root string, want ...string) {
+	t.Helper()
 	notfound := make(map[string]struct{})
 	for _, p := range want {
 		notfound[p] = struct{}{}
@@ -95,7 +103,7 @@ func assertFiles(t *testing.T, root string, want ...string) {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() {
+		if filter != nil && filter(info) {
 			return nil
 		}
 		rel, err := filepath.Rel(root, path)

@@ -211,3 +211,60 @@ func TestSetupAndClearTmp_Empty(t *testing.T) {
 		t.Fatalf("tmp is not under root: tmp=%s root=%s", tmp, root)
 	}
 }
+
+func TestRemoveRepoDirectory(t *testing.T) {
+	root, cleanup := tmpDir(t)
+	defer cleanup()
+
+	mkFiles(t, root,
+		"github.com/foo/baz/.git/HEAD",
+		"github.com/foo/survior/.git/HEAD",
+		"github.com/bam/bam/.git/HEAD",
+		"example.com/repo/.git/HEAD",
+	)
+	s := &Server{
+		ReposDir: root,
+	}
+
+	// Remove everything but github.com/foo/survior
+	for _, d := range []string{
+		"github.com/foo/baz/.git",
+		"github.com/bam/bam/.git",
+		"example.com/repo/.git",
+	} {
+		if err := s.removeRepoDirectory(filepath.Join(root, d)); err != nil {
+			t.Fatalf("failed to remove %s: %s", d, err)
+		}
+	}
+
+	assertPaths(t, nil, root,
+		"github.com/foo/survior/.git/HEAD",
+		"github.com/foo/survior/.git",
+		"github.com/foo/survior",
+		"github.com/foo",
+		"github.com",
+		".tmp",
+		".",
+	)
+}
+
+func TestRemoveRepoDirectory_Empty(t *testing.T) {
+	root, cleanup := tmpDir(t)
+	defer cleanup()
+
+	mkFiles(t, root,
+		"github.com/foo/baz/.git/HEAD",
+	)
+	s := &Server{
+		ReposDir: root,
+	}
+
+	if err := s.removeRepoDirectory(filepath.Join(root, "github.com/foo/baz/.git")); err != nil {
+		t.Fatal(err)
+	}
+
+	assertPaths(t, nil, root,
+		".tmp",
+		".",
+	)
+}
