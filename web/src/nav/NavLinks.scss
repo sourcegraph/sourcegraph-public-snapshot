@@ -1,62 +1,18 @@
 .nav-links {
-    display: flex;
-    padding-right: 0.5rem;
-    justify-content: flex-end;
-    align-items: center;
     position: relative; // For help form
+    white-space: nowrap;
+    flex-wrap: nowrap;
 
-    &__link,
-    &__border-link {
-        margin-left: 0.375rem;
-        margin-right: 0.375rem;
-        display: inline-block;
-        text-decoration: none;
-    }
-    &__link {
-        white-space: nowrap;
-        &-user {
-            font-weight: bold;
-        }
-    }
-
-    &__spacer {
-        width: 0.25rem;
-        margin-left: 0.375rem;
-    }
-
-    &__help {
-        padding: 0;
-        margin-left: 0.25rem;
-    }
-
-    &__border-link {
-        border: 1px #cad2e2;
-        border-radius: 0.125rem;
-        border-style: solid;
-        padding: 0.3125rem;
-    }
-
-    &__theme-switcher {
-        margin-left: 0.25rem;
+    // Less padding above, below, and between links.
+    .nav-item .nav-link {
+        padding-left: 0.375rem;
+        padding-right: 0.375rem;
+        user-select: none;
     }
 
     .avatar,
     .avatar-icon {
         width: 2rem;
         height: 2rem;
-    }
-
-    &__ad {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-}
-
-.theme-light {
-    .nav-links {
-        &__border-link {
-            border: $color-light-border;
-        }
     }
 }

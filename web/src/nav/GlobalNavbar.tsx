@@ -78,15 +78,13 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                     <div />
                 ) : (
                     <>
-                        <div className="global-navbar__left">
-                            {this.state.authRequired ? (
-                                <div className="global-navbar__logo-link">{logo}</div>
-                            ) : (
-                                <Link to="/search" className="global-navbar__logo-link">
-                                    {logo}
-                                </Link>
-                            )}
-                        </div>
+                        {this.state.authRequired ? (
+                            <div className="global-navbar__logo-link">{logo}</div>
+                        ) : (
+                            <Link to="/search" className="global-navbar__logo-link">
+                                {logo}
+                            </Link>
+                        )}
                         {!this.state.authRequired && (
                             <div className="global-navbar__search-box-container">
                                 <SearchNavbarItem
@@ -98,9 +96,7 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
                         )}
                     </>
                 )}
-                {!this.state.authRequired && (
-                    <NavLinks {...this.props} className="global-navbar__nav-links" adjacentToQueryInput={true} />
-                )}
+                {!this.state.authRequired && <NavLinks {...this.props} />}
             </div>
         )
     }

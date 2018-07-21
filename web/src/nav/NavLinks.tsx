@@ -16,13 +16,9 @@ interface Props {
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
-    adjacentToQueryInput?: boolean
-    className?: string
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
 }
-
-const isGQLUser = (val: any): val is GQL.IUser => val && typeof val === 'object' && val.__typename === 'User'
 
 export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
@@ -39,59 +35,75 @@ export class NavLinks extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <div className={`nav-links ${this.props.className || ''}`}>
+            <ul className="nav-links nav align-items-center pl-2 pr-1">
                 {showDotComMarketing && (
-                    <a
-                        href="https://about.sourcegraph.com"
-                        className="nav-links__border-link nav-links__ad"
-                        onClick={this.onClickInstall}
-                        title="Install self-hosted Sourcegraph to search your own code"
-                    >
-                        Install <span className="nav-links__widescreen-only">Sourcegraph</span>
-                    </a>
+                    <li className="nav-item">
+                        <a
+                            href="https://about.sourcegraph.com"
+                            className="nav-link text-truncate"
+                            onClick={this.onClickInstall}
+                            title="Install self-hosted Sourcegraph to search your own code"
+                        >
+                            Install <span className="nav-links__widescreen-only">Sourcegraph</span>
+                        </a>
+                    </li>
                 )}
                 {this.props.user && (
-                    <Link to="/search/searches" className="nav-links__link">
-                        Searches
-                    </Link>
+                    <li className="nav-item">
+                        <Link to="/search/searches" className="nav-link">
+                            Searches
+                        </Link>
+                    </li>
                 )}
                 {canListAllRepositories && (
-                    <Link to="/explore" className="nav-links__link">
-                        Explore
-                    </Link>
+                    <li className="nav-item">
+                        <Link to="/explore" className="nav-link">
+                            Explore
+                        </Link>
+                    </li>
                 )}
                 {this.props.user &&
                     this.props.user.siteAdmin && (
-                        <Link to="/site-admin" className="nav-links__link">
-                            Admin
-                        </Link>
+                        <li className="nav-item">
+                            <Link to="/site-admin" className="nav-link">
+                                Admin
+                            </Link>
+                        </li>
                     )}
                 {this.props.user && (
-                    <Link className="nav-links__link nav-links__link-user" to={`${this.props.user.url}/account`}>
-                        {isGQLUser(this.props.user) && this.props.user.avatarURL ? (
-                            <UserAvatar size={64} />
-                        ) : isGQLUser(this.props.user) ? (
-                            this.props.user.username
-                        ) : (
-                            'Profile'
-                        )}
-                    </Link>
+                    <li className="nav-item">
+                        <Link className="nav-link py-0 pr-2" to={`${this.props.user.url}/account`}>
+                            {this.props.user.avatarURL ? (
+                                <UserAvatar size={64} />
+                            ) : (
+                                <strong>{this.props.user.username}</strong>
+                            )}
+                        </Link>
+                    </li>
                 )}
-                <OpenHelpPopoverButton className="nav-links__help" onHelpPopoverToggle={this.onHelpPopoverToggle} />
+                <li className="nav-item">
+                    <OpenHelpPopoverButton className="nav-link px-0" onHelpPopoverToggle={this.onHelpPopoverToggle} />
+                </li>
                 {this.props.showHelpPopover && <HelpPopover onDismiss={this.onHelpPopoverToggle} />}
                 {!this.props.user &&
                     this.props.location.pathname !== '/sign-in' && (
-                        <Link className="nav-links__link btn btn-primary" to="/sign-in">
-                            Sign in
-                        </Link>
+                        <li className="nav-item">
+                            <Link className="nav-link btn btn-primary" to="/sign-in">
+                                Sign in
+                            </Link>
+                        </li>
                     )}
-                <ThemeSwitcher {...this.props} className="nav-links__theme-switcher" />
+                <li className="nav-item">
+                    <ThemeSwitcher {...this.props} className="nav-link px-0" />
+                </li>
                 {showDotComMarketing && (
-                    <a href="https://about.sourcegraph.com" className="nav-links__link">
-                        About
-                    </a>
+                    <li className="nav-item">
+                        <a href="https://about.sourcegraph.com" className="nav-link">
+                            About
+                        </a>
+                    </li>
                 )}
-            </div>
+            </ul>
         )
     }
 
