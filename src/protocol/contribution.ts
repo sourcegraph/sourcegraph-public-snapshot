@@ -43,28 +43,6 @@ export interface CommandContribution {
 
     /** A URL to an icon (base64: URIs are OK). */
     iconURL?: string
-
-    /**
-     * TODO: Because the CXP connection is (usually) stateless, commands can't modify state. The second best option
-     * is for them to modify user settings. So, require commands to define how they do so.
-     */
-    experimentalSettingsAction?: CommandContributionSettingsAction
-}
-
-/**
- * CommandContributionSettingsAction is the special action executed by a contributed command that modifies
- * settings.
- */
-interface CommandContributionSettingsAction {
-    /** The key path to the value. */
-    path: (string | number)[]
-
-    // Exactly 1 of the following fields must be set.
-
-    /** The values of the setting to cycle among. */
-    cycleValues?: any[]
-    /** Show a user prompt to obtain the value for the setting. */
-    prompt?: string
 }
 
 export enum ContributableMenu {
