@@ -126,7 +126,7 @@ export class BrowserConsoleTracer implements Tracer {
     }
 
     public requestReceived(message: RequestMessage): void {
-        console.log(...this.prefix('info', `▶▶ sent request #${message.id}: `, message.method), message.params)
+        console.log(...this.prefix('info', `▶▶ recv request #${message.id}: `, message.method), message.params)
     }
 
     public notificationSent(message: NotificationMessage): void {
