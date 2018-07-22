@@ -17,12 +17,23 @@ func main() {
 	for _, path := range os.Args[1:] {
 		cfgBuf, err := ioutil.ReadFile(path)
 		if err != nil {
-			fmt.Printf("can't read '%s': %s\n", path, err)
+			fmt.Fprintf(os.Stderr, "can't read '%s': %s\n", path, err)
 			continue
+		}
+		problems, err := conf.Validate(string(cfgBuf))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "errors in validation for '%s': %s\n", path, err)
+		}
+		if len(problems) > 0 {
+			fmt.Fprintf(os.Stderr, "WARNING: Problems encountered validating config file '%s':\n", path)
+			for _, problem := range problems {
+				fmt.Fprintf(os.Stderr, "* %s\n", problem)
+			}
+			fmt.Fprintf(os.Stderr, "confmerge or your config may be out of sync with current schema.\n")
 		}
 		cfgData, err := conf.ParseConfigData(string(cfgBuf))
 		if err != nil {
-			fmt.Printf("can't parse '%s': %s\n", path, err)
+			fmt.Fprintf(os.Stderr, "can't parse '%s': %s\n", path, err)
 			continue
 		}
 		cfg = conf.AppendConfig(cfg, cfgData)

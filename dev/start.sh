@@ -66,11 +66,9 @@ export SOURCEGRAPH_CONFIG_FILE=./dev/config.json
 confpath="./dev"
 
 fancyconfig() {
-	if [ ! -x dev/confmerge/confmerge ]; then
-		if ! ( cd dev/confmerge; go build ); then
-			echo >&2 "WARNING: Can't build confmerge in dev/confmerge, can't merge config files."
-			return 1
-		fi
+	if ! ( cd dev/confmerge; go build ); then
+		echo >&2 "WARNING: Can't build confmerge in dev/confmerge, can't merge config files."
+		return 1
 	fi
 	if [ -f "$confpath/config_combined.json" ]; then
 		echo >&2 "Note: Moving existing config_combined.json to $confpath/config_backup.json."
