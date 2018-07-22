@@ -185,6 +185,11 @@ export class StreamMessageReader extends AbstractMessageReader implements Messag
             this._partialMessageTimeout
         )
     }
+
+    public unsubscribe(): void {
+        super.unsubscribe()
+        this.clearPartialMessageTimer()
+    }
 }
 
 export class StreamMessageWriter extends AbstractMessageWriter implements MessageWriter {
