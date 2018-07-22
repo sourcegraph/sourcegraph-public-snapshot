@@ -19,7 +19,7 @@ interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPEnvironmentPr
  * It is only useful for platform debug, so it's only shown for platform-enabled users.
  */
 export const GlobalDebug: React.SFC<Props> = props =>
-    props.user && platformEnabled(props.user) ? (
+    platformEnabled(props.user) ? (
         <div className="global-debug navbar navbar-expand">
             <ul className="navbar-nav align-items-center">
                 <li className="nav-item">

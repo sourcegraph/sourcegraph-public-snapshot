@@ -34,16 +34,15 @@ export const OrgHeader: React.SFC<Props> = (props: Props) => (
                             >
                                 Overview
                             </NavLink>
-                            {props.authenticatedUser &&
-                                platformEnabled(props.authenticatedUser) && (
-                                    <NavLink
-                                        to={`${props.match.url}/extensions`}
-                                        className="btn area-header__nav-link"
-                                        activeClassName="area-header__nav-link--active"
-                                    >
-                                        <PuzzleIcon className="icon-inline" /> Extensions
-                                    </NavLink>
-                                )}
+                            {platformEnabled(props.authenticatedUser) && (
+                                <NavLink
+                                    to={`${props.match.url}/extensions`}
+                                    className="btn area-header__nav-link"
+                                    activeClassName="area-header__nav-link--active"
+                                >
+                                    <PuzzleIcon className="icon-inline" /> Extensions
+                                </NavLink>
+                            )}
                             <NavLink
                                 to={`${props.match.url}/members`}
                                 exact={true}

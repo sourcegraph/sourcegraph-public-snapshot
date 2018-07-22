@@ -220,24 +220,23 @@ export class UserArea extends React.Component<Props> {
                                     />
                                 )}
                             />
-                            {this.props.user &&
-                                platformEnabled(this.props.user) && (
-                                    <Route
-                                        path={`${this.props.match.url}/extensions`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => (
-                                            <PublisherSubjectExtensionsArea
-                                                {...routeComponentProps}
-                                                {...transferProps}
-                                                publisher={transferProps.user}
-                                                subject={transferProps.user}
-                                                showUserActions={true}
-                                                updateOnChange={this.props.extensions}
-                                            />
-                                        )}
-                                    />
-                                )}
+                            {platformEnabled(this.props.user) && (
+                                <Route
+                                    path={`${this.props.match.url}/extensions`}
+                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => (
+                                        <PublisherSubjectExtensionsArea
+                                            {...routeComponentProps}
+                                            {...transferProps}
+                                            publisher={transferProps.user}
+                                            subject={transferProps.user}
+                                            showUserActions={true}
+                                            updateOnChange={this.props.extensions}
+                                        />
+                                    )}
+                                />
+                            )}
                             <Route key="hardcoded-key" component={NotFoundPage} />
                         </Switch>
                     </div>

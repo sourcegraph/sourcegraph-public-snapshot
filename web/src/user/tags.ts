@@ -16,8 +16,8 @@ const PLATFORM_TAG = 'platform'
  * automatically added to users.
  *
  */
-export function platformEnabled(user: Pick<GQL.IUser, 'tags'>): boolean {
-    return !!window.context.platformEnabled && hasTag(user, PLATFORM_TAG) && USE_PLATFORM
+export function platformEnabled(user: Pick<GQL.IUser, 'tags'> | null): boolean {
+    return !!user && !!window.context.platformEnabled && hasTag(user, PLATFORM_TAG) && USE_PLATFORM
 }
 
 function hasTag(user: Pick<GQL.IUser, 'tags'>, tag: string): boolean {

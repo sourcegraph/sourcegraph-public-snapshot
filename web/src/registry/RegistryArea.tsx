@@ -41,7 +41,7 @@ export interface RegistryAreaPageProps extends ExtensionsProps, ExtensionsChange
  */
 export class RegistryArea extends React.Component<Props> {
     public render(): JSX.Element | null {
-        if (!this.props.user || !platformEnabled(this.props.user)) {
+        if (!platformEnabled(this.props.user)) {
             return <NotFoundPage />
         }
 
