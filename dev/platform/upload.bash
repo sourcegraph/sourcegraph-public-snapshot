@@ -32,7 +32,7 @@ for prog in "${!extensions[@]}"; do
 Description=${prog}
 
 [Service]
-Environment='CX_MODE=tcp' 'CX_ADDR=:${extensions[$prog]}'
+Environment='CX_MODE=tcp' 'CX_ADDR=:${extensions[$prog]}' 'SOURCEGRAPH_CONFIG_FILE=/dev/null'
 ExecStart=/home/ec2-user/${HOSTDIR}/bin/${prog}
 TimeoutSec=30
 Restart=on-failure
