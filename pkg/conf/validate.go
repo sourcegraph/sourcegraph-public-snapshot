@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/xeipuuv/gojsonschema"
 )
@@ -47,7 +48,7 @@ var ignoreLegacyDataCenterFields = map[string]struct{}{
 // Validate validates the site configuration the JSON Schema and other custom validation
 // checks.
 func Validate(inputStr string) (problems []string, err error) {
-	input := []byte(NormalizeJSON(inputStr))
+	input := []byte(jsonc.Normalize(inputStr))
 
 	input, _, err = expandEnv(input)
 	if err != nil {

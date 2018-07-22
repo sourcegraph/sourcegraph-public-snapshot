@@ -13,9 +13,9 @@ import (
 
 	"golang.org/x/net/context/ctxhttp"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -173,7 +173,7 @@ func (c *internalClient) SavedQueriesDeleteInfo(ctx context.Context, query strin
 func (c *internalClient) SettingsGetForSubject(ctx context.Context, subject ConfigurationSubject) (parsed *schema.Settings, settings *Settings, err error) {
 	err = c.postInternal(ctx, "settings/get-for-subject", subject, &settings)
 	if err == nil {
-		err = conf.UnmarshalJSON(settings.Contents, &parsed)
+		err = jsonc.Unmarshal(settings.Contents, &parsed)
 	}
 	return parsed, settings, err
 }

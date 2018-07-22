@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
 func (schemaResolver) Configuration() *configurationCascadeResolver {
@@ -200,7 +200,7 @@ func mergeConfigs(jsonConfigStrings []string) ([]byte, error) {
 	merged := map[string]interface{}{}
 	for _, s := range jsonConfigStrings {
 		var o map[string]interface{}
-		if err := conf.UnmarshalJSON(s, &o); err != nil {
+		if err := jsonc.Unmarshal(s, &o); err != nil {
 			errs = append(errs, err)
 		}
 		for name, value := range o {

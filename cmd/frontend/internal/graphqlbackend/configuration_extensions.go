@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
 func (r *configurationMutationResolver) UpdateExtension(ctx context.Context, args *struct {
@@ -74,7 +75,7 @@ func (r *configurationMutationResolver) UpdateExtension(ctx context.Context, arg
 			var old struct {
 				Extensions map[string]map[string]interface{} `json:"extensions"`
 			}
-			if err := conf.UnmarshalJSON(oldConfig, &old); err != nil {
+			if err := jsonc.Unmarshal(oldConfig, &old); err != nil {
 				return nil, err
 			}
 			value = old.Extensions[extensionID]

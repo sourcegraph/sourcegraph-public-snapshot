@@ -8,8 +8,8 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -96,7 +96,7 @@ func (r *configuredExtensionConnectionResolver) compute(ctx context.Context) ([]
 		}
 
 		var settings schema.Settings
-		if err := conf.UnmarshalJSON(configResolver.contents, &settings); err != nil {
+		if err := jsonc.Unmarshal(configResolver.contents, &settings); err != nil {
 			r.err = err
 			return
 		}

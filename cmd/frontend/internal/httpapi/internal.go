@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -290,7 +291,7 @@ func serveSavedQueriesListAll(w http.ResponseWriter, r *http.Request) error {
 	queries := make([]api.SavedQuerySpecAndConfig, 0, len(settings))
 	for _, settings := range settings {
 		var config api.PartialConfigSavedQueries
-		if err := conf.UnmarshalJSON(settings.Contents, &config); err != nil {
+		if err := jsonc.Unmarshal(settings.Contents, &config); err != nil {
 			return err
 		}
 		for _, query := range config.SavedQueries {
@@ -493,7 +494,7 @@ func serveExtension(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Write(conf.NormalizeJSON(*data))
+	w.Write(jsonc.Normalize(*data))
 	return nil
 }
 

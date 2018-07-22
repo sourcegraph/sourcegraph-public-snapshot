@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -59,7 +59,7 @@ func migrateOrgSlackWebhookURL(ctx context.Context, orgID int32, webhookURL stri
 	// Don't clobber existing Slack webhook URL (unlikely case to occur, would need to be
 	// set in a very brief window of time).
 	var parsed schema.Settings
-	if err := conf.UnmarshalJSON(contents, &parsed); err != nil {
+	if err := jsonc.Unmarshal(contents, &parsed); err != nil {
 		return err
 	}
 	if parsed.NotificationsSlack != nil && parsed.NotificationsSlack.WebhookURL != "" {

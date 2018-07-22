@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
@@ -148,7 +149,7 @@ func (r *configurationMutationResolver) CreateSavedQuery(ctx context.Context, ar
 	_, err := r.doUpdateConfiguration(ctx, func(oldConfig string) (edits []jsonx.Edit, err error) {
 		// Compute the index so we can return it to the caller.
 		var config api.PartialConfigSavedQueries
-		if err := conf.UnmarshalJSON(oldConfig, &config); err != nil {
+		if err := jsonc.Unmarshal(oldConfig, &config); err != nil {
 			return nil, err
 		}
 		index = len(config.SavedQueries)

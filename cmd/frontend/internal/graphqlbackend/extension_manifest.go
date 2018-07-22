@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -25,7 +25,7 @@ func newExtensionManifestResolver(raw *string) *extensionManifestResolver {
 
 func (r *extensionManifestResolver) parse() (*schema.SourcegraphExtension, error) {
 	r.once.Do(func() {
-		r.err = conf.UnmarshalJSON(r.raw, &r.result)
+		r.err = jsonc.Unmarshal(r.raw, &r.result)
 	})
 	return r.result, r.err
 }

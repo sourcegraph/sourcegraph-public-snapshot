@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -28,7 +28,7 @@ func (configuration) GetForSubject(ctx context.Context, subject api.Configuratio
 	}
 
 	var v schema.Settings
-	if err := conf.UnmarshalJSON(settings.Contents, &v); err != nil {
+	if err := jsonc.Unmarshal(settings.Contents, &v); err != nil {
 		return nil, err
 	}
 	return &v, nil

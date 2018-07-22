@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -91,7 +91,7 @@ func (c *extensionRegistryCache) listAllSettings(ctx context.Context) ([]*api.Se
 
 func readRegistryExtensionEnablement(extensionID, data string) *bool {
 	var settings schema.Settings
-	if err := conf.UnmarshalJSON(data, &settings); err != nil {
+	if err := jsonc.Unmarshal(data, &settings); err != nil {
 		// Don't treat as fatal because then we'd fail if any user has invalid settings JSON.
 		return nil
 	}

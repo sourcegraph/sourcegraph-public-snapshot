@@ -7,7 +7,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
 func (r *schemaResolver) ConfigurationSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*configurationSubject, error) {
@@ -187,7 +187,7 @@ func (s *configurationSubject) readConfiguration(ctx context.Context, v interfac
 	if settings == nil {
 		return nil
 	}
-	return conf.UnmarshalJSON(settings.Contents(), &v)
+	return jsonc.Unmarshal(settings.Contents(), &v)
 }
 
 // checkArgHasSameSubject ensures that the subject encoded in args.ID (or similar resolver

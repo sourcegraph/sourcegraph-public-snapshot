@@ -13,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -174,7 +175,7 @@ func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
 	var tmpConfig schema.SiteConfiguration
 
 	if data != "" {
-		data, err := parseJSON(data)
+		data, err := jsonc.Parse(data)
 		if err != nil {
 			return nil, err
 		}
