@@ -122,15 +122,18 @@ export class PopoverButton extends React.PureComponent<Props, State> {
     }
 
     private onGlobalKeyDown = (event: KeyboardEvent) => {
-        // Don't interfere with user keyboard input.
+        if (event.key === Key.Escape) {
+            // Always close the popover when Escape is pressed, even when in an input.
+            this.setState({ open: false })
+            return
+        }
+
+        // Otherwise don't interfere with user keyboard input.
         if (isInputLike(event.target as HTMLElement)) {
             return
         }
 
-        if (event.key === Key.Escape) {
-            event.preventDefault()
-            this.setState({ open: false })
-        } else if (
+        if (
             this.props.globalKeyBinding &&
             !event.ctrlKey &&
             !event.altKey &&
