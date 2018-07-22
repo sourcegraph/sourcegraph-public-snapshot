@@ -761,6 +761,9 @@ export function createConnection<PConsole = _, PTracer = _, PTelemetry = _, PCli
         if (typeof params.trace === 'string') {
             tracer.trace = Trace.fromString(params.trace)
         }
+        if (!params.capabilities) {
+            params.capabilities = {}
+        }
         for (const remote of allRemotes) {
             remote.initialize(params.capabilities)
         }
