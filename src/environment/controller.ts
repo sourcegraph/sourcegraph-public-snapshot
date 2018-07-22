@@ -258,7 +258,7 @@ interface ClientInit {
 
 function computeClients<X extends Extension>(environment: Environment<X>): ClientInit[] {
     const clients: ClientInit[] = []
-    if (!environment.root || !environment.extensions) {
+    if (!environment.extensions) {
         return clients
     }
     for (const x of environment.extensions) {

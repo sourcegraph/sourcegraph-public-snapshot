@@ -48,7 +48,15 @@ describe('Controller', () => {
         )
     })
 
+    it('creates clients for extensions even when root and component are not set', () => {
+        assert.strictEqual(
+            create({ root: null, component: null, extensions: FIXTURE_ENVIRONMENT.extensions }).clientEntries.value
+                .length,
+            1
+        )
+    })
+
     it('creates no clients if the environment needs none', () => {
-        assert.deepStrictEqual(create({ ...FIXTURE_ENVIRONMENT, root: null }).clientEntries.value, [])
+        assert.deepStrictEqual(create({ root: null, component: null, extensions: null }).clientEntries.value, [])
     })
 })
