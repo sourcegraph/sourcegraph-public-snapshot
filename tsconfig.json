@@ -2,11 +2,10 @@
   "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
     "target": "es2018",
-    "module": "es2015",
+    "module": "es6",
     "moduleResolution": "node",
     "sourceMap": true,
     "declaration": true,
-    "outDir": "lib",
     "noEmit": true,
     "lib": ["es2018"],
     "sourceRoot": "src",

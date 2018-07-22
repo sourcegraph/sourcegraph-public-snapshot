@@ -3,7 +3,7 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "watch",
+      "script": "watch:typecheck",
       "problemMatcher": ["$tsc-watch"],
       "isBackground": true
     },

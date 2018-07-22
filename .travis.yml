@@ -14,7 +14,7 @@ script:
   - npm run prettier
   - npm run tslint
   - npm run build
-  - npm run build:all
+  - npm run typecheck
   - npm run cover
   - ./node_modules/.bin/nyc report --reporter json
   - bash <(curl -s https://codecov.io/bash)

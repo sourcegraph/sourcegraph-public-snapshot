@@ -12,20 +12,26 @@
     "url": "https://github.com/sourcegraph/cxp-js/issues"
   },
   "main": "lib/index.js",
+  "module": "module/index.js",
   "files": [
-    "lib"
+    "lib",
+    "module"
   ],
   "scripts": {
     "commitmsg": "commitlint -e $GIT_PARAMS",
     "semantic-release": "semantic-release",
     "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
     "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
-    "build": "tsc -p tsconfig.dist.json",
-    "build:all": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "build:commonjs": "tsc -p tsconfig.dist.commonjs.json",
+    "build:module": "tsc -p tsconfig.dist.module.json",
+    "build": "tsc -p tsconfig.dist.commonjs.json && tsc -p tsconfig.dist.module.json",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --opts mocha.opts",
     "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",
-    "watch": "tsc -p tsconfig.json -w",
-    "watch:build": "tsc -p tsconfig.dist.json -w",
+    "watch:typecheck": "tsc -p tsconfig.json -w",
+    "watch:build:commonjs": "tsc -p tsconfig.dist.commonjs.json -w",
+    "watch:build:module": "tsc -p tsconfig.dist.module.json -w",
+    "watch:build": "concurrently --kill-others 'npm:watch:build:*'",
     "watch:test": "npm run test -- -w",
     "watch:cover": "nodemon --watch src/ --ext ts,js,json --watch package.json --exec 'npm run cover || exit 1'"
   },
@@ -68,6 +74,7 @@
     "@types/node": "^10.5.0",
     "@types/uuid": "^3.4.3",
     "@types/ws": "^5.1.2",
+    "concurrently": "^3.6.0",
     "husky": "^0.14.3",
     "mocha": "^5.2.0",
     "nodemon": "^1.18.2",
