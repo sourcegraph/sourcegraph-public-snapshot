@@ -441,7 +441,7 @@ func (p *Proxy) clientBroadcastFunc(id contextID) func(context.Context, *jsonrpc
 // id.
 func (p *Proxy) clientForwardFunc(id contextID) func(context.Context, *jsonrpc2.Request) (result interface{}, err error) {
 	return func(ctx context.Context, req *jsonrpc2.Request) (result interface{}, err error) {
-		if !id.share {
+		if id.share {
 			// More than 1 client is connected, in which case showMessage{,Request} wouldn't
 			// make sense.
 			return nil, fmt.Errorf("unable to forward %q request to a single client from shared server %q", req.Method, id.mode)
