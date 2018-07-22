@@ -19,10 +19,6 @@ import {
 import { isFunction } from '../../util'
 import { IConnection } from '../server'
 
-export interface ConnectionState {
-    __textDocumentSync: TextDocumentSyncKind | undefined
-}
-
 /**
  * A manager for simple text documents
  */
@@ -149,7 +145,6 @@ export class TextDocuments {
             return isFunction((value as UpdateableDocument).update)
         }
 
-        ;((connection as any) as ConnectionState).__textDocumentSync = TextDocumentSyncKind.Full
         connection.onDidOpenTextDocument((event: DidOpenTextDocumentParams) => {
             const td = event.textDocument
             const document = TextDocument.create(td.uri, td.languageId, td.version, td.text)

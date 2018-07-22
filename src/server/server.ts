@@ -90,7 +90,6 @@ import {
     SignatureHelpRequest,
     TextDocumentDecorationRequest,
     TextDocumentPositionParams,
-    TextDocumentSyncKind,
     TypeDefinitionRequest,
     WillSaveTextDocumentNotification,
     WillSaveTextDocumentParams,
@@ -101,7 +100,6 @@ import { RemoteClient, RemoteClientImpl } from './features/client'
 import { Remote } from './features/common'
 import { ConnectionLogger, RemoteConsole } from './features/console'
 import { Telemetry, TelemetryImpl } from './features/telemetry'
-import { ConnectionState } from './features/textDocumentSync'
 import { Tracer, TracerImpl } from './features/tracer'
 import { RemoteWindow, RemoteWindowImpl } from './features/window'
 import { RemoteWorkspace, RemoteWorkspaceImpl } from './features/workspace'
@@ -667,8 +665,7 @@ export function createConnection<PConsole = _, PTracer = _, PTelemetry = _, PCli
     let shutdownHandler: RequestHandler<null, void, void> | undefined
     let initializeHandler: RequestHandler<InitializeParams, InitializeResult, InitializeError> | undefined
     let exitHandler: NotificationHandler<null> | undefined
-    const protocolConnection: Connection<PConsole, PTracer, PTelemetry, PClient, PWindow, PWorkspace> &
-        ConnectionState = {
+    const protocolConnection: Connection<PConsole, PTracer, PTelemetry, PClient, PWindow, PWorkspace> = {
         listen: (): void => connection.listen(),
 
         sendRequest: <R>(type: string | RPCMessageType, ...params: any[]): Promise<R> =>
@@ -719,7 +716,6 @@ export function createConnection<PConsole = _, PTracer = _, PTelemetry = _, PCli
             connection.onNotification(DidChangeConfigurationNotification.type, handler),
         onDidChangeWatchedFiles: handler => connection.onNotification(DidChangeWatchedFilesNotification.type, handler),
 
-        __textDocumentSync: undefined,
         onDidOpenTextDocument: handler => connection.onNotification(DidOpenTextDocumentNotification.type, handler),
         onDidChangeTextDocument: handler => connection.onNotification(DidChangeTextDocumentNotification.type, handler),
         onDidCloseTextDocument: handler => connection.onNotification(DidCloseTextDocumentNotification.type, handler),
@@ -783,27 +779,13 @@ export function createConnection<PConsole = _, PTracer = _, PTelemetry = _, PCli
                     capabilities = {}
                     result.capabilities = capabilities
                 }
-                if (!capabilities.textDocumentSync) {
-                    capabilities.textDocumentSync =
-                        typeof protocolConnection.__textDocumentSync === 'number'
-                            ? protocolConnection.__textDocumentSync
-                            : TextDocumentSyncKind.None
-                } else if (
-                    typeof capabilities.textDocumentSync !== 'number' &&
-                    typeof capabilities.textDocumentSync.change !== 'number'
-                ) {
-                    capabilities.textDocumentSync.change =
-                        typeof protocolConnection.__textDocumentSync === 'number'
-                            ? protocolConnection.__textDocumentSync
-                            : TextDocumentSyncKind.None
-                }
                 for (const remote of allRemotes) {
                     remote.fillServerCapabilities(capabilities)
                 }
                 return result
             })
         } else {
-            const result: InitializeResult = { capabilities: { textDocumentSync: TextDocumentSyncKind.None } }
+            const result: InitializeResult = { capabilities: {} }
             for (const remote of allRemotes) {
                 remote.fillServerCapabilities(result.capabilities)
             }
