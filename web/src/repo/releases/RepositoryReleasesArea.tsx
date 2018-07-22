@@ -6,8 +6,9 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
-import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
+import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryReleasesTagsPage } from './RepositoryReleasesTagsPage'
 
 const NotFoundPage = () => (
@@ -18,7 +19,7 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
     repo: GQL.IRepository
 
     /** The URL match from RepoContainer. */
@@ -62,9 +63,10 @@ export class RepositoryReleasesArea extends React.Component<Props> {
 
         return (
             <div className="repository-graph-area area--vertical">
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="tags">Tags</RepoHeaderBreadcrumbNavItem>}
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">

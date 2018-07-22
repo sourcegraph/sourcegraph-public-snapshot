@@ -7,8 +7,9 @@ import { Subscription } from 'rxjs'
 import * as GQL from '../../backend/graphqlschema'
 import { DismissibleAlert } from '../../components/DismissibleAlert'
 import { HeroPage } from '../../components/HeroPage'
-import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
+import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryGraphDependenciesPage } from './RepositoryGraphDependenciesPage'
 import { RepositoryGraphOverviewPage } from './RepositoryGraphOverviewPage'
 import { RepositoryGraphPackagesPage } from './RepositoryGraphPackagesPage'
@@ -22,7 +23,7 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
     repo: GQL.IRepository
     rev: string | undefined
     commitID: string
@@ -67,9 +68,10 @@ export class RepositoryGraphArea extends React.Component<Props> {
 
         return (
             <div className="repository-graph-area area">
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="graph">Graph</RepoHeaderBreadcrumbNavItem>}
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <RepositoryGraphSidebar
                     className="area__sidebar"

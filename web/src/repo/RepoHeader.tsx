@@ -2,7 +2,6 @@ import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as H from 'history'
 import * as React from 'react'
-import { Subject, Subscription, Unsubscribable } from 'rxjs'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { ActionItem } from '../components/ActionItem'
@@ -16,18 +15,96 @@ import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
 
 /**
- * An action link that is added to and displayed in the repository header.
+ * Stores the list of RepoHeaderContributions, manages addition/deletion, and ensures they are sorted.
+ *
+ * It should be instantiated in a private field of the common ancestor component of RepoHeader and all components
+ * needing to contribute to RepoHeader.
  */
-interface RepoHeaderAction {
+class RepoHeaderContributionStore {
+    constructor(
+        /** The common ancestor component's setState method. */
+        private setState: (callback: (prevState: RepoHeaderContributionsProps) => RepoHeaderContributionsProps) => void
+    ) {}
+
+    private onRepoHeaderContributionAdd(item: RepoHeaderContribution): void {
+        if (!item.element) {
+            throw new Error(`RepoHeaderContribution has no element`)
+        }
+        if (typeof item.element.key !== 'string') {
+            throw new Error(`RepoHeaderContribution (${item.element.type.toString()}) element must have a string key`)
+        }
+
+        this.setState((prevState: RepoHeaderContributionsProps) => ({
+            repoHeaderContributions: prevState.repoHeaderContributions
+                .filter(({ element }) => element.key !== item.element.key)
+                .concat(item)
+                .sort(byPriority),
+        }))
+    }
+
+    private onRepoHeaderContributionRemove(key: string): void {
+        this.setState(prevState => ({
+            repoHeaderContributions: prevState.repoHeaderContributions.filter(c => c.element.key !== key),
+        }))
+    }
+
+    /** Props to pass to the owner's children (that need to contribute to RepoHeader). */
+    public readonly props: RepoHeaderContributionsLifecycleProps = {
+        repoHeaderContributionsLifecycleProps: {
+            onRepoHeaderContributionAdd: this.onRepoHeaderContributionAdd.bind(this),
+            onRepoHeaderContributionRemove: this.onRepoHeaderContributionRemove.bind(this),
+        },
+    }
+}
+
+function byPriority(a: { priority?: number }, b: { priority?: number }): number {
+    return (b.priority || 0) - (a.priority || 0)
+}
+
+/**
+ * An item that is displayed in the RepoHeader and originates from outside the RepoHeader. The item is typically an
+ * icon, button, or link.
+ */
+export interface RepoHeaderContribution {
+    /** The position of this contribution in the RepoHeader. */
     position: 'nav' | 'left' | 'right'
 
     /**
      * Controls the relative order of header action items. The items are laid out from highest priority (at the
      * beginning) to lowest priority (at the end). The default is 0.
      */
-    priority: number
+    priority?: number
 
+    /**
+     * The element to display in the RepoHeader. The element *must* have a React key that is a string and is unique
+     * among all RepoHeaderContributions. If not, an exception will be thrown.
+     */
     element: React.ReactElement<any>
+}
+
+/** React props for components that store or display RepoHeaderContributions. */
+export interface RepoHeaderContributionsProps {
+    /** Contributed items to display in the RepoHeader. */
+    repoHeaderContributions: RepoHeaderContribution[]
+}
+
+/**
+ * React props for components that participate in the creation or lifecycle of RepoHeaderContributions.
+ */
+export interface RepoHeaderContributionsLifecycleProps {
+    repoHeaderContributionsLifecycleProps?: {
+        /**
+         * Called when a new RepoHeader contribution is created (and should be shown in RepoHeader). If another
+         * contribution with the same ID already exists, this new one overwrites the existing one.
+         */
+        onRepoHeaderContributionAdd: (item: RepoHeaderContribution) => void
+
+        /**
+         * Called when a new RepoHeader contribution is removed (and should no longer be shown in RepoHeader). The key
+         * is the same as that of the contribution's element (when it was added).
+         */
+        onRepoHeaderContributionRemove: (key: string) => void
+    }
 }
 
 interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPControllerProps {
@@ -50,119 +127,38 @@ interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPControllerPro
     /** Information about the revision of the repository. */
     resolvedRev: ResolvedRev | ErrorLike | undefined
 
+    /**
+     * Called in the constructor when the store is constructed. The parent component propagates these lifecycle
+     * callbacks to its children for them to add and remove contributions.
+     */
+    onLifecyclePropsChange: (lifecycleProps: RepoHeaderContributionsLifecycleProps) => void
+
     location: H.Location
     history: H.History
 }
 
-interface State {
-    /**
-     * Actions to display as breadcrumb levels on the left side of the header.
-     */
-    navActions?: RepoHeaderAction[]
-
-    /**
-     * Actions to display on the left side of the header, after the path breadcrumb.
-     */
-    leftActions?: RepoHeaderAction[]
-
-    /**
-     * Actions to display on the right side of the header, before the "Settings" link.
-     */
-    rightActions?: RepoHeaderAction[]
-}
+interface State extends RepoHeaderContributionsProps {}
 
 /**
- * The repository header with the breadcrumb, revision switcher, and other actions/links.
+ * The repository header with the breadcrumb, revision switcher, and other items.
  *
- * Other components can contribute actions to the repository header using RepoHeaderActionPortal.
- *
- * This is technically not the "React way" of doing things, but it is more performant (with less
- * visual jitter) and simpler than passing callbacks in props to all components needing to
- * contribute actions. It is also well encapsulated in RepoHeaderActionPortal.
+ * Other components can contribute items to the repository header using RepoHeaderContribution.
  */
 export class RepoHeader extends React.PureComponent<Props, State> {
-    private static actionAdds = new Subject<RepoHeaderAction>()
-    private static actionRemoves = new Subject<RepoHeaderAction>()
-    private static forceUpdates = new Subject<void>()
-
-    private subscriptions = new Subscription()
-
-    public state: State = {}
-
-    /**
-     * Add an action link to the repository header. Do not call directly; use RepoHeaderActionPortal
-     * instead.
-     * @param action to add to the header
-     */
-    public static addAction(action: RepoHeaderAction): Unsubscribable {
-        if (action.element.key === undefined || action.element.key === null) {
-            throw new Error('RepoHeader addAction: action must have key property')
-        }
-        RepoHeader.actionAdds.next(action)
-        return { unsubscribe: () => RepoHeader.actionRemoves.next(action) }
+    public state: State = {
+        repoHeaderContributions: [],
     }
 
-    /**
-     * Forces an update of actions in the repository header. Do not call directly; use
-     * RepoHeaderActionPortal instead.
-     */
-    public static forceUpdate(): void {
-        this.forceUpdates.next()
-    }
-
-    public componentDidMount(): void {
-        this.subscriptions.add(
-            RepoHeader.actionAdds.subscribe(action => {
-                switch (action.position) {
-                    case 'nav':
-                        this.setState(prevState => ({
-                            navActions: (prevState.navActions || []).concat(action).sort(byPriority),
-                        }))
-                        break
-                    case 'left':
-                        this.setState(prevState => ({
-                            leftActions: (prevState.leftActions || []).concat(action).sort(byPriority),
-                        }))
-                        break
-                    case 'right':
-                        this.setState(prevState => ({
-                            rightActions: (prevState.rightActions || []).concat(action).sort(byPriority),
-                        }))
-                        break
-                }
-            })
-        )
-
-        this.subscriptions.add(
-            RepoHeader.actionRemoves.subscribe(toRemove => {
-                switch (toRemove.position) {
-                    case 'nav':
-                        this.setState(prevState => ({
-                            navActions: (prevState.navActions || []).filter(a => a !== toRemove),
-                        }))
-                        break
-                    case 'left':
-                        this.setState(prevState => ({
-                            leftActions: (prevState.leftActions || []).filter(a => a !== toRemove),
-                        }))
-                        break
-                    case 'right':
-                        this.setState(prevState => ({
-                            rightActions: (prevState.rightActions || []).filter(a => a !== toRemove),
-                        }))
-                        break
-                }
-            })
-        )
-
-        this.subscriptions.add(RepoHeader.forceUpdates.subscribe(() => this.forceUpdate()))
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
+    public constructor(props: Props) {
+        super(props)
+        props.onLifecyclePropsChange(this.repoHeaderContributionStore.props)
     }
 
     public render(): JSX.Element | null {
+        const navActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'nav')
+        const leftActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'left')
+        const rightActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'right')
+
         const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.repo.uri))
         return (
             <nav className="repo-header navbar navbar-expand">
@@ -200,20 +196,18 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         </div>
                     )}
                 </div>
-                {this.state.navActions &&
-                    this.state.navActions.map((a, i) => (
-                        <div className="navbar-nav" key={a.element.key || i}>
-                            <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
-                            <div className="repo-header__rev">{a.element}</div>
-                        </div>
-                    ))}
+                {navActions.map((a, i) => (
+                    <div className="navbar-nav" key={a.element.key || i}>
+                        <ChevronRightIcon className="icon-inline repo-header__icon-chevron" />
+                        <div className="repo-header__rev">{a.element}</div>
+                    </div>
+                ))}
                 <ul className="navbar-nav">
-                    {this.state.leftActions &&
-                        this.state.leftActions.map((a, i) => (
-                            <li className="nav-item" key={a.element.key || i}>
-                                {a.element}
-                            </li>
-                        ))}
+                    {leftActions.map((a, i) => (
+                        <li className="nav-item" key={a.element.key || i}>
+                            {a.element}
+                        </li>
+                    ))}
                 </ul>
                 <div className="repo-header__spacer" />
                 <ul className="navbar-nav">
@@ -223,12 +217,11 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         onExtensionsChange={this.props.onExtensionsChange}
                         cxpController={this.props.cxpController}
                     />
-                    {this.state.rightActions &&
-                        this.state.rightActions.map((a, i) => (
-                            <li className="nav-item" key={a.element.key || i}>
-                                {a.element}
-                            </li>
-                        ))}
+                    {rightActions.map((a, i) => (
+                        <li className="nav-item" key={a.element.key || i}>
+                            {a.element}
+                        </li>
+                    ))}
                     {this.props.repo.viewerCanAdminister && (
                         <li className="nav-item">
                             <ActionItem to={`/${this.props.repo.uri}/-/settings`} data-tooltip="Repository settings">
@@ -241,8 +234,6 @@ export class RepoHeader extends React.PureComponent<Props, State> {
             </nav>
         )
     }
-}
 
-function byPriority(a: { priority: number }, b: { priority: number }): number {
-    return b.priority - a.priority
+    private repoHeaderContributionStore = new RepoHeaderContributionStore(stateUpdate => this.setState(stateUpdate))
 }

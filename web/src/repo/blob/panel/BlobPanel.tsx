@@ -39,7 +39,8 @@ import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
-import { RepoHeaderActionPortal } from '../../RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
+import { RepoHeaderContributionPortal } from '../../RepoHeaderContributionPortal'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { ToggleDiscussionsPanel } from '../actions/ToggleDiscussions'
 import { ToggleHistoryPanel } from '../actions/ToggleHistoryPanel'
@@ -48,7 +49,13 @@ import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
 import { FileLocationsTree } from './FileLocationsTree'
 
-interface Props extends AbsoluteRepoFile, Partial<PositionSpec>, ModeSpec, ExtensionsProps, CXPControllerProps {
+interface Props
+    extends AbsoluteRepoFile,
+        Partial<PositionSpec>,
+        ModeSpec,
+        RepoHeaderContributionsLifecycleProps,
+        ExtensionsProps,
+        CXPControllerProps {
     location: H.Location
     history: H.History
     repoID: GQL.ID
@@ -237,7 +244,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="right"
                     priority={20}
                     element={
@@ -247,9 +254,10 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                             history={this.props.history}
                         />
                     }
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 {window.context.discussionsEnabled && (
-                    <RepoHeaderActionPortal
+                    <RepoHeaderContributionPortal
                         position="right"
                         priority={20}
                         element={
@@ -259,6 +267,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 history={this.props.history}
                             />
                         }
+                        repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
 

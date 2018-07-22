@@ -8,8 +8,9 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../../component
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
-import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
+import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { GitCommitNode, GitCommitNodeProps } from './GitCommitNode'
 
 export const gitCommitFragment = gql`
@@ -92,7 +93,7 @@ const fetchGitCommits = (args: {
         })
     )
 
-interface Props {
+interface Props extends RepoHeaderContributionsLifecycleProps {
     repo: GQL.IRepository
     rev?: string
     commitID: string
@@ -111,9 +112,10 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
         return (
             <div className="repository-commits-page">
                 <PageTitle title="Commits" />
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="commits">Commits</RepoHeaderBreadcrumbNavItem>}
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <FilteredConnection<GQL.IGitCommit, Pick<GitCommitNodeProps, 'repoName' | 'className' | 'compact'>>
                     className="repository-commits-page__content"

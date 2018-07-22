@@ -16,7 +16,8 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { lprToRange, parseHash } from '../../util/url'
-import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
+import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
@@ -76,7 +77,13 @@ const fetchBlob = memoizeObservable(
     fetchBlobCacheKey
 )
 
-interface Props extends AbsoluteRepoFile, ModeSpec, ExtensionsProps, CXPComponentProps, CXPControllerProps {
+interface Props
+    extends AbsoluteRepoFile,
+        ModeSpec,
+        RepoHeaderContributionsLifecycleProps,
+        ExtensionsProps,
+        CXPComponentProps,
+        CXPControllerProps {
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -183,14 +190,15 @@ export class BlobPage extends React.PureComponent<Props, State> {
             <>
                 <PageTitle title={this.getPageTitle()} />
                 {renderAs === 'code' && (
-                    <RepoHeaderActionPortal
+                    <RepoHeaderContributionPortal
                         position="right"
                         priority={99}
                         element={<ToggleLineWrap key="toggle-line-wrap" onDidUpdate={this.onDidUpdateLineWrap} />}
+                        repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
                 {this.state.blobOrError.richHTML && (
-                    <RepoHeaderActionPortal
+                    <RepoHeaderContributionPortal
                         position="right"
                         priority={100}
                         element={
@@ -200,6 +208,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                                 location={this.props.location}
                             />
                         }
+                        repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
                 {this.state.blobOrError.richHTML &&
@@ -241,6 +250,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                                         ? lprToRange(parseHash(this.props.location.hash))!.start
                                         : undefined
                                 }
+                                repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                             />
                         </>
                     )}

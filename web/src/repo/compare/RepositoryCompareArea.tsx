@@ -23,8 +23,9 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
 import { propertyIsDefined } from '../../util/types'
 import { escapeRevspecForURL } from '../../util/url'
-import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
+import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
@@ -36,7 +37,11 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{ spec: string }>, ExtensionsProps, CXPControllerProps {
+interface Props
+    extends RouteComponentProps<{ spec: string }>,
+        RepoHeaderContributionsLifecycleProps,
+        ExtensionsProps,
+        CXPControllerProps {
     repo: GQL.IRepository
 }
 
@@ -165,9 +170,10 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
 
         return (
             <div className="repository-compare-area area--vertical" ref={this.nextRepositoryCompareAreaElement}>
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="compare">Compare</RepoHeaderBreadcrumbNavItem>}
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <RepositoryCompareHeader
                     className="area--vertical__header"

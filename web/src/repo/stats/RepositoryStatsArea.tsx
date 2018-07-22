@@ -4,8 +4,9 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
-import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
+import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryStatsContributorsPage } from './RepositoryStatsContributorsPage'
 import { RepositoryStatsNavbar } from './RepositoryStatsNavbar'
 
@@ -17,7 +18,7 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
     repo: GQL.IRepository
 }
 
@@ -50,9 +51,10 @@ export class RepositoryStatsArea extends React.Component<Props> {
 
         return (
             <div className="repository-stats-area area--vertical">
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="stats">Contributors</RepoHeaderBreadcrumbNavItem>}
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 {showNavbar && (
                     <div className="area--vertical__navbar">

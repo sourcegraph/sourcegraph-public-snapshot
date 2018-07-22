@@ -28,7 +28,8 @@ import { BlobPage } from './blob/BlobPage'
 import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
 import { RepositoryGraphArea } from './graph/RepositoryGraphArea'
-import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
+import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevSidebar } from './RepoRevSidebar'
 import { EmptyRepositoryPage, RepositoryCloningInProgressPage } from './RepositoryGitDataContainer'
 import { RevisionsPopover } from './RevisionsPopover'
@@ -39,6 +40,7 @@ const enableSymbolHistory = localStorage.getItem('symbolHistory') === 'true'
 
 interface RepoRevContainerProps
     extends RouteComponentProps<{}>,
+        RepoHeaderContributionsLifecycleProps,
         ExtensionsProps,
         CXPComponentProps,
         CXPRootProps,
@@ -190,8 +192,9 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 {IS_CHROME && <ChromeExtensionToast />}
                 {IS_FIREFOX && <FirefoxExtensionToast />}
                 <SurveyToast />
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="nav"
+                    priority={100}
                     element={
                         <PopoverButton
                             key="repo-rev"
@@ -217,6 +220,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 'HEAD'}
                         </PopoverButton>
                     }
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <Switch>
                     {['', '/-/:objectType(blob|tree)/:filePath+'].map(routePath => (
@@ -263,8 +267,9 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                     <>
                                         {filePath && (
                                             <>
-                                                <RepoHeaderActionPortal
+                                                <RepoHeaderContributionPortal
                                                     position="nav"
+                                                    priority={10}
                                                     element={
                                                         <FilePathBreadcrumb
                                                             key="path"
@@ -274,9 +279,12 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                             isDir={objectType === 'tree'}
                                                         />
                                                     }
+                                                    repoHeaderContributionsLifecycleProps={
+                                                        this.props.repoHeaderContributionsLifecycleProps
+                                                    }
                                                 />
                                                 {objectType === 'blob' && (
-                                                    <RepoHeaderActionPortal
+                                                    <RepoHeaderContributionPortal
                                                         position="right"
                                                         priority={-10}
                                                         element={
@@ -291,6 +299,9 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                                 filePath={filePath}
                                                                 mode={mode}
                                                             />
+                                                        }
+                                                        repoHeaderContributionsLifecycleProps={
+                                                            this.props.repoHeaderContributionsLifecycleProps
                                                         }
                                                     />
                                                 )}
@@ -343,6 +354,9 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         rev={this.props.rev}
                                                         filePath={routeComponentProps.match.params.filePath || ''}
                                                         mode={mode}
+                                                        repoHeaderContributionsLifecycleProps={
+                                                            this.props.repoHeaderContributionsLifecycleProps
+                                                        }
                                                         extensions={this.props.extensions}
                                                         cxpOnComponentChange={this.props.cxpOnComponentChange}
                                                         cxpController={this.props.cxpController}
@@ -391,6 +405,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 defaultBranch={(this.props.resolvedRevOrError as ResolvedRev).defaultBranch}
                                 commitID={(this.props.resolvedRevOrError as ResolvedRev).commitID}
                                 routePrefix={this.props.routePrefix}
+                                repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                             />
                         )}
                     />
@@ -406,16 +421,19 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                 commitID={(this.props.resolvedRevOrError as ResolvedRev).commitID}
                                 location={this.props.location}
                                 history={this.props.history}
+                                repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                             />
                         )}
                     />
                 </Switch>
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="left"
                     element={<CopyLinkAction key="copy-link" location={this.props.location} />}
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="right"
+                    priority={3}
                     element={
                         <GoToPermalinkAction
                             key="go-to-permalink"
@@ -425,6 +443,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             history={this.props.history}
                         />
                     }
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 {USE_PLATFORM &&
                     this.props.resolvedRevOrError &&

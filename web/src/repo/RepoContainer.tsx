@@ -22,8 +22,8 @@ import { RepositoryCommitPage } from './commit/RepositoryCommitPage'
 import { RepositoryCompareArea } from './compare/RepositoryCompareArea'
 import { RepositoryGraphAction } from './graph/RepositoryGraphAction'
 import { RepositoryReleasesArea } from './releases/RepositoryReleasesArea'
-import { RepoHeader } from './RepoHeader'
-import { RepoHeaderActionPortal } from './RepoHeaderActionPortal'
+import { RepoHeader, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
+import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainer } from './RepoRevContainer'
 import { RepositoryErrorPage } from './RepositoryErrorPage'
 import { RepositoryGitDataContainer } from './RepositoryGitDataContainer'
@@ -50,9 +50,6 @@ interface State extends ParsedRepoRev {
     filePath?: string
     rest?: string
 
-    repoHeaderLeftChildren?: React.ReactFragment | null
-    repoHeaderRightChildren?: React.ReactFragment | null
-
     /**
      * The fetched repository or an error if occurred.
      * `undefined` while loading.
@@ -68,6 +65,8 @@ interface State extends ParsedRepoRev {
 
     /** The external links to show in the repository header, if any. */
     externalLinks?: GQL.IExternalLink[]
+
+    repoHeaderContributionsLifecycleProps?: RepoHeaderContributionsLifecycleProps
 }
 
 const enableRepositoryGraph = localStorage.getItem('repositoryGraph') !== null
@@ -203,6 +202,7 @@ export class RepoContainer extends React.Component<Props, State> {
             cxpOnComponentChange: this.props.cxpOnComponentChange,
             cxpOnRootChange: this.props.cxpOnRootChange,
             cxpController: this.props.cxpController,
+            ...this.state.repoHeaderContributionsLifecycleProps,
         }
 
         const isSettingsPage =
@@ -217,11 +217,12 @@ export class RepoContainer extends React.Component<Props, State> {
                     extensions={this.props.extensions}
                     onExtensionsChange={this.props.onExtensionsChange}
                     cxpController={this.props.cxpController}
+                    onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
                     location={this.props.location}
                     history={this.props.history}
                 />
                 {enableRepositoryGraph && (
-                    <RepoHeaderActionPortal
+                    <RepoHeaderContributionPortal
                         position="right"
                         priority={-1}
                         element={
@@ -231,11 +232,13 @@ export class RepoContainer extends React.Component<Props, State> {
                                 rev={this.state.rev}
                             />
                         }
+                        {...this.state.repoHeaderContributionsLifecycleProps}
                     />
                 )}
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="right"
                     key="go-to-code-host"
+                    priority={2}
                     element={
                         <GoToCodeHostAction
                             key="go-to-code-host"
@@ -248,6 +251,7 @@ export class RepoContainer extends React.Component<Props, State> {
                             externalLinks={this.state.externalLinks}
                         />
                     }
+                    {...this.state.repoHeaderContributionsLifecycleProps}
                 />
                 {this.state.repoOrError.enabled || isSettingsPage ? (
                     <Switch>
@@ -368,6 +372,9 @@ export class RepoContainer extends React.Component<Props, State> {
 
     private onResolvedRevOrError = (v: ResolvedRev | ErrorLike | undefined): void =>
         this.setState({ resolvedRevOrError: v })
+
+    private onRepoHeaderContributionsLifecyclePropsChange = (lifecycleProps: RepoHeaderContributionsLifecycleProps) =>
+        this.setState({ repoHeaderContributionsLifecycleProps: lifecycleProps })
 }
 
 /**

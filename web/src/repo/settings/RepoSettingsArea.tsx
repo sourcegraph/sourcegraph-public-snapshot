@@ -8,7 +8,8 @@ import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
-import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
+import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { fetchRepository } from './backend'
 import { RepoSettingsIndexPage } from './RepoSettingsIndexPage'
 import { RepoSettingsMirrorPage } from './RepoSettingsMirrorPage'
@@ -23,7 +24,7 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends RouteComponentProps<any>, RepoHeaderContributionsLifecycleProps {
     repo: GQL.IRepository
     user: GQL.IUser | null
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
@@ -94,13 +95,14 @@ export class RepoSettingsArea extends React.Component<Props> {
 
         return (
             <div className="repo-settings-area area">
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="nav"
                     element={
                         <span key="graph" className="repo-settings-area__header-item">
                             Settings
                         </span>
                     }
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <RepoSettingsSidebar className="area__sidebar" {...this.props} {...transferProps} />
                 <div className="area__content">

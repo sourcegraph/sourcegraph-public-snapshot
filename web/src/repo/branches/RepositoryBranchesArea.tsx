@@ -4,8 +4,9 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
-import { RepoHeaderActionPortal } from '../RepoHeaderActionPortal'
+import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderBreadcrumbNavItem } from '../RepoHeaderBreadcrumbNavItem'
+import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { RepositoryBranchesAllPage } from './RepositoryBranchesAllPage'
 import { RepositoryBranchesNavbar } from './RepositoryBranchesNavbar'
 import { RepositoryBranchesOverviewPage } from './RepositoryBranchesOverviewPage'
@@ -18,7 +19,7 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, RepoHeaderContributionsLifecycleProps {
     repo: GQL.IRepository
 }
 
@@ -49,9 +50,10 @@ export class RepositoryBranchesArea extends React.Component<Props> {
 
         return (
             <div className="repository-branches-area area--vertical">
-                <RepoHeaderActionPortal
+                <RepoHeaderContributionPortal
                     position="nav"
                     element={<RepoHeaderBreadcrumbNavItem key="branches">Branches</RepoHeaderBreadcrumbNavItem>}
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <div className="area--vertical__navbar">
                     <RepositoryBranchesNavbar className="area--vertical__navbar-inner" repo={this.props.repo.uri} />

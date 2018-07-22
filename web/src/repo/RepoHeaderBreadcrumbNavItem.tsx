@@ -5,7 +5,7 @@ import * as React from 'react'
  *
  * Usage:
  *
- *     <RepoHeaderActionPortal
+ *     <RepoHeaderContributionPortal
  *         position="nav"
  *         element={
  *             <RepoHeaderBreadcrumbNavItem key="foo">Foo</RepoHeaderBreadcrumbNavItem>
