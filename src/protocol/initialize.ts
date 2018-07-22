@@ -20,7 +20,7 @@ export interface _InitializeParams {
     /**
      * The root URI of the workspace.
      *
-     * TODO!(sqs): Figure out our story around roots, multi-roots, workspace folders, etc.
+     * TODO(sqs): Figure out our story around roots, multi-roots, workspace folders, etc.
      */
     root: URI | null
 
