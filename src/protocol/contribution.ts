@@ -54,6 +54,12 @@ export enum ContributableMenu {
 
     /** The title bar for the current document. */
     EditorTitle = 'editor/title',
+
+    /** A directory page (including for the root directory of a repository). */
+    DirectoryPage = 'directory/page',
+
+    /** The help menu in the application. */
+    Help = 'help',
 }
 
 /**
