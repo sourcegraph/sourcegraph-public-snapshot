@@ -556,7 +556,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	enabled := op.Enabled
 
 	// We optimistically assume the repo is already in the table, so first
-	// check if it does. We then fallback to the upsert functionality. The
+	// check if it is. We then fallback to the upsert functionality. The
 	// upsert is logged as a modification to the DB, even if it is a no-op. So
 	// we do this check to avoid log spam if postgres is configured with
 	// log_statement='mod'.
