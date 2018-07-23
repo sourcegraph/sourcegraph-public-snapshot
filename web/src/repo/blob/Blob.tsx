@@ -504,7 +504,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 text: this.props.content,
                             },
                             selections:
-                                this.state.selectedPosition && this.state.selectedPosition.line
+                                this.state.selectedPosition && this.state.selectedPosition.line !== undefined
                                     ? [{ ...(lprToRange(this.state.selectedPosition) as Range), isReversed: false }]
                                     : [],
                             visibleRanges: [], // TODO!(sqs): fill these in
