@@ -19,6 +19,17 @@ export interface Registration {
      * Options necessary for the registration.
      */
     registerOptions?: any
+
+    /**
+     * If true, this registration overwrites an existing registration with the same ID and method. It is an error
+     * if overwriteExisting is true and there is no such existing registration.
+     *
+     * NOTE: This is currently only supported for contributions (when method is "window/contribution"). It is most
+     * useful for contributions because it makes a separate unregister message unnecessary and allows the update to
+     * be atomic (with no brief period of time in between the unregister and register when the contribution would
+     * disappear).
+     */
+    overwriteExisting?: boolean
 }
 
 export interface RegistrationParams {

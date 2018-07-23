@@ -21,6 +21,7 @@ export interface StaticFeature {
 export interface RegistrationData<T> {
     id: string
     registerOptions: T
+    overwriteExisting?: boolean
 }
 
 /** A client feature that exposes functionality that the server can enable, configure, and disable. */

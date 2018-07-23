@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { ContributionRegistry } from '../../environment/providers/contribution'
+import { ContributionRegistry, ContributionsEntry } from '../../environment/providers/contribution'
 import { ClientCapabilities } from '../../protocol'
 import { Client } from '../client'
 import { ContributionFeature } from './contribution'
@@ -73,6 +73,30 @@ describe('ContributionFeature', () => {
             const { registry, feature } = create()
             assert.throws(() => feature.unregister('a'))
             assert.strictEqual(registry.entries.value.length, 0)
+        })
+
+        describe('overwriteExisting', () => {
+            it('rejects registration request with overwriteExisting when there is no existing registration', () => {
+                const { registry, feature } = create()
+                assert.throws(() =>
+                    feature.register(feature.messages, { id: 'a', registerOptions: {}, overwriteExisting: true })
+                )
+                assert.strictEqual(registry.entries.value.length, 0)
+            })
+
+            it('overwrites existing registration', () => {
+                const { registry, feature } = create()
+                feature.register(feature.messages, { id: 'a', registerOptions: { commands: [{ command: '1' }] } })
+                feature.register(feature.messages, {
+                    id: 'a',
+                    registerOptions: { commands: [{ command: '2' }] },
+                    overwriteExisting: true,
+                })
+                assert.strictEqual(registry.entries.value.length, 1)
+                assert.deepStrictEqual(registry.entries.value[0], {
+                    contributions: { commands: [{ command: '2' }] },
+                } as ContributionsEntry)
+            })
         })
     })
 })

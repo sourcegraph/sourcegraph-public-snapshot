@@ -34,8 +34,15 @@ export class ContributionFeature implements DynamicFeature<Contributions> {
     }
 
     public register(_message: RPCMessageType, data: RegistrationData<Contributions>): void {
-        if (this.contributions.has(data.id)) {
+        const existing = this.contributions.has(data.id)
+        if (existing && !data.overwriteExisting) {
             throw new Error(`registration already exists with ID ${data.id}`)
+        }
+        if (data.overwriteExisting) {
+            if (!existing) {
+                throw new Error(`no existing registration to overwrite with ID ${data.id}`)
+            }
+            this.unregister(data.id)
         }
         const sub = new Subscription()
         sub.add(this.registry.registerContributions({ contributions: data.registerOptions }))

@@ -69,6 +69,7 @@ describe('Client', () => {
             interface RegisterCallArgs {
                 message: RPCMessageType
                 data: RegistrationData<any>
+                overwriteExisting?: boolean
             }
 
             it('handles a registration request for a dynamic feature', () => {
@@ -83,10 +84,10 @@ describe('Client', () => {
 
                 // Request registration.
                 client.handleRegistrationRequest({
-                    registrations: [{ id: 'a', method: 'm', registerOptions: { a: 1 } }],
+                    registrations: [{ id: 'a', method: 'm', registerOptions: { a: 1 }, overwriteExisting: true }],
                 })
                 assert.deepStrictEqual(registerCalls, [
-                    { message: { method: 'm' }, data: { id: 'a', registerOptions: { a: 1 } } },
+                    { message: { method: 'm' }, data: { id: 'a', registerOptions: { a: 1 }, overwriteExisting: true } },
                 ] as typeof registerCalls)
 
                 // Request unregistration.

@@ -439,6 +439,7 @@ export class Client implements Unsubscribable {
             const data: RegistrationData<any> = {
                 id: registration.id,
                 registerOptions: options,
+                overwriteExisting: registration.overwriteExisting,
             }
             feature.register(this._method2Message.get(registration.method)!, data)
         }
