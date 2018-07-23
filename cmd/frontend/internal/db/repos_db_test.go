@@ -32,7 +32,7 @@ func repoURIs(repos []*types.Repo) []api.RepoURI {
 }
 
 func createRepo(ctx context.Context, t *testing.T, repo *types.Repo) {
-	if err := Repos.TryInsertNew(ctx, api.InsertRepoOp{URI: repo.URI, Description: repo.Description, Fork: repo.Fork, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: repo.URI, Description: repo.Description, Fork: repo.Fork, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -96,6 +96,48 @@ func TestRepos_List(t *testing.T) {
 	}
 	if !jsonEqual(t, repos, want) {
 		t.Errorf("got %v, want %v", repos, want)
+	}
+}
+
+func TestRepos_List_fork(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := testContext()
+
+	ctx = actor.WithActor(ctx, &actor.Actor{})
+
+	mine := mustCreate(ctx, t, &types.Repo{URI: "a/r", Fork: false})
+	yours := mustCreate(ctx, t, &types.Repo{URI: "b/r", Fork: true})
+
+	{
+		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, OnlyForks: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertJSONEqual(t, yours, repos)
+	}
+	{
+		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, NoForks: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertJSONEqual(t, mine, repos)
+	}
+	{
+		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true, NoForks: true, OnlyForks: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertJSONEqual(t, nil, repos)
+	}
+	{
+		repos, err := Repos.List(ctx, ReposListOptions{Enabled: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertJSONEqual(t, append(append([]*types.Repo(nil), mine...), yours...), repos)
 	}
 }
 

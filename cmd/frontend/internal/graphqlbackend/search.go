@@ -212,8 +212,17 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	}
 	repoGroupFilters, _ := r.query.StringValues(searchquery.FieldRepoGroup)
 
+	forkStr, _ := r.query.StringValue(searchquery.FieldFork)
+	fork := parseYesNoOnly(forkStr)
+
 	tr.LazyPrintf("resolveRepositories - start")
-	repoRevs, missingRepoRevs, repoResults, overLimit, err = resolveRepositories(ctx, repoFilters, minusRepoFilters, repoGroupFilters)
+	repoRevs, missingRepoRevs, repoResults, overLimit, err = resolveRepositories(ctx, resolveRepoOp{
+		repoFilters:      repoFilters,
+		minusRepoFilters: minusRepoFilters,
+		repoGroupFilters: repoGroupFilters,
+		onlyForks:        fork == Only || fork == True,
+		noForks:          fork == No || fork == False,
+	})
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
 		r.repoRevs = repoRevs
@@ -318,26 +327,34 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFilters []string, repoGroupFilters []string) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
-	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("repoFilters: %v, minusRepoFilters: %v, repoGroupFilters: %v", repoFilters, minusRepoFilters, repoGroupFilters))
+type resolveRepoOp struct {
+	repoFilters      []string
+	minusRepoFilters []string
+	repoGroupFilters []string
+	noForks          bool
+	onlyForks        bool
+}
+
+func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
+	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("%+v", op))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	includePatterns := repoFilters
+	includePatterns := op.repoFilters
 	if includePatterns != nil {
 		// Copy to avoid race condition.
 		includePatterns = append([]string{}, includePatterns...)
 	}
-	excludePatterns := minusRepoFilters
+	excludePatterns := op.minusRepoFilters
 
 	maxRepoListSize := maxReposToSearch
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
 	// with repo:, then include all from the group.)
-	if groupNames := repoGroupFilters; len(groupNames) > 0 {
+	if groupNames := op.repoGroupFilters; len(groupNames) > 0 {
 		groups, err := resolveRepoGroups(ctx)
 		if err != nil {
 			return nil, nil, nil, false, err
@@ -370,6 +387,8 @@ func resolveRepositories(ctx context.Context, repoFilters []string, minusRepoFil
 		Enabled:         true,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 		LimitOffset: &db.LimitOffset{Limit: maxRepoListSize + 1},
+		NoForks:     op.noForks,
+		OnlyForks:   op.onlyForks,
 	})
 	tr.LazyPrintf("Repos.List - done")
 	if err != nil {

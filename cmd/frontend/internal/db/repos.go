@@ -163,6 +163,12 @@ type ReposListOptions struct {
 	// Disabled includes disabled repositories in the list.
 	Disabled bool
 
+	// NoForks excludes forks from the list.
+	NoForks bool
+
+	// OnlyForks excludes non-forks from the lhist.
+	OnlyForks bool
+
 	// Filters repositories based on whether they have an IndexedRevision set.
 	HasIndexedRevision *bool
 
@@ -319,6 +325,12 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 		} else {
 			conds = append(conds, sqlf.Sprintf("indexed_revision IS NULL"))
 		}
+	}
+	if opt.NoForks {
+		conds = append(conds, sqlf.Sprintf("NOT fork"))
+	}
+	if opt.OnlyForks {
+		conds = append(conds, sqlf.Sprintf("fork"))
 	}
 
 	return conds, nil
@@ -522,7 +534,7 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 }
 
 const tryInsertNewSQL = `WITH UPSERT AS (
-	UPDATE repo SET uri=$1, external_id=$5, external_service_type=$6, external_service_id=$7 WHERE uri=$1 RETURNING uri
+	UPDATE repo SET uri=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7 WHERE uri=$1 RETURNING uri
 )
 INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id) (
 	SELECT $1 AS uri, $2 AS description, $3 AS fork, '' as language, $4 AS enabled,
@@ -530,11 +542,10 @@ INSERT INTO repo(uri, description, fork, language, enabled, external_id, externa
 	WHERE $1 NOT IN (SELECT uri FROM upsert)
 )`
 
-// TryInsertNew attempts to insert the repository rp into the db. It returns no error if a repo
-// with the given uri already exists.
-func (s *repos) TryInsertNew(ctx context.Context, op api.InsertRepoOp) error {
-	if Mocks.Repos.TryInsertNew != nil {
-		return Mocks.Repos.TryInsertNew(op)
+// Upsert updates the repository if it already exists (keyed on URI) and inserts it if it does not.
+func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
+	if Mocks.Repos.Upsert != nil {
+		return Mocks.Repos.Upsert(op)
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
@@ -569,6 +580,8 @@ func (s dbExternalRepoSpec) toAPISpec() *api.ExternalRepoSpec {
 
 var insertBatchSize = 100
 
+// DEPRECATED: TryInsertNewBatch should be removed after the deprecated
+// serveGitoliteUpdateReposDeprecated function is removed.
 func (s *repos) TryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
 	if len(repos) < insertBatchSize {
 		return s.tryInsertNewBatch(ctx, repos)

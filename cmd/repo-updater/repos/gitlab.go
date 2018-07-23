@@ -116,7 +116,7 @@ func GetGitLabRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 			URI:          gitlabProjectToRepoPath(conn, proj),
 			ExternalRepo: GitLabExternalRepoSpec(proj, *conn.baseURL),
 			Description:  proj.Description,
-			Fork:         false, // TODO(sqs): determining is-fork is not yet supported
+			Fork:         proj.ForkedFromProject != nil,
 			VCS: protocol.VCSInfo{
 				URL: conn.authenticatedRemoteURL(proj),
 			},
@@ -220,7 +220,7 @@ func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 				RepoURI:      gitlabProjectToRepoPath(conn, proj),
 				ExternalRepo: GitLabExternalRepoSpec(proj, *conn.baseURL),
 				Description:  proj.Description,
-				Fork:         false,
+				Fork:         proj.ForkedFromProject != nil,
 				Enabled:      conn.config.InitialRepositoryEnablement,
 			},
 			URL: conn.authenticatedRemoteURL(proj),

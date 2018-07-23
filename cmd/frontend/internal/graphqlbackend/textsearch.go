@@ -744,13 +744,13 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 	index, _ := query.StringValues(searchquery.FieldIndex)
 	if len(index) > 0 {
 		index := index[len(index)-1]
-		switch index {
-		case "yes", "y", "t", "true":
+		switch parseYesNoOnly(index) {
+		case Yes, True:
 			// default
 			if zoektCache != nil {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
 			}
-		case "only", "o", "force":
+		case Only:
 			if zoektCache == nil {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
@@ -760,7 +760,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 			}
 			tr.LazyPrintf("index:only, ignoring %d unindexed repos", len(searcherRepos))
 			searcherRepos = nil
-		case "no", "n", "f", "false":
+		case No, False:
 			tr.LazyPrintf("index:no, bypassing zoekt (using searcher) for %d indexed repos", len(zoektRepos))
 			searcherRepos = append(searcherRepos, zoektRepos...)
 			zoektRepos = nil

@@ -14,6 +14,7 @@ const (
 	FieldRepo      = "repo"
 	FieldRepoGroup = "repogroup"
 	FieldFile      = "file"
+	FieldFork      = "fork"
 	FieldLang      = "lang"
 	FieldType      = "type"
 
@@ -46,6 +47,7 @@ var (
 			FieldRepo:      regexpNegatableFieldType,
 			FieldRepoGroup: types.FieldType{Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldFile:      regexpNegatableFieldType,
+			FieldFork:      {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldLang:      types.FieldType{Literal: types.StringType, Quoted: types.StringType, Negatable: true},
 			FieldType:      stringFieldType,
 

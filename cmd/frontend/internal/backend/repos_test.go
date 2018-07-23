@@ -77,9 +77,9 @@ func TestRepos_Add(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
-	calledTryInsertNew := false
-	db.Mocks.Repos.TryInsertNew = func(op api.InsertRepoOp) error {
-		calledTryInsertNew = true
+	calledUpsert := false
+	db.Mocks.Repos.Upsert = func(op api.InsertRepoOp) error {
+		calledUpsert = true
 		if want := (api.InsertRepoOp{URI: repoURI, Description: "d"}); !reflect.DeepEqual(op, want) {
 			t.Errorf("got %+v, want %+v", op, want)
 		}
@@ -92,7 +92,7 @@ func TestRepos_Add(t *testing.T) {
 	if !calledRepoLookup {
 		t.Error("!calledRepoLookup")
 	}
-	if !calledTryInsertNew {
-		t.Error("!calledTryInsertNew")
+	if !calledUpsert {
+		t.Error("!calledUpsert")
 	}
 }

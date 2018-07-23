@@ -116,7 +116,7 @@ func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
 		// Allow anonymous users on Sourcegraph.com to enable repositories just by visiting them, but
 		// everywhere else, require server admins to explicitly enable repositories.
 		enableAutoAddedRepos := envvar.SourcegraphDotComMode()
-		if err := s.TryInsertNew(ctx, api.InsertRepoOp{
+		if err := s.Upsert(ctx, api.InsertRepoOp{
 			URI:          result.Repo.URI,
 			Description:  result.Repo.Description,
 			Fork:         result.Repo.Fork,
@@ -129,10 +129,12 @@ func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
 	return nil
 }
 
-func (s *repos) TryInsertNew(ctx context.Context, op api.InsertRepoOp) error {
-	return db.Repos.TryInsertNew(ctx, op)
+func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
+	return db.Repos.Upsert(ctx, op)
 }
 
+// DEPRECATED: TryInsertNewBatch should be removed after the deprecated
+// serveGitoliteUpdateReposDeprecated function is removed.
 func (s *repos) TryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
 	return db.Repos.TryInsertNewBatch(ctx, repos)
 }

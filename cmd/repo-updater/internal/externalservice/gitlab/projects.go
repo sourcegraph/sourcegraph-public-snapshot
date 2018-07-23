@@ -16,13 +16,18 @@ import (
 
 // Project is a GitLab project (equivalent to a GitHub repository).
 type Project struct {
+	ProjectCommon
+	Visibility        string         `json:"visibility"`                    // "private", "internal", or "public"
+	ForkedFromProject *ProjectCommon `json:"forked_from_project,omitempty"` // If non-nil, the project from which this project was forked
+}
+
+type ProjectCommon struct {
 	ID                int    `json:"id"`                  // ID of project
 	PathWithNamespace string `json:"path_with_namespace"` // full path name of project ("namespace1/namespace2/name")
 	Description       string `json:"description"`         // description of project
 	WebURL            string `json:"web_url"`             // the web URL of this project ("https://gitlab.com/foo/bar")i
 	HTTPURLToRepo     string `json:"http_url_to_repo"`    // HTTP clone URL
 	SSHURLToRepo      string `json:"ssh_url_to_repo"`     // SSH clone URL ("git@example.com:foo/bar.git")
-	Visibility        string `json:"visibility"`          // "private", "internal", or "public"
 }
 
 // RequiresAuthentication reports whether this project requires authentication to view (i.e., its visibility is

@@ -72,7 +72,7 @@ func TestRepos_Delete(t *testing.T) {
 	}
 	ctx := testContext()
 
-	if err := Repos.TryInsertNew(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -147,7 +147,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Repos.TryInsertNew(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -172,7 +172,7 @@ func TestRepos_Count(t *testing.T) {
 	}
 }
 
-func TestRepos_TryInsertNew(t *testing.T) {
+func TestRepos_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -186,7 +186,7 @@ func TestRepos_TryInsertNew(t *testing.T) {
 		}
 	}
 
-	if err := Repos.TryInsertNew(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -199,7 +199,7 @@ func TestRepos_TryInsertNew(t *testing.T) {
 		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
 	}
 
-	if err := Repos.TryInsertNew(ctx, api.InsertRepoOp{URI: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true}); err != nil {
+	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "asdfasdf", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -211,8 +211,8 @@ func TestRepos_TryInsertNew(t *testing.T) {
 	if rp.URI != "myrepo" {
 		t.Fatalf("rp.URI: %s != %s", rp.URI, "myrepo")
 	}
-	if rp.Description != "" {
-		t.Fatalf("rp.URI: %q != %q", rp.Description, "")
+	if rp.Description != "asdfasdf" {
+		t.Fatalf("rp.URI: %q != %q", rp.Description, "asdfasdf")
 	}
 }
 

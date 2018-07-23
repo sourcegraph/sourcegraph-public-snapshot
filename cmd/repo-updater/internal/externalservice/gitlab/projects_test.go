@@ -68,12 +68,14 @@ func TestClient_GetProject(t *testing.T) {
 	c.httpClient.Transport = &mock
 
 	want := Project{
-		ID:                1,
-		PathWithNamespace: "n1/n2/r",
-		Description:       "d",
-		WebURL:            "https://gitlab.example.com/n1/n2/r",
-		HTTPURLToRepo:     "https://gitlab.example.com/n1/n2/r.git",
-		SSHURLToRepo:      "git@gitlab.example.com:n1/n2/r.git",
+		ProjectCommon: ProjectCommon{
+			ID:                1,
+			PathWithNamespace: "n1/n2/r",
+			Description:       "d",
+			WebURL:            "https://gitlab.example.com/n1/n2/r",
+			HTTPURLToRepo:     "https://gitlab.example.com/n1/n2/r.git",
+			SSHURLToRepo:      "git@gitlab.example.com:n1/n2/r.git",
+		},
 	}
 
 	proj, err := c.GetProject(context.Background(), 0, "n1/n2/r")

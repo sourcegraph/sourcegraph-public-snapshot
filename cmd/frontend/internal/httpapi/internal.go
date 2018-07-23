@@ -111,7 +111,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	err = backend.Repos.TryInsertNew(r.Context(), api.InsertRepoOp{
+	err = backend.Repos.Upsert(r.Context(), api.InsertRepoOp{
 		URI:          repo.RepoURI,
 		Description:  repo.Description,
 		Fork:         repo.Fork,
