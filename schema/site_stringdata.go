@@ -430,6 +430,12 @@ const SiteSchemaJSON = `{
     "auth.saml": {
       "$ref": "#/definitions/SAMLAuthProvider"
     },
+    "auth.sessionExpiry": {
+      "type": "string",
+      "description":
+        "The duration of a user session, after which it expires and the user is required to re-authenticate. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., \"720h\", \"43200m\", \"2592000s\" all indicate a timespan of 30 days. Default is 90 days.",
+      "default": "2160h"
+    },
     "auth.userIdentityHTTPHeader": {
       "description":
         "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".\n\nDEPRECATED: Use \"auth.providers\" with an entry of the form {\"type\": \"http-header\", \"usernameHeader\": \"...\"} instead.",

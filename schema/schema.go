@@ -345,6 +345,7 @@ type SiteConfiguration struct {
 	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
 	AuthPublic                        bool                         `json:"auth.public,omitempty"`
 	AuthSaml                          *SAMLAuthProvider            `json:"auth.saml,omitempty"`
+	AuthSessionExpiry                 string                       `json:"auth.sessionExpiry,omitempty"`
 	AuthUserIdentityHTTPHeader        string                       `json:"auth.userIdentityHTTPHeader,omitempty"`
 	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
 	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
