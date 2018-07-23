@@ -19,7 +19,14 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
     }
 
     public componentWillReceiveProps(nextProps: Readonly<LineDecorationAttachmentProps>): void {
-        if (nextProps.portalID !== this.props.portalID) {
+        if (
+            nextProps.repoPath !== this.props.repoPath ||
+            nextProps.rev !== this.props.rev ||
+            nextProps.filePath !== this.props.filePath ||
+            nextProps.line !== this.props.line ||
+            nextProps.portalID !== this.props.portalID ||
+            nextProps.attachment !== this.props.attachment
+        ) {
             this.portal = document.getElementById(nextProps.portalID)
         }
     }
