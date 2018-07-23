@@ -97,7 +97,7 @@ export class ContributedActionItem extends React.PureComponent<Props> {
                 onSelect={this.runAction}
             >
                 {this.props.contribution.iconURL ? (
-                    <img src={this.props.contribution.iconURL} className="nav-link-icon" />
+                    <img src={this.props.contribution.iconURL} className="icon-inline" />
                 ) : (
                     <span className="d-md-none d-lg-inline">{this.props.contribution.title}</span>
                 )}
