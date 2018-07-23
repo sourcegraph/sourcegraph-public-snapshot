@@ -41,6 +41,9 @@ export interface CommandContribution {
     /** A descriptive title. */
     title?: string
 
+    /** Secondary text to display less prominently than the title (e.g., in a tooltip). */
+    detail?: string
+
     /** A URL to an icon (base64: URIs are OK). */
     iconURL?: string
 }
