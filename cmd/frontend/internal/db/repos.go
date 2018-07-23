@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"reflect"
 	regexpsyntax "regexp/syntax"
 	"strings"
 
@@ -549,7 +550,32 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
-	_, err := globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, op.Enabled, spec.id, spec.serviceType, spec.serviceID)
+	insert := false
+
+	// We optimistically assume the repo is already in the table, so first
+	// check if it does. We then fallback to the upsert functionality. The
+	// upsert is logged as a modification to the DB, even if it is a no-op. So
+	// we do this check to avoid log spam if postgres is configured with
+	// log_statement='mod'.
+	r, err := s.GetByURI(ctx, op.URI)
+	if err != nil {
+		if _, ok := err.(*repoNotFoundErr); !ok {
+			return err
+		}
+		insert = true // missing
+	} else {
+		insert = insert || (op.Description != r.Description)
+		insert = insert || (op.Fork != r.Fork)
+		insert = insert || (op.Enabled != r.Enabled)
+		insert = insert || (!reflect.DeepEqual(spec, r.ExternalRepo))
+	}
+
+	_, err = globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, op.Enabled, spec.id, spec.serviceType, spec.serviceID)
+
+	// HACK(keegan) temporary logging for
+	// https://github.com/sourcegraph/sourcegraph/issues/12430
+	log15.Debug("upserting repo", "repo", op.URI, "op", op, "error", err)
+
 	return err
 }
 
