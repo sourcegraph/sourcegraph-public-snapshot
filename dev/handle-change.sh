@@ -42,7 +42,11 @@ elif [ -n "$cmdlist" ]; then
 	[ $? == 0 ] || failed=true
 fi
 
-echo >&2 "Rebuilt: $rebuilt"
-[ -n "$rebuilt" ] && [ -n "$GOREMAN" ] && $GOREMAN run restart $rebuilt
+if [ -n "$rebuilt" ]; then
+	echo >&2 "Rebuilt: $rebuilt"
+	[ -n "$rebuilt" ] && [ -n "$GOREMAN" ] && $GOREMAN run restart $rebuilt
+else
+	echo >&2 "Nothing to rebuild or rebuilds failed."
+fi
 
 ! $failed

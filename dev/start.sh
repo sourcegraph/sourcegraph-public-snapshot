@@ -104,10 +104,16 @@ export NODE_OPTIONS="--max_old_space_size=4096"
 # Make sure chokidar-cli is installed in the background
 npm install &
 
-./dev/go-install.sh
+if ! ./dev/go-install.sh; then
+	# let NPM finish, otherwise we get NPM diagnostics AFTER the
+	# actual reason we're failing.
+	wait
+	echo >&2 "WARNING: go-install.sh failed, some builds may have failed."
+	exit 1
+fi
 
 # Wait for npm install if it is still running
-fg &> /dev/null || true
+wait
 
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true

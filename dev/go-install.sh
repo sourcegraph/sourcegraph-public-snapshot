@@ -55,43 +55,55 @@ fi
 # build a list of "cmd,true" and "cmd,false" pairs to indicate whether each command
 # wants its own flags. we can't use variable names with the command in them because
 # some commands have hyphens.
-cmdlist=""
-anyraced=false
+raced=""
+unraced=""
 case $GORACED in
-all)	for cmd in $commands; do
-		cmdlist="$cmdlist $cmd,true"
-		anyraced=true
+"all")	for cmd in $commands; do
+		raced="$raced $cmd"
 	done
 	;;
 *)	for cmd in $commands; do
 		case " $GORACED " in
 		*" $cmd "*)
-			raced=true
-			anyraced=true
+			raced="$raced $cmd"
 			;;
 		*)
-			raced=false
+			unraced="$unraced $cmd"
 			;;
 		esac
-		cmdlist="$cmdlist $cmd,$raced"
 	done
 	;;
 esac
 
-if ! $anyraced; then
+# Shared logic for the go install part
+do_install() {
+	race=$1
+	shift
+	cmdlist="$*"
+	cmds=""
+	for cmd in $cmdlist; do
+		cmds="$cmds github.com/sourcegraph/sourcegraph/cmd/$cmd"
+	done
+	if go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds; then
+		if $verbose; then
+			# echo each command on its own line
+			echo "$cmdlist" | tr ' ' '\012'
+		fi
+	else
+		failed="$failed $cmdlist"
+	fi
+}
+
+if [ -n "$raced" ]; then
+	echo >&2 "Go race detector enabled for: $GORACED."
+	do_install true $raced
+else
 	echo >&2 "Go race detector disabled. You can enable it for specific commands by setting GORACED (e.g. GORACED=frontend,searcher or GORACED=all for all commands)"
 fi
 
-failed=""
-for cmd in $cmdlist; do
-	raced=${cmd##*,}
-	cmd=${cmd%,*}
-	if go install -v -gcflags="$GCFLAGS" -tags="$TAGS" -race=$raced github.com/sourcegraph/sourcegraph/cmd/$cmd >&2; then
-		$verbose && echo "$cmd"
-	else
-		failed="$failed $cmd"
-	fi
-done
+if [ -n "$unraced" ]; then
+	do_install false $unraced
+fi
 
 if [ -n "$failed" ]; then
 	echo >&2 "failed to build:$failed"
