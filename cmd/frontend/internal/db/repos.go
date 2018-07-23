@@ -570,6 +570,10 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		insert = insert || (!reflect.DeepEqual(spec, r.ExternalRepo))
 	}
 
+	if !insert {
+		return nil
+	}
+
 	_, err = globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, op.Enabled, spec.id, spec.serviceType, spec.serviceID)
 
 	// HACK(keegan) temporary logging for
