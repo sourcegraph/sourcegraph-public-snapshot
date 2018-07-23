@@ -581,11 +581,6 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
 	_, err = globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language)
-
-	// HACK(keegan) temporary logging for
-	// https://github.com/sourcegraph/sourcegraph/issues/12430
-	log15.Debug("upserted repo", "repo", op.URI, "op", op, "error", err)
-
 	return err
 }
 
