@@ -84,6 +84,17 @@ type ExternalRepoSpec struct {
 	ServiceID string
 }
 
+// Equal returns true if r is equal to s.
+func (r *ExternalRepoSpec) Equal(s *ExternalRepoSpec) bool {
+	if r == s { // handles the case when r and s are both nil
+		return true
+	}
+	if s == nil || r == nil {
+		return false
+	}
+	return r.ID == s.ID && r.ServiceType == s.ServiceType && r.ServiceID == s.ServiceID
+}
+
 func (r *ExternalRepoSpec) String() string {
 	return fmt.Sprintf("ExternalRepoSpec{%s %s %s}", r.ServiceID, r.ServiceType, r.ID)
 }

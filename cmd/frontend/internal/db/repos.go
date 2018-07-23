@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"reflect"
 	regexpsyntax "regexp/syntax"
 	"strings"
 
@@ -538,19 +537,23 @@ const tryInsertNewSQL = `WITH UPSERT AS (
 	UPDATE repo SET uri=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7 WHERE uri=$1 RETURNING uri
 )
 INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id) (
-	SELECT $1 AS uri, $2 AS description, $3 AS fork, '' as language, $4 AS enabled,
+	SELECT $1 AS uri, $2 AS description, $3 AS fork, $8 as language, $4 AS enabled,
 	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id
 	WHERE $1 NOT IN (SELECT uri FROM upsert)
 )`
 
-// Upsert updates the repository if it already exists (keyed on URI) and inserts it if it does not.
+// Upsert updates the repository if it already exists (keyed on URI) and
+// inserts it if it does not.
+//
+// If repo exists, op.Enabled is ignored.
 func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	if Mocks.Repos.Upsert != nil {
 		return Mocks.Repos.Upsert(op)
 	}
 
-	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
 	insert := false
+	language := ""
+	enabled := op.Enabled
 
 	// We optimistically assume the repo is already in the table, so first
 	// check if it does. We then fallback to the upsert functionality. The
@@ -564,21 +567,24 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 		}
 		insert = true // missing
 	} else {
-		insert = insert || (op.Description != r.Description)
-		insert = insert || (op.Fork != r.Fork)
-		insert = insert || (op.Enabled != r.Enabled)
-		insert = insert || (!reflect.DeepEqual(spec, r.ExternalRepo))
+		enabled = r.Enabled
+		language = r.Language
+		// Ignore Enabled for deciding to update
+		insert = ((op.Description != r.Description) ||
+			(op.Fork != r.Fork) ||
+			(!op.ExternalRepo.Equal(r.ExternalRepo)))
 	}
 
 	if !insert {
 		return nil
 	}
 
-	_, err = globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, op.Enabled, spec.id, spec.serviceType, spec.serviceID)
+	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
+	_, err = globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language)
 
 	// HACK(keegan) temporary logging for
 	// https://github.com/sourcegraph/sourcegraph/issues/12430
-	log15.Debug("upserting repo", "repo", op.URI, "op", op, "error", err)
+	log15.Debug("upserted repo", "repo", op.URI, "op", op, "error", err)
 
 	return err
 }
