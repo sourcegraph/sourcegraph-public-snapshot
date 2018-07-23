@@ -533,7 +533,7 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 	return err
 }
 
-const tryInsertNewSQL = `WITH UPSERT AS (
+const upsertSQL = `WITH UPSERT AS (
 	UPDATE repo SET uri=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7 WHERE uri=$1 RETURNING uri
 )
 INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id) (
@@ -580,7 +580,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
-	_, err = globalDB.ExecContext(ctx, tryInsertNewSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language)
+	_, err = globalDB.ExecContext(ctx, upsertSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language)
 	return err
 }
 
