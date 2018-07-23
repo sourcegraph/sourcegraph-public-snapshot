@@ -6,7 +6,7 @@ const create = (): {
     feature: WindowShowMessageFeature
 } => {
     const client: Client = { onNotification: () => void 0, onRequest: () => void 0 } as any
-    const feature = new WindowShowMessageFeature(client, () => void 0, async () => null)
+    const feature = new WindowShowMessageFeature(client, () => void 0, async () => null, async () => null)
     return { client, feature }
 }
 

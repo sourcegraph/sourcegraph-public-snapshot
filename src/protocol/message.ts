@@ -72,13 +72,29 @@ export interface ShowMessageRequestParams {
 }
 
 /**
- * The show message request is sent from the server to the client to show a message
- * and a set of options actions to the user.
+ * The show message request is sent from the server to the client to show a message and a set of actions to the
+ * user.
  */
 export namespace ShowMessageRequest {
     export const type = new RequestType<ShowMessageRequestParams, MessageActionItem | null, void, void>(
         'window/showMessageRequest'
     )
+}
+
+/** The parameters for window/showInput. */
+export interface ShowInputParams {
+    /** The message to display in the input dialog. */
+    message: string
+
+    /** The default value to display in the input field. */
+    defaultValue?: string
+}
+
+/**
+ * The show input request is sent from the server to the client to show a message and prompt the user for input.
+ */
+export namespace ShowInputRequest {
+    export const type = new RequestType<ShowInputParams, string | null, void, void>('window/showInput')
 }
 
 /**

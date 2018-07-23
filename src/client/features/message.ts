@@ -1,5 +1,7 @@
 import {
     MessageActionItem,
+    ShowInputParams,
+    ShowInputRequest,
     ShowMessageNotification,
     ShowMessageParams,
     ShowMessageRequest,
@@ -21,12 +23,18 @@ export class WindowShowMessageFeature implements StaticFeature {
          * Called when the client receives a window/showMessageRequest request and expected to return a promise
          * that resolves to the selected action.
          */
-        private showMessageRequest: (params: ShowMessageRequestParams) => Promise<MessageActionItem | null>
+        private showMessageRequest: (params: ShowMessageRequestParams) => Promise<MessageActionItem | null>,
+        /**
+         * Called when the client receives a window/showInput request and expected to return a promise that
+         * resolves to the user's input.
+         */
+        private showInput: (params: ShowInputParams) => Promise<string | null>
     ) {}
 
     public initialize(): void {
         // TODO(sqs): no way to unregister these
         this.client.onNotification(ShowMessageNotification.type, this.showMessage)
         this.client.onRequest(ShowMessageRequest.type, this.showMessageRequest)
+        this.client.onRequest(ShowInputRequest.type, this.showInput)
     }
 }

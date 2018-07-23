@@ -28,6 +28,7 @@ import {
     InitializeParams,
     LogMessageParams,
     MessageActionItem,
+    ShowInputParams,
     ShowMessageParams,
     ShowMessageRequestParams,
 } from '../protocol'
@@ -58,6 +59,8 @@ interface PromiseCallback<T> {
 }
 
 type ShowMessageRequest = ShowMessageRequestParams & MessageSource & PromiseCallback<MessageActionItem | null>
+
+type ShowInputRequest = ShowInputParams & MessageSource & PromiseCallback<string | null>
 
 type ConfigurationUpdate = ConfigurationUpdateParams & MessageSource & PromiseCallback<void>
 
@@ -100,6 +103,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     private readonly _logMessages = new Subject<LogMessageParams & MessageSource>()
     private readonly _showMessages = new Subject<ShowMessageParams & MessageSource>()
     private readonly _showMessageRequests = new Subject<ShowMessageRequest>()
+    private readonly _showInputs = new Subject<ShowInputRequest>()
     private readonly _configurationUpdates = new Subject<ConfigurationUpdate>()
 
     /** Log messages from extensions. */
@@ -108,8 +112,11 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     /** Messages from extensions intended for display to the user. */
     public readonly showMessages: Observable<ShowMessageParams & MessageSource> = this._showMessages
 
-    /** Messages from extensions requesting a response from the user. */
+    /** Messages from extensions requesting the user to select an action. */
     public readonly showMessageRequests: Observable<ShowMessageRequest> = this._showMessageRequests
+
+    /** Messages from extensions requesting text input from the user. */
+    public readonly showInputs: Observable<ShowInputRequest> = this._showInputs
 
     /** Configuration updates from extensions. */
     public readonly configurationUpdates: Observable<ConfigurationUpdate> = this._configurationUpdates
@@ -233,6 +240,10 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
                 (params: ShowMessageRequestParams) =>
                     new Promise<MessageActionItem | null>(resolve => {
                         this._showMessageRequests.next({ ...params, extension: client.id, resolve })
+                    }),
+                (params: ShowInputParams) =>
+                    new Promise<string | null>(resolve => {
+                        this._showInputs.next({ ...params, extension: client.id, resolve })
                     })
             )
         )
