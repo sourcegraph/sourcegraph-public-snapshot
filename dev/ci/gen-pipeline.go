@@ -207,7 +207,7 @@ func main() {
 
 	if strings.HasPrefix(branch, "docker-images-patch-notest/") {
 		version = version + "_patch"
-		addDockerImageStep(branch[19:], false)
+		addDockerImageStep(branch[27:], false)
 		_, err := pipeline.WriteTo(os.Stdout)
 		if err != nil {
 			panic(err)
