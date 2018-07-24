@@ -21,7 +21,7 @@ import {
 } from '../client/features/location'
 import { WindowLogMessageFeature } from '../client/features/logMessage'
 import { WindowShowMessageFeature } from '../client/features/message'
-import { TextDocumentDidOpenFeature } from '../client/features/textDocument'
+import { TextDocumentDidCloseFeature, TextDocumentDidOpenFeature } from '../client/features/textDocument'
 import { Trace } from '../jsonrpc2/trace'
 import {
     ConfigurationUpdateParams,
@@ -217,6 +217,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         client.registerFeature(new ContributionFeature(this.registries.contribution))
         client.registerFeature(new ExecuteCommandFeature(client, this.registries.commands))
         client.registerFeature(new TextDocumentDidOpenFeature(client, this.environment))
+        client.registerFeature(new TextDocumentDidCloseFeature(client, this.environment))
         client.registerFeature(new TextDocumentDefinitionFeature(client, this.registries.textDocumentDefinition))
         client.registerFeature(
             new TextDocumentImplementationFeature(client, this.registries.textDocumentImplementation)

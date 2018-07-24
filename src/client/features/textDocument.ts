@@ -1,11 +1,13 @@
 import { Observable, Subscription } from 'rxjs'
-import { filter } from 'rxjs/operators'
+import { bufferCount, filter, map } from 'rxjs/operators'
 import uuidv4 from 'uuid/v4'
 import { TextDocumentItem } from 'vscode-languageserver-types'
 import { ObservableEnvironment } from '../../environment/environment'
 import { MessageType as RPCMessageType, NotificationType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
+    DidCloseTextDocumentNotification,
+    DidCloseTextDocumentParams,
     DidOpenTextDocumentNotification,
     DidOpenTextDocumentParams,
     ServerCapabilities,
@@ -88,6 +90,10 @@ export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFe
     }
 }
 
+/**
+ * Support for notifying the server of when the client opened a text document (textDocument/didOpen notifications
+ * sent by the client to the server).
+ */
 export class TextDocumentDidOpenFeature extends TextDocumentNotificationFeature<
     DidOpenTextDocumentParams,
     TextDocumentItem
@@ -108,6 +114,53 @@ export class TextDocumentDidOpenFeature extends TextDocumentNotificationFeature<
 
     public get messages(): typeof DidOpenTextDocumentNotification.type {
         return DidOpenTextDocumentNotification.type
+    }
+
+    public fillClientCapabilities(capabilities: ClientCapabilities): void {
+        ensure(ensure(capabilities, 'textDocument')!, 'synchronization')!.dynamicRegistration = true
+    }
+
+    public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
+        const textDocumentSyncOptions = resolveTextDocumentSync(capabilities.textDocumentSync)
+        if (documentSelector && textDocumentSyncOptions && textDocumentSyncOptions.openClose) {
+            this.register(this.messages, {
+                id: uuidv4(),
+                registerOptions: { documentSelector },
+            })
+        }
+    }
+}
+
+/**
+ * Support for notifying the server of when the client closed a text document (textDocument/didClose notifications
+ * sent by the client to the server).
+ */
+export class TextDocumentDidCloseFeature extends TextDocumentNotificationFeature<
+    DidCloseTextDocumentParams,
+    TextDocumentItem
+> {
+    constructor(client: Client, environment: ObservableEnvironment) {
+        super(
+            client,
+            environment.textDocument.pipe(
+                bufferCount(2, 1),
+                // When the previous value emitted was a document, it means the most recent value was either a
+                // different document or null. In both cases, it means the previous document is closed.
+                filter((v): v is [TextDocumentItem, TextDocumentItem | null] => v[0] !== null),
+                map(([closedDocument]) => closedDocument)
+            ),
+            DidCloseTextDocumentNotification.type,
+            client.options.middleware.didClose,
+            textDocument =>
+                ({
+                    textDocument: { uri: textDocument.uri },
+                } as DidCloseTextDocumentParams),
+            match
+        )
+    }
+
+    public get messages(): typeof DidCloseTextDocumentNotification.type {
+        return DidCloseTextDocumentNotification.type
     }
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {

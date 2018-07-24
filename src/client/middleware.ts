@@ -7,6 +7,7 @@ import { ProvideTextDocumentLocationMiddleware } from './features/location'
 
 export interface Middleware {
     didOpen?: NextSignature<TextDocumentItem, void>
+    didClose?: NextSignature<TextDocumentItem, void>
     provideTextDocumentDefinition?: ProvideTextDocumentLocationMiddleware
     provideTextDocumentImplementation?: ProvideTextDocumentLocationMiddleware
     provideTextDocumentReferences?: ProvideTextDocumentLocationMiddleware<ReferenceParams>

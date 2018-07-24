@@ -5,6 +5,8 @@ import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment } from '../
 import { NotificationType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
+    DidCloseTextDocumentNotification,
+    DidCloseTextDocumentParams,
     DidOpenTextDocumentNotification,
     DidOpenTextDocumentParams,
     TextDocumentRegistrationOptions,
@@ -14,6 +16,7 @@ import { DocumentSelector } from '../../types/document'
 import { Client } from '../client'
 import {
     resolveTextDocumentSync,
+    TextDocumentDidCloseFeature,
     TextDocumentDidOpenFeature,
     TextDocumentNotificationFeature as AbstractTextDocumentNotificationFeature,
 } from './textDocument'
@@ -163,6 +166,135 @@ describe('TextDocumentDidOpenFeature', () => {
                 ...environment.value,
                 component: { document: textDocument, selections: [], visibleRanges: [] },
             })
+        })
+    })
+})
+
+describe('TextDocumentDidCloseFeature', () => {
+    const create = (): {
+        client: Client
+        environment: BehaviorSubject<Environment>
+        feature: TextDocumentDidCloseFeature & { readonly selectors: Map<string, DocumentSelector> }
+    } => {
+        const environment = new BehaviorSubject<Environment>(EMPTY_ENVIRONMENT)
+        const client = { options: { middleware: {} } } as Client
+        const feature = new class extends TextDocumentDidCloseFeature {
+            public readonly selectors!: Map<string, DocumentSelector>
+        }(client, createObservableEnvironment(environment))
+        return { client, environment, feature }
+    }
+
+    it('reports client capabilities', () => {
+        const capabilities: ClientCapabilities = {}
+        create().feature.fillClientCapabilities(capabilities)
+        assert.deepStrictEqual(capabilities, {
+            textDocument: { synchronization: { dynamicRegistration: true } },
+        } as ClientCapabilities)
+    })
+
+    describe('upon initialization', () => {
+        it('registers the provider if the server supports text document sync', () => {
+            const { feature } = create()
+            feature.initialize({ textDocumentSync: { openClose: true } }, ['*'])
+            assert.strictEqual(feature.selectors.size, 1)
+        })
+
+        it('does not register the provider if the server lacks support for text document sync', () => {
+            const { feature } = create()
+            feature.initialize({ textDocumentSync: { openClose: false } }, ['*'])
+            assert.strictEqual(feature.selectors.size, 0)
+        })
+
+        it('does not register the provider if the server omits mention of support for text document sync', () => {
+            const { feature } = create()
+            feature.initialize({}, ['*'])
+            assert.strictEqual(feature.selectors.size, 0)
+        })
+
+        it('registers the provider if the server supports text document sync (backcompat for non-TextDocumentSyncOptions value)', () => {
+            const { feature } = create()
+            feature.initialize({ textDocumentSync: TextDocumentSyncKind.Incremental }, ['*'])
+            assert.strictEqual(feature.selectors.size, 1)
+        })
+
+        it('does not register the provider if the server omits mention of support for text document sync (backcompat for non-TextDocumentSyncOptions value)', () => {
+            const { feature } = create()
+            feature.initialize({ textDocumentSync: TextDocumentSyncKind.None }, ['*'])
+            assert.strictEqual(feature.selectors.size, 0)
+        })
+    })
+
+    describe('when a text document is opened and then closed', () => {
+        it('sends a textDocument/didClose notification to the server', done => {
+            const { client, environment, feature } = create()
+            feature.initialize({ textDocumentSync: { openClose: true } }, ['l'])
+
+            const textDocument: TextDocumentItem = {
+                uri: 'file:///f',
+                languageId: 'l',
+                version: 1,
+                text: '',
+            }
+
+            let didCloseNotifications: DidCloseTextDocumentParams[] = []
+            function mockSendNotification(method: string, params: any): void
+            function mockSendNotification(
+                type: NotificationType<DidCloseTextDocumentParams, TextDocumentRegistrationOptions>,
+                params: DidCloseTextDocumentParams
+            ): void
+            function mockSendNotification(
+                type: string | NotificationType<DidCloseTextDocumentParams, TextDocumentRegistrationOptions>,
+                params: any
+            ): void {
+                assert.strictEqual(
+                    typeof type === 'string' ? type : type.method,
+                    DidCloseTextDocumentNotification.type.method
+                )
+                didCloseNotifications.push(params)
+            }
+            client.sendNotification = mockSendNotification
+
+            // Open the document.
+            environment.next({
+                ...environment.value,
+                component: { document: textDocument, selections: [], visibleRanges: [] },
+            })
+            assert.deepStrictEqual(didCloseNotifications, [])
+            didCloseNotifications = []
+
+            // Close the document by setting component to null.
+            environment.next({
+                ...environment.value,
+                component: null,
+            })
+            assert.deepStrictEqual(didCloseNotifications, [
+                {
+                    textDocument: { uri: textDocument.uri },
+                },
+            ] as DidCloseTextDocumentParams[])
+            didCloseNotifications = []
+
+            // Reopen the document.
+            environment.next({
+                ...environment.value,
+                component: { document: textDocument, selections: [], visibleRanges: [] },
+            })
+            assert.deepStrictEqual(didCloseNotifications, [])
+            didCloseNotifications = []
+
+            // Close the document by setting component to a different document.
+            environment.next({
+                ...environment.value,
+                component: { document: { ...textDocument, uri: 'file:///f2' }, selections: [], visibleRanges: [] },
+            })
+            assert.deepStrictEqual(didCloseNotifications, [
+                {
+                    textDocument: { uri: textDocument.uri },
+                },
+            ] as DidCloseTextDocumentParams[])
+            didCloseNotifications = []
+
+            done()
         })
     })
 })
