@@ -374,6 +374,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         }
                                                         rev={this.props.rev}
                                                         filePath={routeComponentProps.match.params.filePath || ''}
+                                                        cxpController={this.props.cxpController}
                                                         location={this.props.location}
                                                         history={this.props.history}
                                                         isLightTheme={this.props.isLightTheme}

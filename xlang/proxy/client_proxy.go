@@ -490,9 +490,13 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 			return nil, err
 		}
 
-		// This is a valid notification to send, but given in our
-		// situation we can have many clients for a single language
-		// server, it doesn't make sense to pass on.
+		// It only makes sense to pass this along when there is only a single client.
+		if !c.context.share {
+			if err := c.callServer(ctx, req.ID, req.Method, req.Notif, false, req.Params, nil); err != nil {
+				return nil, err
+			}
+		}
+
 		return nil, nil
 
 	case "textDocument/definition", "textDocument/hover", "textDocument/references", "textDocument/documentHighlight", "textDocument/documentLink", "documentLink/resolve", "textDocument/implementation", "textDocument/typeDefinition", "textDocument/documentSymbol", "workspace/symbol",
@@ -752,7 +756,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		}
 		return nil, nil
 
-	case "window/showMessageRequest", "configuration/update":
+	case "window/showMessageRequest", "configuration/update", "client/registerCapability", "client/unregisterCapability", "window/showInput":
 		// Pass these through verbatim.
 		var result interface{}
 		err := conn.Call(ctx, req.Method, req.Params, &result)

@@ -118,9 +118,9 @@ function environmentFilter(
             nextEnvironment.extensions.filter(x => {
                 try {
                     const component = nextEnvironment.component
-                    if (x.manifest && !isErrorLike(x.manifest) && x.manifest.activationEvents && component) {
+                    if (x.manifest && !isErrorLike(x.manifest) && x.manifest.activationEvents) {
                         return x.manifest.activationEvents.some(
-                            e => e === '*' || e === `onLanguage:${component.document.languageId}`
+                            e => e === '*' || (!!component && e === `onLanguage:${component.document.languageId}`)
                         )
                     }
                 } catch (err) {
@@ -155,19 +155,28 @@ export function createController(): Controller<CXPExtensionWithManifest> {
         environmentFilter,
     })
 
-    controller.showMessages.subscribe(({ message }) => alert(message))
-    controller.showMessageRequests.subscribe(({ message, actions, resolve }) => {
+    function messageFromExtension(extension: string, message: string): string {
+        return `From extension ${extension}:\n\n${message}`
+    }
+    controller.showMessages.subscribe(({ extension, message }) => alert(messageFromExtension(extension, message)))
+    controller.showMessageRequests.subscribe(({ extension, message, actions, resolve }) => {
         if (!actions || actions.length === 0) {
-            alert(message)
+            alert(messageFromExtension(extension, message))
             resolve(null)
             return
         }
         const value = prompt(
-            `${message}\n\nValid responses: ${actions.map(({ title }) => JSON.stringify(title)).join(', ')}`,
+            messageFromExtension(
+                extension,
+                `${message}\n\nValid responses: ${actions.map(({ title }) => JSON.stringify(title)).join(', ')}`
+            ),
             actions[0].title
         )
         resolve(actions.find(a => a.title === value) || null)
     })
+    controller.showInputs.subscribe(({ extension, message, defaultValue, resolve }) =>
+        resolve(prompt(messageFromExtension(extension, message), defaultValue))
+    )
     controller.configurationUpdates
         .pipe(
             mergeMap(params =>

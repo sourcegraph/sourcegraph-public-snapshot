@@ -1,5 +1,6 @@
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
+import { ContributableMenu } from 'cxp/lib/protocol'
 import * as H from 'history'
 import * as React from 'react'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
@@ -8,8 +9,7 @@ import { ActionItem } from '../components/ActionItem'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { CXPControllerProps } from '../cxp/CXPEnvironment'
-import { ContributedActions } from '../extensions/ContributedActions'
-import { ContributableMenu } from '../extensions/contributions'
+import { ContributedActionsNavItems } from '../extensions/ContributedActions'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
@@ -211,10 +211,8 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 </ul>
                 <div className="repo-header__spacer" />
                 <ul className="navbar-nav">
-                    <ContributedActions
+                    <ContributedActionsNavItems
                         menu={ContributableMenu.EditorTitle}
-                        extensions={this.props.extensions}
-                        onExtensionsChange={this.props.onExtensionsChange}
                         cxpController={this.props.cxpController}
                     />
                     {rightActions.map((a, i) => (

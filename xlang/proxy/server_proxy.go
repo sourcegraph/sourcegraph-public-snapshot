@@ -650,45 +650,34 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		}
 		return c.handleFS(ctx, req.Method, path)
 
-	case "window/logMessage", "window/showMessage", "window/showMessageRequest":
+	case "window/logMessage", "window/showMessage":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		{
-			// lsp.ShowMessage{,Request}Params shares LogMessageParams' "message" and "type" JSON
-			// properties, so just unmarshal into LogMessageParams here. (We only use this for logging,
-			// so it's OK to ignore the other fields.)
-			var params lsp.LogMessageParams
-			if err := json.Unmarshal(*req.Params, &params); err != nil {
-				return nil, err
-			}
-			logWithLevel(int(params.Type), req.Method+" "+params.Message, c.id.contextID, "method", req.Method, "id", req.ID)
+		// lsp.ShowMessageParams shares LogMessageParams' "message" and "type" JSON
+		// properties, so just unmarshal into LogMessageParams here. (We only use this for logging,
+		// so it's OK to ignore the other fields.)
+		var params lsp.LogMessageParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return nil, err
 		}
+		logWithLevel(int(params.Type), req.Method+" "+params.Message, c.id.contextID, "method", req.Method, "id", req.ID)
 
 		// Log to the span for the server, not for this specific request.
 		if span := opentracing.SpanFromContext(ctx); span != nil {
 			span.LogFields(otlog.Object(req.Method, *req.Params))
 		}
 
-		switch req.Method {
-		case "window/logMessage", "window/showMessage":
-			// Forward these notifications to all clients and save for future clients.
-			//
-			// We pass through the window/logMessage and window/showMessage notifications from language
-			// servers to ALL clients because we assume that they're relevant. This assumption may need
-			// to change in the future. Note that this does not hold for window/showMessageRequest,
-			// which only makes sense soliciting the response from a single client.
-			c.saveMessage(*req.Params)
-			c.clientBroadcast(ctx, req)
-
-		case "window/showMessageRequest":
-			// Forward to a single client and return the response.
-			return c.clientForward(ctx, req)
-		}
-
+		// Forward these notifications to all clients and save for future clients.
+		//
+		// We pass through the window/logMessage and window/showMessage notifications from language
+		// servers to ALL clients because we assume that they're relevant. This assumption may need
+		// to change in the future.
+		c.saveMessage(*req.Params)
+		c.clientBroadcast(ctx, req)
 		return nil, nil
 
-	case "configuration/update":
+	case "configuration/update", "client/registerCapability", "client/unregisterCapability", "window/showMessageRequest", "window/showInput":
 		// Pass these through verbatim.
 		return c.clientForward(ctx, req)
 

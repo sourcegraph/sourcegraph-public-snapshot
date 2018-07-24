@@ -156,3 +156,30 @@ type ConfigurationUpdateParams struct {
 	Path  jsonx.Path  `json:"path"`
 	Value interface{} `json:"value"`
 }
+
+type Registration struct {
+	ID                string      `json:"id"`
+	Method            string      `json:"method"`
+	RegisterOptions   interface{} `json:"registerOptions,omitempty"`
+	OverwriteExisting bool        `json:"overwriteExisting,omitempty"`
+}
+
+type RegistrationParams struct {
+	Registrations []Registration `json:"registrations"`
+}
+
+type Unregistration struct {
+	ID     string `json:"id"`
+	Method string `json:"method"`
+}
+
+type UnregistrationParams struct {
+	// NOTE: The JSON field name typo exists in LSP ("unregisterations", the commonly used English
+	// spelling is "unregistrations").
+	Unregistrations []Unregistration `json:"unregisterations,omitempty"`
+}
+
+type ShowInputParams struct {
+	Message      string `json:"message"`
+	DefaultValue string `json:"defaultValue,omitempty"`
+}

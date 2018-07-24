@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/cxp/pkg/cxpmain"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -113,25 +112,17 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 					Commands: []*cxp.CommandContribution{
 						{
 							Command: setAPITokenCommandID,
-							Title:   "Codecov: Set API token to view coverage for private repositories",
+							Title:   "Codecov: Set API token to view coverage for private repositories (TODO: not implemented, needs command registration and handling)",
 							IconURL: iconURL,
-							ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
-								Path:   jsonx.PropertyPath("token"),
-								Prompt: "Set Codecov (codecov.io) API token:",
-							},
 						},
 						{
 							Command: toggleLineDecorationsCommandID,
-							Title:   "Coverage: 73%",
-							ExperimentalSettingsAction: &cxp.CommandContributionSettingsAction{
-								Path:        jsonx.PropertyPath("lineDecorations"),
-								CycleValues: []interface{}{false, true},
-							},
+							Title:   "Coverage: 73% (TODO: not implemented, needs command registration and handling)",
 						},
 					},
 					Menus: &cxp.MenuContributions{
 						EditorTitle: []*cxp.MenuItemContribution{
-							{Command: setAPITokenCommandID, Hidden: settings.Token != ""},
+							{Command: setAPITokenCommandID},
 							{Command: toggleLineDecorationsCommandID},
 						},
 					},

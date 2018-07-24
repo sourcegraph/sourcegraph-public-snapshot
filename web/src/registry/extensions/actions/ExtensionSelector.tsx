@@ -19,6 +19,7 @@ import { fromRawExtension, RawConfiguredExtension } from '../../../extensions/ex
 import { currentConfiguration } from '../../../settings/configuration'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { updateUserExtensionSettings } from '../../backend'
+import { ExtensionsEmptyState } from '../ExtensionsEmptyState'
 
 function queryConfiguredExtensions(args: { first?: number }): Observable<GQL.IConfiguredExtensionConnection> {
     return queryGraphQL(
@@ -257,16 +258,7 @@ export class ExtensionSelector extends React.PureComponent<Props, State> {
                             location={this.props.location}
                             noSummaryIfAllNodesVisible={true}
                             shouldUpdateURLQuery={false}
-                            emptyElement={
-                                <div className="px-3 py-4 text-center bg-striped-secondary">
-                                    <h4 className="text-muted mb-3">
-                                        Enable extensions to add new features to Sourcegraph.
-                                    </h4>
-                                    <Link to="/registry" className="btn btn-primary" onClick={this.dismissPopover}>
-                                        View available extensions in registry
-                                    </Link>
-                                </div>
-                            }
+                            emptyElement={<ExtensionsEmptyState onClick={this.dismissPopover} />}
                             onUpdate={this.onExtensionConnectionUpdate}
                         />
                         {(!this.state.extensionConnectionOrError ||

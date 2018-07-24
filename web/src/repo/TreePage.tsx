@@ -6,6 +6,7 @@ import { Loader } from '@sourcegraph/icons/lib/Loader'
 import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
 import UserIcon from '@sourcegraph/icons/lib/User'
+import { ContributableMenu } from 'cxp/lib/protocol'
 import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
@@ -19,6 +20,9 @@ import { FilteredConnection } from '../components/FilteredConnection'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
+import { CXPControllerProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
+import { ContributedActionItem } from '../extensions/ContributedActionItem'
+import { ContributedActionsContainer } from '../extensions/ContributedActions'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
@@ -90,7 +94,7 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props {
+interface Props extends CXPControllerProps {
     repoPath: string
     repoID: GQL.ID
     repoDescription: string
@@ -287,6 +291,27 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         ))}
                                     </div>
                                 </section>
+                            )}
+                            {USE_PLATFORM && (
+                                <ContributedActionsContainer
+                                    menu={ContributableMenu.DirectoryPage}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={items => (
+                                        <section className="tree-page__section">
+                                            <h3 className="tree-page__section-header">Actions</h3>
+                                            {items.map((item, i) => (
+                                                <ContributedActionItem
+                                                    key={i}
+                                                    {...item}
+                                                    className="btn btn-secondary mr-1 mb-1"
+                                                    cxpController={this.props.cxpController}
+                                                />
+                                            ))}
+                                        </section>
+                                    )}
+                                    empty={null}
+                                    cxpController={this.props.cxpController}
+                                />
                             )}
                             <div className="tree-page__section">
                                 <h3 className="tree-page__section-header">Changes</h3>

@@ -3,13 +3,17 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import DraftsIcon from '@sourcegraph/icons/lib/Drafts'
 import LinkIcon from '@sourcegraph/icons/lib/Link'
 import StarIcon from '@sourcegraph/icons/lib/Star'
+import { ContributableMenu } from 'cxp/lib/protocol'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { fromEvent, merge, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
+import { CXPControllerProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
+import { ContributedActionItem } from '../extensions/ContributedActionItem'
+import { ContributedActionsContainer } from '../extensions/ContributedActions'
 
-interface Props {
+interface Props extends CXPControllerProps {
     onDismiss: () => void
 }
 
@@ -100,6 +104,22 @@ export class HelpPopover extends React.Component<Props> {
                         </Link>
                     ))}
                 </div>
+                {USE_PLATFORM && (
+                    <ContributedActionsContainer
+                        menu={ContributableMenu.Help}
+                        // tslint:disable-next-line:jsx-no-lambda
+                        render={items => (
+                            <>
+                                <h4 className="card-header pl-3">Extensions help</h4>
+                                {items.map((item, i) => (
+                                    <ContributedActionItem key={i} {...item} cxpController={this.props.cxpController} />
+                                ))}
+                            </>
+                        )}
+                        empty={null}
+                        cxpController={this.props.cxpController}
+                    />
+                )}
             </div>
         )
     }

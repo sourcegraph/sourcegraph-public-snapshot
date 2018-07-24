@@ -11,6 +11,9 @@ interface Props {
      */
     className?: string
 
+    /** An additional class name for the popover element. */
+    popoverClassName?: string
+
     /**
      * The button label.
      */
@@ -33,6 +36,15 @@ interface Props {
 
     /** If set, pressing this key toggles the popover's open state. */
     globalKeyBinding?: string
+
+    /**
+     * Whether the global keybinding should be active even when the user has an input element focused. This should
+     * only be used for keybindings that would not conflict with routine user input. For example, use it for a
+     * keybinding to F1, which will ensure that F1 doesn't open Chrome help when the user is focused in an input
+     * field.
+     *
+     */
+    globalKeyBindingActiveInInputs?: boolean
 
     /** Popover placement. */
     placement?: PopoverProps['placement']
@@ -80,7 +92,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                 isOpen={isOpen}
                 toggle={this.onPopoverVisibilityToggle}
                 target={this.rootRef}
-                className="popover-button__popover"
+                className={`popover-button__popover ${this.props.popoverClassName || ''}`}
             >
                 {this.props.popoverElement}
             </Popover>
@@ -129,7 +141,7 @@ export class PopoverButton extends React.PureComponent<Props, State> {
         }
 
         // Otherwise don't interfere with user keyboard input.
-        if (isInputLike(event.target as HTMLElement)) {
+        if (!this.props.globalKeyBindingActiveInInputs && isInputLike(event.target as HTMLElement)) {
             return
         }
 

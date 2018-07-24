@@ -11,6 +11,9 @@ type Props = {
     /** The telemetry event to log; i.e., eventLogger.log(logEvent) is called. */
     logEvent?: string
 
+    /** The component's CSS class name (defaults to "nav-link"). */
+    className?: string
+
     disabled?: boolean
 } & (
     | {
@@ -38,7 +41,9 @@ type Props = {
  */
 export class ActionItem extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
-        const className = `nav-link ${this.props.disabled ? 'disabled' : ''}`
+        const className = `${this.props.className === undefined ? 'nav-link' : this.props.className} ${
+            this.props.disabled ? 'disabled' : ''
+        }`
 
         if ('onSelect' in this.props) {
             // Render using an <a> with no href, so that we get a focus ring. We need to set up a keypress listener

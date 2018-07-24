@@ -1,8 +1,8 @@
+import { Contributions } from 'cxp/lib/protocol'
 import * as GQL from '../backend/graphqlschema'
 import { SourcegraphExtension } from '../schema/extension.schema'
 import { parseJSON } from '../settings/configuration'
 import { asError, ErrorLike } from '../util/errors'
-import { Contributions } from './contributions'
 
 /**
  * Describes a configured extension and its contributions. This value is propagated throughout the application.
