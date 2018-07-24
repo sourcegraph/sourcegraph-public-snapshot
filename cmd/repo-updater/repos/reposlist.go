@@ -418,6 +418,7 @@ func (r *repoList) startUpdate(ctx context.Context, nextUp *repoData, auto bool)
 func (r *repoList) doUpdate(ctx context.Context, repo *repoData, url string) {
 	log15.Debug("doUpdate", "repo", repo.name)
 	name := repo.name
+	uri := api.RepoURI(name)
 	var resp *gitserverprotocol.RepoUpdateResponse
 	var err error
 
@@ -427,18 +428,8 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData, url string) {
 
 	log15.Debug("doUpdate", "repo", name, "interval", repo.interval)
 
-	// Check whether repo already exists, if not create an entry for it.
-	uri := api.RepoURI(name)
-	newRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoURI: uri, Enabled: repo.auto})
-	if err != nil {
-		log15.Warn("error creating or checking for repo", "repo", uri)
-		return
-	}
-	if string(newRepo.URI) != name {
-		log15.Warn("ReposCreateIfNotExists thinks name is wrong", "oldName", name, "newName", newRepo.URI)
-	}
 	// Check whether it's cloned.
-	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, uri)
+	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, api.RepoURI(uri))
 	if err != nil {
 		log15.Warn("error checking if repo cloned", "repo", uri, "err", err)
 		return
@@ -446,7 +437,12 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData, url string) {
 	// We request an update if auto updates are enabled, or if the repo isn't
 	// cloned, or the manual flag is set.
 	if !cloned || repo.manual || !r.autoUpdatesDisabled {
-		resp, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: api.RepoURI(name), URL: url}, repo.interval)
+		interval := repo.interval
+		// manual updates should happen even if the repo is usually rarely-updated.
+		if repo.manual {
+			interval = 5 * time.Second
+		}
+		resp, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: api.RepoURI(name), URL: url}, interval)
 		if err != nil {
 			log15.Warn("error requesting repo update", "repo", name, "err", err)
 			return
@@ -717,7 +713,13 @@ func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repositor
 		if cfg.Type != "git" {
 			continue
 		}
-		newList[cfg.Path] = configuredRepo{url: cfg.Url, enabled: true}
+		// Check whether repo already exists, if not create an entry for it.
+		newRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoURI: api.RepoURI(cfg.Path), Enabled: true})
+		if err != nil {
+			log15.Warn("error creating or checking for repo", "repo", cfg.Path)
+			continue
+		}
+		newList[cfg.Path] = configuredRepo{url: cfg.Url, enabled: newRepo.Enabled}
 	}
 	r.updateSource("internalConfig", newList)
 }
