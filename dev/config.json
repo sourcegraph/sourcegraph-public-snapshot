@@ -6,6 +6,7 @@
     "canonicalURLRedirect": "enabled",
     "multipleAuthProviders": "enabled",
     "platform": true,
+    "updateScheduler": "enabled",
     "discussions": "enabled"
   },
   "htmlHeadTop":
