@@ -201,13 +201,14 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 .pipe(
                     // Ignore click events caused by the user selecting text
                     filter(() => window.getSelection().toString() === ''),
-                    withLatestFrom(this.codeViewElements),
-                    map(([event, codeElement]) => ({
-                        event,
-                        position: locateTarget(event.target as HTMLElement, domFunctions),
-                    }))
+                    map(event => ({ event, position: locateTarget(event.target as HTMLElement, domFunctions) }))
                 )
                 .subscribe(({ event, position }) => {
+                    // Prevent selecting text on shift click (click+drag to select will still work)
+                    // Note that this is only called if the selection was empty initially (see above),
+                    // so this only clears a selection caused by this click.
+                    window.getSelection().removeAllRanges()
+
                     let hash: string
                     if (
                         position &&
