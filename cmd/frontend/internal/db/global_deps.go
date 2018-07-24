@@ -108,6 +108,10 @@ func repoURIToGoPathPrefixes(repoURI api.RepoURI) []string {
 
 		// go4.org
 		"github.com/camlistore/go4": {"go4.org"},
+
+		// At special request of a user, since we don't support custom import
+		// paths generically here yet. See https://github.com/sourcegraph/sourcegraph/issues/12488
+		"github.com/goadesign/goa": {"github.com/goadesign/goa", "goa.design/goa"},
 	}
 	if v, ok := manualMapping[repoURI]; ok {
 		return v
