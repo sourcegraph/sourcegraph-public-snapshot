@@ -61,8 +61,7 @@ parts will be automated. You will need to complete four main steps.
 
 ```bash
 git fetch
-git checkout ${COMMIT_FROM_STEP_1.2}
-git tag v$VERSION origin/master
+git tag v$VERSION ${COMMIT_FROM_STEP_1.2}
 git push --tags
 ```
 
