@@ -282,6 +282,7 @@ var doNotRequireRestart = []string{
 	"dontIncludeSymbolResultsByDefault",
 	"langservers",
 	"platform",
+	"log",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown
