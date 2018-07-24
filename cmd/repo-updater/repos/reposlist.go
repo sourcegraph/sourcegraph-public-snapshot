@@ -546,7 +546,7 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 			r.stats.knownRepos = len(r.repos)
 			r.stats.scale = r.intervalScale
 			r.stats.Honey() // report also to Honeycomb
-			log15.Warn("update loop", "last", now.Sub(statTime), "stats", r.stats)
+			log15.Info("update loop", "last", now.Sub(statTime), "stats", r.stats)
 			r.stats.manualFetches = 0
 			r.stats.autoFetches = 0
 			r.stats.loops = 0
