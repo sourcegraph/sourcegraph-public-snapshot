@@ -163,7 +163,6 @@ type repoList struct {
 	mu                  sync.Mutex                // locking to avoid races
 	pingChan            chan string               // send reason-for-ping as a string here to ping the update worker
 	confRepos           map[string]sourceRepoList // list of configured repos from each source
-	ready               bool                      // whether we're ready for pings
 	intervalScale       float64                   // how much to scale intervals by
 	nextDue             time.Time                 // next time we expect a thing to be ready
 	stats               repoListStats             // usage stats so we can observe usage
@@ -190,8 +189,8 @@ type sourceRepoList map[string]configuredRepo
 var repos = repoList{
 	repos:               make(map[string]*repoData),
 	autoUpdatesDisabled: false,
-	pingChan:            make(chan string),
-	maxRequests:         5, // this matches a default config elsewhere
+	pingChan:            make(chan string, 1), // buffered to prevent deadlocks
+	maxRequests:         5,                    // this matches a default config elsewhere
 }
 
 // recomputeScale determines how long it'd take to do all the repo
@@ -258,25 +257,21 @@ func (r *repoList) interval(age time.Duration) time.Duration {
 
 // ping attempts to wake up the main update loop if it would not already
 // be waking up at or before the 'due' time.
+//
+// Call this only when you hold r's mutex.
 func (r *repoList) ping(due time.Time, s string) {
-	// Ping is often called when the mutex is held. If we wait for updateLoop
-	// to consume the channel send, but updateLoop is waiting on the mutex,
-	// that is a deadlock. So complete the task that wants to ping immediately,
-	// and handle the actual ping asynchronously sometime later. This could
-	// result in updateLoop running extra times when there's nothing to do,
-	// which is better than deadlocking.
-	go func() {
-		r.mu.Lock()
-		defer r.mu.Unlock()
-		if r.ready {
-			if due.Before(r.nextDue) {
-				r.pingChan <- s
-				// Suppress additional pings until the next time the loop gets
-				// that far.
-				r.ready = false
-			}
-		}
-	}()
+	// only ping if our next wake up time needs to be adjusted.
+	if !due.Before(r.nextDue) {
+		return
+	}
+
+	// We do a non-blocking send. pingChan has a buffer size of 1, so if the
+	// buffer is full, someone else already requested the ping. This is fine,
+	// since it has the same desired effect.
+	select {
+	case r.pingChan <- s:
+	default:
+	}
 }
 
 // queue marks the named repository for automatic scheduling.
@@ -591,7 +586,6 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 		if len(r.bumped) > 0 && waitTime > 1*time.Second {
 			waitTime = 1 * time.Second
 		}
-		r.ready = true
 		r.nextDue = now.Add(waitTime)
 		r.mu.Unlock()
 		log15.Debug("updateLoop: unlocked")
@@ -605,10 +599,6 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 			log15.Debug("woken by ping", "s", s)
 		case <-ctx.Done():
 			log15.Info("context complete, terminating update loop.")
-			r.mu.Lock()
-			// prevent ping deadlocks.
-			r.ready = false
-			r.mu.Unlock()
 			return
 		case <-shutdown:
 			log15.Info("shutdown received. scheduler should be restarted soon.")
@@ -618,8 +608,6 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 			r.repos = make(map[string]*repoData)
 			r.heap = make([]*repoData, 0)
 			r.bumped = make([]*repoData, 0)
-			// prevent ping deadlocks.
-			r.ready = false
 			r.mu.Unlock()
 			return
 		}
