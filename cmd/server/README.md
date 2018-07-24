@@ -14,20 +14,19 @@ This process is quite manual still, since we want to ensure each release is
 high quality. As we get used to releasing Sourcegraph Server more and more
 parts will be automated. You will need to complete four main steps.
 
-#### (1) Prepare a PR to the [sourcegraph/website](https://github.com/sourcegraph/website) repository
+#### (1) Create the release candidate
 
-1.  Check out a new branch in the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
-1.  Ensure documentation is up-to-date with everything listed under the `Unreleased changes` section in the [CHANGELOG](../../CHANGELOG.md). Do not edit the `CHANGELOG.md` file yet.
-1.  Update the old version number in the documentation to be the version number you are releasing [by editing this React component](https://github.com/sourcegraph/website/blob/master/src/components/ServerVersionNumber.tsx).
-1.  Regenerate the site settings docs by running the last two commands mentioned under https://github.com/sourcegraph/website#documentation-pages
-1.  Create the PR on the website repository, but do not merge it yet.
+1.  Update [CHANGELOG](../../CHANGELOG.md) and move any `Unreleased changes` under their own section for the new `VERSION` you are about to release.
+2.  Commit and push this change. Remember the commit hash. This is the commit you will tag as the official release if testing goes well.
 
 #### (2) Test
 
+1.  Look in Buildkite to find the image hash (e.g. `sha256:043dce9761dd4b48f1211e7b69c0eeb2a4ee89d5a35f889fbdaea2492fb70f5d`) for the `sourcegraph/server` docker image step ([example](https://buildkite.com/sourcegraph/sourcegraph/builds/18738#eca69bac-2efd-4e99-82bd-99e9edd986f9)) of the build you just created in (1.2).
+
 1.  Run the latest container from a clean state:
 
-    ```
-    CLEAN=true ./dev/run-server-image.sh
+    ```bash
+    CLEAN=true IMAGE=sourcegraph/server@$IMAGE_HASH ./dev/run-server-image.sh
     ```
 
 1.  Do some manual testing:
@@ -37,8 +36,8 @@ parts will be automated. You will need to complete four main steps.
     - Open a code file and see code intel working
 1.  Run the previous minor version (e.g. if releasing 2.9.0 then install 2.8.0) from a clean state:
 
-    ```
-    CLEAN=true IMAGE=sourcegraph/server:X.Y.0 ./dev/run-server-image.sh
+    ```bash
+    CLEAN=true IMAGE=sourcegraph/server:$PREVIOUS_VERSION ./dev/run-server-image.sh
     ```
 
 1.  Do some manual testing to create state that we can ensure persists after the update:
@@ -48,8 +47,8 @@ parts will be automated. You will need to complete four main steps.
     - Open a code file and see code intel working
 1.  Stop the old container and run the new container without cleaning the data:
 
-    ```
-    CLEAN=false ./dev/run-server-image.sh
+    ```bash
+    CLEAN=false IMAGE=sourcegraph/server@$IMAGE_HASH ./dev/run-server-image.sh
     ```
 
 1.  Verify that
@@ -60,17 +59,27 @@ parts will be automated. You will need to complete four main steps.
 
 #### (3) Release the Sourcegraph Server Docker image
 
-```
+```bash
 git fetch
-git tag vX.Y.Z origin/master
+git checkout ${COMMIT_FROM_STEP_1.2}
+git tag v$VERSION origin/master
 git push --tags
 ```
 
 #### (4) Update the public documentation
 
-1.  Merge the PR that you previously prepared to the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
+1.  Check out a new branch in the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
+1.  Update the old version number in the documentation to be the version number you are releasing [by editing this React component](https://github.com/sourcegraph/website/blob/master/src/components/ServerVersionNumber.tsx).
+1.  Copy the schema from the released git commit to the [sourcegraph/website](https://github.com/sourcegraph/website) repo:
+    ```bash
+    cd $WEBSITE_REPO
+    cp $GOPATH/src/github.com/sourcegraph/sourcegraph/schema/site.schema.json utils/
+    ```
+1.  Create the PR on the website repository and merge it.
+
+#### (5) Notify existing instances that an update is available
+
 1.  Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
-1.  Update [CHANGELOG](../../CHANGELOG.md) and move any `Unreleased changes` under their own section for the new `VERSION` you have just released.
 1.  Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseServerBuild` to the
     semver version string of the new version.
 1.  Commit and `git push` this change directly to the `master` branch.
