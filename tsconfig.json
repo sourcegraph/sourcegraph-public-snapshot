@@ -18,5 +18,6 @@
         "name": "tslint-language-service"
       }
     ]
-  }
+  },
+  "exclude": ["lib/**", "module/**"]
 }
