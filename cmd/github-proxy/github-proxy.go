@@ -4,7 +4,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -16,12 +15,10 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -64,8 +61,6 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
-	// possibly-temporary hack: refuse to do things when we're close to our limits.
-	monitors := make(map[string]*ratelimit.Monitor)
 
 	go func() {
 		c := make(chan os.Signal, 1)
@@ -94,25 +89,6 @@ func main() {
 
 	var h http.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		q2 := r.URL.Query()
-
-		resource := "core"
-		if strings.HasPrefix(r.URL.Path, "/search/") {
-			resource = "search"
-		} else if r.URL.Path == "/graphql" {
-			resource = "graphql"
-		}
-		if monitors[resource] == nil {
-			monitors[resource] = &ratelimit.Monitor{HeaderPrefix: "X-"}
-		}
-		rateLimit := monitors[resource]
-		rateLimitRemaining, rateLimitReset, rateLimitKnown := rateLimit.Get()
-		if rateLimitKnown && (rateLimitRemaining < 1 && rateLimitReset > 0) {
-			// we're rate-limited for this kind of query, spamming it won't help.
-			nextTime := time.Now().Add(rateLimitReset)
-			http.Error(w, fmt.Sprintf("rate limit for %q exceeded, reset at %s", resource, nextTime), http.StatusForbidden)
-			return
-		}
-
 		h2 := make(http.Header)
 		for k, v := range r.Header {
 			if _, found := hopHeaders[k]; !found {
@@ -148,12 +124,17 @@ func main() {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		rateLimit.Update(resp.Header)
 		defer resp.Body.Close()
 
 		if limit := resp.Header.Get("X-Ratelimit-Remaining"); limit != "" {
 			limit, _ := strconv.Atoi(limit)
 
+			resource := "core"
+			if strings.HasPrefix(r.URL.Path, "/search/") {
+				resource = "search"
+			} else if r.URL.Path == "/graphql" {
+				resource = "graphql"
+			}
 			rateLimitRemainingGauge.WithLabelValues(resource).Set(float64(limit))
 		}
 

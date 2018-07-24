@@ -39,6 +39,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Fixed cases where gitserver directory structure migration could fail/crash.
 - Fixed "Generate access token" link on user settings page. Previously, this link would 404.
 - Fixed a bug where the search query was not updated in the search bar when searching from the homepage.
+- Fixed a possible crash in github-proxy.
 
 ### Removed
 
