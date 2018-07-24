@@ -11,8 +11,6 @@ import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersisten
 import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
-import { SymbolHistoryEntry } from './history/utils'
-import { RepoRevSidebarHistory } from './RepoRevSidebarHistory'
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
@@ -24,15 +22,11 @@ interface Props extends AbsoluteRepoFile, CXPControllerProps {
     className: string
     history: H.History
     location: H.Location
-    /** List of history entries to render in the symbol history sidebar. */
-    historyListToRender?: SymbolHistoryEntry[]
 }
 
 interface State {
     showSidebar: boolean
 }
-
-const enableSymbolHistory = localStorage.getItem('symbolHistory') === 'true'
 
 /**
  * The sidebar for a specific repo revision that shows the list of files and directories.
@@ -41,9 +35,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
     private static LAST_TAB_STORAGE_KEY = 'repo-rev-sidebar-last-tab'
     private static HIDDEN_STORAGE_KEY = 'repo-rev-sidebar-hidden'
 
-    private static TABS: Tab<SidebarTabID>[] = enableSymbolHistory
-        ? [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }, { id: 'history', label: 'History' }]
-        : [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }]
+    private static TABS: Tab<SidebarTabID>[] = [{ id: 'files', label: 'Files' }, { id: 'symbols', label: 'Symbols' }]
 
     public state: State = {
         showSidebar: localStorage.getItem(RepoRevSidebar.HIDDEN_STORAGE_KEY) === null,
@@ -127,18 +119,6 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             history={this.props.history}
                             location={this.props.location}
                         />
-                        {enableSymbolHistory ? (
-                            <RepoRevSidebarHistory
-                                key="history"
-                                location={this.props.location}
-                                history={this.props.history}
-                                commitID={this.props.commitID}
-                                cxpController={this.props.cxpController}
-                                historyListToRender={this.props.historyListToRender || []}
-                            />
-                        ) : (
-                            <div />
-                        )}
                     </TabsWithLocalStorageViewStatePersistence>
                 }
             />
