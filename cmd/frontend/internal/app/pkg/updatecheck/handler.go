@@ -30,7 +30,7 @@ var (
 	// Data Center installations what the latest version is. The version here _must_ be
 	// available at https://storage.googleapis.com/sourcegraph-assets/sourcegraph-server-gen/
 	// before landing in master.
-	latestReleaseDataCenterBuild = newBuild("2.7.6")
+	latestReleaseDataCenterBuild = newBuild("2.9.8")
 )
 
 func getLatestRelease(deployType string) build {

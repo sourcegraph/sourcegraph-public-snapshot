@@ -28,22 +28,12 @@ func TestLatestDataCenterVersionPushed(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping due to network request")
 	}
-	platforms := []string{
-		"darwin_amd64",
-		"linux_amd64",
+	url := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph/releases/tag/v%v", latestReleaseDataCenterBuild.Version)
+	resp, err := http.Head(url)
+	if err != nil {
+		t.Skip("failed to contact googleapis.com", err)
 	}
-	for _, platform := range platforms {
-		url := fmt.Sprintf("https://storage.googleapis.com/sourcegraph-assets/sourcegraph-server-gen/%s/%s/sourcegraph-server-gen", latestReleaseDataCenterBuild.Version, platform)
-		resp, err := http.Head(url)
-		if err != nil {
-			t.Skip("failed to contact googleapis.com", err)
-		}
-		if resp.StatusCode == 403 {
-			t.Errorf("sourcegraph-server-gen %s %s is not uploaded to Google Storage. %s from %s", latestReleaseDataCenterBuild.Version, platform, resp.Status, url)
-			continue
-		}
-		if resp.StatusCode != 200 {
-			t.Skip("Unexpected response from googleapis.com", resp.Status, url)
-		}
+	if resp.StatusCode != 200 {
+		t.Errorf("sourcegraph-server-gen %s is not uploaded to Google Storage. %s from %s", latestReleaseDataCenterBuild.Version, resp.Status, url)
 	}
 }
