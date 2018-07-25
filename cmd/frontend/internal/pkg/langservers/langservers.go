@@ -520,7 +520,7 @@ type LangInfo struct {
 
 // Running tells if the language server is running.
 func (i *LangInfo) Running() bool {
-	return i.Installed && i.Status != StatusNone
+	return i.Installed && i.Status != StatusNone && i.Status != StatusUnhealthy
 }
 
 type cacheEntry struct {
