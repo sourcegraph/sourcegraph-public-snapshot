@@ -1,4 +1,4 @@
-import escapeRegExp from 'lodash'
+import { escapeRegExp } from 'lodash'
 
 /** The options that describe a search */
 export interface SearchOptions {
