@@ -1,4 +1,4 @@
-import escapeRegexp from 'escape-string-regexp'
+import escapeRegExp from 'lodash'
 
 /** The options that describe a search */
 export interface SearchOptions {
@@ -43,7 +43,7 @@ export function searchOptionsEqual(a: SearchOptions, b: SearchOptions): boolean 
 }
 
 export function searchQueryForRepoRev(repoPath: string, rev?: string): string {
-    return `repo:${quoteIfNeeded(`^${escapeRegexp(repoPath)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
+    return `repo:${quoteIfNeeded(`^${escapeRegExp(repoPath)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
 }
 
 function abbreviateOID(oid: string): string {

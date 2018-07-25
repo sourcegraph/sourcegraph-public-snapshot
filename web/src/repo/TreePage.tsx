@@ -7,9 +7,8 @@ import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import { ContributableMenu } from 'cxp/lib/protocol'
-import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
-import { upperFirst } from 'lodash'
+import { escapeRegExp, upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -176,7 +175,7 @@ export class TreePage extends React.PureComponent<Props, State> {
     private getQueryPrefix(): string {
         let queryPrefix = searchQueryForRepoRev(this.props.repoPath, this.props.rev)
         if (this.props.filePath) {
-            queryPrefix += `file:^${escapeRegexp(this.props.filePath)}/ `
+            queryPrefix += `file:^${escapeRegExp(this.props.filePath)}/ `
         }
         return queryPrefix
     }

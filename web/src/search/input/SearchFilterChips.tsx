@@ -1,5 +1,5 @@
-import escapeRegexp from 'escape-string-regexp'
 import * as H from 'history'
+import { escapeRegExp } from 'lodash'
 import * as path from 'path'
 import * as React from 'react'
 import { matchPath } from 'react-router'
@@ -173,14 +173,14 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
                         const [repoPath] = match.params.repoRev!.split('@')
 
                         scopes.push({
-                            value: `repo:^${escapeRegexp(repoPath)}$`,
+                            value: `repo:^${escapeRegExp(repoPath)}$`,
                         })
 
                         if (match.params.filePath) {
                             const dirname = isTree ? match.params.filePath : path.dirname(match.params.filePath)
                             if (dirname !== '.') {
                                 scopes.push({
-                                    value: `repo:^${escapeRegexp(repoPath)}$ file:^${escapeRegexp(dirname)}/`,
+                                    value: `repo:^${escapeRegExp(repoPath)}$ file:^${escapeRegExp(dirname)}/`,
                                 })
                             }
                         }
@@ -206,6 +206,6 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
 
 function scopeForRepo(repoPath: string): ISearchScope {
     return {
-        value: `repo:^${escapeRegexp(repoPath)}$`,
+        value: `repo:^${escapeRegExp(repoPath)}$`,
     }
 }

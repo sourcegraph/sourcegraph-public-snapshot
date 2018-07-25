@@ -1,5 +1,4 @@
-import escapeRegexp from 'escape-string-regexp'
-import { isEqual } from 'lodash'
+import { escapeRegExp, isEqual } from 'lodash'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject } from 'rxjs'
@@ -44,7 +43,7 @@ const RepositoryContributorNode: React.SFC<RepositoryContributorNodeProps> = ({
         'type:diff',
         `author:${quoteIfNeeded(node.person.email)}`,
         after ? `after:${quoteIfNeeded(after)}` : '',
-        path ? `file:${quoteIfNeeded(escapeRegexp(path))}` : '',
+        path ? `file:${quoteIfNeeded(escapeRegExp(path))}` : '',
     ]
         .join(' ')
         .replace(/\s+/, ' ')
