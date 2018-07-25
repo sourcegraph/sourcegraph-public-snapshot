@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	"path"
 	"strings"
 	"time"
 
@@ -41,13 +40,6 @@ func Code(ctx context.Context, code, filepath string, disableTimeout bool, isLig
 		themechoice = "Solarized (light)"
 	}
 
-	extension := strings.TrimPrefix(path.Ext(filepath), ".")
-	if extension == "" {
-		// When the file does not have an extension, fall back to the basename
-		// (e.g. for Dockerfile).
-		extension = path.Base(filepath)
-	}
-
 	// Trim a single newline from the end of the file. This means that a file
 	// "a\n\n\n\n" will show line numbers 1-4 rather than 1-5, i.e. no blank
 	// line will be shown at the end of the file corresponding to the last
@@ -59,10 +51,6 @@ func Code(ctx context.Context, code, filepath string, disableTimeout bool, isLig
 	code = strings.TrimSuffix(code, "\n")
 
 	resp, err := client.Highlight(ctx, &gosyntect.Query{
-		// Legacy: Passing this in here so that new Sourcegraph versions work
-		// with old syntect_server versions. We will remove this in the future.
-		Extension: extension,
-
 		Code:     code,
 		Filepath: filepath,
 		Theme:    themechoice,
@@ -74,10 +62,7 @@ func Code(ctx context.Context, code, filepath string, disableTimeout bool, isLig
 		return table, true, err2
 	} else if err != nil {
 		postTooLarge := strings.HasSuffix(err.Error(), "EOF")
-		// TODO(slimsag): gosyntect should provide concrete error types here - we have invalid extension here for backward compatibility.
-		// can remove in ~1 month.
-		invalidSyntax := strings.Contains(err.Error(), "invalid extension") || strings.Contains(err.Error(), "invalid syntax")
-		if invalidSyntax || postTooLarge {
+		if postTooLarge {
 			// Failed to highlight code, e.g. for a text file. We still need to
 			// generate the table.
 			table, err2 := generatePlainTable(code)
