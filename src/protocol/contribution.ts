@@ -38,14 +38,88 @@ export interface CommandContribution {
      */
     command: string
 
-    /** A descriptive title. */
+    /** The title that succinctly describes the action taken by this command. */
     title?: string
 
-    /** Secondary text to display less prominently than the title (e.g., in a tooltip). */
-    detail?: string
+    /**
+     * The category that describes the group of related commands of which this command is a member.
+     *
+     * Clients: When displaying this command's title alongside titles of commands from other groups, the client
+     * should display each command as "${category}: ${title}" if the prefix is set.
+     */
+    category?: string
 
-    /** A URL to an icon (base64: URIs are OK). */
+    /**
+     * A longer description of the action taken by this command.
+     *
+     * Extensions: The description should not be unnecessary repetitive with the title.
+     *
+     * Clients: If the description is shown, the title must be shown nearby.
+     */
+    description?: string
+
+    /**
+     * A URL to an icon for this command (data: URIs are OK).
+     *
+     * Clients: The client should show this icon before the title, proportionally scaling the dimensions as
+     * necessary to avoid unduly enlarging the item beyond the dimensions necessary to render the text. The client
+     * should assume the icon is square (or roughly square). The client must not display a border around the icon.
+     * The client may choose not to display this icon.
+     */
     iconURL?: string
+
+    /**
+     * A specification of how to display this command on a toolbar. The client is responsible for displaying
+     * contributions and defining which parts of its interface are considered be toolbars. Generally, items on a
+     * toolbar are always visible and, compared to items in a dropdown menu or list, are expected to be smaller and
+     * to convey information (in addition to performing an action).
+     *
+     * For example, a "Toggle code coverage" command may prefer to display a summarized status (such as "Coverage:
+     * 77%") on a toolbar instead of the full title.
+     *
+     * Clients: If the label is empty and only an iconURL is set, and the client decides not to display the icon
+     * (e.g., because the client is not graphical), then the client may hide the item from the toolbar.
+     */
+    toolbarItem?: {
+        /** The text label for this command when displayed on a toolbar. */
+        label?: string
+
+        /**
+         * A description associated with this toolbar item.
+         *
+         * Clients: The description should be shown in a tooltip when the user focuses or hovers this toolbar item.
+         */
+        description?: string
+
+        /**
+         * The group in the toolbar where this command's toolbar item is displayed. This defines the sort order of
+         * toolbar items. The group value is an opaque string (it is just compared relative to other toolbar items'
+         * group values); there is no specification set of expected or supported values.
+         *
+         * Clients: On a toolbar, the client should sort toolbar items by (group, command), with toolbar items
+         * lacking a group sorting last. The client must not display the group value.
+         */
+        group?: string
+
+        /**
+         * The icon URL for this command when displayed on a toolbar (data: URIs are OK).
+         *
+         * Clients: The client should this icon before the label (if any), proportionally scaling the dimensions as
+         * necessary to avoid unduly enlarging the toolbar item beyond the dimensions necessary to show the label.
+         * In space-constrained situations, the client should show only the icon and omit the label. The client
+         * must not display a border around the icon. The client may choose not to display this icon.
+         */
+        iconURL?: string
+
+        /**
+         * A description of the information represented by the icon.
+         *
+         * Clients: The client should not display this text directly. Instead, the client should use the
+         * accessibility facilities of the client's platform (such as the <img alt> attribute) to make it available
+         * to users needing the textual description.
+         */
+        iconDescription?: string
+    }
 }
 
 export enum ContributableMenu {
