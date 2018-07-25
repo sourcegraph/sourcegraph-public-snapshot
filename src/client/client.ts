@@ -148,9 +148,18 @@ export class Client implements Unsubscribable {
      * errorHandler in ClientOptions.
      */
     public activate(): void {
+        // Callers should subscribe to Client#state instead of awaiting the activation.
+        this.activateAndWait().then(null, () => void 0)
+    }
+
+    /**
+     * Activates the client and returns a promise that resolves when the initial activation finishes (or fails and
+     * no retry will occur). Used by tests.
+     */
+    protected activateAndWait(): Promise<void> {
         this._state.next(ClientState.Connecting)
         let activateConnection: Connection | null = null // track so we know if we're dealing with the same value upon error
-        this.resolveConnection()
+        return this.resolveConnection()
             .then(connection => {
                 activateConnection = connection
                 connection.listen()
@@ -205,6 +214,11 @@ export class Client implements Unsubscribable {
         return connection
             .initialize(initParams)
             .then(result => {
+                // If this client was stopped during the initialize call, don't continue'
+                if (this._state.value === ClientState.ShuttingDown || this._state.value === ClientState.Stopped) {
+                    return
+                }
+
                 this.connection = connection
                 this._initializeResult = result
 
@@ -254,7 +268,7 @@ export class Client implements Unsubscribable {
 
         this.connectionPromise = null
         this.connection = null
-        this.cleanUp()
+        this.unregisterDynamicFeatureRegistrations()
 
         let action: Promise<CloseAction> = Promise.resolve(CloseAction.DoNotReconnect)
         try {
@@ -334,7 +348,7 @@ export class Client implements Unsubscribable {
         } else {
             this._state.next(endState)
         }
-        this.cleanUp()
+        this.unregisterDynamicFeatureRegistrations()
         if (wasConnectionActive) {
             // Shut down gracefully before closing the connection.
             const connection = this.connection!
@@ -353,7 +367,7 @@ export class Client implements Unsubscribable {
         return Promise.resolve()
     }
 
-    private cleanUp(): void {
+    private unregisterDynamicFeatureRegistrations(): void {
         for (const handler of this._dynamicFeatures.values()) {
             handler.unregisterAll()
         }
@@ -456,6 +470,10 @@ export class Client implements Unsubscribable {
     }
 
     public unsubscribe(): void {
+        // Immediately unregister dynamic feature registrations, even before the connection shuts down, since
+        // calling unsubscribe is evidence that the consumer doesn't want this client's data anymore.
+        this.unregisterDynamicFeatureRegistrations()
+
         if (this.needsStop()) {
             this.stop().then(null, err => console.error(err))
         }

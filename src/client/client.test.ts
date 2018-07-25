@@ -191,15 +191,21 @@ describe('Client', () => {
             constructor(options: Pick<ClientOptions, Exclude<keyof ClientOptions, 'root'>>) {
                 super('', '', { ...options, root: null })
             }
+
+            public activateAndWait(): Promise<void> {
+                return super.activateAndWait()
+            }
         }
 
         const createClientTransportsForTestServer = (
-            registerServer: (server: MessageConnection) => void
+            registerServer?: (server: MessageConnection) => void
         ): MessageTransports => {
             const [clientTransports, serverTransports] = createMessageTransports()
             const serverConnection = createMessageConnection(serverTransports)
             serverConnection.listen()
-            registerServer(serverConnection)
+            if (registerServer) {
+                registerServer(serverConnection)
+            }
             return clientTransports
         }
 
@@ -210,6 +216,46 @@ describe('Client', () => {
                 assert.throws(() => client.sendRequest('x'))
                 assert.throws(() => client.onNotification('x', () => void 0))
                 assert.throws(() => client.onRequest('x', () => void 0))
+            })
+        })
+
+        describe('activation', () => {
+            it('does not proceed if client was stopped after establishing the connection', async () => {
+                const client = new ConnectionTestClient({
+                    createMessageTransports: () =>
+                        Promise.resolve(createClientTransportsForTestServer()).then(messageTransports => {
+                            client.stop().catch(err => {
+                                throw err
+                            })
+                            return messageTransports
+                        }),
+                })
+                await client.activateAndWait()
+                await clientStateIs(client, ClientState.Stopped, [
+                    ClientState.Initializing,
+                    ClientState.Active,
+                    ClientState.ActivateFailed,
+                ])
+            })
+
+            it('does not proceed if client was stopped after receiving the server initialize response', async () => {
+                const client = new ConnectionTestClient({
+                    createMessageTransports: () =>
+                        createClientTransportsForTestServer(server => {
+                            server.onRequest('initialize', () => {
+                                client.stop().catch(err => {
+                                    throw err
+                                })
+                                return {}
+                            })
+                        }),
+                })
+                await client.activateAndWait()
+                await clientStateIs(client, ClientState.Stopped, [
+                    ClientState.Initializing,
+                    ClientState.Active,
+                    ClientState.ActivateFailed,
+                ])
             })
         })
 
