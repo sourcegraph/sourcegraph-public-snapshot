@@ -283,6 +283,13 @@ var doNotRequireRestart = []string{
 	"langservers",
 	"platform",
 	"log",
+	"experimentalFeatures::updateScheduler",
+	"experimentalFeatures::jumpToDefOSSIndex",
+	"experimentalFeatures::canonicalURLRedirect",
+	"experimentalFeatures::configVars",
+	"experimentalFeatures::multipleAuthProviders",
+	"experimentalFeatures::platform",
+	"experimentalFeatures::discussions",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown
@@ -439,21 +446,35 @@ func needRestartToApply(before, after *schema.SiteConfiguration) bool {
 // two configurations.
 func diff(before, after *schema.SiteConfiguration) (fields map[string]struct{}) {
 	fields = make(map[string]struct{})
-	b := reflect.ValueOf(before).Elem()
-	a := reflect.ValueOf(after).Elem()
-	for i := 0; i < b.NumField(); i++ {
-		beforeField := b.Field(i)
-		afterField := a.Field(i)
-
-		tag := b.Type().Field(i).Tag.Get("json")
-		if tag == "" {
-			// should never happen, and if it does this diffing func cannot work.
-			panic(fmt.Sprintf("missing json struct field tag on schema.SiteConfiguration field %q", b.Type().Field(i).Name))
-		}
-		if !reflect.DeepEqual(beforeField.Interface(), afterField.Interface()) {
-			fieldName := parseJSONTag(tag)
+	beforeFields := getJSONFields(before)
+	afterFields := getJSONFields(after)
+	for fieldName, beforeField := range beforeFields {
+		afterField := afterFields[fieldName]
+		if !reflect.DeepEqual(beforeField, afterField) {
 			fields[fieldName] = struct{}{}
 		}
+	}
+	return fields
+}
+
+func getJSONFields(vv interface{}) (fields map[string]interface{}) {
+	fields = make(map[string]interface{})
+	v := reflect.ValueOf(vv).Elem()
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		tag := v.Type().Field(i).Tag.Get("json")
+		if tag == "" {
+			// should never happen, and if it does this func cannot work.
+			panic(fmt.Sprintf("missing json struct field tag on %T field %q", v.Interface(), v.Type().Field(i).Name))
+		}
+		if ef, ok := f.Interface().(*schema.ExperimentalFeatures); ok && ef != nil {
+			for fieldName, fieldValue := range getJSONFields(ef) {
+				fields["experimentalFeatures::"+fieldName] = fieldValue
+			}
+			continue
+		}
+		fieldName := parseJSONTag(tag)
+		fields[fieldName] = f.Interface()
 	}
 	return fields
 }

@@ -44,6 +44,22 @@ func TestDiff(t *testing.T) {
 			after:  &schema.SiteConfiguration{AppURL: "b", Langservers: []*schema.Langservers{{Address: "a"}}},
 			want:   []string{"appURL", "langservers"},
 		},
+		{
+			name: "experimental_features",
+			before: &schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+				Discussions: "enabled",
+			}},
+			after: &schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
+				Discussions: "disabled",
+			}},
+			want: []string{"experimentalFeatures::discussions"},
+		},
+		{
+			name:   "experimental_features_noop",
+			before: &schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{}},
+			after:  &schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{}},
+			want:   nil,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
