@@ -62,7 +62,7 @@
     "@types/http-proxy-middleware": "0.17.5",
     "@types/jsdom": "11.0.6",
     "@types/lodash-es": "4.17.0",
-    "@types/marked": "0.3.0",
+    "@types/marked": "0.4.0",
     "@types/mkdirp-promise": "5.0.0",
     "@types/mocha": "5.2.4",
     "@types/mz": "0.0.32",
