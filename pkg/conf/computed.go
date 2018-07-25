@@ -168,18 +168,7 @@ func DebugManageDocker() bool {
 	}
 	v, err := strconv.ParseBool(os.Getenv("DEBUG_MANAGE_DOCKER"))
 	if err != nil {
-		// We do not use managed Docker by default in dev mode. This is because
-		// there appear to be bugs in Docker For Mac that we encounter due to
-		// goreman restarting our frontend process quickly. For example,
-		// pkg/langservers/langservers.go tries to stop Docker containers on
-		// process shutdown and tries to start them on startup -- and it also
-		// tries to create the lsp network on startup -- some combination of
-		// these actions occurring at the same time is believed to cause
-		// issues such as https://github.com/sourcegraph/sourcegraph/issues/10587
-		// where the Docker "lsp" network we create suddenly has an extreme
-		// amount of packet loss, and where containers like codeintel-go get
-		// stuck permanently in a "starting" state.
-		return false
+		return true // use managed docker by default in dev mode
 	}
 	return v
 }
@@ -211,7 +200,7 @@ func SupportsManagingLanguageServers() (reason string, ok bool) {
 	}
 	if IsDev(deployType) && !DebugManageDocker() {
 		// Running in dev mode with managed docker disabled.
-		return "Managing language servers automatically is disabled by default in local dev. Set DEBUG_MANAGE_DOCKER=t to enable.", false
+		return "Managing language servers automatically is disabled in your local dev instance due to the value of DEBUG_MANAGE_DOCKER.", false
 	}
 	return "", true
 }
