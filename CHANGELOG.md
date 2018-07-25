@@ -18,6 +18,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+- Repo-updater has a new and improved scheduler for periodic repo fetches. If you have problems with it, you can revert to the old behavior by adding `"experimentalFeatures": { "updateScheduler": "disabled" }` to your `config.json`.
 - A once-off migration will run changing the layout of cloned repos on disk. This should only affect installations created January 2018 or before. There should be no user visible changes.
 - Experimental feature flag "updateScheduler" enables a smarter and less spammy algorithm for automatic repository updates.
 - It is no longer possible to disable code intelligence by unsetting the LSP_PROXY environment variable. Instead, code intelligence can be disabled per language on the site admin page (e.g. https://yoursourcegraph/site-admin/code-intelligence).

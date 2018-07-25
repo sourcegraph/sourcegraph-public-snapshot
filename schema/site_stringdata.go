@@ -70,7 +70,7 @@ const SiteSchemaJSON = `{
             "Enables or disables a newer update scheduling algorithm which attempts to prioritize frequently-updated repositories, and throttles automatic updates to limit congestion.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "jumpToDefOSSIndex": {
           "description":

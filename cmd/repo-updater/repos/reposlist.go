@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	envNewScheduler      = env.Get("SRC_UPDATE_SCHEDULER", "", "Use updated repo-update scheduler.")
+	envNewScheduler      = env.Get("SRC_UPDATE_SCHEDULER", "enabled", "Use updated repo-update scheduler.")
 	useNewScheduler      bool
 	useNewSchedulerMutex sync.Mutex
 )
@@ -654,13 +654,13 @@ func RunRepositorySyncWorker(ctx context.Context) {
 		// Determine which scheduler to run.
 		c := conf.Get()
 		ef := c.ExperimentalFeatures
-		sched := false
+		sched := true
 		if ef != nil {
-			sched = ef.UpdateScheduler == "enabled"
+			sched = ef.UpdateScheduler != "disabled"
 		}
 		// Allow direct environment override.
-		if envNewScheduler == "enabled" {
-			sched = true
+		if envNewScheduler == "disabled" {
+			sched = false
 		}
 		prevSched := setNewScheduler(sched)
 
