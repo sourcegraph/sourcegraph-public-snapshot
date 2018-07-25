@@ -160,6 +160,7 @@ type repoList struct {
 	autoUpdatesDisabled bool                      // should we do auto-updates?
 	repos               map[string]*repoData      // reponame lookup
 	bumped              []*repoData               // manual updates that get priority
+	newQueue            []*repoData               // we only want to process new repos when there is spare capacity
 	mu                  sync.Mutex                // locking to avoid races
 	pingChan            chan string               // send reason-for-ping as a string here to ping the update worker
 	confRepos           map[string]sourceRepoList // list of configured repos from each source
@@ -190,7 +191,14 @@ var repos = repoList{
 	repos:               make(map[string]*repoData),
 	autoUpdatesDisabled: false,
 	pingChan:            make(chan string, 1), // buffered to prevent deadlocks
-	maxRequests:         5,                    // this matches a default config elsewhere
+	maxRequests:         2,                    // intentionally low, should get updated by live data
+}
+
+func conservativeMaxRequests(max int) int {
+	if max > 3 {
+		return max - 2
+	}
+	return 1
 }
 
 // recomputeScale determines how long it'd take to do all the repo
@@ -375,15 +383,8 @@ func (r *repoList) add(name, url string, queue bool) {
 		fetchTime: 1 * time.Second,
 	}
 	r.repos[name] = repo
-
-	// set entry up for right away if manual, but scattered around
-	// if it's a background queue item.
-	repo.due = time.Now()
 	if queue {
-		repo.due = repo.due.Add(repo.scatterDelay())
-		if repo.heapIndex < 0 {
-			heap.Push(&r.heap, repo)
-		}
+		r.newQueue = append(r.newQueue, repo)
 	} else {
 		r.bumped = append(r.bumped, repo)
 	}
@@ -411,7 +412,6 @@ func (r *repoList) startUpdate(ctx context.Context, nextUp *repoData, auto bool)
 //
 // safe to run when not holding mutex.
 func (r *repoList) doUpdate(ctx context.Context, repo *repoData, url string) {
-	log15.Debug("doUpdate", "repo", repo.name)
 	name := repo.name
 	uri := api.RepoURI(name)
 	var resp *gitserverprotocol.RepoUpdateResponse
@@ -469,9 +469,12 @@ func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateR
 		r.stats.errors++
 	}
 	if resp != nil {
-		if resp.QueueCap > 0 && resp.QueueCap != r.maxRequests {
-			log15.Warn("changing max requests to match gitserver", "old", r.maxRequests, "new", resp.QueueCap)
-			r.maxRequests = resp.QueueCap
+		if resp.QueueCap > 0 {
+			newMax := conservativeMaxRequests(resp.QueueCap)
+			if newMax != r.maxRequests {
+				log15.Warn("changing max requests to avoid flooding gitserver", "old", r.maxRequests, "new", newMax, "gitserver", resp.QueueCap)
+				r.maxRequests = newMax
+			}
 		}
 		if resp.Finished != nil && resp.Received != nil {
 			altTime := resp.Finished.Sub(*resp.Received)
@@ -523,7 +526,6 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 	// a minute should be long enough to get the repo list somewhat populated.
 	nextStatTime := statTime.Add(1 * time.Minute)
 	for {
-		log15.Debug("updateLoop: locking")
 		r.mu.Lock()
 		log15.Debug("updateLoop", "repos", len(r.repos), "queue", len(r.heap))
 		now := time.Now()
@@ -558,14 +560,14 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 			}
 		}
 		r.bumped = newBumped
-		for nextUp = r.heap.peek(); nextUp != nil && nextUp.due.Before(now); nextUp = r.heap.peek() {
+		for nextUp = r.heap.peek(); nextUp != nil && nextUp.due.Before(now) && r.activeRequests < r.maxRequests; nextUp = r.heap.peek() {
 			// We didn't use Pop() above because popping and immediately pushing again
 			// would be much more expensive, in the case where we woke up from a ping
 			// rather than because the next item was due.
 			nextUp = heap.Pop(&r.heap).(*repoData)
-			log15.Debug("nextUp ready", "repo", nextUp.name)
+			log15.Debug("repo ready", "repo", nextUp.name)
 			// process this entry, if it's not already running
-			if !nextUp.working && r.activeRequests < r.maxRequests {
+			if !nextUp.working {
 				r.startUpdate(ctx, nextUp, true)
 			} else {
 				// skip this update, maybe try again in the normal update interval.
@@ -573,22 +575,41 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 				heap.Push(&r.heap, nextUp)
 			}
 		}
+
+		// We have spare capacity to process new repos
+		for r.activeRequests < r.maxRequests && len(r.newQueue) > 0 {
+			newEntry := r.newQueue[0]
+			r.newQueue = r.newQueue[1:]
+			// A new entry is due when it is created. If something else, such as a
+			// manual bump, caused it to get processed already, it might actually be
+			// in process now, and we should skip it. Or it might have been processed,
+			// and had a new due time picked, and we should skip it. In either case,
+			// it's already where it needs to be in the regular queue(s).
+			if now.After(newEntry.due) && !newEntry.working {
+				// This is always an "automatic" update; it was not triggered by user
+				// interaction with the repo, but was done automatically from config.
+				r.startUpdate(ctx, newEntry, true)
+			}
+		}
+
 		// Default time in the unlikely event that we have no repos at all,
 		// in which case this loop waking up fairly often won't be a problem.
 		waitTime := 10 * time.Second
 		if nextUp != nil {
 			waitTime = nextUp.due.Sub(time.Now()) + 50*time.Millisecond
+			if waitTime < 0 {
+				waitTime = 1 * time.Second
+			}
 			log15.Debug("nextUp due", "interval", nextUp.interval, "due", nextUp.due, "repo", nextUp.name)
 		}
 		// If something is bumped, but in-process, we'll try again soon
 		// note, if auto updates are on, that will be redundant, but that's why
 		// we have the debouncing...
-		if len(r.bumped) > 0 && waitTime > 1*time.Second {
+		if (len(r.bumped) > 0 || len(r.newQueue) > 0) && waitTime > 1*time.Second {
 			waitTime = 1 * time.Second
 		}
 		r.nextDue = now.Add(waitTime)
 		r.mu.Unlock()
-		log15.Debug("updateLoop: unlocked")
 
 		// DO NOT lock r.mu around this select; that would prevent ping from
 		// working.
