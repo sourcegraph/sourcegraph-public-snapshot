@@ -10,6 +10,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+- Fixed an issue where Sourcegraph Server would not start code intelligence containers properly when the Sourcegraph Server container was shut down non-gracefully.
+
 ### Removed
 
 ## 2.9.4

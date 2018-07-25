@@ -385,6 +385,37 @@ func Stop(language string) error {
 }
 
 func start(language string) error {
+	// Remove the container if it already exists. This effectively gives us the same behavior
+	// as `docker run --rm` (which we cannot use as `--rm` and `--restart=always` are mutually
+	// exclusive options). If we did not do this here, the container name may already be in
+	// use by a container that was previously started but not running. i.e., docker run will
+	// never *start* a container that is OK but not running (`docker start` would have to be
+	// used):
+	//
+	// 	$ docker ps
+	// 	[...] IMAGE                               STATUS                         NAMES
+	// 	[...] sourcegraph/codeintel-typescript    Exited (137) 32 minutes ago    typescript
+	//
+	// 	$ docker run --name=typescript --restart=always sourcegraph/codeintel-typescript
+	// 	docker: Error response from daemon: Conflict. The container name "/typescript" is already in use by container "cd64c8a4dfdc811e945d9d668026fd9552e6a4d9b28353a38c10446dc16ecaf5". You have to remove (or rename) that container to be able to reuse that name.
+	// 	See 'docker run --help'.
+	//
+	// NOTE: We do not yet handle the fact that we could be removing someone else's container
+	// whose name conflicts with ours. This has *always* been true historically, ever since we
+	// suggested --rm to users before we had managed Docker. To fix this, we should switch to
+	// container names that are unlikely to conflict like "sourcegraph-typescript" or explore
+	// DIND (https://github.com/sourcegraph/sourcegraph/issues/11616). Note however that you
+	// cannot `docker rm` a running container, so the issue would be in Sourcegraph and not
+	// the user's conflicting container generally.
+	_, err := dockerCmd("rm", containerName(language))
+	if err != nil && !strings.Contains(err.Error(), "No such container") {
+		// Also ignore running container warnings -- since that means it is most likely ours
+		// and we will hit the 'container name is already in use' error case below.
+		if !strings.Contains(err.Error(), "You cannot remove a running container") {
+			return err
+		}
+	}
+
 	cmd := []string{"run", "--detach", "--restart=always", "--network=lsp", "--name=" + containerName(language)}
 	if envvar.InsecureDevMode() {
 		cmd = append(cmd, startDebugArgs(language)...)
@@ -392,7 +423,7 @@ func start(language string) error {
 		cmd = append(cmd, startProdArgs(language)...)
 	}
 	cmd = append(cmd, imageName(language))
-	_, err := dockerCmd(cmd...)
+	_, err = dockerCmd(cmd...)
 	if err != nil && strings.Contains(err.Error(), fmt.Sprintf(`The container name "/%s" is already in use by container`, containerName(language))) {
 		// already started
 		return nil
@@ -430,16 +461,7 @@ func stop(language string) error {
 		}
 		return err
 	}
-
-	// Remove the container. This is effectively the same as `docker run --rm`
-	// and we need it or else the container name would not be released and subsequent
-	// start(...) calls would fail.
-	_, err = dockerCmd("rm", containerName(language))
-	if err != nil && strings.Contains(err.Error(), "No such container") {
-		// already removed; this shouldn't happen generally / is just defensive
-		return nil
-	}
-	return err
+	return nil
 }
 
 // Restart restarts the language server for the given language.
