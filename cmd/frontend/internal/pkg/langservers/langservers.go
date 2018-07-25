@@ -453,13 +453,18 @@ func stop(language string) error {
 	if StaticInfo[language].kill {
 		cmdName = "kill"
 	}
+	startTime := time.Now()
 	_, err := dockerCmd(cmdName, containerName(language))
+	timeToKill := time.Since(startTime)
 	if err != nil {
 		if strings.Contains(err.Error(), "No such container") {
 			// already stopped
 			return nil
 		}
 		return err
+	}
+	if timeToKill > 10*time.Second { // 'docker stop' kills after 10s by default.
+		log15.Warn("langservers: stopping the language server took unusually long and docker may have had to SIGKILL it; is it responding to signals properly?", "duration", time.Since(startTime), "language", language)
 	}
 	return nil
 }
