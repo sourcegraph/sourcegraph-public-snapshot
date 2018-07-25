@@ -39,24 +39,38 @@ export class ExecuteCommandFeature implements DynamicFeature<ExecuteCommandRegis
     }
 
     public register(_message: RPCMessageType, data: RegistrationData<ExecuteCommandRegistrationOptions>): void {
+        const existing = this.commands.has(data.id)
+        if (existing) {
+            throw new Error(`registration already exists with ID ${data.id}`)
+        }
         const sub = new Subscription()
         for (const command of data.registerOptions.commands) {
-            sub.add(
-                this.registry.registerCommand({
-                    command,
-                    run: (...args: any[]): Promise<any> =>
-                        this.client.sendRequest(ExecuteCommandRequest.type, {
-                            command,
-                            arguments: args,
-                        } as ExecuteCommandParams),
-                })
-            )
+            try {
+                sub.add(
+                    this.registry.registerCommand({
+                        command,
+                        run: (...args: any[]): Promise<any> =>
+                            this.client.sendRequest(ExecuteCommandRequest.type, {
+                                command,
+                                arguments: args,
+                            } as ExecuteCommandParams),
+                    })
+                )
+            } catch (err) {
+                // Unregister commands that were successfully registered if any of them fails, so that this invocation
+                // is atomic (all-or-none).
+                sub.unsubscribe()
+                throw err
+            }
         }
         this.commands.set(data.id, sub)
     }
 
     public unregister(id: string): void {
         const sub = this.commands.get(id)
+        if (!sub) {
+            throw new Error(`no registration with ID ${id}`)
+        }
         if (sub) {
             sub.unsubscribe()
         }
