@@ -921,6 +921,12 @@ func setContainerID() {
 func deleteLSPBridge() {
 	_, err := dockerCmd("network", "rm", "lsp")
 	if err != nil && !strings.Contains(err.Error(), "No such network") && !strings.Contains(err.Error(), "not found") {
+		// In dev mode, deleting the LSP bridge almost always fails because goreman doesn't
+		// send us SIGINT or SIGHUP(!) so we cannot do graceful shutdown of containers, and
+		// hence the network would always have active endpoints.
+		if envvar.InsecureDevMode() {
+			return
+		}
 		log15.Error("langservers: error deleting Docker lsp bridge network", "error", err)
 	}
 }
