@@ -42,7 +42,7 @@ export class NavLinks extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <ul className="nav-links nav align-items-center pl-2 pr-1">
-                {showDotComMarketing && (
+                {!showDotComMarketing && (
                     <li className="nav-item">
                         <a
                             href="https://about.sourcegraph.com"
@@ -82,9 +82,15 @@ export class NavLinks extends React.PureComponent<Props> {
                             </Link>
                         </li>
                     )}
-                {this.props.user && (
+                {platformEnabled(this.props.user) && (
+                    <CXPCommandListPopoverButton
+                        menu={ContributableMenu.CommandPalette}
+                        cxpController={this.props.cxpController}
+                    />
+                )}
+                {this.props.user ? (
                     <li className="nav-item">
-                        <Link className="nav-link py-0 pr-2" to={`${this.props.user.url}/account`}>
+                        <Link className="nav-link py-0" to={`${this.props.user.url}/account`}>
                             {this.props.user.avatarURL ? (
                                 <UserAvatar size={64} />
                             ) : (
@@ -92,12 +98,14 @@ export class NavLinks extends React.PureComponent<Props> {
                             )}
                         </Link>
                     </li>
-                )}
-                {platformEnabled(this.props.user) && (
-                    <CXPCommandListPopoverButton
-                        menu={ContributableMenu.CommandPalette}
-                        cxpController={this.props.cxpController}
-                    />
+                ) : (
+                    this.props.location.pathname !== '/sign-in' && (
+                        <li className="nav-item mx-1">
+                            <Link className="nav-link btn btn-primary" to="/sign-in">
+                                Sign in
+                            </Link>
+                        </li>
+                    )
                 )}
                 <li className="nav-item">
                     <OpenHelpPopoverButton className="nav-link px-0" onHelpPopoverToggle={this.onHelpPopoverToggle} />
@@ -105,14 +113,6 @@ export class NavLinks extends React.PureComponent<Props> {
                 {this.props.showHelpPopover && (
                     <HelpPopover onDismiss={this.onHelpPopoverToggle} cxpController={this.props.cxpController} />
                 )}
-                {!this.props.user &&
-                    this.props.location.pathname !== '/sign-in' && (
-                        <li className="nav-item">
-                            <Link className="nav-link btn btn-primary" to="/sign-in">
-                                Sign in
-                            </Link>
-                        </li>
-                    )}
                 <li className="nav-item">
                     <ThemeSwitcher {...this.props} className="nav-link px-0" />
                 </li>
