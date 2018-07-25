@@ -1,11 +1,5 @@
 {
-  "name": "sourcegraph",
-  "version": "0.0.1",
-  "description": "Sourcegraph",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sourcegraph/sourcegraph"
-  },
+  "private": true,
   "engines": {
     "npm": "^6.0.0",
     "node": ">=8.0.0 <11.0.0"
@@ -38,7 +32,6 @@
       ".ts"
     ]
   },
-  "author": "The Sourcegraph Team <hi@sourcegraph.com>",
   "browserslist": [
     "last 1 version",
     ">1%",
@@ -46,7 +39,6 @@
     "not <0.25%",
     "last 1 Chrome versions"
   ],
-  "license": "MIT",
   "devDependencies": {
     "@gql2ts/from-schema": "^1.8.0",
     "@sourcegraph/tsconfig": "^3.0.0",
