@@ -18,6 +18,8 @@ import { memoizeObservable } from '../../util/memoize'
 import { lprToRange, parseHash } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
+import { ToggleDiscussionsPanel } from './actions/ToggleDiscussions'
+import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { Blob } from './Blob'
@@ -173,22 +175,30 @@ export class BlobPage extends React.PureComponent<Props, State> {
     }
 
     public render(): React.ReactNode {
-        if (!this.state.blobOrError) {
-            // Render placeholder for layout before content is fetched.
-            return <div className="blob-page__placeholder" />
-        }
-
         if (isErrorLike(this.state.blobOrError)) {
             return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.blobOrError.message)} />
         }
 
         const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
         // renderAs is renderMode but with undefined mapped to the actual mode.
-        const renderAs = renderMode || (this.state.blobOrError.richHTML ? 'rendered' : 'code')
+        const renderAs = renderMode || (this.state.blobOrError && this.state.blobOrError.richHTML ? 'rendered' : 'code')
 
-        return (
+        // Always render these to avoid UI jitter during loading when switching to a new file.
+        const alwaysRender = (
             <>
                 <PageTitle title={this.getPageTitle()} />
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={20}
+                    element={
+                        <ToggleHistoryPanel
+                            key="toggle-blob-panel"
+                            location={this.props.location}
+                            history={this.props.history}
+                        />
+                    }
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                />
                 {renderAs === 'code' && (
                     <RepoHeaderContributionPortal
                         position="right"
@@ -197,6 +207,31 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
+                {window.context.discussionsEnabled && (
+                    <RepoHeaderContributionPortal
+                        position="right"
+                        priority={20}
+                        element={
+                            <ToggleDiscussionsPanel
+                                key="toggle-blob-discussion-panel"
+                                location={this.props.location}
+                                history={this.props.history}
+                            />
+                        }
+                        repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                    />
+                )}
+            </>
+        )
+
+        if (!this.state.blobOrError) {
+            // Render placeholder for layout before content is fetched.
+            return <div className="blob-page__placeholder">{alwaysRender}</div>
+        }
+
+        return (
+            <>
+                {alwaysRender}
                 {this.state.blobOrError.richHTML && (
                     <RepoHeaderContributionPortal
                         position="right"
@@ -220,39 +255,23 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     )}
                 {renderAs === 'code' &&
                     !this.state.blobOrError.highlight.aborted && (
-                        <>
-                            <Blob
-                                className="blob-page__blob"
-                                repoPath={this.props.repoPath}
-                                commitID={this.props.commitID}
-                                filePath={this.props.filePath}
-                                content={this.state.blobOrError.content}
-                                html={this.state.blobOrError.highlight.html}
-                                rev={this.props.rev}
-                                mode={this.props.mode}
-                                extensions={this.props.extensions}
-                                cxpController={this.props.cxpController}
-                                cxpOnComponentChange={this.props.cxpOnComponentChange}
-                                wrapCode={this.state.wrapCode}
-                                renderMode={renderMode}
-                                location={this.props.location}
-                                history={this.props.history}
-                            />
-                            <BlobPanel
-                                {...this.props}
-                                repoID={this.props.repoID}
-                                repoPath={this.props.repoPath}
-                                commitID={this.props.commitID}
-                                extensions={this.props.extensions}
-                                cxpController={this.props.cxpController}
-                                position={
-                                    lprToRange(parseHash(this.props.location.hash))
-                                        ? lprToRange(parseHash(this.props.location.hash))!.start
-                                        : undefined
-                                }
-                                repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                            />
-                        </>
+                        <Blob
+                            className="blob-page__blob"
+                            repoPath={this.props.repoPath}
+                            commitID={this.props.commitID}
+                            filePath={this.props.filePath}
+                            content={this.state.blobOrError.content}
+                            html={this.state.blobOrError.highlight.html}
+                            rev={this.props.rev}
+                            mode={this.props.mode}
+                            extensions={this.props.extensions}
+                            cxpController={this.props.cxpController}
+                            cxpOnComponentChange={this.props.cxpOnComponentChange}
+                            wrapCode={this.state.wrapCode}
+                            renderMode={renderMode}
+                            location={this.props.location}
+                            history={this.props.history}
+                        />
                     )}
                 {!this.state.blobOrError.richHTML &&
                     this.state.blobOrError.highlight.aborted && (
@@ -268,6 +287,20 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             </div>
                         </div>
                     )}
+                <BlobPanel
+                    {...this.props}
+                    repoID={this.props.repoID}
+                    repoPath={this.props.repoPath}
+                    commitID={this.props.commitID}
+                    extensions={this.props.extensions}
+                    cxpController={this.props.cxpController}
+                    position={
+                        lprToRange(parseHash(this.props.location.hash))
+                            ? lprToRange(parseHash(this.props.location.hash))!.start
+                            : undefined
+                    }
+                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
+                />
             </>
         )
     }

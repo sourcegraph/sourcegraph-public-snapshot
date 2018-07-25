@@ -40,10 +40,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
-import { RepoHeaderContributionPortal } from '../../RepoHeaderContributionPortal'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
-import { ToggleDiscussionsPanel } from '../actions/ToggleDiscussions'
-import { ToggleHistoryPanel } from '../actions/ToggleHistoryPanel'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
 import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
@@ -244,33 +241,6 @@ export class BlobPanel extends React.PureComponent<Props, State> {
 
         return (
             <>
-                <RepoHeaderContributionPortal
-                    position="right"
-                    priority={20}
-                    element={
-                        <ToggleHistoryPanel
-                            key="toggle-blob-panel"
-                            location={this.props.location}
-                            history={this.props.history}
-                        />
-                    }
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                />
-                {window.context.discussionsEnabled && (
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={20}
-                        element={
-                            <ToggleDiscussionsPanel
-                                key="toggle-blob-discussion-panel"
-                                location={this.props.location}
-                                history={this.props.history}
-                            />
-                        }
-                        repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                    />
-                )}
-
                 {titleRendered && <PanelTitlePortal>{titleRendered}</PanelTitlePortal>}
                 {extraRendered && (
                     <PanelItemPortal
