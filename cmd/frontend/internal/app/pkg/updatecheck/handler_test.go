@@ -30,10 +30,7 @@ func TestLatestDataCenterVersionPushed(t *testing.T) {
 	}
 	url := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph/releases/tag/v%v", latestReleaseDataCenterBuild.Version)
 	resp, err := http.Head(url)
-	if err != nil {
-		t.Skip("failed to contact googleapis.com", err)
-	}
-	if resp.StatusCode != 200 {
-		t.Errorf("sourcegraph-server-gen %s is not uploaded to Google Storage. %s from %s", latestReleaseDataCenterBuild.Version, resp.Status, url)
+	if err != nil || resp.StatusCode != 200 {
+		t.Errorf("Could not find Data Center release %s on GitHub. Respnose code %s from %s, err: %v", latestReleaseDataCenterBuild.Version, resp.Status, url, err)
 	}
 }
