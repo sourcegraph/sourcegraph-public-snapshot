@@ -26,7 +26,7 @@ interface State {
     reloadStartedAt?: number
 }
 
-const EXPECTED_RELOAD_WAIT = 4 * 1000 // 4 seconds
+const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
 
 /**
  * A page displaying the site configuration.
@@ -101,7 +101,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                     delay(500)
                                 )
                             ),
-                            timeout(5000)
+                            timeout(10000)
                         )
                     ),
                     tap(() => this.remoteRefreshes.next())
