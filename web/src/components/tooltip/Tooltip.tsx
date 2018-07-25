@@ -23,12 +23,12 @@ export class Tooltip extends React.PureComponent<Props, State> {
     public state: State = { subjectSeq: 0 }
 
     /**
-     * Forces an update. Other components must call this if they modify their
-     * tooltip content while the tooltip is still visible.
+     * Forces an update of the tooltip content. Other components must call this if they modify their tooltip
+     * content while the tooltip is still visible.
      */
     public static forceUpdate(): void {
         if (Tooltip.INSTANCE) {
-            Tooltip.INSTANCE.forceUpdate()
+            Tooltip.INSTANCE.updateContent()
         }
     }
 
@@ -73,6 +73,10 @@ export class Tooltip extends React.PureComponent<Props, State> {
             subjectSeq: prevState.subject === subject ? prevState.subjectSeq : prevState.subjectSeq + 1,
             content: subject ? this.getContent(subject) : undefined,
         }))
+    }
+
+    private updateContent = () => {
+        this.setState(prevState => ({ content: prevState.subject ? this.getContent(prevState.subject) : undefined }))
     }
 
     /**
