@@ -33,32 +33,14 @@ func TestPreSpansToTable_Complex(t *testing.T) {
 </span></pre>
 `
 
-	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span style="color:#323232;"></span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">import </span><span style="color:#323232;">(</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;</span></td></tr><tr><td class="line" data-line="5"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/pkg/api/legacyerr&#34;</span></td></tr><tr><td class="line" data-line="6"></td><td class="code"><span style="color:#323232;">)</span></td></tr><tr><td class="line" data-line="7"></td><td class="code"><span style="color:#323232;"></span></td></tr><tr><td class="line" data-line="8"></td><td class="code"><span style="color:#323232;"></span></td></tr><tr><td class="line" data-line="9"></td><td class="code"></td></tr></table>`
-	got, err := preSpansToTable(input)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got != want {
-		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
-	}
-}
-
-func TestLegacy_PreSpansToTable_Complex(t *testing.T) {
-	input := `<pre style="background-color:#ffffff;">
-<span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode</span>
-
-<span style="font-weight:bold;color:#a71d5d;">import</span><span style="color:#323232;"> </span><span style="color:#323232;">(</span>
-<span style="color:#323232;">	</span><span style="color:#183691;">&quot;</span><span style="color:#183691;">net/http</span><span style="color:#183691;">&quot;</span>
-
-<span style="color:#323232;">	</span><span style="color:#183691;">&quot;</span><span style="color:#183691;">github.com/sourcegraph/sourcegraph/pkg/api/legacyerr</span><span style="color:#183691;">&quot;</span>
-<span style="color:#323232;">)</span>
-
-</pre>
-
-`
-	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span>
-</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">import</span><span style="color:#323232;"> </span><span style="color:#323232;">(</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;</span><span style="color:#183691;">net/http</span><span style="color:#183691;">&#34;</span></td></tr><tr><td class="line" data-line="5"></td><td class="code"><span>
-</span></td></tr><tr><td class="line" data-line="6"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;</span><span style="color:#183691;">github.com/sourcegraph/sourcegraph/pkg/api/legacyerr</span><span style="color:#183691;">&#34;</span></td></tr><tr><td class="line" data-line="7"></td><td class="code"><span style="color:#323232;">)</span></td></tr><tr><td class="line" data-line="8"></td><td class="code"><span>
+	want := `<table><tr><td class="line" data-line="1"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode
+</span></td></tr><tr><td class="line" data-line="2"></td><td class="code"><span style="color:#323232;">
+</span></td></tr><tr><td class="line" data-line="3"></td><td class="code"><span style="font-weight:bold;color:#a71d5d;">import </span><span style="color:#323232;">(
+</span></td></tr><tr><td class="line" data-line="4"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;net/http&#34;
+</span></td></tr><tr><td class="line" data-line="5"></td><td class="code"><span style="color:#323232;">	</span><span style="color:#183691;">&#34;github.com/sourcegraph/sourcegraph/pkg/api/legacyerr&#34;
+</span></td></tr><tr><td class="line" data-line="6"></td><td class="code"><span style="color:#323232;">)
+</span></td></tr><tr><td class="line" data-line="7"></td><td class="code"><span style="color:#323232;">
+</span></td></tr><tr><td class="line" data-line="8"></td><td class="code"><span style="color:#323232;">
 </span></td></tr><tr><td class="line" data-line="9"></td><td class="code"></td></tr></table>`
 	got, err := preSpansToTable(input)
 	if err != nil {
@@ -68,63 +50,6 @@ func TestLegacy_PreSpansToTable_Complex(t *testing.T) {
 		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
 	}
 }
-
-func TestLegacy_ConvertNewlinesToNoNewlines(t *testing.T) {
-	input := `<pre style="background-color:#ffffff;">
-<span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode
-</span><span style="color:#323232;">
-</span><span style="font-weight:bold;color:#a71d5d;">import</span><span style="color:#323232;">(
-</span><span style="color:#323232;">	</span><span style="color:#183691;">&quot;</span><span style="color:#183691;">net/http</span><span style="color:#183691;">&quot;
-</span><span style="color:#323232;">	</span><span style="color:#183691;">&quot;</span><span style="color:#183691;">github.com/sourcegraph/sourcegraph/pkg/api/legacyerr</span><span style="color:#183691;">&quot;
-</span><span style="color:#323232;">)
-</span><span style="color:#323232;">
-</span><span style="color:#323232;">
-</span></pre>`
-
-	want := `<pre style="background-color:#ffffff;"><span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode</span>
-<span style="color:#323232;"></span>
-<span style="font-weight:bold;color:#a71d5d;">import</span><span style="color:#323232;">(</span>
-<span style="color:#323232;">	</span><span style="color:#183691;">&#34;</span><span style="color:#183691;">net/http</span><span style="color:#183691;">&#34;</span>
-<span style="color:#323232;">	</span><span style="color:#183691;">&#34;</span><span style="color:#183691;">github.com/sourcegraph/sourcegraph/pkg/api/legacyerr</span><span style="color:#183691;">&#34;</span>
-<span style="color:#323232;">)</span>
-<span style="color:#323232;"></span>
-<span style="color:#323232;"></span>
-</pre>`
-	got, err := convertNewlinesToNoNewlines([]byte(input))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(got) != want {
-		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
-	}
-}
-
-// TestLegacy_ConvertNewlinesToNoNewlines_NoChange tests that there is no
-// change when the input is already in the expected format. This is needed in
-// case someone tries to run a new Sourcegraph version against an old
-// syntect_server version.
-func TestLegacy_ConvertNewlinesToNoNewlines_NoChange(t *testing.T) {
-	input := `<pre style="background-color:#ffffff;">
-
-<span style="font-weight:bold;color:#a71d5d;">package</span><span style="color:#323232;"> errcode</span>
-
-<span style="font-weight:bold;color:#a71d5d;">import</span><span style="color:#323232;"> </span><span style="color:#323232;">(</span>
-<span style="color:#323232;">	</span><span style="color:#183691;">&#34;</span><span style="color:#183691;">net/http</span><span style="color:#183691;">&#34;</span>
-
-<span style="color:#323232;">	</span><span style="color:#183691;">&#34;</span><span style="color:#183691;">github.com/sourcegraph/sourcegraph/pkg/api/legacyerr</span><span style="color:#183691;">&#34;</span>
-<span style="color:#323232;">)</span>
-
-</pre>`
-	want := input
-	got, err := convertNewlinesToNoNewlines([]byte(input))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(got) != want {
-		t.Fatalf("\ngot:\n%s\nwant:\n%s\n", got, want)
-	}
-}
-
 func TestGeneratePlainTable(t *testing.T) {
 	input := `line 1
 line 2
