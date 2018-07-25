@@ -78,7 +78,6 @@ var StaticInfo = map[string]*StaticInfoT{
 		DocsURL:      "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
 		SiteConfig:   schema.Langservers{Language: "typescript", Address: "tcp://typescript:2088"},
 		Experimental: false,
-		kill:         true,
 	},
 	"javascript": {
 		DisplayName:  "JavaScript",
@@ -87,7 +86,6 @@ var StaticInfo = map[string]*StaticInfoT{
 		DocsURL:      "https://github.com/sourcegraph/javascript-typescript-langserver/blob/master/README.md",
 		SiteConfig:   schema.Langservers{Language: "javascript", Address: "tcp://typescript:2088"},
 		Experimental: false,
-		kill:         true,
 	},
 	"python": {
 		DisplayName:  "Python",
@@ -96,7 +94,6 @@ var StaticInfo = map[string]*StaticInfoT{
 		DocsURL:      "https://github.com/sourcegraph/python-langserver/blob/master/README.md",
 		SiteConfig:   schema.Langservers{Language: "python", Address: "tcp://python:2087"},
 		Experimental: false,
-		kill:         true,
 	},
 	"java": {
 		DisplayName:  "Java",
