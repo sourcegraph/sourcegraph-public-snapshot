@@ -9,16 +9,44 @@ export interface ContributionsEntry {
     contributions: Contributions
 }
 
+/**
+ * An unsubscribable that deregisters the contributions it is associated with. It can also be used in
+ * ContributionRegistry#replaceContributions.
+ */
+export interface ContributionUnsubscribable extends Unsubscribable {
+    entry: ContributionsEntry
+}
+
 /** Manages and executes contributions from all extensions. */
 export class ContributionRegistry {
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
-    public registerContributions(entry: ContributionsEntry): Unsubscribable {
+    /** Register contributions and return an unsubscribable that deregisters the contributions. */
+    public registerContributions(entry: ContributionsEntry): ContributionUnsubscribable {
         this._entries.next([...this._entries.value, entry])
         return {
             unsubscribe: () => {
                 this._entries.next(this._entries.value.filter(e => e !== entry))
             },
+            entry,
+        }
+    }
+
+    /**
+     * Atomically deregister the previous contributions and register the next contributions. The registry's observable
+     * emits only one time after both operations are complete (instead of also emitting after the deregistration
+     * and before the registration).
+     */
+    public replaceContributions(
+        previous: ContributionUnsubscribable,
+        next: ContributionsEntry
+    ): ContributionUnsubscribable {
+        this._entries.next([...this._entries.value.filter(e => e !== previous.entry), next])
+        return {
+            unsubscribe: () => {
+                this._entries.next(this._entries.value.filter(e => e !== next))
+            },
+            entry: next,
         }
     }
 

@@ -62,8 +62,26 @@ describe('ContributionRegistry', () => {
         assert.deepStrictEqual(registry.entries.value, [])
     })
 
+    it('replaces contributions', () => {
+        const registry = new ContributionRegistry()
+        const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
+        const entry2: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_2 }
+
+        const unregister1 = registry.registerContributions(entry1)
+        assert.deepStrictEqual(registry.entries.value, [entry1])
+
+        const unregister2 = registry.replaceContributions(unregister1, entry2)
+        assert.deepStrictEqual(registry.entries.value, [entry2])
+
+        unregister1.unsubscribe()
+        assert.deepStrictEqual(registry.entries.value, [entry2])
+
+        unregister2.unsubscribe()
+        assert.deepStrictEqual(registry.entries.value, [])
+    })
+
     describe('contributions observable', () => {
-        it('returns stream of results', () => {
+        it('returns stream of results of registrations', () => {
             const registry = new class extends ContributionRegistry {
                 public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
                     return super.getContributions(entries)

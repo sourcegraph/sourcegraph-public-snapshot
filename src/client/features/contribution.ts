@@ -1,6 +1,9 @@
-import { Subscription } from 'rxjs'
 import uuidv4 from 'uuid/v4'
-import { ContributionRegistry } from '../../environment/providers/contribution'
+import {
+    ContributionRegistry,
+    ContributionsEntry,
+    ContributionUnsubscribable,
+} from '../../environment/providers/contribution'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import { ClientCapabilities, Contributions, ServerCapabilities } from '../../protocol'
 import { DynamicFeature, ensure, RegistrationData } from './common'
@@ -9,7 +12,7 @@ import { DynamicFeature, ensure, RegistrationData } from './common'
  * Support for user-facing features contributed by the server for use and display in the client's application.
  */
 export class ContributionFeature implements DynamicFeature<Contributions> {
-    private contributions = new Map<string, Subscription>()
+    private contributions = new Map<string, ContributionUnsubscribable>()
 
     constructor(private registry: ContributionRegistry) {}
 
@@ -34,19 +37,21 @@ export class ContributionFeature implements DynamicFeature<Contributions> {
     }
 
     public register(_message: RPCMessageType, data: RegistrationData<Contributions>): void {
-        const existing = this.contributions.has(data.id)
+        const existing = this.contributions.get(data.id)
         if (existing && !data.overwriteExisting) {
             throw new Error(`registration already exists with ID ${data.id}`)
         }
+        const entry: ContributionsEntry = { contributions: data.registerOptions }
+        let subscription: ContributionUnsubscribable
         if (data.overwriteExisting) {
             if (!existing) {
                 throw new Error(`no existing registration to overwrite with ID ${data.id}`)
             }
-            this.unregister(data.id)
+            subscription = this.registry.replaceContributions(existing, entry)
+        } else {
+            subscription = this.registry.registerContributions(entry)
         }
-        const sub = new Subscription()
-        sub.add(this.registry.registerContributions({ contributions: data.registerOptions }))
-        this.contributions.set(data.id, sub)
+        this.contributions.set(data.id, subscription)
     }
 
     public unregister(id: string): void {
