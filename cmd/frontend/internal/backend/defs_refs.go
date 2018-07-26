@@ -26,7 +26,7 @@ type defs struct{}
 // repositories (which can take ~1s) from causing any serious performance
 // issues when the request rate is high.
 var (
-	totalRefsCache        = rcache.NewWithTTL("totalrefs", 3600) // 1h
+	totalRefsCache        = rcache.NewWithTTL("totalrefs", 4*60*60) // 4h
 	totalRefsCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "defs",
@@ -34,7 +34,7 @@ var (
 		Help:      "Counts cache hits and misses for Defs.TotalRefs repo ref counts.",
 	}, []string{"type"})
 
-	listTotalRefsCache        = rcache.NewWithTTL("listtotalrefs", 3600) // 1h
+	listTotalRefsCache        = rcache.NewWithTTL("listtotalrefs", 4*60*60) // 4h
 	listTotalRefsCacheCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "src",
 		Subsystem: "defs",
