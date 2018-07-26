@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/langservers"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -201,6 +202,14 @@ func (c *langServersResolver) Enable(ctx context.Context, args *struct{ Language
 	if err := langservers.SetDisabled(args.Language, false); err != nil {
 		return nil, errors.Wrap(err, "langservers.SetDisabled")
 	}
+
+	// Wait for the new configuration to be respected. Usually this is not required,
+	// but in the case of enabling a language server here if we returned without
+	// waiting for the new configuration to be respected the language server container
+	// would be in a langserver.StateNone status (i.e. no container exists) until the
+	// config change was detected -- which is rightfully displayed in the UI as
+	// 'Unhealthy'. We prefer to avoid that when starting language servers.
+	bg.RespectLangServersConfigUpdate()
 	return &EmptyResponse{}, nil
 }
 

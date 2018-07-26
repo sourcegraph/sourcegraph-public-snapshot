@@ -9,6 +9,32 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
+// RespectLangServersConfigUpdate is invoked inside of conf.Watch, but also
+// sometimes manually when the caller needs to block untill the latest config
+// has been respected.
+func RespectLangServersConfigUpdate() {
+	for _, language := range langservers.Languages {
+		// Start language servers that were previously enabled.
+		state, err := langservers.State(language)
+		if err != nil {
+			log15.Error("failed to get language server state", "language", language, "error", err)
+			continue
+		}
+		if state == langservers.StateEnabled {
+			// Start language server now.
+			if err := langservers.Start(language); err != nil {
+				log15.Error("failed to start language server", "language", language, "error", err)
+			}
+			continue
+		}
+		if state == langservers.StateDisabled {
+			// Stop the language server if it is running.
+			_ = langservers.Stop(language)
+			continue
+		}
+	}
+}
+
 // StartLangServers should be invoked on startup, after DB initialization, in
 // order to start up language servers, etc.
 func StartLangServers(ctx context.Context) {
@@ -21,33 +47,16 @@ func StartLangServers(ctx context.Context) {
 		defer func() {
 			startup = false
 		}()
-		for _, language := range langservers.Languages {
-			// Start language servers that were previously enabled.
-			state, err := langservers.State(language)
-			if err != nil {
-				log15.Error("failed to get language server state", "language", language, "error", err)
-				continue
-			}
-			if state == langservers.StateEnabled {
-				// Start language server now.
-				if err := langservers.Start(language); err != nil {
-					log15.Error("failed to start language server", "language", language, "error", err)
-				}
-				continue
-			}
-			if state == langservers.StateDisabled {
-				// Stop the language server if it is running.
-				_ = langservers.Stop(language)
-				continue
-			}
+		RespectLangServersConfigUpdate()
 
-			// Do not run the below code to reflect docker state in the config,
-			// except on server startup. Otherwise, we could introduce an
-			// infinite loop due to langservers.SetDisabled writing to the
-			// config and inherently firing conf.Watch again.
-			if !startup {
-				continue
-			}
+		// Do not run the below code to reflect docker state in the config,
+		// except on server startup. Otherwise, we could introduce an
+		// infinite loop due to langservers.SetDisabled writing to the
+		// config and inherently firing conf.Watch again.
+		if !startup {
+			return
+		}
+		for _, language := range langservers.Languages {
 			// We didn't start/stop the language server. If it is currently
 			// running, this indicates that a server admin did so manually e.g. via
 			// `docker run`. It is important that we mark this language as enabled

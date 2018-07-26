@@ -425,6 +425,16 @@ func start(language string) error {
 		// already started
 		return nil
 	}
+	if err != nil {
+		return err
+	}
+
+	// Force an update of the info cache. We do not usually need to do this,
+	// but in the case of starting a language server we do. Otherwise the status
+	// would be StatusNone which is inherently unhealthy and the caller would
+	// be forced to display the langserver as "unhealthy" until the cache is
+	// updated in a second or so.
+	_, err = updateInfoCache(language)
 	return err
 }
 
