@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+- Directories with no contents other than a single child directory are now expanded automatically in the file tree.
+
 ### Added
 
 ### Fixed

@@ -246,6 +246,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     selectedNode={this.state.selectedNode}
                     setChildNodes={this.setChildNode}
                     setActiveNode={this.setActiveNode}
+                    isSingleChild={false}
                 />
             </div>
         )

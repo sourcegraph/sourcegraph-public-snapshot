@@ -36,6 +36,8 @@ interface TreeLayerProps extends AbsoluteRepo {
     isRoot: boolean
     entryInfo?: GQL.IGitBlob | GQL.IGitTree
     selectedNode: TreeNode
+    /** Whether this tree layer is the only child of the parent layer. */
+    isSingleChild: boolean
     onHover?: (filePath: string) => void
     onSelect: (node: TreeNode) => void
     onToggleExpand: (path: string, expanded: boolean, node: TreeNode) => void
@@ -111,6 +113,13 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 )
                 .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))
         )
+
+        // If this layer is the only child, and it's a directory, expand it automatically. This
+        // ensures the user doesn't have to open every directory if they are deeply nested and have no contents
+        // other than another directory.
+        if (this.props.isSingleChild && this.props.entryInfo && this.props.entryInfo.isDirectory) {
+            this.props.onToggleExpand(this.props.entryInfo.path, true, this.node)
+        }
 
         // When we're at the root tree layer or the tree is already expanded, fetch the tree contents on mount.
         // For other layers, fetch on hover or on expand.
@@ -277,6 +286,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                             selectedNode={this.props.selectedNode}
                                             setChildNodes={this.setChildNode}
                                             setActiveNode={this.props.setActiveNode}
+                                            isSingleChild={
+                                                (this.state.treeOrError as GQL.IGitTree).entries.length === 1
+                                            }
                                         />
                                     ))
                                 )}
@@ -382,6 +394,10 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                             selectedNode={this.props.selectedNode}
                                                             setChildNodes={this.setChildNode}
                                                             setActiveNode={this.props.setActiveNode}
+                                                            isSingleChild={
+                                                                (this.state.treeOrError as GQL.IGitTree).entries
+                                                                    .length === 1
+                                                            }
                                                         />
                                                     ))
                                                 )}
