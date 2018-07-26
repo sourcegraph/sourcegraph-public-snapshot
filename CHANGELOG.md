@@ -6,13 +6,14 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
-- Directories with no contents other than a single child directory are now expanded automatically in the file tree.
+- In the file tree, if a directory that contains only a single directory is expanded, its child directory is now expanded automatically.
 
 ### Added
 
 ### Fixed
 
 - Fixed an issue where Sourcegraph Server would not start code intelligence containers properly when the Sourcegraph Server container was shut down non-gracefully.
+- Fixed an issue where the file tree would return an error when navigating between repositories.
 
 ### Removed
 

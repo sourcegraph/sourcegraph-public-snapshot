@@ -87,6 +87,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                         (x, y) =>
                             x.repoPath === y.repoPath &&
                             x.rev === y.rev &&
+                            x.commitID === y.commitID &&
                             x.parentPath === y.parentPath &&
                             x.isExpanded === y.isExpanded
                     ),
