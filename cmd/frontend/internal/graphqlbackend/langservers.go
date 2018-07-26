@@ -99,7 +99,7 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			canDisable:   infoErr == nil && isSiteAdmin,
 			canRestart:   infoErr == nil && isSiteAdmin && state == langservers.StateEnabled,
 			canUpdate:    infoErr == nil && isSiteAdmin,
-			healthy:      infoErr == nil && (info.Pulling || info.Status != langservers.StatusUnhealthy),
+			healthy:      infoErr == nil && (info.Pulling || info.Running()),
 		})
 	}
 
