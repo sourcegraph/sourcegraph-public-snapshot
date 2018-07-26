@@ -42,7 +42,7 @@ export class NavLinks extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <ul className="nav-links nav align-items-center pl-2 pr-1">
-                {!showDotComMarketing && (
+                {showDotComMarketing && (
                     <li className="nav-item">
                         <a
                             href="https://about.sourcegraph.com"
