@@ -88,7 +88,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             x.repoPath === y.repoPath &&
                             x.rev === y.rev &&
                             x.parentPath === y.parentPath &&
-                            x.expandedTrees === y.expandedTrees
+                            x.isExpanded === y.isExpanded
                     ),
                     filter(props => props.isExpanded),
                     switchMap(props => {
@@ -203,6 +203,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             // If none of the above conditions are met, there's no need to update.
             return false
         }
+
         return true
     }
 
