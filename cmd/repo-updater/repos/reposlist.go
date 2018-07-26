@@ -21,6 +21,41 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
+// This file contains the repo-updater scheduler and "repos.list" config
+// handling. The repo-updater scheduler is a scheduler for running git fetch
+// which scales to tens of thousands of repositories.
+//
+// The best way to understand the scheduler is to start by reading the
+// updateLoop function. The scheduler is designed to not run more than
+// maxConcurrent fetches at once, but to smartly order fetches so as to
+// minimise the syncing lag between gitserver and a remote repository.
+//
+// The way it achieves this is by setting a deadline for when to run fetch for
+// a repository (repoData.due). This deadline is based on the last time a
+// fetch ran and the last time the repository changed. Repositories that are
+// recently changed will be checked more often.
+//
+// We store all repositories in a heap to efficiently find the next due
+// repository as well as efficiently mutate the due time for a repository.
+//
+// The scheduler also takes into account user traffic and will update
+// repositories users are browsing. This is done via a separate queue called
+// bump. Additionally if we do not know the last time a repository was fetched
+// we do not have a good deadline to check it. So those items are placed in a
+// third queue called newQueue.
+//
+// updateLoop will always try to schedule repositories in bump immediately. If
+// we are not at maxConcurrent fetches yet, then it will also schedule items
+// past due in the heap. If we are still not at maxConcurrent fetches then it
+// will schedule as many repositories from newQueue as possible. The reason
+// newQueue is processed last is we do not want a large number of new
+// repositories starving existing repositories from being updated.
+//
+// See the original design document at
+// https://github.com/sourcegraph/docs-private/blob/master/201806/repo.md
+//
+// TODO: Separate "repos.list" code and the scheduler.
+
 const (
 	minDelay = 45 * time.Second
 	maxDelay = 8 * time.Hour
