@@ -11,7 +11,7 @@ import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
-import { combineLatest, merge, Observable, Subject, Subscription } from 'rxjs'
+import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
 import { Range } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
@@ -21,7 +21,7 @@ import { CXPComponent, CXPComponentProps } from '../../cxp/CXPComponent'
 import { CXPControllerProps, USE_PLATFORM } from '../../cxp/CXPEnvironment'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
-import { propertyIsDefined } from '../../util/types'
+import { isDefined, propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, lprToRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
@@ -109,21 +109,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
     private hoverOverlayElements = new Subject<HTMLElement | null>()
     private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
 
-    /** Emits whenever something is hovered in the code */
-    private codeMouseOvers = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeMouseOver = (event: React.MouseEvent<HTMLElement>) => this.codeMouseOvers.next(event)
-
-    /** Emits whenever something is hovered in the code */
-    private codeMouseMoves = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeMouseMove = (event: React.MouseEvent<HTMLElement>) => this.codeMouseMoves.next(event)
-
-    /**
-     * Emits whenever something is clicked in the code.
-     * Note that this also fires when the user selects text, see `codeClicksWithoutSelection` further down.
-     */
-    private codeClicks = new Subject<React.MouseEvent<HTMLElement>>()
-    private nextCodeClick = (event: React.MouseEvent<HTMLElement>) => this.codeClicks.next(event)
-
     /** Emits when the go to definition button was clicked */
     private goToDefinitionClicks = new Subject<MouseEvent>()
     private nextGoToDefinitionClick = (event: MouseEvent) => this.goToDefinitionClicks.next(event)
@@ -197,18 +182,20 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         // When clicking a line, update the URL (which will in turn trigger a highlight of the line)
         this.subscriptions.add(
-            this.codeClicks
+            this.codeViewElements
                 .pipe(
+                    filter(isDefined),
+                    switchMap(codeView => fromEvent<MouseEvent>(codeView, 'click')),
                     // Ignore click events caused by the user selecting text
-                    filter(() => window.getSelection().toString() === ''),
-                    map(event => ({ event, position: locateTarget(event.target as HTMLElement, domFunctions) }))
+                    filter(() => window.getSelection().toString() === '')
                 )
-                .subscribe(({ event, position }) => {
+                .subscribe(event => {
                     // Prevent selecting text on shift click (click+drag to select will still work)
                     // Note that this is only called if the selection was empty initially (see above),
                     // so this only clears a selection caused by this click.
                     window.getSelection().removeAllRanges()
 
+                    const position = locateTarget(event.target as HTMLElement, domFunctions)
                     let hash: string
                     if (
                         position &&
@@ -446,9 +433,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     className={`blob__code ${this.props.wrapCode ? ' blob__code--wrapped' : ''} e2e-blob`}
                     ref={this.nextCodeViewElement}
                     dangerouslySetInnerHTML={{ __html: this.props.html }}
-                    onClick={this.nextCodeClick}
-                    onMouseOver={this.nextCodeMouseOver}
-                    onMouseMove={this.nextCodeMouseMove}
                 />
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
