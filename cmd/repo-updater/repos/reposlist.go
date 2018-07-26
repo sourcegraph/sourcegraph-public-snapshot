@@ -27,8 +27,8 @@ import (
 //
 // The best way to understand the scheduler is to start by reading the
 // updateLoop function. The scheduler is designed to not run more than
-// maxConcurrent fetches at once, but to smartly order fetches so as to
-// minimise the syncing lag between gitserver and a remote repository.
+// maxConcurrent fetches at once, and to order fetches so as to minimise the
+// syncing lag between gitserver and a remote repository.
 //
 // The way it achieves this is by setting a deadline for when to run fetch for
 // a repository (repoData.due). This deadline is based on the last time a
