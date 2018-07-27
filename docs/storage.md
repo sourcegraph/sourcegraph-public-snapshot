@@ -22,7 +22,6 @@ can make global configuration changes, such as changing the timezone. If you
 need to use other settings for other databases, use a separate PostgreSQL
 instance.
 
-
 After installing PostgreSQL, set up up a `sourcegraph` user and database:
 
 ```
