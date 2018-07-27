@@ -69,6 +69,7 @@ git push --tags
 
 1.  Check out a new branch in the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
 1.  Update the old version number in the documentation to be the version number you are releasing [by editing this React component](https://github.com/sourcegraph/website/blob/master/src/components/ServerVersionNumber.tsx).
+1.  Copy over the new changelog entries from [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 1.  Copy the schema from the released git commit to the [sourcegraph/website](https://github.com/sourcegraph/website) repo:
     ```bash
     cd $WEBSITE_REPO
