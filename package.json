@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@sourcegraph/prettierrc": "^2.1.1",
+    "@types/textarea-caret": "^3.0.0",
     "chokidar-cli": "^1.2.0",
     "graphql-schema-linter": "^0.1.5",
     "prettier": "1.13.7"
