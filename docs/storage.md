@@ -3,7 +3,17 @@
 Sourcegraph stores most data in a
 [PostgreSQL database](http://www.postgresql.org). Git repositories,
 uploaded user content (e.g., image attachments in issues) are stored
-on the filesystem.
+
+## Version requirements
+
+You must use PostgreSQL 9.x (9.6 or 9.7) for development. If you use PostgreSQL
+10, you can't make changes to the database schema and make proper pull requests
+for them; we generate files based on the database schema, and the formatting
+gets broken. (The changes are minor and cosmetic, but they're a hassle for us
+in tracking changes, so we need to all be using compatible-enough versions.)
+
+For Ubuntu 18.04, you will need to add a repository source. Use the
+[PostgreSQL.org official repo and instructions.](https://www.postgresql.org/download/linux/ubuntu/)
 
 # Initializing PostgreSQL
 
@@ -11,6 +21,7 @@ Sourcegraph assumes it has a dedicated PostgreSQL server, or at least that you
 can make global configuration changes, such as changing the timezone. If you
 need to use other settings for other databases, use a separate PostgreSQL
 instance.
+
 
 After installing PostgreSQL, set up up a `sourcegraph` user and database:
 
