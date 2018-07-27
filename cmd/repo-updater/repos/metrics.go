@@ -71,6 +71,43 @@ var (
 		Name:      "purge_skipped",
 		Help:      "Incremented each time we skip a repository clone to remove.",
 	})
+
+	schedError = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "sched_error",
+		Help:      "Incremented each time we encounter an error updating a repository.",
+	})
+	schedLoops = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "sched_loops",
+		Help:      "Incremented each time the scheduler loops.",
+	})
+	schedAutoFetch = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "sched_auto_fetch",
+		Help:      "Incremented each time the scheduler updates a managed repository due to hitting a deadline.",
+	})
+	schedManualFetch = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "sched_manual_fetch",
+		Help:      "Incremented each time the scheduler updates a repository due to user traffic.",
+	})
+	schedKnownRepos = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "sched_known_repos",
+		Help:      "The number of unique repositories that have been managed by the scheduler.",
+	})
+	schedScale = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Subsystem: "repoupdater",
+		Name:      "sched_scale",
+		Help:      "The scheduler interval scale.",
+	})
 )
 
 func init() {
@@ -84,4 +121,10 @@ func init() {
 	prometheus.MustRegister(purgeSuccess)
 	prometheus.MustRegister(purgeFailed)
 	prometheus.MustRegister(purgeSkipped)
+	prometheus.MustRegister(schedError)
+	prometheus.MustRegister(schedLoops)
+	prometheus.MustRegister(schedAutoFetch)
+	prometheus.MustRegister(schedManualFetch)
+	prometheus.MustRegister(schedKnownRepos)
+	prometheus.MustRegister(schedScale)
 }

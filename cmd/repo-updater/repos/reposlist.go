@@ -434,8 +434,10 @@ func (r *repoList) startUpdate(ctx context.Context, nextUp *repoData, auto bool)
 	nextUp.started = time.Now()
 	if auto {
 		r.stats.autoFetches++
+		schedAutoFetch.Inc()
 	} else {
 		r.stats.manualFetches++
+		schedManualFetch.Inc()
 	}
 	go r.doUpdate(ctx, nextUp)
 }
@@ -510,6 +512,7 @@ func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateR
 	repo.fetchTime = now.Sub(repo.started)
 	if err != nil {
 		r.stats.errors++
+		schedError.Inc()
 	}
 	if resp != nil {
 		if resp.QueueCap > 0 {
@@ -577,6 +580,13 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 		if loopCounter == 0 {
 			r.recomputeScale()
 		}
+		// Update counters (cheap to do)
+		{
+			schedKnownRepos.Set(float64(len(r.repos)))
+			schedScale.Set(r.intervalScale)
+			schedLoops.Inc()
+		}
+
 		if now.After(nextStatTime) {
 			// Report some convenient stats.
 			r.stats.knownRepos = len(r.repos)
