@@ -437,7 +437,7 @@ func (r *repoList) startUpdate(ctx context.Context, nextUp *repoData, auto bool)
 	} else {
 		r.stats.manualFetches++
 	}
-	go r.doUpdate(ctx, nextUp, nextUp.url)
+	go r.doUpdate(ctx, nextUp)
 }
 
 // doUpdate attempts the actual update for a repo, calling r.requeue()
@@ -445,9 +445,18 @@ func (r *repoList) startUpdate(ctx context.Context, nextUp *repoData, auto bool)
 // to modify the repo's URL while this function is running; it will
 // use the URL configured when it was called.
 //
-// safe to run when not holding mutex.
-func (r *repoList) doUpdate(ctx context.Context, repo *repoData, url string) {
+// Only run if not holding the mutex.
+func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
+	// We need to hold the lock to read values from repo and r. So we read
+	// everything we need at the very start.
+	r.mu.Lock()
 	name := repo.name
+	url := repo.url
+	interval := repo.interval
+	manual := repo.manual
+	autoUpdatesDisabled := r.autoUpdatesDisabled
+	r.mu.Unlock()
+
 	uri := api.RepoURI(name)
 	var resp *gitserverprotocol.RepoUpdateResponse
 	var err error
@@ -456,7 +465,7 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData, url string) {
 	// someone could request that this become queued *while it is in process*?
 	defer r.requeue(repo, &resp, &err)
 
-	log15.Debug("doUpdate", "repo", name, "interval", repo.interval)
+	log15.Debug("doUpdate", "repo", name, "interval", interval)
 
 	// Check whether it's cloned.
 	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, api.RepoURI(uri))
@@ -466,10 +475,9 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData, url string) {
 	}
 	// We request an update if auto updates are enabled, or if the repo isn't
 	// cloned, or the manual flag is set.
-	if !cloned || repo.manual || !r.autoUpdatesDisabled {
-		interval := repo.interval
+	if !cloned || manual || !autoUpdatesDisabled {
 		// manual updates should happen even if the repo is usually rarely-updated.
-		if repo.manual {
+		if manual {
 			interval = 5 * time.Second
 		}
 		resp, err = gitserver.DefaultClient.RequestRepoUpdate(ctx, gitserver.Repo{Name: api.RepoURI(name), URL: url}, interval)
