@@ -518,7 +518,7 @@ func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateR
 		if resp.QueueCap > 0 {
 			newMax := conservativeMaxRequests(resp.QueueCap)
 			if newMax != r.maxRequests {
-				log15.Warn("changing max requests to avoid flooding gitserver", "old", r.maxRequests, "new", newMax, "gitserver", resp.QueueCap)
+				log15.Info("changing max requests to avoid flooding gitserver", "old", r.maxRequests, "new", newMax, "gitserver", resp.QueueCap)
 				r.maxRequests = newMax
 			}
 		}
