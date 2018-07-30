@@ -177,9 +177,7 @@ func Main() error {
 
 	// Start HTTPS server.
 	if useTLS {
-		tlsConf := &tls.Config{
-			NextProtos: []string{"h2", "http/1.1"},
-		}
+		var tlsConf *tls.Config
 
 		// Configure tlsConf
 		if tlsCertAndKey {
@@ -188,7 +186,10 @@ func Main() error {
 			if err != nil {
 				return err
 			}
-			tlsConf.Certificates = []tls.Certificate{cert}
+			tlsConf = &tls.Config{
+				NextProtos:   []string{"h2", "http/1.1"},
+				Certificates: []tls.Certificate{cert},
+			}
 		} else {
 			// LetsEncrypt
 			m := &autocert.Manager{
@@ -196,15 +197,12 @@ func Main() error {
 				HostPolicy: autocert.HostWhitelist(globals.AppURL.Host),
 				Cache:      db.CertCache,
 			}
-			tlsConf.GetCertificate = m.GetCertificate
+			// m.TLSConfig uses m's GetCertificate as well as enabling ACME
+			// "tls-alpn-01" challenges.
+			tlsConf = m.TLSConfig()
 			// We register paths on our HTTP handler so that we can do ACME
-			// "http-01" challenges. We are required to run the port 80
-			// handler since that is the only challenge ACME will issue us
-			// that we can accept.
+			// "http-01" challenges.
 			srv.SetWrapper(m.HTTPHandler)
-			if httpAddr == "" {
-				log.Fatal("HTTP is disabled but is required to serve HTTPS with Lets Encrypt")
-			}
 		}
 
 		l, err := net.Listen("tcp", httpsAddr)
