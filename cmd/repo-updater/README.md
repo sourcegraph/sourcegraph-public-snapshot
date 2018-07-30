@@ -11,22 +11,23 @@ Repo-updater has two primary tasks: Maintaining metadata about repositories for 
 ### Repo metadata and lookups
 
 The primary function of repo-updater for repository metadata is to provide an abstraction layer and cache on top of the interfaces of various different code hosts. As of this writing, it has support for:
-  * AWS Code Commit
-  * Bitbucket Server
-  * GitHub
-  * GitLab
-  * Gitolite
-  * Phabricator
-  * repos.list information in config.json
+
+- AWS Code Commit
+- Bitbucket Server
+- GitHub
+- GitLab
+- Gitolite
+- Phabricator
+- repos.list information in config.json
 
 The exposed API call `RepoLookup` is the primary interface to this. Everything else calls RepoLookup when it wants to find out about a repository. This function then tries each of the code hosts in a consistent order, looking for one which claims to be authoritative. The current order is:
 
-  * GitHub
-  * GitLab
-  * Bitbucket Server
-  * AWS Code Commit
-  * repos.list information in config.json
-  * Gitolite
+- GitHub
+- GitLab
+- Bitbucket Server
+- AWS Code Commit
+- repos.list information in config.json
+- Gitolite
 
 Note that Phabricator isn't listed here. (As of this writing, I don't know why.)
 
@@ -34,7 +35,7 @@ The implementations of these mostly live in `repos/*.go`, but GitHub, GitLab, Bi
 
 In each of these cases, the code in `internal/externalservice` implements a cache using `sourcegraph/pkg/rcache`, which is supposed to be an application-level cache. There's also an HTTP cache used for the actual transport. In the specific case of github, API calls are actually proxied through `github-proxy`. The HTTP cache handles things like `Etag` and `If-Modified-Since` headers to reduce spamminess of API calls; GitHub, for instance, won't count an API call as consuming API rate limit if it returns a 304.
 
-In general, the spamminess of these requests is a significant concern; I did a simple search and saw >10 requests in a row to github about the *same* repository in a second or two. (Inference: The caching is unreliable or not working as intended.)
+In general, the spamminess of these requests is a significant concern; I did a simple search and saw >10 requests in a row to github about the _same_ repository in a second or two. (Inference: The caching is unreliable or not working as intended.)
 
 ### Fetching repositories
 
