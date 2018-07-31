@@ -123,6 +123,8 @@ Indexes:
     "global_dep_idxgin" gin (dep_data jsonb_path_ops)
     "global_dep_language" btree (language)
     "global_dep_repo_id" btree (repo_id)
+    "idx_globaldep_depth" btree ((dep_data ->> ('depth'::text COLLATE "C")))
+    "idx_globaldep_package" btree ((dep_data ->> ('package'::text COLLATE "C")))
 Foreign-key constraints:
     "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
 

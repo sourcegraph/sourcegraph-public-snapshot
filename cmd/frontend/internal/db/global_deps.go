@@ -287,8 +287,11 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 		FROM global_dep
 		WHERE language='go'
 		AND dep_data->>'depth' = '0'
-		AND dep_data->>'package' LIKE $1;
-	`, source+"%")
+		AND (
+			(dep_data->>'package' COLLATE "C" < $1 || '0' COLLATE "C" AND dep_data->>'package' COLLATE "C" > $1 || '/' COLLATE "C")
+			OR (dep_data->>'package' COLLATE "C" = $1)
+		);
+	`, source)
 	if err != nil {
 		return 0, errors.Wrap(err, "Query")
 	}
