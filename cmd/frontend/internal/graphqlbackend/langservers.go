@@ -82,7 +82,14 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			return nil, errors.Wrap(err, "langservers.State")
 		}
 
-		info, infoErr := langservers.Info(language)
+		var (
+			info      *langservers.LangInfo
+			infoErr   error
+			canManage = langservers.CanManage() == nil
+		)
+		if canManage {
+			info, infoErr = langservers.Info(language)
+		}
 
 		results = append(results, &langServerResolver{
 			language:     language,
@@ -94,13 +101,13 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 			custom:       false,
 			experimental: langservers.StaticInfo[language].Experimental,
 			state:        state,
-			pending:      infoErr == nil && (info.Pulling || info.Status == langservers.StatusStarting),
-			downloading:  infoErr == nil && info.Pulling,
-			canEnable:    infoErr == nil && (isSiteAdmin || state == langservers.StateNone),
-			canDisable:   infoErr == nil && isSiteAdmin,
-			canRestart:   infoErr == nil && isSiteAdmin && state == langservers.StateEnabled,
-			canUpdate:    infoErr == nil && isSiteAdmin,
-			healthy:      infoErr == nil && (info.Pulling || info.Running()),
+			pending:      canManage && infoErr == nil && (info.Pulling || info.Status == langservers.StatusStarting),
+			downloading:  canManage && infoErr == nil && info.Pulling,
+			canEnable:    canManage && infoErr == nil && (isSiteAdmin || state == langservers.StateNone),
+			canDisable:   canManage && infoErr == nil && isSiteAdmin,
+			canRestart:   canManage && infoErr == nil && isSiteAdmin && state == langservers.StateEnabled,
+			canUpdate:    canManage && infoErr == nil && isSiteAdmin,
+			healthy:      canManage && infoErr == nil && (info.Pulling || info.Running()),
 		})
 	}
 
