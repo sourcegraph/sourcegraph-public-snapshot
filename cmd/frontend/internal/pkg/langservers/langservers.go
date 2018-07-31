@@ -731,6 +731,9 @@ func mapLanguage(language string) string {
 }
 
 func haveDockerSocket() (bool, error) {
+	if conf.IsDev(conf.DeployType()) && conf.DebugNoDockerSocket() {
+		return false, nil
+	}
 	_, err := os.Stat("/var/run/docker.sock")
 	if err != nil {
 		if os.IsNotExist(err) {

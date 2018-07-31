@@ -173,6 +173,23 @@ func DebugManageDocker() bool {
 	return v
 }
 
+// DebugNoDockerSocket returns true if the application should pretend that
+// there is no Docker socket present, regardless of what the filesystem says.
+//
+// This is useful for testing that state in a dev instance, which must be
+// supported as users can remove the Docker socket pass-through for e.g.
+// security reasons.
+//
+// This only exists for dev mode / debugging purposes, and should never be used
+// in a production setting. It panics if the deploy type is not "dev".
+func DebugNoDockerSocket() bool {
+	if deployType := DeployType(); !IsDev(deployType) {
+		panic(fmt.Sprintf("DebugManageDocker cannot be called except when DEPLOY_TYPE=dev (found %q)", deployType))
+	}
+	v, _ := strconv.ParseBool(os.Getenv("DEBUG_NO_DOCKER_SOCKET"))
+	return v
+}
+
 // UpdateChannel tells the update channel. Default is "release".
 func UpdateChannel() string {
 	channel := GetTODO().UpdateChannel
