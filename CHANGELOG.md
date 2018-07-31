@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+- Most `experimentalFeatures` in the site configuration now respond to configuration changes live, without requiring a server restart. As usual, you will be prompted for a restart after saving your configuration changes if one is required.
+
 ### Added
 
 - Support for ACME "tls-alpn-01" challenges to obtain LetsEncrypt certificates. Previously Sourcegraph only supported ACME "http-01" challenges which required port 80 to be accessible.
