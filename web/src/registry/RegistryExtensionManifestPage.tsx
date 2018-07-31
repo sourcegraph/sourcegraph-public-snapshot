@@ -6,8 +6,8 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
+import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { eventLogger } from '../tracking/eventLogger'
-import { DynamicallyImportedMonacoSettingsEditor } from './DynamicallyImportedMonacoSettingsEditor'
 import { RegistryExtensionAreaPageProps } from './RegistryExtensionArea'
 
 export const RegistryExtensionNoManifestAlert: React.SFC<{
