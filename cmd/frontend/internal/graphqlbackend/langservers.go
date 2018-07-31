@@ -297,8 +297,8 @@ func (r *siteResolver) LanguageServerManagementStatus(ctx context.Context) (*lan
 type languageServerManagementStatusResolver struct{}
 
 func (r *languageServerManagementStatusResolver) SiteCanManage() bool {
-	_, ok := langservers.CanManage()
-	return ok
+	err := langservers.CanManage()
+	return err == nil
 }
 
 func (r *languageServerManagementStatusResolver) Reason(ctx context.Context) (*string, error) {
@@ -308,9 +308,5 @@ func (r *languageServerManagementStatusResolver) Reason(ctx context.Context) (*s
 		return nil, err
 	}
 
-	reason, ok := langservers.CanManage()
-	if ok {
-		return nil, nil
-	}
-	return &reason, nil
+	return nullString(langservers.CanManage().Error()), nil
 }

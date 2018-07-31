@@ -307,8 +307,8 @@ func checkSupported(language string) error {
 
 // Update updates the language server for the specified language.
 func Update(language string) error {
-	if reason, ok := CanManage(); !ok {
-		return errors.New(reason)
+	if err := CanManage(); err != nil {
+		return err
 	}
 	language = mapLanguage(language)
 
@@ -343,8 +343,8 @@ func pull(language string) error {
 
 // Start starts the language server Docker container for the specified language.
 func Start(language string) error {
-	if reason, ok := CanManage(); !ok {
-		return errors.New(reason)
+	if err := CanManage(); err != nil {
+		return err
 	}
 	language = mapLanguage(language)
 
@@ -376,8 +376,8 @@ func Start(language string) error {
 
 // Stop stops the language server Docker container for the specified language.
 func Stop(language string) error {
-	if reason, ok := CanManage(); !ok {
-		return errors.New(reason)
+	if err := CanManage(); err != nil {
+		return err
 	}
 	language = mapLanguage(language)
 
@@ -487,8 +487,8 @@ func stop(language string) error {
 
 // Restart restarts the language server for the given language.
 func Restart(language string) error {
-	if reason, ok := CanManage(); !ok {
-		return errors.New(reason)
+	if err := CanManage(); err != nil {
+		return err
 	}
 	language = mapLanguage(language)
 
@@ -570,8 +570,8 @@ func queryContainerInfoWorker() {
 // Info tells the current information of a language server Docker
 // container/image.
 func Info(language string) (*LangInfo, error) {
-	if reason, ok := CanManage(); !ok {
-		return nil, errors.New(reason)
+	if err := CanManage(); err != nil {
+		return nil, err
 	}
 
 	// Check if info exists in the cache already and use it if so.
@@ -793,26 +793,33 @@ func containerName(language string) string {
 }
 
 var (
-	canManage       bool
-	canManageReason string
+	canManage error
 )
 
-// CanManage reports whether language servers can be managed (enabled/disabled/restarted/updated) if
-// language server Docker containers can be managed by Sourcegraph without requiring users to take
-// manual steps. The most common reasons for lacking this capability are that Data Center is in use
-// or the admin intentionally did not expose the Docker socket to the Sourcegraph container (for
-// security reasons).
+// CanManage reports whether language servers can be managed via the functions
+// in this package:
 //
-// If no, the boolean is false and the reason (which is always non-empty in this case) describes why
-// not. Otherwise the boolean is true and the reason is empty.
-func CanManage() (reason string, ok bool) {
-	return canManageReason, canManage
+// 	Update
+// 	Start
+// 	Stop
+// 	Info
+// 	Restart
+//
+// If this function returns an error, it indicates that they cannot be managed
+// for some reason. Otherwise, nil is returned. The error message is suitable
+// for display directly to e.g. a site admin.
+//
+// The most common reasons for lacking this capability are that Data Center is
+// in use or the admin intentionally did not expose the Docker socket to the
+// Sourcegraph container (for security reasons).
+func CanManage() error {
+	return canManage
 }
 
 func init() {
 	reason, ok := conf.SupportsManagingLanguageServers()
 	if !ok {
-		canManageReason, canManage = reason, ok
+		canManage = errors.New(reason)
 		return
 	}
 
@@ -827,17 +834,16 @@ func init() {
 	haveSocket, err := haveDockerSocket()
 	if err != nil {
 		const msg = "Language server management capabilities disabled due to an error looking up /var/run/docker.sock"
-		canManageReason = fmt.Sprintf("%s: %s.", msg, err)
+		canManage = fmt.Errorf("%s: %s.", msg, err)
 		log15.Error(msg+".", "error", err)
 		return
 	}
 	if !haveSocket {
 		const msg = "Language server management capabilities disabled because /var/run/docker.sock was not found. See https://about.sourcegraph.com/docs/code-intelligence/install for help."
-		canManageReason = msg
+		canManage = errors.New(msg)
 		log15.Error(msg)
 		return
 	}
-	canManage = true
 
 	setupNetworking()
 
