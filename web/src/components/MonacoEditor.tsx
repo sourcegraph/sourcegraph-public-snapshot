@@ -65,16 +65,13 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <>
-                <link rel="stylesheet" type="text/css" href={`${window.context.assetsRoot}/styles/app.bundle.css`} />
-                <div
-                    // tslint:disable-next-line:jsx-ban-props
-                    style={{ height: `${this.props.height}px`, position: 'relative' }}
-                    ref={this.setRef}
-                    id={this.props.id}
-                    className="monaco-editor-container"
-                />
-            </>
+            <div
+                // tslint:disable-next-line:jsx-ban-props
+                style={{ height: `${this.props.height}px`, position: 'relative' }}
+                ref={this.setRef}
+                id={this.props.id}
+                className="monaco-editor-container"
+            />
         )
     }
 }
