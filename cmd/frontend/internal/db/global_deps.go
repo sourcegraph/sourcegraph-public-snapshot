@@ -287,7 +287,7 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 		FROM global_dep
 		WHERE language='go'
 		AND dep_data->>'depth' = '0'
-		AND (
+		AND ( -- in C locale, this is equivalent to matching "$1/*", but matches much faster
 			(dep_data->>'package' COLLATE "C" < $1 || '0' COLLATE "C" AND dep_data->>'package' COLLATE "C" > $1 || '/' COLLATE "C")
 			OR (dep_data->>'package' COLLATE "C" = $1)
 		);

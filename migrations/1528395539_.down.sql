@@ -1,2 +1,2 @@
-DROP INDEX idx_globaldep_package;
-DROP INDEX idx_globaldep_depth;
+DROP INDEX global_dep_idx_package;
+DROP INDEX global_dep_idx_depth;
