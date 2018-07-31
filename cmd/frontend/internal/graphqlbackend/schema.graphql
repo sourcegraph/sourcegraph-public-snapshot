@@ -463,6 +463,9 @@ input ConfigurationEdit {
     # When the value is a non-primitive type, it must be specified using a GraphQL variable, not an inline literal,
     # or else the GraphQL parser will return an error.
     value: JSONValue
+    # Whether to treat the value as a JSONC-encoded string, which makes it possible to perform a configuration edit
+    # that preserves (or adds/removes) comments.
+    valueIsJSONCEncodedString: Boolean = false
 }
 
 # A segment of a key path that locates a nested JSON value in a root JSON value. Exactly one field in each

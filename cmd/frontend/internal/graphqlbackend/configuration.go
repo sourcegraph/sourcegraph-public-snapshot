@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -59,8 +61,9 @@ type updateConfigurationPayload struct{}
 func (updateConfigurationPayload) Empty() *EmptyResponse { return nil }
 
 type configurationEdit struct {
-	KeyPath []*keyPathSegment
-	Value   *jsonValue
+	KeyPath                   []*keyPathSegment
+	Value                     *jsonValue
+	ValueIsJSONCEncodedString bool
 }
 
 type keyPathSegment struct {
@@ -99,6 +102,13 @@ func (r *configurationMutationResolver) EditConfiguration(ctx context.Context, a
 	var value interface{}
 	if args.Edit.Value != nil {
 		value = args.Edit.Value.value
+	}
+	if args.Edit.ValueIsJSONCEncodedString {
+		s, ok := value.(string)
+		if !ok {
+			return nil, errors.New("value must be a string for valueIsJSONCEncodedString")
+		}
+		value = json.RawMessage(s)
 	}
 
 	return r.editConfiguration(ctx, keyPath, value, remove)
