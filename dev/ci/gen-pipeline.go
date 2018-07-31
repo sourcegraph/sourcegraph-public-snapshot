@@ -288,6 +288,7 @@ func main() {
 		Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
 
 	addDeploySteps := func() {
+		/* TODO(slimsag): ASAP: undo this, see https://github.com/sourcegraph/sourcegraph/issues/12537#issuecomment-409121017
 		// Deploy to dogfood
 		pipeline.AddStep(":dog:",
 			ConcurrencyGroup("deploy"),
@@ -297,6 +298,7 @@ func main() {
 			Env("NAMESPACE", "default"),
 			Cmd("./dev/ci/deploy-dogfood.sh"))
 		pipeline.AddWait()
+		*/
 
 		// Run e2e tests against dogfood
 		pipeline.AddStep(":chromium:",
