@@ -42,7 +42,7 @@ $success: $green;
 $info: $cyan;
 $warning: $yellow;
 $danger: $red;
-$secondary-light: $gray-01;
+$secondary-light: darken($gray-01, 5%);
 
 $theme-colors-light: (
     'secondary': $secondary-light,
