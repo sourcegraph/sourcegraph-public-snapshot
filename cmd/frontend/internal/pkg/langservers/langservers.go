@@ -307,6 +307,9 @@ func checkSupported(language string) error {
 
 // Update updates the language server for the specified language.
 func Update(language string) error {
+	if reason, ok := CanManage(); !ok {
+		return errors.New(reason)
+	}
 	language = mapLanguage(language)
 
 	dockerContainerAccess.lock(language)
@@ -340,6 +343,9 @@ func pull(language string) error {
 
 // Start starts the language server Docker container for the specified language.
 func Start(language string) error {
+	if reason, ok := CanManage(); !ok {
+		return errors.New(reason)
+	}
 	language = mapLanguage(language)
 
 	dockerContainerAccess.lock(language)
@@ -370,6 +376,9 @@ func Start(language string) error {
 
 // Stop stops the language server Docker container for the specified language.
 func Stop(language string) error {
+	if reason, ok := CanManage(); !ok {
+		return errors.New(reason)
+	}
 	language = mapLanguage(language)
 
 	dockerContainerAccess.lock(language)
@@ -478,6 +487,9 @@ func stop(language string) error {
 
 // Restart restarts the language server for the given language.
 func Restart(language string) error {
+	if reason, ok := CanManage(); !ok {
+		return errors.New(reason)
+	}
 	language = mapLanguage(language)
 
 	dockerContainerAccess.lock(language)
@@ -558,6 +570,10 @@ func queryContainerInfoWorker() {
 // Info tells the current information of a language server Docker
 // container/image.
 func Info(language string) (*LangInfo, error) {
+	if reason, ok := CanManage(); !ok {
+		return nil, errors.New(reason)
+	}
+
 	// Check if info exists in the cache already and use it if so.
 	latestInfo.RLock()
 	e, ok := latestInfo.byLanguage[language]
