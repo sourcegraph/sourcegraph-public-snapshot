@@ -207,7 +207,6 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         />
                         <MonacoSettingsEditor
                             value={contents}
-                            className="settings-file__monaco-editor"
                             jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
                             onChange={this.onEditorChange}
                             readOnly={this.state.saving}

@@ -37,6 +37,7 @@ export interface SettingsAreaPageProps extends SettingsAreaPageCommonProps {
 
 interface Props extends SettingsAreaPageCommonProps, RouteComponentProps<{}> {
     extraHeader?: JSX.Element
+    className?: string
 }
 
 const LOADING: 'loading' = 'loading'
@@ -118,7 +119,7 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         return (
-            <div>
+            <div className={this.props.className}>
                 <h2>{term} settings</h2>
                 {this.props.extraHeader}
                 <Switch>
