@@ -1,6 +1,7 @@
 package handlerutil
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/gorilla/schema"
+	"github.com/pkg/errors"
 
 	"github.com/neelance/parallel"
 
@@ -64,10 +66,24 @@ func (h HandlerWithErrorReturn) ServeHTTP(w http.ResponseWriter, r *http.Request
 
 	err := collapseMultipleErrors(h.Handler(w, r))
 	if err != nil {
-		status := errcode.HTTP(err)
+		status := httpErrCode(r, err)
 		reportError(r, status, err, false)
 		h.Error(w, r, status, err)
 	}
+}
+
+// httpErrCode maps an error to a status code. If the client canceled the
+// request we return the non-standard "499 Client Closed Request" used by
+// nginx.
+func httpErrCode(r *http.Request, err error) int {
+	// If we failed due to ErrCanceled, it may be due to the client closing
+	// the connection. If that is the case, return 499. We do not just check
+	// if the client closed the connection, in case we failed due to another
+	// reason leading to the client closing the connection.
+	if errors.Cause(err) == context.Canceled && r.Context().Err() == context.Canceled {
+		return 499
+	}
+	return errcode.HTTP(err)
 }
 
 // collapseMultipleErrors returns the first err if err is a
