@@ -167,60 +167,57 @@ export class SettingsFile extends React.PureComponent<Props, State> {
         const contents =
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
-        return (
-            <div>
-                {this.state.monacoSettingsEditorOrError === undefined ? (
-                    <Loader className="icon-inline" />
-                ) : isErrorLike(this.state.monacoSettingsEditorOrError) ? (
-                    <div className="alert alert-danger">
-                        Error loading settings editor: {upperFirst(this.state.monacoSettingsEditorOrError.message)}
-                    </div>
-                ) : (
-                    (() => {
-                        const MonacoSettingsEditor = this.state.monacoSettingsEditorOrError.MonacoSettingsEditor
-                        return (
-                            <>
-                                <div className="site-admin-configuration-page__action-groups">
-                                    <div className="site-admin-configuration-page__action-groups">
-                                        <div className="site-admin-configuration-page__action-group-header">
-                                            Quick configure:
-                                        </div>
-                                        <div className="site-admin-configuration-page__actions">
-                                            {settingsActions.map(({ id, label }) => (
-                                                <button
-                                                    key={id}
-                                                    className="btn btn-secondary btn-sm site-admin-configuration-page__action"
-                                                    // tslint:disable-next-line:jsx-no-lambda
-                                                    onClick={() => this.runAction(id)}
-                                                >
-                                                    {label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                                <SaveToolbar
-                                    dirty={dirty}
-                                    disabled={this.state.saving || !dirty}
-                                    error={this.props.commitError}
-                                    saving={this.state.saving}
-                                    onSave={this.save}
-                                    onDiscard={this.discard}
-                                />
-                                <MonacoSettingsEditor
-                                    value={contents}
-                                    jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
-                                    onChange={this.onEditorChange}
-                                    readOnly={this.state.saving}
-                                    monacoRef={this.monacoRef}
-                                    isLightTheme={this.props.isLightTheme}
-                                    onDidSave={this.save}
-                                />
-                            </>
-                        )
-                    })()
-                )}
+        return this.state.monacoSettingsEditorOrError === undefined ? (
+            <Loader className="icon-inline" />
+        ) : isErrorLike(this.state.monacoSettingsEditorOrError) ? (
+            <div className="alert alert-danger">
+                Error loading settings editor: {upperFirst(this.state.monacoSettingsEditorOrError.message)}
             </div>
+        ) : (
+            (() => {
+                const MonacoSettingsEditor = this.state.monacoSettingsEditorOrError.MonacoSettingsEditor
+                return (
+                    <div className="settings-file d-flex flex-column">
+                        <div className="site-admin-configuration-page__action-groups">
+                            <div className="site-admin-configuration-page__action-groups">
+                                <div className="site-admin-configuration-page__action-group-header">
+                                    Quick configure:
+                                </div>
+                                <div className="site-admin-configuration-page__actions">
+                                    {settingsActions.map(({ id, label }) => (
+                                        <button
+                                            key={id}
+                                            className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                            // tslint:disable-next-line:jsx-no-lambda
+                                            onClick={() => this.runAction(id)}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        <SaveToolbar
+                            dirty={dirty}
+                            disabled={this.state.saving || !dirty}
+                            error={this.props.commitError}
+                            saving={this.state.saving}
+                            onSave={this.save}
+                            onDiscard={this.discard}
+                        />
+                        <MonacoSettingsEditor
+                            value={contents}
+                            className="settings-file__monaco-editor"
+                            jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
+                            onChange={this.onEditorChange}
+                            readOnly={this.state.saving}
+                            monacoRef={this.monacoRef}
+                            isLightTheme={this.props.isLightTheme}
+                            onDidSave={this.save}
+                        />
+                    </div>
+                )
+            })()
         )
     }
 
