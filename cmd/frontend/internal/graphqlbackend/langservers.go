@@ -315,5 +315,9 @@ func (r *languageServerManagementStatusResolver) Reason(ctx context.Context) (*s
 		return nil, err
 	}
 
-	return nullString(langservers.CanManage().Error()), nil
+	err := langservers.CanManage()
+	if err == nil {
+		return nil, nil
+	}
+	return nullString(err.Error()), nil
 }
