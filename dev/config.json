@@ -102,7 +102,7 @@
     }
   ],
   "update.channel": "release",
-  "corsOrigin": "https://github.com https://phabricator.sgdev.org",
+  "corsOrigin": "https://github.com https://phabricator.sgdev.org https://bitbucket.sgdev.org",
 
   // Uncomment to enable Sentry (dev project)
   //
