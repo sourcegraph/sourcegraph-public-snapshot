@@ -2,9 +2,11 @@ package proxy
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
+	"io"
 
 	"github.com/fatih/color"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 const (
@@ -41,25 +43,31 @@ func metaToStr(id contextID, extraMeta ...interface{}) string {
 
 // logWithLevel logs a message with LSP metadata with a passed loglevel
 func logWithLevel(lvl int, msg string, id contextID, extraMeta ...interface{}) {
+	var w io.Writer
 	switch lvl {
 	case err:
 		msg = color.New(color.BgRed).Sprint("ERROR") + " " + msg
+		w = env.ErrorOut
 		break
 	case warn:
 		msg = color.New(color.BgYellow).Sprint("WARN") + "  " + msg
+		w = env.WarnOut
 		break
 	case info:
 		msg = color.New(color.BgCyan).Sprint("INFO") + "  " + msg
+		w = env.InfoOut
 		break
 	case debug:
 		msg = "DEBUG " + msg
+		w = env.DebugOut
 		break
 	default:
 		msg = color.New(color.Faint).Sprint("VERB" + string(lvl) + " " + msg)
+		w = env.DebugOut
 		break
 	}
 	msg += " " + color.New(color.Faint).Sprint(metaToStr(id, extraMeta...))
-	log.Println(msg)
+	fmt.Fprintln(w, msg)
 }
 
 // logError logs a message with LSP metadata with loglevel ERROR
