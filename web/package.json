@@ -64,7 +64,7 @@
     "@types/lodash-es": "4.17.1",
     "@types/marked": "0.4.0",
     "@types/mkdirp-promise": "5.0.0",
-    "@types/mocha": "5.2.4",
+    "@types/mocha": "5.2.5",
     "@types/mz": "0.0.32",
     "@types/node": "8.10.21",
     "@types/ora": "1.3.4",
