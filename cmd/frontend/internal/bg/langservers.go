@@ -27,11 +27,9 @@ func RespectLangServersConfigUpdate() {
 			}
 			continue
 		}
-		if state == langservers.StateDisabled {
-			// Stop the language server if it is running.
-			_ = langservers.Stop(language)
-			continue
-		}
+		// Stop the language server if it is running, as it is not enabled
+		// (StateDisabled or StateNone).
+		_ = langservers.Stop(language)
 	}
 }
 
