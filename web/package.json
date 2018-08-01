@@ -74,7 +74,7 @@
     "@types/puppeteer": "1.6.0",
     "@types/react": "16.4.6",
     "@types/react-dom": "16.0.6",
-    "@types/react-router": "4.0.28",
+    "@types/react-router": "4.0.30",
     "@types/react-router-dom": "4.2.7",
     "@types/reactstrap": "6.0.0",
     "@types/uuid": "3.4.3",
