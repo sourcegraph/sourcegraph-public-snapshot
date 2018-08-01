@@ -66,6 +66,11 @@ const LinkComponent = (props: LinkProps) => <Link {...props} />
 
 const domFunctions = {
     getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
+        // If the target is part of the blame annotation (a.blame or span.blame__contents), return null.
+        if (target.classList.contains('blame') || target.classList.contains('blame__contents')) {
+            return null
+        }
+
         const row = target.closest('tr')
         if (!row) {
             return null
