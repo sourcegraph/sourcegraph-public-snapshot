@@ -18,3 +18,8 @@ dev/config.json @sqs
 client/vscode/ @chrismwendt
 cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 web/src/tracking/ @dadlerj
+
+# Don't set any reviewers for these,
+# configure by package through Renovate config (see renovate.json)
+**/package.json
+**/package-lock.json

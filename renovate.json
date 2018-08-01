@@ -10,6 +10,7 @@
   "prCreation": "not-pending",
   "semanticCommits": false,
   "rangeStrategy": "replace",
+  "assignees": ["felixfbecker"],
   "packageRules": [
     {
       "packagePatterns": ["^@sourcegraph/"],
@@ -20,11 +21,16 @@
     {
       "packagePatterns": ["^@types/"],
       "rangeStrategy": "pin",
+      "assignees": [],
       "automerge": true
     },
     {
       "packageNames": ["cxp"],
       "assignees": ["sqs"]
+    },
+    {
+      "includePaths": ["client/vscode"],
+      "assignees": ["chrismwendt"]
     }
   ]
 }
