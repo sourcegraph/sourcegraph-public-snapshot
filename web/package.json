@@ -47,7 +47,7 @@
     "@types/bluebird": "3.5.23",
     "@types/browserify": "12.0.33",
     "@types/chai": "4.1.4",
-    "@types/d3-axis": "1.0.9",
+    "@types/d3-axis": "1.0.10",
     "@types/d3-scale": "1.0.10",
     "@types/d3-selection": "1.2.0",
     "@types/d3-shape": "1.2.3",
