@@ -80,7 +80,7 @@
     "@types/uuid": "3.4.3",
     "@types/webpack": "4.4.5",
     "@types/webpack-serve": "1.0.4",
-    "autoprefixer": "^8.6.5",
+    "autoprefixer": "^9.0.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
     "babel-plugin-istanbul": "^4.1.5",
