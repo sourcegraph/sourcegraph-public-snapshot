@@ -76,7 +76,7 @@
     "@types/react-dom": "16.0.6",
     "@types/react-router": "4.0.30",
     "@types/react-router-dom": "4.2.7",
-    "@types/reactstrap": "6.0.0",
+    "@types/reactstrap": "6.0.2",
     "@types/uuid": "3.4.3",
     "@types/webpack": "4.4.5",
     "@types/webpack-serve": "1.0.4",
