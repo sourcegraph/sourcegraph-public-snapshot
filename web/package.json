@@ -109,7 +109,7 @@
     "node-sass": "^4.9.0",
     "node-sass-import-once": "^1.2.0",
     "nyc": "^12.0.0",
-    "ora": "^2.0.0",
+    "ora": "^3.0.0",
     "p-retry": "^2.0.0",
     "plugin-error": "^1.0.1",
     "postcss-loader": "^2.1.5",
