@@ -31,6 +31,7 @@ Other tips:
   Make 'type:diff' searches have colored diffs by installing https://colordiff.org
     - Ubuntu/Debian: $ sudo apt-get install colordiff
     - Mac OS:        $ brew install colordiff
+    - Windows:       $ npm install -g colordiff
 
   Disable color output by setting NO_COLOR=t (see https://no-color.org).
 
