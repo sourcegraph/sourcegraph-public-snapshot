@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -91,20 +90,6 @@ func readConfig() (*config, error) {
 	}
 	if cfg.Endpoint == "" {
 		cfg.Endpoint = "https://sourcegraph.com"
-	}
-
-	if cfg.AccessToken == "" {
-		return nil, fmt.Errorf(`error: you must specify an access token to use for %s
-
-You can do so via the environment:
-
-	SRC_ACCESS_TOKEN="secret" src ...
-
-or via the configuration file (%s):
-
-	{"accessToken": "secret"}
-
-`, cfg.Endpoint, cfgPath)
 	}
 	return &cfg, nil
 }

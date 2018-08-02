@@ -134,7 +134,9 @@ func curlCmd(endpoint, accessToken, query string, vars map[string]interface{}) (
 	}
 
 	s := fmt.Sprintf("curl \\\n")
-	s += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Authorization: token "+accessToken))
+	if accessToken != "" {
+		s += fmt.Sprintf("   %s \\\n", shellquote.Join("-H", "Authorization: token "+accessToken))
+	}
 	s += fmt.Sprintf("   %s \\\n", shellquote.Join("-d", string(data)))
 	s += fmt.Sprintf("   %s", shellquote.Join(gqlURL(endpoint)))
 	return s, nil
@@ -197,7 +199,9 @@ func (a *apiRequest) do() error {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "token "+cfg.AccessToken)
+	if cfg.AccessToken != "" {
+		req.Header.Set("Authorization", "token "+cfg.AccessToken)
+	}
 	req.Body = ioutil.NopCloser(&buf)
 
 	// Perform the request.
@@ -211,6 +215,11 @@ func (a *apiRequest) do() error {
 	// confirm the status code. You can test this easily with e.g. an invalid
 	// endpoint like -endpoint=https://google.com
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusUnauthorized && isatty.IsCygwinTerminal(os.Stdout.Fd()) {
+			fmt.Println("You may need to specify or update your access token to use this endpoint.")
+			fmt.Println("See https://github.com/sourcegraph/src-cli#authentication")
+			fmt.Println("")
+		}
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err

@@ -35,6 +35,7 @@ chmod +x /usr/local/bin/src
 Note: Windows support is still rough around the edges, but is available. If you encounter issues, please let us know by filing an issue :)
 
 Run in PowerShell as administrator:
+
 ```powershell
 New-Item -ItemType Directory 'C:\Program Files\Sourcegraph'
 Invoke-WebRequest https://github.com/sourcegraph/src-cli/releases/download/latest/src_windows_amd64.exe -OutFile 'C:\Program Files\Sourcegraph\src.exe'
@@ -43,6 +44,7 @@ $env:Path += ';C:\Program Files\Sourcegraph'
 ```
 
 Or manually:
+
 - [Download the latest src_windows_amd64.exe](https://github.com/sourcegraph/src-cli/releases/download/latest/src_windows_amd64.exe) and rename to `src.exe`.
 - Place the file under e.g. `C:\Program Files\Sourcegraph\src.exe`
 - Add that directory to your system path to access it from any command prompt
@@ -50,6 +52,22 @@ Or manually:
 ## Usage
 
 Consult `src -h` and `src api -h` for usage information.
+
+## Authentication
+
+Some Sourcegraph instances will be configured to require authentication. You can do so via the environment:
+
+```sh
+SRC_ACCESS_TOKEN="secret" src ...
+```
+
+Or via the configuration file (`~/src-config.json`):
+
+```sh
+	{"accessToken": "secret"}
+```
+
+See `src -h` for more information.
 
 ## Development
 
