@@ -120,10 +120,7 @@ Examples:
 // gqlURL returns the URL to the GraphQL endpoint for the given Sourcegraph
 // instance.
 func gqlURL(endpoint string) string {
-	if !strings.HasSuffix(endpoint, "/") {
-		endpoint = endpoint + "/"
-	}
-	return endpoint + ".api/graphql"
+	return endpoint + "/.api/graphql"
 }
 
 // curlCmd returns the curl command to perform the given GraphQL query. Bash-only.

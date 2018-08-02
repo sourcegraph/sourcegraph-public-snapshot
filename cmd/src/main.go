@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 )
 
 const usageText = `src is a tool that provides access to Sourcegraph instances.
@@ -85,7 +86,7 @@ func readConfig() (*config, error) {
 		cfg.AccessToken = envToken
 	}
 	if *endpoint != "" {
-		cfg.Endpoint = *endpoint
+		cfg.Endpoint = strings.TrimSuffix(*endpoint, "/")
 	}
 	if cfg.Endpoint == "" {
 		cfg.Endpoint = "https://sourcegraph.com"
