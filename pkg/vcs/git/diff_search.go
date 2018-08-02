@@ -215,6 +215,10 @@ func RawLogDiffSearch(ctx context.Context, repo gitserver.Repo, opt RawLogDiffSe
 		for _, p := range opt.Paths.IncludePatterns {
 			// Roughly try to convert IncludePatterns (regexps) to git pathspecs (globs).
 			glob, equiv := regexpToGlobBestEffort(p)
+			if !opt.Paths.IsCaseSensitive && glob != "" {
+				// This relies on regexpToGlobBestEffort not returning `:`-prefixed globs.
+				glob = ":(icase)" + glob
+			}
 			if !equiv {
 				addMaxCount500 = true
 			}

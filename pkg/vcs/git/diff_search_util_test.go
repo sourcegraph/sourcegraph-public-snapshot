@@ -1,6 +1,9 @@
 package git
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestRegexpToGlobBestEffort(t *testing.T) {
 	tests := map[string]struct {
@@ -67,6 +70,12 @@ func TestRegexpToGlobBestEffort(t *testing.T) {
 			glob, equiv := regexpToGlobBestEffort(pat)
 			if glob != want.glob {
 				t.Errorf("got glob %q, want %q", glob, want.glob)
+			}
+			// If functionaltiy to handle leading : globs is added, be sure
+			// to update the code that handles matching paths case-insensitively.
+			// Update it by removing the code that concatenates :(icase) to the resulting glob.
+			if strings.HasPrefix(glob, ":") {
+				t.Errorf("got glob %q with ':' as a prefix. Callers expect regexpToGlobBestEffort to not return ':' as a prefix", glob)
 			}
 			if equiv != want.equiv {
 				t.Errorf("got equiv %v, want %v", equiv, want.equiv)
