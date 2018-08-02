@@ -71,6 +71,6 @@
     "vscode-jsonrpc": "^3.6.2",
     "vscode-languageclient": "^4.2.1",
     "vscode-languageserver-types": "^3.8.2",
-    "ws": "^5.2.0"
+    "ws": "^6.0.0"
   }
 }
