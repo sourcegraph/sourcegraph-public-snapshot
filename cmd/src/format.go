@@ -4,16 +4,85 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"text/template"
+	"time"
+
+	humanize "github.com/dustin/go-humanize"
 )
 
 func parseTemplate(text string) (*template.Template, error) {
 	tmpl := template.New("")
 	tmpl.Funcs(map[string]interface{}{
+		"join": strings.Join,
 		"json": func(v interface{}) (string, error) {
-			b, err := json.MarshalIndent(v, "", "  ")
+			b, err := marshalIndent(v)
 			return string(b), err
 		},
+		"msDuration": func(ms int) time.Duration {
+			return time.Duration(ms) * time.Millisecond
+		},
+		"repoNames": func(repos []map[string]interface{}) (names []string) {
+			for _, r := range repos {
+				names = append(names, r["name"].(string))
+			}
+			return
+		},
+		"pad": func(value interface{}, padding int, padCharacter string) string {
+			val := fmt.Sprint(value)
+			repeat := padding - len(val)
+			if repeat < 0 {
+				repeat = 0
+			}
+			return strings.Repeat(padCharacter, repeat) + val
+		},
+		"padRight": func(value interface{}, padding int, padCharacter string) string {
+			val := fmt.Sprint(value)
+			repeat := padding - len(val)
+			if repeat < 0 {
+				repeat = 0
+			}
+			return val + strings.Repeat(padCharacter, repeat)
+		},
+		"indent": func(lines, indention string) string {
+			split := strings.Split(lines, "\n")
+			for i, l := range split {
+				if l != "" {
+					split[i] = indention + l
+				}
+			}
+			return strings.Join(split, "\n")
+		},
+		"addFloat": func(x, y float64) float64 {
+			return x + y
+		},
+		"debug": func(v interface{}) string {
+			data, _ := marshalIndent(v)
+			fmt.Println(string(data))
+
+			// Template functions must return something. In our case, it is
+			// useful to actually print the string above now as the template
+			// could fail due to e.g. syntax errors that someone is trying to
+			// debug,and we want the spew above to show regardless.
+			return ""
+		},
+		"color": func(name string) string {
+			return ansiColors[name]
+		},
+		"humanizeRFC3339": func(date string) (string, error) {
+			t, err := time.Parse(time.RFC3339, date)
+			if err != nil {
+				return "", err
+			}
+			return humanize.Time(t), nil
+		},
+
+		// Register search-specific template functions
+		"searchSequentialLineNumber": searchTemplateFuncs["searchSequentialLineNumber"],
+		"searchHighlightMatch":       searchTemplateFuncs["searchHighlightMatch"],
+		"searchHighlightPreview":     searchTemplateFuncs["searchHighlightPreview"],
+		"searchHighlightDiffPreview": searchTemplateFuncs["searchHighlightDiffPreview"],
+		"searchMaxRepoNameLength":    searchTemplateFuncs["searchMaxRepoNameLength"],
 	})
 	return tmpl.Parse(text)
 }

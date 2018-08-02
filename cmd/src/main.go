@@ -26,6 +26,7 @@ The options are:
 
 The commands are:
 
+	search        search for results on Sourcegraph
 	api           interacts with the Sourcegraph GraphQL API
 	repos,repo    manages repositories
 	users,user    manages users

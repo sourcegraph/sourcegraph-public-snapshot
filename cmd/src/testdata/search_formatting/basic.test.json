@@ -1,0 +1,322 @@
+{
+  "SourcegraphEndpoint": "https://sourcegraph.com",
+  "Query": "repogroup:sample error max:4 repo:^github\\.com/golang/oauth2$",
+  "Results": [
+    {
+      "__typename": "FileMatch",
+      "file": {
+        "commit": {
+          "oid": "3d292e4d0cdc3a0113e6d207bb137145ef1de42f"
+        },
+        "name": "clientcredentials.go",
+        "path": "clientcredentials/clientcredentials.go",
+        "url": "/github.com/golang/oauth2/-/blob/clientcredentials/clientcredentials.go"
+      },
+      "lineMatches": [
+        {
+          "limitHit": false,
+          "lineNumber": 49,
+          "offsetAndLengths": [
+            [
+              60,
+              5
+            ]
+          ],
+          "preview": "func (c *Config) Token(ctx context.Context) (*oauth2.Token, error) {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 81,
+          "offsetAndLengths": [
+            [
+              46,
+              5
+            ]
+          ],
+          "preview": "func (c *tokenSource) Token() (*oauth2.Token, error) {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 90,
+          "offsetAndLengths": [
+            [
+              19,
+              5
+            ]
+          ],
+          "preview": "\t\t\treturn nil, fmt.Errorf(\"oauth2: cannot overwrite parameter %q\", k)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 96,
+          "offsetAndLengths": [
+            [
+              40,
+              5
+            ]
+          ],
+          "preview": "\t\tif rErr, ok := err.(*internal.RetrieveError); ok {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 97,
+          "offsetAndLengths": [
+            [
+              32,
+              5
+            ]
+          ],
+          "preview": "\t\t\treturn nil, (*oauth2.RetrieveError)(rErr)"
+        }
+      ],
+      "repository": {
+        "name": "github.com/golang/oauth2",
+        "url": "/github.com/golang/oauth2"
+      }
+    },
+    {
+      "__typename": "FileMatch",
+      "file": {
+        "commit": {
+          "oid": "3d292e4d0cdc3a0113e6d207bb137145ef1de42f"
+        },
+        "name": "clientcredentials_test.go",
+        "path": "clientcredentials/clientcredentials_test.go",
+        "url": "/github.com/golang/oauth2/-/blob/clientcredentials/clientcredentials_test.go"
+      },
+      "lineMatches": [
+        {
+          "limitHit": false,
+          "lineNumber": 26,
+          "offsetAndLengths": [
+            [
+              54,
+              5
+            ]
+          ],
+          "preview": "\trt func(req *http.Request) (resp *http.Response, err error)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 29,
+          "offsetAndLengths": [
+            [
+              79,
+              5
+            ]
+          ],
+          "preview": "func (t *mockTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 36,
+          "offsetAndLengths": [
+            [
+              5,
+              5
+            ]
+          ],
+          "preview": "\t\t\tt.Errorf(\"authenticate client request URL = %q; want %q\", r.URL, \"/token\")"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 40,
+          "offsetAndLengths": [
+            [
+              5,
+              5
+            ]
+          ],
+          "preview": "\t\t\tt.Errorf(\"Unexpected authorization header, %v is found.\", headerAuth)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 43,
+          "offsetAndLengths": [
+            [
+              5,
+              5
+            ]
+          ],
+          "preview": "\t\t\tt.Errorf(\"Content-Type header = %q; want %q\", got, want)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 50,
+          "offsetAndLengths": [
+            [
+              5,
+              5
+            ]
+          ],
+          "preview": "\t\t\tt.Errorf(\"failed reading request body: %s.\", err)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 53,
+          "offsetAndLengths": [
+            [
+              5,
+              5
+            ]
+          ],
+          "preview": "\t\t\tt.Errorf(\"payload = %q; want %q\", string(body), \"grant_type=client_credentials\u0026scope=scope1+scope2\")"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 62,
+          "offsetAndLengths": [
+            [
+              4,
+              5
+            ]
+          ],
+          "preview": "\t\tt.Error(err)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 68,
+          "offsetAndLengths": [
+            [
+              4,
+              5
+            ]
+          ],
+          "preview": "\t\tt.Errorf(\"Access token = %q; want %q\", tok.AccessToken, \"90d64460d14870c08c81352a05dedd3465940a7c\")"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 71,
+          "offsetAndLengths": [
+            [
+              4,
+              5
+            ]
+          ],
+          "preview": "\t\tt.Errorf(\"token type = %q; want %q\", tok.TokenType, \"bearer\")"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 81,
+          "offsetAndLengths": [
+            [
+              5,
+              5
+            ]
+          ],
+          "preview": "\t\t\tt.Errorf(\"Unexpected token refresh request URL, %v is found.\", r.URL)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 85,
+          "offsetAndLengths": [
+            [
+              5,
+              5
+            ]
+          ],
+          "preview": "\t\t\tt.Errorf(\"Unexpected Content-Type header, %v is found.\", headerContentType)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 89,
+          "offsetAndLengths": [
+            [
+              5,
+              5
+            ]
+          ],
+          "preview": "\t\t\tt.Errorf(\"Unexpected refresh token payload, %v is found.\", string(body))"
+        }
+      ],
+      "repository": {
+        "name": "github.com/golang/oauth2",
+        "url": "/github.com/golang/oauth2"
+      }
+    },
+    {
+      "__typename": "FileMatch",
+      "file": {
+        "commit": {
+          "oid": "3d292e4d0cdc3a0113e6d207bb137145ef1de42f"
+        },
+        "name": "appengine.go",
+        "path": "google/appengine.go",
+        "url": "/github.com/golang/oauth2/-/blob/google/appengine.go"
+      },
+      "lineMatches": [
+        {
+          "limitHit": false,
+          "lineNumber": 20,
+          "offsetAndLengths": [
+            [
+              102,
+              5
+            ]
+          ],
+          "preview": "var appengineTokenFunc func(c context.Context, scopes ...string) (token string, expiry time.Time, err error)"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 61,
+          "offsetAndLengths": [
+            [
+              56,
+              5
+            ]
+          ],
+          "preview": "func (ts *appEngineTokenSource) Token() (*oauth2.Token, error) {"
+        }
+      ],
+      "repository": {
+        "name": "github.com/golang/oauth2",
+        "url": "/github.com/golang/oauth2"
+      }
+    },
+    {
+      "__typename": "FileMatch",
+      "file": {
+        "commit": {
+          "oid": "3d292e4d0cdc3a0113e6d207bb137145ef1de42f"
+        },
+        "name": "go19.go",
+        "path": "google/go19.go",
+        "url": "/github.com/golang/oauth2/-/blob/google/go19.go"
+      },
+      "lineMatches": [
+        {
+          "limitHit": false,
+          "lineNumber": 46,
+          "offsetAndLengths": [
+            [
+              82,
+              5
+            ]
+          ],
+          "preview": "func FindDefaultCredentials(ctx context.Context, scopes ...string) (*Credentials, error) {"
+        },
+        {
+          "limitHit": false,
+          "lineNumber": 54,
+          "offsetAndLengths": [
+            [
+              96,
+              5
+            ]
+          ],
+          "preview": "func CredentialsFromJSON(ctx context.Context, jsonData []byte, scopes ...string) (*Credentials, error) {"
+        }
+      ],
+      "repository": {
+        "name": "github.com/golang/oauth2",
+        "url": "/github.com/golang/oauth2"
+      }
+    }
+  ],
+  "LimitHit": true,
+  "Cloning": [],
+  "Missing": [],
+  "Timedout": [],
+  "ResultCount": 22,
+  "ElapsedMilliseconds": 19
+}
