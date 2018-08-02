@@ -78,7 +78,7 @@
     "@types/react-router-dom": "4.3.0",
     "@types/reactstrap": "6.0.2",
     "@types/uuid": "3.4.3",
-    "@types/webpack": "4.4.5",
+    "@types/webpack": "4.4.9",
     "@types/webpack-serve": "1.0.4",
     "autoprefixer": "^9.0.0",
     "babel-core": "^6.26.3",
