@@ -1,18 +1,18 @@
 # Sourcegraph CLI [![Build Status](https://travis-ci.org/sourcegraph/src-cli.svg)](https://travis-ci.org/sourcegraph/src-cli) [![Build status](https://ci.appveyor.com/api/projects/status/fwa1bkd198hyim8a?svg=true)](https://ci.appveyor.com/project/sourcegraph/src-cli) [![Go Report Card](https://goreportcard.com/badge/sourcegraph/src-cli)](https://goreportcard.com/report/sourcegraph/src-cli)
 
-The Sourcegraph CLI provides access to [Sourcegraph](https://sourcegraph.com) via a command line interface.
+The Sourcegraph `src` CLI provides access to [Sourcegraph](https://sourcegraph.com) via a command line interface.
 
-## Status of the project
+![image](https://user-images.githubusercontent.com/3173176/43567326-3db5f31c-95e6-11e8-9e74-4c04079c01b0.png)
 
-Currently, the `src` CLI only provides access to Sourcegraph's GraphQL API. It lets you:
+It currently provides the ability to:
 
-- Execute GraphQL queries against a Sourcegraph instance, and get JSON results back.
-- Provide your API access token via an environment variable or file on disk.
+- **Execute search queries** from the command line and get nice colorized output back (or JSON, optionally).
+- **Execute GraphQL queries** against a Sourcegraph instance, and get JSON results back (`src api`).
+  - You can provide your API access token via an environment variable or file on disk.
+  - You can easily convert a `src api` command into a curl command with `src api -get-curl`.
+- **Manage repositories, users, and organizations** using the `src repos`, `src users`, and `src orgs` commands.
 
-**In the future** it may provide much more:
-
-- Executing search queries from the command line easily and getting formatted results back,
-- A command-line management interface for Sourcegraph instances: adding users, deleting users, etc.
+If there is something you'd like to see Sourcegraph be able to do from the CLI, let us know! :)
 
 ## Installation
 
@@ -61,8 +61,6 @@ go get -u github.com/sourcegraph/src-cli/cmd/src
 
 ## Releasing
 
-1. Find the latest version (either via the releases tab on GitHub or via git tags) to determine which version you are releasing.
-2. `VERSION=9.9.9 ./release.sh` (replace `9.9.9` with the version you are releasing)
-3. Travis will automatically perform the release. Once it has finished, **confirm that the curl commands fetch the latest version above**.
-
-
+1.  Find the latest version (either via the releases tab on GitHub or via git tags) to determine which version you are releasing.
+2.  `VERSION=9.9.9 ./release.sh` (replace `9.9.9` with the version you are releasing)
+3.  Travis will automatically perform the release. Once it has finished, **confirm that the curl commands fetch the latest version above**.
