@@ -48,47 +48,56 @@ export async function webpack(): Promise<void> {
 }
 
 export async function webpackServe(): Promise<void> {
-    await serve({
-        config: {
-            ...webpackConfig,
-            serve: {
-                clipboard: false,
-                content: '../ui/assets',
-                port: 3080,
-                hot: false,
-                dev: {
-                    publicPath: '/.assets/',
-                    stats: WEBPACK_STATS_OPTIONS,
-                },
-                add: (app, middleware, options) => {
-                    // Since we're manipulating the order of middleware added, we need to handle
-                    // adding these two internal middleware functions.
-                    middleware.webpack()
-                    middleware.content()
+    await serve(
+        {},
+        {
+            config: {
+                ...webpackConfig,
+                serve: {
+                    clipboard: false,
+                    content: '../ui/assets',
+                    port: 3080,
+                    hotClient: false,
+                    devMiddleware: {
+                        publicPath: '/.assets/',
+                        stats: WEBPACK_STATS_OPTIONS,
+                    },
+                    add: (app, middleware) => {
+                        // Since we're manipulating the order of middleware added, we need to handle adding these
+                        // two internal middleware functions.
+                        //
+                        // The `as any` cast is necessary because the `middleware.webpack` typings are incorrect
+                        // (the related issue https://github.com/webpack-contrib/webpack-serve/issues/238 perhaps
+                        // explains why: the webpack-serve docs incorrectly state that resolving
+                        // `middleware.webpack()` is not necessary).
+                        ;(middleware.webpack() as any).then(() => {
+                            middleware.content()
 
-                    // Proxy *must* be the last middleware added.
-                    app.use(
-                        convert(
-                            // Proxy all requests (that are not for webpack-built assets) to the Sourcegraph
-                            // frontend server, and we make the Sourcegraph appURL equal to the URL of
-                            // webpack-serve. This is how webpack-serve needs to work (because it does a bit
-                            // more magic in injecting scripts that use WebSockets into proxied requests).
-                            httpProxyMiddleware({
-                                target: 'http://localhost:3081',
-                                ws: true,
+                            // Proxy *must* be the last middleware added.
+                            app.use(
+                                convert(
+                                    // Proxy all requests (that are not for webpack-built assets) to the Sourcegraph
+                                    // frontend server, and we make the Sourcegraph appURL equal to the URL of
+                                    // webpack-serve. This is how webpack-serve needs to work (because it does a bit
+                                    // more magic in injecting scripts that use WebSockets into proxied requests).
+                                    httpProxyMiddleware({
+                                        target: 'http://localhost:3081',
+                                        ws: true,
 
-                                // Avoid crashing on "read ECONNRESET".
-                                onError: err => console.error(err),
-                                onProxyReqWs: (_proxyReq, _req, socket) =>
-                                    socket.on('error', err => console.error('WebSocket proxy error:', err)),
-                            })
-                        )
-                    )
+                                        // Avoid crashing on "read ECONNRESET".
+                                        onError: err => console.error(err),
+                                        onProxyReqWs: (_proxyReq, _req, socket) =>
+                                            socket.on('error', err => console.error('WebSocket proxy error:', err)),
+                                    })
+                                )
+                            )
+                        })
+                    },
+                    compiler: createWebpackCompiler(webpackConfig),
                 },
-                compiler: createWebpackCompiler(webpackConfig),
             },
-        },
-    })
+        }
+    )
 }
 
 const GRAPHQL_SCHEMA_PATH = __dirname + '/../cmd/frontend/internal/graphqlbackend/schema.graphql'

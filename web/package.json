@@ -81,7 +81,7 @@
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "3.4.3",
     "@types/webpack": "^4.4.9",
-    "@types/webpack-serve": "1.0.4",
+    "@types/webpack-serve": "^2.0.0",
     "autoprefixer": "^9.0.0",
     "babel-core": "^6.26.3",
     "babel-loader": "^7.1.5",
@@ -132,7 +132,7 @@
     "typescript": "~3.0.0",
     "uglifyjs-webpack-plugin": "^1.2.4",
     "webpack": "^4.15.1",
-    "webpack-serve": "^1.0.4"
+    "webpack-serve": "^2.0.2"
   },
   "dependencies": {
     "@sourcegraph/codeintellify": "^3.6.3",
