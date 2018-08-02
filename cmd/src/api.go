@@ -97,7 +97,7 @@ Examples:
 			result: &result,
 			done: func() error {
 				// Print the formatted JSON.
-				f, err := json.MarshalIndent(result, "", "  ")
+				f, err := marshalIndent(result)
 				if err != nil {
 					return err
 				}
@@ -288,7 +288,7 @@ type graphqlError struct {
 }
 
 func (g *graphqlError) Error() string {
-	j, _ := json.MarshalIndent(g.Errors, "", "  ")
+	j, _ := marshalIndent(g.Errors)
 	return string(j)
 }
 

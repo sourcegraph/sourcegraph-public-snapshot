@@ -25,3 +25,8 @@ func execTemplate(tmpl *template.Template, data interface{}) error {
 	fmt.Println()
 	return nil
 }
+
+// json.MarshalIndent, but with defaults.
+func marshalIndent(v interface{}) ([]byte, error) {
+	return json.MarshalIndent(v, "", "  ")
+}
