@@ -1,0 +1,118 @@
+{
+  "name": "@sourcegraph/extensions-client-common",
+  "version": "0.0.0-development",
+  "description": "Common TypeScript/React client application code for CXP extension configuration and management, used in Sourcegraph and \"Sourcegraph for X\" products",
+  "author": "Sourcegraph",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sourcegraph/extensions-client-common.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sourcegraph/extensions-client-common/issues"
+  },
+  "main": "lib/index.js",
+  "module": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "commitmsg": "commitlint -e $GIT_PARAMS",
+    "semantic-release": "semantic-release",
+    "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
+    "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
+    "schema:graphql": "cp ../sourcegraph/web/src/backend/graphqlschema.ts src/schema/graphqlschema.ts",
+    "schema:json": "cpy '../sourcegraph/web/src/schema/extension.schema.{d.ts,json}' src/schema/",
+    "clean": "del-cli 'lib/**/*'",
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "npm run clean && npm run build:typescript && npm run build:assets",
+    "build:typescript": "tsc -p tsconfig.dist.json",
+    "build:assets": "cpy --parents --cwd=src '**/*.{css,d.ts,json}' '../lib/'",
+    "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
+    "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000",
+    "watch:typecheck": "tsc -p tsconfig.json -w",
+    "watch:build:typescript": "tsc -p tsconfig.dist.json -w",
+    "watch:build:assets": "nodemon --watch src/ --ext css --exec 'npm run build:assets || exit 1'",
+    "watch:build": "npm run clean && concurrently --kill-others 'npm:watch:build:*'",
+    "watch:test": "npm run test -- -w"
+  },
+  "nyc": {
+    "extension": [
+      ".ts"
+    ],
+    "exclude": [
+      "examples/",
+      "**/*.d.ts",
+      "**/*.test.ts",
+      "**/*.js"
+    ],
+    "cache": true,
+    "reporter": [
+      "text",
+      "lcovonly"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "sideEffects": false,
+  "dependencies": {
+    "lodash-es": "^4.17.10",
+    "string-score": "^1.0.1",
+    "ts-key-enum": "^2.0.0"
+  },
+  "peerDependencies": {
+    "cxp": "^6.4.0",
+    "react": "^16.0.0",
+    "react-dom": "^16.0.0",
+    "react-router": "^4.2.0",
+    "react-router-dom": "^4.2.0",
+    "rxjs": "^6.2.2",
+    "bootstrap": "^4.0.0",
+    "reactstrap": "^6.2.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^7.0.0",
+    "@commitlint/config-conventional": "^7.0.1",
+    "@sourcegraph/prettierrc": "^2.2.0",
+    "@sourcegraph/tsconfig": "^3.0.0",
+    "@sourcegraph/tslint-config": "^12.0.0",
+    "@sqs/jsonc-parser": "^1.0.3",
+    "@types/graphql": "^0.13.3",
+    "@types/lodash-es": "^4.17.1",
+    "@types/mocha": "^5.2.3",
+    "@types/node": "^10.5.0",
+    "@types/react": "^16.4.8",
+    "@types/react-dom": "^16.0.7",
+    "@types/react-router": "^4.0.30",
+    "@types/react-router-dom": "^4.3.0",
+    "@types/reactstrap": "6.0.0",
+    "bootstrap": "^4.0.0",
+    "concurrently": "^3.6.1",
+    "cpy-cli": "^2.0.0",
+    "cxp": "^6.4.0",
+    "del-cli": "^1.1.0",
+    "esm": "^3.0.74",
+    "gql2ts": "^1.8.2",
+    "husky": "^0.14.3",
+    "mocha": "^5.2.0",
+    "nodemon": "^1.18.3",
+    "nyc": "^12.0.2",
+    "prettier": "^1.14.2",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2",
+    "react-router": "^4.3.1",
+    "react-router-dom": "^4.3.1",
+    "reactstrap": "^6.2.0",
+    "rxjs": "^6.2.2",
+    "semantic-release": "^15.9.8",
+    "source-map-support": "^0.5.6",
+    "ts-node": "^7.0.0",
+    "tslint": "^5.11.0",
+    "tslint-language-service": "^0.9.9",
+    "typescript": "^3.0.1"
+  },
+  "optionalDependencies": {}
+}
