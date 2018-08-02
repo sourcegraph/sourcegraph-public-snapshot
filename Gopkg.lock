@@ -3,6 +3,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/dustin/go-humanize"
+  packages = ["."]
+  revision = "9f541cc9db5d55bce703bd99987c9d5cb8eea45e"
+
+[[projects]]
+  branch = "master"
   name = "github.com/kballard/go-shellquote"
   packages = ["."]
   revision = "cd60e84ee657ff3dc51de0b4f55dd299a3e136f2"
@@ -22,6 +28,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "875b38813ee41d3f0c2df54e1981e49bc6beee2f3fd3efe0d2236a1f257ac1ae"
+  inputs-digest = "e45b1315f6a67c3596673b69521c6e46f6c136357fe9fd93834d9faf22350824"
   solver-name = "gps-cdcl"
   solver-version = 1
