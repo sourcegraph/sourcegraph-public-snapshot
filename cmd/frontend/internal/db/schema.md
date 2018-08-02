@@ -120,7 +120,6 @@ Referenced by:
  repo_id  | integer | not null
  hints    | jsonb   | 
 Indexes:
-    "global_dep_idx_depth" btree ((dep_data ->> 'depth'::text))
     "global_dep_idx_package" btree ((dep_data ->> ('package'::text COLLATE "C")))
     "global_dep_idxgin" gin (dep_data jsonb_path_ops)
     "global_dep_language" btree (language)
