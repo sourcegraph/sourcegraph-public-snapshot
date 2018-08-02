@@ -29,8 +29,7 @@
       "assignees": ["sqs"]
     },
     {
-      "packagePatterns": ["*"],
-      "includePaths": ["client/vscode"],
+      "paths": ["client/vscode"],
       "assignees": ["chrismwendt"]
     }
   ]
