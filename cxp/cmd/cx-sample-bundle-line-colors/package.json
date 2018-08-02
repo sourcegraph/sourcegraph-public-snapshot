@@ -14,7 +14,7 @@
   ],
   "devDependencies": {
     "parcel-bundler": "^1.9.6",
-    "typescript": "^2.9.2"
+    "typescript": "^3.0.0"
   },
   "dependencies": {
     "cxp": "^1.1.0"

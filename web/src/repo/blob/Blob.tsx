@@ -280,7 +280,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined
-        const decorations: Observable<TextDocumentDecoration[] | undefined> = combineLatest(
+        const decorations: Observable<TextDocumentDecoration[] | null> = combineLatest(
             modelChanges,
 
             // Only trigger on extensions being enabled/disabled, not just when settings change (because extensions
@@ -293,13 +293,13 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 )
             )
         ).pipe(
-            switchMap(([model, extensions]) => {
+            switchMap(([model]) => {
                 const modelChanged = !isEqual(model, lastModel)
                 lastModel = model // record so we can compute modelChanged
 
                 // Only clear decorations if the model changed. If only the extensions changed, keep
                 // the old decorations until the new ones are available, to avoid UI jitter.
-                return merge(modelChanged ? [undefined] : [], getDecorations(model, this.props))
+                return merge(modelChanged ? [null] : [], getDecorations(model, this.props))
             }),
             share()
         )
