@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs'
 import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
+import { HistoryPopoverContainer } from '../components/HistoryPopoverContainer'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { CXPCommandListPopoverButton } from '../cxp/components/CXPCommandList'
 import { CXPControllerProps } from '../cxp/CXPEnvironment'
@@ -25,6 +26,8 @@ interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPControllerPro
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
 }
+
+const fileHistoryEnabled = localStorage.getItem('enable-file-history') === 'true'
 
 export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
@@ -87,6 +90,11 @@ export class NavLinks extends React.PureComponent<Props> {
                         menu={ContributableMenu.CommandPalette}
                         cxpController={this.props.cxpController}
                     />
+                )}
+                {fileHistoryEnabled && (
+                    <li>
+                        <HistoryPopoverContainer location={this.props.location} history={this.props.history} />
+                    </li>
                 )}
                 {this.props.user ? (
                     <li className="nav-item">

@@ -68,7 +68,9 @@ interface LayoutProps extends RouteComponentProps<any>, ExtensionsProps, Extensi
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     showHelpPopover: boolean
+    showHistoryPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
+    onHistoryPopoverToggle: (visible?: boolean) => void
 }
 
 const Layout: React.SFC<LayoutProps> = props => {
@@ -142,6 +144,9 @@ interface AppState extends ExtensionsProps, CXPEnvironmentProps, CXPControllerPr
 
     /** Whether the help popover is shown. */
     showHelpPopover: boolean
+
+    /** Whether the history popover is shown. */
+    showHistoryPopover: boolean
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -154,6 +159,7 @@ class App extends React.Component<{}, AppState> {
         isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
         navbarSearchQuery: '',
         showHelpPopover: false,
+        showHistoryPopover: false,
         extensions: [],
         cxpEnvironment: CXP_EMPTY_ENVIRONMENT,
         cxpController: createCXPController(),
@@ -232,7 +238,9 @@ class App extends React.Component<{}, AppState> {
             navbarSearchQuery={this.state.navbarSearchQuery}
             onNavbarQueryChange={this.onNavbarQueryChange}
             showHelpPopover={this.state.showHelpPopover}
+            showHistoryPopover={this.state.showHistoryPopover}
             onHelpPopoverToggle={this.onHelpPopoverToggle}
+            onHistoryPopoverToggle={this.onHistoryPopoverToggle}
             extensions={this.state.extensions}
             onExtensionsChange={this.onExtensionsChange}
             cxpEnvironment={this.state.cxpEnvironment}
@@ -261,6 +269,13 @@ class App extends React.Component<{}, AppState> {
             // If visible is any non-boolean type (e.g., MouseEvent), treat it as undefined. This lets callers use
             // onHelpPopoverToggle directly in an event handler without wrapping it in an another function.
             showHelpPopover: visible !== true && visible !== false ? !prevState.showHelpPopover : visible,
+        }))
+    }
+
+    private onHistoryPopoverToggle = (visible?: boolean): void => {
+        eventLogger.log('HistoryPopoverToggled')
+        this.setState(prevState => ({
+            showHistoryPopover: visible !== true && visible !== false ? !prevState.showHistoryPopover : visible,
         }))
     }
 
