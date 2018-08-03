@@ -63,6 +63,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
+	clientVersionString = strings.TrimPrefix(clientVersionString, "v")
 	clientVersion, err := semver.NewVersion(clientVersionString)
 	if err != nil {
 		http.Error(w, clientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
