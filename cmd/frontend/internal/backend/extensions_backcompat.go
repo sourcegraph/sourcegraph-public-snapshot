@@ -62,18 +62,20 @@ func init() {
 			if info != nil {
 				lang = info.DisplayName
 			}
-			description := `# ` + lang + ` language server` + "\n\n"
+			readme := `# ` + lang + ` language server` + "\n\n"
+			var description string
 			if info != nil {
 				var maybeExperimental string
 				if info.Experimental {
 					maybeExperimental = " **EXPERIMENTAL**"
 				}
 				repoName := strings.TrimPrefix(info.HomepageURL, "https://github.com/")
-				description += `This extension provides code intelligence for ` + info.DisplayName + ` using the` + maybeExperimental + ` [` + repoName + ` language server](` + info.HomepageURL + `).` + "\n\n"
+				description = info.DisplayName + " code intelligence using the " + repoName + " language server"
+				readme += `This extension provides code intelligence for ` + info.DisplayName + ` using the` + maybeExperimental + ` [` + repoName + ` language server](` + info.HomepageURL + `).` + "\n\n"
 			}
-			description += `This extension was automatically created from the Sourcegraph site configuration's ` + "`" + `langservers.` + ls.Language + "`" + ` setting. Site admins may delete this extension by removing that setting from site configuration.` + "\n\n"
+			readme += `This extension was automatically created from the Sourcegraph site configuration's ` + "`" + `langservers.` + ls.Language + "`" + ` setting. Site admins may delete this extension by removing that setting from site configuration.` + "\n\n"
 			if info != nil {
-				description += `More information:
+				readme += `More information:
 
 * [Documentation and configuration options](` + info.DocsURL + `)
 * [Source code and repository](` + info.HomepageURL + `)
@@ -86,8 +88,9 @@ func init() {
 			}
 
 			x := schema.SourcegraphExtension{
-				Title:       lang + " code intelligence",
+				Title:       lang,
 				Description: description,
+				Readme:      readme,
 				Platform: schema.ExtensionPlatform{
 					Tcp: &schema.TCPTarget{
 						Type:    "tcp",

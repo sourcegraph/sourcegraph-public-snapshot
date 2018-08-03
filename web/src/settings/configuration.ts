@@ -36,3 +36,7 @@ export function parseJSON(text: string): any {
     }
     return o
 }
+
+export function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
+    return keyPath.map(v => (typeof v === 'string' ? { property: v } : { index: v }))
+}

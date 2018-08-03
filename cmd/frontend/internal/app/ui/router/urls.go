@@ -1,11 +1,11 @@
 package router
 
-func RegistryExtension(extensionID string) string {
-	return "/registry/extensions/" + extensionID
+func Extension(extensionID string) string {
+	return "/extensions/" + extensionID
 }
 
 func RegistryPublisherExtensions(isUser, isOrg bool, name string) string {
-	const prefix = "/registry/publishers"
+	const prefix = "/extensions/registry/publishers"
 	switch {
 	case isUser:
 		return prefix + "/users/" + name

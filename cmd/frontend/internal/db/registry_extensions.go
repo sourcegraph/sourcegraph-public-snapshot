@@ -102,7 +102,7 @@ func (s *registryExtensions) GetByID(ctx context.Context, id int32) (*RegistryEx
 		return Mocks.RegistryExtensions.GetByID(id)
 	}
 
-	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("x.id=%d", id)}, nil)
+	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("x.id=%d", id)}, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (s *registryExtensions) GetByUUID(ctx context.Context, uuid string) (*Regis
 		return Mocks.RegistryExtensions.GetByUUID(uuid)
 	}
 
-	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("x.uuid=%d", uuid)}, nil)
+	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("x.uuid=%d", uuid)}, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (s *registryExtensions) GetByExtensionID(ctx context.Context, extensionID s
 	results, err := s.list(ctx, []*sqlf.Query{
 		sqlf.Sprintf("x.name=%s", extensionName),
 		sqlf.Sprintf("(users.username=%s OR orgs.name=%s)", publisherName, publisherName),
-	}, nil)
+	}, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -174,8 +174,9 @@ func (s *registryExtensions) GetByExtensionID(ctx context.Context, extensionID s
 
 // RegistryExtensionsListOptions contains options for listing registry extensions.
 type RegistryExtensionsListOptions struct {
-	Publisher RegistryPublisher
-	Query     string // matches the extension ID
+	Publisher              RegistryPublisher
+	Query                  string // matches the extension ID
+	PrioritizeExtensionIDs []string
 	*LimitOffset
 }
 
@@ -196,12 +197,21 @@ func (o RegistryExtensionsListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
+func (o RegistryExtensionsListOptions) sqlOrder() []*sqlf.Query {
+	ids := make([]*sqlf.Query, len(o.PrioritizeExtensionIDs)+1)
+	for i, id := range o.PrioritizeExtensionIDs {
+		ids[i] = sqlf.Sprintf("%v", string(id))
+	}
+	ids[len(o.PrioritizeExtensionIDs)] = sqlf.Sprintf("NULL")
+	return []*sqlf.Query{sqlf.Sprintf(extensionIDExpr+` IN (%v) ASC`, sqlf.Join(ids, ","))}
+}
+
 // List lists all registry extensions that satisfy the options.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
 // options.
 func (s *registryExtensions) List(ctx context.Context, opt RegistryExtensionsListOptions) ([]*RegistryExtension, error) {
-	return s.list(ctx, opt.sqlConditions(), opt.LimitOffset)
+	return s.list(ctx, opt.sqlConditions(), opt.sqlOrder(), opt.LimitOffset)
 }
 
 func (registryExtensions) listCountSQL(conds []*sqlf.Query) *sqlf.Query {
@@ -213,14 +223,16 @@ WHERE (%s) AND x.deleted_at IS NULL`,
 		sqlf.Join(conds, ") AND ("))
 }
 
-func (s *registryExtensions) list(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*RegistryExtension, error) {
+func (s *registryExtensions) list(ctx context.Context, conds, order []*sqlf.Query, limitOffset *LimitOffset) ([]*RegistryExtension, error) {
+	order = append(order, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
 SELECT x.id, x.uuid, x.publisher_user_id, x.publisher_org_id, x.name, x.manifest, x.created_at, x.updated_at,
   `+extensionIDExpr+` AS non_canonical_extension_id, `+extensionPublisherNameExpr+` AS non_canonical_publisher_name
 %s
-ORDER BY x.id ASC
+ORDER BY %s, x.id ASC
 %s`,
 		s.listCountSQL(conds),
+		sqlf.Join(order, ","),
 		limitOffset.SQL(),
 	)
 

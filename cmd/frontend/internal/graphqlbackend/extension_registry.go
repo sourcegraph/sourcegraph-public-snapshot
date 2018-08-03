@@ -36,6 +36,6 @@ func getExtensionByExtensionID(ctx context.Context, extensionID string) (*regist
 	return &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{v: remote}}, nil
 }
 
-func (*extensionRegistryResolver) LocalExtensionIDPrefix() (*string, error) {
+func (*extensionRegistryResolver) LocalExtensionIDPrefix() *string {
 	return backend.GetLocalRegistryExtensionIDPrefix()
 }

@@ -6,10 +6,10 @@ import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
 import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { ExplorePage } from './explore/ExplorePage'
+import { ExtensionsArea } from './extensions/ExtensionsArea'
 import { SurveyPage } from './marketing/SurveyPage'
 import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
-import { RegistryArea } from './registry/RegistryArea'
 import { RepoContainer } from './repo/RepoContainer'
 import { parseSearchURLQuery } from './search'
 import { ScopePage } from './search/input/ScopePage'
@@ -132,8 +132,8 @@ export const routes: LayoutRouteProps[] = [
     ...(window.context.platformEnabled
         ? [
               {
-                  path: '/registry',
-                  component: RegistryArea,
+                  path: '/extensions',
+                  component: ExtensionsArea,
               },
           ]
         : []),

@@ -23,7 +23,6 @@ import { Location, MarkupContent, Position } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import {
-    ExtensionsProps,
     getDefinition,
     getHover,
     getImplementations,
@@ -34,6 +33,7 @@ import {
 import * as GQL from '../../../backend/graphqlschema'
 import { fetchServerCapabilities, isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { CXPControllerProps } from '../../../cxp/CXPEnvironment'
+import { ExtensionsProps } from '../../../extensions/ExtensionsClientCommonContext'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -146,7 +146,6 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                             commitID: subject.commitID,
                             filePath: subject.filePath,
                             mode: subject.mode,
-                            settings: null,
                         }).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ serverCapabilitiesOrError: c })),
@@ -177,7 +176,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 ...(subject as Pick<typeof subject, Exclude<keyof typeof subject, 'extensions'>>),
                                 position,
                             },
-                            { extensions: subject.extensions, cxpController: this.props.cxpController }
+                            { cxpController: this.props.cxpController }
                         ).pipe(
                             catchError(error => [asError(error)]),
                             map(c => ({ hoverOrError: c } as PartialStateUpdate))
@@ -388,7 +387,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         )
 
     private queryReferencesExternal = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        fetchExternalReferences(this.props as LSPTextDocumentPositionParams, this.props.extensions).pipe(
+        fetchExternalReferences(this.props as LSPTextDocumentPositionParams).pipe(
             map(c => ({ loading: true, locations: c })),
             concat([{ loading: false, locations: [] }]),
             bufferTime(500), // reduce UI jitter

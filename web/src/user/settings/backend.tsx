@@ -30,10 +30,16 @@ const configurationCascadeFragment = gql`
             ... on Org {
                 id
                 name
+                displayName
             }
             ... on User {
                 id
                 username
+                displayName
+            }
+            ... on Site {
+                id
+                siteID
             }
             latestSettings {
                 id
@@ -41,6 +47,8 @@ const configurationCascadeFragment = gql`
                     contents
                 }
             }
+            settingsURL
+            viewerCanAdminister
         }
         merged {
             contents

@@ -46,27 +46,6 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 	}
 }
 
-func configurationSubjectByDBID(ctx context.Context, subject api.ConfigurationSubject) (*configurationSubject, error) {
-	switch {
-	case subject.Site:
-		return &configurationSubject{site: singletonSiteResolver}, nil
-	case subject.User != nil:
-		user, err := userByIDInt32(ctx, *subject.User)
-		if err != nil {
-			return nil, err
-		}
-		return &configurationSubject{user: user}, nil
-	case subject.Org != nil:
-		org, err := orgByIDInt32(ctx, *subject.Org)
-		if err != nil {
-			return nil, err
-		}
-		return &configurationSubject{org: org}, nil
-	default:
-		return nil, errUnknownConfigurationSubject
-	}
-}
-
 func configurationSubjectID(subject api.ConfigurationSubject) (graphql.ID, error) {
 	switch {
 	case subject.Site:

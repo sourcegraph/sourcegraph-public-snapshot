@@ -23,6 +23,9 @@ $font-size-base: 0.875rem;
 $line-height-base: (20/14);
 
 $grid-gutter-width: 1.5rem;
+$container-max-widths: (
+    xl: 74rem,
+);
 
 // Tell Bootstrap to use colors from OpenColor
 $blue: $oc-blue-7;
@@ -260,11 +263,22 @@ hr {
     opacity: 0.5;
 }
 
+.spacer {
+    flex: 1;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
 // Pages
 @import './api/APIConsole';
 @import './cxp/components/CXPCommandList';
 @import './cxp/components/CXPStatus';
 @import './explore/ExplorePage';
+@import './extensions/ExtensionsArea';
+@import './extensions/extension/ExtensionArea';
+@import './extensions/registry/RegistryArea';
 @import './global/GlobalAlerts';
 @import './global/GlobalDebug';
 @import './search/input/ScopePage';
@@ -281,9 +295,6 @@ hr {
 @import './auth/ResetPasswordPage';
 @import './auth/SignInPage';
 @import './auth/SignUpPage';
-@import './registry/RegistryArea';
-@import './registry/RegistryExtensionArea';
-@import './registry/extensions/actions/ExtensionSelector';
 @import './repo/GitRefTag';
 @import './repo/Repository';
 @import './repo/RepoContainer';
@@ -317,3 +328,5 @@ hr {
 @import './extension/Link';
 @import './marketing/SurveyPage';
 @import './components/SingleValueCard';
+
+@import './extensions/extensions-client-common';

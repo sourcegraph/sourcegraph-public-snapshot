@@ -327,9 +327,9 @@ func registerContributions(ctx context.Context, conn *jsonrpc2.Conn, settings ex
 				RegisterOptions: &cxp.Contributions{
 					Commands: []*cxp.CommandContribution{
 						{
-							Command: toggleCommandID,
-							Title:   "Blame",
-							Detail:  showHide + " blame annotations",
+							Command:     toggleCommandID,
+							Title:       "Blame",
+							Description: showHide + " blame annotations",
 						},
 					},
 					Menus: &cxp.MenuContributions{

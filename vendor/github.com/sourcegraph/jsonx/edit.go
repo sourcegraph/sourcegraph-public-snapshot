@@ -22,7 +22,9 @@ type Edit struct {
 
 // ComputePropertyEdit returns the edits necessary to set the value at the specified
 // key path to the value. If value is nil, the property's value is set to JSON null;
-// use ComputePropertyRemoval to obtain the edits necessary to remove a property.
+// use ComputePropertyRemoval to obtain the edits necessary to remove a property. If
+// value is a json.RawMessage, it is treated as an opaque value to insert (which
+// means it can contain comments, trailing commas, etc.).
 //
 // If the insertionIndex is non-nil, it is called to determine the index at which to
 // insert the value (given the existing properties, in order).
@@ -43,7 +45,19 @@ func ComputePropertyRemoval(text string, path Path, options FormatOptions) ([]Ed
 	return computePropertyEdit(text, path, nil, nil, options)
 }
 
-func computePropertyEdit(text string, path Path, value interface{}, insertionIndex func(properties []string) int, options FormatOptions) ([]Edit, []ParseErrorCode, error) {
+func computePropertyEdit(text string, path Path, valueObj interface{}, insertionIndex func(properties []string) int, options FormatOptions) ([]Edit, []ParseErrorCode, error) {
+	// Tolerate errors in value if it's json.RawMessage.
+	var value string
+	if v, ok := valueObj.(json.RawMessage); ok {
+		value = string(v)
+	} else {
+		data, err := json.Marshal(valueObj)
+		if err != nil {
+			return nil, nil, err
+		}
+		value = string(data)
+	}
+
 	root, parseErrorCodes := ParseTree(text, ParseOptions{Comments: true, TrailingCommas: true})
 
 	var parent *Node
@@ -54,11 +68,15 @@ func computePropertyEdit(text string, path Path, value interface{}, insertionInd
 		path = path[:len(path)-1]
 
 		parent = FindNodeAtLocation(root, path)
-		if parent == nil && value != nil {
+		if parent == nil && valueObj != nil {
 			if lastSegment.IsProperty {
-				value = map[string]interface{}{lastSegment.Property: value}
+				key, err := json.Marshal(lastSegment.Property)
+				if err != nil {
+					return nil, nil, err
+				}
+				value = "{" + string(key) + ":" + value + "}"
 			} else {
-				value = []interface{}{value}
+				value = "[" + value + "]"
 			}
 		} else {
 			break
@@ -67,15 +85,10 @@ func computePropertyEdit(text string, path Path, value interface{}, insertionInd
 
 	if parent == nil {
 		// empty document
-		if value == nil { // delete
+		if valueObj == nil { // delete
 			return nil, nil, errors.New("can't delete in empty document")
 		}
-		edit := Edit{Content: text}
-		data, err := json.Marshal(value)
-		if err != nil {
-			return nil, nil, err
-		}
-		edit.Content = string(data)
+		edit := Edit{Content: value}
 		if root != nil {
 			edit.Offset = root.Offset
 			edit.Length = root.Length
@@ -94,7 +107,7 @@ func computePropertyEdit(text string, path Path, value interface{}, insertionInd
 
 		existing := FindNodeAtLocation(parent, Path{lastSegment})
 		if existing != nil {
-			if value == nil { // delete
+			if valueObj == nil { // delete
 				propertyIndex := indexOf(parent.Children, existing.Parent)
 				var removeBegin int
 				removeEnd := existing.Parent.Offset + existing.Parent.Length
@@ -108,6 +121,9 @@ func computePropertyEdit(text string, path Path, value interface{}, insertionInd
 						// remove the comma of the next node
 						next := parent.Children[1]
 						removeEnd = next.Offset
+					} else {
+						// remove trailing comma after this node, if any
+						removeEnd = parent.Offset + parent.Length - 1
 					}
 				}
 				edits, err := FormatEdit(text, Edit{Offset: removeBegin, Length: removeEnd - removeBegin, Content: ""}, options)
@@ -115,15 +131,11 @@ func computePropertyEdit(text string, path Path, value interface{}, insertionInd
 			}
 
 			// set value of existing property
-			data, err := json.Marshal(value)
-			if err != nil {
-				return nil, nil, err
-			}
-			edits, err := FormatEdit(text, Edit{Offset: existing.Offset, Length: existing.Length, Content: string(data)}, options)
+			edits, err := FormatEdit(text, Edit{Offset: existing.Offset, Length: existing.Length, Content: value}, options)
 			return edits, parseErrorCodes, err
 		}
 
-		if value == nil { // delete
+		if valueObj == nil { // delete
 			return nil, parseErrorCodes, nil // property does not exist, nothing to do
 		}
 
@@ -131,11 +143,7 @@ func computePropertyEdit(text string, path Path, value interface{}, insertionInd
 		if err != nil {
 			return nil, nil, err
 		}
-		propValueData, err := json.Marshal(value)
-		if err != nil {
-			return nil, nil, err
-		}
-		newProperty := string(propNameData) + ": " + string(propValueData)
+		newProperty := string(propNameData) + ": " + value
 
 		var index int
 		if insertionIndex != nil {
@@ -160,22 +168,18 @@ func computePropertyEdit(text string, path Path, value interface{}, insertionInd
 		insertIndex := lastSegment
 		if insertIndex.Index == -1 {
 			// Insert
-			newProperty, err := json.Marshal(value)
-			if err != nil {
-				return nil, nil, err
-			}
 			var edit Edit
 			if len(parent.Children) == 0 {
-				edit = Edit{Offset: parent.Offset + 1, Length: 0, Content: string(newProperty)}
+				edit = Edit{Offset: parent.Offset + 1, Length: 0, Content: value}
 			} else {
 				previous := parent.Children[len(parent.Children)-1]
-				edit = Edit{Offset: previous.Offset + previous.Length, Length: 0, Content: "," + string(newProperty)}
+				edit = Edit{Offset: previous.Offset + previous.Length, Length: 0, Content: "," + value}
 			}
 			edits, err := FormatEdit(text, edit, options)
 			return edits, parseErrorCodes, err
 		}
 
-		if value == nil && len(parent.Children) >= 0 {
+		if valueObj == nil && len(parent.Children) >= 0 {
 			// Removal
 			removalIndex := lastSegment.Index
 			toRemove := parent.Children[removalIndex]
@@ -199,11 +203,7 @@ func computePropertyEdit(text string, path Path, value interface{}, insertionInd
 		// Modify
 		editIndex := lastSegment.Index
 		toEdit := parent.Children[editIndex]
-		data, err := json.Marshal(value)
-		if err != nil {
-			return nil, nil, err
-		}
-		edit := Edit{Offset: toEdit.Offset, Length: toEdit.Length, Content: string(data)}
+		edit := Edit{Offset: toEdit.Offset, Length: toEdit.Length, Content: value}
 		edits, err := FormatEdit(text, edit, options)
 		return edits, parseErrorCodes, err
 	}

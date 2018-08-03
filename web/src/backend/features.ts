@@ -5,7 +5,6 @@ import { forkJoin, Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { Definition, Location } from 'vscode-languageserver-types'
 import { CXPControllerProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
-import { ConfiguredExtension, ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import {
@@ -32,26 +31,6 @@ export interface ModeSpec {
     mode: string
 }
 
-/** The extensions in use. */
-export type Extensions = ConfiguredExtension[]
-
-/** Extended by React prop types that carry extensions. */
-export interface ExtensionsProps {
-    /** The enabled extensions. */
-    extensions: Extensions
-}
-
-/**
- * Contains the props needed by this file's getXyz functions to communicate with extensions (using the new CXP
- * implementation) or with language servers (using the old LSP HTTP POST implementation).
- */
-interface ExtensionsAndCXPControllerProps extends ExtensionsProps, CXPControllerProps {}
-
-/** Extended by React prop types for components that need to signal a change to extensions. */
-export interface ExtensionsChangeProps {
-    onExtensionsChange: (enabledExtensions: Extensions) => void
-}
-
 export { HoverMerged } // reexport to avoid needing to change all import sites - TODO(sqs): actually go change all them
 
 /**
@@ -62,7 +41,7 @@ export { HoverMerged } // reexport to avoid needing to change all import sites -
  */
 export function getHover(
     ctx: LSPTextDocumentPositionParams,
-    { extensions, cxpController }: ExtensionsAndCXPControllerProps
+    { cxpController }: CXPControllerProps
 ): Observable<HoverMerged | null> {
     if (USE_PLATFORM) {
         return cxpController.registries.textDocumentHover.getHover({
@@ -73,9 +52,7 @@ export function getHover(
             },
         })
     }
-    return forkJoin(getModes(ctx, extensions).map(({ mode, settings }) => fetchHover({ ...ctx, mode, settings }))).pipe(
-        map(HoverMerged.from)
-    )
+    return forkJoin(getModes(ctx).map(({ mode }) => fetchHover({ ...ctx, mode }))).pipe(map(HoverMerged.from))
 }
 
 /**
@@ -86,7 +63,7 @@ export function getHover(
  */
 export function getDefinition(
     ctx: LSPTextDocumentPositionParams,
-    { extensions, cxpController }: ExtensionsAndCXPControllerProps
+    { cxpController }: CXPControllerProps
 ): Observable<Definition> {
     if (USE_PLATFORM) {
         return cxpController.registries.textDocumentDefinition.getLocation({
@@ -97,9 +74,9 @@ export function getDefinition(
             },
         })
     }
-    return forkJoin(
-        getModes(ctx, extensions).map(({ mode, settings }) => fetchDefinition({ ...ctx, mode, settings }))
-    ).pipe(map(results => flatten(compact(results))))
+    return forkJoin(getModes(ctx).map(({ mode }) => fetchDefinition({ ...ctx, mode }))).pipe(
+        map(results => flatten(compact(results)))
+    )
 }
 
 /**
@@ -113,7 +90,7 @@ export function getDefinition(
  */
 export function getJumpURL(
     ctx: LSPTextDocumentPositionParams,
-    extensions: ExtensionsAndCXPControllerProps
+    extensions: CXPControllerProps
 ): Observable<string | null> {
     return getDefinition(ctx, extensions).pipe(
         map(def => {
@@ -143,13 +120,10 @@ export function getJumpURL(
  * @param ctx the location
  * @return information about the symbol at the location
  */
-export function getXdefinition(
-    ctx: LSPTextDocumentPositionParams,
-    extensions: Extensions
-): Observable<SymbolLocationInformation | undefined> {
-    return forkJoin(
-        getModes(ctx, extensions).map(({ mode, settings }) => fetchXdefinition({ ...ctx, mode, settings }))
-    ).pipe(map(results => results.find(v => !!v)))
+export function getXdefinition(ctx: LSPTextDocumentPositionParams): Observable<SymbolLocationInformation | undefined> {
+    return forkJoin(getModes(ctx).map(({ mode }) => fetchXdefinition({ ...ctx, mode }))).pipe(
+        map(results => results.find(v => !!v))
+    )
 }
 
 /**
@@ -173,7 +147,7 @@ function castArray<T>(value: null | T | T[]): T[] {
  */
 export function getReferences(
     ctx: LSPTextDocumentPositionParams & LSPReferencesParams,
-    { extensions, cxpController }: ExtensionsAndCXPControllerProps
+    { cxpController }: CXPControllerProps
 ): Observable<Location[]> {
     if (USE_PLATFORM) {
         return cxpController.registries.textDocumentReferences
@@ -189,9 +163,9 @@ export function getReferences(
             })
             .pipe(map(castArray))
     }
-    return forkJoin(
-        getModes(ctx, extensions).map(({ mode, settings }) => fetchReferences({ ...ctx, mode, settings }))
-    ).pipe(map(results => flatten(results)))
+    return forkJoin(getModes(ctx).map(({ mode }) => fetchReferences({ ...ctx, mode }))).pipe(
+        map(results => flatten(results))
+    )
 }
 
 /**
@@ -202,7 +176,7 @@ export function getReferences(
  */
 export function getImplementations(
     ctx: LSPTextDocumentPositionParams,
-    { extensions, cxpController }: ExtensionsAndCXPControllerProps
+    { cxpController }: CXPControllerProps
 ): Observable<Location[]> {
     if (USE_PLATFORM) {
         return cxpController.registries.textDocumentImplementation
@@ -215,9 +189,9 @@ export function getImplementations(
             })
             .pipe(map(castArray))
     }
-    return forkJoin(
-        getModes(ctx, extensions).map(({ mode, settings }) => fetchImplementation({ ...ctx, mode, settings }))
-    ).pipe(map(results => flatten(results)))
+    return forkJoin(getModes(ctx).map(({ mode }) => fetchImplementation({ ...ctx, mode }))).pipe(
+        map(results => flatten(results))
+    )
 }
 
 /**
@@ -226,13 +200,10 @@ export function getImplementations(
  * @param ctx the symbol descriptor and repository to search in
  * @return references to the symbol
  */
-export function getXreferences(
-    ctx: XReferenceOptions & AbsoluteRepo & LSPSelector,
-    extensions: Extensions
-): Observable<Location[]> {
-    return forkJoin(
-        getModes(ctx, extensions).map(({ mode, settings }) => fetchXreferences({ ...ctx, mode, settings }))
-    ).pipe(map(results => flatten(results)))
+export function getXreferences(ctx: XReferenceOptions & AbsoluteRepo & LSPSelector): Observable<Location[]> {
+    return forkJoin(getModes(ctx).map(({ mode }) => fetchXreferences({ ...ctx, mode }))).pipe(
+        map(results => flatten(results))
+    )
 }
 
 /**
@@ -243,7 +214,7 @@ export function getXreferences(
  */
 export function getDecorations(
     ctx: AbsoluteRepoFile & LSPSelector,
-    { extensions, cxpController }: ExtensionsAndCXPControllerProps
+    { cxpController }: CXPControllerProps
 ): Observable<TextDocumentDecoration[] | null> {
     if (USE_PLATFORM) {
         return cxpController.registries.textDocumentDecoration.getDecorations({
@@ -251,8 +222,8 @@ export function getDecorations(
         })
     }
     return forkJoin(
-        getModes(ctx, extensions).map(({ mode, settings }) =>
-            fetchDecorations({ ...ctx, mode, settings }).pipe(
+        getModes(ctx).map(({ mode }) =>
+            fetchDecorations({ ...ctx, mode }).pipe(
                 map(results => (results === null ? [] : compact(results))),
                 catchError(error => {
                     if (!isMethodNotFoundError(error)) {
@@ -266,14 +237,6 @@ export function getDecorations(
 }
 
 /** Computes the set of LSP modes to use. */
-function getModes(ctx: ModeSpec, extensions: Extensions): { mode: string; settings: ExtensionSettings | null }[] {
-    // Using the old behavior (use the language server identified by the mode) when there are no extensions set is
-    // the most reliable way of supporting both platform-enabled and non-platform-enabled users. A user would only
-    // have a non-empty extensions list if they were platform-enabled. The one weird thing is that if a
-    // platform-enabled user disables all extensions, then they will get the default behavior (of using the mode's
-    // language server); that is acceptable.
-    if (extensions.length === 0) {
-        return [{ mode: ctx.mode, settings: null }]
-    }
-    return extensions.map(({ extensionID, settings }) => ({ mode: extensionID, settings }))
+function getModes(ctx: ModeSpec): { mode: string }[] {
+    return [{ mode: ctx.mode }]
 }

@@ -158,42 +158,6 @@ func (v *ExtensionPlatform) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"bundle", "docker", "websocket", "tcp", "exec"})
 }
 
-// ExtensionSettings description: Settings for an extension.
-type ExtensionSettings struct {
-	Disabled   bool                   `json:"disabled,omitempty"`
-	Additional map[string]interface{} `json:"-"`
-}
-
-func (v ExtensionSettings) MarshalJSON() ([]byte, error) {
-	m := make(map[string]interface{}, len(v.Additional)+1)
-	for k, v := range v.Additional {
-		m[k] = v
-	}
-	m["disabled"] = v.Disabled
-	return json.Marshal(m)
-}
-func (v *ExtensionSettings) UnmarshalJSON(data []byte) error {
-	var s struct {
-		Disabled bool `json:"disabled,omitempty"`
-	}
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	*v = ExtensionSettings{Disabled: s.Disabled}
-	var m map[string]interface{}
-	if err := json.Unmarshal(data, &m); err != nil {
-		return err
-	}
-	delete(m, "disabled")
-	if len(m) > 0 {
-		(*v).Additional = make(map[string]interface{}, len(m))
-	}
-	for k, vv := range m {
-		(*v).Additional[k] = vv
-	}
-	return nil
-}
-
 type GitHubConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
 	GitURLType                  string   `json:"gitURLType,omitempty"`
@@ -327,12 +291,12 @@ type Sentry struct {
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
-	Extensions             map[string]ExtensionSettings `json:"extensions,omitempty"`
-	Motd                   []string                     `json:"motd,omitempty"`
-	NotificationsSlack     *SlackNotificationsConfig    `json:"notifications.slack,omitempty"`
-	SearchRepositoryGroups map[string][]string          `json:"search.repositoryGroups,omitempty"`
-	SearchSavedQueries     []*SearchSavedQueries        `json:"search.savedQueries,omitempty"`
-	SearchScopes           []*SearchScope               `json:"search.scopes,omitempty"`
+	Extensions             map[string]bool           `json:"extensions,omitempty"`
+	Motd                   []string                  `json:"motd,omitempty"`
+	NotificationsSlack     *SlackNotificationsConfig `json:"notifications.slack,omitempty"`
+	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
+	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
+	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
 }
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
@@ -415,6 +379,7 @@ type SourcegraphExtension struct {
 	Args             *map[string]interface{} `json:"args,omitempty"`
 	Description      string                  `json:"description,omitempty"`
 	Platform         ExtensionPlatform       `json:"platform"`
+	Readme           string                  `json:"readme,omitempty"`
 	Title            string                  `json:"title,omitempty"`
 }
 

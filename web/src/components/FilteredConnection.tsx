@@ -275,7 +275,7 @@ class ConnectionNodes<C extends Connection<N>, N, NP = {}> extends React.PureCom
  * Fields that belong in FilteredConnectionProps and that don't depend on the type parameters. These are the fields
  * that are most likely to be needed by callers, and it's simpler for them if they are in a parameter-less type.
  */
-export interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
+interface FilteredConnectionDisplayProps extends ConnectionDisplayProps {
     history: H.History
     location: H.Location
 

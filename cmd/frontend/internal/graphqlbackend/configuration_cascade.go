@@ -3,11 +3,9 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
@@ -127,57 +125,6 @@ func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurati
 	return &configurationResolver{contents: string(merged), messages: messages}, nil
 }
 
-// mergedWithExtensionsEnablementOnly is like Merged, except it only returns the subset of
-// configuration that is necessary for determining which extensions are enabled. This subset is safe
-// to show to any viewer (not just the subject and site admins).
-//
-// This alternate method exists because we want any viewer to be able to see which extensions a user
-// is using.
-//
-// 🚨 SECURITY: This method bypasses security checks in the funcs it calls and is responsible for
-// ensuring the security of the result it returns.
-func (r *configurationCascadeResolver) mergedWithExtensionsEnablementOnly(ctx context.Context) (_ *configurationResolver, err error) {
-	// 🚨 SECURITY: Cleanse errors that were produced by a func with access to elevated-privilege
-	// data, to prevent the error message from leaking that data to an unauthorized viewer.
-	var isSiteAdmin bool
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err == nil {
-		isSiteAdmin = true
-	} else if err != backend.ErrNotAuthenticated && err != backend.ErrMustBeSiteAdmin {
-		return nil, err
-	}
-	cleanseError := func(err error) error {
-		if isSiteAdmin {
-			return err
-		}
-		return errors.New("unexpected error while determining extension enablement state")
-	}
-	defer func() {
-		if err != nil {
-			err = cleanseError(err)
-		}
-	}()
-
-	cr, err := r.Merged(backend.WithAuthzBypass(ctx))
-	if err != nil {
-		return nil, err
-	}
-
-	// Strip out non-extensions-enablement config.
-	var safeConfig struct {
-		Extensions map[string]struct {
-			Disabled bool `json:"disabled,omitempty"`
-		} `json:"extensions,omitempty"`
-	}
-	if err := json.Unmarshal([]byte(cr.contents), &safeConfig); err != nil {
-		return nil, err
-	}
-	safeContents, err := json.Marshal(safeConfig)
-	if err != nil {
-		return nil, err
-	}
-	return &configurationResolver{contents: string(safeContents)}, nil
-}
-
 // deeplyMergedConfigFields contains the names of top-level configuration fields whose values should
 // be merged if they appear in multiple cascading configurations. The value is the merge depth (how
 // many levels into the object should the merging occur).
@@ -190,7 +137,7 @@ var deeplyMergedConfigFields = map[string]int{
 	"search.savedQueries":     1,
 	"search.repositoryGroups": 1,
 	"motd":       1,
-	"extensions": 2, // merge settings for individual extensions (2 levels deep)
+	"extensions": 1,
 }
 
 // mergeConfigs merges the specified JSON configs together to produce a single JSON config. The deep

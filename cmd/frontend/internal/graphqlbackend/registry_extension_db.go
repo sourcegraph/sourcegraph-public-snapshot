@@ -14,8 +14,6 @@ import (
 // registryExtensionDBResolver implements the GraphQL type RegistryExtension.
 type registryExtensionDBResolver struct {
 	v *db.RegistryExtension
-
-	cache *extensionRegistryCache
 }
 
 func (r *registryExtensionDBResolver) ID() graphql.ID {
@@ -49,7 +47,7 @@ func (r *registryExtensionDBResolver) UpdatedAt() *string {
 }
 
 func (r *registryExtensionDBResolver) URL() string {
-	return router.RegistryExtension(r.v.NonCanonicalExtensionID)
+	return router.Extension(r.v.NonCanonicalExtensionID)
 }
 func (r *registryExtensionDBResolver) RemoteURL() *string { return nil }
 
@@ -59,30 +57,10 @@ func (r *registryExtensionDBResolver) RegistryName() (string, error) {
 
 func (r *registryExtensionDBResolver) IsLocal() bool { return true }
 
-func (r *registryExtensionDBResolver) ExtensionConfigurationSubjects(ctx context.Context, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
-	return listExtensionConfigurationSubjects(ctx, r.cache, &registryExtensionMultiResolver{local: r}, args)
-}
-
-func (r *registryExtensionDBResolver) Users(ctx context.Context, args *connectionArgs) (*userConnectionResolver, error) {
-	return listRegistryExtensionUsers(ctx, r.cache, r.v.NonCanonicalExtensionID, args)
-}
-
-func (r *registryExtensionDBResolver) ViewerHasEnabled(ctx context.Context) (bool, error) {
-	return viewerHasEnabledRegistryExtension(ctx, r.v.NonCanonicalExtensionID)
-}
-
 func (r *registryExtensionDBResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	err := toRegistryPublisherID(r.v).viewerCanAdminister(ctx)
 	if err == backend.ErrMustBeSiteAdmin || err == backend.ErrNotAnOrgMember || err == backend.ErrNotAuthenticated {
 		return false, nil
 	}
 	return err == nil, err
-}
-
-type configuredExtensionFromRegistryExtensionArgs struct {
-	Subject *graphql.ID
-}
-
-func (r *registryExtensionDBResolver) ConfiguredExtension(ctx context.Context, args *configuredExtensionFromRegistryExtensionArgs) (*configuredExtensionResolver, error) {
-	return configuredExtensionFromRegistryExtension(ctx, r.v.NonCanonicalExtensionID, *args)
 }

@@ -2,6 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
+	"sort"
+	"strings"
 	"sync"
 
 	graphql "github.com/graph-gophers/graphql-go"
@@ -18,9 +20,10 @@ type registryExtensionConnectionArgs struct {
 
 func (r *extensionRegistryResolver) Extensions(ctx context.Context, args *struct {
 	registryExtensionConnectionArgs
-	Publisher *graphql.ID
-	Local     bool
-	Remote    bool
+	Publisher              *graphql.ID
+	Local                  bool
+	Remote                 bool
+	PrioritizeExtensionIDs *[]string
 }) (*registryExtensionConnectionResolver, error) {
 	var opt db.RegistryExtensionsListOptions
 	args.connectionArgs.set(&opt.LimitOffset)
@@ -36,10 +39,21 @@ func (r *extensionRegistryResolver) Extensions(ctx context.Context, args *struct
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
+
+	var prioritizeExtensionIDs map[string]struct{}
+	if args.PrioritizeExtensionIDs != nil {
+		prioritizeExtensionIDs = make(map[string]struct{}, len(*args.PrioritizeExtensionIDs))
+		for _, id := range *args.PrioritizeExtensionIDs {
+			prioritizeExtensionIDs[id] = struct{}{}
+			opt.PrioritizeExtensionIDs = append(opt.PrioritizeExtensionIDs, id)
+		}
+	}
+
 	return &registryExtensionConnectionResolver{
-		opt:           opt,
-		includeLocal:  args.Local,
-		includeRemote: args.Remote,
+		opt:                    opt,
+		includeLocal:           args.Local,
+		includeRemote:          args.Remote,
+		prioritizeExtensionIDs: prioritizeExtensionIDs,
 	}, nil
 }
 
@@ -78,11 +92,29 @@ type registryExtensionConnectionResolver struct {
 	opt db.RegistryExtensionsListOptions
 
 	includeLocal, includeRemote bool
+	prioritizeExtensionIDs      map[string]struct{}
 
 	// cache results because they are used by multiple fields
 	once               sync.Once
 	registryExtensions []*registryExtensionMultiResolver
 	err                error
+}
+
+// filterStripLocalExtensionIDs filters to local extension IDs and strips the
+// host prefix.
+func filterStripLocalExtensionIDs(extensionIDs []string) []string {
+	prefix := backend.GetLocalRegistryExtensionIDPrefix()
+	if prefix == nil {
+		return []string{}
+	}
+	local := []string{}
+	for _, id := range extensionIDs {
+		parts := strings.SplitN(id, "/", 3)
+		if len(parts) == 3 && parts[0] == *prefix {
+			local = append(local, parts[1]+"/"+parts[2])
+		}
+	}
+	return local
 }
 
 func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]*registryExtensionMultiResolver, error) {
@@ -97,7 +129,9 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]*r
 		// Query local registry extensions.
 		var local []*db.RegistryExtension
 		if r.includeLocal {
-			local, r.err = db.RegistryExtensions.List(ctx, opt2)
+			opt3 := opt2
+			opt3.PrioritizeExtensionIDs = filterStripLocalExtensionIDs(opt3.PrioritizeExtensionIDs)
+			local, r.err = db.RegistryExtensions.List(ctx, opt3)
 			if r.err != nil {
 				return
 			}
@@ -125,13 +159,21 @@ func (r *registryExtensionConnectionResolver) compute(ctx context.Context) ([]*r
 			remote = append(remote, xs...)
 		}
 
-		var cache extensionRegistryCache
 		r.registryExtensions = make([]*registryExtensionMultiResolver, len(local)+len(remote))
 		for i, x := range local {
-			r.registryExtensions[i] = &registryExtensionMultiResolver{local: &registryExtensionDBResolver{v: x, cache: &cache}}
+			r.registryExtensions[i] = &registryExtensionMultiResolver{local: &registryExtensionDBResolver{v: x}}
 		}
 		for i, x := range remote {
-			r.registryExtensions[len(local)+i] = &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{v: x, cache: &cache}}
+			r.registryExtensions[len(local)+i] = &registryExtensionMultiResolver{remote: &registryExtensionRemoteResolver{v: x}}
+		}
+
+		if r.prioritizeExtensionIDs != nil {
+			// Sort prioritized extension IDs first.
+			sort.SliceStable(r.registryExtensions, func(i, j int) bool {
+				_, pi := r.prioritizeExtensionIDs[r.registryExtensions[i].ExtensionID()]
+				_, pj := r.prioritizeExtensionIDs[r.registryExtensions[j].ExtensionID()]
+				return pi && !pj
+			})
 		}
 	})
 	return r.registryExtensions, r.err

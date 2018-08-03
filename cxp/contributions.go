@@ -12,10 +12,20 @@ type Contributions struct {
 //
 // See cxp-js for canonical documentation.
 type CommandContribution struct {
-	Command string `json:"command"`
-	Title   string `json:"title,omitempty"`
-	Detail  string `json:"detail,omitempty"`
-	IconURL string `json:"iconURL,omitempty"`
+	Command     string                          `json:"command"`
+	Title       string                          `json:"title,omitempty"`
+	Category    string                          `json:"category,omitempty"`
+	Description string                          `json:"description,omitempty"`
+	IconURL     string                          `json:"iconURL,omitempty"`
+	ToolbarItem *CommandContributionToolbarItem `json:"toolbarItem,omitempty"`
+}
+
+type CommandContributionToolbarItem struct {
+	Label           string `json:"label,omitempty"`
+	Description     string `json:"description,omitempty"`
+	Group           string `json:"group,omitempty"`
+	IconURL         string `json:"iconURL,omitempty"`
+	IconDescription string `json:"iconDescription,omitempty"`
 }
 
 // MenuContributions describes the menu items contributed by an extension.

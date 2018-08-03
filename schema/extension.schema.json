@@ -12,7 +12,14 @@
       "type": "string"
     },
     "description": {
-      "description": "A description of the extension's features and purpose. Markdown formatting is supported.",
+      "description":
+        "The extension's description, which summarizes the extension's purpose and features. It should not exceed a few sentences.",
+      "type": "string",
+      "maxLength": 280
+    },
+    "readme": {
+      "description":
+        "The extension's README, which should describe (in detail) the extension's purpose, features, and usage instructions. Markdown formatting is supported.",
       "type": "string",
       "format": "markdown"
     },

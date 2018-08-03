@@ -15,10 +15,11 @@ import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } fr
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
 import { Range } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
-import { ExtensionsProps, getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
+import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams, TextDocumentDecoration } from '../../backend/lsp'
 import { CXPComponent, CXPComponentProps } from '../../cxp/CXPComponent'
 import { CXPControllerProps, USE_PLATFORM } from '../../cxp/CXPEnvironment'
+import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
@@ -264,13 +265,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         // EXPERIMENTAL: DECORATIONS
 
-        /** Emits the extensions when they change. */
-        const extensionsChanges = this.componentUpdates.pipe(
-            map(({ extensions }) => extensions),
-            distinctUntilChanged((a, b) => isEqual(a, b)),
-            share()
-        )
-
         /** Emits when the URL's target blob (repository, revision, and path) changes. */
         const modelChanges: Observable<AbsoluteRepoFile & LSPSelector> = this.componentUpdates.pipe(
             map(props => pick(props, 'repoPath', 'rev', 'commitID', 'filePath', 'mode')),
@@ -280,19 +274,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined
-        const decorations: Observable<TextDocumentDecoration[] | null> = combineLatest(
-            modelChanges,
-
-            // Only trigger on extensions being enabled/disabled, not just when settings change (because extensions
-            // dynamically react to that).
-            //
-            // TODO!(sqs): how to handle static decorations extensions that do NOT dynamically react to that?
-            extensionsChanges.pipe(
-                distinctUntilChanged((a, b) =>
-                    isEqual(a.map(({ extensionID }) => extensionID), b.map(({ extensionID }) => extensionID))
-                )
-            )
-        ).pipe(
+        const decorations: Observable<TextDocumentDecoration[] | null> = combineLatest(modelChanges).pipe(
             switchMap(([model]) => {
                 const modelChanged = !isEqual(model, lastModel)
                 lastModel = model // record so we can compute modelChanged

@@ -46,10 +46,7 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local *
 		return nil, nil, fmt.Errorf("invalid extension ID: %q", extensionID)
 	}
 
-	prefix, err := GetLocalRegistryExtensionIDPrefix()
-	if err != nil {
-		return nil, nil, err
-	}
+	prefix := GetLocalRegistryExtensionIDPrefix()
 
 	var isLocal bool
 	switch len(parts) {
@@ -101,10 +98,7 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local *
 // PrefixLocalExtensionID adds the local registry's extension ID prefix (from
 // GetLocalRegistryExtensionIDPrefix) to all extensions' extension IDs in the list.
 func PrefixLocalExtensionID(xs ...*db.RegistryExtension) error {
-	prefix, err := GetLocalRegistryExtensionIDPrefix()
-	if err != nil {
-		return err
-	}
+	prefix := GetLocalRegistryExtensionIDPrefix()
 	if prefix == nil {
 		return nil
 	}
@@ -128,23 +122,23 @@ var mockLocalRegistryExtensionIDPrefix **string
 
 // GetLocalRegistryExtensionIDPrefix returns the extension ID prefix (if any) of extensions in the
 // local registry.
-func GetLocalRegistryExtensionIDPrefix() (*string, error) {
+func GetLocalRegistryExtensionIDPrefix() *string {
 	if mockLocalRegistryExtensionIDPrefix != nil {
-		return *mockLocalRegistryExtensionIDPrefix, nil
+		return *mockLocalRegistryExtensionIDPrefix
 	}
 	if envvar.SourcegraphDotComMode() {
-		return nil, nil
+		return nil
 	}
 	name, err := GetLocalRegistryName()
 	if err != nil {
-		return nil, nil
+		return nil
 	}
-	return &name, nil
+	return &name
 }
 
-// getRemoteRegistryURL returns the remote registry URL from site configuration, or nil if there is
+// GetRemoteRegistryURL returns the remote registry URL from site configuration, or nil if there is
 // none. If an error exists while parsing the value in site configuration, the error is returned.
-func getRemoteRegistryURL() (*url.URL, error) {
+func GetRemoteRegistryURL() (*url.URL, error) {
 	pc := conf.Platform()
 	if pc == nil || pc.RemoteRegistryURL == "" {
 		return nil, nil
@@ -166,7 +160,7 @@ func GetRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 		return x, err
 	}
 
-	registryURL, err := getRemoteRegistryURL()
+	registryURL, err := GetRemoteRegistryURL()
 	if registryURL == nil || err != nil {
 		return nil, err
 	}
@@ -189,7 +183,7 @@ func GetRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 // ListRemoteRegistryExtensions lists the remote registry extensions and rewrites their fields to be
 // from the frame-of-reference of this site.
 func ListRemoteRegistryExtensions(ctx context.Context, query string) ([]*registry.Extension, error) {
-	registryURL, err := getRemoteRegistryURL()
+	registryURL, err := GetRemoteRegistryURL()
 	if registryURL == nil || err != nil {
 		return nil, err
 	}

@@ -1,7 +1,8 @@
 import { Controller as CXPController } from 'cxp/lib/environment/controller'
 import { Environment as CXPEnvironment } from 'cxp/lib/environment/environment'
 import { Extension as CXPExtension } from 'cxp/lib/environment/extension'
-import { ConfiguredExtension } from '../extensions/extension'
+import { SourcegraphExtension } from '../schema/extension.schema'
+import { ErrorLike } from '../util/errors'
 import { CXPComponentProps } from './CXPComponent'
 import { CXPRootProps } from './CXPRoot'
 
@@ -13,7 +14,8 @@ export const USE_PLATFORM = localStorage.getItem('platform') !== null
  * callback (to know how to communicate with or run the extension).
  */
 export interface CXPExtensionWithManifest extends CXPExtension {
-    manifest: ConfiguredExtension['manifest']
+    isEnabled: boolean
+    manifest: SourcegraphExtension | null | ErrorLike
 }
 
 /** React props or state representing the CXP environment. */

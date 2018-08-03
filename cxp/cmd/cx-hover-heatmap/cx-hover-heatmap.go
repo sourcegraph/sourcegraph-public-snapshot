@@ -324,9 +324,9 @@ func registerContributions(ctx context.Context, conn *jsonrpc2.Conn, settings ex
 				RegisterOptions: &cxp.Contributions{
 					Commands: []*cxp.CommandContribution{
 						{
-							Command: toggleCommandID,
-							Title:   "Heatmap",
-							Detail:  showHide + " hover heatmap",
+							Command:     toggleCommandID,
+							Title:       "Heatmap",
+							Description: showHide + " hover heatmap",
 						},
 					},
 					Menus: &cxp.MenuContributions{

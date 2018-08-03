@@ -1,11 +1,9 @@
 import GearIcon from '@sourcegraph/icons/lib/Gear'
-import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import SlidersVerticalIcon from '@sourcegraph/icons/lib/SlidersVertical'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { orgURL } from '../../org'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { platformEnabled } from '../tags'
 import { UserAvatar } from '../UserAvatar'
 import { UserAreaPageProps } from './UserArea'
 
@@ -42,15 +40,6 @@ export const UserHeader: React.SFC<Props> = (props: Props) => (
                             >
                                 Overview
                             </NavLink>
-                            {platformEnabled(props.authenticatedUser) && (
-                                <NavLink
-                                    to={`${props.match.url}/extensions`}
-                                    className="btn area-header__nav-link"
-                                    activeClassName="area-header__nav-link--active"
-                                >
-                                    <PuzzleIcon className="icon-inline" /> Extensions
-                                </NavLink>
-                            )}
                             {props.user.viewerCanAdminister && (
                                 <NavLink
                                     to={`${props.match.url}/settings`}

@@ -292,17 +292,24 @@ func registerContributions(ctx context.Context, conn *jsonrpc2.Conn, settings ex
 				RegisterOptions: &cxp.Contributions{
 					Commands: []*cxp.CommandContribution{
 						{
-							Command: randomizeColorsCommandID,
-							Detail:  "Randomize color theme",
-							IconURL: iconURL(settings.Colors),
+							Command:  randomizeColorsCommandID,
+							Title:    "Randomize theme",
+							Category: "Line colors",
+							ToolbarItem: &cxp.CommandContributionToolbarItem{
+								Description:     "Randomize theme",
+								IconURL:         iconURL(settings.Colors),
+								IconDescription: fmt.Sprintf("vertical stripes of the following colors: %s", strings.Join(settings.Colors, " ")),
+							},
 						},
 						{
-							Command: promptColorsCommandID,
-							Title:   "Set color theme...",
+							Command:  promptColorsCommandID,
+							Title:    "Set theme...",
+							Category: "Line colors",
 						},
 						{
-							Command: clearCommandID,
-							Title:   "Reset color theme",
+							Command:  clearCommandID,
+							Title:    "Clear",
+							Category: "Line colors",
 						},
 					},
 					Menus: &cxp.MenuContributions{

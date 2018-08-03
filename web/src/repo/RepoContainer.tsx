@@ -6,12 +6,12 @@ import { merge, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
 import { parseBrowserRepoURL } from '.'
 import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
-import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { CXPComponentProps } from '../cxp/CXPComponent'
 import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { CXPRootProps } from '../cxp/CXPRoot'
+import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { ErrorLike, isErrorLike } from '../util/errors'
@@ -37,7 +37,6 @@ const RepoPageNotFound: React.SFC = () => (
 interface Props
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         ExtensionsProps,
-        ExtensionsChangeProps,
         CXPComponentProps,
         CXPRootProps,
         CXPControllerProps {
@@ -215,7 +214,6 @@ export class RepoContainer extends React.Component<Props, State> {
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
                     extensions={this.props.extensions}
-                    onExtensionsChange={this.props.onExtensionsChange}
                     cxpController={this.props.cxpController}
                     onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
                     location={this.props.location}

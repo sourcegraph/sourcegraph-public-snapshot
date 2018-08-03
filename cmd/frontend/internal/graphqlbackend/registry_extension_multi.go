@@ -109,37 +109,9 @@ func (r *registryExtensionMultiResolver) IsLocal() bool {
 	return r.remote.IsLocal()
 }
 
-func (r *registryExtensionMultiResolver) ExtensionConfigurationSubjects(ctx context.Context, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
-	if r.local != nil {
-		return r.local.ExtensionConfigurationSubjects(ctx, args)
-	}
-	return r.remote.ExtensionConfigurationSubjects(ctx, args)
-}
-
-func (r *registryExtensionMultiResolver) Users(ctx context.Context, args *connectionArgs) (*userConnectionResolver, error) {
-	if r.local != nil {
-		return r.local.Users(ctx, args)
-	}
-	return r.remote.Users(ctx, args)
-}
-
-func (r *registryExtensionMultiResolver) ViewerHasEnabled(ctx context.Context) (bool, error) {
-	if r.local != nil {
-		return r.local.ViewerHasEnabled(ctx)
-	}
-	return r.remote.ViewerHasEnabled(ctx)
-}
-
 func (r *registryExtensionMultiResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	if r.local != nil {
 		return r.local.ViewerCanAdminister(ctx)
 	}
 	return r.remote.ViewerCanAdminister(ctx)
-}
-
-func (r *registryExtensionMultiResolver) ConfiguredExtension(ctx context.Context, args *configuredExtensionFromRegistryExtensionArgs) (*configuredExtensionResolver, error) {
-	if r.local != nil {
-		return r.local.ConfiguredExtension(ctx, args)
-	}
-	return r.remote.ConfiguredExtension(ctx, args)
 }

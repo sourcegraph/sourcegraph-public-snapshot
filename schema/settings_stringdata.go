@@ -72,10 +72,17 @@ const SettingsSchemaJSON = `{
       "items": { "type": "string" }
     },
     "extensions": {
-      "description": "Extension configuration, mapping extension IDs to the configuration for that extension.",
+      "description":
+        "The CXP extensions to use. Enable an extension by adding a property ` + "`" + `\"my/extension\": true` + "`" + ` (where ` + "`" + `my/extension` + "`" + ` is the extension ID). Override a previously enabled extension and disable it by setting its value to ` + "`" + `false` + "`" + `.",
       "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "description": "A valid extension ID.",
+        "pattern": "^([^/]+/)?[^/]+/[^/]+$"
+      },
       "additionalProperties": {
-        "$ref": "#/definitions/ExtensionSettings"
+        "type": "boolean",
+        "description": "` + "`" + `true` + "`" + ` to enable the extension, ` + "`" + `false` + "`" + ` to disable the extension (if it was previously enabled)"
       }
     }
   },
@@ -115,17 +122,6 @@ const SettingsSchemaJSON = `{
           "description":
             "The Slack webhook URL used to post notification messages to a Slack channel. To obtain this URL, go to: https://YOUR-WORKSPACE-NAME.slack.com/apps/new/A0F7XDUAZ-incoming-webhooks",
           "format": "uri"
-        }
-      }
-    },
-    "ExtensionSettings": {
-      "description": "Settings for an extension.",
-      "type": "object",
-      "additionalProperties": true,
-      "properties": {
-        "disabled": {
-          "description": "Disable this extension (if it is enabled at a lower-precedence level of configuration).",
-          "type": "boolean"
         }
       }
     }

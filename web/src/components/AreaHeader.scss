@@ -1,6 +1,15 @@
+.simple-area-header {
+    background-color: $color-bg-4;
+}
+.theme-light {
+    .simple-area-header {
+        background-color: $color-light-bg-2;
+        border-top: solid 1px $color-light-border;
+    }
+}
+
 .area-header {
     padding: 1.25rem 0.25rem 0 0.5rem;
-    background-color: $color-bg-4;
     border-top: solid 1px transparent;
     border-bottom: solid 1px $color-border;
 
@@ -58,6 +67,7 @@
     }
 }
 
+// stylelint-disable-next-line no-duplicate-selectors
 .theme-light {
     .area-header {
         background-color: $color-light-bg-2;

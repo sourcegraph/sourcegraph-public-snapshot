@@ -14,7 +14,8 @@ import { createWebSocketMessageTransports } from 'cxp/lib/jsonrpc2/transports/br
 import { createWebWorkerMessageTransports } from 'cxp/lib/jsonrpc2/transports/webWorker'
 import { InitializeError } from 'cxp/lib/protocol'
 import { catchError, mergeMap } from 'rxjs/operators'
-import { toGQLKeyPath, updateUserExtensionSettings } from '../registry/backend'
+import { updateUserExtensionSettings } from '../extensions/ExtensionsClientCommonContext'
+import { toGQLKeyPath } from '../settings/configuration'
 import { isErrorLike } from '../util/errors'
 import { getSavedClientTrace } from './client'
 import { CXPExtensionWithManifest } from './CXPEnvironment'
@@ -118,7 +119,7 @@ function environmentFilter(
             nextEnvironment.extensions.filter(x => {
                 try {
                     const component = nextEnvironment.component
-                    if (x.manifest && !isErrorLike(x.manifest) && x.manifest.activationEvents) {
+                    if (x.isEnabled && x.manifest && !isErrorLike(x.manifest) && x.manifest.activationEvents) {
                         return x.manifest.activationEvents.some(
                             e => e === '*' || (!!component && e === `onLanguage:${component.document.languageId}`)
                         )

@@ -3,7 +3,6 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
 import { HistoryPopoverContainer } from '../components/HistoryPopoverContainer'
@@ -11,13 +10,14 @@ import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { CXPCommandListPopoverButton } from '../cxp/components/CXPCommandList'
 import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { ContributedActionsNavItems } from '../extensions/ContributedActions'
+import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { eventLogger } from '../tracking/eventLogger'
 import { platformEnabled } from '../user/tags'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
-interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPControllerProps {
+interface Props extends ExtensionsProps, CXPControllerProps {
     location: H.Location
     history: H.History
     user: GQL.IUser | null
@@ -74,6 +74,13 @@ export class NavLinks extends React.PureComponent<Props> {
                     <li className="nav-item">
                         <Link to="/explore" className="nav-link">
                             Explore
+                        </Link>
+                    </li>
+                )}
+                {platformEnabled(this.props.user) && (
+                    <li className="nav-item">
+                        <Link to="/extensions" className="nav-link">
+                            Extensions
                         </Link>
                     </li>
                 )}

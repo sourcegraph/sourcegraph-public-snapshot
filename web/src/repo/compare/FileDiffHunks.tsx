@@ -3,8 +3,8 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { NEVER, Subject, Subscription } from 'rxjs'
-import { ExtensionsProps } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
+import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 
 const DiffBoundary: React.SFC<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */

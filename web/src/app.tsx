@@ -33,18 +33,17 @@ registerLanguage('ruby', require('highlight.js/lib/languages/ruby'))
 registerLanguage('rust', require('highlight.js/lib/languages/rust'))
 registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
+import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import { Component as CXPComponent, EMPTY_ENVIRONMENT as CXP_EMPTY_ENVIRONMENT } from 'cxp/lib/environment/environment'
 import { URI } from 'cxp/lib/types/textDocument'
-import { isEqual } from 'lodash'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { currentUser } from './auth'
-import { Extensions, ExtensionsChangeProps, ExtensionsProps } from './backend/features'
 import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
@@ -52,6 +51,8 @@ import { Tooltip } from './components/tooltip/Tooltip'
 import { createController as createCXPController } from './cxp/controller'
 import { CXPControllerProps, CXPEnvironmentProps, CXPProps } from './cxp/CXPEnvironment'
 import { LinkExtension } from './extension/Link'
+import { ExtensionsProps } from './extensions/ExtensionsClientCommonContext'
+import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
@@ -61,7 +62,7 @@ import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { eventLogger } from './tracking/eventLogger'
 
-interface LayoutProps extends RouteComponentProps<any>, ExtensionsProps, ExtensionsChangeProps, CXPProps {
+interface LayoutProps extends RouteComponentProps<any>, ExtensionsProps, CXPProps {
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
@@ -160,7 +161,7 @@ class App extends React.Component<{}, AppState> {
         navbarSearchQuery: '',
         showHelpPopover: false,
         showHistoryPopover: false,
-        extensions: [],
+        extensions: createExtensionsContextController(),
         cxpEnvironment: CXP_EMPTY_ENVIRONMENT,
         cxpController: createCXPController(),
     }
@@ -171,6 +172,18 @@ class App extends React.Component<{}, AppState> {
         document.body.classList.add('theme')
         this.subscriptions.add(
             currentUser.subscribe(user => this.setState({ user }), error => this.setState({ user: null }))
+        )
+
+        this.subscriptions.add(this.state.cxpController)
+
+        // Keep CXP controller's extensions up-to-date.
+        //
+        // TODO(sqs): handle loading and errors
+        this.subscriptions.add(
+            this.state.extensions.viewerConfiguredExtensions.subscribe(
+                extensions => this.onViewerConfiguredExtensionsChange(extensions),
+                err => console.error(err)
+            )
         )
     }
 
@@ -242,7 +255,6 @@ class App extends React.Component<{}, AppState> {
             onHelpPopoverToggle={this.onHelpPopoverToggle}
             onHistoryPopoverToggle={this.onHistoryPopoverToggle}
             extensions={this.state.extensions}
-            onExtensionsChange={this.onExtensionsChange}
             cxpEnvironment={this.state.cxpEnvironment}
             cxpOnComponentChange={this.cxpOnComponentChange}
             cxpOnRootChange={this.cxpOnRootChange}
@@ -279,22 +291,19 @@ class App extends React.Component<{}, AppState> {
         }))
     }
 
-    private onExtensionsChange = (extensions: Extensions): void => {
+    private onViewerConfiguredExtensionsChange(viewerConfiguredExtensions: ConfiguredExtension[]): void {
         this.setState(
-            prevState =>
-                isEqual(prevState.extensions, extensions)
-                    ? null
-                    : {
-                          extensions,
-                          cxpEnvironment: {
-                              ...prevState.cxpEnvironment,
-                              extensions: extensions.map(x => ({
-                                  id: x.extensionID,
-                                  settings: x.settings,
-                                  manifest: x.manifest,
-                              })),
-                          },
-                      },
+            prevState => ({
+                cxpEnvironment: {
+                    ...prevState.cxpEnvironment,
+                    extensions: viewerConfiguredExtensions.map(x => ({
+                        id: x.extensionID,
+                        settings: { merged: x.settings },
+                        isEnabled: x.isEnabled,
+                        manifest: x.manifest,
+                    })),
+                },
+            }),
             () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
         )
     }

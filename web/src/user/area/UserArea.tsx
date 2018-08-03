@@ -5,16 +5,13 @@ import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
-import { ExtensionsProps } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
-import { PublisherSubjectExtensionsArea } from '../../registry/PublisherSubjectExtensionsArea'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { UserAccountArea } from '../account/UserAccountArea'
-import { platformEnabled } from '../tags'
 import { UserHeader } from './UserHeader'
 import { UserOverviewPage } from './UserOverviewPage'
 
@@ -66,7 +63,7 @@ const NotFoundPage = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="Sorry, the requested user was not found." />
 )
 
-interface Props extends RouteComponentProps<{ username: string }>, ExtensionsProps {
+interface Props extends RouteComponentProps<{ username: string }> {
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
      * parameter.
@@ -86,7 +83,7 @@ interface State {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaPageProps extends ExtensionsProps {
+export interface UserAreaPageProps {
     /**
      * The user who is the subject of the page.
      */
@@ -107,7 +104,7 @@ export interface UserAreaPageProps extends ExtensionsProps {
 /**
  * A user's public profile area.
  */
-export class UserArea extends React.Component<Props> {
+export class UserArea extends React.Component<Props, State> {
     public state: State = {}
 
     private routeMatchChanges = new Subject<{ username: string }>()
@@ -165,7 +162,6 @@ export class UserArea extends React.Component<Props> {
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
             authenticatedUser: this.props.user,
-            extensions: this.props.extensions,
         }
         return (
             <div className="user-area area--vertical">
@@ -220,23 +216,6 @@ export class UserArea extends React.Component<Props> {
                                     />
                                 )}
                             />
-                            {platformEnabled(this.props.user) && (
-                                <Route
-                                    path={`${this.props.match.url}/extensions`}
-                                    key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    render={routeComponentProps => (
-                                        <PublisherSubjectExtensionsArea
-                                            {...routeComponentProps}
-                                            {...transferProps}
-                                            publisher={transferProps.user}
-                                            subject={transferProps.user}
-                                            showUserActions={true}
-                                            updateOnChange={this.props.extensions}
-                                        />
-                                    )}
-                                />
-                            )}
                             <Route key="hardcoded-key" component={NotFoundPage} />
                         </Switch>
                     </div>

@@ -69,6 +69,33 @@ export function overwriteSettings(subject: GQL.ID, lastID: number | null, conten
     )
 }
 
+export function editConfiguration(
+    subject: GQL.ID,
+    lastID: number | null,
+    edit: GQL.IConfigurationEdit
+): Observable<void> {
+    return mutateGraphQL(
+        gql`
+            mutation EditSettings($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
+                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                    editConfiguration(edit: $edit) {
+                        empty {
+                            alwaysNil
+                        }
+                    }
+                }
+            }
+        `,
+        { subject, lastID, edit }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || (errors && errors.length > 0)) {
+                throw createAggregateError(errors)
+            }
+        })
+    )
+}
+
 /**
  * Runs a GraphQL mutation that includes configuration mutations, populating the variables object
  * with the lastID and subject for the configuration mutation.

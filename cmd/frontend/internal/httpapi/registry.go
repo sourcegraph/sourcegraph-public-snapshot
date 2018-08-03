@@ -64,7 +64,7 @@ func toRegistryAPIExtension(v *db.RegistryExtension) *registry.Extension {
 		Manifest:  v.Manifest,
 		CreatedAt: v.CreatedAt,
 		UpdatedAt: v.UpdatedAt,
-		URL:       baseURL + router.RegistryExtension(v.NonCanonicalExtensionID),
+		URL:       baseURL + router.Extension(v.NonCanonicalExtensionID),
 	}
 }
 

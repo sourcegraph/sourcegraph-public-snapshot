@@ -44,7 +44,12 @@ export class ContributedActionsNavItems extends React.PureComponent<ContributedA
             <>
                 {getContributedActionItems(this.state.contributions, this.props.menu).map((item, i) => (
                     <li key={i} className="nav-item">
-                        <ContributedActionItem key={i} {...item} cxpController={this.props.cxpController} />
+                        <ContributedActionItem
+                            key={i}
+                            {...item}
+                            variant="toolbarItem"
+                            cxpController={this.props.cxpController}
+                        />
                     </li>
                 ))}
             </>

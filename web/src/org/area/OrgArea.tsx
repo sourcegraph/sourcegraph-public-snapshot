@@ -8,10 +8,8 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
-import { PublisherSubjectExtensionsArea } from '../../registry/PublisherSubjectExtensionsArea'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { platformEnabled } from '../../user/tags'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { OrgAccountArea } from '../account/OrgAccountArea'
 import { OrgHeader } from './OrgHeader'
@@ -192,23 +190,6 @@ export class OrgArea extends React.Component<Props> {
                                     <OrgMembersPage {...routeComponentProps} {...transferProps} />
                                 )}
                             />
-                            {this.props.user &&
-                                platformEnabled(this.props.user) && (
-                                    <Route
-                                        path={`${this.props.match.url}/extensions`}
-                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                        // tslint:disable-next-line:jsx-no-lambda
-                                        render={routeComponentProps => (
-                                            <PublisherSubjectExtensionsArea
-                                                {...routeComponentProps}
-                                                {...transferProps}
-                                                publisher={transferProps.org}
-                                                subject={transferProps.org}
-                                                showUserActions={true}
-                                            />
-                                        )}
-                                    />
-                                )}
                             <Route
                                 path={`${this.props.match.url}/settings`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

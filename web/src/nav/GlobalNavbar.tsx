@@ -3,14 +3,14 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { authRequired } from '../auth'
-import { ExtensionsChangeProps, ExtensionsProps } from '../backend/features'
 import * as GQL from '../backend/graphqlschema'
 import { CXPControllerProps, CXPEnvironmentProps } from '../cxp/CXPEnvironment'
+import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { parseSearchURLQuery, SearchOptions } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { NavLinks } from './NavLinks'
 
-interface Props extends ExtensionsProps, ExtensionsChangeProps, CXPEnvironmentProps, CXPControllerProps {
+interface Props extends ExtensionsProps, CXPEnvironmentProps, CXPControllerProps {
     history: H.History
     location: H.Location
     user: GQL.IUser | null

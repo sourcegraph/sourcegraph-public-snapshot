@@ -1167,11 +1167,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:104f60574ef8e21b87224345938e70936abdbcdad5e61aba4c19bf9fa777b381"
+  digest = "1:8d52236029a9725a805528026e42cbf37d06c5b51ddebaffd338b75be51ac11e"
   name = "github.com/sourcegraph/jsonx"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "c36de8ab1fb0e9f845dc648bc930d37a5635246a"
+  revision = "5a4ae5eb18cdbc32deeca612618eb6c34020f59d"
 
 [[projects]]
   branch = "master"

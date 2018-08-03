@@ -331,9 +331,9 @@ func registerContributions(ctx context.Context, conn *jsonrpc2.Conn, settings ex
 				RegisterOptions: &cxp.Contributions{
 					Commands: []*cxp.CommandContribution{
 						{
-							Command: toggleCommandID,
-							Title:   "Line age",
-							Detail:  showHide + " line age",
+							Command:     toggleCommandID,
+							Title:       "Line age",
+							Description: showHide + " line age",
 						},
 					},
 					Menus: &cxp.MenuContributions{

@@ -42,9 +42,6 @@ export function refreshCurrentUser(): Observable<never> {
                 session {
                     canSignOut
                 }
-                configuredExtensions {
-                    url
-                }
             }
         }
     `).pipe(

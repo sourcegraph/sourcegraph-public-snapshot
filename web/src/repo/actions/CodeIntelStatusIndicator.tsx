@@ -49,7 +49,7 @@ const propsToStateUpdate = (obs: Observable<CodeIntelStatusIndicatorProps>) =>
             }
             return forkJoin(
                 fetchLangServer(mode),
-                fetchServerCapabilities({ repoPath, rev, commitID, filePath, mode, settings: null }).pipe(
+                fetchServerCapabilities({ repoPath, rev, commitID, filePath, mode }).pipe(
                     catchError(err => {
                         if (err.code === EMODENOTFOUND) {
                             return [undefined]

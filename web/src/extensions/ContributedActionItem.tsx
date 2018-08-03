@@ -1,15 +1,25 @@
 import { CommandContribution } from 'cxp/lib/protocol'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
-import { catchError, map, mapTo, mergeMap, startWith } from 'rxjs/operators'
+import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 import { ExecuteCommandParams } from 'vscode-languageserver-protocol'
 import { ActionItem } from '../components/ActionItem'
+import { Tooltip } from '../components/tooltip/Tooltip'
 import { CXPControllerProps } from '../cxp/CXPEnvironment'
 import { asError, ErrorLike } from '../util/errors'
 
 export interface ContributedActionItemProps {
     contribution: CommandContribution
+    variant?: 'toolbarItem'
     className?: string
+
+    /** Called when the item's command is executed. */
+    onCommandExecute?: () => void
+
+    /**
+     * Whether to set the disabled attribute on the element when command execution is started and not yet finished.
+     */
+    disabledDuringExecution?: boolean
 
     /** Instead of showing the icon and/or title, show this element. */
     title?: React.ReactElement<any>
@@ -24,7 +34,7 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ContributedActionItem extends React.PureComponent<Props> {
+export class ContributedActionItem extends React.PureComponent<Props, State> {
     public state: State = { actionOrError: null }
 
     private commandExecutions = new Subject<ExecuteCommandParams>()
@@ -37,6 +47,11 @@ export class ContributedActionItem extends React.PureComponent<Props> {
                     mergeMap(params =>
                         from(this.props.cxpController.registries.commands.executeCommand(params)).pipe(
                             mapTo(null),
+                            tap(() => {
+                                if (this.props.onCommandExecute) {
+                                    this.props.onCommandExecute()
+                                }
+                            }),
                             catchError(error => [asError(error)]),
                             map(c => ({ actionOrError: c })),
                             startWith<Pick<State, 'actionOrError'>>({ actionOrError: LOADING })
@@ -47,26 +62,60 @@ export class ContributedActionItem extends React.PureComponent<Props> {
         )
     }
 
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
+        // If the tooltip changes while it's visible, we need to force-update it to show the new value.
+        const prevTooltip = prevProps.contribution.toolbarItem && prevProps.contribution.toolbarItem.description
+        const tooltip = this.props.contribution.toolbarItem && this.props.contribution.toolbarItem.description
+        if (prevTooltip !== tooltip) {
+            Tooltip.forceUpdate()
+        }
+    }
+
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
+        let content: JSX.Element | string | undefined
+        let tooltip: string | undefined
+        if (this.props.title) {
+            content = this.props.title
+            tooltip = this.props.contribution.description
+        } else if (this.props.variant === 'toolbarItem' && this.props.contribution.toolbarItem) {
+            content = (
+                <>
+                    {this.props.contribution.toolbarItem.iconURL && (
+                        <img
+                            src={this.props.contribution.toolbarItem.iconURL}
+                            alt={this.props.contribution.toolbarItem.iconDescription}
+                            className="icon-inline"
+                        />
+                    )}{' '}
+                    {this.props.contribution.toolbarItem.label}
+                </>
+            )
+            tooltip = this.props.contribution.toolbarItem.description
+        } else {
+            content = (
+                <>
+                    {this.props.contribution.iconURL && (
+                        <img src={this.props.contribution.iconURL} className="icon-inline" />
+                    )}{' '}
+                    {this.props.contribution.category ? `${this.props.contribution.category}: ` : ''}
+                    {this.props.contribution.title}
+                </>
+            )
+            tooltip = this.props.contribution.description
+        }
+
         return (
             <ActionItem
-                data-tooltip={this.props.contribution.detail}
-                disabled={this.state.actionOrError === LOADING}
+                data-tooltip={tooltip}
+                disabled={this.props.disabledDuringExecution && this.state.actionOrError === LOADING}
                 onSelect={this.runAction}
                 className={this.props.className}
             >
-                {this.props.title || (
-                    <>
-                        {this.props.contribution.iconURL && (
-                            <img src={this.props.contribution.iconURL} className="icon-inline" />
-                        )}{' '}
-                        {this.props.contribution.title}
-                    </>
-                )}
+                {content}
             </ActionItem>
         )
     }

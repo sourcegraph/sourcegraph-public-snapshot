@@ -8,7 +8,6 @@ import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, Hover, Location, MarkupContent, Range } from 'vscode-languageserver-types'
 import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
-import { ExtensionSettings } from '../extensions/extension'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
 import { ErrorLike, normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
@@ -19,11 +18,6 @@ import { HoverMerged, ModeSpec } from './features'
  * correct initialization request.
  */
 export interface LSPSelector extends AbsoluteRepo, ModeSpec {}
-
-/** All of the context to send to the backend to initialize the correct server for a request. */
-export interface LSPContext extends LSPSelector {
-    settings: ExtensionSettings | null
-}
 
 /**
  * Contains the fields necessary to construct an LSP TextDocumentPositionParams value.
@@ -57,7 +51,7 @@ export type ResponseResults = { 0: InitializeResult } & any[]
 
 type ResponseError = ErrorLike & { responses: ResponseMessages }
 
-const httpSendLSPRequest = (ctx: LSPContext, request?: LSPRequest): Observable<ResponseResults> =>
+const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<ResponseResults> =>
     ajax({
         method: 'POST',
         url: `/.api/xlang/${request ? request.method : 'initialize'}`,
@@ -74,10 +68,7 @@ const httpSendLSPRequest = (ctx: LSPContext, request?: LSPRequest): Observable<R
                     params: {
                         rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
                         mode: ctx.mode,
-                        initializationOptions: {
-                            mode: ctx.mode,
-                            settings: ctx.settings,
-                        },
+                        initializationOptions: { mode: ctx.mode },
                     },
                 },
                 request ? { id: 1, ...request } : null,
@@ -113,14 +104,14 @@ const httpSendLSPRequest = (ctx: LSPContext, request?: LSPRequest): Observable<R
  * (the arg) is returned. If the request arg is not given, it is omitted and the result from initialize is
  * returned.
  */
-const sendLSPRequest: (ctx: LSPContext, request?: LSPRequest) => Observable<any> = (ctx, request) =>
+const sendLSPRequest: (ctx: LSPSelector, request?: LSPRequest) => Observable<any> = (ctx, request) =>
     httpSendLSPRequest(ctx, request).pipe(map(results => results[request ? 1 : 0]))
 
 /**
  * Query the server's capabilities.
  */
 export const fetchServerCapabilities = memoizeObservable(
-    (pos: LSPContext & { filePath: string }): Observable<ServerCapabilities> =>
+    (pos: LSPSelector & { filePath: string }): Observable<ServerCapabilities> =>
         sendLSPRequest(pos).pipe(map(result => (result as InitializeResult).capabilities)),
     cacheKey
 )
@@ -151,7 +142,7 @@ const normalizeHoverResponse = (hoverResponse: any): void => {
 
 /** Callers should use features.getHover instead. */
 export const fetchHover = memoizeObservable(
-    (ctx: LSPTextDocumentPositionParams & LSPContext): Observable<Hover | null> =>
+    (ctx: LSPTextDocumentPositionParams & LSPSelector): Observable<Hover | null> =>
         sendLSPRequest(ctx, {
             method: 'textDocument/hover',
             params: {
@@ -191,7 +182,7 @@ export const fetchHover = memoizeObservable(
 
 /** Callers should use features.getDefinition instead. */
 export const fetchDefinition = memoizeObservable(
-    (ctx: LSPTextDocumentPositionParams & LSPContext): Observable<Definition> =>
+    (ctx: LSPTextDocumentPositionParams & LSPSelector): Observable<Definition> =>
         sendLSPRequest(ctx, {
             method: 'textDocument/definition',
             params: {
@@ -209,7 +200,7 @@ export const fetchDefinition = memoizeObservable(
 
 /** Callers should use features.getXdefinition instead. */
 export const fetchXdefinition = memoizeObservable(
-    (ctx: LSPTextDocumentPositionParams & LSPContext): Observable<SymbolLocationInformation | undefined> =>
+    (ctx: LSPTextDocumentPositionParams & LSPSelector): Observable<SymbolLocationInformation | undefined> =>
         sendLSPRequest(ctx, {
             method: 'textDocument/xdefinition',
             params: {
@@ -231,7 +222,7 @@ export interface LSPReferencesParams {
 
 /** Callers should use features.getReferences instead. */
 export const fetchReferences = memoizeObservable(
-    (ctx: LSPTextDocumentPositionParams & LSPReferencesParams & LSPContext): Observable<Location[]> =>
+    (ctx: LSPTextDocumentPositionParams & LSPReferencesParams & LSPSelector): Observable<Location[]> =>
         sendLSPRequest(ctx, {
             method: 'textDocument/references',
             params: {
@@ -252,7 +243,7 @@ export const fetchReferences = memoizeObservable(
 
 /** Callers should use features.getImplementation instead. */
 export const fetchImplementation = memoizeObservable(
-    (ctx: LSPTextDocumentPositionParams & LSPContext): Observable<Location[]> =>
+    (ctx: LSPTextDocumentPositionParams & LSPSelector): Observable<Location[]> =>
         sendLSPRequest(ctx, {
             method: 'textDocument/implementation',
             params: {
@@ -278,14 +269,13 @@ export interface XReferenceOptions extends WorkspaceReferenceParams {
 
 /** Callers should use features.getXreferences instead. */
 export const fetchXreferences = memoizeObservable(
-    (ctx: XReferenceOptions & LSPContext): Observable<Location[]> =>
+    (ctx: XReferenceOptions & LSPSelector): Observable<Location[]> =>
         sendLSPRequest(
             {
                 repoPath: ctx.repoPath,
                 rev: ctx.rev,
                 commitID: ctx.commitID,
                 mode: ctx.mode,
-                settings: ctx.settings,
             },
             {
                 method: 'workspace/xreferences',
@@ -319,7 +309,7 @@ export interface DecorationAttachmentRenderOptions {
 }
 
 export const fetchDecorations = memoizeObservable(
-    (ctx: LSPContext & FileSpec): Observable<TextDocumentDecoration[] | null> =>
+    (ctx: LSPSelector & FileSpec): Observable<TextDocumentDecoration[] | null> =>
         sendLSPRequest(ctx, {
             method: 'textDocument/decoration',
             params: {
@@ -331,6 +321,6 @@ export const fetchDecorations = memoizeObservable(
     cacheKey
 )
 
-function cacheKey(sel: LSPContext): string {
-    return `${makeRepoURI(sel)}:mode=${sel.mode}:settings=${JSON.stringify(sel.settings)}`
+function cacheKey(sel: LSPSelector): string {
+    return `${makeRepoURI(sel)}:mode=${sel.mode}`
 }

@@ -4,7 +4,7 @@ import { catchError, map } from 'rxjs/operators'
 import { normalizeAjaxError } from '../util/errors'
 import * as GQL from './graphqlschema'
 
-const graphQLContent = Symbol('graphQLContent')
+export const graphQLContent = Symbol('graphQLContent')
 export interface GraphQLDocument {
     [graphQLContent]: string
 }

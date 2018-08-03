@@ -1,9 +1,0 @@
-.registry-extension-configure-button {
-    &__enable-btn {
-        // Ensure same width for 'Enable' and 'Disable' to reduce UI jitter. This is a rough estimate of the width; we
-        // should revise it (within reason) if popular platforms render it larger.
-        //
-        // stylelint-disable-next-line declaration-property-unit-whitelist
-        min-width: 59px;
-    }
-}

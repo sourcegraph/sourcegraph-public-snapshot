@@ -18,8 +18,6 @@ import (
 // misnomer.
 type registryExtensionRemoteResolver struct {
 	v *registry.Extension
-
-	cache *extensionRegistryCache
 }
 
 func (r *registryExtensionRemoteResolver) ID() graphql.ID {
@@ -67,7 +65,7 @@ func (r *registryExtensionRemoteResolver) UpdatedAt() *string {
 }
 
 func (r *registryExtensionRemoteResolver) URL() string {
-	return router.RegistryExtension(r.v.ExtensionID)
+	return router.Extension(r.v.ExtensionID)
 }
 
 func (r *registryExtensionRemoteResolver) RemoteURL() *string {
@@ -90,22 +88,6 @@ func (r *registryExtensionRemoteResolver) RegistryName() (string, error) {
 
 func (r *registryExtensionRemoteResolver) IsLocal() bool { return r.v.IsSynthesizedLocalExtension }
 
-func (r *registryExtensionRemoteResolver) ExtensionConfigurationSubjects(ctx context.Context, args *registryExtensionExtensionConfigurationSubjectsConnectionArgs) (*extensionConfigurationSubjectConnection, error) {
-	return listExtensionConfigurationSubjects(ctx, r.cache, &registryExtensionMultiResolver{remote: r}, args)
-}
-
-func (r *registryExtensionRemoteResolver) Users(ctx context.Context, args *connectionArgs) (*userConnectionResolver, error) {
-	return listRegistryExtensionUsers(ctx, r.cache, r.v.ExtensionID, args)
-}
-
-func (r *registryExtensionRemoteResolver) ViewerHasEnabled(ctx context.Context) (bool, error) {
-	return viewerHasEnabledRegistryExtension(ctx, r.v.ExtensionID)
-}
-
 func (r *registryExtensionRemoteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return false, nil // can't administer remote extensions
-}
-
-func (r *registryExtensionRemoteResolver) ConfiguredExtension(ctx context.Context, args *configuredExtensionFromRegistryExtensionArgs) (*configuredExtensionResolver, error) {
-	return configuredExtensionFromRegistryExtension(ctx, r.v.ExtensionID, *args)
 }

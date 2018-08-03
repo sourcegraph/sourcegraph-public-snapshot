@@ -8,13 +8,14 @@ import { HighlightedMatches } from '../../components/HighlightedMatches'
 import { PopoverButton } from '../../components/PopoverButton'
 import { ContributedActionItem, ContributedActionItemProps } from '../../extensions/ContributedActionItem'
 import { getContributedActionItems } from '../../extensions/ContributedActions'
-import { ExtensionsEmptyState } from '../../registry/extensions/ExtensionsEmptyState'
+import { ExtensionsEmptyState } from '../../extensions/ExtensionsEmptyState'
 import { CXPControllerProps } from '../CXPEnvironment'
 
 interface Props extends CXPControllerProps {
     /** The menu whose commands to display. */
     menu: ContributableMenu
 
+    /** Called when the user has selected an item in the list. */
     onSelect?: () => void
 }
 
@@ -98,10 +99,12 @@ export class CXPCommandList extends React.PureComponent<Props, State> {
                             ref={i === selectedIndex ? this.setSelectedItem : undefined}
                             title={
                                 <HighlightedMatches
-                                    text={item.contribution.title || item.contribution.command}
+                                    text={`${item.contribution.category ? `${item.contribution.category}: ` : ''}${item
+                                        .contribution.title || item.contribution.command}`}
                                     pattern={query}
                                 />
                             }
+                            onCommandExecute={this.props.onSelect}
                             cxpController={this.props.cxpController}
                         />
                     ))

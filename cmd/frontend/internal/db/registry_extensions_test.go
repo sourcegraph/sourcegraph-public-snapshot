@@ -92,13 +92,17 @@ func TestRegistryExtensions(t *testing.T) {
 			t.Errorf("got extension ID %q, want %q", x.NonCanonicalExtensionID, extensionID)
 		}
 	}
-	testListCount := func(t *testing.T, opt RegistryExtensionsListOptions, want []*RegistryExtension) {
+	testList := func(t *testing.T, opt RegistryExtensionsListOptions, want []*RegistryExtension) {
 		t.Helper()
 		if ois, err := RegistryExtensions.List(ctx, opt); err != nil {
 			t.Fatal(err)
 		} else if !reflect.DeepEqual(ois, want) {
-			t.Errorf("got %+v, want %+v", ois, want)
+			t.Errorf("got %s, want %s", asJSON(t, ois), asJSON(t, want))
 		}
+	}
+	testListCount := func(t *testing.T, opt RegistryExtensionsListOptions, want []*RegistryExtension) {
+		t.Helper()
+		testList(t, opt, want)
 		if n, err := RegistryExtensions.Count(ctx, opt); err != nil {
 			t.Fatal(err)
 		} else if want := len(want); n != want {
@@ -198,6 +202,10 @@ func TestRegistryExtensions(t *testing.T) {
 			})
 			t.Run("List/Count by Publisher.Query one", func(t *testing.T) {
 				testListCount(t, RegistryExtensionsListOptions{Query: c.publisherName + "/" + x.Name}, wantByCurrent)
+			})
+			t.Run("List/Count with prioritizeExtensionIDs", func(t *testing.T) {
+				testList(t, RegistryExtensionsListOptions{PrioritizeExtensionIDs: []string{xu.NonCanonicalExtensionID}, LimitOffset: &LimitOffset{Limit: 1}}, []*RegistryExtension{xu})
+				testList(t, RegistryExtensionsListOptions{PrioritizeExtensionIDs: []string{xo.NonCanonicalExtensionID}, LimitOffset: &LimitOffset{Limit: 1}}, []*RegistryExtension{xo})
 			})
 
 			if err := RegistryExtensions.Delete(ctx, x.ID); err != nil {
