@@ -39,3 +39,13 @@ img.icon-inline,
 .icon-inline > .icon-loader {
     stroke: currentColor;
 }
+
+// @sourcegraph/react-loading-spinner coloring
+.theme-light {
+    --loading-spinner-outer-color: #{rgba($body-color-light, 0.3)};
+    --loading-spinner-inner-color: #{rgba($body-color-light, 1)};
+}
+.theme-dark {
+    --loading-spinner-outer-color: #{rgba($body-color-dark, 0.3)};
+    --loading-spinner-inner-color: #{rgba($body-color-dark, 1)};
+}
