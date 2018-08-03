@@ -32,7 +32,7 @@ var ansiColors = map[string]string{
 	"search-link":           fg256Color(237),
 	"search-repository":     fg256Color(23),
 	"search-filename":       fg256Color(69),
-	"search-match":          fg256Color(0) + bg256Color(2),
+	"search-match":          fg256Color(0) + bg256Color(11),
 	"search-line-numbers":   fg256Color(69),
 	"search-commit-author":  fg256Color(2),
 	"search-commit-subject": fg256Color(68),
