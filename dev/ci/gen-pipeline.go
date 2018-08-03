@@ -166,40 +166,41 @@ func main() {
 			cmds = append(cmds, Cmd(preBuildScript))
 		}
 
-		image := "us.gcr.io/sourcegraph-dev/" + app
+		gcrImage := "us.gcr.io/sourcegraph-dev/" + app
 		buildScript := cmdDir + "/build.sh"
 		if _, err := os.Stat(buildScript); err == nil {
 			cmds = append(cmds,
-				Env("IMAGE", image+":"+version),
+				Env("IMAGE", gcrImage+":"+version),
 				Env("VERSION", version),
 				Cmd(buildScript),
 			)
 		} else {
 			cmds = append(cmds,
 				Cmd("go build github.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/godockerize"),
-				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --go-build-flags='-ldflags' --go-build-flags='-X github.com/sourcegraph/sourcegraph/pkg/version.version=%s' --env VERSION=%s github.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, version, app)),
+				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --go-build-flags='-ldflags' --go-build-flags='-X github.com/sourcegraph/sourcegraph/pkg/version.version=%s' --env VERSION=%s github.com/sourcegraph/sourcegraph/cmd/%s", gcrImage, version, version, version, app)),
 			)
 		}
 		cmds = append(cmds,
 			Cmd("gcloud auth configure-docker -q"),
-			Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
+			Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, version)),
 		)
 		if latest {
 			cmds = append(cmds,
-				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", image, version, image)),
-				Cmd(fmt.Sprintf("docker push %s:latest", image)),
+				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", gcrImage, version, gcrImage)),
+				Cmd(fmt.Sprintf("docker push %s:latest", gcrImage)),
 			)
 			if app == "server" {
 				cmds = append(cmds,
-					Cmd(fmt.Sprintf("docker tag %s:%s sourcegraph/server:insiders", image, version)),
+					Cmd(fmt.Sprintf("docker tag %s:%s sourcegraph/server:insiders", gcrImage, version)),
 					Cmd("docker push sourcegraph/server:insiders"),
 				)
 			}
 		}
-		if taggedRelease && app == "server" {
+		if taggedRelease {
+			dockerHubImage := fmt.Sprintf("sourcegraph/%s", app)
 			cmds = append(cmds,
-				Cmd(fmt.Sprintf("docker tag %s:%s sourcegraph/server:%s", image, version, version)),
-				Cmd("docker push sourcegraph/server:"+version),
+				Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", gcrImage, version, dockerHubImage, version)),
+				Cmd(fmt.Sprintf("docker push %s:%s", dockerHubImage, version)),
 			)
 		}
 		pipeline.AddStep(":docker:", cmds...)
