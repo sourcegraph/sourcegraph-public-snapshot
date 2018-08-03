@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	stdlibpath "path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -191,6 +192,10 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 	}
 
 	if len(out) == 0 {
+		// If we are listing the empty root tree, we will have no output.
+		if stdlibpath.Clean(path) == "." {
+			return []os.FileInfo{}, nil
+		}
 		return nil, &os.PathError{Op: "git ls-tree", Path: path, Err: os.ErrNotExist}
 	}
 

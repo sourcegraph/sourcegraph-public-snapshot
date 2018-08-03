@@ -121,12 +121,13 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 func TestRepository_FileSystem(t *testing.T) {
 	t.Parallel()
 
-	// In all tests, repo should contain two commits. The first commit (whose ID
-	// is in the 'first' field) has a file at dir1/file1 with the contents
-	// "myfile1" and the mtime 2006-01-02T15:04:05Z. The second commit (whose ID
-	// is in the 'second' field) adds a file at file2 (in the top-level
-	// directory of the repository) with the contents "infile2" and the mtime
-	// 2014-05-06T19:20:21Z.
+	// In all tests, repo should contain three commits. The first commit
+	// (whose ID is in the 'first' field) has a file at dir1/file1 with the
+	// contents "myfile1" and the mtime 2006-01-02T15:04:05Z. The second
+	// commit (whose ID is in the 'second' field) adds a file at file2 (in the
+	// top-level directory of the repository) with the contents "infile2" and
+	// the mtime 2014-05-06T19:20:21Z. The third commit contains an empty
+	// tree.
 	//
 	// TODO(sqs): add symlinks, etc.
 	gitCommands := []string{
@@ -139,15 +140,18 @@ func TestRepository_FileSystem(t *testing.T) {
 		"touch --date=2014-05-06T19:20:21Z 'file 2' || touch -t " + times[1] + " 'file 2'",
 		"git add 'file 2'",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2014-05-06T19:20:21Z git commit -m commit2 --author='a <a@a.com>' --date 2014-05-06T19:20:21Z",
+		"git rm 'dir1/file1' 'file 2'",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2018-05-06T19:20:21Z git commit -m commit3 --author='a <a@a.com>' --date 2018-05-06T19:20:21Z",
 	}
 	tests := map[string]struct {
-		repo          gitserver.Repo
-		first, second api.CommitID
+		repo                 gitserver.Repo
+		first, second, third api.CommitID
 	}{
 		"git cmd": {
 			repo:   makeGitRepository(t, gitCommands...),
 			first:  "b6602ca96bdc0ab647278577a3c6edcb8fe18fb0",
 			second: "c5151eceb40d5e625716589b745248e1a6c6228d",
+			third:  "ba3c51080ed4a5b870952ecd7f0e15f255b24cca",
 		},
 	}
 
@@ -190,6 +194,13 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 		if want := int64(7); file1Info.Size() != want {
 			t.Errorf("%s: got dir1 entry size == %d, want %d", label, file1Info.Size(), want)
+		}
+
+		// dir2 should not exist
+		_, err = git.ReadDir(ctx, test.repo, test.first, "dir2", false)
+		if !os.IsNotExist(err) {
+			t.Errorf("%s: fs1.ReadDir(dir2): should not exist: %s", label, err)
+			continue
 		}
 
 		// dir1/file1 should exist, contain "infile1", have the right mtime, and be a file.
@@ -278,6 +289,17 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 		if file1Info := dir1Entries[0]; file1Info.Name() != "file1" {
 			t.Errorf("%s: got dir1 entry name == %q, want 'file1'", label, file1Info.Name())
+		}
+
+		// rootEntries should be empty for third commit
+		rootEntries, err = git.ReadDir(ctx, test.repo, test.third, ".", false)
+		if err != nil {
+			t.Errorf("%s: fs3.ReadDir(.): %s", label, err)
+			continue
+		}
+		if got, want := len(rootEntries), 0; got != want {
+			t.Errorf("%s: got len(rootEntries) == %d, want %d", label, got, want)
+			continue
 		}
 	}
 }
