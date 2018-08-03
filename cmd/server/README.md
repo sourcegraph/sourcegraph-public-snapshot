@@ -84,7 +84,9 @@ git push --tags
     semver version string of the new version.
 1.  Commit and `git push` this change directly to the `master` branch.
 
-You are done! Sourcegraph Server version `VERSION` has been released!
+Sourcegraph Server version `VERSION` has been released!
+
+You should also [release Data Center](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#cutting-a-release).
 
 ## Publishing new code intelligence images
 
