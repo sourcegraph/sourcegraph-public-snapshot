@@ -166,7 +166,7 @@ func main() {
 			cmds = append(cmds, Cmd(preBuildScript))
 		}
 
-		gcrImage := "us.gcr.io/sourcegraph-dev/" + app
+		gcrImage := "sourcegraph/" + app
 		buildScript := cmdDir + "/build.sh"
 		if _, err := os.Stat(buildScript); err == nil {
 			cmds = append(cmds,
@@ -181,7 +181,7 @@ func main() {
 			)
 		}
 		cmds = append(cmds,
-			Cmd("gcloud auth configure-docker -q"),
+			Cmd(`docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"`),
 			Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, version)),
 		)
 		if latest {
