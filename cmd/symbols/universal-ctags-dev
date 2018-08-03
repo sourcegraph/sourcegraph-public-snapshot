@@ -2,7 +2,7 @@
 
 # This script is a wrapper around `universal-ctags`.
 #
-# This wrapper script runs `universal-ctags` via the `us.gcr.io/sourcegraph-dev/symbols` Docker image. This is the
+# This wrapper script runs `universal-ctags` via the `sourcegraph/symbols` Docker image. This is the
 # same Docker image that actually runs the symbols service in production, and it has the `universal-ctags` compiled
 # binary inside of it (because it needs it, too).
 #
@@ -13,7 +13,7 @@ set -e
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-IMAGE=docker.sourcegraph.com/symbols:latest
+IMAGE=sourcegraph/symbols:latest
 NAME=universal-ctags
 
 if [[ -z "${OFFLINE-}" ]] && ! docker pull "$IMAGE" > /dev/null; then
