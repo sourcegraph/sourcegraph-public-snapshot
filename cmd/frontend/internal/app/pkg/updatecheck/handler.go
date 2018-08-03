@@ -65,7 +65,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	clientVersion, err := semver.NewVersion(clientVersionString)
 	if err != nil {
-		http.Error(w, "bad version string: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, clientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	if clientSiteID == "" {
