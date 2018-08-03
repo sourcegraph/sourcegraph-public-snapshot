@@ -24,13 +24,13 @@ var (
 	// Server installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseServerBuild = newBuild("2.9.3")
+	latestReleaseServerBuild = newBuild("2.10.0")
 
 	// latestReleaseDataCenterBuild is only used by sourcegraph.com to tell existing
 	// Data Center installations what the latest version is. The version here _must_ be
 	// available at https://storage.googleapis.com/sourcegraph-assets/sourcegraph-server-gen/
 	// before landing in master.
-	latestReleaseDataCenterBuild = newBuild("2.9.8")
+	latestReleaseDataCenterBuild = newBuild("2.10.0")
 )
 
 func getLatestRelease(deployType string) build {
