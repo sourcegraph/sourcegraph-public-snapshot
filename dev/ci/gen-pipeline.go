@@ -181,7 +181,6 @@ func main() {
 			)
 		}
 		cmds = append(cmds,
-			Cmd(`docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"`),
 			Cmd(fmt.Sprintf("docker push %s:%s", gcrImage, version)),
 		)
 		if latest {
