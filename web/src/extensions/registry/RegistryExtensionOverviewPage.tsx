@@ -57,7 +57,12 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                             Published on
                                         </dt>
                                         <dd>
-                                            <LinkOrSpan to={this.props.extension.registryExtension.remoteURL}>
+                                            <LinkOrSpan
+                                                to={this.props.extension.registryExtension.remoteURL}
+                                                target={
+                                                    this.props.extension.registryExtension.isLocal ? undefined : '_self'
+                                                }
+                                            >
                                                 {this.props.extension.registryExtension.registryName}
                                             </LinkOrSpan>
                                         </dd>
