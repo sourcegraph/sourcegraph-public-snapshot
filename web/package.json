@@ -57,7 +57,7 @@
     "@types/fork-ts-checker-webpack-plugin": "0.4.1",
     "@types/get-stream": "3.0.1",
     "@types/globby": "8.0.0",
-    "@types/graphql": "0.13.3",
+    "@types/graphql": "0.13.4",
     "@types/gulp": "4.0.5",
     "@types/highlight.js": "9.12.3",
     "@types/http-proxy-middleware": "0.17.5",

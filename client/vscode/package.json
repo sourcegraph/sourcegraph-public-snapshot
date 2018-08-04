@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@sourcegraph/tsconfig": "^3.0.0",
-    "@types/graphql": "0.13.3",
+    "@types/graphql": "0.13.4",
     "@types/lodash": "4.14.116",
     "@types/mocha": "5.2.5",
     "@types/node": "6.0.114",
