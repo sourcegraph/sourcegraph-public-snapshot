@@ -46,6 +46,7 @@ diff --git a/.arcconfig b/.arcconfig
 
 // This is probably a flakey test because it's relying on phabricator results
 func TestGetRawDiff(t *testing.T) {
+	t.Skip("TODO(isaac): https://github.com/sourcegraph/sourcegraph/issues/12724")
 	if apiToken == "" {
 		// Should we cause this test to fail if not configured?
 		t.Error("no api token provided")
