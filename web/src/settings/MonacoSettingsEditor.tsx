@@ -4,9 +4,6 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
-import extensionSchemaJSON from '../schema/extension.schema.json'
-import settingsSchemaJSON from '../schema/settings.schema.json'
-import siteSchemaJSON from '../schema/site.schema.json'
 import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
@@ -19,12 +16,9 @@ export interface Props {
     height?: number
 
     /**
-     * The ID of the JSON Schema that describes the document (typically a URI).
+     * The JSON Schema that describes the document.
      */
-    jsonSchema:
-        | 'https://sourcegraph.com/v1/site.schema.json#'
-        | 'https://sourcegraph.com/v1/settings.schema.json#'
-        | 'https://sourcegraph.com/v1/extension.schema.json#'
+    jsonSchema: { $id: string }
 
     monacoRef?: (monacoValue: typeof monaco | null) => void
     isLightTheme: boolean
@@ -142,19 +136,16 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
             })
         }
 
-        const schemas: { uri: string; schema: any }[] = [
-            { uri: 'https://sourcegraph.com/v1/site.schema.json#', schema: siteSchemaJSON },
-            { uri: 'https://sourcegraph.com/v1/settings.schema.json#', schema: settingsSchemaJSON },
-            { uri: './settings.schema.json#', schema: settingsSchemaJSON }, // so that relative references work
-            { uri: 'https://sourcegraph.com/v1/extension.schema.json#', schema: extensionSchemaJSON },
-        ]
         monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
             validate: true,
             allowComments: true,
-            schemas: schemas.map(schema => ({
-                ...schema,
-                fileMatch: schema.uri === this.props.jsonSchema ? ['*'] : undefined,
-            })),
+            schemas: [
+                {
+                    uri: this.props.jsonSchema.$id,
+                    schema: this.props.jsonSchema,
+                    fileMatch: ['*'],
+                },
+            ],
         })
 
         monaco.editor.defineTheme('sourcegraph-dark', {

@@ -5,6 +5,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { PageTitle } from '../../components/PageTitle'
+import extensionSchemaJSON from '../../schema/extension.schema.json'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ExtensionAreaPageProps } from './ExtensionArea'
@@ -97,7 +98,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                             id="registry-extension-edit-page__data"
                             value={this.props.extension.rawManifest}
                             height={500}
-                            jsonSchema="https://sourcegraph.com/v1/extension.schema.json#"
+                            jsonSchema={extensionSchemaJSON}
                             readOnly={true}
                             isLightTheme={this.props.isLightTheme}
                             history={this.props.history}

@@ -7,6 +7,7 @@ import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { SaveToolbar } from '../components/SaveToolbar'
+import settingsSchemaJSON from '../schema/settings.schema.json'
 import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
@@ -207,7 +208,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         />
                         <MonacoSettingsEditor
                             value={contents}
-                            jsonSchema="https://sourcegraph.com/v1/settings.schema.json#"
+                            jsonSchema={settingsSchemaJSON}
                             onChange={this.onEditorChange}
                             readOnly={this.state.saving}
                             monacoRef={this.monacoRef}

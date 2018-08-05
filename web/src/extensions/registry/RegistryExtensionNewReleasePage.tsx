@@ -10,6 +10,7 @@ import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import extensionSchemaJSON from '../../schema/extension.schema.json'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -158,7 +159,7 @@ export class RegistryExtensionNewReleasePage extends React.PureComponent<Props, 
                             id="registry-extension-edit-page__manifest"
                             value={manifestValue}
                             onChange={this.onManifestChange}
-                            jsonSchema="https://sourcegraph.com/v1/extension.schema.json#"
+                            jsonSchema={extensionSchemaJSON}
                             readOnly={this.state.updateOrError === 'loading'}
                             isLightTheme={this.props.isLightTheme}
                             history={this.props.history}

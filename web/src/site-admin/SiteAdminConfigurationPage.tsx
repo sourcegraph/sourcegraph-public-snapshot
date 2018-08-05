@@ -5,6 +5,7 @@ import { Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
+import siteSchemaJSON from '../schema/site.schema.json'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
@@ -256,7 +257,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                             <DynamicallyImportedMonacoSettingsEditor
                                 value={contents || ''}
                                 actions={siteConfigActions}
-                                jsonSchema="https://sourcegraph.com/v1/site.schema.json#"
+                                jsonSchema={siteSchemaJSON}
                                 onDirtyChange={this.onDirtyChange}
                                 canEdit={this.state.site.configuration.canUpdate}
                                 saving={this.state.saving}
