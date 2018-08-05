@@ -98,6 +98,8 @@ func (g *generator) emitTaggedUnionType(schema *jsonschema.Schema) ([]ast.Decl, 
 		}
 	}
 
+	imports := importSpecs("fmt", "encoding/json", "errors")
+
 	// Generate Go union type.
 	fields := make([]*ast.Field, len(oneOfSchemas))
 	fieldNames := make([]string, len(oneOfSchemas))
@@ -106,10 +108,11 @@ func (g *generator) emitTaggedUnionType(schema *jsonschema.Schema) ([]ast.Decl, 
 		constValue := discriminantValues[i]
 		fieldNames[i] = toGoName(constValue, "Const_")
 		fieldNameToConstValue[fieldNames[i]] = constValue
-		typeExpr, err := g.expr(s)
+		typeExpr, fieldImports, err := g.expr(s)
 		if err != nil {
 			return nil, nil, errors.WithMessage(err, fmt.Sprintf("failed to get type expression for !go.taggedUnionType union type %q", fieldNames[i]))
 		}
+		imports = append(imports, fieldImports...)
 		fields[i] = &ast.Field{
 			Names: []*ast.Ident{ast.NewIdent(fieldNames[i])},
 			Type:  &ast.StarExpr{X: typeExpr},
@@ -147,7 +150,7 @@ func (g *generator) emitTaggedUnionType(schema *jsonschema.Schema) ([]ast.Decl, 
 	makeMethod(unmarshalJSONDecl, &ast.StarExpr{X: ast.NewIdent(goName)}, "UnmarshalJSON")
 
 	return []ast.Decl{typeDecl, marshalJSONDecl, unmarshalJSONDecl},
-		importSpecs("fmt", "encoding/json", "errors"),
+		imports,
 		nil
 }
 

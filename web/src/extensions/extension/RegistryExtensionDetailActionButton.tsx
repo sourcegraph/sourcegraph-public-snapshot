@@ -57,7 +57,7 @@ export const RegistryExtensionDetailActionButton: React.SFC<Props> = props => {
             <ExtensionConfigureButton
                 extension={props.extension}
                 onUpdate={props.onUpdate}
-                header="Edit extension settings for..."
+                header="Edit settings for..."
                 itemFilter={ADDED_AND_CAN_ADMINISTER}
                 itemComponent={ExtensionConfiguredSubjectItemForConfigure}
                 buttonClassName={`btn-success ${props.className || ''} ${props.buttonClassName || ''}`}

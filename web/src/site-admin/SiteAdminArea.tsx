@@ -4,6 +4,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
+import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
 import { SiteAdminAuthenticationProvidersPage } from './SiteAdminAuthenticationProvidersPage'
@@ -34,7 +35,7 @@ const NotSiteAdminPage = () => (
     <HeroPage icon={DirectionalSignIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
 )
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, ExtensionsProps {
     user: GQL.IUser | null
     isLightTheme: boolean
 }
@@ -90,7 +91,11 @@ export class SiteAdminArea extends React.Component<Props> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <SiteAdminSettingsPage {...routeComponentProps} {...transferProps} />
+                                <SiteAdminSettingsPage
+                                    {...routeComponentProps}
+                                    {...transferProps}
+                                    extensions={this.props.extensions}
+                                />
                             )}
                         />
                         <Route

@@ -8,6 +8,7 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
+import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -63,7 +64,7 @@ const NotFoundPage = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="Sorry, the requested user was not found." />
 )
 
-interface Props extends RouteComponentProps<{ username: string }> {
+interface Props extends RouteComponentProps<{ username: string }>, ExtensionsProps {
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
      * parameter.
@@ -83,7 +84,7 @@ interface State {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaPageProps {
+export interface UserAreaPageProps extends ExtensionsProps {
     /**
      * The user who is the subject of the page.
      */
@@ -162,6 +163,7 @@ export class UserArea extends React.Component<Props, State> {
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
             authenticatedUser: this.props.user,
+            extensions: this.props.extensions,
         }
         return (
             <div className="user-area area--vertical">

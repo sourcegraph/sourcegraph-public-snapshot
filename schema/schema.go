@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sourcegraph/go-jsonschema/jsonschema"
 )
 
 type AWSCodeCommitConnection struct {
@@ -84,6 +85,11 @@ type BundleTarget struct {
 	ContentType string `json:"contentType,omitempty"`
 	Type        string `json:"type"`
 	Url         string `json:"url"`
+}
+
+// Contributions description: Features contributed by this extension. Extensions may also register certain types of contributions dynamically.
+type Contributions struct {
+	Configuration *jsonschema.Schema `json:"configuration,omitempty"`
 }
 
 // DockerTarget description: A specification of how to run a Docker container to provide this extension's functionality.
@@ -377,6 +383,7 @@ type SlackNotificationsConfig struct {
 type SourcegraphExtension struct {
 	ActivationEvents []string                `json:"activationEvents"`
 	Args             *map[string]interface{} `json:"args,omitempty"`
+	Contributes      *Contributions          `json:"contributes,omitempty"`
 	Description      string                  `json:"description,omitempty"`
 	Platform         ExtensionPlatform       `json:"platform"`
 	Readme           string                  `json:"readme,omitempty"`

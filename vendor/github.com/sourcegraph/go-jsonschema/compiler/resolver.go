@@ -47,6 +47,10 @@ func resolveReferences(locationsByRoot schemaLocationsByRoot) (resolutions map[*
 }
 
 func resolveReference(ref *url.URL, locationsByRoot schemaLocationsByRoot, onlyInRoot *jsonschema.Schema) *jsonschema.Schema {
+	if isRefToMetaSchema(ref) {
+		return metaSchemaSentinel
+	}
+
 	refStr := ref.String()
 	for root, locations := range locationsByRoot {
 		if onlyInRoot != nil && root != onlyInRoot {
@@ -63,4 +67,14 @@ func resolveReference(ref *url.URL, locationsByRoot schemaLocationsByRoot, onlyI
 		}
 	}
 	return nil
+}
+
+// metaSchemaSentinel is a sentinel value that refers to the JSON Schema describing JSON Schema
+// documents itself (the meta-schema). During the compiler's resolution phase, it is stored as the
+// resolution for $refs to the meta-schema. During the compiler's codegen phase, it is represented
+// by the Go type *jsonschema.Schema and an import of package jsonschema is added.
+var metaSchemaSentinel = &jsonschema.Schema{}
+
+func isRefToMetaSchema(ref *url.URL) bool {
+	return (ref.Scheme == "http" || ref.Scheme == "https") && ref.Host == "json-schema.org" && ref.Path == "/draft-07/schema" && (ref.Fragment == "" || ref.Fragment == "/")
 }

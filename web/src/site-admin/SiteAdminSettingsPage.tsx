@@ -7,6 +7,7 @@ import { catchError, map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { PageTitle } from '../components/PageTitle'
+import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { SettingsArea } from '../settings/SettingsArea'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 
@@ -27,7 +28,7 @@ function querySiteConfigDeprecatedSettings(): Observable<string | null> {
     )
 }
 
-interface Props extends RouteComponentProps<{}> {
+interface Props extends RouteComponentProps<{}>, ExtensionsProps {
     user: GQL.IUser
     isLightTheme: boolean
     site: Pick<GQL.ISite, '__typename' | 'id'>

@@ -8,6 +8,7 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
+import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -66,7 +67,7 @@ const NotFoundPage = () => (
     />
 )
 
-interface Props extends RouteComponentProps<{ name: string }> {
+interface Props extends RouteComponentProps<{ name: string }>, ExtensionsProps {
     /**
      * The currently authenticated user.
      */
@@ -85,7 +86,7 @@ interface State {
 /**
  * Properties passed to all page components in the org area.
  */
-export interface OrgAreaPageProps {
+export interface OrgAreaPageProps extends ExtensionsProps {
     /** The org that is the subject of the page. */
     org: GQL.IOrg
 
@@ -157,6 +158,7 @@ export class OrgArea extends React.Component<Props> {
             authenticatedUser: this.props.user,
             org: this.state.orgOrError,
             onOrganizationUpdate: this.onDidUpdateOrganization,
+            extensions: this.props.extensions,
         }
 
         if (this.props.location.pathname === `${this.props.match.url}/invitation`) {

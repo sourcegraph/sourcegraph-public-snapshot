@@ -1093,7 +1093,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3200480924faf4a4cbc3f6783f7e5a750404921b9f41da65b8e4e38a85db69ad"
+  digest = "1:270c0cf445e9966f8d0921e42add6822283fa1021dbe3f74c8560222c36be539"
   name = "github.com/sourcegraph/go-jsonschema"
   packages = [
     "cmd/go-jsonschema-compiler",
@@ -1101,7 +1101,7 @@
     "jsonschema",
   ]
   pruneopts = "NUT"
-  revision = "d0bc3b7ffa727fcdfcc60430c93568eda2b16e4d"
+  revision = "0e659b54484d990c976bbfb981e39f92f4c2fb6d"
 
 [[projects]]
   branch = "master"
@@ -1818,6 +1818,7 @@
     "github.com/shurcooL/vfsgen",
     "github.com/sourcegraph/ctxvfs",
     "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler",
+    "github.com/sourcegraph/go-jsonschema/jsonschema",
     "github.com/sourcegraph/go-langserver/langserver",
     "github.com/sourcegraph/go-langserver/langserver/util",
     "github.com/sourcegraph/go-langserver/pkg/lsp",

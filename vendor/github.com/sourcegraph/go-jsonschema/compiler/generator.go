@@ -74,10 +74,11 @@ func (g *generator) emitStructType(schema *jsonschema.Schema) (decls []ast.Decl,
 	for i, name := range names {
 		prop := (*schema.Properties)[name]
 
-		typeExpr, err := g.expr(prop)
+		typeExpr, fieldImports, err := g.expr(prop)
 		if err != nil {
 			return nil, nil, errors.WithMessage(err, fmt.Sprintf("failed to get type expression for property %q", name))
 		}
+		imports = append(imports, fieldImports...)
 
 		var jsonStructTagExtra string
 		if !schema.IsRequiredProperty(name) {
@@ -137,8 +138,13 @@ func (g *generator) emitStructType(schema *jsonschema.Schema) (decls []ast.Decl,
 	return decls, imports, nil
 }
 
-// expr returns the Go expression AST node that refers to the Go type (builtin or named) for schema.
-func (g *generator) expr(schema *jsonschema.Schema) (ast.Expr, error) {
+// expr returns the Go expression AST node that refers to the Go type (builtin or named) for schema,
+// as well as any Go import statements that must be added to the file containing this Go expression.
+func (g *generator) expr(schema *jsonschema.Schema) (ast.Expr, []*ast.ImportSpec, error) {
+	if schema == metaSchemaSentinel {
+		return &ast.SelectorExpr{X: ast.NewIdent("jsonschema"), Sel: ast.NewIdent("Schema")}, importSpecs("github.com/sourcegraph/go-jsonschema/jsonschema"), nil
+	}
+
 	// Handle $ref to another schema.
 	if schema.Reference != nil {
 		return g.expr(g.resolutions[schema])
@@ -147,11 +153,12 @@ func (g *generator) expr(schema *jsonschema.Schema) (ast.Expr, error) {
 	// Handle array types.
 	if len(schema.Type) == 1 && schema.Type[0] == jsonschema.ArrayType {
 		var elt ast.Expr
+		var imports []*ast.ImportSpec
 		if schema.Items != nil && schema.Items.Schema != nil {
 			var err error
-			elt, err = g.expr(schema.Items.Schema)
+			elt, imports, err = g.expr(schema.Items.Schema)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			// Prefer array-of-pointer-to-struct over array-of-struct.
 			//
@@ -163,42 +170,42 @@ func (g *generator) expr(schema *jsonschema.Schema) (ast.Expr, error) {
 		} else {
 			elt = emptyInterfaceType
 		}
-		return &ast.ArrayType{Elt: elt}, nil
+		return &ast.ArrayType{Elt: elt}, imports, nil
 	}
 
 	// Handle object types that are emitted as Go map types (not named struct types).
 	if len(schema.Type) == 1 && schema.Type[0] == jsonschema.ObjectType && schema.Properties == nil && schema.AdditionalProperties != nil {
-		typeExpr, err := g.expr(schema.AdditionalProperties)
+		typeExpr, imports, err := g.expr(schema.AdditionalProperties)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return &ast.MapType{Key: ast.NewIdent("string"), Value: typeExpr}, nil
+		return &ast.MapType{Key: ast.NewIdent("string"), Value: typeExpr}, imports, nil
 	}
 
 	// Handle types represented by Go builtin types or some other non-named types.
 	if len(schema.Type) != 1 && (schema.Go == nil || !schema.Go.TaggedUnionType) {
-		return emptyInterfaceType, nil
+		return emptyInterfaceType, nil, nil
 	}
 	if len(schema.Type) == 1 && goBuiltinType(schema.Type[0]) != "" {
-		return ast.NewIdent(goBuiltinType(schema.Type[0])), nil
+		return ast.NewIdent(goBuiltinType(schema.Type[0])), nil, nil
 	}
 	if schema.IsEmpty {
-		return emptyInterfaceType, nil
+		return emptyInterfaceType, nil, nil
 	}
 	if schema.IsNegated {
-		return emptyInterfaceType, nil
+		return emptyInterfaceType, nil, nil
 	}
 
 	// Otherwise, use a Go named type.
 	_, location := g.schemaLocator.locateSchema(schema)
 	if location == nil {
-		return nil, errors.New("unable to locate schema")
+		return nil, nil, errors.New("unable to locate schema")
 	}
 	goName, err := goNameForSchema(schema, *location)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return ast.NewIdent(goName), nil
+	return ast.NewIdent(goName), nil, nil
 }
 
 func docForSchema(schema *jsonschema.Schema, goName string) *ast.CommentGroup {

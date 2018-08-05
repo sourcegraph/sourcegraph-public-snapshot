@@ -1,3 +1,4 @@
+import { gqlToCascade } from '@sourcegraph/extensions-client-common/lib/settings'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { upperFirst } from 'lodash'
@@ -6,16 +7,18 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../backend/graphql'
-import * as GQL from '../backend/graphqlschema'
 import { IConfigurationCascade } from '../backend/graphqlschema'
+import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
+import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import settingsSchemaJSON from '../schema/settings.schema.json'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { SettingsPage } from './SettingsPage'
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
-interface SettingsAreaPageCommonProps {
+interface SettingsAreaPageCommonProps extends ExtensionsProps {
     /** The subject whose settings to edit. */
     subject: Pick<GQL.ConfigurationSubject, '__typename' | 'id'>
 
@@ -27,10 +30,15 @@ interface SettingsAreaPageCommonProps {
     isLightTheme: boolean
 }
 
+interface SettingsData {
+    subjects: GQL.IConfigurationCascade['subjects']
+    settingsJSONSchema: { $id: string }
+}
+
 /** Properties passed to all pages in the settings area. */
 export interface SettingsAreaPageProps extends SettingsAreaPageCommonProps {
-    /** The settings, or null if the subject has no settings yet. */
-    settings: GQL.ISettings | null
+    /** The settings data, or null if the subject has no settings yet. */
+    data: SettingsData
 
     /** Called when the page updates the subject's settings. */
     onUpdate: () => void
@@ -45,16 +53,16 @@ const LOADING: 'loading' = 'loading'
 
 interface State {
     /**
-     * The configuration cascade, loading, or an error.
+     * The data, loading, or an error.
      */
-    cascadeOrError: typeof LOADING | Pick<GQL.IConfigurationCascade, 'subjects'> | ErrorLike
+    dataOrError: typeof LOADING | SettingsData | ErrorLike
 }
 
 /**
  * A settings area with a top-level JSON editor and sub-pages for editing nested settings values.
  */
 export class SettingsArea extends React.Component<Props, State> {
-    public state: State = { cascadeOrError: LOADING }
+    public state: State = { dataOrError: LOADING }
 
     private subjectChanges = new Subject<Pick<GQL.IConfigurationSubject, 'id'>>()
     private refreshRequests = new Subject<void>()
@@ -68,8 +76,16 @@ export class SettingsArea extends React.Component<Props, State> {
                     distinctUntilChanged(),
                     switchMap(([{ id }]) =>
                         fetchConfigurationCascade(id).pipe(
+                            switchMap(cascade =>
+                                this.getMergedSettingsJSONSchema(cascade).pipe(
+                                    map(
+                                        settingsJSONSchema =>
+                                            ({ subjects: cascade.subjects, settingsJSONSchema } as SettingsData)
+                                    )
+                                )
+                            ),
                             catchError(error => [error]),
-                            map(c => ({ cascadeOrError: c } as Pick<State, 'cascadeOrError'>))
+                            map(c => ({ dataOrError: c } as Pick<State, 'dataOrError'>))
                         )
                     )
                 )
@@ -90,11 +106,11 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (this.state.cascadeOrError === LOADING) {
+        if (this.state.dataOrError === LOADING) {
             return null // loading
         }
-        if (isErrorLike(this.state.cascadeOrError)) {
-            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.cascadeOrError.message)} />
+        if (isErrorLike(this.state.dataOrError)) {
+            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.dataOrError.message)} />
         }
 
         let term: string
@@ -114,11 +130,12 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         const transferProps: SettingsAreaPageProps = {
-            settings: this.state.cascadeOrError.subjects[this.state.cascadeOrError.subjects.length - 1].latestSettings,
+            data: this.state.dataOrError,
             subject: this.props.subject,
             authenticatedUser: this.props.authenticatedUser,
             onUpdate: this.onUpdate,
             isLightTheme: this.props.isLightTheme,
+            extensions: this.props.extensions,
         }
 
         return (
@@ -140,6 +157,32 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 
     private onUpdate = () => this.refreshRequests.next()
+
+    private getMergedSettingsJSONSchema(
+        cascade: Pick<GQL.IConfigurationCascade, 'subjects'>
+    ): Observable<{ $id: string }> {
+        return this.props.extensions.withRegistryMetadata(gqlToCascade(cascade)).pipe(
+            map(configuredExtensions => ({
+                $id: 'sourcegraph://merged-settings.schema.json',
+                allOf: [
+                    settingsSchemaJSON,
+                    ...configuredExtensions
+                        .map(ce => {
+                            if (
+                                ce.manifest &&
+                                !isErrorLike(ce.manifest) &&
+                                ce.manifest.contributes &&
+                                ce.manifest.contributes.configuration
+                            ) {
+                                return ce.manifest.contributes.configuration
+                            }
+                            return true // JSON Schema that matches everything
+                        })
+                        .filter(schema => schema !== true), // omit trivial JSON Schemas
+                ],
+            }))
+        )
+    }
 }
 
 function fetchConfigurationCascade(subject: GQL.ID): Observable<Pick<IConfigurationCascade, 'subjects'>> {

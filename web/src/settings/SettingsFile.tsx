@@ -7,7 +7,6 @@ import { from as fromPromise, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 import * as GQL from '../backend/graphqlschema'
 import { SaveToolbar } from '../components/SaveToolbar'
-import settingsSchemaJSON from '../schema/settings.schema.json'
 import { settingsActions } from '../site-admin/configHelpers'
 import { eventLogger } from '../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
@@ -17,6 +16,11 @@ interface Props {
     history: H.History
 
     settings: GQL.ISettings | null
+
+    /**
+     * The JSON Schema that describes the document.
+     */
+    jsonSchema: { $id: string }
 
     /**
      * Called when the user saves changes to the settings file's contents.
@@ -208,7 +212,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         />
                         <MonacoSettingsEditor
                             value={contents}
-                            jsonSchema={settingsSchemaJSON}
+                            jsonSchema={this.props.jsonSchema}
                             onChange={this.onEditorChange}
                             readOnly={this.state.saving}
                             monacoRef={this.monacoRef}

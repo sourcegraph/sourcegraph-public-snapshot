@@ -37,6 +37,7 @@ export const OrgAccountArea: React.SFC<Props> = props => {
         org: props.org,
         onOrganizationUpdate: props.onOrganizationUpdate,
         isLightTheme: props.isLightTheme,
+        extensions: props.extensions,
     }
     return (
         <div className="org-settings-area area">
