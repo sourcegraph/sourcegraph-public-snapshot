@@ -3,6 +3,7 @@ import {
     MessageActionItem,
     MessageType,
     ServerCapabilities,
+    ShowInputRequest,
     ShowMessageRequest,
     ShowMessageRequestParams,
 } from '../../protocol'
@@ -37,6 +38,15 @@ export interface RemoteWindow extends Remote {
      */
     showInformationMessage(message: string): void
     showInformationMessage<T extends MessageActionItem>(message: string, ...actions: T[]): Promise<T | undefined>
+
+    /**
+     * Show a request for textual user input.
+     *
+     * @param message The message to show.
+     * @param defaultValue The default value for the user input, or undefined for no default.
+     * @returns The user's input, or null if the user (or the client) canceled the input request.
+     */
+    showInputRequest(message: string, defaultValue?: string): Promise<string | null>
 }
 
 export class RemoteWindowImpl implements RemoteWindow {
@@ -80,6 +90,10 @@ export class RemoteWindowImpl implements RemoteWindow {
     ): Promise<MessageActionItem | undefined> {
         const params: ShowMessageRequestParams = { type: MessageType.Info, message, actions }
         return this.connection.sendRequest(ShowMessageRequest.type, params).then(null2Undefined)
+    }
+
+    public showInputRequest(message: string, defaultValue?: string): Promise<string | null> {
+        return this.connection.sendRequest(ShowInputRequest.type, { message, defaultValue })
     }
 }
 
