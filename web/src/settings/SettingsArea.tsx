@@ -3,12 +3,13 @@ import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { combineLatest, Subject, Subscription } from 'rxjs'
+import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
+import { IConfigurationCascade } from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
-import { fetchSettings } from '../configuration/backend'
-import { ErrorLike, isErrorLike } from '../util/errors'
+import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { SettingsPage } from './SettingsPage'
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
@@ -43,15 +44,17 @@ interface Props extends SettingsAreaPageCommonProps, RouteComponentProps<{}> {
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    /** The settings, null if there are no settings yet for the subject, loading, or an error. */
-    settingsOrError: typeof LOADING | GQL.ISettings | null | ErrorLike
+    /**
+     * The configuration cascade, loading, or an error.
+     */
+    cascadeOrError: typeof LOADING | Pick<GQL.IConfigurationCascade, 'subjects'> | ErrorLike
 }
 
 /**
  * A settings area with a top-level JSON editor and sub-pages for editing nested settings values.
  */
 export class SettingsArea extends React.Component<Props, State> {
-    public state: State = { settingsOrError: LOADING }
+    public state: State = { cascadeOrError: LOADING }
 
     private subjectChanges = new Subject<Pick<GQL.IConfigurationSubject, 'id'>>()
     private refreshRequests = new Subject<void>()
@@ -64,9 +67,9 @@ export class SettingsArea extends React.Component<Props, State> {
                 .pipe(
                     distinctUntilChanged(),
                     switchMap(([{ id }]) =>
-                        fetchSettings(id).pipe(
+                        fetchConfigurationCascade(id).pipe(
                             catchError(error => [error]),
-                            map(c => ({ settingsOrError: c }))
+                            map(c => ({ cascadeOrError: c } as Pick<State, 'cascadeOrError'>))
                         )
                     )
                 )
@@ -87,11 +90,11 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (this.state.settingsOrError === LOADING) {
+        if (this.state.cascadeOrError === LOADING) {
             return null // loading
         }
-        if (isErrorLike(this.state.settingsOrError)) {
-            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.settingsOrError.message)} />
+        if (isErrorLike(this.state.cascadeOrError)) {
+            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.cascadeOrError.message)} />
         }
 
         let term: string
@@ -111,7 +114,7 @@ export class SettingsArea extends React.Component<Props, State> {
         }
 
         const transferProps: SettingsAreaPageProps = {
-            settings: this.state.settingsOrError,
+            settings: this.state.cascadeOrError.subjects[this.state.cascadeOrError.subjects.length - 1].latestSettings,
             subject: this.props.subject,
             authenticatedUser: this.props.authenticatedUser,
             onUpdate: this.onUpdate,
@@ -137,4 +140,33 @@ export class SettingsArea extends React.Component<Props, State> {
     }
 
     private onUpdate = () => this.refreshRequests.next()
+}
+
+function fetchConfigurationCascade(subject: GQL.ID): Observable<Pick<IConfigurationCascade, 'subjects'>> {
+    return queryGraphQL(
+        gql`
+            query ConfigurationCascade($subject: ID!) {
+                configurationSubject(id: $subject) {
+                    configurationCascade {
+                        subjects {
+                            latestSettings {
+                                id
+                                configuration {
+                                    contents
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        { subject }
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.configurationSubject) {
+                throw createAggregateError(errors)
+            }
+            return data.configurationSubject.configurationCascade
+        })
+    )
 }

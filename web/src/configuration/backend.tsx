@@ -1,47 +1,10 @@
 import { Observable } from 'rxjs'
 import { map, mergeMap, take } from 'rxjs/operators'
-import { gql, GraphQLDocument, mutateGraphQL, MutationResult, queryGraphQL } from '../backend/graphql'
+import { gql, GraphQLDocument, mutateGraphQL, MutationResult } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { configurationCascade } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
 import { createAggregateError } from '../util/errors'
-
-const settingsFragment = gql`
-    fragment SettingsFields on Settings {
-        id
-        configuration {
-            contents
-        }
-    }
-`
-
-/**
- * Fetches the settings for the subject.
- *
- * @return Observable that emits the settings or `null` if no settings exist yet for the subject.
- */
-export function fetchSettings(subject: GQL.ID): Observable<GQL.ISettings | null> {
-    return queryGraphQL(
-        gql`
-            query Settings($subject: ID!) {
-                configurationSubject(id: $subject) {
-                    latestSettings {
-                        ...SettingsFields
-                    }
-                }
-            }
-            ${settingsFragment}
-        `,
-        { subject }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.configurationSubject) {
-                throw createAggregateError(errors)
-            }
-            return data.configurationSubject.latestSettings
-        })
-    )
-}
 
 /**
  * Overwrites the settings for the subject.
