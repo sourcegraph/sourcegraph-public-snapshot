@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -32,10 +31,12 @@ import (
 var websocketUpgrader = websocket.Upgrader{}
 
 func init() {
-	if v, _ := strconv.ParseBool(os.Getenv("WEBSOCKET_INSECURE_SKIP_ORIGIN_CHECK")); v {
-		websocketUpgrader.CheckOrigin = func(r *http.Request) bool {
-			return true
-		}
+	// It's ok to allow other origins here because middleware already checks the
+	// origin and applies CORS for all incoming http requests. Checking here
+	// again would be redundant (and would be too strict, because we allow CORS
+	// from the browser extension, for example).
+	websocketUpgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
 	}
 }
 
