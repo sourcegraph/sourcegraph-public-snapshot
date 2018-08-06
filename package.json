@@ -59,7 +59,7 @@
   "sideEffects": false,
   "dependencies": {
     "minimatch": "^3.0.4",
-    "rxjs": "^6.2.1",
+    "rxjs": "^6.2.2",
     "uuid": "^3.3.2",
     "vscode-languageserver-types": "^3.8.2"
   },
