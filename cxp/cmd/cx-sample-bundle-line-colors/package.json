@@ -17,6 +17,6 @@
     "typescript": "^3.0.0"
   },
   "dependencies": {
-    "cxp": "^1.1.0"
+    "cxp": "^6.3.0"
   }
 }
