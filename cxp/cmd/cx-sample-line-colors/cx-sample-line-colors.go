@@ -37,7 +37,7 @@ type handler struct {
 }
 
 type extensionSettings struct {
-	Colors []string `json:"colors,omitempty"`
+	Colors []string `json:"lineColors.colors,omitempty"`
 }
 
 func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (interface{}, error) {
@@ -243,8 +243,8 @@ func (h *handler) updateSettings(ctx context.Context, conn *jsonrpc2.Conn, openD
 	// Run async because we are currently handling a client request, and we would deadlock otherwise.
 	go func() {
 		if err := conn.Call(ctx, "configuration/update", cxp.ConfigurationUpdateParams{
-			Path:  jsonx.Path{},
-			Value: newSettings,
+			Path:  jsonx.MakePath("lineColors.colors"),
+			Value: newSettings.Colors,
 		}, nil); err != nil {
 			log.Println("configuration/update error:", err)
 		}
@@ -338,11 +338,16 @@ const (
 )
 
 func iconURL(colors []string) string {
+	if len(colors) == 0 {
+		colors = []string{"red", "orange", "yellow", "green", "blue", "indigo", "violet"}
+	}
+
 	svgRects := make([]string, len(colors))
 	const totalWidth = float64(100)
 	for i, color := range colors {
-		width := totalWidth - (float64(i) * totalWidth / float64(len(colors)))
-		svgRects[i] = fmt.Sprintf(`<rect width="%.2f" height="100" fill="%s"/>`, width, html.EscapeString(color))
+		width := totalWidth / float64(len(colors))
+		svgRects[i] = fmt.Sprintf(`<rect x="%.2f" width="%.2f" height="100" fill="%s"/>`, width*float64(i), width, html.EscapeString(color))
+		log.Println(color)
 	}
 	svg := `<?xml version="1.0" encoding="utf-8" standalone="yes"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="100" height="100">` + strings.Join(svgRects, "") + `</svg>`
 	return "data:image/svg+xml;base64," + base64.StdEncoding.EncodeToString([]byte(svg))
