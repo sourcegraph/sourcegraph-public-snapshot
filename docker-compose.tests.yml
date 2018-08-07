@@ -1,0 +1,8 @@
+version: '3.2'
+services:
+  bext:
+    build:
+      context: .
+      args:
+        - NPM_TOKEN
+    working_dir: /bext

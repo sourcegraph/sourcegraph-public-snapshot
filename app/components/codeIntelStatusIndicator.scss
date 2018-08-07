@@ -1,0 +1,71 @@
+.code-intel-status-indicator {
+    position: relative;
+
+    &__popover {
+        display: none;
+        position: absolute;
+        top: 1rem;
+        right: -1rem;
+        z-index: 50;
+        width: 13rem;
+        max-width: 90vw;
+        margin: 0.5rem 1rem;
+        white-space: normal;
+        background: white;
+    }
+
+    &:hover &__popover,
+    &__popover:hover {
+        display: block;
+    }
+
+    &__unstyled-list {
+        list-style-type: none;
+    }
+}
+
+// A full-width container with a horizontal header.
+.composite-container {
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &__header {
+        &-action {
+            align-items: center;
+            cursor: pointer;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            padding: 0 0.3125rem !important;
+            margin-right: 0;
+            height: 1.75rem;
+            user-select: none;
+
+            &:not(&-active) {
+                opacity: 0.8;
+            }
+
+            @media (max-width: 768px) {
+                margin-right: 0.25rem;
+            }
+
+            &-text {
+                &:not(:empty) {
+                    margin-left: 0.25rem;
+                }
+
+                @media (max-width: 768px) {
+                    display: none;
+                }
+            }
+        }
+    }
+    &__icon {
+        width: 1rem !important;
+        height: 1rem !important;
+        vertical-align: middle;
+    }
+}

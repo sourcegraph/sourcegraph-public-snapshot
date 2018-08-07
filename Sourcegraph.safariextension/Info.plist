@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Author</key>
+	<string>Sourcegraph &lt;hi@sourcegraph.com&gt;</string>
+	<key>Builder Version</key>
+	<string>13604.5.6</string>
+	<key>CFBundleDisplayName</key>
+	<string>Sourcegraph</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.sourcegraph.sourcegraph</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.7</string>
+	<key>CFBundleVersion</key>
+	<string>1.7.8</string>
+	<key>Chrome</key>
+	<dict>
+		<key>Database Quota</key>
+		<integer>5242880</integer>
+		<key>Global Page</key>
+		<string>background.safari.html</string>
+		<key>Popovers</key>
+		<array>
+			<dict>
+				<key>Filename</key>
+				<string>options.html</string>
+				<key>Height</key>
+				<integer>600</integer>
+				<key>Identifier</key>
+				<string>com.sourcegraph.options</string>
+				<key>Width</key>
+				<integer>400</integer>
+			</dict>
+		</array>
+		<key>Toolbar Items</key>
+		<array>
+			<dict>
+				<key>Identifier</key>
+				<string>com.sourcegraph.browser-action</string>
+				<key>Image</key>
+				<string>img/icon-16.png</string>
+				<key>Include By Default</key>
+				<true/>
+				<key>Label</key>
+				<string>Souregraph</string>
+				<key>Popover</key>
+				<string>com.sourcegraph.options</string>
+			</dict>
+		</array>
+	</dict>
+	<key>Content</key>
+	<dict>
+		<key>Scripts</key>
+		<dict>
+			<key>End</key>
+			<array>
+				<string>js/inject.bundle.js</string>
+			</array>
+		</dict>
+		<key>Whitelist</key>
+		<array>
+			<string>http://*/*</string>
+			<string>https://*/*</string>
+		</array>
+	</dict>
+	<key>Description</key>
+	<string>Get Code Intelligence in code files and code review diffs on GitHub and Phabricator.</string>
+	<key>DeveloperIdentifier</key>
+	<string>74A5FJ7P96</string>
+	<key>ExtensionInfoDictionaryVersion</key>
+	<string>1.0</string>
+	<key>Permissions</key>
+	<dict>
+		<key>Website Access</key>
+		<dict>
+			<key>Include Secure Pages</key>
+			<true/>
+			<key>Level</key>
+			<string>All</string>
+		</dict>
+	</dict>
+	<key>Website</key>
+	<string>https://about.sourcegraph.com</string>
+</dict>
+</plist>

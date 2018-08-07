@@ -1,0 +1,6 @@
+build/
+package.json
+package-lock.json
+
+*.safariextension/**/*
+!*.safariextension/background.safari.html

@@ -1,0 +1,50 @@
+{
+  "extends": ["stylelint-config-standard", "stylelint-config-prettier"],
+  "plugins": ["stylelint-scss"],
+  "rules": {
+    "at-rule-no-unknown": null,
+    "scss/at-rule-no-unknown": [true],
+    "color-named": "always-where-possible",
+    "declaration-block-no-duplicate-properties": [
+      true,
+      {
+        "ignore": ["consecutive-duplicates-with-different-values"]
+      }
+    ],
+    "declaration-empty-line-before": null,
+    "declaration-property-unit-whitelist": {
+      "/^border(?!.*-radius$)/": ["px", "%"],
+      "/^border-radius/": ["px", "rem", "%"],
+      "/^box-shadow": ["px"],
+      "/^margin/": ["rem", "px"],
+      "/^padding/": ["rem", "px", "em"],
+      "font-size": ["px", "em"],
+      "height": ["rem", "%", "vh", "px"],
+      "width": ["rem", "%", "vw", "px"]
+    },
+    "indentation": 4,
+    "max-empty-lines": 1,
+    "no-duplicate-selectors": true,
+    "scss/dollar-variable-pattern": "^[a-z\\d](?:[a-z\\d]|-(?=[a-z\\d]))*$",
+    "scss/selector-no-redundant-nesting-selector": true,
+    "selector-class-pattern": [
+      "^[a-z0-9-]+(__[a-z0-9-]+)?(--[a-z0-9-]+)?$",
+      {
+        "message": "Please follow BEM naming conventions",
+        "resolveNestedSelectors": true
+      }
+    ],
+    "selector-max-compound-selectors": [
+      1,
+      {
+        "message": "Descendent selectors break encapsulation and are bad for performance. Please try using BEM class names instead and nesting/combining them with &",
+        "severity": "warning"
+      }
+    ],
+    "selector-max-id": [0],
+    "string-quotes": "single",
+    "value-no-vendor-prefix": true,
+    "font-family-no-missing-generic-family-keyword": null,
+    "no-descending-specificity": null
+  }
+}

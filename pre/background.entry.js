@@ -1,0 +1,1 @@
+window.EXTENSION_ENV = 'BACKGROUND'

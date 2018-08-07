@@ -1,0 +1,84 @@
+@import 'node_modules/open-color/open-color.scss';
+@import './global-styles/colors';
+
+// Bootstrap configuration before Bootstrap is imported
+$border-radius: 2px;
+$border-radius-sm: 1px;
+$border-radius-lg: 4px;
+$font-size-base: 0.875rem;
+$line-height-base: (20/14);
+
+// Tell Bootstrap to use colors from OpenColor
+$blue: $oc-blue-7;
+$indigo: $oc-indigo-7;
+$purple: $oc-violet-7;
+$pink: $oc-pink-7;
+$red: $oc-red-7;
+$orange: $oc-orange-7;
+$yellow: $oc-yellow-7;
+$green: $oc-green-7;
+$teal: $oc-teal-7;
+$cyan: $oc-cyan-7;
+
+$primary: $blue;
+$secondary: #2b3750;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
+$secondary-light: #f2f4f8;
+
+$theme-colors-light: (
+    'secondary': $secondary-light,
+);
+
+:root {
+    --border-color: rgba(0, 0, 0, 0.125);
+}
+
+// Formats an icon so that it appears inline in the text
+// with height matching the text
+.icon-inline {
+    // Center SVG inside the container
+    display: inline-flex;
+    align-items: center;
+    svg {
+        // 14px font size -> 24px icon size
+        width: 20;
+        height: 20;
+        // Match color of the text
+        fill: currentColor;
+    }
+}
+
+.sg-icon .icon {
+    @extend .icon-inline;
+    display: flex;
+}
+
+.selection-highlight,
+.selection-highlight span,
+.selection-highlight-sticky,
+.selection-highlight-sticky span {
+    background-color: rgba(255, 192, 120, 0.5);
+}
+
+@import 'node_modules/bootstrap/scss/functions';
+@import 'node_modules/bootstrap/scss/variables';
+@import 'node_modules/bootstrap/scss/mixins';
+@import 'node_modules/bootstrap/scss/alert';
+@import 'node_modules/bootstrap/scss/card';
+@import 'node_modules/bootstrap/scss/utilities/text';
+@import './global-styles/card';
+@import './global-styles/icons';
+@import './repo/tooltips';
+@import './highlight';
+@import './options';
+@import './tree/tree';
+@import './tree/repoRevSidebar';
+@import './tree/resizable';
+@import './components/alerts';
+@import './components/symbols';
+@import './components/codeIntelStatusIndicator';
+@import 'node_modules/@sourcegraph/codeintellify/lib/HoverOverlay.scss';
+@import 'node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';

@@ -1,0 +1,17 @@
+steps:
+  - label: ':typescript:'
+    command: |-
+      npm ci
+      npm run prettier
+      npm run tslint
+      npm run build
+
+  - label: ':cypress:'
+    command: |-
+      ./ci/test.sh
+    artifact_paths: 'cypress/screenshots/*;cypress/videos/*'
+    plugins:
+      docker-compose#v2.2.0:
+        run: bext
+        config: docker-compose.tests.yml
+        env: BUILDKITE_BUILD_CHECKOUT_PATH

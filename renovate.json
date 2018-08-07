@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json.schemastore.org/renovate",
+  "extends": ["config:base"],
+  "timezone": "America/Los_Angeles",
+  "schedule": ["on the 1st through 7th day of the month"],
+  "lockFileMaintenance": {
+    "schedule": ["on the 1st through 7th day of the month"]
+  },
+  "updateNotScheduled": true,
+  "prCreation": "not-pending",
+  "semanticCommits": true,
+  "semanticCommitType": "chore",
+  "rangeStrategy": "replace",
+  "prHourlyLimit": 5,
+  "packageRules": [
+    {
+      "packagePatterns": [".*"],
+      "semanticCommitType": "chore"
+    },
+    {
+      "packagePatterns": ["^@sourcegraph/"],
+      "packageNames": ["cxp"],
+      "rangeStrategy": "bump",
+      "schedule": [],
+      "minor": {
+        "semanticCommitType": "feat"
+      },
+      "patch": {
+        "semanticCommitType": "fix"
+      }
+    },
+    {
+      "packagePatterns": ["^@types/"],
+      "rangeStrategy": "pin",
+      "automerge": true
+    },
+    {
+      "packageNames": ["cxp"],
+      "assignees": ["chrismwendt"]
+    }
+  ]
+}

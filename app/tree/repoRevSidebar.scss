@@ -1,0 +1,102 @@
+.repo-rev-container {
+    flex: 1 1 auto;
+
+    display: flex;
+    height: 100%;
+
+    position: relative; // for sidebar toggle
+
+    &__sidebar {
+        background: #24292e;
+
+        &-toggle {
+            background: white;
+
+            position: absolute;
+            z-index: 1; // overlay the content when sidebar is closed
+            margin-top: 2px;
+        }
+
+        &-resizable {
+            min-width: 8rem;
+            &--open .tree {
+                width: 16rem;
+            }
+        }
+    }
+
+    &__content {
+        flex: 1 1 auto;
+
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        min-width: 0;
+
+        background-color: white;
+    }
+}
+
+.repo-rev-sidebar {
+    flex: 1 1 auto;
+
+    overflow-x: auto;
+
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    border-right: 1px solid #2b3750;
+    width: 100%; // necessary to prevent border-right from shrinking as width narrows
+
+    &:not(&--open) {
+        width: 0;
+    }
+
+    &__tab {
+        // Mimic h5 style.
+        font-size: 12px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: #c9d4e3 !important;
+    }
+    &__close-button {
+        font-size: 12px;
+        flex: 0 0 auto;
+        padding-right: 0.125rem;
+    }
+    // While the symbols tab is feature-flagged, don't show it or any indication that there are multiple tabs.
+    &--no-symbols &__tab,
+    &--no-symbols .tab-bar__spacer,
+    &--no-symbols &__close-button {
+        border: none !important;
+    }
+
+    &-toggle {
+        top: 0.6rem;
+        left: 1rem;
+        pointer-events: auto;
+        width: 2rem;
+        height: 2rem;
+        margin-right: -1.25rem;
+        z-index: 1;
+
+        .icon {
+            width: 1.125rem;
+            height: 1.125rem;
+        }
+
+        display: flex;
+        justify-content: center;
+
+        border-radius: 0.25rem;
+    }
+}
+
+.tab-btn {
+    background-color: #24292e;
+    padding: 3px 0 3px 10px;
+    font-size: 12px;
+    display: inline-block;
+    border: none;
+}

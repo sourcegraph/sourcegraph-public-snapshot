@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>DefaultValue</key>
+		<string>https://sourcegraph.com</string>
+		<key>Key</key>
+		<string>sourcegraphURL</string>
+	</dict>
+	<dict>
+		<key>Key</key>
+		<string>gitHubEnterpriseURL</string>
+	</dict>
+	<dict>
+		<key>Key</key>
+		<string>phabricatorURL</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<string>true</string>
+		<key>Key</key>
+		<string>repositoryFileTreeEnabled</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<string>true</string>
+		<key>Key</key>
+		<string>sourcegraphRepoSearchEnabled</string>
+	</dict>
+	<dict>
+		<key>DefaultValue</key>
+		<string>false</string>
+		<key>Key</key>
+		<string>openEditorEnabled</string>
+	</dict>
+	<dict>
+		<key>Key</key>
+		<string>identity</string>
+	</dict>
+</array>
+</plist>
