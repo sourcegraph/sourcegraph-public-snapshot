@@ -99,6 +99,10 @@
     {
       "address": "tcp://localhost:4389",
       "language": "go"
+    },
+    {
+      "address": "tcp://localhost:2083",
+      "language": "python"
     }
   ],
   "update.channel": "release",

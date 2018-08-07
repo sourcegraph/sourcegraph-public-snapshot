@@ -6,6 +6,9 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+- Most `experimentalFeatures` in the site configuration now respond to configuration changes live, without requiring a server restart. As usual, you will be prompted for a restart after saving your configuration changes if one is required.
+- Gravatar image avatars are no longer displayed for committers.
+
 ### Added
 
 ### Fixed
