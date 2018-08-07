@@ -306,6 +306,8 @@ func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p
 		}
 
 		tr.LazyPrintf("transient error %s", err.Error())
+		// Retry search on another searcher instance (if possible)
+		excludedSearchURLs[searcherURL] = true
 	}
 }
 

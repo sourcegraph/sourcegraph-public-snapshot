@@ -18,6 +18,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 - An issue / edge case where the Code Intelligence management admin page would incorrectly show language servers as `Running` when they had been removed from Docker.
 - Log level is respected in lsp-proxy logs.
+- Fixed an error where text searches could be routed to a faulty search worker.
 
 ### Removed
 
