@@ -64,10 +64,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             merge(
-                this.titleInputChanges.pipe(
-                    tap(x => console.log(x)),
-                    map((titleInputValue): Update => state => ({ ...state, titleInputValue }))
-                ),
+                this.titleInputChanges.pipe(map((titleInputValue): Update => state => ({ ...state, titleInputValue }))),
 
                 this.textAreaChanges.pipe(map((textAreaValue): Update => state => ({ ...state, textAreaValue }))),
 
