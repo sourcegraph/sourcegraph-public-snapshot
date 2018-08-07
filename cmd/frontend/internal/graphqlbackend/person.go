@@ -2,8 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"crypto/md5"
-	"fmt"
 	"strings"
 	"sync"
 
@@ -78,7 +76,7 @@ func (r *personResolver) AvatarURL(ctx context.Context) (string, error) {
 	if user != nil && user.AvatarURL != "" {
 		return user.AvatarURL, nil
 	}
-	return "https://www.gravatar.com/avatar/" + gravatarHash(r.email) + "?d=identicon", nil
+	return "", nil
 }
 
 func (r *personResolver) User(ctx context.Context) (*userResolver, error) {
@@ -87,15 +85,4 @@ func (r *personResolver) User(ctx context.Context) (*userResolver, error) {
 		return nil, err
 	}
 	return &userResolver{user: user}, nil
-}
-
-// gravatarHash hashes the email into a Gravatar hash.
-func gravatarHash(email string) string {
-	if email != "" {
-		h := md5.New()
-		h.Write([]byte(strings.ToLower(email)))
-		return fmt.Sprintf("%x", h.Sum(nil))
-	}
-
-	return ""
 }
