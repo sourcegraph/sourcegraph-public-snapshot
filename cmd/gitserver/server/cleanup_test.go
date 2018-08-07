@@ -124,6 +124,67 @@ func TestCleanupExpired(t *testing.T) {
 	}
 }
 
+func TestCleanupOldLocks(t *testing.T) {
+	root, cleanup := tmpDir(t)
+	defer cleanup()
+
+	// Only recent lock files should remain.
+	mkFiles(t, root,
+		"github.com/foo/empty/.git/HEAD",
+
+		"github.com/foo/freshconfiglock/.git/HEAD",
+		"github.com/foo/freshconfiglock/.git/config.lock",
+
+		"github.com/foo/freshpacked/.git/HEAD",
+		"github.com/foo/freshpacked/.git/packed-refs.lock",
+
+		"github.com/foo/staleconfiglock/.git/HEAD",
+		"github.com/foo/staleconfiglock/.git/config.lock",
+
+		"github.com/foo/stalepacked/.git/HEAD",
+		"github.com/foo/stalepacked/.git/packed-refs.lock",
+
+		"github.com/foo/refslock/.git/HEAD",
+		"github.com/foo/refslock/.git/refs/heads/fresh",
+		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
+		"github.com/foo/refslock/.git/refs/heads/stale",
+		"github.com/foo/refslock/.git/refs/heads/stale.lock",
+	)
+
+	chtime := func(p string, age time.Duration) {
+		err := os.Chtimes(filepath.Join(root, p), time.Now().Add(-age), time.Now().Add(-age))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	chtime("github.com/foo/staleconfiglock/.git/config.lock", time.Hour)
+	chtime("github.com/foo/stalepacked/.git/packed-refs.lock", 2*time.Hour)
+	chtime("github.com/foo/refslock/.git/refs/heads/stale.lock", 2*time.Hour)
+
+	s := &Server{ReposDir: root}
+	s.Handler() // Handler as a side-effect sets up Server
+	s.cleanupRepos()
+
+	assertPaths(t, root,
+		"github.com/foo/empty/.git/HEAD",
+
+		"github.com/foo/freshconfiglock/.git/HEAD",
+		"github.com/foo/freshconfiglock/.git/config.lock",
+
+		"github.com/foo/freshpacked/.git/HEAD",
+		"github.com/foo/freshpacked/.git/packed-refs.lock",
+
+		"github.com/foo/staleconfiglock/.git/HEAD",
+
+		"github.com/foo/stalepacked/.git/HEAD",
+
+		"github.com/foo/refslock/.git/HEAD",
+		"github.com/foo/refslock/.git/refs/heads/fresh",
+		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
+		"github.com/foo/refslock/.git/refs/heads/stale",
+	)
+}
+
 func TestSetupAndClearTmp(t *testing.T) {
 	root, cleanup := tmpDir(t)
 	defer cleanup()

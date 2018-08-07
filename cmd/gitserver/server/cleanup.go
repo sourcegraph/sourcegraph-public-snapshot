@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
@@ -46,8 +47,10 @@ var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
 
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
-// 1. Remove inactive repos on sourcegraph.com
-// 2. Reclone repos after a while. (simulate git gc)
+// 1. Remove corrupt repos.
+// 2. Remove inactive repos on sourcegraph.com
+// 3. Reclone repos after a while. (simulate git gc)
+// 4. Remove stale lock files.
 func (s *Server) cleanupRepos() {
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
@@ -127,6 +130,42 @@ func (s *Server) cleanupRepos() {
 		return true, nil
 	}
 
+	removeStaleLocks := func(gitDir string) (done bool, err error) {
+		// if removing a lock fails, we still want to try the other locks.
+		var multi error
+
+		// config.lock should be held for a very short amount of time.
+		if err := removeFileOlderThan(filepath.Join(gitDir, "config.lock"), time.Minute); err != nil {
+			multi = multierror.Append(multi, err)
+		}
+		// packed-refs can be held for quite a while, so we are conservative
+		// with the age.
+		if err := removeFileOlderThan(filepath.Join(gitDir, "packed-refs.lock"), time.Hour); err != nil {
+			multi = multierror.Append(multi, err)
+		}
+		// we use the same conservative age for locks inside of refs
+		if err := filepath.Walk(filepath.Join(gitDir, "refs"), func(path string, fi os.FileInfo, err error) error {
+			if err != nil {
+				// ignore
+				return nil
+			}
+
+			if fi.IsDir() {
+				return nil
+			}
+
+			if !strings.HasSuffix(path, ".lock") {
+				return nil
+			}
+
+			return removeFileOlderThan(path, time.Hour)
+		}); err != nil {
+			multi = multierror.Append(multi, err)
+		}
+
+		return false, multi
+	}
+
 	filepath.Walk(s.ReposDir, func(gitDir string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			return nil
@@ -174,6 +213,13 @@ func (s *Server) cleanupRepos() {
 		_, err = maybeReclone(gitDir)
 		if err != nil {
 			log15.Error("error recloning repo", "repo", gitDir, "error", err)
+		}
+
+		// If git is interrupted it can leave lock files lying around. It
+		// does not clean these up, and instead fails commands.
+		_, err = removeStaleLocks(gitDir)
+		if err != nil {
+			log15.Error("error removing stale git locks", "repo", gitDir, "error", err)
 		}
 
 		return filepath.SkipDir
@@ -385,4 +431,28 @@ func wrapCmdError(cmd *exec.Cmd, err error) error {
 		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(ee.Stderr))
 	}
 	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
+}
+
+// removeFileOlderThan removes path if its mtime is older than maxAge. If the
+// file is missing, no error is returned.
+func removeFileOlderThan(path string, maxAge time.Duration) error {
+	fi, err := os.Stat(filepath.Join(path))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+
+	age := time.Since(fi.ModTime())
+	if age < maxAge {
+		return nil
+	}
+
+	log15.Debug("removing stale lock file", "path", path, "age", age)
+	err = os.Remove(path)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
 }
