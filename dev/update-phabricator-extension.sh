@@ -12,7 +12,7 @@ rm -f ui/assets/extension/css/style.bundle.css
 
 if [ -n "$SYMLINK" ]; then
     # Symlink for development. Assumes you are running `npm run dev` in a local clone of browser-extension.
-    BUILDDIR=../browser-extension
+    BUILDDIR=../browser-extensions
 
     ln $BUILDDIR/build/dist/js/phabricator.bundle.js client/phabricator/scripts
     ln $BUILDDIR/build/dist/css/style.bundle.css client/phabricator/scripts
@@ -20,7 +20,7 @@ if [ -n "$SYMLINK" ]; then
     ln $BUILDDIR/build/dist/css/style.bundle.css ui/assets/extension/css
 
     echo
-    echo 'Symlinked Phabricator bundle files to dev bundles in ../browser-extension.'
+    echo 'Symlinked Phabricator bundle files to dev bundles in ../browser-extensions.'
     echo
     echo 'Ensure you are running `npm run dev` in that directory to keep the bundle files up to date.'
     echo
@@ -29,7 +29,7 @@ else
     # Build for production and copy into repository.
     BUILDDIR=client/phabricator/.extension
     rm -rf $BUILDDIR
-    git clone git@github.com:sourcegraph/browser-extension.git $BUILDDIR
+    git clone git@github.com:sourcegraph/browser-extensions.git $BUILDDIR
     (cd $BUILDDIR && npm install && npm run build)
 
     cp $BUILDDIR/build/dist/js/phabricator.bundle.js client/phabricator/scripts

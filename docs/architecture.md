@@ -114,7 +114,7 @@ Syntect is a Rust service that is responsible for syntax highlighting.
 
 ## Other products
 
-### Browser extensions ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/browser-extension) | [docs](https://about.sourcegraph.com/docs/features/browser-extension/))
+### Browser extensions ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/browser-extensions) | [docs](https://about.sourcegraph.com/docs/features/browser-extensions/))
 
 We publish browser extensions for Chrome, Firefox, and Safari, that provide code intelligence (hover tooltips, jump to definition, find references) when browsing code on code hosts. By default it works for open source code, but it also works for private code if your company has a Sourcegraph deployment.
 
