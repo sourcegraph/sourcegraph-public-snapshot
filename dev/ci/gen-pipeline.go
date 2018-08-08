@@ -351,7 +351,9 @@ func main() {
 	case strings.HasPrefix(branch, "docker-images/"):
 		addDockerImageStep(branch[14:], true)
 		pipeline.AddWait()
-		addDeploySteps()
+		if branch != "docker-images/server" {
+			addDeploySteps()
+		}
 	}
 
 	_, err := pipeline.WriteTo(os.Stdout)
