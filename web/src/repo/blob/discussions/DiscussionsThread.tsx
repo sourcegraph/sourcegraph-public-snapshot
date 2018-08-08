@@ -91,7 +91,13 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                         {thread.comments.nodes.map(node => (
                             <DiscussionsComment key={node.id} {...this.props} comment={node} />
                         ))}
-                        <DiscussionsInput submitLabel="Comment" noTitle={true} onSubmit={this.onSubmit} />
+                        <DiscussionsInput
+                            key="input"
+                            submitLabel="Comment"
+                            noTitle={true}
+                            onSubmit={this.onSubmit}
+                            {...this.props}
+                        />
                     </div>
                 )}
             </div>

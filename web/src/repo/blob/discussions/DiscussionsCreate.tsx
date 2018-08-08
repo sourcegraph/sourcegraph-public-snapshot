@@ -22,7 +22,7 @@ export class DiscussionsCreate extends React.PureComponent<Props> {
         return (
             <div className="discussions-create">
                 <DiscussionsNavbar {...this.props} />
-                <DiscussionsInput submitLabel="Create discussion" onSubmit={this.onSubmit} />
+                <DiscussionsInput submitLabel="Create discussion" onSubmit={this.onSubmit} {...this.props} />
             </div>
         )
     }

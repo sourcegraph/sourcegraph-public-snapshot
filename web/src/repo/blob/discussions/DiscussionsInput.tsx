@@ -1,5 +1,6 @@
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import * as H from 'history'
 import * as React from 'react'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, concat, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
@@ -8,8 +9,12 @@ import { Markdown } from '../../../components/Markdown'
 import { Spacer, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../../../components/Tabs'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { renderMarkdown } from './DiscussionsBackend'
+import { DiscussionsInputMentionOverlay, OnBlurHandler, OnKeyDownFilter } from './DiscussionsInputMentionOverlay'
 
 interface Props {
+    location: H.Location
+    history: H.History
+
     /** The label to display on the submit button. */
     submitLabel: string
 
@@ -22,7 +27,7 @@ interface Props {
 
 interface State {
     titleInputValue: string
-    textAreaValue: string
+    textArea: { textAreaValue: string; selectionStart: number; element?: HTMLElement }
     submitting: boolean
     error?: any
 
@@ -44,18 +49,32 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
         this.titleInputChanges.next(e.currentTarget.value)
 
     private textAreaKeyDowns = new Subject<React.KeyboardEvent<HTMLTextAreaElement>>()
-    private nextTextAreaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => this.textAreaKeyDowns.next(e)
+    private nextTextAreaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (this.onKeyDownFilter && this.onKeyDownFilter(e)) {
+            return
+        }
+        this.textAreaKeyDowns.next(e)
+    }
 
-    private textAreaChanges = new Subject<string>()
-    private nextTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) =>
-        this.textAreaChanges.next(e.currentTarget.value)
+    private textAreaChanges = new Subject<{ textAreaValue: string; selectionStart: number; element?: HTMLElement }>()
+    private nextTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        this.textAreaChanges.next({
+            textAreaValue: e.currentTarget.value,
+            selectionStart: e.currentTarget.selectionStart,
+            element: e.currentTarget,
+        })
+    }
 
     private tabChanges = new Subject<string>()
     private nextTabChange = (tab: string) => this.tabChanges.next(tab)
 
+    private onBlurHandler?: OnBlurHandler
+    private onKeyDownFilter?: OnKeyDownFilter
+    private textAreaRef?: HTMLTextAreaElement
+
     public state: State = {
         titleInputValue: '',
-        textAreaValue: '',
+        textArea: { textAreaValue: '', selectionStart: 0 },
         submitting: false,
     }
 
@@ -66,7 +85,10 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
             merge(
                 this.titleInputChanges.pipe(map((titleInputValue): Update => state => ({ ...state, titleInputValue }))),
 
-                this.textAreaChanges.pipe(map((textAreaValue): Update => state => ({ ...state, textAreaValue }))),
+                this.textAreaChanges.pipe(
+                    startWith({ textAreaValue: '', selectionStart: 0, element: undefined }),
+                    map((textArea): Update => state => ({ ...state, textArea }))
+                ),
 
                 // Handle tab changes by logging the event and fetching preview data.
                 this.tabChanges.pipe(
@@ -79,7 +101,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     }),
                     filter(tab => tab === 'preview'),
                     withLatestFrom(this.textAreaChanges),
-                    mergeMap(([, textAreaValue]) =>
+                    mergeMap(([, { textAreaValue }]) =>
                         of<Update>(state => ({ ...state, previewHTML: undefined, previewLoading: true })).pipe(
                             concat(
                                 renderMarkdown(textAreaValue).pipe(
@@ -115,7 +137,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         this.titleInputChanges.pipe(startWith('')),
                         this.componentUpdates.pipe(startWith(this.props))
                     ),
-                    mergeMap(([, textAreaValue, titleInputValue, props]) =>
+                    mergeMap(([, { textAreaValue }, titleInputValue, props]) =>
                         // Start with setting submitting: true
                         of<Update>(state => ({ ...state, submitting: true })).pipe(
                             concat(
@@ -125,7 +147,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                             ...state,
                                             submitting: false,
                                             titleInputValue: '',
-                                            textAreaValue: '',
+                                            textArea: { ...state, textAreaValue: '', selectionStart: 0 },
                                         })
                                     ),
                                     catchError(
@@ -152,7 +174,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const { titleInputValue, textAreaValue, submitting, error, previewLoading, previewHTML } = this.state
+        const { titleInputValue, textArea, submitting, error, previewLoading, previewHTML } = this.state
 
         return (
             <Form className="discussions-input" onSubmit={this.nextSubmit}>
@@ -179,12 +201,26 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     onSelectTab={this.nextTabChange}
                 >
                     <div key="write">
+                        {textArea.element && (
+                            <DiscussionsInputMentionOverlay
+                                location={this.props.location}
+                                history={this.props.history}
+                                textAreaValue={textArea.textAreaValue}
+                                selectionStart={textArea.selectionStart}
+                                setTextAreaValue={this.setTextAreaValue}
+                                textAreaElement={textArea.element}
+                                setOnBlurHandler={this.setOnBlurHandler}
+                                setOnKeyDownFilter={this.setOnKeyDownFilter}
+                            />
+                        )}
                         <textarea
                             className="form-control discussions-input__text-box"
                             placeholder="Leave a comment"
                             onChange={this.nextTextAreaChange}
                             onKeyDown={this.nextTextAreaKeyDown}
-                            value={textAreaValue}
+                            onBlur={this.onBlurHandler}
+                            value={textArea.textAreaValue}
+                            ref={this.setTextAreaRef}
                         />
                     </div>
                     <div key="preview" className="discussions-input__preview">
@@ -196,7 +232,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     <button
                         type="submit"
                         className="btn btn-primary discussions-input__button"
-                        disabled={submitting || !textAreaValue}
+                        disabled={submitting || !textArea.textAreaValue}
                     >
                         {this.props.submitLabel}
                     </button>
@@ -210,6 +246,27 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
             </Form>
         )
     }
+
+    private setOnBlurHandler = (h: OnBlurHandler) => {
+        this.onBlurHandler = h
+    }
+
+    private setOnKeyDownFilter = (f: OnKeyDownFilter) => {
+        this.onKeyDownFilter = f
+    }
+
+    private setTextAreaValue = (v: { newValue: string; newSelectionStart: number }) => {
+        this.textAreaChanges.next({
+            textAreaValue: v.newValue,
+            selectionStart: v.newSelectionStart,
+            element: this.state.textArea.element,
+        })
+        this.textAreaRef!.value = v.newValue
+        this.textAreaRef!.selectionStart = v.newSelectionStart
+        this.textAreaRef!.selectionEnd = v.newSelectionStart
+    }
+
+    private setTextAreaRef = (ref: HTMLTextAreaElement) => (this.textAreaRef = ref)
 }
 
 // TODO(slimsag:discussions): ASAP: "Error posting comment" should have different message for thread creation
