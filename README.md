@@ -1,6 +1,6 @@
 # Sourcegraph browser extensions
 
-[![build](https://badge.buildkite.com/8aec2156579076111918e632ba9e188cafc8c9598968457f4f.svg)](https://buildkite.com/sourcegraph/browser-extension)
+[![build](https://badge.buildkite.com/59c6f8596c7823a61a1d7341805fd83515999ec114c9fb7ae2.svg)](https://buildkite.com/sourcegraph/browser-extensions)
 [![chrome version](https://img.shields.io/chrome-web-store/v/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome users](https://img.shields.io/chrome-web-store/users/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
@@ -115,7 +115,7 @@ Click reload for Sourcegraph at `about:debugging`
   - Check "Show Develop menu in menu bar"
 - Open `Develop -> Show Extension Builder`
 - Click the `+` at the bottom left of the Extension Builder and select `browser-extension/Sourcegraph.safariextension`
-- Click `Install` and `Add extension...` and open `~/path/to/browser-extension/Sourcegraph.safariextension`
+- Click `Install` and `Add extension...` and open `~/path/to/browser-extensions/Sourcegraph.safariextension`
 - To test against localhost, follow https://about.sourcegraph.com/docs/features/safari-extension:
   - Set `"corsOrigin": "https://github.com"` in your localhost site configuration
   - Download the `ngrok` executable https://dashboard.ngrok.com/get-started, authenticate, and run `./ngrok localhost 3080`
