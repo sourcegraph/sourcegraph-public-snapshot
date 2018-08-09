@@ -18,6 +18,8 @@ The tooltips include features like:
 - find references
 - improved search functionality
 
+#### 🚀 Install: [**Sourcegraph for Chrome**](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack) — [**Sourcegraph for Firefox**](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
+
 It works as follows:
 
 - when visiting e.g. https://github.com/..., the extension injects a content script (inject.bundle.js)
