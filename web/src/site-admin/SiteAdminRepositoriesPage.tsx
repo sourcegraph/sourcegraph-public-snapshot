@@ -404,7 +404,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
         if (
             enabled &&
             !confirm(
-                `Enabling and cloning all repositories may take some time and use significant resources. Enable and clone all repositories?`
+                `Enabling and cloning all repositories may take some time and use significant resources. This will enable and clone all accessible repositories, and is not limited to your current search filter. Enable and clone all repositories?`
             )
         ) {
             return
