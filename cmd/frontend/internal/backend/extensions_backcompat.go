@@ -115,7 +115,7 @@ func init() {
 				Platform: schema.ExtensionPlatform{
 					Tcp: &schema.TCPTarget{
 						Type:    "tcp",
-						Address: strings.TrimPrefix(ls.Address, "tcp://"),
+						Address: addr,
 					},
 				},
 				ActivationEvents: []string{"onLanguage:" + ls.Language},
