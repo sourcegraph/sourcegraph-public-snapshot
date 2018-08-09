@@ -136,7 +136,7 @@
   },
   "dependencies": {
     "@sourcegraph/codeintellify": "^3.6.3",
-    "@sourcegraph/extensions-client-common": "0.0.3-development",
+    "@sourcegraph/extensions-client-common": "0.0.5-development",
     "@sourcegraph/icons": "^1.15.0",
     "@sqs/jsonc-parser": "^1.0.3",
     "bootstrap": "^4.0.0",
