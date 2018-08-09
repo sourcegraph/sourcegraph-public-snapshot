@@ -1,6 +1,6 @@
 {
   "$schema": "http://json.schemastore.org/webextension",
-  "version": "1.7.50",
+  "version": "1.7.51",
   "name": "Sourcegraph",
   "manifest_version": 2,
   "description": "Code intelligence for your code host and code reviews: hovers, documentation, definitions, and references in files, PRs, and diffs",
