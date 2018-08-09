@@ -158,6 +158,8 @@ func main() {
 			os.Exit(1)
 		}
 		cmds := []StepOpt{
+			ConcurrencyGroup("docker-push"),
+			Concurrency(1),
 			Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
 		}
 
