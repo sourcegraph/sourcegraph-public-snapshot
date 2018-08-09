@@ -10,20 +10,17 @@ This file documents information relevant to developers at Sourcegraph.
 
 ## Publishing a new version
 
-This process is quite manual still, since we want to ensure each release is
-high quality. As we get used to releasing Sourcegraph Server more and more
-parts will be automated. You will need to complete four main steps.
+#### (0) Use the proper branch
 
-#### (0) Check out the proper branch
+- New major releases (e.g. `v3.0.0`) should be tagged from `master`. Once you have tagged the release, create a long lived branch from that tag for patches to that release (e.g. `3.0`).
+- New minor releases (e.g. `v3.1.0`) should be tagged from `master`. Once you have tagged the release, create a long lived branch from that tag for patches to that release (e.g. `3.1`).
+- New patch releases (e.g. `v3.1.1`) should be tagged from the existing patch branch for the release being patched (e.g. `3.1`).
+  - Commits necessary for a patch release are cherry-picked from `master` into the patch branch before tagging a release.
 
-New major/minor releases should be cut from `master`.
+To avoid confusion between tags and branches:
 
-Patch releases should be cut from the branch that corresponds to the major/minor version of the
-patch, e.g., `2.9` or `2.10`. This will typically mean cherry-picking commits from `master` onto the
-version branch. If no such branch yet exists, one should be created off the tag of the first release
-with that major/minor version, e.g., `v2.9.0` or `v2.10.0`.
-
-Check out the appropriate branch and proceed with the next step.
+- Tags are always the full semantic version with a leading `v` (e.g. `v2.10.0`)
+- Branches are always the dot-separated major/minor versions with no leading `v` (e.g. `2.10`).
 
 #### (1) Create the release candidate
 
