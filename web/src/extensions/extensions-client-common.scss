@@ -1,5 +1,8 @@
 // Imports, styles, and CSS variables for @sourcegraph/extensions-client-common.
+@import '~@sourcegraph/extensions-client-common/lib/components/PopoverButton.css';
 @import '~@sourcegraph/extensions-client-common/lib/components/Toggle.css';
+@import '~@sourcegraph/extensions-client-common/lib/cxp/CXPCommandList';
+@import '~@sourcegraph/extensions-client-common/lib/cxp/CXPStatus';
 @import '~@sourcegraph/extensions-client-common/lib/extensions/manager/ExtensionCard.css';
 
 :root {

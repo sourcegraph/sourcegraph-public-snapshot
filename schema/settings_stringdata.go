@@ -9,7 +9,6 @@ const SettingsSchemaJSON = `{
   "title": "Settings",
   "description": "Configuration settings for users and organizations on Sourcegraph.",
   "type": "object",
-  "additionalProperties": false,
   "properties": {
     "search.savedQueries": {
       "description": "Saved search queries",
@@ -50,7 +49,7 @@ const SettingsSchemaJSON = `{
       "description": "Predefined search scopes",
       "type": "array",
       "items": {
-        "$ref": "#/definitions/SearchScope"
+        "$ref": "https://sourcegraph.com/v1/settings.schema.json#/definitions/SearchScope"
       }
     },
     "search.repositoryGroups": {
@@ -63,7 +62,7 @@ const SettingsSchemaJSON = `{
       }
     },
     "notifications.slack": {
-      "$ref": "#/definitions/SlackNotificationsConfig"
+      "$ref": "https://sourcegraph.com/v1/settings.schema.json#/definitions/SlackNotificationsConfig"
     },
     "motd": {
       "description":

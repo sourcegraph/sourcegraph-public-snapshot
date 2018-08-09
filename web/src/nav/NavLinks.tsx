@@ -1,3 +1,6 @@
+import { ContributedActionsNavItems } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActions'
+import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { CXPCommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/cxp/CXPCommandList'
 import { ContributableMenu } from 'cxp/lib/protocol'
 import * as H from 'history'
 import * as React from 'react'
@@ -7,9 +10,6 @@ import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
 import { HistoryPopoverContainer } from '../components/HistoryPopoverContainer'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { CXPCommandListPopoverButton } from '../cxp/components/CXPCommandList'
-import { CXPControllerProps } from '../cxp/CXPEnvironment'
-import { ContributedActionsNavItems } from '../extensions/ContributedActions'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { eventLogger } from '../tracking/eventLogger'
@@ -61,6 +61,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     <ContributedActionsNavItems
                         menu={ContributableMenu.GlobalNav}
                         cxpController={this.props.cxpController}
+                        extensions={this.props.extensions}
                     />
                 )}
                 {this.props.user && (
@@ -96,6 +97,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     <CXPCommandListPopoverButton
                         menu={ContributableMenu.CommandPalette}
                         cxpController={this.props.cxpController}
+                        extensions={this.props.extensions}
                     />
                 )}
                 {fileHistoryEnabled && (
@@ -126,7 +128,11 @@ export class NavLinks extends React.PureComponent<Props> {
                     <OpenHelpPopoverButton className="nav-link px-0" onHelpPopoverToggle={this.onHelpPopoverToggle} />
                 </li>
                 {this.props.showHelpPopover && (
-                    <HelpPopover onDismiss={this.onHelpPopoverToggle} cxpController={this.props.cxpController} />
+                    <HelpPopover
+                        onDismiss={this.onHelpPopoverToggle}
+                        cxpController={this.props.cxpController}
+                        extensions={this.props.extensions}
+                    />
                 )}
                 <li className="nav-item">
                     <ThemeSwitcher {...this.props} className="nav-link px-0" />

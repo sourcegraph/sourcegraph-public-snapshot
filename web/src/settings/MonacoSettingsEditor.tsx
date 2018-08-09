@@ -4,6 +4,8 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
+import jsonSchemaMetaSchema from '../schema/json-schema.schema.json'
+import settingsSchema from '../schema/settings.schema.json'
 import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
@@ -144,6 +146,16 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     uri: this.props.jsonSchema.$id,
                     schema: this.props.jsonSchema,
                     fileMatch: ['*'],
+                },
+
+                // Include these schemas because they are referenced by other schemas.
+                {
+                    uri: 'http://json-schema.org/draft-07/schema',
+                    schema: jsonSchemaMetaSchema,
+                },
+                {
+                    uri: 'https://sourcegraph.com/v1/settings.schema.json#',
+                    schema: settingsSchema,
                 },
             ],
         })

@@ -33,6 +33,10 @@ registerLanguage('ruby', require('highlight.js/lib/languages/ruby'))
 registerLanguage('rust', require('highlight.js/lib/languages/rust'))
 registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
+import {
+    createController as createCXPController,
+    CXPControllerProps,
+} from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
@@ -48,10 +52,11 @@ import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
-import { createController as createCXPController } from './cxp/controller'
-import { CXPControllerProps, CXPEnvironmentProps, CXPProps } from './cxp/CXPEnvironment'
+import { CXPComponentProps } from './cxp/CXPComponent'
+import { CXPEnvironmentProps } from './cxp/CXPEnvironment'
+import { CXPRootProps } from './cxp/CXPRoot'
 import { LinkExtension } from './extension/Link'
-import { ExtensionsProps } from './extensions/ExtensionsClientCommonContext'
+import { createMessageTransports, ExtensionsProps } from './extensions/ExtensionsClientCommonContext'
 import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
@@ -62,7 +67,13 @@ import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { eventLogger } from './tracking/eventLogger'
 
-interface LayoutProps extends RouteComponentProps<any>, ExtensionsProps, CXPProps {
+interface LayoutProps
+    extends RouteComponentProps<any>,
+        ExtensionsProps,
+        CXPEnvironmentProps,
+        CXPControllerProps,
+        CXPComponentProps,
+        CXPRootProps {
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
@@ -156,14 +167,18 @@ const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
  * The root component
  */
 class App extends React.Component<{}, AppState> {
-    public state: AppState = {
-        isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
-        navbarSearchQuery: '',
-        showHelpPopover: false,
-        showHistoryPopover: false,
-        extensions: createExtensionsContextController(),
-        cxpEnvironment: CXP_EMPTY_ENVIRONMENT,
-        cxpController: createCXPController(),
+    constructor(props: {}) {
+        super(props)
+        const extensions = createExtensionsContextController()
+        this.state = {
+            isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
+            navbarSearchQuery: '',
+            showHelpPopover: false,
+            showHistoryPopover: false,
+            extensions,
+            cxpEnvironment: CXP_EMPTY_ENVIRONMENT,
+            cxpController: createCXPController(extensions.context, createMessageTransports),
+        }
     }
 
     private subscriptions = new Subscription()

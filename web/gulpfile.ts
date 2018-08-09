@@ -5,7 +5,7 @@ import globby from 'globby'
 import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'graphql'
 import * as gulp from 'gulp'
 import httpProxyMiddleware from 'http-proxy-middleware'
-import { compileFromFile } from 'json-schema-to-typescript'
+import { compile as compileJSONSchema } from 'json-schema-to-typescript'
 // @ts-ignore
 import convert from 'koa-connect'
 import mkdirp from 'mkdirp-promise'
@@ -137,7 +137,14 @@ export async function schemaTypes(): Promise<void> {
     await mkdirp(__dirname + '/src/schema')
     await Promise.all(
         ['settings', 'site', 'extension'].map(async file => {
-            const types = await compileFromFile(__dirname + `/../schema/${file}.schema.json`, {
+            let data = await readFile(__dirname + `/../schema/${file}.schema.json`, 'utf8')
+            // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
+            // when the schema is in a oneOf (to be merged with extension schemas).
+            data = data.replace(
+                /https:\/\/sourcegraph\.com\/v1\/settings\.schema\.json#\/definitions\//g,
+                '#/definitions/'
+            )
+            const types = await compileJSONSchema(JSON.parse(data), 'settings.schema', {
                 cwd: __dirname + '/../schema',
             })
             await writeFile(__dirname + `/src/schema/${file}.schema.d.ts`, types)

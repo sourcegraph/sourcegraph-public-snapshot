@@ -56,11 +56,7 @@ export class GoToPermalinkAction extends React.PureComponent<{
         }
 
         return (
-            <ActionItem
-                to={this.permalinkURL}
-                data-tooltip="Permalink (with full Git commit SHA)"
-                logEvent="GoToPermalinkClicked"
-            >
+            <ActionItem to={this.permalinkURL} data-tooltip="Permalink (with full Git commit SHA)">
                 <LinkIcon className="icon-inline" />
             </ActionItem>
         )

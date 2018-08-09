@@ -6,6 +6,7 @@ import {
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
+import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { isEqual, upperFirst } from 'lodash'
@@ -18,7 +19,6 @@ import { getHover, getJumpURL } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
-import { CXPControllerProps } from '../../cxp/CXPEnvironment'
 import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'

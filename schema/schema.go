@@ -304,6 +304,20 @@ type Settings struct {
 	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
 	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
 }
+type SiteConfigSearchScope struct {
+	Description string `json:"description,omitempty"`
+	Id          string `json:"id,omitempty"`
+	Name        string `json:"name"`
+	Value       string `json:"value"`
+}
+
+// SiteConfigSettings description: Site settings hard-coded in site configuration.
+//
+// DEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying the cluster in Sourcegraph Data Center.
+type SiteConfigSettings struct {
+	SearchRepositoryGroups map[string][]string      `json:"search.repositoryGroups,omitempty"`
+	SearchScopes           []*SiteConfigSearchScope `json:"search.scopes,omitempty"`
+}
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
@@ -364,8 +378,8 @@ type SiteConfiguration struct {
 	SamlIDProviderMetadataURL         string                       `json:"samlIDProviderMetadataURL,omitempty"`
 	SamlSPCert                        string                       `json:"samlSPCert,omitempty"`
 	SamlSPKey                         string                       `json:"samlSPKey,omitempty"`
-	SearchScopes                      []*SearchScope               `json:"searchScopes,omitempty"`
-	Settings                          *Settings                    `json:"settings,omitempty"`
+	SearchScopes                      []*SiteConfigSearchScope     `json:"searchScopes,omitempty"`
+	Settings                          *SiteConfigSettings          `json:"settings,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`
 	TlsLetsencrypt                    string                       `json:"tls.letsencrypt,omitempty"`
 	TlsCert                           string                       `json:"tlsCert,omitempty"`

@@ -324,12 +324,7 @@ const SiteSchemaJSON = `{
       "type": "string"
     },
     "searchScopes": {
-      "description":
-        "JSON array of custom search scopes (e.g., [{\"name\":\"Text Files\",\"value\":\"file:\\.txt$\"}]).\n\nDEPRECATED: Values should be moved to the \"settings\" field's \"search.scopes\" property.",
-      "type": "array",
-      "items": {
-        "$ref": "./settings.schema.json#/definitions/SearchScope"
-      }
+      "$ref": "#/definitions/SiteConfigSearchScope"
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
@@ -570,9 +565,22 @@ const SiteSchemaJSON = `{
       }
     },
     "settings": {
+      "title": "SiteConfigSettings",
       "description":
         "Site settings hard-coded in site configuration.\n\nDEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying the cluster in Sourcegraph Data Center.",
-      "$ref": "./settings.schema.json#"
+      "type": "object",
+      "properties": {
+        "search.scopes": { "$ref": "#/definitions/SiteConfigSearchScope" },
+        "search.repositoryGroups": {
+          "description":
+            "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -1061,6 +1069,34 @@ const SiteSchemaJSON = `{
         "domain": {
           "description": "The HELO domain to provide to the SMTP server (if needed).",
           "type": "string"
+        }
+      }
+    },
+    "SiteConfigSearchScope": {
+      "description": "Predefined search scopes",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "value"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description":
+              "A unique identifier for the search scope.\n\nIf set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value."
+          },
+          "name": {
+            "type": "string",
+            "description": "The human-readable name for this search scope"
+          },
+          "value": {
+            "type": "string",
+            "description": "The query string of this search scope"
+          },
+          "description": {
+            "type": "string",
+            "description": "A description for this search scope"
+          }
         }
       }
     }

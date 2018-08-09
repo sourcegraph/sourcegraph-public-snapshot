@@ -110,12 +110,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         }
 
         return (
-            <ActionItem
-                to={url}
-                target="_self"
-                data-tooltip={`View on ${displayName}`}
-                logEvent="OpenInCodeHostClicked"
-            >
+            <ActionItem to={url} target="_self" data-tooltip={`View on ${displayName}`}>
                 <Icon className="icon-inline" />
             </ActionItem>
         )

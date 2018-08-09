@@ -62,6 +62,7 @@ func init() {
 			if info != nil {
 				lang = info.DisplayName
 			}
+			title := lang
 			readme := `# ` + lang + ` language server` + "\n\n"
 			var description string
 			if info != nil {
@@ -87,8 +88,28 @@ func init() {
 				url = info.HomepageURL
 			}
 
+			var addr string
+			if ls.Address != "" {
+				// Address is specified in site config; prefer that.
+				addr = ls.Address
+			} else if info.SiteConfig.Address != "" {
+				// Use the default TCP address. This is necessary to know the address on Data
+				// Center, because it is not necessary to specify the address in site config on Data
+				// Center for builtin lang servers.
+				//
+				// TODO(sqs): The better way to obtain the address on Data Center would be to use
+				// the LANGSERVER_xyz vars, which are only set on the lsp-proxy deployment. That
+				// would get the correct address even when it is changed from the default in
+				// deploy-sourcegraph.
+				addr = info.SiteConfig.Address
+			}
+			if addr == "" {
+				title += " (unavailable)"
+				readme += "\n\n## Status: unavailable\nThis language server is unavailable because no TCP address is specified for it in site configuration."
+			}
+
 			x := schema.SourcegraphExtension{
-				Title:       lang,
+				Title:       title,
 				Description: description,
 				Readme:      readme,
 				Platform: schema.ExtensionPlatform{

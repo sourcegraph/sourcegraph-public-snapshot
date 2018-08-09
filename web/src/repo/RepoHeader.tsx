@@ -1,3 +1,5 @@
+import { ContributedActionsNavItems } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActions'
+import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import { ContributableMenu } from 'cxp/lib/protocol'
@@ -7,8 +9,6 @@ import * as GQL from '../backend/graphqlschema'
 import { ActionItem } from '../components/ActionItem'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
-import { CXPControllerProps } from '../cxp/CXPEnvironment'
-import { ContributedActionsNavItems } from '../extensions/ContributedActions'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { ResolvedRev } from './backend'
@@ -214,6 +214,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     <ContributedActionsNavItems
                         menu={ContributableMenu.EditorTitle}
                         cxpController={this.props.cxpController}
+                        extensions={this.props.extensions}
                     />
                     {rightActions.map((a, i) => (
                         <li className="nav-item" key={a.element.key || i}>

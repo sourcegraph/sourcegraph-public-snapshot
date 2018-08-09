@@ -19,7 +19,11 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
             <div className="extensions-overview-page container px-2 px-xl-0">
                 <PageTitle title="Extensions" />
                 <div className="py-3">
-                    <ExtensionsList {...this.props} emptyElement={<ExtensionsEmptyState />} />
+                    <ExtensionsList
+                        {...this.props}
+                        emptyElement={<ExtensionsEmptyState />}
+                        subject={this.props.authenticatedUser.id}
+                    />
                 </div>
             </div>
         )

@@ -1,3 +1,6 @@
+import { ContributedActionItem } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActionItem'
+import { ContributedActionsContainer } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActions'
+import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import BookClosedIcon from '@sourcegraph/icons/lib/BookClosed'
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import DraftsIcon from '@sourcegraph/icons/lib/Drafts'
@@ -9,11 +12,10 @@ import { Link } from 'react-router-dom'
 import { fromEvent, merge, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import { CXPControllerProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
-import { ContributedActionItem } from '../extensions/ContributedActionItem'
-import { ContributedActionsContainer } from '../extensions/ContributedActions'
+import { USE_PLATFORM } from '../cxp/CXPEnvironment'
+import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 
-interface Props extends CXPControllerProps {
+interface Props extends CXPControllerProps, ExtensionsProps {
     onDismiss: () => void
 }
 
@@ -112,12 +114,18 @@ export class HelpPopover extends React.Component<Props> {
                             <>
                                 <h4 className="card-header pl-3">Extensions help</h4>
                                 {items.map((item, i) => (
-                                    <ContributedActionItem key={i} {...item} cxpController={this.props.cxpController} />
+                                    <ContributedActionItem
+                                        key={i}
+                                        {...item}
+                                        cxpController={this.props.cxpController}
+                                        extensions={this.props.extensions}
+                                    />
                                 ))}
                             </>
                         )}
                         empty={null}
                         cxpController={this.props.cxpController}
+                        extensions={this.props.extensions}
                     />
                 )}
             </div>

@@ -27,7 +27,7 @@ interface Props extends RouteComponentProps<{ extensionID: string }>, Extensions
  */
 export interface ExtensionsAreaPageProps extends ExtensionsProps, ExtensionsProps {
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
+    authenticatedUser: GQL.IUser
 }
 
 const LOADING: 'loading' = 'loading'
@@ -58,7 +58,8 @@ export class ExtensionsArea extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!platformEnabled(this.props.user)) {
+        if (!this.props.user || !platformEnabled(this.props.user)) {
+            // TODO(sqs): allow users who are not authenticated
             return <NotFoundPage />
         }
 

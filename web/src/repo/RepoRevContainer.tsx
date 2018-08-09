@@ -1,3 +1,4 @@
+import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { isEqual, upperFirst } from 'lodash'
@@ -10,7 +11,7 @@ import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
 import { CXPComponentProps } from '../cxp/CXPComponent'
-import { CXPControllerProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
+import { USE_PLATFORM } from '../cxp/CXPEnvironment'
 import { CXPRoot, CXPRootProps } from '../cxp/CXPRoot'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
@@ -352,6 +353,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         rev={this.props.rev}
                                                         filePath={routeComponentProps.match.params.filePath || ''}
                                                         cxpController={this.props.cxpController}
+                                                        extensions={this.props.extensions}
                                                         location={this.props.location}
                                                         history={this.props.history}
                                                         isLightTheme={this.props.isLightTheme}

@@ -53,7 +53,6 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
         return (
             <ActionItem
                 to={ToggleRenderedFileMode.getURLForMode(this.props.location, otherMode)}
-                logEvent="ViewButtonClicked"
                 data-tooltip={otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}
             >
                 <ViewIcon className="icon-inline" />{' '}

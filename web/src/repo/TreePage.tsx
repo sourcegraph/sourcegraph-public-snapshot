@@ -1,3 +1,6 @@
+import { ContributedActionItem } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActionItem'
+import { ContributedActionsContainer } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActions'
+import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import BranchIcon from '@sourcegraph/icons/lib/Branch'
 import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import { Folder as FolderIcon } from '@sourcegraph/icons/lib/Folder'
@@ -19,9 +22,8 @@ import { FilteredConnection } from '../components/FilteredConnection'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
-import { CXPControllerProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
-import { ContributedActionItem } from '../extensions/ContributedActionItem'
-import { ContributedActionsContainer } from '../extensions/ContributedActions'
+import { USE_PLATFORM } from '../cxp/CXPEnvironment'
+import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
@@ -93,7 +95,7 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends CXPControllerProps {
+interface Props extends CXPControllerProps, ExtensionsProps {
     repoPath: string
     repoID: GQL.ID
     repoDescription: string
@@ -304,12 +306,14 @@ export class TreePage extends React.PureComponent<Props, State> {
                                                     {...item}
                                                     className="btn btn-secondary mr-1 mb-1"
                                                     cxpController={this.props.cxpController}
+                                                    extensions={this.props.extensions}
                                                 />
                                             ))}
                                         </section>
                                     )}
                                     empty={null}
                                     cxpController={this.props.cxpController}
+                                    extensions={this.props.extensions}
                                 />
                             )}
                             <div className="tree-page__section">
