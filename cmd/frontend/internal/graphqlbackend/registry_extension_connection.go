@@ -104,14 +104,13 @@ type registryExtensionConnectionResolver struct {
 // host prefix.
 func filterStripLocalExtensionIDs(extensionIDs []string) []string {
 	prefix := backend.GetLocalRegistryExtensionIDPrefix()
-	if prefix == nil {
-		return []string{}
-	}
 	local := []string{}
 	for _, id := range extensionIDs {
 		parts := strings.SplitN(id, "/", 3)
-		if len(parts) == 3 && parts[0] == *prefix {
+		if prefix != nil && len(parts) == 3 && parts[0] == *prefix {
 			local = append(local, parts[1]+"/"+parts[2])
+		} else if (prefix == nil || *prefix == "") && len(parts) == 2 {
+			local = append(local, id)
 		}
 	}
 	return local
