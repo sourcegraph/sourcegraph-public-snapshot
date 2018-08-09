@@ -120,6 +120,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 	var relayState relayState
 	if err := relayState.decode(r.FormValue("RelayState")); err != nil {
 		log15.Error("Error decoding SAML relay state.", "err", err)
+		traceLog("SAML RelayState", r.FormValue("RelayState"))
 		http.Error(w, "Error decoding SAML relay state.", http.StatusForbidden)
 		return
 	}
