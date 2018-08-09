@@ -8,7 +8,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -18,9 +20,11 @@ var locked = false
 var env = expvar.NewMap("env")
 
 var (
-	Version   = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
-	LogLevel  = Get("SRC_LOG_LEVEL", "dbug", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
-	LogFormat = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed)")
+	// MyName represents the name of the current process.
+	MyName, envVarName = findName()
+	Version            = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
+	LogLevel           = Get("SRC_LOG_LEVEL", "dbug", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
+	LogFormat          = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed)")
 )
 
 var (
@@ -35,6 +39,21 @@ var (
 	// CritOut is os.Stderr if LogLevel includes crit
 	CritOut io.Writer
 )
+
+// findName returns the name of the current process, that being the
+// part of argv[0] after the last slash if any, and also the lowercase
+// letters from that, suitable for use as a likely key for lookups
+// in things like shell environment variables which can't contain
+// hyphens.
+func findName() (string, string) {
+	// Environment variable names can't contain, for instance, hyphens.
+	origName := filepath.Base(os.Args[0])
+	name := strings.Replace(origName, "-", "_", -1)
+	if name == "" {
+		name = "unknown"
+	}
+	return origName, name
+}
 
 func init() {
 	lvl, _ := log15.LvlFromString(LogLevel)
@@ -72,9 +91,15 @@ func Get(name string, defaultValue string, description string) string {
 	}
 	descriptions[name] = description
 
-	value, ok := os.LookupEnv(name)
+	// Allow per-process override. For instance, SRC_LOG_LEVEL_repo_updater would
+	// apply to repo-updater, but not to anything else.
+	perProg := name + "_" + envVarName
+	value, ok := os.LookupEnv(perProg)
 	if !ok {
-		value = defaultValue
+		value, ok = os.LookupEnv(name)
+		if !ok {
+			value = defaultValue
+		}
 	}
 	env.Set(name, jsonStringer(value))
 	return value
@@ -106,7 +131,7 @@ func PrintHelp() {
 	}
 }
 
-// HandleHelpfFlag looks at the first CLI argument. If it is "help", "-h" or "--help", then it calls
+// HandleHelpFlag looks at the first CLI argument. If it is "help", "-h" or "--help", then it calls
 // PrintHelp and exits.
 func HandleHelpFlag() {
 	if len(os.Args) >= 2 {

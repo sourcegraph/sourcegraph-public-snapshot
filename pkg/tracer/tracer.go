@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strconv"
 	"time"
 
@@ -84,7 +83,7 @@ func Init(options ...Option) {
 		setter(opts)
 	}
 	if opts.serviceName == "" {
-		opts.serviceName = filepath.Base(os.Args[0])
+		opts.serviceName = env.MyName
 	}
 	var handler log15.Handler
 	switch env.LogFormat {
