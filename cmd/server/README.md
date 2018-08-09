@@ -14,6 +14,17 @@ This process is quite manual still, since we want to ensure each release is
 high quality. As we get used to releasing Sourcegraph Server more and more
 parts will be automated. You will need to complete four main steps.
 
+#### (0) Check out the proper branch
+
+New major/minor releases should be cut from `master`.
+
+Patch releases should be cut from the branch that corresponds to the major/minor version of the
+patch, e.g., `2.9` or `2.10`. This will typically mean cherry-picking commits from `master` onto the
+version branch. If no such branch yet exists, one should be created off the tag of the first release
+with that major/minor version, e.g., `v2.9.0` or `v2.10.0`.
+
+Check out the appropriate branch and proceed with the next step.
+
 #### (1) Create the release candidate
 
 1.  Update [CHANGELOG](../../CHANGELOG.md) and move any `Unreleased changes` under their own section for the new `VERSION` you are about to release.
