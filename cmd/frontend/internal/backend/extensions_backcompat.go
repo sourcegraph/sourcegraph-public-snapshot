@@ -107,6 +107,10 @@ func init() {
 				title += " (unavailable)"
 				readme += "\n\n## Status: unavailable\nThis language server is unavailable because no TCP address is specified for it in site configuration."
 			}
+			if addr != "" && conf.IsDataCenter(conf.DeployType()) {
+				// Data Center uses an "xlang-" prefix for these.
+				addr = "xlang-" + addr
+			}
 
 			x := schema.SourcegraphExtension{
 				Title:       title,
