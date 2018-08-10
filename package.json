@@ -65,7 +65,7 @@
     "sass-loader": "^6.0.6",
     "semantic-release": "^15.9.3",
     "semantic-release-chrome": "^1.0.1",
-    "semantic-release-firefox": "^1.0.2",
+    "semantic-release-firefox": "^1.0.4",
     "shelljs": "^0.8.0",
     "socket.io": "^2.1.1",
     "style-loader": "^0.22.0",
