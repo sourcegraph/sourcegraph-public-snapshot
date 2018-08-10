@@ -1,16 +1,12 @@
 branch: release
 verifyConditions:
-  - semantic-release-chrome
   - semantic-release-firefox
+  - semantic-release-chrome
   - '@semantic-release/github'
 prepare:
   # Build bundles and output them to the dist folders
   - path: '@semantic-release/exec'
     cmd: npm run build
-  # Update Chrome manifest version and zip extension
-  - path: semantic-release-chrome
-    asset: &chromeAssetPath sourcegraph-extension-chrome.zip
-    distFolder: &chromeDistFolder build/chrome
   # Update Firefox manifest version, create xpi and zip sources
   - path: semantic-release-firefox
     distFolder: &firefoxDistFolder build/firefox
@@ -33,12 +29,11 @@ prepare:
         - Sourcegraph.safariextension
         - Sourcegraph.safariextension/**
         - sources.zip
-publish:
-  # Publish to Chrome extension store
+  # Update Chrome manifest version and zip extension
   - path: semantic-release-chrome
-    asset: *chromeAssetPath
-    distFolder: *chromeDistFolder
-    extensionId: dgjhfomjieaadpoljlnidmbgkdffpack
+    asset: &chromeAssetPath sourcegraph-extension-chrome.zip
+    distFolder: &chromeDistFolder build/chrome
+publish:
   # Publish to Mozilla Add-on store
   - path: semantic-release-firefox
     xpiPath: *firefoxXpiPath
@@ -70,6 +65,11 @@ publish:
       3.  Action items for hover tooltip - Users can now see references, the definition, and also search based on the currently selected token. -
           https://goo.gl/CHFnjr
       4.  File tree navigation when viewing a GitHub repository - https://goo.gl/7NafYf
+  # Publish to Chrome extension store
+  - path: semantic-release-chrome
+    asset: *chromeAssetPath
+    distFolder: *chromeDistFolder
+    extensionId: dgjhfomjieaadpoljlnidmbgkdffpack
   # Create release on GitHub
   - path: '@semantic-release/github'
     assets:
