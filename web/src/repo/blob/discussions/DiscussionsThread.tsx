@@ -2,10 +2,12 @@ import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
+import { Redirect } from 'react-router'
 import { combineLatest, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, repeatWhen, startWith, switchMap, tap } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { formatHash } from '../../../util/url'
 import { addCommentToThread, fetchDiscussionThreadAndComments } from './DiscussionsBackend'
 import { DiscussionsComment } from './DiscussionsComment'
 import { DiscussionsInput } from './DiscussionsInput'
@@ -76,6 +78,18 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         // TODO(slimsag:discussions): future: test error state + cleanup CSS
 
         const { error, loading, thread } = this.state
+        const { location, commentID } = this.props
+
+        // If the thread is loaded, ensure that the URL hash is updated to
+        // reflect the line that the discussion was created on.
+        if (thread) {
+            const desiredHash = this.urlHashWithLine(thread, commentID)
+            if (desiredHash !== location.hash) {
+                const discussionURL = location.pathname + location.search + desiredHash
+                return <Redirect to={discussionURL} />
+            }
+        }
+
         return (
             <div className="discussions-thread">
                 <DiscussionsNavbar {...this.props} threadTitle={thread ? thread.title : undefined} />
@@ -102,6 +116,32 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                 )}
             </div>
         )
+    }
+
+    /**
+     * Produces a URL hash for linking to the given discussion thread and the
+     * line that it was created on.
+     * @param thread The thread to link to.
+     */
+    private urlHashWithLine(thread: GQL.IDiscussionThread, commentID?: GQL.ID): string {
+        const hash = new URLSearchParams()
+        hash.set('tab', 'discussions')
+        hash.set('threadID', thread.id)
+        if (commentID) {
+            hash.set('commentID', commentID)
+        }
+
+        return thread.target.__typename === 'DiscussionThreadTargetRepo' && thread.target.selection !== null
+            ? formatHash(
+                  {
+                      line: thread.target.selection.startLine,
+                      character: thread.target.selection.startCharacter,
+                      endLine: thread.target.selection.endLine,
+                      endCharacter: thread.target.selection.endCharacter,
+                  },
+                  hash
+              )
+            : '#' + hash.toString()
     }
 
     private onSubmit = (title: string, contents: string) =>

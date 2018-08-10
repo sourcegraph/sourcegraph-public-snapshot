@@ -7,7 +7,7 @@ import * as GQL from '../../../backend/graphqlschema'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { UserAvatar } from '../../../user/UserAvatar'
-import { formatHash, openFromJS } from '../../../util/url'
+import { openFromJS } from '../../../util/url'
 import { fetchDiscussionThreads } from './DiscussionsBackend'
 
 interface DiscussionNodeProps {
@@ -21,20 +21,8 @@ const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
     const hash = new URLSearchParams()
     hash.set('tab', 'discussions')
     hash.set('threadID', node.id)
-    const hashString =
-        node.target.__typename === 'DiscussionThreadTargetRepo' && node.target.selection !== null
-            ? formatHash(
-                  {
-                      line: node.target.selection.startLine,
-                      character: node.target.selection.startCharacter,
-                      endLine: node.target.selection.endLine,
-                      endCharacter: node.target.selection.endCharacter,
-                  },
-                  hash
-              )
-            : '#' + hash.toString()
 
-    const discussionURL = location.pathname + location.search + hashString
+    const discussionURL = location.pathname + location.search + '#' + hash.toString()
 
     const openDiscussion = (e: any) => openFromJS(discussionURL, e)
     const preventDefault = (e: React.MouseEvent<HTMLAnchorElement>) => e.preventDefault()
