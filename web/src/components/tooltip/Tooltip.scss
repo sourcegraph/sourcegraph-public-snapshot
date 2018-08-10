@@ -1,5 +1,6 @@
 .tooltip {
     animation: 0.25s fade-in;
+    pointer-events: none;
 }
 
 @keyframes fade-in {
