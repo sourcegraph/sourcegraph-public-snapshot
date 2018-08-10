@@ -81,24 +81,33 @@ class FilteredDiscussionsConnection extends FilteredConnection<
 interface Props {
     repoID: GQL.ID
     rev: string | undefined
-    filePath: string
+    filePath: string | undefined
     history: H.History
     location: H.Location
+
+    autoFocus?: boolean
+    defaultFirst?: number
+    hideSearch?: boolean
+    noun?: string
+    pluralNoun?: string
+    noFlex?: boolean
 }
 
 export class DiscussionsList extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <FilteredDiscussionsConnection
-                className="discussions-list"
-                autoFocus={true}
+                className={'discussions-list' + this.props.noFlex ? 'discussions-list--no-flex' : ''}
+                autoFocus={this.props.autoFocus !== undefined ? this.props.autoFocus : true}
                 compact={true}
-                noun="discussion"
-                pluralNoun="discussions"
+                noun={this.props.noun || 'discussion'}
+                pluralNoun={this.props.pluralNoun || 'discussions'}
                 queryConnection={this.fetchThreads}
                 nodeComponent={DiscussionNode}
                 nodeComponentProps={{ location: this.props.location } as Pick<DiscussionNodeProps, 'location'>}
-                defaultFirst={100}
+                updateOnChange={`${this.props.repoID}:${this.props.rev}:${this.props.filePath}`}
+                defaultFirst={this.props.defaultFirst || 100}
+                hideSearch={this.props.hideSearch}
                 shouldUpdateURLQuery={false}
                 history={this.props.history}
                 location={this.props.location}
@@ -106,6 +115,10 @@ export class DiscussionsList extends React.PureComponent<Props> {
         )
     }
 
-    private fetchThreads = (args: { query?: string }): Observable<GQL.IDiscussionThreadConnection> =>
-        fetchDiscussionThreads({ targetRepositoryID: this.props.repoID, targetRepositoryPath: this.props.filePath })
+    private fetchThreads = (args: { first?: number; query?: string }): Observable<GQL.IDiscussionThreadConnection> =>
+        fetchDiscussionThreads({
+            first: args.first,
+            targetRepositoryID: this.props.repoID,
+            targetRepositoryPath: this.props.filePath,
+        })
 }
