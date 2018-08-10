@@ -2,59 +2,17 @@ package vfsutil
 
 import (
 	"archive/zip"
-	"bytes"
 	"context"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/ctxvfs"
 	"golang.org/x/tools/godoc/vfs"
 	"golang.org/x/tools/godoc/vfs/zipfs"
 )
-
-// ArchiveFileSystem returns a virtual file system backed by a .zip
-// archive of a Git tree (in the common case, the root tree of a Git
-// repository at a specific commit). The treeish is a Git object ID
-// that refers to a tree; it can be a commit ID, a tree ID, and so
-// on. For consistency, callers should generally use full SHAs, not
-// rev specs like branch names, etc.
-//
-// ArchiveFileSystem fetches the full .zip archive initially and then
-// can satisfy FS operations nearly instantly in memory.
-func ArchiveFileSystem(repo gitserver.Repo, treeish string) *ArchiveFS {
-	fetch := func(ctx context.Context) (*archiveReader, error) {
-		rc, err := git.Archive(ctx, repo, git.ArchiveOptions{
-			Treeish: treeish,
-			Format:  "zip",
-		})
-		if err != nil {
-			return nil, err
-		}
-		defer rc.Close()
-		data, err := ioutil.ReadAll(rc)
-		if err != nil {
-			return nil, err
-		}
-		gitserverBytes.Add(float64(len(data)))
-
-		zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
-		if err != nil {
-			return nil, err
-		}
-		return &archiveReader{
-			Reader: zr,
-		}, nil
-	}
-	return &ArchiveFS{fetch: fetch}
-}
 
 // archiveReader is like zip.ReadCloser, but it allows us to use a custom
 // closer.
@@ -176,14 +134,3 @@ func (fs *ArchiveFS) Close() error {
 }
 
 func (fs *ArchiveFS) String() string { return "ArchiveFS(" + fs.fs.String() + ")" }
-
-var gitserverBytes = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Subsystem: "vfs",
-	Name:      "gitserver_bytes_total",
-	Help:      "Total number of bytes read into memory by ArchiveFileSystem.",
-})
-
-func init() {
-	prometheus.MustRegister(gitserverBytes)
-}
