@@ -35,11 +35,10 @@ import (
 )
 
 var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the remote gitservers")
-var gitserverCount = env.Get("SRC_GITSERVER_COUNT", "0", "The number of gitserver replicas from a Kubernetes StatefulSet. SRC_GIT_SERVERS is ignored when this is set.")
 
-// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS or SRC_GITSERVER_COUNT.
+// DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = &Client{
-	Addrs: getGitservers(),
+	Addrs: strings.Fields(gitservers),
 	HTTPClient: &http.Client{
 		// nethttp.Transport will propagate opentracing spans
 		Transport: &nethttp.Transport{
@@ -54,23 +53,6 @@ var DefaultClient = &Client{
 	// which service is making the request (excluding requests proxied via the
 	// frontend internal API)
 	UserAgent: filepath.Base(os.Args[0]),
-}
-
-func getGitservers() []string {
-	count, err := strconv.Atoi(gitserverCount)
-	if err != nil {
-		fmt.Fprintf(env.ErrorOut, "invalid SRC_GITSERVER_COUNT: %s", err)
-		os.Exit(1)
-	}
-	if count <= 0 {
-		return strings.Fields(gitservers)
-	}
-	addrs := []string{}
-	for i := 1; i <= count; i++ {
-		addr := fmt.Sprintf("gitserver-%d.gitserver:3178", i)
-		addrs = append(addrs, addr)
-	}
-	return addrs
 }
 
 // Client is a gitserver client.
