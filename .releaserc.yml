@@ -32,6 +32,7 @@ prepare:
         - node_modules/**
         - Sourcegraph.safariextension
         - Sourcegraph.safariextension/**
+        - sources.zip
 publish:
   # Publish to Chrome extension store
   - path: semantic-release-chrome
