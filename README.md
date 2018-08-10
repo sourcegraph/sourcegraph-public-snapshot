@@ -127,29 +127,22 @@ Click reload for Sourcegraph at `about:debugging`
 
 Coming soon...
 
-## Deploy (Chrome)
+## Deploy
 
-- Ensure that you have bumped and committed the version in `chrome/extension.info.json`
-- Run `npm run build` to generate the new production build.
-- Sign in via Google with your Sourcegraph email address.
-- Naviate to https://chrome.google.com/webstore/developer/dashboard?pli=1
-- If you don't see the extension, ask [to get added to the `sg-chrome-ext-devs` Google Group](https://groups.google.com/forum/#!managemembers/sg-chrome-ext-devs/invite)
-- Click "edit" in the row associated with Sourcegraph for GitHub
-- Click "Upload Updated Package" in the top section (inside Upload).
-- Click choose file and select the `build/bundles/chrome-bundle.zip` file.
-- Add release notes and submit the build. It will be availble for the submitter instantly, but users will see it in a couple of hours. If this is a big fix for a bug then it is worth telling users they can go to `chrome://extensions` and clicking "Update extensions now" (This option is only available if "Developer mode" is enabled).
-- Click "Publish Changes"
+Deployment to Firefox and Chrome extension stores happen automatically in CI when the `release` branch is updated.
+Releases are also uploaded to the [GitHub releases page](https://github.com/sourcegraph/browser-extensions/releases) and tagged in git.
 
-### Automated
+Make sure that commit messages follow the [Conventional Commits Standard](https://conventionalcommits.org/) as the commit message will be used for the (public) release notes and to automatically determine the version number.
 
-To deploy the chrome extension with your Google Apps credentials, you must have `CHROME_WEBSTORE_CLIENT_SECRET` on your environment and
-be part of the "sg chrome ext devs" Google group. (You must also pay Google a one-time fee of $5...)
+To release the latest commit on master, ensure your master is up-to-date and run
 
-```bash
-$ make deploy
+```sh
+git push origin master:release
 ```
 
-## Deploy (Safari)
+### Safari
+
+_Safari support is work-in-progress and released manually._
 
 - Ensure you have the production build by running `npm run build`
 - Open the extension builder in Safari `Develop -> Show Extension Builder`
@@ -162,44 +155,3 @@ $ make deploy
 - Click the `...` menu on the far right of the line item for `Sourcegraph.safariextz`
 - Copy `Sourcegraph.safariextz` and change the destination name to `Sourcegraph-<version>.safariextz`
   - Make sure to keep the source permissions
-
-## Deploy (Firefox)
-
-- Sign into Firefox under a Sourcegraph developer account
-- Go to https://addons.mozilla.org/en-US/developers/addon/sourcegraph/versions/submit/
-- Ensure you have completed the steps above for release a production version. The three most important steps are: 1) Ensure it runs and there are no errors 2) Bump the version. 3) The `dist` build reflects the current changes you've made.
-- Click "Select a file..." and click the `build/bundles/firefox-bundle.xpi` that was generated from `npm run build`.
-- Following the upload, delete all contents of the `node_modules` directory except the `@sourcegraph` directory.
-  - Firefox requires us to upload our source code because the files are bundled. They also do not allow you to upload the `node_modules` directory unless the extension relies on private modules. We use private node modules so we need to include the `node_modules/@sourcegraph` contents to ensure the extension is approved.
-- Create a zip of the entire browser-extension repository.
-- Upload the browser-extension.zip to the Firefox store before clicking continue.
-- Append to the version notes if there is something significant. Otherwise use the previous version notes. You can find previous version notes by going to https://addons.mozilla.org/en-US/developers/addon/sourcegraph/versions and clicking the previous submission.
-- ALWAYS INCLUDE NOTES FOR REVIEWERS: (Copy paste what is below, if a significant change happened include it and update the README.)
-  Running from source:
-
-1.  With npm 6 installed, run `npm install`
-2.  npm run build
-3.  Go to about:debugging
-4.  Select "Enable add-on debugging"
-5.  Load Temporary Add-on
-6.  Click "Load Temporary Add-on" and select "build/bundles/firefox-bundle.xpi"
-
-NOTE: This extension includes an opt-in for event tracking on GitHub.com for the purposes of personalization.
-
-How to use the extension:
-The Sourcegraph developer extension works on GitHub.com. Below you will find a list of Sourcegraph's features with relevant URLs as well as screenshots and videos to help verify the extension.
-
-Relevant URLs:
-Open on Sourcegraph URL: https://github.com/gorilla/mux
-Code browsing URL: https://github.com/gorilla/mux/blob/master/mux.go
-
-Main features of Sourcegraph:
-
-1.  Open in Sourcegraph - This feature takes the user from the repository homepage to viewing the repository on Sourcegraph.com https://goo.gl/jepnDz
-2.  Code intelligence when hovering over code tokens - This provides developers with IDE like code browsing tools on GitHub - https://goo.gl/G1cMMM
-3.  Action items for hover tooltip - Users can now see references, the definition, and also search based on the currently selected token. -
-    https://goo.gl/CHFnjr
-4.  File tree navigation when viewing a GitHub repository - https://goo.gl/7NafYf
-
-- Click Save Changes
-- You're done.

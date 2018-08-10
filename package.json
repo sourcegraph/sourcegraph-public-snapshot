@@ -4,6 +4,7 @@
     "npm": "^6.0.0"
   },
   "scripts": {
+    "commitmsg": "commitlint -E GIT_PARAMS",
     "dev": "NODE_ENV=development ts-node scripts/dev",
     "dev:firefox": "web-ext run --source-dir ./build/firefox",
     "build": "NODE_ENV=production ts-node scripts/build",
@@ -16,7 +17,14 @@
     "test:e2e": "cypress run --browser chrome",
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js"
   },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
   "devDependencies": {
+    "@commitlint/cli": "^7.0.0",
+    "@commitlint/config-conventional": "^7.0.1",
     "@sourcegraph/prettierrc": "^2.2.0",
     "@sourcegraph/tslint-config": "^12.0.0",
     "@types/bluebird": "3.5.23",
@@ -48,11 +56,15 @@
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "get-graphql-schema": "^2.1.1",
     "gql2ts": "^1.2.1",
+    "husky": "^0.14.3",
     "jade": "^1.11.0",
     "node-sass": "^4.9.0",
     "postcss-loader": "^2.0.8",
     "prettier": "1.14.0",
     "sass-loader": "^6.0.6",
+    "semantic-release": "^15.9.3",
+    "semantic-release-chrome": "^1.0.1",
+    "semantic-release-firefox": "^1.0.2",
     "shelljs": "^0.8.0",
     "socket.io": "^2.1.1",
     "style-loader": "^0.22.0",

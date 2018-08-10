@@ -15,3 +15,12 @@ steps:
         run: bext
         config: docker-compose.tests.yml
         env: BUILDKITE_BUILD_CHECKOUT_PATH
+
+  - wait
+
+  - label: ':package:'
+    command: |-
+      npm ci
+      npm run build
+      ./node_modules/.bin/semantic-release
+    branches: release

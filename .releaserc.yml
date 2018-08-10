@@ -1,0 +1,73 @@
+branch: release
+verifyConditions:
+  - semantic-release-chrome
+  - semantic-release-firefox
+  - '@semantic-release/github'
+prepare:
+  # Update Chrome manifest version and zip extension
+  - path: semantic-release-chrome
+    asset: &chromeAssetPath sourcegraph-extension-chrome.zip
+    distFolder: &chromeDistFolder build/chrome
+  # Update Firefox manifest version, create xpi and zip sources
+  - path: semantic-release-firefox
+    distFolder: &firefoxDistFolder build/firefox
+    xpiPath: &firefoxXpiPath sourcegraph-extension-firefox.xpi
+    sourcesGlobOptions:
+      dot: true # Files like .babelrc are needed to build
+      ignore:
+        - .git
+        - .git/**
+        - .github
+        - .github/**
+        - build
+        - build/**
+        - ci
+        - ci/**
+        - cypress
+        - cypress/**
+        - node_modules
+        - node_modules/**
+        - Sourcegraph.safariextension
+        - Sourcegraph.safariextension/**
+publish:
+  # Publish to Chrome extension store
+  - path: semantic-release-chrome
+    asset: *chromeAssetPath
+    distFolder: *chromeDistFolder
+    extensionId: dgjhfomjieaadpoljlnidmbgkdffpack
+  # Publish to Mozilla Add-on store
+  - path: semantic-release-firefox
+    xpiPath: *firefoxXpiPath
+    distFolder: *firefoxDistFolder
+    addOnSlug: sourcegraph
+    notesToReviewer: |
+      Running from source:
+
+      1.  With npm 6 installed, run `npm install`
+      2.  npm run build
+      3.  Go to about:debugging
+      4.  Select "Enable add-on debugging"
+      5.  Load Temporary Add-on
+      6.  Click "Load Temporary Add-on" and select "build/bundles/firefox-bundle.xpi"
+
+      NOTE: This extension includes an opt-in for event tracking on GitHub.com for the purposes of personalization.
+
+      How to use the extension:
+      The Sourcegraph developer extension works on GitHub.com. Below you will find a list of Sourcegraph's features with relevant URLs as well as screenshots and videos to help verify the extension.
+
+      Relevant URLs:
+      Open on Sourcegraph URL: https://github.com/gorilla/mux
+      Code browsing URL: https://github.com/gorilla/mux/blob/master/mux.go
+
+      Main features of Sourcegraph:
+
+      1.  Open in Sourcegraph - This feature takes the user from the repository homepage to viewing the repository on Sourcegraph.com https://goo.gl/jepnDz
+      2.  Code intelligence when hovering over code tokens - This provides developers with IDE like code browsing tools on GitHub - https://goo.gl/G1cMMM
+      3.  Action items for hover tooltip - Users can now see references, the definition, and also search based on the currently selected token. -
+          https://goo.gl/CHFnjr
+      4.  File tree navigation when viewing a GitHub repository - https://goo.gl/7NafYf
+  # Create release on GitHub
+  - path: '@semantic-release/github'
+    assets:
+      - path: *chromeAssetPath
+      - path: *firefoxXpiPath
