@@ -17,6 +17,11 @@ interface UserNodeProps {
      * Whether or not this node is currently selected by the user.
      */
     selected: boolean
+
+    /**
+     * Called when this node is clicked.
+     */
+    onClick: () => void
 }
 
 class UserNode extends React.PureComponent<UserNodeProps> {
@@ -27,6 +32,7 @@ class UserNode extends React.PureComponent<UserNodeProps> {
                     this.props.selected ? ' active' : ''
                 }`}
                 href="#"
+                onMouseDown={this.onMouseDown}
             >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
@@ -40,6 +46,11 @@ class UserNode extends React.PureComponent<UserNodeProps> {
                 </div>
             </a>
         )
+    }
+
+    private onMouseDown: React.MouseEventHandler<HTMLElement> = e => {
+        e.preventDefault()
+        this.props.onClick()
     }
 }
 
@@ -265,7 +276,13 @@ export class DiscussionsInputMentionOverlay extends React.PureComponent<Props> {
                     )}
                     {connection &&
                         connection.nodes.map((node, index) => (
-                            <UserNode key={node.id} selected={index === selectionState.index} node={node} />
+                            <UserNode
+                                key={node.id}
+                                selected={index === selectionState.index}
+                                node={node}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                onClick={() => this.select(index)}
+                            />
                         ))}
                     {connection &&
                         connection.nodes.length === 0 && (
