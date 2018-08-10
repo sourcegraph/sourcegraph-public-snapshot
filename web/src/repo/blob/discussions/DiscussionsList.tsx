@@ -22,7 +22,7 @@ const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
     hash.set('tab', 'discussions')
     hash.set('threadID', node.id)
 
-    var rev = node.target.branch && node.target.branch.displayName
+    let rev = node.target.branch && node.target.branch.displayName
     if (rev === null) {
         rev = node.target.revision && node.target.revision.displayName
     }
