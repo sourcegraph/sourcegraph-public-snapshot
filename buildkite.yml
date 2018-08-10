@@ -3,6 +3,8 @@ env:
 
 steps:
   - label: ':typescript:'
+    env:
+      CYPRESS_INSTALL_BINARY: '0'
     command: |-
       npm ci
       npm run prettier
@@ -22,6 +24,8 @@ steps:
   - wait
 
   - label: ':package:'
+    env:
+      CYPRESS_INSTALL_BINARY: '0'
     command: |-
       npm ci
       npm run build
