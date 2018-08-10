@@ -7,7 +7,7 @@ import * as GQL from '../../../backend/graphqlschema'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { UserAvatar } from '../../../user/UserAvatar'
-import { openFromJS } from '../../../util/url'
+import { openFromJS, toPrettyBlobURL } from '../../../util/url'
 import { fetchDiscussionThreads } from './DiscussionsBackend'
 
 interface DiscussionNodeProps {
@@ -22,7 +22,22 @@ const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
     hash.set('tab', 'discussions')
     hash.set('threadID', node.id)
 
-    const discussionURL = location.pathname + location.search + '#' + hash.toString()
+    var rev = node.target.branch && node.target.branch.displayName
+    if (rev === null) {
+        rev = node.target.revision && node.target.revision.displayName
+    }
+
+    const discussionURL =
+        (node.target.path
+            ? toPrettyBlobURL({
+                  repoPath: node.target.repository && node.target.repository.name,
+                  rev: rev || '',
+                  filePath: node.target.path || '',
+              })
+            : location.pathname) +
+        location.search +
+        '#' +
+        hash.toString()
 
     const openDiscussion = (e: any) => openFromJS(discussionURL, e)
     const preventDefault = (e: React.MouseEvent<HTMLAnchorElement>) => e.preventDefault()
