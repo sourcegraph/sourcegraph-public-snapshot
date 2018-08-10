@@ -599,6 +599,8 @@ type Query {
         # When present, lists only the threads whose target is a repository with this ID.
         targetRepositoryID: ID
         # When present, lists only the threads whose target is a repository with this file path.
+        #
+        # If the path ends with "/**", any path below that is matched.
         targetRepositoryPath: String
     ): DiscussionThreadConnection!
     # Lists discussion comments.
