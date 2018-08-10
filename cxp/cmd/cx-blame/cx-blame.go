@@ -43,7 +43,7 @@ type handler struct {
 }
 
 type extensionSettings struct {
-	Hide bool `json:"hide,omitempty"`
+	Hide bool `json:"blame.hide,omitempty"`
 }
 
 func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) (result interface{}, err error) {
@@ -222,8 +222,8 @@ func (h *handler) updateSettings(ctx context.Context, conn *jsonrpc2.Conn, newSe
 	// Run async because we are currently handling a client request, and we would deadlock otherwise.
 	go func() {
 		if err := conn.Call(ctx, "configuration/update", cxp.ConfigurationUpdateParams{
-			Path:  jsonx.Path{},
-			Value: newSettings,
+			Path:  jsonx.MakePath("blame.hide"),
+			Value: newSettings.Hide,
 		}, nil); err != nil {
 			log.Println("configuration/update error:", err)
 		}
@@ -327,9 +327,13 @@ func registerContributions(ctx context.Context, conn *jsonrpc2.Conn, settings ex
 				RegisterOptions: &cxp.Contributions{
 					Commands: []*cxp.CommandContribution{
 						{
-							Command:     toggleCommandID,
-							Title:       "Blame",
-							Description: showHide + " blame annotations",
+							Command:  toggleCommandID,
+							Category: "Blame",
+							Title:    showHide + " Git blame",
+							ToolbarItem: &cxp.CommandContributionToolbarItem{
+								Label:       "Blame",
+								Description: showHide + " Git blame",
+							},
 						},
 					},
 					Menus: &cxp.MenuContributions{
