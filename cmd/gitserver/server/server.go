@@ -379,6 +379,7 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := path.Join(s.ReposDir, string(req.Repo))
 	if repoCloned(dir) {
 		w.WriteHeader(http.StatusOK)
