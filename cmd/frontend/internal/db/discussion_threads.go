@@ -238,7 +238,12 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 			targetRepoConds = append(targetRepoConds, sqlf.Sprintf("repo_id=%v", *opts.TargetRepoID))
 		}
 		if opts.TargetRepoPath != nil {
-			targetRepoConds = append(targetRepoConds, sqlf.Sprintf("path=%v", *opts.TargetRepoPath))
+			if strings.HasSuffix(*opts.TargetRepoPath, "/**") {
+				match := strings.TrimSuffix(*opts.TargetRepoPath, "/**") + "%"
+				targetRepoConds = append(targetRepoConds, sqlf.Sprintf("path LIKE %v", match))
+			} else {
+				targetRepoConds = append(targetRepoConds, sqlf.Sprintf("path=%v", *opts.TargetRepoPath))
+			}
 		}
 		conds = append(conds, sqlf.Sprintf("id IN (SELECT id FROM discussion_threads_target_repo WHERE %v)", sqlf.Join(targetRepoConds, "AND")))
 	}
