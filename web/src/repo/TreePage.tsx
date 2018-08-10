@@ -34,6 +34,7 @@ import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/e
 import { memoizeObservable } from '../util/memoize'
 import { basename } from '../util/path'
 import { fetchTree } from './backend'
+import { DiscussionsList } from './blob/discussions/DiscussionsList'
 import { GitCommitNode, GitCommitNodeProps } from './commits/GitCommitNode'
 import { gitCommitFragment } from './commits/RepositoryCommitsPage'
 
@@ -261,37 +262,55 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     <OpenHelpPopoverButton onHelpPopoverToggle={this.props.onHelpPopoverToggle} />
                                 </Form>
                             </section>
-                            {this.state.treeOrError.directories.length > 0 && (
-                                <section className="tree-page__section">
-                                    <h3 className="tree-page__section-header">Directories</h3>
-                                    <div className="tree-page__entries tree-page__entries-directories">
-                                        {this.state.treeOrError.directories.map((e, i) => (
-                                            <TreeEntry
-                                                key={i}
-                                                isDir={true}
-                                                name={e.name}
-                                                parentPath={this.props.filePath}
-                                                url={e.url}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
-                            )}
-                            {this.state.treeOrError.files.length > 0 && (
-                                <section className="tree-page__section">
-                                    <h3 className="tree-page__section-header">Files</h3>
-                                    <div className="tree-page__entries tree-page__entries-files">
-                                        {this.state.treeOrError.files.map((e, i) => (
-                                            <TreeEntry
-                                                key={i}
-                                                isDir={false}
-                                                name={e.name}
-                                                parentPath={this.props.filePath}
-                                                url={e.url}
-                                            />
-                                        ))}
-                                    </div>
-                                </section>
+                            {!window.context.discussionsEnabled &&
+                                this.state.treeOrError.directories.length > 0 && (
+                                    <section className="tree-page__section">
+                                        <h3 className="tree-page__section-header">Directories</h3>
+                                        <div className="tree-page__entries tree-page__entries-directories">
+                                            {this.state.treeOrError.directories.map((e, i) => (
+                                                <TreeEntry
+                                                    key={i}
+                                                    isDir={true}
+                                                    name={e.name}
+                                                    parentPath={this.props.filePath}
+                                                    url={e.url}
+                                                />
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
+                            {!window.context.discussionsEnabled &&
+                                this.state.treeOrError.files.length > 0 && (
+                                    <section className="tree-page__section">
+                                        <h3 className="tree-page__section-header">Files</h3>
+                                        <div className="tree-page__entries tree-page__entries-files">
+                                            {this.state.treeOrError.files.map((e, i) => (
+                                                <TreeEntry
+                                                    key={i}
+                                                    isDir={false}
+                                                    name={e.name}
+                                                    parentPath={this.props.filePath}
+                                                    url={e.url}
+                                                />
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
+                            {window.context.discussionsEnabled && (
+                                <div className="tree-page__section mt-2 tree-page__section--discussions">
+                                    <h3 className="tree-page__section-header">Discussions</h3>
+                                    <DiscussionsList
+                                        repoID={this.props.repoID}
+                                        rev={this.props.rev}
+                                        filePath={this.props.filePath + '/**' || undefined}
+                                        history={this.props.history}
+                                        location={this.props.location}
+                                        noun="discussion in this tree"
+                                        pluralNoun="discussions in this tree"
+                                        defaultFirst={2}
+                                        hideSearch={true}
+                                    />
+                                </div>
                             )}
                             {USE_PLATFORM && (
                                 <ContributedActionsContainer

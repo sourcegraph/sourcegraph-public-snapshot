@@ -2,7 +2,9 @@
     display: flex;
     flex-direction: column;
     min-height: 0; /* needed for Firefox/Edge scrolling to work properly; See sourcegraph/sourcegraph#12340 and https://codepen.io/slimsag/pen/mjPXyN */
-
+    &--no-flex {
+        display: block;
+    }
     &__row {
         display: block;
         padding: 0.75rem;

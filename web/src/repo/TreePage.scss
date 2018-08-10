@@ -30,7 +30,8 @@
             }
         }
 
-        &--commits {
+        &--commits,
+        &--discussions {
             width: 100%;
             max-width: 64rem;
         }
