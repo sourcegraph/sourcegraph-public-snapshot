@@ -47,7 +47,20 @@ export class DiscussionsNavbar extends React.PureComponent<Props> {
                             #{threadID}
                         </strong>
                     )}
-                {threadID === undefined && commentID === undefined && <strong>New discussion</strong>}
+                {threadID === undefined &&
+                    commentID === undefined && (
+                        <>
+                            {!threadTitle && <strong>New discussion</strong>}
+                            {threadTitle && (
+                                <>
+                                    <strong className="discussions-navbar__title-container">
+                                        New discussion:{' '}
+                                        <small className="discussions-navbar__title text-muted">"{threadTitle}"</small>
+                                    </strong>
+                                </>
+                            )}
+                        </>
+                    )}
             </div>
         )
     }

@@ -94,7 +94,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                         <DiscussionsInput
                             key="input"
                             submitLabel="Comment"
-                            noTitle={true}
+                            noExplicitTitle={true}
                             onSubmit={this.onSubmit}
                             {...this.props}
                         />

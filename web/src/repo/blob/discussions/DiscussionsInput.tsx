@@ -19,10 +19,16 @@ interface Props {
     submitLabel: string
 
     /** Called when the submit button is clicked. */
-    onSubmit: (title: string, textAreaValue: string) => Observable<void>
+    onSubmit: (title: string, comment: string) => Observable<void>
 
-    /** Whether or not to hide the title portion of the input. */
-    noTitle?: boolean
+    /**
+     * Whether or not to hide the title portion of the input and instead use an
+     * implicit git-commit-message style title field.
+     */
+    noExplicitTitle?: boolean
+
+    /** Called when the title value changes. */
+    onTitleChange?: (title: string) => void
 }
 
 interface State {
@@ -83,11 +89,21 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.subscriptions.add(
             merge(
-                this.titleInputChanges.pipe(map((titleInputValue): Update => state => ({ ...state, titleInputValue }))),
+                this.titleInputChanges.pipe(
+                    tap(titleInputValue => this.props.onTitleChange && this.props.onTitleChange(titleInputValue)),
+                    map((titleInputValue): Update => state => ({ ...state, titleInputValue }))
+                ),
 
                 this.textAreaChanges.pipe(
                     startWith({ textAreaValue: '', selectionStart: 0, element: undefined }),
-                    map((textArea): Update => state => ({ ...state, textArea }))
+                    map(
+                        (textArea): Update => state => {
+                            if (this.props.noExplicitTitle) {
+                                this.titleInputChanges.next(textArea.textAreaValue.split('\n')[0])
+                            }
+                            return { ...state, textArea }
+                        }
+                    )
                 ),
 
                 // Handle tab changes by logging the event and fetching preview data.
@@ -104,7 +120,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     mergeMap(([, { textAreaValue }]) =>
                         of<Update>(state => ({ ...state, previewHTML: undefined, previewLoading: true })).pipe(
                             concat(
-                                renderMarkdown(textAreaValue).pipe(
+                                renderMarkdown(this.trimImplicitTitle(textAreaValue)).pipe(
                                     map(
                                         (previewHTML): Update => state => ({
                                             ...state,
@@ -141,7 +157,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         // Start with setting submitting: true
                         of<Update>(state => ({ ...state, submitting: true })).pipe(
                             concat(
-                                props.onSubmit(titleInputValue, textAreaValue).pipe(
+                                props.onSubmit(titleInputValue, this.trimImplicitTitle(textAreaValue)).pipe(
                                     map(
                                         (): Update => state => ({
                                             ...state,
@@ -178,7 +194,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
 
         return (
             <Form className="discussions-input" onSubmit={this.nextSubmit}>
-                {!this.props.noTitle && (
+                {!this.props.noExplicitTitle && (
                     <input
                         className="form-control discussions-input__title"
                         placeholder="Title"
@@ -221,6 +237,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                             onBlur={this.onBlurHandler}
                             value={textArea.textAreaValue}
                             ref={this.setTextAreaRef}
+                            autoFocus={this.props.noExplicitTitle}
                         />
                     </div>
                     <div key="preview" className="discussions-input__preview">
@@ -245,6 +262,17 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                 )}
             </Form>
         )
+    }
+
+    /** Trims the implicit title string out of the comment (e.g. textarea value). */
+    private trimImplicitTitle = (comment: string): string => {
+        if (!this.props.noExplicitTitle) {
+            return comment
+        }
+        return comment
+            .split('\n')
+            .slice(1)
+            .join('\n')
     }
 
     private setOnBlurHandler = (h: OnBlurHandler) => {

@@ -4,4 +4,7 @@
 .discussions-create {
     display: flex;
     flex-direction: column;
+    &__content {
+        overflow: auto;
+    }
 }

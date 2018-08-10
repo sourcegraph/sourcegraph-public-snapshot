@@ -1,4 +1,5 @@
 import * as H from 'history'
+import InformationVariantIcon from 'mdi-react/InformationVariantIcon'
 import * as React from 'react'
 import { map, tap } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
@@ -17,12 +18,39 @@ interface Props {
     location: H.Location
 }
 
-export class DiscussionsCreate extends React.PureComponent<Props> {
+interface State {
+    title?: string
+}
+
+export class DiscussionsCreate extends React.PureComponent<Props, State> {
+    constructor(props: Props) {
+        super(props)
+        this.state = {}
+    }
+
     public render(): JSX.Element | null {
         return (
             <div className="discussions-create">
-                <DiscussionsNavbar {...this.props} />
-                <DiscussionsInput submitLabel="Create discussion" onSubmit={this.onSubmit} {...this.props} />
+                <DiscussionsNavbar {...this.props} threadTitle={this.state.title} />
+                <div className="discussions-create__content">
+                    {this.state.title &&
+                        this.state.title.length > 60 && (
+                            <div className="alert alert-info p-1 mt-3 ml-3 mr-3 mb-0">
+                                <small>
+                                    <InformationVariantIcon className="icon-inline" />
+                                    The first line of your message will become the title of your discussion. A good
+                                    title is usually 50 characters or less.
+                                </small>
+                            </div>
+                        )}
+                    <DiscussionsInput
+                        submitLabel="Create discussion"
+                        noExplicitTitle={true}
+                        onTitleChange={this.onTitleChange}
+                        onSubmit={this.onSubmit}
+                        {...this.props}
+                    />
+                </div>
             </div>
         )
     }
@@ -62,4 +90,6 @@ export class DiscussionsCreate extends React.PureComponent<Props> {
             map(thread => void 0)
         )
     }
+
+    private onTitleChange = (newTitle: string) => this.setState({ title: newTitle })
 }
