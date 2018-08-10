@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Link } from 'react-router-dom'
+import { RouterLinkOrAnchor } from './RouterLinkOrAnchor'
 
 /**
  * The LinkOrSpan component renders a <Link> (from react-router-dom) if the "to" property is a non-empty string;
@@ -12,9 +12,9 @@ export const LinkOrSpan: React.SFC<
     } & React.AnchorHTMLAttributes<HTMLAnchorElement>
 > = ({ to, className = '', children, ...otherProps }) =>
     to ? (
-        <Link to={to} className={className} {...otherProps}>
+        <RouterLinkOrAnchor to={to} className={className} {...otherProps}>
             {children}
-        </Link>
+        </RouterLinkOrAnchor>
     ) : (
         <span className={className} {...otherProps}>
             {children}
