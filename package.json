@@ -25,6 +25,7 @@
   "devDependencies": {
     "@commitlint/cli": "^7.0.0",
     "@commitlint/config-conventional": "^7.0.1",
+    "@semantic-release/exec": "^3.0.2",
     "@sourcegraph/prettierrc": "^2.2.0",
     "@sourcegraph/tslint-config": "^12.0.0",
     "@types/bluebird": "3.5.23",

@@ -28,6 +28,5 @@ steps:
       CYPRESS_INSTALL_BINARY: '0'
     command: |-
       npm ci
-      npm run build
       ./node_modules/.bin/semantic-release
     branches: release

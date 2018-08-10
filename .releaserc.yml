@@ -4,6 +4,9 @@ verifyConditions:
   - semantic-release-firefox
   - '@semantic-release/github'
 prepare:
+  # Build bundles and output them to the dist folders
+  - path: '@semantic-release/exec'
+    cmd: npm run build
   # Update Chrome manifest version and zip extension
   - path: semantic-release-chrome
     asset: &chromeAssetPath sourcegraph-extension-chrome.zip
