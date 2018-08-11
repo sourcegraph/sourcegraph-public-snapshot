@@ -9,8 +9,8 @@ import { CXPControllerProps } from '../cxp/controller'
 import { ConfigurationSubject } from '../settings'
 import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
 import { PopoverButton } from '../ui/generic/PopoverButton'
-import { ContributedActionItem, ContributedActionItemProps } from './ContributedActionItem'
-import { getContributedActionItems } from './ContributedActions'
+import { ActionItem, ActionItemProps } from './actions/ActionItem'
+import { getContributedActionItems } from './actions/contributions'
 
 interface Props<S extends ConfigurationSubject, C = Settings> extends CXPControllerProps, ExtensionsProps<S, C> {
     /** The menu whose commands to display. */
@@ -34,8 +34,8 @@ export class CommandList<S extends ConfigurationSubject, C = Settings> extends R
 
     private subscriptions = new Subscription()
 
-    private selectedItem: ContributedActionItem<S, C> | null = null
-    private setSelectedItem = (e: ContributedActionItem<S, C> | null) => (this.selectedItem = e)
+    private selectedItem: ActionItem<S, C> | null = null
+    private setSelectedItem = (e: ActionItem<S, C> | null) => (this.selectedItem = e)
 
     public componentDidMount(): void {
         this.subscriptions.add(
@@ -88,7 +88,7 @@ export class CommandList<S extends ConfigurationSubject, C = Settings> extends R
                 </div>
                 {items.length > 0 ? (
                     items.map((item, i) => (
-                        <ContributedActionItem
+                        <ActionItem
                             className={`list-group-item list-group-item-action px-3 ${
                                 i === selectedIndex ? 'active border-primary' : ''
                             }`}
@@ -149,7 +149,7 @@ export class CommandList<S extends ConfigurationSubject, C = Settings> extends R
     }
 }
 
-function filterAndRankItems(allItems: ContributedActionItemProps[], query: string): ContributedActionItemProps[] {
+function filterAndRankItems(allItems: ActionItemProps[], query: string): ActionItemProps[] {
     if (!query) {
         return allItems
     }

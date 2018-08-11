@@ -2,14 +2,14 @@ import { CommandContribution, ExecuteCommandParams } from 'cxp/module/protocol'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
-import { ExtensionsProps } from '../context'
-import { Settings } from '../copypasta'
-import { CXPControllerProps } from '../cxp/controller'
-import { asError, ErrorLike } from '../errors'
-import { ConfigurationSubject } from '../settings'
-import { LinkOrButton } from '../ui/generic/LinkOrButton'
+import { ExtensionsProps } from '../../context'
+import { Settings } from '../../copypasta'
+import { CXPControllerProps } from '../../cxp/controller'
+import { asError, ErrorLike } from '../../errors'
+import { ConfigurationSubject } from '../../settings'
+import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
-export interface ContributedActionItemProps {
+export interface ActionItemProps {
     contribution: CommandContribution
     variant?: 'toolbarItem'
     className?: string
@@ -27,7 +27,7 @@ export interface ContributedActionItemProps {
 }
 
 interface Props<S extends ConfigurationSubject, C = Settings>
-    extends ContributedActionItemProps,
+    extends ActionItemProps,
         CXPControllerProps,
         ExtensionsProps<S, C> {}
 
@@ -38,10 +38,7 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ContributedActionItem<S extends ConfigurationSubject, C = Settings> extends React.PureComponent<
-    Props<S, C>,
-    State
-> {
+export class ActionItem<S extends ConfigurationSubject, C = Settings> extends React.PureComponent<Props<S, C>, State> {
     public state: State = { actionOrError: null }
 
     private commandExecutions = new Subject<ExecuteCommandParams>()
