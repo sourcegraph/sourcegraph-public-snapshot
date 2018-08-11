@@ -3,12 +3,11 @@ import uuidv4 from 'uuid/v4'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { ProvideTextDocumentDecorationSignature } from '../../environment/providers/decoration'
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
-import { ClientCapabilities, ServerCapabilities, TextDocumentRegistrationOptions } from '../../protocol'
+import { ClientCapabilities, ServerCapabilities } from '../../protocol'
 import { TextDocumentDecoration, TextDocumentPublishDecorationsNotification } from '../../protocol/decoration'
-import { DocumentSelector } from '../../types/document'
 import { NextSignature } from '../../types/middleware'
 import { Client } from '../client'
-import { ensure, TextDocumentFeature } from './common'
+import { ensure, Feature } from './common'
 
 export type ProvideTextDocumentDecorationMiddleware = NextSignature<
     TextDocumentIdentifier,
@@ -19,16 +18,13 @@ export type ProvideTextDocumentDecorationMiddleware = NextSignature<
  * Support for text document decorations published by the server (textDocument/publishDecorations notifications
  * from the server).
  */
-export class TextDocumentDecorationFeature extends TextDocumentFeature<TextDocumentRegistrationOptions> {
+export class TextDocumentDecorationFeature extends Feature<undefined> {
     /** Map of document URI to its decorations (last published by the server). */
     private decorations = new Map<string, BehaviorSubject<TextDocumentDecoration[] | null>>()
 
     constructor(
         client: Client,
-        private registry: FeatureProviderRegistry<
-            TextDocumentRegistrationOptions,
-            ProvideTextDocumentDecorationSignature
-        >
+        private registry: FeatureProviderRegistry<undefined, ProvideTextDocumentDecorationSignature>
     ) {
         super(client)
     }
@@ -39,27 +35,24 @@ export class TextDocumentDecorationFeature extends TextDocumentFeature<TextDocum
         ensure(capabilities, 'decoration')
     }
 
-    public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-        if (!capabilities.decorationProvider || !documentSelector) {
+    public initialize(capabilities: ServerCapabilities): void {
+        if (!capabilities.decorationProvider) {
             return
         }
-        this.register(this.messages, {
-            id: uuidv4(),
-            registerOptions: { documentSelector },
-        })
+        this.register(this.messages, { id: uuidv4(), registerOptions: undefined })
         // TODO(sqs): no way to unregister this
         this.client.onNotification(TextDocumentPublishDecorationsNotification.type, params => {
             this.getDecorationsSubject(params.textDocument, params.decorations)
         })
     }
 
-    protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
+    protected registerProvider(): Unsubscribable {
         const client = this.client
         const provideTextDocumentDecoration: ProvideTextDocumentDecorationSignature = textDocument =>
             this.getDecorationsSubject(textDocument)
         const middleware = client.options.middleware.provideTextDocumentDecoration
         return this.registry.registerProvider(
-            options,
+            undefined,
             (textDocument: TextDocumentIdentifier): Observable<TextDocumentDecoration[] | null> =>
                 middleware
                     ? middleware(textDocument, provideTextDocumentDecoration)

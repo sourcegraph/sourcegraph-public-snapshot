@@ -2,7 +2,7 @@ import * as assert from 'assert'
 import { Unsubscribable } from 'rxjs'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 import { Client } from '../client'
-import { TextDocumentFeature as AbstractTextDocumentFeature } from './common'
+import { Feature as AbstractTextDocumentFeature } from './common'
 
 const create = <F extends AbstractTextDocumentFeature<TextDocumentRegistrationOptions>>(
     FeatureClass: new (client: Client) => F

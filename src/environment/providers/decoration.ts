@@ -1,7 +1,6 @@
 import { combineLatest, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
-import { TextDocumentRegistrationOptions } from '../../protocol'
 import { TextDocumentDecoration } from '../../protocol/decoration'
 import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
@@ -12,7 +11,7 @@ export type ProvideTextDocumentDecorationSignature = (
 
 /** Provides text document decorations from all extensions. */
 export class TextDocumentDecorationProviderRegistry extends FeatureProviderRegistry<
-    TextDocumentRegistrationOptions,
+    undefined,
     ProvideTextDocumentDecorationSignature
 > {
     public getDecorations(params: TextDocumentIdentifier): Observable<TextDocumentDecoration[] | null> {

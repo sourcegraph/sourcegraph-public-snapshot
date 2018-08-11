@@ -1,11 +1,6 @@
 import { Unsubscribable } from 'rxjs'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
-import {
-    ClientCapabilities,
-    InitializeParams,
-    ServerCapabilities,
-    TextDocumentRegistrationOptions,
-} from '../../protocol'
+import { ClientCapabilities, InitializeParams, ServerCapabilities } from '../../protocol'
 import { DocumentSelector } from '../../types/document'
 import { isFunction } from '../../util'
 import { Client } from '../client'
@@ -57,15 +52,15 @@ export namespace DynamicFeature {
     }
 }
 
-/** Common base class for client features that operate on text documents. */
-export abstract class TextDocumentFeature<T extends TextDocumentRegistrationOptions> implements DynamicFeature<T> {
+/** Common base class for client features. */
+export abstract class Feature<O> implements DynamicFeature<O> {
     private subscriptionsByID = new Map<string, Unsubscribable>()
 
     constructor(protected client: Client) {}
 
     public abstract get messages(): RPCMessageType
 
-    public register(message: RPCMessageType, data: RegistrationData<T>): void {
+    public register(message: RPCMessageType, data: RegistrationData<O>): void {
         if (message.method !== this.messages.method) {
             throw new Error(
                 `Register called on wrong feature. Requested ${message.method} but reached feature ${
@@ -73,16 +68,13 @@ export abstract class TextDocumentFeature<T extends TextDocumentRegistrationOpti
                 }`
             )
         }
-        if (!data.registerOptions.documentSelector) {
-            return
-        }
         if (this.subscriptionsByID.has(data.id)) {
             throw new Error(`registration already exists with ID ${data.id}`)
         }
         this.subscriptionsByID.set(data.id, this.registerProvider(data.registerOptions))
     }
 
-    protected abstract registerProvider(options: T): Unsubscribable
+    protected abstract registerProvider(options: O): Unsubscribable
 
     public abstract fillClientCapabilities(capabilities: ClientCapabilities): void
 

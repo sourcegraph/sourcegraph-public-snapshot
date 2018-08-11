@@ -6,7 +6,6 @@ import {
     ClientCapabilities,
     TextDocumentPublishDecorationsNotification,
     TextDocumentPublishDecorationsParams,
-    TextDocumentRegistrationOptions,
 } from '../../protocol'
 import { Client } from '../client'
 import { TextDocumentDecorationFeature } from './decoration'
@@ -35,11 +34,11 @@ describe('TextDocumentDecorationFeature', () => {
 
             function mockOnNotification(method: string, handler: NotificationHandler<any>): void
             function mockOnNotification(
-                type: NotificationType<TextDocumentPublishDecorationsParams, TextDocumentRegistrationOptions>,
+                type: NotificationType<TextDocumentPublishDecorationsParams, void>,
                 params: NotificationHandler<TextDocumentPublishDecorationsParams>
             ): void
             function mockOnNotification(
-                type: string | NotificationType<TextDocumentPublishDecorationsParams, TextDocumentRegistrationOptions>,
+                type: string | NotificationType<TextDocumentPublishDecorationsParams, void>,
                 params: NotificationHandler<any>
             ): void {
                 assert.strictEqual(
@@ -50,13 +49,13 @@ describe('TextDocumentDecorationFeature', () => {
             }
             client.onNotification = mockOnNotification
 
-            feature.initialize({ decorationProvider: {} }, ['*'])
+            feature.initialize({ decorationProvider: {} })
             assert.strictEqual(registry.providersSnapshot.length, 1)
         })
 
         it('does not register the provider if the server lacks a decorationProvider', () => {
             const { registry, feature } = create()
-            feature.initialize({ decorationProvider: undefined }, ['*'])
+            feature.initialize({ decorationProvider: undefined })
             assert.strictEqual(registry.providersSnapshot.length, 0)
         })
     })

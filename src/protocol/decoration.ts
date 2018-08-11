@@ -13,10 +13,7 @@ export interface DecorationProviderOptions extends DecorationCapabilityOptions {
 
 export interface DecorationServerCapabilities {
     /** The server's support for decoration. */
-    decorationProvider?:
-        | boolean
-        | DecorationProviderOptions
-        | (DecorationProviderOptions & TextDocumentRegistrationOptions)
+    decorationProvider?: boolean | DecorationProviderOptions
 }
 
 /**

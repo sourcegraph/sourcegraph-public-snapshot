@@ -18,7 +18,7 @@ import { DocumentSelector } from '../../types/document'
 import { NextSignature } from '../../types/middleware'
 import { Client } from '../client'
 import { Middleware } from '../middleware'
-import { ensure, TextDocumentFeature } from './common'
+import { ensure, Feature } from './common'
 
 export type ProvideTextDocumentLocationMiddleware<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
@@ -32,7 +32,7 @@ export type ProvideTextDocumentLocationMiddleware<
 export abstract class TextDocumentLocationFeature<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
     L extends Location = Location
-> extends TextDocumentFeature<TextDocumentRegistrationOptions> {
+> extends Feature<TextDocumentRegistrationOptions> {
     constructor(
         client: Client,
         private registry: FeatureProviderRegistry<
