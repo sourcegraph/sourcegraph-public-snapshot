@@ -1,26 +1,24 @@
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { HoverMerged } from 'cxp/lib/types/hover'
+import { ResourceDecorations } from 'cxp/module/protocol'
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { compact, flatten } from 'lodash'
-import { forkJoin, Observable } from 'rxjs'
-import { catchError, map } from 'rxjs/operators'
+import { forkJoin, Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { Definition, Location } from 'vscode-languageserver-types'
 import { USE_PLATFORM } from '../cxp/CXPEnvironment'
 import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import {
-    fetchDecorations,
     fetchDefinition,
     fetchHover,
     fetchImplementation,
     fetchReferences,
     fetchXdefinition,
     fetchXreferences,
-    isMethodNotFoundError,
     LSPReferencesParams,
     LSPSelector,
     LSPTextDocumentPositionParams,
-    TextDocumentDecoration,
     XReferenceOptions,
 } from './lsp'
 
@@ -222,19 +220,7 @@ export function getDecorations(
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
         })
     }
-    return forkJoin(
-        getModes(ctx).map(({ mode }) =>
-            fetchDecorations({ ...ctx, mode }).pipe(
-                map(results => (results === null ? [] : compact(results))),
-                catchError(error => {
-                    if (!isMethodNotFoundError(error)) {
-                        console.error(error)
-                    }
-                    return [[]]
-                })
-            )
-        )
-    ).pipe(map(results => flatten(results)))
+    return of(null)
 }
 
 /** Computes the set of LSP modes to use. */

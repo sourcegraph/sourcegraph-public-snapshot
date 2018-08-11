@@ -8,6 +8,7 @@ import {
 } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { TextDocumentDecoration } from 'cxp/module/protocol'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
@@ -17,7 +18,7 @@ import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLa
 import { Range } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
-import { LSPSelector, LSPTextDocumentPositionParams, TextDocumentDecoration } from '../../backend/lsp'
+import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { CXPComponent, CXPComponentProps } from '../../cxp/CXPComponent'
 import { USE_PLATFORM } from '../../cxp/CXPEnvironment'
 import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
@@ -328,10 +329,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         }
                         const row = codeCell.parentElement as HTMLTableRowElement
                         let decorated = false
-                        if (decoration.background) {
-                            row.style.background = decoration.background
-                            decorated = true
-                        }
                         if (decoration.backgroundColor) {
                             row.style.backgroundColor = decoration.backgroundColor
                             decorated = true

@@ -6,7 +6,7 @@ import {
 import { Observable, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { Definition, Hover, Location, MarkupContent, Range } from 'vscode-languageserver-types'
+import { Definition, Hover, Location, MarkupContent } from 'vscode-languageserver-types'
 import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
 import { ErrorLike, normalizeAjaxError } from '../util/errors'
@@ -38,7 +38,7 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
 const EMETHODNOTFOUND = -32601
 
 /** Returns whether the LSP message is a "method not found" error. */
-export function isMethodNotFoundError(val: any): boolean {
+function isMethodNotFoundError(val: any): boolean {
     return val && val.code === EMETHODNOTFOUND
 }
 
@@ -287,38 +287,6 @@ export const fetchXreferences = memoizeObservable(
             }
         ).pipe(map((refInfos: ReferenceInformation[]) => refInfos.map(refInfo => refInfo.reference))),
     options => cacheKey(options) + ':' + JSON.stringify([options.query, options.hints, options.limit])
-)
-
-export interface TextDocumentDecoration {
-    after?: DecorationAttachmentRenderOptions
-    background?: string
-    backgroundColor?: string
-    border?: string
-    borderColor?: string
-    borderWidth?: string
-    isWholeLine?: boolean
-    range: Range
-}
-
-export interface DecorationAttachmentRenderOptions {
-    backgroundColor?: string
-    color?: string
-    contentText?: string
-    hoverMessage?: string
-    linkURL?: string
-}
-
-export const fetchDecorations = memoizeObservable(
-    (ctx: LSPSelector & FileSpec): Observable<TextDocumentDecoration[] | null> =>
-        sendLSPRequest(ctx, {
-            method: 'textDocument/decoration',
-            params: {
-                textDocument: {
-                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
-                },
-            },
-        }),
-    cacheKey
 )
 
 function cacheKey(sel: LSPSelector): string {

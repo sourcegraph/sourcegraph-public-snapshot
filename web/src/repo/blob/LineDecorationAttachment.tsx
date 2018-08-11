@@ -1,7 +1,7 @@
+import { DecorationAttachmentRenderOptions } from 'cxp/module/protocol'
 import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { AbsoluteRepoFile } from '..'
-import { DecorationAttachmentRenderOptions } from '../../backend/lsp'
 import { LinkOrSpan } from '../../components/LinkOrSpan'
 
 interface LineDecorationAttachmentProps extends AbsoluteRepoFile {
