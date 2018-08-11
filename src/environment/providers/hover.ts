@@ -3,12 +3,12 @@ import { map, switchMap } from 'rxjs/operators'
 import { Hover } from 'vscode-languageserver-types'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { HoverMerged } from '../../types/hover'
-import { TextDocumentFeatureProviderRegistry } from './textDocument'
+import { FeatureProviderRegistry } from './registry'
 
 export type ProvideTextDocumentHoverSignature = (params: TextDocumentPositionParams) => Promise<Hover | null>
 
 /** Provides hovers from all extensions. */
-export class TextDocumentHoverProviderRegistry extends TextDocumentFeatureProviderRegistry<
+export class TextDocumentHoverProviderRegistry extends FeatureProviderRegistry<
     TextDocumentRegistrationOptions,
     ProvideTextDocumentHoverSignature
 > {

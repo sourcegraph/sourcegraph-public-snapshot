@@ -3,7 +3,7 @@ import { map, switchMap } from 'rxjs/operators'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { TextDocumentRegistrationOptions } from '../../protocol'
 import { TextDocumentDecoration } from '../../protocol/decoration'
-import { TextDocumentFeatureProviderRegistry } from './textDocument'
+import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
 export type ProvideTextDocumentDecorationSignature = (
@@ -11,7 +11,7 @@ export type ProvideTextDocumentDecorationSignature = (
 ) => Observable<TextDocumentDecoration[] | null>
 
 /** Provides text document decorations from all extensions. */
-export class TextDocumentDecorationProviderRegistry extends TextDocumentFeatureProviderRegistry<
+export class TextDocumentDecorationProviderRegistry extends FeatureProviderRegistry<
     TextDocumentRegistrationOptions,
     ProvideTextDocumentDecorationSignature
 > {

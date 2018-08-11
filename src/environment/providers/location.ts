@@ -2,7 +2,7 @@ import { combineLatest, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { Location } from 'vscode-languageserver-types'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
-import { TextDocumentFeatureProviderRegistry } from './textDocument'
+import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
 /**
@@ -18,10 +18,7 @@ export type ProvideTextDocumentLocationSignature<
 export class TextDocumentLocationProviderRegistry<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
     L extends Location = Location
-> extends TextDocumentFeatureProviderRegistry<
-    TextDocumentRegistrationOptions,
-    ProvideTextDocumentLocationSignature<P, L>
-> {
+> extends FeatureProviderRegistry<TextDocumentRegistrationOptions, ProvideTextDocumentLocationSignature<P, L>> {
     public getLocation(params: P): Observable<L | L[] | null> {
         return getLocation<P, L>(this.providers, params)
     }

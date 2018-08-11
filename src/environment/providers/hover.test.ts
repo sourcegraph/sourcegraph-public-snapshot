@@ -4,7 +4,7 @@ import { TestScheduler } from 'rxjs/testing'
 import { Hover, Position } from 'vscode-languageserver-types'
 import { HoverMerged } from '../../types/hover'
 import { getHover, ProvideTextDocumentHoverSignature } from './hover'
-import { FIXTURE } from './textDocument.test'
+import { FIXTURE } from './registry.test'
 
 const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
 

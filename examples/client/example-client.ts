@@ -5,7 +5,7 @@ import { Client, ClientState } from '../../src/client/client'
 import { TextDocumentHoverFeature } from '../../src/client/features/hover'
 import { TextDocumentDidOpenFeature } from '../../src/client/features/textDocument'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment } from '../../src/environment/environment'
-import { NoopProviderRegistry } from '../../src/environment/providers/textDocument'
+import { NoopProviderRegistry } from '../../src/environment/providers/registry'
 import { createWebSocketMessageTransports } from '../../src/jsonrpc2/transports/nodeWebSocket'
 import config from './config'
 

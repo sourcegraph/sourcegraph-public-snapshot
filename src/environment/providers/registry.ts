@@ -1,15 +1,14 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { TextDocumentRegistrationOptions } from '../../protocol'
 
 /** A registry entry for a registered provider. */
-interface Entry<O extends TextDocumentRegistrationOptions, P> {
+interface Entry<O, P> {
     registrationOptions: O
     provider: P
 }
 
-/** Base class for provider registries for text document features. */
-export abstract class TextDocumentFeatureProviderRegistry<O extends TextDocumentRegistrationOptions, P> {
+/** Base class for provider registries for features. */
+export abstract class FeatureProviderRegistry<O, P> {
     private entries = new BehaviorSubject<Entry<O, P>[]>([])
 
     public constructor(initialEntries?: Entry<O, P>[]) {
@@ -51,4 +50,4 @@ export abstract class TextDocumentFeatureProviderRegistry<O extends TextDocument
 }
 
 /** An empty provider registry, mainly useful in tests and example code. */
-export class NoopProviderRegistry extends TextDocumentFeatureProviderRegistry<any, any> {}
+export class NoopProviderRegistry extends FeatureProviderRegistry<any, any> {}

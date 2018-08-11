@@ -3,7 +3,7 @@ import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Location, Position, Range } from 'vscode-languageserver-types'
 import { getLocation, getLocations, ProvideTextDocumentLocationSignature } from './location'
-import { FIXTURE } from './textDocument.test'
+import { FIXTURE } from './registry.test'
 
 const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
 

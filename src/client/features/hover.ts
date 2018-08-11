@@ -2,7 +2,7 @@ import { Unsubscribable } from 'rxjs'
 import uuidv4 from 'uuid/v4'
 import { Hover, MarkupKind } from 'vscode-languageserver-types'
 import { ProvideTextDocumentHoverSignature } from '../../environment/providers/hover'
-import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'
+import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import {
     ClientCapabilities,
     HoverRequest,
@@ -23,10 +23,7 @@ export type ProvideTextDocumentHoverMiddleware = NextSignature<TextDocumentPosit
 export class TextDocumentHoverFeature extends TextDocumentFeature<TextDocumentRegistrationOptions> {
     constructor(
         client: Client,
-        private registry: TextDocumentFeatureProviderRegistry<
-            TextDocumentRegistrationOptions,
-            ProvideTextDocumentHoverSignature
-        >
+        private registry: FeatureProviderRegistry<TextDocumentRegistrationOptions, ProvideTextDocumentHoverSignature>
     ) {
         super(client)
     }

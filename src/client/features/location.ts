@@ -2,7 +2,7 @@ import { Unsubscribable } from 'rxjs'
 import uuidv4 from 'uuid/v4'
 import { Location } from 'vscode-languageserver-types'
 import { ProvideTextDocumentLocationSignature } from '../../environment/providers/location'
-import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'
+import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import {
     ClientCapabilities,
     DefinitionRequest,
@@ -35,7 +35,7 @@ export abstract class TextDocumentLocationFeature<
 > extends TextDocumentFeature<TextDocumentRegistrationOptions> {
     constructor(
         client: Client,
-        private registry: TextDocumentFeatureProviderRegistry<
+        private registry: FeatureProviderRegistry<
             TextDocumentRegistrationOptions,
             ProvideTextDocumentLocationSignature<P, L>
         >

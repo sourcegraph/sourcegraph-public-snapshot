@@ -4,7 +4,7 @@ import { TestScheduler } from 'rxjs/testing'
 import { Position, TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { TextDocumentDecoration } from '../../protocol'
 import { getDecorations, ProvideTextDocumentDecorationSignature } from './decoration'
-import { FIXTURE as COMMON_FIXTURE } from './textDocument.test'
+import { FIXTURE as COMMON_FIXTURE } from './registry.test'
 
 // const DELAY = 100 // msec
 

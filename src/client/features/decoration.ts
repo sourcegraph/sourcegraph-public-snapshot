@@ -2,7 +2,7 @@ import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import uuidv4 from 'uuid/v4'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { ProvideTextDocumentDecorationSignature } from '../../environment/providers/decoration'
-import { TextDocumentFeatureProviderRegistry } from '../../environment/providers/textDocument'
+import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import { ClientCapabilities, ServerCapabilities, TextDocumentRegistrationOptions } from '../../protocol'
 import { TextDocumentDecoration, TextDocumentPublishDecorationsNotification } from '../../protocol/decoration'
 import { DocumentSelector } from '../../types/document'
@@ -25,7 +25,7 @@ export class TextDocumentDecorationFeature extends TextDocumentFeature<TextDocum
 
     constructor(
         client: Client,
-        private registry: TextDocumentFeatureProviderRegistry<
+        private registry: FeatureProviderRegistry<
             TextDocumentRegistrationOptions,
             ProvideTextDocumentDecorationSignature
         >

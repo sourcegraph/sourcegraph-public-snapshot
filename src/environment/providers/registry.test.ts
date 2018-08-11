@@ -2,7 +2,7 @@ import * as assert from 'assert'
 import { Subscription } from 'rxjs'
 import { Position } from 'vscode-languageserver-types'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
-import { TextDocumentFeatureProviderRegistry as AbstractTextDocumentFeatureProviderRegistry } from './textDocument'
+import { FeatureProviderRegistry as AbstractFeatureProviderRegistry } from './registry'
 
 /** Useful test fixtures. */
 export const FIXTURE = {
@@ -18,14 +18,11 @@ export const FIXTURE = {
     },
 }
 
-class TextDocumentFeatureProviderRegistry extends AbstractTextDocumentFeatureProviderRegistry<
-    TextDocumentRegistrationOptions,
-    {}
-> {}
+class FeatureProviderRegistry extends AbstractFeatureProviderRegistry<TextDocumentRegistrationOptions, {}> {}
 
-describe('TextDocumentFeatureProviderRegistry', () => {
+describe('FeatureProviderRegistry', () => {
     it('is initially empty', () => {
-        assert.deepStrictEqual(new TextDocumentFeatureProviderRegistry().providersSnapshot, [])
+        assert.deepStrictEqual(new FeatureProviderRegistry().providersSnapshot, [])
     })
 
     it('accepts initial providers', () => {
@@ -36,14 +33,14 @@ describe('TextDocumentFeatureProviderRegistry', () => {
             },
         ]
         assert.deepStrictEqual(
-            new TextDocumentFeatureProviderRegistry(initialEntries).providersSnapshot,
+            new FeatureProviderRegistry(initialEntries).providersSnapshot,
             initialEntries.map(({ provider }) => provider)
         )
     })
 
     it('registers and unregisters providers', () => {
         const subscriptions = new Subscription()
-        const registry = new TextDocumentFeatureProviderRegistry()
+        const registry = new FeatureProviderRegistry()
         const provider1 = () => ({})
         const provider2 = () => ({})
 
