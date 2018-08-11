@@ -1,8 +1,8 @@
 import { Client as CXPClient, ClientState as CXPClientState } from 'cxp/module/client/client'
 import { ClientKey as CXPClientKey } from 'cxp/module/environment/controller'
 import { Trace } from 'cxp/module/jsonrpc2/trace'
-import { combineLatest, of, Subject, Subscription } from 'cxp/node_modules/rxjs'
 import * as React from 'react'
+import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { updateSavedClientTrace } from '../cxp/client'
 import { CXPControllerProps } from '../cxp/controller'
@@ -25,7 +25,7 @@ interface State {
     clients?: { client: CXPClient; key: CXPClientKey; state: CXPClientState }[]
 }
 
-export class CXPStatus extends React.PureComponent<Props, State> {
+export class ExtensionStatus extends React.PureComponent<Props, State> {
     public state: State = {}
 
     private componentUpdates = new Subject<Props>()
@@ -75,15 +75,15 @@ export class CXPStatus extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="cxp-status card border-0">
-                <div className="card-header">CXP clients</div>
+            <div className="extension-status card border-0">
+                <div className="card-header">Extensions</div>
                 {this.state.clients ? (
                     this.state.clients.length > 0 ? (
                         <div className="list-group list-group-flush">
                             {this.state.clients.map(({ client, key, state }, i) => (
                                 <div
                                     key={i}
-                                    className="cxp-status__client list-group-item d-flex align-items-center justify-content-between py-2"
+                                    className="extension-status__client list-group-item d-flex align-items-center justify-content-between py-2"
                                 >
                                     <span className="d-flex align-items-center">
                                         <span data-tooltip={key.root || 'no root'}>{client.id}</span>
@@ -91,7 +91,7 @@ export class CXPStatus extends React.PureComponent<Props, State> {
                                             {CXPClientState[state]}
                                         </span>
                                     </span>
-                                    <div className="cxp-status__client-actions d-flex align-items-center ml-3">
+                                    <div className="extension-status__client-actions d-flex align-items-center ml-3">
                                         <button
                                             className={`btn btn-sm btn-${
                                                 client.trace === Trace.Off ? 'outline-' : ''
@@ -185,13 +185,13 @@ function clientStateBadgeClass(state: CXPClientState): string {
     }
 }
 
-/** A button that toggles the visibility of the CXPStatus element in a popover. */
-export const CXPStatusPopover: React.SFC<Props> = props => (
+/** A button that toggles the visibility of the ExtensionStatus element in a popover. */
+export const ExtensionStatusPopover: React.SFC<Props> = props => (
     <PopoverButton
         caretIcon={props.caretIcon}
         placement="auto-end"
         globalKeyBinding="X"
-        popoverElement={<CXPStatus {...props} />}
+        popoverElement={<ExtensionStatus {...props} />}
     >
         <span className="text-muted">CXP</span>
     </PopoverButton>

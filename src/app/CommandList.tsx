@@ -1,16 +1,16 @@
 import { ContributableMenu, Contributions } from 'cxp/module/protocol'
-import { Subscription } from 'cxp/node_modules/rxjs'
+import { Subscription } from 'rxjs'
 import * as React from 'react'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
-import { ContributedActionItem, ContributedActionItemProps } from '../app/ContributedActionItem'
-import { getContributedActionItems } from '../app/ContributedActions'
 import { ExtensionsProps } from '../context'
 import { Settings } from '../copypasta'
 import { CXPControllerProps } from '../cxp/controller'
 import { ConfigurationSubject } from '../settings'
 import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
 import { PopoverButton } from '../ui/generic/PopoverButton'
+import { ContributedActionItem, ContributedActionItemProps } from './ContributedActionItem'
+import { getContributedActionItems } from './ContributedActions'
 
 interface Props<S extends ConfigurationSubject, C = Settings> extends CXPControllerProps, ExtensionsProps<S, C> {
     /** The menu whose commands to display. */
@@ -29,10 +29,7 @@ interface State {
 }
 
 /** Displays a list of commands contributed by CXP extensions for a specific menu. */
-export class CXPCommandList<S extends ConfigurationSubject, C = Settings> extends React.PureComponent<
-    Props<S, C>,
-    State
-> {
+export class CommandList<S extends ConfigurationSubject, C = Settings> extends React.PureComponent<Props<S, C>, State> {
     public state: State = { input: '', selectedIndex: 0 }
 
     private subscriptions = new Subscription()
@@ -67,15 +64,15 @@ export class CXPCommandList<S extends ConfigurationSubject, C = Settings> extend
         const selectedIndex = ((this.state.selectedIndex % items.length) + items.length) % items.length
 
         return (
-            <div className="cxp-command-list list-group list-group-flush rounded">
+            <div className="command-list list-group list-group-flush rounded">
                 <div className="list-group-item">
                     {/* tslint:disable-next-line:jsx-ban-elements */}
                     <form className="form" onSubmit={this.onSubmit}>
-                        <label className="sr-only" htmlFor="cxp-command-list__input">
+                        <label className="sr-only" htmlFor="command-list__input">
                             Command
                         </label>
                         <input
-                            id="cxp-command-list__input"
+                            id="command-list__input"
                             type="text"
                             className="form-control px-2 py-1 rounded-0"
                             value={this.state.input}
@@ -178,7 +175,7 @@ function filterAndRankItems(allItems: ContributedActionItemProps[], query: strin
         .map(({ item }) => item)
 }
 
-export class CXPCommandListPopoverButton<S extends ConfigurationSubject, C = Settings> extends React.PureComponent<
+export class CommandListPopoverButton<S extends ConfigurationSubject, C = Settings> extends React.PureComponent<
     Props<S, C>,
     { hideOnChange?: any }
 > {
@@ -193,7 +190,7 @@ export class CXPCommandListPopoverButton<S extends ConfigurationSubject, C = Set
                 globalKeyBinding={Key.F1}
                 globalKeyBindingActiveInInputs={true}
                 hideOnChange={this.state.hideOnChange}
-                popoverElement={<CXPCommandList {...this.props} onSelect={this.dismissPopover} />}
+                popoverElement={<CommandList {...this.props} onSelect={this.dismissPopover} />}
             >
                 <this.props.extensions.context.icons.Menu className="icon-inline" />
             </PopoverButton>
