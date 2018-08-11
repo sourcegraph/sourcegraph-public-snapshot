@@ -40,7 +40,6 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
 describe('ContributionRegistry', () => {
     it('is initially empty', () => {
         assert.deepStrictEqual(new ContributionRegistry().entries.value, [])
-        assert.deepStrictEqual(new ContributionRegistry().contributionsSnapshot, {})
     })
 
     it('registers and unregisters contributions', () => {

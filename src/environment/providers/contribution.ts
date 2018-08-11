@@ -63,14 +63,6 @@ export class ContributionRegistry {
     }
 
     /**
-     * The current set of contributions (merged). Used by callers that do not need to react to contributions being
-     * registered or unregistered.
-     */
-    public get contributionsSnapshot(): Contributions {
-        return mergeContributions(this._entries.value.map(e => e.contributions))
-    }
-
-    /**
      * All contribution entries, emitted whenever the set of registered contributions changes.
      *
      * Most callers should use ContributionsRegistry#contributions. Only use #entries if the caller needs
