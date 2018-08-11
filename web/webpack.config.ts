@@ -83,6 +83,7 @@ const config: webpack.Configuration = {
                         loader: 'ts-loader',
                         options: {
                             compilerOptions: {
+                                target: 'es6',
                                 module: 'esnext',
                                 noEmit: false,
                             },
