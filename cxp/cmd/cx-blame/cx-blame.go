@@ -330,7 +330,7 @@ func registerContributions(ctx context.Context, conn *jsonrpc2.Conn, settings ex
 							Command:  toggleCommandID,
 							Category: "Blame",
 							Title:    showHide + " Git blame",
-							ToolbarItem: &cxp.CommandContributionToolbarItem{
+							ActionItem: &cxp.CommandContributionActionItem{
 								Label:       "Blame",
 								Description: showHide + " Git blame",
 							},

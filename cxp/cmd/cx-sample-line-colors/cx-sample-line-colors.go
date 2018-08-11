@@ -295,7 +295,7 @@ func registerContributions(ctx context.Context, conn *jsonrpc2.Conn, settings ex
 							Command:  randomizeColorsCommandID,
 							Title:    "Randomize theme",
 							Category: "Line colors",
-							ToolbarItem: &cxp.CommandContributionToolbarItem{
+							ActionItem: &cxp.CommandContributionActionItem{
 								Description:     "Randomize theme",
 								IconURL:         iconURL(settings.Colors),
 								IconDescription: fmt.Sprintf("vertical stripes of the following colors: %s", strings.Join(settings.Colors, " ")),

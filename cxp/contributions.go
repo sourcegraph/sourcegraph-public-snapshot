@@ -12,15 +12,15 @@ type Contributions struct {
 //
 // See cxp-js for canonical documentation.
 type CommandContribution struct {
-	Command     string                          `json:"command"`
-	Title       string                          `json:"title,omitempty"`
-	Category    string                          `json:"category,omitempty"`
-	Description string                          `json:"description,omitempty"`
-	IconURL     string                          `json:"iconURL,omitempty"`
-	ToolbarItem *CommandContributionToolbarItem `json:"toolbarItem,omitempty"`
+	Command     string                         `json:"command"`
+	Title       string                         `json:"title,omitempty"`
+	Category    string                         `json:"category,omitempty"`
+	Description string                         `json:"description,omitempty"`
+	IconURL     string                         `json:"iconURL,omitempty"`
+	ActionItem  *CommandContributionActionItem `json:"actionItem,omitempty"`
 }
 
-type CommandContributionToolbarItem struct {
+type CommandContributionActionItem struct {
 	Label           string `json:"label,omitempty"`
 	Description     string `json:"description,omitempty"`
 	Group           string `json:"group,omitempty"`
