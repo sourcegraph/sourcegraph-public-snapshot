@@ -1,6 +1,6 @@
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { TextDocumentDecoration } from 'cxp/module/protocol'
 import { HoverMerged } from 'cxp/module/types/hover'
-import { ResourceDecorations } from 'cxp/module/protocol'
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { compact, flatten } from 'lodash'
 import { forkJoin, Observable, of } from 'rxjs'
@@ -217,7 +217,7 @@ export function getDecorations(
 ): Observable<TextDocumentDecoration[] | null> {
     if (USE_PLATFORM) {
         return cxpController.registries.textDocumentDecoration.getDecorations({
-            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+            uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
         })
     }
     return of(null)
