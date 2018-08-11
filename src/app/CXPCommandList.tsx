@@ -1,16 +1,16 @@
 import { ContributableMenu, Contributions } from 'cxp/module/protocol'
+import { Subscription } from 'cxp/node_modules/rxjs'
 import * as React from 'react'
-import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
-import { HighlightedMatches } from '../components/HighlightedMatches'
-import { PopoverButton } from '../components/PopoverButton'
+import { ContributedActionItem, ContributedActionItemProps } from '../app/ContributedActionItem'
+import { getContributedActionItems } from '../app/ContributedActions'
 import { ExtensionsProps } from '../context'
-import { ContributedActionItem, ContributedActionItemProps } from '../contributions/ContributedActionItem'
-import { getContributedActionItems } from '../contributions/ContributedActions'
 import { Settings } from '../copypasta'
+import { CXPControllerProps } from '../cxp/controller'
 import { ConfigurationSubject } from '../settings'
-import { CXPControllerProps } from './controller'
+import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
+import { PopoverButton } from '../ui/generic/PopoverButton'
 
 interface Props<S extends ConfigurationSubject, C = Settings> extends CXPControllerProps, ExtensionsProps<S, C> {
     /** The menu whose commands to display. */

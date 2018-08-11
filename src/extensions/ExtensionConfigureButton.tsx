@@ -244,9 +244,7 @@ class ExtensionConfigurationSubjectsDropdownItems<S extends ConfigurationSubject
                         <React.Fragment key={i}>
                             {neededDivider && <DropdownItem divider={true} />}
                             {headerLabel && <DropdownItem header={true}>{headerLabel}</DropdownItem>}
-                            {items.map((item, i) => (
-                                <Item key={i} item={item} {...props} />
-                            ))}
+                            {items.map((item, i) => <Item key={i} item={item} {...props} />)}
                         </React.Fragment>
                     )
                 })}

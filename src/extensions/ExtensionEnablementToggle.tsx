@@ -1,10 +1,10 @@
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import { Toggle } from '../components/Toggle'
 import { ExtensionsProps } from '../context'
 import { asError, ErrorLike, isErrorLike } from '../errors'
 import { ConfigurationSubject, ID } from '../settings'
+import { Toggle } from '../ui/generic/Toggle'
 import { ConfiguredExtension } from './extension'
 
 interface Props<S extends ConfigurationSubject, C> extends ExtensionsProps<S, C> {

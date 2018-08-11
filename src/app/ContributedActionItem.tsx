@@ -2,12 +2,12 @@ import { CommandContribution, ExecuteCommandParams } from 'cxp/module/protocol'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
-import { LinkOrButton } from '../components/LinkOrButton'
 import { ExtensionsProps } from '../context'
 import { Settings } from '../copypasta'
 import { CXPControllerProps } from '../cxp/controller'
 import { asError, ErrorLike } from '../errors'
 import { ConfigurationSubject } from '../settings'
+import { LinkOrButton } from '../ui/generic/LinkOrButton'
 
 export interface ContributedActionItemProps {
     contribution: CommandContribution

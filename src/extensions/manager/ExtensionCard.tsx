@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { LinkOrSpan } from '../../components/LinkOrSpan'
 import { ExtensionsProps } from '../../context'
 import { isErrorLike } from '../../errors'
 import { ConfigurationSubject, ID } from '../../settings'
+import { LinkOrSpan } from '../../ui/generic/LinkOrSpan'
 import { ConfiguredExtension } from '../extension'
 import {
     ADDED_AND_CAN_ADMINISTER,

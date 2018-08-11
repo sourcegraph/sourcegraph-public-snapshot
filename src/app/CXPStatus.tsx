@@ -1,12 +1,12 @@
 import { Client as CXPClient, ClientState as CXPClientState } from 'cxp/module/client/client'
 import { ClientKey as CXPClientKey } from 'cxp/module/environment/controller'
 import { Trace } from 'cxp/module/jsonrpc2/trace'
+import { combineLatest, of, Subject, Subscription } from 'cxp/node_modules/rxjs'
 import * as React from 'react'
-import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { PopoverButton } from '../components/PopoverButton'
-import { updateSavedClientTrace } from './client'
-import { CXPControllerProps } from './controller'
+import { updateSavedClientTrace } from '../cxp/client'
+import { CXPControllerProps } from '../cxp/controller'
+import { PopoverButton } from '../ui/generic/PopoverButton'
 
 interface Props extends CXPControllerProps {
     caretIcon: React.ComponentType<{
