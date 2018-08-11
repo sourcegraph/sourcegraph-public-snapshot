@@ -1,4 +1,4 @@
-import { ContributedActionsNavItems } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActions'
+import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
@@ -211,7 +211,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 </ul>
                 <div className="repo-header__spacer" />
                 <ul className="navbar-nav">
-                    <ContributedActionsNavItems
+                    <ActionsNavItems
                         menu={ContributableMenu.EditorTitle}
                         cxpController={this.props.cxpController}
                         extensions={this.props.extensions}

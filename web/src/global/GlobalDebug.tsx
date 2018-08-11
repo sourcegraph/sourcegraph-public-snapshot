@@ -1,5 +1,5 @@
+import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
-import { CXPStatusPopover } from '@sourcegraph/extensions-client-common/lib/cxp/CXPStatus'
 import { CaretDown } from '@sourcegraph/icons/lib/CaretDown'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
@@ -21,7 +21,7 @@ export const GlobalDebug: React.SFC<Props> = props =>
         <div className="global-debug navbar navbar-expand">
             <ul className="navbar-nav align-items-center">
                 <li className="nav-item">
-                    <CXPStatusPopover
+                    <ExtensionStatusPopover
                         loaderIcon={Loader as React.ComponentType<{ className: string; onClick?: () => void }>}
                         caretIcon={CaretDown as React.ComponentType<{ className: string; onClick?: () => void }>}
                         cxpController={props.cxpController}

@@ -1,6 +1,6 @@
-import { ContributedActionsNavItems } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActions'
+import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
+import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
-import { CXPCommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/cxp/CXPCommandList'
 import { ContributableMenu } from 'cxp/module/protocol'
 import * as H from 'history'
 import * as React from 'react'
@@ -58,7 +58,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     </li>
                 )}
                 {platformEnabled(this.props.user) && (
-                    <ContributedActionsNavItems
+                    <ActionsNavItems
                         menu={ContributableMenu.GlobalNav}
                         cxpController={this.props.cxpController}
                         extensions={this.props.extensions}
@@ -94,7 +94,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         </li>
                     )}
                 {platformEnabled(this.props.user) && (
-                    <CXPCommandListPopoverButton
+                    <CommandListPopoverButton
                         menu={ContributableMenu.CommandPalette}
                         cxpController={this.props.cxpController}
                         extensions={this.props.extensions}

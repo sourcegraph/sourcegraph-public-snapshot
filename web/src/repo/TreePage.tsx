@@ -1,5 +1,5 @@
-import { ContributedActionItem } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActionItem'
-import { ContributedActionsContainer } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActions'
+import { ActionItem } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionItem'
+import { ActionsContainer } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsContainer'
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import BranchIcon from '@sourcegraph/icons/lib/Branch'
 import CommitIcon from '@sourcegraph/icons/lib/Commit'
@@ -313,14 +313,14 @@ export class TreePage extends React.PureComponent<Props, State> {
                                 </div>
                             )}
                             {USE_PLATFORM && (
-                                <ContributedActionsContainer
+                                <ActionsContainer
                                     menu={ContributableMenu.DirectoryPage}
                                     // tslint:disable-next-line:jsx-no-lambda
                                     render={items => (
                                         <section className="tree-page__section">
                                             <h3 className="tree-page__section-header">Actions</h3>
                                             {items.map((item, i) => (
-                                                <ContributedActionItem
+                                                <ActionItem
                                                     key={i}
                                                     {...item}
                                                     className="btn btn-secondary mr-1 mb-1"

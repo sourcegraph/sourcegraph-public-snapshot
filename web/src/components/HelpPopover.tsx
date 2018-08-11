@@ -1,5 +1,5 @@
-import { ContributedActionItem } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActionItem'
-import { ContributedActionsContainer } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActions'
+import { ActionItem } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionItem'
+import { ActionsContainer } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsContainer'
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import BookClosedIcon from '@sourcegraph/icons/lib/BookClosed'
 import CloseIcon from '@sourcegraph/icons/lib/Close'
@@ -107,14 +107,14 @@ export class HelpPopover extends React.Component<Props> {
                     ))}
                 </div>
                 {USE_PLATFORM && (
-                    <ContributedActionsContainer
+                    <ActionsContainer
                         menu={ContributableMenu.Help}
                         // tslint:disable-next-line:jsx-no-lambda
                         render={items => (
                             <>
                                 <h4 className="card-header pl-3">Extensions help</h4>
                                 {items.map((item, i) => (
-                                    <ContributedActionItem
+                                    <ActionItem
                                         key={i}
                                         {...item}
                                         cxpController={this.props.cxpController}
