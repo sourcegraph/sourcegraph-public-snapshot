@@ -40,8 +40,11 @@ import {
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
-import { Component as CXPComponent, EMPTY_ENVIRONMENT as CXP_EMPTY_ENVIRONMENT } from 'cxp/lib/environment/environment'
-import { URI } from 'cxp/lib/types/textDocument'
+import {
+    Component as CXPComponent,
+    EMPTY_ENVIRONMENT as CXP_EMPTY_ENVIRONMENT,
+} from 'cxp/module/environment/environment'
+import { URI } from 'cxp/module/types/textDocument'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'

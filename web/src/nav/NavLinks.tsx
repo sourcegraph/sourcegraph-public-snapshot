@@ -1,7 +1,7 @@
 import { ContributedActionsNavItems } from '@sourcegraph/extensions-client-common/lib/contributions/ContributedActions'
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { CXPCommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/cxp/CXPCommandList'
-import { ContributableMenu } from 'cxp/lib/protocol'
+import { ContributableMenu } from 'cxp/module/protocol'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'

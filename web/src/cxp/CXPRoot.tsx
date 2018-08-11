@@ -1,4 +1,4 @@
-import { URI } from 'cxp/lib/types/textDocument'
+import { URI } from 'cxp/module/types/textDocument'
 import * as React from 'react'
 
 /** React props for components that participate in the creation or lifecycle of a CXP root. */

@@ -1,4 +1,4 @@
-import { Component } from 'cxp/lib/environment/environment'
+import { Component } from 'cxp/module/environment/environment'
 import * as React from 'react'
 
 /** React props for components that participate in the CXP environment. */

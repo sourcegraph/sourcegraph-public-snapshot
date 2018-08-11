@@ -1,7 +1,7 @@
-import { createWebWorkerMessageTransports } from 'cxp/lib/jsonrpc2/transports/webWorker'
-import { InitializeResult } from 'cxp/lib/protocol'
-import { TextDocumentDecoration } from 'cxp/lib/protocol/decorations'
-import { createConnection } from 'cxp/lib/server/server'
+import { createWebWorkerMessageTransports } from 'cxp/module/jsonrpc2/transports/webWorker'
+import { InitializeResult } from 'cxp/module/protocol'
+import { TextDocumentDecoration } from 'cxp/module/protocol/decorations'
+import { createConnection } from 'cxp/module/server/server'
 
 const connection = createConnection(createWebWorkerMessageTransports(self as DedicatedWorkerGlobalScope))
 connection.onInitialize(

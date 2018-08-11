@@ -2,7 +2,7 @@ import { ContributedActionsNavItems } from '@sourcegraph/extensions-client-commo
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
-import { ContributableMenu } from 'cxp/lib/protocol'
+import { ContributableMenu } from 'cxp/module/protocol'
 import * as H from 'history'
 import * as React from 'react'
 import * as GQL from '../backend/graphqlschema'
