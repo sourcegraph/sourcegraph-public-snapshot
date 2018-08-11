@@ -6,8 +6,6 @@ import { TextDocumentDecoration } from '../../protocol'
 import { getDecorations, ProvideTextDocumentDecorationSignature } from './decoration'
 import { FIXTURE as COMMON_FIXTURE } from './registry.test'
 
-// const DELAY = 100 // msec
-
 const FIXTURE = {
     ...COMMON_FIXTURE,
     TextDocumentIdentifier: { uri: 'file:///f' } as TextDocumentIdentifier,
