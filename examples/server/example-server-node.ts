@@ -1,31 +1,36 @@
 import * as net from 'net'
 import * as stream from 'stream'
 import * as WebSocket from 'ws'
+import { TextDocumentPublishDecorationsNotification } from '../../lib/protocol'
 import { createWebSocketMessageTransports } from '../../src/jsonrpc2/transports/nodeWebSocket'
 import { StreamMessageReader, StreamMessageWriter } from '../../src/jsonrpc2/transports/stream'
 import { InitializeResult } from '../../src/protocol'
-import { TextDocumentDecoration, TextDocumentDecorationParams } from '../../src/protocol/decoration'
+import { TextDocumentDecoration } from '../../src/protocol/decoration'
 import { Connection, createConnection } from '../../src/server/server'
 
 function register(connection: Connection): void {
     connection.onInitialize(
-        params =>
+        () =>
             ({
-                capabilities: { decorationProvider: { static: true } },
+                capabilities: {
+                    textDocumentSync: { openClose: true },
+                    decorationProvider: true,
+                },
             } as InitializeResult)
     )
 
-    connection.onRequest(
-        'textDocument/decoration',
-        (params: TextDocumentDecorationParams): TextDocumentDecoration[] =>
-            ['cyan', 'magenta', 'yellow', 'black'].map(
+    connection.onDidOpenTextDocument(params =>
+        connection.sendNotification(TextDocumentPublishDecorationsNotification.type, {
+            textDocument: params.textDocument,
+            decorations: ['cyan', 'magenta', 'yellow', 'black', 'cyan', 'magenta', 'yellow', 'black'].map(
                 (color, i) =>
                     ({
                         range: { start: { line: i, character: 0 }, end: { line: i, character: 0 } },
                         isWholeLine: true,
                         backgroundColor: color,
                     } as TextDocumentDecoration)
-            )
+            ),
+        })
     )
 }
 

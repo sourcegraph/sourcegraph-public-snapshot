@@ -8,10 +8,7 @@ import {
     ConfigurationUpdateFeature,
 } from '../client/features/configuration'
 import { ContributionFeature } from '../client/features/contribution'
-import {
-    TextDocumentDynamicDecorationFeature,
-    TextDocumentStaticDecorationFeature,
-} from '../client/features/decoration'
+import { TextDocumentDecorationFeature } from '../client/features/decoration'
 import { TextDocumentHoverFeature } from '../client/features/hover'
 import {
     TextDocumentDefinitionFeature,
@@ -227,8 +224,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
             new TextDocumentTypeDefinitionFeature(client, this.registries.textDocumentTypeDefinition)
         )
         client.registerFeature(new TextDocumentHoverFeature(client, this.registries.textDocumentHover))
-        client.registerFeature(new TextDocumentStaticDecorationFeature(client, this.registries.textDocumentDecoration))
-        client.registerFeature(new TextDocumentDynamicDecorationFeature(client, this.registries.textDocumentDecoration))
+        client.registerFeature(new TextDocumentDecorationFeature(client, this.registries.textDocumentDecoration))
         client.registerFeature(
             new WindowLogMessageFeature(client, (params: LogMessageParams) =>
                 this._logMessages.next({ ...params, extension: client.id })

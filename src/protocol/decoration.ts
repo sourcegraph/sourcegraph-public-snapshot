@@ -1,31 +1,22 @@
 import { Range, TextDocumentIdentifier } from 'vscode-languageserver-types'
-import { NotificationHandler, RequestHandler } from '../jsonrpc2/handlers'
-import { NotificationType, RequestType } from '../jsonrpc2/messages'
+import { NotificationHandler } from '../jsonrpc2/handlers'
+import { NotificationType } from '../jsonrpc2/messages'
 import { TextDocumentRegistrationOptions } from './textDocument'
 
 export interface DecorationClientCapabilities {
     decoration?: DecorationCapabilityOptions
 }
 
-export interface DecorationCapabilityOptions {
-    /**
-     * Whether the server supports static decorations (i.e., decorations that the client requests using
-     * textDocument/decoration).
-     */
-    static?: boolean
-
-    /**
-     * Whether the server publishes dynamic decorations (i.e., decorations that the server pushes to the client
-     * with textDocument/publishDecorations without the client needing to request them).
-     */
-    dynamic?: boolean
-}
+export interface DecorationCapabilityOptions {}
 
 export interface DecorationProviderOptions extends DecorationCapabilityOptions {}
 
 export interface DecorationServerCapabilities {
     /** The server's support for decoration. */
-    decorationProvider?: DecorationProviderOptions | (DecorationProviderOptions & TextDocumentRegistrationOptions)
+    decorationProvider?:
+        | boolean
+        | DecorationProviderOptions
+        | (DecorationProviderOptions & TextDocumentRegistrationOptions)
 }
 
 /**
@@ -75,25 +66,19 @@ export interface DecorationAttachmentRenderOptions {
     linkURL?: string
 }
 
-export interface TextDocumentDecorationParams {
-    textDocument: TextDocumentIdentifier
-}
-
-export namespace TextDocumentDecorationRequest {
-    export const type = new RequestType<
-        TextDocumentDecorationParams,
-        TextDocumentDecoration[] | null,
-        void,
-        TextDocumentRegistrationOptions
-    >('textDocument/decoration')
-    export type HandlerSignature = RequestHandler<TextDocumentDecorationParams, TextDocumentDecoration[] | null, void>
-}
-
+/**
+ * The parameters for the textDocument/publishDecorations request, sent from the server to the client to display
+ * decorations on a text document.
+ */
 export interface TextDocumentPublishDecorationsParams {
     textDocument: TextDocumentIdentifier
     decorations: TextDocumentDecoration[] | null
 }
 
+/**
+ * The textDocument/publishDecorations request, sent from the server to the client to display decorations on a text
+ * document.
+ */
 export namespace TextDocumentPublishDecorationsNotification {
     export const type = new NotificationType<TextDocumentPublishDecorationsParams, TextDocumentRegistrationOptions>(
         'textDocument/publishDecorations'

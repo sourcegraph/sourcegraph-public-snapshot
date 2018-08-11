@@ -1,8 +1,8 @@
 import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { Position } from 'vscode-languageserver-types'
-import { TextDocumentDecoration, TextDocumentDecorationParams } from '../../protocol'
+import { Position, TextDocumentIdentifier } from 'vscode-languageserver-types'
+import { TextDocumentDecoration } from '../../protocol'
 import { getDecorations, ProvideTextDocumentDecorationSignature } from './decoration'
 import { FIXTURE as COMMON_FIXTURE } from './textDocument.test'
 
@@ -10,7 +10,7 @@ import { FIXTURE as COMMON_FIXTURE } from './textDocument.test'
 
 const FIXTURE = {
     ...COMMON_FIXTURE,
-    TextDocumentDecorationParams: { textDocument: { uri: 'file:///f' } } as TextDocumentDecorationParams,
+    TextDocumentIdentifier: { uri: 'file:///f' } as TextDocumentIdentifier,
 }
 
 const FIXTURE_RESULT: TextDocumentDecoration[] | null = [
@@ -29,7 +29,7 @@ describe('getDecorations', () => {
                 expectObservable(
                     getDecorations(
                         cold<ProvideTextDocumentDecorationSignature[]>('-a-|', { a: [] }),
-                        FIXTURE.TextDocumentDecorationParams
+                        FIXTURE.TextDocumentIdentifier
                     )
                 ).toBe('-a-|', {
                     a: null,
@@ -43,7 +43,7 @@ describe('getDecorations', () => {
                 expectObservable(
                     getDecorations(
                         cold<ProvideTextDocumentDecorationSignature[]>('-a-|', { a: [() => of(null)] }),
-                        FIXTURE.TextDocumentDecorationParams
+                        FIXTURE.TextDocumentIdentifier
                     )
                 ).toBe('-a-|', {
                     a: null,
@@ -57,7 +57,7 @@ describe('getDecorations', () => {
                         cold<ProvideTextDocumentDecorationSignature[]>('-a-|', {
                             a: [() => of(FIXTURE_RESULT)],
                         }),
-                        FIXTURE.TextDocumentDecorationParams
+                        FIXTURE.TextDocumentIdentifier
                     )
                 ).toBe('-a-|', {
                     a: FIXTURE_RESULT,
@@ -73,7 +73,7 @@ describe('getDecorations', () => {
                         cold<ProvideTextDocumentDecorationSignature[]>('-a-|', {
                             a: [() => of(null), () => of(null)],
                         }),
-                        FIXTURE.TextDocumentDecorationParams
+                        FIXTURE.TextDocumentIdentifier
                     )
                 ).toBe('-a-|', {
                     a: null,
@@ -87,7 +87,7 @@ describe('getDecorations', () => {
                         cold<ProvideTextDocumentDecorationSignature[]>('-a-|', {
                             a: [() => of(FIXTURE_RESULT), () => of(null)],
                         }),
-                        FIXTURE.TextDocumentDecorationParams
+                        FIXTURE.TextDocumentIdentifier
                     )
                 ).toBe('-a-|', {
                     a: FIXTURE_RESULT,
@@ -101,7 +101,7 @@ describe('getDecorations', () => {
                         cold<ProvideTextDocumentDecorationSignature[]>('-a-|', {
                             a: [() => of(FIXTURE_RESULT), () => of(FIXTURE_RESULT)],
                         }),
-                        FIXTURE.TextDocumentDecorationParams
+                        FIXTURE.TextDocumentIdentifier
                     )
                 ).toBe('-a-|', {
                     a: [...FIXTURE_RESULT!, ...FIXTURE_RESULT!],
@@ -118,7 +118,7 @@ describe('getDecorations', () => {
                             a: [() => of(FIXTURE_RESULT)],
                             b: [() => of(null)],
                         }),
-                        FIXTURE.TextDocumentDecorationParams
+                        FIXTURE.TextDocumentIdentifier
                     )
                 ).toBe('-a-b-|', {
                     a: FIXTURE_RESULT,

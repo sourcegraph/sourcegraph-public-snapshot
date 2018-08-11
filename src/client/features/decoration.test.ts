@@ -9,65 +9,28 @@ import {
     TextDocumentRegistrationOptions,
 } from '../../protocol'
 import { Client } from '../client'
-import { TextDocumentDynamicDecorationFeature, TextDocumentStaticDecorationFeature } from './decoration'
+import { TextDocumentDecorationFeature } from './decoration'
 
-describe('TextDocumentStaticDecorationFeature', () => {
+describe('TextDocumentDecorationFeature', () => {
     const create = (): {
         client: Client
         registry: TextDocumentDecorationProviderRegistry
-        feature: TextDocumentStaticDecorationFeature
+        feature: TextDocumentDecorationFeature
     } => {
         const client = { options: { middleware: {} } } as Client
         const registry = new TextDocumentDecorationProviderRegistry()
-        const feature = new TextDocumentStaticDecorationFeature(client, registry)
+        const feature = new TextDocumentDecorationFeature(client, registry)
         return { client, registry, feature }
     }
 
     it('reports client capabilities', () => {
         const capabilities: ClientCapabilities = {}
         create().feature.fillClientCapabilities(capabilities)
-        assert.deepStrictEqual(capabilities, {
-            decoration: { static: true },
-        } as ClientCapabilities)
+        assert.deepStrictEqual(capabilities, { decoration: {} } as ClientCapabilities)
     })
 
     describe('upon initialization', () => {
-        it('registers the provider if the server has static decorationProvider', () => {
-            const { registry, feature } = create()
-            feature.initialize({ decorationProvider: { static: true } }, ['*'])
-            assert.strictEqual(registry.providersSnapshot.length, 1)
-        })
-
-        it('does not register the provider if the server lacks static decorationProvider', () => {
-            const { registry, feature } = create()
-            feature.initialize({ decorationProvider: { static: false } }, ['*'])
-            assert.strictEqual(registry.providersSnapshot.length, 0)
-        })
-    })
-})
-
-describe('TextDocumentDynamicDecorationFeature', () => {
-    const create = (): {
-        client: Client
-        registry: TextDocumentDecorationProviderRegistry
-        feature: TextDocumentDynamicDecorationFeature
-    } => {
-        const client = { options: { middleware: {} } } as Client
-        const registry = new TextDocumentDecorationProviderRegistry()
-        const feature = new TextDocumentDynamicDecorationFeature(client, registry)
-        return { client, registry, feature }
-    }
-
-    it('reports client capabilities', () => {
-        const capabilities: ClientCapabilities = {}
-        create().feature.fillClientCapabilities(capabilities)
-        assert.deepStrictEqual(capabilities, {
-            decoration: { dynamic: true },
-        } as ClientCapabilities)
-    })
-
-    describe('upon initialization', () => {
-        it('registers the provider and listens for notifications if the server has dynamic decorationProvider', done => {
+        it('registers the provider and listens for notifications if the server has a decorationProvider', done => {
             const { client, registry, feature } = create()
 
             function mockOnNotification(method: string, handler: NotificationHandler<any>): void
@@ -87,13 +50,13 @@ describe('TextDocumentDynamicDecorationFeature', () => {
             }
             client.onNotification = mockOnNotification
 
-            feature.initialize({ decorationProvider: { dynamic: true } }, ['*'])
+            feature.initialize({ decorationProvider: {} }, ['*'])
             assert.strictEqual(registry.providersSnapshot.length, 1)
         })
 
-        it('does not register the provider if the server lacks dynamic decorationProvider', () => {
+        it('does not register the provider if the server lacks a decorationProvider', () => {
             const { registry, feature } = create()
-            feature.initialize({ decorationProvider: { dynamic: false } }, ['*'])
+            feature.initialize({ decorationProvider: undefined }, ['*'])
             assert.strictEqual(registry.providersSnapshot.length, 0)
         })
     })

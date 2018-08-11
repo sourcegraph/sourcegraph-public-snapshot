@@ -27,18 +27,10 @@ export function run(connection: Connection): void {
     // Tell the client that this extension provides decorations (so that our onTextDocumentDecoration handler above
     // is called whenever the client opens a file).
     connection.onInitialize(() => ({
-        capabilities: { decorationProvider: { static: true } },
+        capabilities: { hoverProvider: true },
     }))
 
-    // Register a handler for when the client asks us "which decorations should be shown on the current file?".
-    // Each time, the extension responds: "the whole first line should have a blue background color, and add
-    // 'Hello, world!' to the end".
-    connection.onTextDocumentDecoration(() => [
-        {
-            range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-            isWholeLine: true,
-            backgroundColor: 'blue',
-            after: { contentText: 'Hello, world!' },
-        },
-    ])
+    // Register a handler for when the client asks us "what should I show in the hover tooltip for the current
+    // cursor position?".
+    connection.onHover(() => ({ contents: 'Hello, world!' }))
 }

@@ -88,7 +88,6 @@ import {
     RenameRequest,
     ShutdownRequest,
     SignatureHelpRequest,
-    TextDocumentDecorationRequest,
     TextDocumentPositionParams,
     TypeDefinitionRequest,
     WillSaveTextDocumentNotification,
@@ -512,13 +511,6 @@ export interface Connection<PConsole = _, PTracer = _, PTelemetry = _, PClient =
     onExecuteCommand(handler: RequestHandler<ExecuteCommandParams, any | undefined | null, void>): void
 
     /**
-     * Installs a handler for the text document decoration request.
-     *
-     * @param handler The corresponding handler.
-     */
-    onTextDocumentDecoration(handler: TextDocumentDecorationRequest.HandlerSignature): void
-
-    /**
      * Unsubscribes the connection
      */
     unsubscribe(): void
@@ -749,7 +741,6 @@ export function createConnection<PConsole = _, PTracer = _, PTelemetry = _, PCli
         onDocumentColor: handler => connection.onRequest(DocumentColorRequest.type, handler),
         onColorPresentation: handler => connection.onRequest(ColorPresentationRequest.type, handler),
         onExecuteCommand: handler => connection.onRequest(ExecuteCommandRequest.type, handler),
-        onTextDocumentDecoration: handler => connection.onRequest(TextDocumentDecorationRequest.type, handler),
 
         unsubscribe: () => connection.unsubscribe(),
     }

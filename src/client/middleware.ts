@@ -1,7 +1,7 @@
 import { TextDocumentItem } from 'vscode-languageserver-types'
 import { ReferenceParams } from '../protocol'
 import { NextSignature } from '../types/middleware'
-import { HandleTextDocumentDecorationMiddleware, ProvideTextDocumentDecorationMiddleware } from './features/decoration'
+import { ProvideTextDocumentDecorationMiddleware } from './features/decoration'
 import { ProvideTextDocumentHoverMiddleware } from './features/hover'
 import { ProvideTextDocumentLocationMiddleware } from './features/location'
 
@@ -14,5 +14,4 @@ export interface Middleware {
     provideTextDocumentTypeDefinition?: ProvideTextDocumentLocationMiddleware
     provideTextDocumentHover?: ProvideTextDocumentHoverMiddleware
     provideTextDocumentDecoration?: ProvideTextDocumentDecorationMiddleware
-    handleTextDocumentDecoration?: HandleTextDocumentDecorationMiddleware
 }

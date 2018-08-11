@@ -14,7 +14,7 @@ describe('Connection', () => {
 
         const initParams: InitializeParams = {
             root: null,
-            capabilities: { decoration: { static: true } },
+            capabilities: { decoration: true },
             workspaceFolders: null,
         }
         const initResult: InitializeResult = { capabilities: { contributions: { commands: [{ command: 'c' }] } } }
