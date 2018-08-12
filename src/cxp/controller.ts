@@ -261,13 +261,13 @@ export function createController<S extends ConfigurationSubject, C = Settings>(
         // Debug helpers: e.g., just run `cxp` in devtools to get a reference to this controller. (If multiple
         // controllers are created, this points to the last one created.)
         if (has(window, 'cxp')) {
-            delete (window as any)['cxp']
+            delete (window as any).cxp
         }
         Object.defineProperty(window, 'cxp', {
             get: () => controller,
         })
         if (has(window, 'cxpenv')) {
-            delete (window as any)['cxpenv']
+            delete (window as any).cxpenv
         }
         if (!has(window, 'cxpenv')) {
             Object.defineProperty(window, 'cxpenv', {
