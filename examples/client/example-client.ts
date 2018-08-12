@@ -22,7 +22,7 @@ const client = new Client('', '', {
             })
         ),
 })
-client.registerFeature(new TextDocumentDidOpenFeature(client, createObservableEnvironment(environment)))
+client.registerFeature(new TextDocumentDidOpenFeature(client, createObservableEnvironment(environment).textDocument))
 client.registerFeature(new TextDocumentHoverFeature(client, new NoopProviderRegistry()))
 client.state.subscribe(state => console.log('Client state:', ClientState[state]))
 client.activate()

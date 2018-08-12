@@ -1,17 +1,16 @@
 import * as assert from 'assert'
 import { Subject } from 'rxjs'
-import { ExtensionSettings } from '../../environment/extension'
 import { ClientCapabilities } from '../../protocol'
 import { Client } from '../client'
 import { ConfigurationChangeNotificationFeature } from './configuration'
 
 const create = (): {
     client: Client
-    settings: Subject<ExtensionSettings>
-    feature: ConfigurationChangeNotificationFeature
+    settings: Subject<any>
+    feature: ConfigurationChangeNotificationFeature<any>
 } => {
     const client = { options: { middleware: {} } } as Client
-    const settings = new Subject<ExtensionSettings>()
+    const settings = new Subject<any>()
     const feature = new ConfigurationChangeNotificationFeature(client, settings)
     return { client, settings, feature }
 }

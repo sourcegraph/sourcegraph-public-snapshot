@@ -1,7 +1,6 @@
 import { Observable, Subscription } from 'rxjs'
 import { first, map } from 'rxjs/operators'
 import uuidv4 from 'uuid/v4'
-import { ExtensionSettings } from '../../environment/extension'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
@@ -19,11 +18,13 @@ import { DynamicFeature, ensure, RegistrationData, StaticFeature } from './commo
 /**
  * Support for extension settings managed by the client (workspace/didChangeConfiguration notifications to the
  * server).
+ *
+ * @template C settings type
  */
-export class ConfigurationChangeNotificationFeature implements DynamicFeature<undefined> {
+export class ConfigurationChangeNotificationFeature<C extends object> implements DynamicFeature<undefined> {
     private subscriptionsByID = new Map<string, Subscription>()
 
-    constructor(private client: Client, private settings: Observable<ExtensionSettings>) {}
+    constructor(private client: Client, private settings: Observable<C>) {}
 
     public readonly messages = DidChangeConfigurationNotification.type
 
@@ -81,9 +82,11 @@ export class ConfigurationChangeNotificationFeature implements DynamicFeature<un
 
 /**
  * Support for the server requesting the client's configuration (workspace/configuration request to the client).
+ *
+ * @template C settings type
  */
-export class ConfigurationFeature implements StaticFeature {
-    constructor(private client: Client, private settings: Observable<ExtensionSettings>) {}
+export class ConfigurationFeature<C extends object> implements StaticFeature {
+    constructor(private client: Client, private settings: Observable<C>) {}
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         capabilities.workspace = capabilities.workspace || {}
@@ -115,7 +118,7 @@ export class ConfigurationFeature implements StaticFeature {
         })
     }
 
-    private getConfiguration(settings: ExtensionSettings, resource: URI | undefined, section: string | undefined): any {
+    private getConfiguration(settings: C, resource: URI | undefined, section: string | undefined): C {
         if (resource) {
             throw new Error('configuration request: resource param is not supported')
         }

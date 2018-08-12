@@ -1,5 +1,4 @@
 import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 import { Client, ClientOptions } from '../client/client'
 import { ExecuteCommandFeature } from '../client/features/command'
 import {
@@ -31,7 +30,7 @@ import {
 } from '../protocol'
 import { isEqual } from '../util'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment, ObservableEnvironment } from './environment'
-import { Extension, ExtensionSettings } from './extension'
+import { Extension } from './extension'
 import { Registries } from './registries'
 
 /** The minimal unique identifier for a client. */
@@ -61,8 +60,13 @@ type ShowInputRequest = ShowInputParams & MessageSource & PromiseCallback<string
 
 type ConfigurationUpdate = ConfigurationUpdateParams & MessageSource & PromiseCallback<void>
 
-/** Options for creating the controller. */
-export interface ControllerOptions<X extends Extension> {
+/**
+ * Options for creating the controller.
+ *
+ * @template X extension type
+ * @template C settings type
+ */
+export interface ControllerOptions<X extends Extension, C extends object> {
     /** Returns additional options to use when creating a client. */
     clientOptions: (
         key: ClientKey,
@@ -76,14 +80,17 @@ export interface ControllerOptions<X extends Extension> {
     /**
      * Called before applying the next environment in Controller#setEnvironment. It should have no side effects.
      */
-    environmentFilter?: (nextEnvironment: Environment<X>) => Environment<X>
+    environmentFilter?: (nextEnvironment: Environment<X, C>) => Environment<X, C>
 }
 
 /**
  * The controller for the environment.
+ *
+ * @template X extension type
+ * @template C settings type
  */
-export class Controller<X extends Extension = Extension> implements Unsubscribable {
-    private _environment = new BehaviorSubject<Environment<X>>(EMPTY_ENVIRONMENT)
+export class Controller<X extends Extension, C extends object> implements Unsubscribable {
+    private _environment = new BehaviorSubject<Environment<X, C>>(EMPTY_ENVIRONMENT)
 
     private _clientEntries = new BehaviorSubject<ClientEntry[]>([])
 
@@ -118,7 +125,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     /** Configuration updates from extensions. */
     public readonly configurationUpdates: Observable<ConfigurationUpdate> = this._configurationUpdates
 
-    constructor(private options: ControllerOptions<X>) {
+    constructor(private options: ControllerOptions<X, C>) {
         this.subscriptions.add(() => {
             for (const c of this._clientEntries.value) {
                 c.client.unsubscribe()
@@ -126,7 +133,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         })
     }
 
-    public setEnvironment(nextEnvironment: Environment<X>): void {
+    public setEnvironment(nextEnvironment: Environment<X, C>): void {
         if (this.options.environmentFilter) {
             nextEnvironment = this.options.environmentFilter(nextEnvironment)
         }
@@ -147,7 +154,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         const nextClients: ClientEntry[] = []
         const unusedClients: ClientEntry[] = []
         for (const oldClient of this._clientEntries.value) {
-            const newIndex = newClients.findIndex(({ key }) => isEqual(oldClient.key as ClientKey, key as ClientKey))
+            const newIndex = newClients.findIndex(newClient => isEqual(oldClient.key, newClient))
             if (newIndex === -1) {
                 // Client is no longer needed.
                 unusedClients.push(oldClient)
@@ -163,7 +170,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
             unusedClient.client.unsubscribe()
         }
         // Create new clients.
-        for (const { key } of newClients) {
+        for (const key of newClients) {
             // Find the extension that this client is for.
             const extension = environment.extensions!.find(x => x.id === key.id)
             if (!extension) {
@@ -181,13 +188,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
             const client = new Client(key.id, key.id, clientOptions)
 
             // Register client features.
-            const settings = this._environment.pipe(
-                map(({ extensions }) => (extensions ? extensions.find(x => x.id === key.id) : null)),
-                filter((x): x is X => !!x),
-                map(x => x.settings),
-                distinctUntilChanged((a, b) => isEqual(a, b))
-            )
-            this.registerClientFeatures(client, settings)
+            this.registerClientFeatures(client, this.environment.configuration)
 
             // Activate client.
             client.activate()
@@ -199,9 +200,9 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         this._clientEntries.next(nextClients)
     }
 
-    private registerClientFeatures(client: Client, settings: Observable<ExtensionSettings>): void {
-        client.registerFeature(new ConfigurationChangeNotificationFeature(client, settings))
-        client.registerFeature(new ConfigurationFeature(client, settings))
+    private registerClientFeatures(client: Client, configuration: Observable<C>): void {
+        client.registerFeature(new ConfigurationChangeNotificationFeature<C>(client, configuration))
+        client.registerFeature(new ConfigurationFeature<C>(client, configuration))
         client.registerFeature(
             new ConfigurationUpdateFeature(
                 client,
@@ -213,8 +214,8 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         )
         client.registerFeature(new ContributionFeature(this.registries.contribution))
         client.registerFeature(new ExecuteCommandFeature(client, this.registries.commands))
-        client.registerFeature(new TextDocumentDidOpenFeature(client, this.environment))
-        client.registerFeature(new TextDocumentDidCloseFeature(client, this.environment))
+        client.registerFeature(new TextDocumentDidOpenFeature(client, this.environment.textDocument))
+        client.registerFeature(new TextDocumentDidCloseFeature(client, this.environment.textDocument))
         client.registerFeature(new TextDocumentDefinitionFeature(client, this.registries.textDocumentDefinition))
         client.registerFeature(
             new TextDocumentImplementationFeature(client, this.registries.textDocumentImplementation)
@@ -246,7 +247,7 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
         )
     }
 
-    public readonly environment: ObservableEnvironment<X> = createObservableEnvironment<X>(this._environment)
+    public readonly environment: ObservableEnvironment<X, C> = createObservableEnvironment<X, C>(this._environment)
 
     public set trace(value: Trace) {
         for (const client of this._clientEntries.value) {
@@ -259,31 +260,22 @@ export class Controller<X extends Extension = Extension> implements Unsubscribab
     }
 }
 
-interface ClientInit {
-    key: ClientKey
-    settings: ExtensionSettings
-}
-
-function computeClients<X extends Extension>(environment: Environment<X>): ClientInit[] {
-    const clients: ClientInit[] = []
+function computeClients<X extends Extension>(
+    environment: Pick<Environment<X, any>, 'root' | 'extensions'>
+): ClientKey[] {
+    const clients: ClientKey[] = []
     if (!environment.extensions) {
         return clients
     }
     for (const x of environment.extensions) {
         clients.push({
-            key: {
-                id: x.id,
-                root: environment.root,
-                initializationOptions: {
-                    // TODO(sqs): Add a type for InitializationOptions sent to the Sourcegraph CXP proxy.
-                    session: 'cxp', // the special 'cxp' value makes each connection an isolated session
-                    mode: x.id,
-                    // Note: settings are omitted here because they do not form part of the client key (because
-                    // merely changing settings does not require a new client to be created for the new settings).
-                    // They are filled in by ConfigurationFeature.
-                },
+            id: x.id,
+            root: environment.root,
+            initializationOptions: {
+                // TODO(sqs): Add a type for InitializationOptions sent to the Sourcegraph CXP proxy.
+                session: 'cxp', // the special 'cxp' value makes each connection an isolated session
+                mode: x.id,
             },
-            settings: x.settings,
         })
     }
     return clients

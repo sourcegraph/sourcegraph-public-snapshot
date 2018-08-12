@@ -88,7 +88,7 @@ describe('TextDocumentDidOpenFeature', () => {
         const client = { options: { middleware: {} } } as Client
         const feature = new class extends TextDocumentDidOpenFeature {
             public readonly selectors!: Map<string, DocumentSelector>
-        }(client, createObservableEnvironment(environment))
+        }(client, createObservableEnvironment(environment).textDocument)
         return { client, environment, feature }
     }
 
@@ -180,7 +180,7 @@ describe('TextDocumentDidCloseFeature', () => {
         const client = { options: { middleware: {} } } as Client
         const feature = new class extends TextDocumentDidCloseFeature {
             public readonly selectors!: Map<string, DocumentSelector>
-        }(client, createObservableEnvironment(environment))
+        }(client, createObservableEnvironment(environment).textDocument)
         return { client, environment, feature }
     }
 

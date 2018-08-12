@@ -1,8 +1,7 @@
 import { Observable, Subscription } from 'rxjs'
 import { bufferCount, filter, map } from 'rxjs/operators'
 import uuidv4 from 'uuid/v4'
-import { TextDocumentItem } from 'vscode-languageserver-types'
-import { ObservableEnvironment } from '../../environment/environment'
+import { TextDocument, TextDocumentItem } from 'vscode-languageserver-types'
 import { MessageType as RPCMessageType, NotificationType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
@@ -98,10 +97,10 @@ export class TextDocumentDidOpenFeature extends TextDocumentNotificationFeature<
     DidOpenTextDocumentParams,
     TextDocumentItem
 > {
-    constructor(client: Client, environment: ObservableEnvironment) {
+    constructor(client: Client, environmentTextDocument: Observable<Pick<TextDocument, 'uri' | 'languageId'> | null>) {
         super(
             client,
-            environment.textDocument.pipe(filter((v): v is TextDocumentItem => v !== null)),
+            environmentTextDocument.pipe(filter((v): v is TextDocumentItem => v !== null)),
             DidOpenTextDocumentNotification.type,
             client.options.middleware.didOpen,
             textDocument =>
@@ -139,10 +138,10 @@ export class TextDocumentDidCloseFeature extends TextDocumentNotificationFeature
     DidCloseTextDocumentParams,
     TextDocumentItem
 > {
-    constructor(client: Client, environment: ObservableEnvironment) {
+    constructor(client: Client, environmentTextDocument: Observable<Pick<TextDocument, 'uri' | 'languageId'> | null>) {
         super(
             client,
-            environment.textDocument.pipe(
+            environmentTextDocument.pipe(
                 bufferCount(2, 1),
                 // When the previous value emitted was a document, it means the most recent value was either a
                 // different document or null. In both cases, it means the previous document is closed.
