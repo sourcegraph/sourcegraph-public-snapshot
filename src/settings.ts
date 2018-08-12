@@ -184,6 +184,6 @@ export function subjectLabel(subject: ConfigurationSubject): string {
 /**
  * React partial props for components needing the configuration cascade.
  */
-export interface ConfigurationCascadeProps<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> {
+export interface ConfigurationCascadeProps<S extends ConfigurationSubject, C extends Settings> {
     configurationCascade: ConfigurationCascade<S, C>
 }
