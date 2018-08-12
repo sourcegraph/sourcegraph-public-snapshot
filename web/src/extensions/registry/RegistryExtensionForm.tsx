@@ -75,6 +75,6 @@ export const RegistryExtensionNameFormGroup: React.SFC<{
             maxLength={EXTENSION_NAME_MAX_LENGTH}
             disabled={disabled}
         />
-        <small className="form-help text-muted">An identifier for this extension.</small>
+        <small className="form-help text-muted">The name for this extension.</small>
     </div>
 )
