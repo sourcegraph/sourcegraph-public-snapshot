@@ -7,13 +7,13 @@ import { HeroPage } from '../components/HeroPage'
 import { platformEnabled } from '../user/tags'
 import { ExtensionArea } from './extension/ExtensionArea'
 import { ExtensionsAreaHeader } from './ExtensionsAreaHeader'
-import { ExtensionsProps } from './ExtensionsClientCommonContext'
+import { ConfigurationCascadeProps, ExtensionsProps } from './ExtensionsClientCommonContext'
 import { ExtensionsOverviewPage } from './ExtensionsOverviewPage'
 import { RegistryArea } from './registry/RegistryArea'
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
-interface Props extends RouteComponentProps<{ extensionID: string }>, ExtensionsProps, ExtensionsProps {
+interface Props extends RouteComponentProps<{ extensionID: string }>, ConfigurationCascadeProps, ExtensionsProps {
     /**
      * The currently authenticated user.
      */
@@ -25,7 +25,7 @@ interface Props extends RouteComponentProps<{ extensionID: string }>, Extensions
 /**
  * Properties passed to all page components in the extensions area.
  */
-export interface ExtensionsAreaPageProps extends ExtensionsProps, ExtensionsProps {
+export interface ExtensionsAreaPageProps extends ConfigurationCascadeProps, ExtensionsProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser
 }
@@ -65,6 +65,7 @@ export class ExtensionsArea extends React.Component<Props, State> {
 
         const transferProps: ExtensionsAreaPageProps = {
             authenticatedUser: this.props.user,
+            configurationCascade: this.props.configurationCascade,
             extensions: this.props.extensions,
         }
 

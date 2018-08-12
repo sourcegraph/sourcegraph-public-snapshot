@@ -63,7 +63,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
     public render(): JSX.Element | null {
         return (
             <div className="registry-extension-manifest-page">
-                <PageTitle title={`Manifest of ${this.props.extension.extensionID}`} />
+                <PageTitle title={`Manifest of ${this.props.extension.id}`} />
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="d-flex align-items-center">
                         <h3 className="mb-0 mr-1">Manifest</h3>

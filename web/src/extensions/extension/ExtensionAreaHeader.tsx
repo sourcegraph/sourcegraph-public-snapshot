@@ -1,14 +1,14 @@
+import { isExtensionAdded, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import LockIcon from '@sourcegraph/icons/lib/Lock'
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import * as React from 'react'
 import { NavLink, RouteComponentProps } from 'react-router-dom'
 import { isErrorLike } from '../../util/errors'
-import { ExtensionsProps } from '../ExtensionsClientCommonContext'
 import { ExtensionAreaPageProps } from './ExtensionArea'
 import { ExtensionConfigurationState } from './ExtensionConfigurationState'
 import { RegistryExtensionDetailActionButton } from './RegistryExtensionDetailActionButton'
 
-interface Props extends ExtensionAreaPageProps, ExtensionsProps, RouteComponentProps<{}> {}
+interface Props extends ExtensionAreaPageProps, RouteComponentProps<{}> {}
 
 /**
  * Header for the extension area.
@@ -27,13 +27,13 @@ export const ExtensionAreaHeader: React.SFC<Props> = (props: Props) => (
                                         {(props.extension.manifest &&
                                             !isErrorLike(props.extension.manifest) &&
                                             props.extension.manifest.title) ||
-                                            props.extension.extensionID}
+                                            props.extension.id}
                                     </h2>
                                 </div>
                                 {props.extension.manifest &&
                                     !isErrorLike(props.extension.manifest) &&
                                     props.extension.manifest.title && (
-                                        <div className="text-muted">{props.extension.extensionID}</div>
+                                        <div className="text-muted">{props.extension.id}</div>
                                     )}
                                 {props.extension.manifest &&
                                     !isErrorLike(props.extension.manifest) &&
@@ -44,8 +44,8 @@ export const ExtensionAreaHeader: React.SFC<Props> = (props: Props) => (
                         </div>
                         <div className="d-flex align-items-center mt-3 mb-2">
                             <ExtensionConfigurationState
-                                isAdded={props.extension.isAdded}
-                                isEnabled={props.extension.isEnabled}
+                                isAdded={isExtensionAdded(props.configurationCascade.merged, props.extension.id)}
+                                isEnabled={isExtensionEnabled(props.configurationCascade.merged, props.extension.id)}
                                 enabledIconOnly={true}
                                 className="mr-2"
                             />
@@ -53,6 +53,7 @@ export const ExtensionAreaHeader: React.SFC<Props> = (props: Props) => (
                                 extension={props.extension}
                                 onUpdate={props.onDidUpdateExtension}
                                 nonButtonClassName="d-block"
+                                configurationCascade={props.configurationCascade}
                                 extensions={props.extensions}
                             />
                         </div>

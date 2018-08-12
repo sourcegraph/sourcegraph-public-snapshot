@@ -23,6 +23,7 @@ export class ExtensionsOverviewPage extends React.PureComponent<Props> {
                         {...this.props}
                         emptyElement={<ExtensionsEmptyState />}
                         subject={this.props.authenticatedUser.id}
+                        configurationCascade={this.props.configurationCascade}
                     />
                 </div>
             </div>

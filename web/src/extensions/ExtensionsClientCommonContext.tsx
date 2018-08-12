@@ -1,8 +1,13 @@
 import { ExtensionsProps as GenericExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
+import { Settings } from '@sourcegraph/extensions-client-common/lib/copypasta'
 import { CXPExtensionWithManifest } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { importScriptsBlobURL } from '@sourcegraph/extensions-client-common/lib/cxp/webWorker'
-import { ConfigurationSubject, gqlToCascade } from '@sourcegraph/extensions-client-common/lib/settings'
+import {
+    ConfigurationCascadeProps as GenericConfigurationCascadeProps,
+    ConfigurationSubject,
+    gqlToCascade,
+} from '@sourcegraph/extensions-client-common/lib/settings'
 import CaretDown from '@sourcegraph/icons/lib/CaretDown'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import Menu from '@sourcegraph/icons/lib/Menu'
@@ -22,6 +27,8 @@ import { editConfiguration } from '../configuration/backend'
 import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
 import { isErrorLike } from '../util/errors'
+
+export interface ConfigurationCascadeProps extends GenericConfigurationCascadeProps<ConfigurationSubject, Settings> {}
 
 export interface ExtensionsProps extends GenericExtensionsProps<ConfigurationSubject> {}
 

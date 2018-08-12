@@ -20,7 +20,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
         return (
             <div className="registry-extension-overview-page row">
-                <PageTitle title={this.props.extension.extensionID} />
+                <PageTitle title={this.props.extension.id} />
                 <div className="col-md-8">
                     <ExtensionREADME extension={this.props.extension} />
                 </div>
@@ -69,7 +69,7 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                     </>
                                 )}
                             <dt className="border-top pt-2">Extension ID</dt>
-                            <dd>{this.props.extension.extensionID}</dd>
+                            <dd>{this.props.extension.id}</dd>
                             {this.props.extension.registryExtension &&
                                 this.props.extension.registryExtension.updatedAt && (
                                     <>

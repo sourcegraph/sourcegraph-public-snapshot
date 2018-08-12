@@ -1,5 +1,4 @@
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { upperFirst } from 'lodash'
@@ -10,8 +9,7 @@ import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } fr
 import { gql, graphQLContent } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
-import { Settings } from '../../schema/settings.schema'
+import { ConfigurationCascadeProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { RegistryExtensionManifestPage } from '../extension/RegistryExtensionManifestPage'
 import { ExtensionsAreaPageProps } from '../ExtensionsArea'
@@ -64,18 +62,18 @@ interface Props extends ExtensionsAreaPageProps, RouteComponentProps<{ extension
 
 interface State {
     /** The registry extension, undefined while loading, or an error.  */
-    extensionOrError?: ConfiguredExtension<ConfigurationSubject, Settings, GQL.IRegistryExtension> | ErrorLike
+    extensionOrError?: ConfiguredExtension<GQL.IRegistryExtension> | ErrorLike
 }
 
 /**
  * Properties passed to all page components in the registry extension area.
  */
-export interface ExtensionAreaPageProps extends ExtensionsProps {
+export interface ExtensionAreaPageProps extends ConfigurationCascadeProps, ExtensionsProps {
     /** The extension registry area main URL. */
     url: string
 
     /** The extension that is the subject of the page. */
-    extension: ConfiguredExtension<ConfigurationSubject, Settings, GQL.IRegistryExtension>
+    extension: ConfiguredExtension<GQL.IRegistryExtension>
 
     /** Called when the component updates the extension and it should be refreshed here. */
     onDidUpdateExtension: () => void
@@ -167,6 +165,7 @@ export class ExtensionArea extends React.Component<Props> {
             url,
             authenticatedUser: this.props.authenticatedUser,
             onDidUpdateExtension: this.onDidUpdateExtension,
+            configurationCascade: this.props.configurationCascade,
             extension: this.state.extensionOrError,
             extensions: this.props.extensions,
         }

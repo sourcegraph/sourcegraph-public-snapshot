@@ -33,11 +33,13 @@ registerLanguage('ruby', require('highlight.js/lib/languages/ruby'))
 registerLanguage('rust', require('highlight.js/lib/languages/rust'))
 registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
+import { Settings } from '@sourcegraph/extensions-client-common/lib/copypasta'
 import {
     createController as createCXPController,
     CXPControllerProps,
 } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
+import { ConfigurationCascade, ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import {
@@ -59,7 +61,11 @@ import { CXPComponentProps } from './cxp/CXPComponent'
 import { CXPEnvironmentProps } from './cxp/CXPEnvironment'
 import { CXPRootProps } from './cxp/CXPRoot'
 import { LinkExtension } from './extension/Link'
-import { createMessageTransports, ExtensionsProps } from './extensions/ExtensionsClientCommonContext'
+import {
+    ConfigurationCascadeProps,
+    createMessageTransports,
+    ExtensionsProps,
+} from './extensions/ExtensionsClientCommonContext'
 import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
@@ -72,6 +78,7 @@ import { eventLogger } from './tracking/eventLogger'
 
 interface LayoutProps
     extends RouteComponentProps<any>,
+        ConfigurationCascadeProps,
         ExtensionsProps,
         CXPEnvironmentProps,
         CXPControllerProps,
@@ -143,7 +150,7 @@ const Layout: React.SFC<LayoutProps> = props => {
     )
 }
 
-interface AppState extends ExtensionsProps, CXPEnvironmentProps, CXPControllerProps {
+interface AppState extends ConfigurationCascadeProps, ExtensionsProps, CXPEnvironmentProps, CXPControllerProps {
     error?: Error
     user?: GQL.IUser | null
 
@@ -178,6 +185,7 @@ class App extends React.Component<{}, AppState> {
             navbarSearchQuery: '',
             showHelpPopover: false,
             showHistoryPopover: false,
+            configurationCascade: { subjects: [], merged: {} },
             extensions,
             cxpEnvironment: CXP_EMPTY_ENVIRONMENT,
             cxpController: createCXPController(extensions.context, createMessageTransports),
@@ -193,6 +201,13 @@ class App extends React.Component<{}, AppState> {
         )
 
         this.subscriptions.add(this.state.cxpController)
+
+        this.subscriptions.add(
+            this.state.extensions.context.configurationCascade.subscribe(
+                v => this.onConfigurationCascadeChange(v),
+                err => console.error(err)
+            )
+        )
 
         // Keep CXP controller's extensions up-to-date.
         //
@@ -272,6 +287,7 @@ class App extends React.Component<{}, AppState> {
             showHistoryPopover={this.state.showHistoryPopover}
             onHelpPopoverToggle={this.onHelpPopoverToggle}
             onHistoryPopoverToggle={this.onHistoryPopoverToggle}
+            configurationCascade={this.state.configurationCascade}
             extensions={this.state.extensions}
             cxpEnvironment={this.state.cxpEnvironment}
             cxpOnComponentChange={this.cxpOnComponentChange}
@@ -309,17 +325,27 @@ class App extends React.Component<{}, AppState> {
         }))
     }
 
+    private onConfigurationCascadeChange(
+        configurationCascade: ConfigurationCascade<ConfigurationSubject, Settings>
+    ): void {
+        this.setState(
+            prevState => ({
+                configurationCascade,
+                cxpEnvironment: {
+                    ...prevState.cxpEnvironment,
+                    configuration: configurationCascade,
+                },
+            }),
+            () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
+        )
+    }
+
     private onViewerConfiguredExtensionsChange(viewerConfiguredExtensions: ConfiguredExtension[]): void {
         this.setState(
             prevState => ({
                 cxpEnvironment: {
                     ...prevState.cxpEnvironment,
-                    extensions: viewerConfiguredExtensions.map(x => ({
-                        id: x.extensionID,
-                        settings: { merged: x.settings },
-                        isEnabled: x.isEnabled,
-                        manifest: x.manifest,
-                    })),
+                    extensions: viewerConfiguredExtensions,
                 },
             }),
             () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)

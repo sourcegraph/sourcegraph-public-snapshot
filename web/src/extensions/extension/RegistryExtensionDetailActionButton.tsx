@@ -9,9 +9,9 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/extensions/ExtensionConfigureButton'
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import * as React from 'react'
-import { ExtensionsProps } from '../ExtensionsClientCommonContext'
+import { ConfigurationCascadeProps, ExtensionsProps } from '../ExtensionsClientCommonContext'
 
-interface Props extends ExtensionsProps {
+interface Props extends ConfigurationCascadeProps, ExtensionsProps {
     /** The extension that this element is for. */
     extension: ConfiguredExtension
 
@@ -37,7 +37,7 @@ interface Props extends ExtensionsProps {
  * - "Disabled" (no action) if the extension is added and disabled.
  */
 export const RegistryExtensionDetailActionButton: React.SFC<Props> = props => {
-    if (props.extension.settingsCascade.every(s => !isExtensionAdded(s.settings, props.extension.extensionID))) {
+    if (props.configurationCascade.subjects.every(s => !isExtensionAdded(s.settings, props.extension.id))) {
         return (
             <ExtensionConfigureButton
                 extension={props.extension}
@@ -46,6 +46,7 @@ export const RegistryExtensionDetailActionButton: React.SFC<Props> = props => {
                 itemFilter={ALL_CAN_ADMINISTER}
                 itemComponent={ExtensionConfiguredSubjectItemForAdd}
                 buttonClassName={`btn-primary ${props.className || ''} ${props.buttonClassName || ''}`}
+                configurationCascade={props.configurationCascade}
                 extensions={props.extensions}
             >
                 <AddIcon className="icon-inline" /> Add extension
@@ -61,6 +62,7 @@ export const RegistryExtensionDetailActionButton: React.SFC<Props> = props => {
                 itemFilter={ADDED_AND_CAN_ADMINISTER}
                 itemComponent={ExtensionConfiguredSubjectItemForConfigure}
                 buttonClassName={`btn-success ${props.className || ''} ${props.buttonClassName || ''}`}
+                configurationCascade={props.configurationCascade}
                 extensions={props.extensions}
             >
                 Configure
@@ -72,6 +74,7 @@ export const RegistryExtensionDetailActionButton: React.SFC<Props> = props => {
                 itemFilter={ALL_CAN_ADMINISTER}
                 itemComponent={ExtensionConfiguredSubjectItemForAdd}
                 buttonClassName={`btn-outline-link ${props.className || ''} ${props.buttonClassName || ''}`}
+                configurationCascade={props.configurationCascade}
                 extensions={props.extensions}
             >
                 Add
@@ -83,6 +86,7 @@ export const RegistryExtensionDetailActionButton: React.SFC<Props> = props => {
                 itemFilter={ADDED_AND_CAN_ADMINISTER}
                 itemComponent={ExtensionConfiguredSubjectItemForRemove}
                 buttonClassName={`btn-outline-link ${props.className || ''} ${props.buttonClassName || ''}`}
+                configurationCascade={props.configurationCascade}
                 extensions={props.extensions}
             >
                 Remove
