@@ -6,10 +6,10 @@ import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { updateSavedClientTrace } from '../cxp/client'
 import { CXPControllerProps } from '../cxp/controller'
-import { ConfigurationCascade, ConfigurationSubject } from '../settings'
+import { ConfigurationSubject, Settings } from '../settings'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 
-interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> extends CXPControllerProps<S, C> {
+interface Props<S extends ConfigurationSubject, C extends Settings> extends CXPControllerProps<S, C> {
     caretIcon: React.ComponentType<{
         className: 'icon-inline' | string
         onClick?: () => void
@@ -26,10 +26,10 @@ interface State {
     clients?: { client: CXPClient; key: CXPClientKey; state: CXPClientState }[]
 }
 
-export class ExtensionStatus<
-    S extends ConfigurationSubject,
-    C extends ConfigurationCascade<S>
-> extends React.PureComponent<Props<S, C>, State> {
+export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+    Props<S, C>,
+    State
+> {
     public state: State = {}
 
     private componentUpdates = new Subject<Props<S, C>>()
@@ -190,10 +190,9 @@ function clientStateBadgeClass(state: CXPClientState): string {
 }
 
 /** A button that toggles the visibility of the ExtensionStatus element in a popover. */
-export class ExtensionStatusPopover<
-    S extends ConfigurationSubject,
-    C extends ConfigurationCascade<S>
-> extends React.PureComponent<Props<S, C>> {
+export class ExtensionStatusPopover<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+    Props<S, C>
+> {
     public render(): JSX.Element | null {
         return (
             <PopoverButton

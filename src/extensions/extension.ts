@@ -1,5 +1,5 @@
 import { Extension } from 'cxp/module/environment/extension'
-import { ErrorLike } from '../errors'
+import { ErrorLike, isErrorLike } from '../errors'
 import { SourcegraphExtension } from '../schema/extension.schema'
 import * as GQL from '../schema/graphqlschema'
 import { Settings } from '../settings'
@@ -28,11 +28,11 @@ export interface ConfiguredExtension<
 }
 
 /** Reports whether the given extension is enabled in the settings. */
-export function isExtensionEnabled(settings: Settings | null, extensionID: string): boolean {
-    return !!settings && !!settings.extensions && !!settings.extensions[extensionID]
+export function isExtensionEnabled(settings: Settings | ErrorLike | null, extensionID: string): boolean {
+    return !!settings && !isErrorLike(settings) && !!settings.extensions && !!settings.extensions[extensionID]
 }
 
 /** Reports whether the given extension is mentioned (enabled or disabled) in the settings. */
-export function isExtensionAdded(settings: Settings | null, extensionID: string): boolean {
-    return !!settings && !!settings.extensions && extensionID in settings.extensions
+export function isExtensionAdded(settings: Settings | ErrorLike | null, extensionID: string): boolean {
+    return !!settings && !isErrorLike(settings) && !!settings.extensions && extensionID in settings.extensions
 }

@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsProps } from '../../context'
 import { isErrorLike } from '../../errors'
-import { ConfigurationCascade, ConfigurationCascadeProps, ConfigurationSubject, ID } from '../../settings'
+import { ConfigurationCascadeProps, ConfigurationSubject, ID, Settings } from '../../settings'
 import { LinkOrSpan } from '../../ui/generic/LinkOrSpan'
 import { ConfiguredExtension, isExtensionAdded, isExtensionEnabled } from '../extension'
 import {
@@ -14,7 +14,7 @@ import {
 } from '../ExtensionConfigureButton'
 import { ExtensionEnablementToggle } from '../ExtensionEnablementToggle'
 
-interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>
+interface Props<S extends ConfigurationSubject, C extends Settings>
     extends ConfigurationCascadeProps<S, C>,
         ExtensionsProps<S, C> {
     node: ConfiguredExtension
@@ -23,10 +23,9 @@ interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S
 }
 
 /** Displays an extension as a card. */
-export class ExtensionCard<
-    S extends ConfigurationSubject,
-    C extends ConfigurationCascade<S>
-> extends React.PureComponent<Props<S, C>> {
+export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+    Props<S, C>
+> {
     public render(): JSX.Element | null {
         const { node, ...props } = this.props
         return (

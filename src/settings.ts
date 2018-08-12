@@ -16,6 +16,12 @@ export interface IClient {
 export interface Settings {
     extensions?: { [extensionID: string]: boolean }
     [key: string]: any
+
+    // These properties should never exist on Settings but do exist on ConfigurationCascade. This makes it so the
+    // compiler points out where we misuse a Settings value in place of a ConfigurationCascade value and vice
+    // versa.
+    subjects?: never
+    merged?: never
 }
 
 /**

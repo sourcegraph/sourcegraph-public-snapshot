@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { ConfigurationSubject, ConfiguredSubject } from '../settings'
+import { ConfigurationSubject, ConfiguredSubject, Settings } from '../settings'
 import { filterItems } from './ExtensionConfigureButton'
 
 const FIXTURE_CONFIGURATION_SUBJECT: ConfigurationSubject = {
@@ -22,11 +22,14 @@ describe('filterItems', () =>
                     { subject: { ...FIXTURE_CONFIGURATION_SUBJECT, id: '3' }, settings: { extensions: { b: true } } },
                     { subject: { ...FIXTURE_CONFIGURATION_SUBJECT, id: '4' }, settings: null },
                     { subject: { ...FIXTURE_CONFIGURATION_SUBJECT, id: '4' }, settings: {} },
-                ],
+                ] as ConfiguredSubject<ConfigurationSubject>[],
                 { added: true }
             ),
             [
-                { subject: { ...FIXTURE_CONFIGURATION_SUBJECT, id: '1' }, settings: { extensions: { a: true } } },
+                {
+                    subject: { ...FIXTURE_CONFIGURATION_SUBJECT, id: '1' },
+                    settings: { extensions: { a: true } } as Settings,
+                },
                 { subject: { ...FIXTURE_CONFIGURATION_SUBJECT, id: '2' }, settings: { extensions: { a: false } } },
             ] as ConfiguredSubject<ConfigurationSubject>[]
         )))

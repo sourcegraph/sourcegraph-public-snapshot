@@ -5,7 +5,7 @@ import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators
 import { ExtensionsProps } from '../../context'
 import { CXPControllerProps } from '../../cxp/controller'
 import { asError, ErrorLike } from '../../errors'
-import { ConfigurationCascade, ConfigurationSubject } from '../../settings'
+import { ConfigurationSubject, Settings } from '../../settings'
 import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
 export interface ActionItemProps {
@@ -25,7 +25,7 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>
+interface Props<S extends ConfigurationSubject, C extends Settings>
     extends ActionItemProps,
         CXPControllerProps<S, C>,
         ExtensionsProps<S, C> {}
@@ -37,7 +37,7 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ActionItem<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> extends React.PureComponent<
+export class ActionItem<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
     Props<S, C>,
     State
 > {

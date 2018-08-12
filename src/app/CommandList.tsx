@@ -5,13 +5,13 @@ import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 import { ExtensionsProps } from '../context'
 import { CXPControllerProps } from '../cxp/controller'
-import { ConfigurationCascade, ConfigurationSubject } from '../settings'
+import { ConfigurationSubject, Settings } from '../settings'
 import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 import { ActionItem, ActionItemProps } from './actions/ActionItem'
 import { getContributedActionItems } from './actions/contributions'
 
-interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>
+interface Props<S extends ConfigurationSubject, C extends Settings>
     extends CXPControllerProps<S, C>,
         ExtensionsProps<S, C> {
     /** The menu whose commands to display. */
@@ -30,7 +30,7 @@ interface State {
 }
 
 /** Displays a list of commands contributed by CXP extensions for a specific menu. */
-export class CommandList<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> extends React.PureComponent<
+export class CommandList<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
     Props<S, C>,
     State
 > {
@@ -179,10 +179,10 @@ function filterAndRankItems(allItems: ActionItemProps[], query: string): ActionI
         .map(({ item }) => item)
 }
 
-export class CommandListPopoverButton<
-    S extends ConfigurationSubject,
-    C extends ConfigurationCascade<S>
-> extends React.PureComponent<Props<S, C>, { hideOnChange?: any }> {
+export class CommandListPopoverButton<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+    Props<S, C>,
+    { hideOnChange?: any }
+> {
     public state: { hideOnChange?: any } = {}
 
     public render(): JSX.Element | null {

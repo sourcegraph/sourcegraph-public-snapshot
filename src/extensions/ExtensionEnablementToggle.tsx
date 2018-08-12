@@ -3,11 +3,11 @@ import { combineLatest, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsProps } from '../context'
 import { asError, ErrorLike, isErrorLike } from '../errors'
-import { ConfigurationCascade, ConfigurationCascadeProps, ConfigurationSubject, ID } from '../settings'
+import { ConfigurationCascadeProps, ConfigurationSubject, ID, Settings } from '../settings'
 import { Toggle } from '../ui/generic/Toggle'
 import { ConfiguredExtension, isExtensionEnabled } from './extension'
 
-interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>
+interface Props<S extends ConfigurationSubject, C extends Settings>
     extends ConfigurationCascadeProps<S, C>,
         ExtensionsProps<S, C> {
     extension: ConfiguredExtension
@@ -34,10 +34,10 @@ interface State {
 /**
  * Enables and disables the extension and displays the enablement state.
  */
-export class ExtensionEnablementToggle<
-    S extends ConfigurationSubject,
-    C extends ConfigurationCascade<S>
-> extends React.PureComponent<Props<S, C>, State> {
+export class ExtensionEnablementToggle<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
+    Props<S, C>,
+    State
+> {
     public state: State = { toggleOrError: null }
 
     private componentUpdates = new Subject<Props<S, C>>()
