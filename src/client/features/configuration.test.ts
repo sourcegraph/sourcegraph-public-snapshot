@@ -1,18 +1,18 @@
 import * as assert from 'assert'
 import { Subject } from 'rxjs'
-import { ClientCapabilities } from '../../protocol'
+import { ClientCapabilities, ConfigurationCascade } from '../../protocol'
 import { Client } from '../client'
 import { ConfigurationChangeNotificationFeature } from './configuration'
 
 const create = (): {
     client: Client
-    settings: Subject<any>
-    feature: ConfigurationChangeNotificationFeature<any>
+    configurationCascade: Subject<ConfigurationCascade>
+    feature: ConfigurationChangeNotificationFeature<ConfigurationCascade>
 } => {
     const client = { options: { middleware: {} } } as Client
-    const settings = new Subject<any>()
-    const feature = new ConfigurationChangeNotificationFeature(client, settings)
-    return { client, settings, feature }
+    const configurationCascade = new Subject<ConfigurationCascade>()
+    const feature = new ConfigurationChangeNotificationFeature(client, configurationCascade)
+    return { client, configurationCascade, feature }
 }
 
 describe('ConfigurationChangeNotificationFeature', () => {

@@ -4,6 +4,7 @@ import uuidv4 from 'uuid/v4'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
+    ConfigurationCascade,
     ConfigurationRequest,
     ConfigurationUpdateParams,
     ConfigurationUpdateRequest,
@@ -16,31 +17,32 @@ import { Client } from '../client'
 import { DynamicFeature, ensure, RegistrationData, StaticFeature } from './common'
 
 /**
- * Support for extension settings managed by the client (workspace/didChangeConfiguration notifications to the
+ * Support for configuration settings managed by the client (workspace/didChangeConfiguration notifications to the
  * server).
  *
- * @template C settings type
+ * @template C configuration cascade type
  */
-export class ConfigurationChangeNotificationFeature<C extends object> implements DynamicFeature<undefined> {
+export class ConfigurationChangeNotificationFeature<C extends ConfigurationCascade>
+    implements DynamicFeature<undefined> {
     private subscriptionsByID = new Map<string, Subscription>()
 
-    constructor(private client: Client, private settings: Observable<C>) {}
+    constructor(private client: Client, private configurationCascade: Observable<C>) {}
 
     public readonly messages = DidChangeConfigurationNotification.type
 
     public fillInitializeParams(params: InitializeParams): void {
-        // This runs synchronously because this.settings' root source is a BehaviorSubject (which has an initial
-        // value). Confirm it is synchronous just in case, because a bug here would be hard to diagnose.
+        // This runs synchronously because this.configurationCascade's root source is a BehaviorSubject (which has
+        // an initial value). Confirm it is synchronous just in case, because a bug here would be hard to diagnose.
         let sync = false
-        this.settings
+        this.configurationCascade
             .pipe(first())
-            .subscribe(settings => {
-                ensure(params, 'initializationOptions')!.settings = settings
+            .subscribe(configurationCascade => {
+                ensure(params, 'initializationOptions')!.settings = configurationCascade
                 sync = true
             })
             .unsubscribe()
         if (!sync) {
-            throw new Error('settings are not immediately available')
+            throw new Error('configuration is not immediately available')
         }
     }
 
@@ -58,8 +60,8 @@ export class ConfigurationChangeNotificationFeature<C extends object> implements
         }
         this.subscriptionsByID.set(
             data.id,
-            this.settings.subscribe(settings =>
-                this.client.sendNotification(DidChangeConfigurationNotification.type, { settings })
+            this.configurationCascade.subscribe(configurationCascade =>
+                this.client.sendNotification(DidChangeConfigurationNotification.type, { configurationCascade })
             )
         )
     }
@@ -83,10 +85,10 @@ export class ConfigurationChangeNotificationFeature<C extends object> implements
 /**
  * Support for the server requesting the client's configuration (workspace/configuration request to the client).
  *
- * @template C settings type
+ * @template C configuration cascade type
  */
-export class ConfigurationFeature<C extends object> implements StaticFeature {
-    constructor(private client: Client, private settings: Observable<C>) {}
+export class ConfigurationFeature<C extends ConfigurationCascade> implements StaticFeature {
+    constructor(private client: Client, private configurationCascade: Observable<C>) {}
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         capabilities.workspace = capabilities.workspace || {}
@@ -96,15 +98,15 @@ export class ConfigurationFeature<C extends object> implements StaticFeature {
     public initialize(): void {
         this.client.onRequest(ConfigurationRequest.type, (params, token) => {
             const configuration: ConfigurationRequest.HandlerSignature = params =>
-                this.settings
+                this.configurationCascade
                     .pipe(
                         first(),
-                        map(settings => {
+                        map(configurationCascade => {
                             const result: any[] = []
                             for (const item of params.items) {
                                 result.push(
                                     this.getConfiguration(
-                                        settings,
+                                        configurationCascade,
                                         item.scopeUri,
                                         item.section !== null ? item.section : undefined
                                     )
@@ -118,7 +120,7 @@ export class ConfigurationFeature<C extends object> implements StaticFeature {
         })
     }
 
-    private getConfiguration(settings: C, resource: URI | undefined, section: string | undefined): C {
+    private getConfiguration(configurationCascade: C, resource: URI | undefined, section: string | undefined): C {
         if (resource) {
             throw new Error('configuration request: resource param is not supported')
         }
@@ -129,7 +131,7 @@ export class ConfigurationFeature<C extends object> implements StaticFeature {
         // Also figure out in what cases it's OK for one extension to see another extension's
         // settings. In some cases this is dangerous because it would let extensions see the access
         // tokens, etc., configured for other extensions.
-        return settings
+        return configurationCascade
     }
 }
 

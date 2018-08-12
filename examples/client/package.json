@@ -21,7 +21,7 @@
     ],
     "initializationOptions": {
       "mode": "sample/line-colors",
-      "settings": {
+      "configurationCascade": {
         "merged": {
           "colors": [
             "red"

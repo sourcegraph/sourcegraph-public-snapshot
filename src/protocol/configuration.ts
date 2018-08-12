@@ -11,7 +11,9 @@ export interface ConfigurationUpdateParams {
     value: any
 }
 
-/** The configuration/update request, which the server sends to the client to update the client's settings. */
+/**
+ * The configuration/update request, which the server sends to the client to update the client's configuration.
+ */
 export namespace ConfigurationUpdateRequest {
     export const type = new RequestType<ConfigurationUpdateParams, void, void, void>('configuration/update')
 }
@@ -79,7 +81,15 @@ export interface DidChangeConfigurationRegistrationOptions {
  */
 export interface DidChangeConfigurationParams {
     /**
-     * The actual changed settings
+     * The new configuration cascade, after the change was applied.
      */
-    settings: any
+    configurationCascade: ConfigurationCascade
+}
+
+/**
+ * The merged configuration from a configuration cascade.
+ */
+export interface ConfigurationCascade {
+    /** The final settings, merged from all levels in the cascade. */
+    merged: any
 }

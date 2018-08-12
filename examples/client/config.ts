@@ -7,6 +7,6 @@ export default require('./package.json').cxp as {
     documentSelector: DocumentSelector
     initializationOptions: {
         mode: string
-        settings: { merged: any }
+        configurationCascade: { merged: any }
     }
 }

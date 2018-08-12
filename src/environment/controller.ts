@@ -20,6 +20,7 @@ import { WindowShowMessageFeature } from '../client/features/message'
 import { TextDocumentDidCloseFeature, TextDocumentDidOpenFeature } from '../client/features/textDocument'
 import { Trace } from '../jsonrpc2/trace'
 import {
+    ConfigurationCascade,
     ConfigurationUpdateParams,
     InitializeParams,
     LogMessageParams,
@@ -64,9 +65,9 @@ type ConfigurationUpdate = ConfigurationUpdateParams & MessageSource & PromiseCa
  * Options for creating the controller.
  *
  * @template X extension type
- * @template C settings type
+ * @template C configuration cascade type
  */
-export interface ControllerOptions<X extends Extension, C extends object> {
+export interface ControllerOptions<X extends Extension, C extends ConfigurationCascade> {
     /** Returns additional options to use when creating a client. */
     clientOptions: (
         key: ClientKey,
@@ -87,9 +88,9 @@ export interface ControllerOptions<X extends Extension, C extends object> {
  * The controller for the environment.
  *
  * @template X extension type
- * @template C settings type
+ * @template C configuration cascade type
  */
-export class Controller<X extends Extension, C extends object> implements Unsubscribable {
+export class Controller<X extends Extension, C extends ConfigurationCascade> implements Unsubscribable {
     private _environment = new BehaviorSubject<Environment<X, C>>(EMPTY_ENVIRONMENT)
 
     private _clientEntries = new BehaviorSubject<ClientEntry[]>([])
@@ -160,7 +161,7 @@ export class Controller<X extends Extension, C extends object> implements Unsubs
                 unusedClients.push(oldClient)
             } else {
                 // Client already exists. Settings may have changed, but ConfigurationFeature is responsible for
-                // notifying the server of settings changes.
+                // notifying the server of configuration changes.
                 newClients.splice(newIndex, 1)
                 nextClients.push(oldClient)
             }

@@ -1,6 +1,7 @@
 import { Observable, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { Range, TextDocument, TextDocumentItem } from 'vscode-languageserver-types'
+import { ConfigurationCascade } from '../protocol'
 import { Selection, URI } from '../types/textDocument'
 import { isEqual } from '../util'
 import { Extension } from './extension'
@@ -12,9 +13,9 @@ import { Extension } from './extension'
  * and support extension configuration.
  *
  * @template X extension type, to support storing additional properties on extensions
- * @template C settings type
+ * @template C configuration cascade type
  */
-export interface Environment<X extends Extension = Extension, C extends object = { [key: string]: any }> {
+export interface Environment<X extends Extension = Extension, C extends ConfigurationCascade = ConfigurationCascade> {
     /**
      * The root URI of the environment, or null if there is none (which means the extension is unable to access any
      * documents in the environment).
@@ -31,7 +32,7 @@ export interface Environment<X extends Extension = Extension, C extends object =
     /** The active extensions, or null if there are none. */
     readonly extensions: X[] | null
 
-    /** The configuration settings. */
+    /** The configuration cascade. */
     readonly configuration: C
 }
 
@@ -40,7 +41,7 @@ export const EMPTY_ENVIRONMENT: Environment<any, any> = {
     root: null,
     component: null,
     extensions: null,
-    configuration: {},
+    configuration: { merged: {} },
 }
 
 /** An application component that displays a [TextDocument](#TextDocument). */
@@ -64,9 +65,9 @@ export interface Component {
  * Includes derived observables for convenience.
  *
  * @template X extension type, to support storing additional properties on extensions
- * @template C settings type
+ * @template C configuration cascade type
  */
-export interface ObservableEnvironment<X extends Extension, C extends object> {
+export interface ObservableEnvironment<X extends Extension, C extends ConfigurationCascade> {
     /** The environment (and changes to it). */
     readonly environment: Observable<Environment<X, C>> & { readonly value: Environment<X, C> }
 
@@ -79,7 +80,7 @@ export interface ObservableEnvironment<X extends Extension, C extends object> {
     /** The active component's text document (and changes to it). */
     readonly textDocument: Observable<Pick<TextDocument, 'uri' | 'languageId'> | null>
 
-    /** The environment's configuration (and changes to it). */
+    /** The environment's configuration cascade (and changes to it). */
     readonly configuration: Observable<C>
 }
 
@@ -99,9 +100,9 @@ export const EMPTY_OBSERVABLE_ENVIRONMENT: ObservableEnvironment<any, any> = {
  * Helper function for creating an ObservableEnvironment from the raw environment Observable.
  *
  * @template X extension type
- * @template C settings type
+ * @template C configuration cascade type
  */
-export function createObservableEnvironment<X extends Extension, C extends object>(
+export function createObservableEnvironment<X extends Extension, C extends ConfigurationCascade>(
     environment: Observable<Environment<X, C>> & { readonly value: Environment<X, C> }
 ): ObservableEnvironment<X, C> {
     const component = environment.pipe(
