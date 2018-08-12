@@ -16,6 +16,7 @@ import { catchError, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import { Context } from '../context'
 import { Settings } from '../copypasta'
 import { asError, ErrorLike, isErrorLike } from '../errors'
+import { isExtensionEnabled } from '../extensions/extension'
 import { SourcegraphExtension } from '../schema/extension.schema'
 import { ConfigurationSubject } from '../settings'
 import { getSavedClientTrace } from './client'
@@ -25,7 +26,6 @@ import { getSavedClientTrace } from './client'
  * callback (to know how to communicate with or run the extension).
  */
 export interface CXPExtensionWithManifest extends Extension {
-    isEnabled: boolean
     manifest: SourcegraphExtension | null | ErrorLike
 }
 
@@ -33,12 +33,12 @@ export interface CXPExtensionWithManifest extends Extension {
  * React props or state containing the CXP controller. There should be only a single CXP controller for the whole
  * application.
  */
-export interface CXPControllerProps {
+export interface CXPControllerProps<C extends object = Settings> {
     /**
      * The CXP controller, which is used to communicate with the extensions and manages extensions based on the CXP
      * environment.
      */
-    cxpController: Controller<CXPExtensionWithManifest>
+    cxpController: Controller<CXPExtensionWithManifest, C>
 }
 
 interface CXPInitializationFailedHandler {
@@ -128,10 +128,12 @@ class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
 /**
  * Filter the environment to omit extensions that should not be activated (based on their manifest's
  * activationEvents).
+ *
+ * @template C settings type
  */
-function environmentFilter(
-    nextEnvironment: Environment<CXPExtensionWithManifest>
-): Environment<CXPExtensionWithManifest> {
+function environmentFilter<C extends Settings>(
+    nextEnvironment: Environment<CXPExtensionWithManifest, C>
+): Environment<CXPExtensionWithManifest, C> {
     return {
         ...nextEnvironment,
         extensions:
@@ -139,7 +141,7 @@ function environmentFilter(
             nextEnvironment.extensions.filter(x => {
                 try {
                     const component = nextEnvironment.component
-                    if (!x.isEnabled) {
+                    if (!isExtensionEnabled(nextEnvironment.configuration, x.id)) {
                         return false
                     } else if (!x.manifest) {
                         console.warn(
@@ -175,11 +177,11 @@ function environmentFilter(
  * It receives state updates via calls to the setEnvironment method from React components. It provides results to
  * React components via its registries and the showMessages, etc., observables.
  */
-export function createController<S extends ConfigurationSubject, C = Settings>(
+export function createController<S extends ConfigurationSubject, C extends object = Settings>(
     context: Context<S, C>,
     createMessageTransports: (extension: CXPExtensionWithManifest, options: ClientOptions) => Promise<MessageTransports>
-): Controller<CXPExtensionWithManifest> {
-    const controller = new Controller({
+): Controller<CXPExtensionWithManifest, C> {
+    const controller = new Controller<CXPExtensionWithManifest, C>({
         clientOptions: (key: ClientKey, options: ClientOptions, extension: CXPExtensionWithManifest) => {
             const errorHandler = new ErrorHandler(extension.id)
             return {

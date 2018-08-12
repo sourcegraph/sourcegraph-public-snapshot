@@ -11,7 +11,7 @@ import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
 export interface ActionItemProps {
     contribution: CommandContribution
-    variant?: 'toolbarItem'
+    variant?: 'actionItem'
     className?: string
 
     /** Called when the item's command is executed. */
@@ -68,8 +68,8 @@ export class ActionItem<S extends ConfigurationSubject, C = Settings> extends Re
 
     public componentDidUpdate(prevProps: Props<S, C>, prevState: State): void {
         // If the tooltip changes while it's visible, we need to force-update it to show the new value.
-        const prevTooltip = prevProps.contribution.toolbarItem && prevProps.contribution.toolbarItem.description
-        const tooltip = this.props.contribution.toolbarItem && this.props.contribution.toolbarItem.description
+        const prevTooltip = prevProps.contribution.actionItem && prevProps.contribution.actionItem.description
+        const tooltip = this.props.contribution.actionItem && this.props.contribution.actionItem.description
         if (prevTooltip !== tooltip) {
             this.props.extensions.context.forceUpdateTooltip()
         }
@@ -85,20 +85,20 @@ export class ActionItem<S extends ConfigurationSubject, C = Settings> extends Re
         if (this.props.title) {
             content = this.props.title
             tooltip = this.props.contribution.description
-        } else if (this.props.variant === 'toolbarItem' && this.props.contribution.toolbarItem) {
+        } else if (this.props.variant === 'actionItem' && this.props.contribution.actionItem) {
             content = (
                 <>
-                    {this.props.contribution.toolbarItem.iconURL && (
+                    {this.props.contribution.actionItem.iconURL && (
                         <img
-                            src={this.props.contribution.toolbarItem.iconURL}
-                            alt={this.props.contribution.toolbarItem.iconDescription}
+                            src={this.props.contribution.actionItem.iconURL}
+                            alt={this.props.contribution.actionItem.iconDescription}
                             className="icon-inline"
                         />
                     )}{' '}
-                    {this.props.contribution.toolbarItem.label}
+                    {this.props.contribution.actionItem.label}
                 </>
             )
-            tooltip = this.props.contribution.toolbarItem.description
+            tooltip = this.props.contribution.actionItem.description
         } else {
             content = (
                 <>

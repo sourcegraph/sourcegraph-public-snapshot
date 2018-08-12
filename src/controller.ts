@@ -3,7 +3,7 @@ import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
 import { Context } from './context'
 import { Settings } from './copypasta'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
-import { ConfiguredExtension, isExtensionAdded, isExtensionEnabled } from './extensions/extension'
+import { ConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent, GraphQLDocument } from './graphql'
 import { SourcegraphExtension } from './schema/extension.schema'
 import * as GQL from './schema/graphqlschema'
@@ -130,10 +130,8 @@ export class Controller<S extends ConfigurationSubject, C = Settings> {
                     const configuredExtensions: ConfiguredExtension[] = []
                     for (const extensionID of extensionIDs) {
                         const registryExtension = registryExtensions.find(x => x.extensionID === extensionID)
-                        const settingsProperties = toSettingsProperties(cascade, extensionID)
                         configuredExtensions.push({
-                            extensionID,
-                            ...settingsProperties,
+                            id: extensionID,
                             manifest:
                                 registryExtension && registryExtension.manifest
                                     ? parseJSONCOrError(registryExtension.manifest.raw)
@@ -157,8 +155,7 @@ export class Controller<S extends ConfigurationSubject, C = Settings> {
                 const configuredExtensions: ConfiguredExtension[] = []
                 for (const registryExtension of registryExtensions) {
                     configuredExtensions.push({
-                        extensionID: registryExtension.extensionID,
-                        ...toSettingsProperties(cascade, registryExtension.extensionID),
+                        id: registryExtension.extensionID,
                         manifest: registryExtension.manifest
                             ? parseJSONCOrError<SourcegraphExtension>(registryExtension.manifest.raw)
                             : null,
@@ -170,21 +167,5 @@ export class Controller<S extends ConfigurationSubject, C = Settings> {
                 return configuredExtensions
             })
         )
-    }
-}
-
-function toSettingsProperties(
-    cascade: ConfigurationCascade<ConfigurationSubject, Settings>,
-    extensionID: string
-): Pick<ConfiguredExtension, 'settings' | 'settingsCascade' | 'isEnabled' | 'isAdded'> {
-    const mergedSettings = cascade.merged
-    return {
-        settings: mergedSettings,
-        settingsCascade: cascade.subjects.map(({ subject, settings }) => ({
-            subject,
-            settings,
-        })),
-        isEnabled: !isErrorLike(mergedSettings) && isExtensionEnabled(mergedSettings, extensionID),
-        isAdded: !isErrorLike(mergedSettings) && isExtensionAdded(mergedSettings, extensionID),
     }
 }

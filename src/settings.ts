@@ -173,3 +173,10 @@ export function subjectLabel(subject: ConfigurationSubject): string {
             return subject.username
     }
 }
+
+/**
+ * React partial props for components needing the configuration cascade.
+ */
+export interface ConfigurationCascadeProps<S extends ConfigurationSubject, C = Settings> {
+    configurationCascade: ConfigurationCascade<S, C>
+}

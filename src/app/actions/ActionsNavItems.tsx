@@ -42,7 +42,7 @@ export class ActionsNavItems<S extends ConfigurationSubject, C = Settings> exten
                         <ActionItem
                             key={i}
                             {...item}
-                            variant="toolbarItem"
+                            variant="actionItem"
                             cxpController={this.props.cxpController}
                             extensions={this.props.extensions}
                         />

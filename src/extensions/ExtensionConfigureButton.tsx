@@ -8,6 +8,7 @@ import { ExtensionsProps } from '../context'
 import { Settings } from '../copypasta'
 import { asError, ErrorLike, isErrorLike } from '../errors'
 import {
+    ConfigurationCascadeProps,
     ConfigurationSubject,
     ConfiguredSubject,
     SUBJECT_TYPE_ORDER,
@@ -36,9 +37,9 @@ export class ExtensionConfiguredSubjectItemForConfigure<S extends ConfigurationS
                 to={this.props.item.subject.subject.settingsURL}
             >
                 <span className="mr-4">{subjectLabel(this.props.item.subject.subject)}</span>
-                {isExtensionAdded(this.props.item.subject.settings, this.props.item.extension.extensionID) &&
+                {isExtensionAdded(this.props.item.subject.settings, this.props.item.extension.id) &&
                     !isErrorLike(this.props.item.subject.settings) &&
-                    !isExtensionEnabled(this.props.item.subject.settings, this.props.item.extension.extensionID) && (
+                    !isExtensionEnabled(this.props.item.subject.settings, this.props.item.extension.id) && (
                         <small className="text-muted">Disabled</small>
                     )}
             </Link>
@@ -74,7 +75,7 @@ export class ExtensionConfiguredSubjectItemForAdd<S extends ConfigurationSubject
                     switchMap(() =>
                         this.props.extensions.context
                             .updateExtensionSettings(this.props.item.subject.subject.id, {
-                                extensionID: this.props.item.extension.extensionID,
+                                extensionID: this.props.item.extension.id,
                                 enabled: true,
                             })
                             .pipe(
@@ -96,7 +97,7 @@ export class ExtensionConfiguredSubjectItemForAdd<S extends ConfigurationSubject
     }
 
     public render(): JSX.Element | null {
-        const isAdded = isExtensionAdded(this.props.item.subject.settings, this.props.item.extension.extensionID)
+        const isAdded = isExtensionAdded(this.props.item.subject.settings, this.props.item.extension.id)
         return (
             <DropdownItem
                 className="dropdown-item d-flex justify-content-between align-items-center"
@@ -148,7 +149,7 @@ export class ExtensionConfiguredSubjectItemForRemove<S extends ConfigurationSubj
                     switchMap(() =>
                         this.props.extensions.context
                             .updateExtensionSettings(this.props.item.subject.subject.id, {
-                                extensionID: this.props.item.extension.extensionID,
+                                extensionID: this.props.item.extension.id,
                                 remove: true,
                             })
                             .pipe(
@@ -291,7 +292,7 @@ export function filterItems<S extends ConfigurationSubject>(
     })
 }
 
-interface Props<S extends ConfigurationSubject, C> extends ExtensionsProps<S, C> {
+interface Props<S extends ConfigurationSubject, C> extends ConfigurationCascadeProps<S, C>, ExtensionsProps<S, C> {
     /** The extension that this element is for. */
     extension: ConfiguredExtension
 
@@ -349,8 +350,8 @@ export class ExtensionConfigureButton<S extends ConfigurationSubject, C> extends
                         header={this.props.header}
                         itemComponent={this.props.itemComponent}
                         items={filterItems(
-                            this.props.extension.extensionID,
-                            this.props.extension.settingsCascade,
+                            this.props.extension.id,
+                            this.props.configurationCascade.subjects,
                             this.props.itemFilter
                         ).map(subject => ({
                             subject,

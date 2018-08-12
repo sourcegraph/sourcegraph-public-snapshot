@@ -1,8 +1,8 @@
+import { Extension } from 'cxp/module/environment/extension'
 import { Settings } from '../copypasta'
 import { ErrorLike } from '../errors'
 import { SourcegraphExtension } from '../schema/extension.schema'
 import * as GQL from '../schema/graphqlschema'
-import { ConfigurationSubject, ConfiguredSubject } from '../settings'
 
 /**
  * Describes a configured extension.
@@ -12,29 +12,11 @@ import { ConfigurationSubject, ConfiguredSubject } from '../settings'
  * @template RX the registry extension type
  */
 export interface ConfiguredExtension<
-    S extends ConfigurationSubject = ConfigurationSubject,
-    C extends { [key: string]: any } = Settings,
     RX extends Pick<GQL.IRegistryExtension, 'id' | 'url' | 'viewerCanAdminister'> = Pick<
         GQL.IRegistryExtension,
         'id' | 'url' | 'viewerCanAdminister'
     >
-> {
-    /** The ID of the extension, unique on a Sourcegraph site. */
-    extensionID: string
-
-    /** The merged settings for the extension for the viewer. */
-    settings: C | null // TODO(sqs): make this interface extend ConfigurationCascade<ExtensionSettings>
-    // TODO(sqs): make this also | ErrorLike maybe? unless we remove this field altogether
-
-    /** The settings for the extension at each level of the cascade. */
-    settingsCascade: ConfiguredSubject<S, C>[]
-
-    /** Whether the extension is enabled for the viewer. */
-    isEnabled: boolean
-
-    /** Whether the extension is added in the viewer's settings. */
-    isAdded: boolean
-
+> extends Extension {
     /** The parsed extension manifest, null if there is none, or a parse error. */
     manifest: SourcegraphExtension | null | ErrorLike
 
@@ -45,10 +27,12 @@ export interface ConfiguredExtension<
     registryExtension?: RX
 }
 
+/** Reports whether the given extension is enabled in the settings. */
 export function isExtensionEnabled(settings: Settings | null, extensionID: string): boolean {
     return !!settings && !!settings.extensions && !!settings.extensions[extensionID]
 }
 
+/** Reports whether the given extension is mentioned (enabled or disabled) in the settings. */
 export function isExtensionAdded(settings: Settings | null, extensionID: string): boolean {
     return !!settings && !!settings.extensions && extensionID in settings.extensions
 }

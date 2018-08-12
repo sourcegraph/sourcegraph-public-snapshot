@@ -1,13 +1,13 @@
 import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
+import { combineLatest, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsProps } from '../context'
 import { asError, ErrorLike, isErrorLike } from '../errors'
-import { ConfigurationSubject, ID } from '../settings'
+import { ConfigurationCascadeProps, ConfigurationSubject, ID } from '../settings'
 import { Toggle } from '../ui/generic/Toggle'
-import { ConfiguredExtension } from './extension'
+import { ConfiguredExtension, isExtensionEnabled } from './extension'
 
-interface Props<S extends ConfigurationSubject, C> extends ExtensionsProps<S, C> {
+interface Props<S extends ConfigurationSubject, C> extends ConfigurationCascadeProps<S, C>, ExtensionsProps<S, C> {
     extension: ConfiguredExtension
 
     /** The subject whose settings are edited when the user toggles enablement using this component. */
@@ -45,11 +45,18 @@ export class ExtensionEnablementToggle<S extends ConfigurationSubject, C> extend
     public componentDidMount(): void {
         const extensionChanges = this.componentUpdates.pipe(
             map(({ extension }) => extension),
-            distinctUntilChanged((a, b) => a.extensionID === b.extensionID && a.isEnabled === b.isEnabled)
+            distinctUntilChanged((a, b) => a.id === b.id)
         )
 
-        // Reset toggleOrError compensation for stale isEnabled value after we receive the new post-update value.
-        this.subscriptions.add(extensionChanges.subscribe(() => this.setState({ toggleOrError: null })))
+        const enablementChanges = combineLatest(
+            extensionChanges,
+            this.componentUpdates.pipe(
+                map(({ configurationCascade }) => configurationCascade && configurationCascade.merged)
+            )
+        ).pipe(map(([extension, settings]) => isExtensionEnabled(settings, extension.id)))
+
+        // Reset toggleOrError compensation for stale enablement after we receive the new post-update value.
+        this.subscriptions.add(enablementChanges.subscribe(() => this.setState({ toggleOrError: null })))
 
         this.subscriptions.add(
             this.toggles
@@ -57,7 +64,7 @@ export class ExtensionEnablementToggle<S extends ConfigurationSubject, C> extend
                     switchMap(enabled =>
                         this.props.extensions.context
                             .updateExtensionSettings(this.props.subject, {
-                                extensionID: this.props.extension.extensionID,
+                                extensionID: this.props.extension.id,
                                 enabled,
                             })
                             .pipe(
@@ -90,8 +97,9 @@ export class ExtensionEnablementToggle<S extends ConfigurationSubject, C> extend
             return null
         }
 
-        const isEnabled =
-            this.state.toggleOrError === LOADING ? !this.props.extension.isEnabled : this.props.extension.isEnabled
+        // Invert extension enablement if we changed the value but the change hasn't yet been synced to the server.
+        const unadjustedIsEnabled = isExtensionEnabled(this.props.configurationCascade.merged, this.props.extension.id)
+        const isEnabled = this.state.toggleOrError === LOADING ? !unadjustedIsEnabled : unadjustedIsEnabled
 
         return (
             <div className="d-flex align-items-center">

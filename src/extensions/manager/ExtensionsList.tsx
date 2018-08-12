@@ -16,7 +16,7 @@ import { ExtensionsProps } from '../../context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../errors'
 import { gql, graphQLContent } from '../../graphql'
 import * as GQL from '../../schema/graphqlschema'
-import { ConfigurationSubject, ID } from '../../settings'
+import { ConfigurationCascadeProps, ConfigurationSubject, ID } from '../../settings'
 import { ConfiguredExtension } from '../extension'
 import { ExtensionCard } from './ExtensionCard'
 
@@ -57,7 +57,7 @@ export const registryExtensionFragment = gql`
 `
 
 interface Props<S extends ConfigurationSubject, C>
-    extends ExtensionsProps<S, C>,
+    extends ConfigurationCascadeProps<S, C>,
         ExtensionsProps<S, C>,
         RouteComponentProps<{}> {
     subject: ID
@@ -228,6 +228,7 @@ export class ExtensionsList<S extends ConfigurationSubject, C> extends React.Pur
                                         subject={this.props.subject}
                                         node={e}
                                         onDidUpdate={this.onDidUpdateExtension}
+                                        configurationCascade={this.props.configurationCascade}
                                         extensions={this.props.extensions}
                                     />
                                 ))}
@@ -267,7 +268,7 @@ export class ExtensionsList<S extends ConfigurationSubject, C> extends React.Pur
                         `[graphQLContent],
                         {
                             ...args,
-                            prioritizeExtensionIDs: viewerExtensions.map(({ extensionID }) => extensionID),
+                            prioritizeExtensionIDs: viewerExtensions.map(({ id }) => id),
                         } as GQL.IExtensionsOnExtensionRegistryArguments
                     )
                     .pipe(

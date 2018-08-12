@@ -61,7 +61,7 @@ export interface Context<S extends ConfigurationSubject, C = Settings> {
 }
 
 /**
- * React partial props for components needing the ExtensionsController.
+ * React partial props for components needing the extensions controller.
  */
 export interface ExtensionsProps<S extends ConfigurationSubject, C = Settings> {
     extensions: Controller<S, C>

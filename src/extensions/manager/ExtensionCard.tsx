@@ -2,9 +2,9 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsProps } from '../../context'
 import { isErrorLike } from '../../errors'
-import { ConfigurationSubject, ID } from '../../settings'
+import { ConfigurationCascadeProps, ConfigurationSubject, ID } from '../../settings'
 import { LinkOrSpan } from '../../ui/generic/LinkOrSpan'
-import { ConfiguredExtension } from '../extension'
+import { ConfiguredExtension, isExtensionAdded, isExtensionEnabled } from '../extension'
 import {
     ADDED_AND_CAN_ADMINISTER,
     ALL_CAN_ADMINISTER,
@@ -14,7 +14,7 @@ import {
 } from '../ExtensionConfigureButton'
 import { ExtensionEnablementToggle } from '../ExtensionEnablementToggle'
 
-interface Props<S extends ConfigurationSubject, C> extends ExtensionsProps<S, C> {
+interface Props<S extends ConfigurationSubject, C> extends ConfigurationCascadeProps<S, C>, ExtensionsProps<S, C> {
     node: ConfiguredExtension
     subject: ID
     onDidUpdate: () => void
@@ -34,7 +34,7 @@ export class ExtensionCard<S extends ConfigurationSubject, C> extends React.Pure
                         <h4 className="card-title extension-card-body-title mb-0">
                             {node.manifest && !isErrorLike(node.manifest) && node.manifest.title
                                 ? node.manifest.title
-                                : node.extensionID}
+                                : node.id}
                         </h4>
                         <div className="extension-card-body-text d-inline-block mt-1">
                             {node.manifest ? (
@@ -68,8 +68,8 @@ export class ExtensionCard<S extends ConfigurationSubject, C> extends React.Pure
                             <li className="extension-card-spacer" />
                             {props.subject && (
                                 <>
-                                    {node.isAdded &&
-                                        !node.isEnabled && (
+                                    {isExtensionAdded(props.configurationCascade.merged, node.id) &&
+                                        !isExtensionEnabled(props.configurationCascade.merged, node.id) && (
                                             <li className="nav-item">
                                                 <ExtensionConfigureButton
                                                     extension={node}
@@ -79,24 +79,26 @@ export class ExtensionCard<S extends ConfigurationSubject, C> extends React.Pure
                                                     itemComponent={ExtensionConfiguredSubjectItemForRemove}
                                                     buttonClassName="btn-outline-link btn-sm py-0 mr-1"
                                                     caret={false}
+                                                    configurationCascade={this.props.configurationCascade}
                                                     extensions={this.props.extensions}
                                                 >
                                                     Remove
                                                 </ExtensionConfigureButton>
                                             </li>
                                         )}
-                                    {node.isAdded && (
+                                    {isExtensionAdded(props.configurationCascade.merged, node.id) && (
                                         <li className="nav-item">
                                             <ExtensionEnablementToggle
                                                 extension={node}
                                                 subject={props.subject}
                                                 onChange={props.onDidUpdate}
                                                 tabIndex={-1}
+                                                configurationCascade={this.props.configurationCascade}
                                                 extensions={this.props.extensions}
                                             />
                                         </li>
                                     )}
-                                    {!node.isAdded && (
+                                    {!isExtensionAdded(props.configurationCascade.merged, node.id) && (
                                         <li className="nav-item">
                                             <ExtensionConfigureButton
                                                 extension={node}
@@ -106,6 +108,7 @@ export class ExtensionCard<S extends ConfigurationSubject, C> extends React.Pure
                                                 itemComponent={ExtensionConfiguredSubjectItemForAdd}
                                                 buttonClassName="btn-primary btn-sm"
                                                 caret={false}
+                                                configurationCascade={this.props.configurationCascade}
                                                 extensions={this.props.extensions}
                                             >
                                                 Add
