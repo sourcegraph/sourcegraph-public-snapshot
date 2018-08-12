@@ -134,28 +134,28 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
 		var params struct {
-			Settings struct {
+			ConfigurationCascade struct {
 				Merged extensionSettings `json:"merged"`
-			} `json:"settings"`
+			} `json:"configurationCascade"`
 		}
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
-		if reflect.DeepEqual(settings, params.Settings.Merged) {
+		if reflect.DeepEqual(settings, params.ConfigurationCascade.Merged) {
 			// Nothing to do; we already have the latest settings.
 			return nil, nil
 		}
 
 		h.mu.Lock()
-		h.settings = params.Settings.Merged
+		h.settings = params.ConfigurationCascade.Merged
 		h.mu.Unlock()
 
-		if err := h.publishDecorations(ctx, conn, params.Settings.Merged); err != nil {
+		if err := h.publishDecorations(ctx, conn, params.ConfigurationCascade.Merged); err != nil {
 			return nil, errors.WithMessage(err, "publish decorations")
 		}
 
 		if !registeredContributions {
-			if err := registerContributions(ctx, conn, params.Settings.Merged, registeredContributions); err != nil {
+			if err := registerContributions(ctx, conn, params.ConfigurationCascade.Merged, registeredContributions); err != nil {
 				return nil, errors.WithMessage(err, "publish contributions")
 			}
 			h.mu.Lock()

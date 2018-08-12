@@ -138,18 +138,18 @@ func (h *handler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
 		var params struct {
-			Settings struct {
+			ConfigurationCascade struct {
 				Merged extensionSettings `json:"merged"`
-			} `json:"settings"`
+			} `json:"configurationCascade"`
 		}
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
 		h.mu.Lock()
-		h.settings = params.Settings.Merged
+		h.settings = params.ConfigurationCascade.Merged
 		h.mu.Unlock()
 
-		if err := publishDecorationsForOpenDocuments(ctx, conn, clientCap, params.Settings.Merged, rootURI, openDocuments); err != nil {
+		if err := publishDecorationsForOpenDocuments(ctx, conn, clientCap, params.ConfigurationCascade.Merged, rootURI, openDocuments); err != nil {
 			log.Printf("Error getting decorations after configuration change: %s.", err)
 		}
 		return nil, nil
