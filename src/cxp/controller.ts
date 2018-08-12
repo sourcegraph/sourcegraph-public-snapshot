@@ -15,9 +15,8 @@ import { InitializeError } from 'cxp/module/protocol'
 import { catchError, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import { Context } from '../context'
 import { Settings } from '../copypasta'
-import { asError, ErrorLike, isErrorLike } from '../errors'
-import { isExtensionEnabled } from '../extensions/extension'
-import { SourcegraphExtension } from '../schema/extension.schema'
+import { asError, isErrorLike } from '../errors'
+import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
 import { ConfigurationSubject } from '../settings'
 import { getSavedClientTrace } from './client'
 
@@ -25,9 +24,7 @@ import { getSavedClientTrace } from './client'
  * Adds the manifest to CXP extensions in the CXP environment, so we can consult it in the createMessageTransports
  * callback (to know how to communicate with or run the extension).
  */
-export interface CXPExtensionWithManifest extends Extension {
-    manifest: SourcegraphExtension | null | ErrorLike
-}
+interface ExtensionWithManifest extends Extension, Pick<ConfiguredExtension, 'manifest'> {}
 
 /**
  * React props or state containing the CXP controller. There should be only a single CXP controller for the whole
@@ -38,7 +35,7 @@ export interface CXPControllerProps<C extends object = Settings> {
      * The CXP controller, which is used to communicate with the extensions and manages extensions based on the CXP
      * environment.
      */
-    cxpController: Controller<CXPExtensionWithManifest, C>
+    cxpController: Controller<ExtensionWithManifest, C>
 }
 
 interface CXPInitializationFailedHandler {
@@ -132,8 +129,8 @@ class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
  * @template C settings type
  */
 function environmentFilter<C extends Settings>(
-    nextEnvironment: Environment<CXPExtensionWithManifest, C>
-): Environment<CXPExtensionWithManifest, C> {
+    nextEnvironment: Environment<ExtensionWithManifest, C>
+): Environment<ExtensionWithManifest, C> {
     return {
         ...nextEnvironment,
         extensions:
@@ -179,10 +176,10 @@ function environmentFilter<C extends Settings>(
  */
 export function createController<S extends ConfigurationSubject, C extends object = Settings>(
     context: Context<S, C>,
-    createMessageTransports: (extension: CXPExtensionWithManifest, options: ClientOptions) => Promise<MessageTransports>
-): Controller<CXPExtensionWithManifest, C> {
-    const controller = new Controller<CXPExtensionWithManifest, C>({
-        clientOptions: (key: ClientKey, options: ClientOptions, extension: CXPExtensionWithManifest) => {
+    createMessageTransports: (extension: ExtensionWithManifest, options: ClientOptions) => Promise<MessageTransports>
+): Controller<ExtensionWithManifest, C> {
+    const controller = new Controller<ExtensionWithManifest, C>({
+        clientOptions: (key: ClientKey, options: ClientOptions, extension: ExtensionWithManifest) => {
             const errorHandler = new ErrorHandler(extension.id)
             return {
                 createMessageTransports: () => createMessageTransports(extension, options),

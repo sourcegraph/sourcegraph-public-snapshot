@@ -20,7 +20,7 @@ export interface ConfiguredExtension<
     /** The parsed extension manifest, null if there is none, or a parse error. */
     manifest: SourcegraphExtension | null | ErrorLike
 
-    /** The raw extension manifest (JSON), or null if there is none.. */
+    /** The raw extension manifest (JSON), or null if there is none. */
     rawManifest: string | null
 
     /** The corresponding extension on the registry, if any. */
