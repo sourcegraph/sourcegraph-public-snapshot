@@ -3,12 +3,12 @@ import { Observable } from 'rxjs'
 import { Controller } from './controller'
 import { QueryResult } from './graphql'
 import * as GQL from './schema/graphqlschema'
-import { ConfigurationCascade, ConfigurationSubject, ID } from './settings'
+import { ConfigurationCascade, ConfigurationSubject, ID, Settings } from './settings'
 
 /**
  * Description of the context in which extensions-client-common is running, and platform-specific hooks.
  */
-export interface Context<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> {
+export interface Context<S extends ConfigurationSubject, C extends Settings> {
     /**
      * An observable that emits whenever the configuration cascade changes (including when any individual subject's
      * settings change).

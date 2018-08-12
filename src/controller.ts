@@ -13,7 +13,7 @@ import { parseJSONCOrError } from './util'
  * A controller that exposes functionality for a configuration cascade and querying extensions from the remote
  * registry.
  */
-export class Controller<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> {
+export class Controller<S extends ConfigurationSubject, C extends Settings> {
     public static readonly LOADING: 'loading' = 'loading'
 
     constructor(public readonly context: Context<S, C>) {}
