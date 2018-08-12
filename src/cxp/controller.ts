@@ -141,9 +141,7 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
                         return false
                     } else if (!x.manifest) {
                         console.warn(
-                            `Extension ${
-                                x.id
-                            } was not found on your primary Sourcegraph instance so it will not be activated.`
+                            `Extension ${x.id} was not found. Remove it from settings to suppress this warning.`
                         )
                         return false
                     } else if (isErrorLike(x.manifest)) {
