@@ -1,10 +1,10 @@
 import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
-import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { CaretDown } from '@sourcegraph/icons/lib/CaretDown'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as React from 'react'
 import * as GQL from '../backend/graphqlschema'
 import { CXPEnvironmentProps } from '../cxp/CXPEnvironment'
+import { CXPControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { platformEnabled } from '../user/tags'
 
 interface Props extends CXPEnvironmentProps, CXPControllerProps {

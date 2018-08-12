@@ -1,12 +1,13 @@
 import { ExtensionsProps as GenericExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
-import { Settings } from '@sourcegraph/extensions-client-common/lib/copypasta'
+import { CXPControllerProps as GenericCXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { importScriptsBlobURL } from '@sourcegraph/extensions-client-common/lib/cxp/webWorker'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
     ConfigurationCascadeProps as GenericConfigurationCascadeProps,
     ConfigurationSubject,
     gqlToCascade,
+    Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import CaretDown from '@sourcegraph/icons/lib/CaretDown'
 import Loader from '@sourcegraph/icons/lib/Loader'
@@ -28,12 +29,14 @@ import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
 import { isErrorLike } from '../util/errors'
 
+export interface CXPControllerProps extends GenericCXPControllerProps<ConfigurationSubject, Settings> {}
+
 export interface ConfigurationCascadeProps extends GenericConfigurationCascadeProps<ConfigurationSubject, Settings> {}
 
-export interface ExtensionsProps extends GenericExtensionsProps<ConfigurationSubject> {}
+export interface ExtensionsProps extends GenericExtensionsProps<ConfigurationSubject, Settings> {}
 
-export function createExtensionsContextController(): ExtensionsContextController<ConfigurationSubject> {
-    return new ExtensionsContextController<ConfigurationSubject>({
+export function createExtensionsContextController(): ExtensionsContextController<ConfigurationSubject, Settings> {
+    return new ExtensionsContextController<ConfigurationSubject, Settings>({
         configurationCascade: configurationCascade.pipe(
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))

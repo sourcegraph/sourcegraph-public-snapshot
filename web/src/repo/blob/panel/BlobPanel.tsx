@@ -1,4 +1,3 @@
-import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import { highlight } from 'highlight.js/lib/highlight'
@@ -33,7 +32,7 @@ import {
 } from '../../../backend/features'
 import * as GQL from '../../../backend/graphqlschema'
 import { fetchServerCapabilities, isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
-import { ExtensionsProps } from '../../../extensions/ExtensionsClientCommonContext'
+import { CXPControllerProps, ExtensionsProps } from '../../../extensions/ExtensionsClientCommonContext'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'

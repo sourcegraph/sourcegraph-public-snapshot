@@ -1,4 +1,3 @@
-import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { TextDocumentDecoration } from 'cxp/module/protocol'
 import { HoverMerged } from 'cxp/module/types/hover'
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
@@ -7,6 +6,7 @@ import { forkJoin, Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Definition, Location } from 'vscode-languageserver-types'
 import { USE_PLATFORM } from '../cxp/CXPEnvironment'
+import { CXPControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import {

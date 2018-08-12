@@ -33,13 +33,13 @@ registerLanguage('ruby', require('highlight.js/lib/languages/ruby'))
 registerLanguage('rust', require('highlight.js/lib/languages/rust'))
 registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
-import { Settings } from '@sourcegraph/extensions-client-common/lib/copypasta'
-import {
-    createController as createCXPController,
-    CXPControllerProps,
-} from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { createController as createCXPController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { ConfigurationCascade, ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
+import {
+    ConfigurationCascade,
+    ConfigurationSubject,
+    Settings,
+} from '@sourcegraph/extensions-client-common/lib/settings'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import {
@@ -64,6 +64,7 @@ import { LinkExtension } from './extension/Link'
 import {
     ConfigurationCascadeProps,
     createMessageTransports,
+    CXPControllerProps,
     ExtensionsProps,
 } from './extensions/ExtensionsClientCommonContext'
 import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
@@ -75,6 +76,7 @@ import { GlobalNavbar } from './nav/GlobalNavbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { eventLogger } from './tracking/eventLogger'
+import { isErrorLike } from './util/errors'
 
 interface LayoutProps
     extends RouteComponentProps<any>,
@@ -329,13 +331,22 @@ class App extends React.Component<{}, AppState> {
         configurationCascade: ConfigurationCascade<ConfigurationSubject, Settings>
     ): void {
         this.setState(
-            prevState => ({
-                configurationCascade,
-                cxpEnvironment: {
-                    ...prevState.cxpEnvironment,
-                    configuration: configurationCascade,
-                },
-            }),
+            prevState => {
+                const update: Pick<AppState, 'configurationCascade' | 'cxpEnvironment'> = {
+                    configurationCascade,
+                    cxpEnvironment: prevState.cxpEnvironment,
+                }
+                if (configurationCascade.merged !== null && !isErrorLike(configurationCascade.merged)) {
+                    // Only update CXP environment configuration if the configuration was successfully parsed.
+                    //
+                    // TODO(sqs): Think through how this error should be handled.
+                    update.cxpEnvironment = {
+                        ...prevState.cxpEnvironment,
+                        configuration: configurationCascade,
+                    }
+                }
+                return update
+            },
             () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
         )
     }

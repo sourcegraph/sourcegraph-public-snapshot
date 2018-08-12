@@ -1,6 +1,5 @@
 import { ActionItem } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsContainer'
-import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import BookClosedIcon from '@sourcegraph/icons/lib/BookClosed'
 import CloseIcon from '@sourcegraph/icons/lib/Close'
 import DraftsIcon from '@sourcegraph/icons/lib/Drafts'
@@ -13,7 +12,7 @@ import { fromEvent, merge, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 import { USE_PLATFORM } from '../cxp/CXPEnvironment'
-import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { CXPControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 
 interface Props extends CXPControllerProps, ExtensionsProps {
     onDismiss: () => void

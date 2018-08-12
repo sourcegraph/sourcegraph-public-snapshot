@@ -7,7 +7,6 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
-import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { TextDocumentDecoration } from 'cxp/module/protocol'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
@@ -21,7 +20,7 @@ import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/fe
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { CXPComponent, CXPComponentProps } from '../../cxp/CXPComponent'
 import { USE_PLATFORM } from '../../cxp/CXPEnvironment'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { CXPControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'

@@ -6,7 +6,6 @@ import {
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
-import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
@@ -20,7 +19,7 @@ import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { CXPControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
