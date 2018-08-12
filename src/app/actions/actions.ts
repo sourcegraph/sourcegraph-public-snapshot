@@ -1,11 +1,10 @@
 import { ContributableMenu, Contributions } from 'cxp/module/protocol'
 import { ExtensionsProps } from '../../context'
-import { Settings } from '../../copypasta'
 import { CXPControllerProps } from '../../cxp/controller'
-import { ConfigurationSubject } from '../../settings'
+import { ConfigurationCascade, ConfigurationSubject } from '../../settings'
 
-export interface ActionsProps<S extends ConfigurationSubject, C = Settings>
-    extends CXPControllerProps,
+export interface ActionsProps<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>
+    extends CXPControllerProps<S, C>,
         ExtensionsProps<S, C> {
     menu: ContributableMenu
 }

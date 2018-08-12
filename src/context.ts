@@ -1,7 +1,6 @@
 import { ConfigurationUpdateParams } from 'cxp/module/protocol'
 import { Observable } from 'rxjs'
 import { Controller } from './controller'
-import { Settings } from './copypasta'
 import { QueryResult } from './graphql'
 import * as GQL from './schema/graphqlschema'
 import { ConfigurationCascade, ConfigurationSubject, ID } from './settings'
@@ -9,7 +8,7 @@ import { ConfigurationCascade, ConfigurationSubject, ID } from './settings'
 /**
  * Description of the context in which extensions-client-common is running, and platform-specific hooks.
  */
-export interface Context<S extends ConfigurationSubject, C = Settings> {
+export interface Context<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> {
     /**
      * An observable that emits whenever the configuration cascade changes (including when any individual subject's
      * settings change).
@@ -63,6 +62,6 @@ export interface Context<S extends ConfigurationSubject, C = Settings> {
 /**
  * React partial props for components needing the extensions controller.
  */
-export interface ExtensionsProps<S extends ConfigurationSubject, C = Settings> {
+export interface ExtensionsProps<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> {
     extensions: Controller<S, C>
 }

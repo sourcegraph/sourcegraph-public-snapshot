@@ -1,6 +1,5 @@
 import assert from 'assert'
 import { cloneDeep } from 'lodash-es'
-import { Settings } from './copypasta'
 import { createAggregateError, ErrorLike, isErrorLike } from './errors'
 import {
     ConfigurationCascade,
@@ -9,6 +8,7 @@ import {
     gqlToCascade,
     merge,
     mergeSettings,
+    Settings,
     SubjectConfigurationContents,
 } from './settings'
 

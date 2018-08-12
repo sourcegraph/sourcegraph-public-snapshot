@@ -1,8 +1,8 @@
 import { Extension } from 'cxp/module/environment/extension'
-import { Settings } from '../copypasta'
 import { ErrorLike } from '../errors'
 import { SourcegraphExtension } from '../schema/extension.schema'
 import * as GQL from '../schema/graphqlschema'
+import { Settings } from '../settings'
 
 /**
  * Describes a configured extension.

@@ -1,5 +1,4 @@
 import { cloneDeep, isFunction, isPlainObject } from 'lodash-es'
-import { Settings } from './copypasta'
 import { createAggregateError, ErrorLike, isErrorLike } from './errors'
 import * as GQL from './schema/graphqlschema'
 import { parseJSONCOrError } from './util'
@@ -9,6 +8,14 @@ export type ID = string
 export interface IClient {
     __typename: 'Client'
     displayName: string
+}
+
+/**
+ * A subset of the settings JSON Schema type containing the minimum needed by this library.
+ */
+export interface Settings {
+    extensions?: { [extensionID: string]: boolean }
+    [key: string]: any
 }
 
 /**
@@ -29,7 +36,7 @@ export type ConfigurationSubject = Pick<GQL.IConfigurationSubject, 'id' | 'setti
  * @template S the configuration subject type
  * @template C the settings type
  */
-export interface ConfigurationCascade<S extends ConfigurationSubject, C = Settings> {
+export interface ConfigurationCascade<S extends ConfigurationSubject, C extends Settings = Settings> {
     /**
      * The settings for each subject in the cascade, from lowest to highest precedence.
      */
@@ -49,7 +56,7 @@ export interface ConfigurationCascade<S extends ConfigurationSubject, C = Settin
  * @template S the configuration subject type
  * @template C the settings type
  */
-export interface ConfiguredSubject<S extends ConfigurationSubject, C = Settings> {
+export interface ConfiguredSubject<S extends ConfigurationSubject, C extends Settings = Settings> {
     /** The subject. */
     subject: S
 
@@ -70,7 +77,7 @@ export interface SubjectConfigurationContents {
 }
 
 /** Converts a GraphQL ConfigurationCascade value to a value of this library's ConfigurationCascade type. */
-export function gqlToCascade<S extends ConfigurationSubject, C = Settings>({
+export function gqlToCascade<S extends ConfigurationSubject, C extends Settings>({
     subjects,
 }: {
     subjects: (S & SubjectConfigurationContents)[]
@@ -177,6 +184,6 @@ export function subjectLabel(subject: ConfigurationSubject): string {
 /**
  * React partial props for components needing the configuration cascade.
  */
-export interface ConfigurationCascadeProps<S extends ConfigurationSubject, C = Settings> {
+export interface ConfigurationCascadeProps<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> {
     configurationCascade: ConfigurationCascade<S, C>
 }

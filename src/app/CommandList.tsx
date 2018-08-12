@@ -1,18 +1,19 @@
 import { ContributableMenu, Contributions } from 'cxp/module/protocol'
-import { Subscription } from 'rxjs'
 import * as React from 'react'
+import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 import { ExtensionsProps } from '../context'
-import { Settings } from '../copypasta'
 import { CXPControllerProps } from '../cxp/controller'
-import { ConfigurationSubject } from '../settings'
+import { ConfigurationCascade, ConfigurationSubject } from '../settings'
 import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 import { ActionItem, ActionItemProps } from './actions/ActionItem'
 import { getContributedActionItems } from './actions/contributions'
 
-interface Props<S extends ConfigurationSubject, C = Settings> extends CXPControllerProps, ExtensionsProps<S, C> {
+interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>
+    extends CXPControllerProps<S, C>,
+        ExtensionsProps<S, C> {
     /** The menu whose commands to display. */
     menu: ContributableMenu
 
@@ -29,7 +30,10 @@ interface State {
 }
 
 /** Displays a list of commands contributed by CXP extensions for a specific menu. */
-export class CommandList<S extends ConfigurationSubject, C = Settings> extends React.PureComponent<Props<S, C>, State> {
+export class CommandList<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> extends React.PureComponent<
+    Props<S, C>,
+    State
+> {
     public state: State = { input: '', selectedIndex: 0 }
 
     private subscriptions = new Subscription()
@@ -175,10 +179,10 @@ function filterAndRankItems(allItems: ActionItemProps[], query: string): ActionI
         .map(({ item }) => item)
 }
 
-export class CommandListPopoverButton<S extends ConfigurationSubject, C = Settings> extends React.PureComponent<
-    Props<S, C>,
-    { hideOnChange?: any }
-> {
+export class CommandListPopoverButton<
+    S extends ConfigurationSubject,
+    C extends ConfigurationCascade<S>
+> extends React.PureComponent<Props<S, C>, { hideOnChange?: any }> {
     public state: { hideOnChange?: any } = {}
 
     public render(): JSX.Element | null {

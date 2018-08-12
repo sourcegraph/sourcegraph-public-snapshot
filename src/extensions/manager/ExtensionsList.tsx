@@ -16,7 +16,7 @@ import { ExtensionsProps } from '../../context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../errors'
 import { gql, graphQLContent } from '../../graphql'
 import * as GQL from '../../schema/graphqlschema'
-import { ConfigurationCascadeProps, ConfigurationSubject, ID } from '../../settings'
+import { ConfigurationCascade, ConfigurationCascadeProps, ConfigurationSubject, ID } from '../../settings'
 import { ConfiguredExtension } from '../extension'
 import { ExtensionCard } from './ExtensionCard'
 
@@ -56,7 +56,7 @@ export const registryExtensionFragment = gql`
     }
 `
 
-interface Props<S extends ConfigurationSubject, C>
+interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>
     extends ConfigurationCascadeProps<S, C>,
         ExtensionsProps<S, C>,
         RouteComponentProps<{}> {
@@ -91,7 +91,10 @@ interface State {
 /**
  * Displays a list of all extensions used by a configuration subject.
  */
-export class ExtensionsList<S extends ConfigurationSubject, C> extends React.PureComponent<Props<S, C>, State> {
+export class ExtensionsList<
+    S extends ConfigurationSubject,
+    C extends ConfigurationCascade<S>
+> extends React.PureComponent<Props<S, C>, State> {
     private static URL_QUERY_PARAM = 'query'
 
     private updates = new Subject<void>()

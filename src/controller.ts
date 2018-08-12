@@ -1,20 +1,19 @@
 import { combineLatest, Observable, of, throwError } from 'rxjs'
 import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
 import { Context } from './context'
-import { Settings } from './copypasta'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
 import { ConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent, GraphQLDocument } from './graphql'
 import { SourcegraphExtension } from './schema/extension.schema'
 import * as GQL from './schema/graphqlschema'
-import { ConfigurationCascade, ConfigurationSubject } from './settings'
+import { ConfigurationCascade, ConfigurationSubject, Settings } from './settings'
 import { parseJSONCOrError } from './util'
 
 /**
  * A controller that exposes functionality for a configuration cascade and querying extensions from the remote
  * registry.
  */
-export class Controller<S extends ConfigurationSubject, C = Settings> {
+export class Controller<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> {
     public static readonly LOADING: 'loading' = 'loading'
 
     constructor(public readonly context: Context<S, C>) {}

@@ -3,10 +3,9 @@ import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 import { ExtensionsProps } from '../../context'
-import { Settings } from '../../copypasta'
 import { CXPControllerProps } from '../../cxp/controller'
 import { asError, ErrorLike } from '../../errors'
-import { ConfigurationSubject } from '../../settings'
+import { ConfigurationCascade, ConfigurationSubject } from '../../settings'
 import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
 export interface ActionItemProps {
@@ -26,9 +25,9 @@ export interface ActionItemProps {
     title?: React.ReactElement<any>
 }
 
-interface Props<S extends ConfigurationSubject, C = Settings>
+interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>
     extends ActionItemProps,
-        CXPControllerProps,
+        CXPControllerProps<S, C>,
         ExtensionsProps<S, C> {}
 
 const LOADING: 'loading' = 'loading'
@@ -38,7 +37,10 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
-export class ActionItem<S extends ConfigurationSubject, C = Settings> extends React.PureComponent<Props<S, C>, State> {
+export class ActionItem<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> extends React.PureComponent<
+    Props<S, C>,
+    State
+> {
     public state: State = { actionOrError: null }
 
     private commandExecutions = new Subject<ExecuteCommandParams>()

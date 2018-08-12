@@ -5,12 +5,13 @@ import DropdownItem from 'reactstrap/lib/DropdownItem'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsProps } from '../context'
-import { Settings } from '../copypasta'
 import { asError, ErrorLike, isErrorLike } from '../errors'
 import {
+    ConfigurationCascade,
     ConfigurationCascadeProps,
     ConfigurationSubject,
     ConfiguredSubject,
+    Settings,
     SUBJECT_TYPE_ORDER,
     subjectLabel,
     subjectTypeHeader,
@@ -23,7 +24,10 @@ interface ExtensionConfiguredSubject {
 }
 
 /** A dropdown menu item for a extension-subject item that links to the subject's settings.  */
-export class ExtensionConfiguredSubjectItemForConfigure<S extends ConfigurationSubject, C> extends React.PureComponent<
+export class ExtensionConfiguredSubjectItemForConfigure<
+    S extends ConfigurationSubject,
+    C extends ConfigurationCascade<S>
+> extends React.PureComponent<
     {
         item: ExtensionConfiguredSubject
         onUpdate: () => void
@@ -55,7 +59,10 @@ interface ExtensionConfiguredSubjectItemForAddState {
 }
 
 /** A dropdown menu item for a extension-subject item that adds the extension to the subject's settings.  */
-export class ExtensionConfiguredSubjectItemForAdd<S extends ConfigurationSubject, C> extends React.PureComponent<
+export class ExtensionConfiguredSubjectItemForAdd<
+    S extends ConfigurationSubject,
+    C extends ConfigurationCascade<S>
+> extends React.PureComponent<
     {
         item: ExtensionConfiguredSubject
         onUpdate: () => void
@@ -129,7 +136,10 @@ interface ExtensionConfiguredSubjectItemForRemoveState {
 }
 
 /** A dropdown menu item for a extension-subject item that removes the extension from the subject's settings.  */
-export class ExtensionConfiguredSubjectItemForRemove<S extends ConfigurationSubject, C> extends React.PureComponent<
+export class ExtensionConfiguredSubjectItemForRemove<
+    S extends ConfigurationSubject,
+    C extends ConfigurationCascade<S>
+> extends React.PureComponent<
     {
         item: ExtensionConfiguredSubject
         onUpdate: () => void
@@ -194,7 +204,10 @@ export class ExtensionConfiguredSubjectItemForRemove<S extends ConfigurationSubj
     }
 }
 
-class ExtensionConfigurationSubjectsDropdownItems<S extends ConfigurationSubject, C> extends React.PureComponent<
+class ExtensionConfigurationSubjectsDropdownItems<
+    S extends ConfigurationSubject,
+    C extends ConfigurationCascade<S>
+> extends React.PureComponent<
     {
         items: ExtensionConfiguredSubject[]
 
@@ -245,7 +258,9 @@ class ExtensionConfigurationSubjectsDropdownItems<S extends ConfigurationSubject
                         <React.Fragment key={i}>
                             {neededDivider && <DropdownItem divider={true} />}
                             {headerLabel && <DropdownItem header={true}>{headerLabel}</DropdownItem>}
-                            {items.map((item, i) => <Item key={i} item={item} {...props} />)}
+                            {items.map((item, i) => (
+                                <Item key={i} item={item} {...props} />
+                            ))}
                         </React.Fragment>
                     )
                 })}
@@ -292,7 +307,9 @@ export function filterItems<S extends ConfigurationSubject>(
     })
 }
 
-interface Props<S extends ConfigurationSubject, C> extends ConfigurationCascadeProps<S, C>, ExtensionsProps<S, C> {
+interface Props<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>
+    extends ConfigurationCascadeProps<S, C>,
+        ExtensionsProps<S, C> {
     /** The extension that this element is for. */
     extension: ConfiguredExtension
 
@@ -331,10 +348,10 @@ interface State {
 /**
  * Displays a button with a dropdown menu listing the extension configuration subjects of an extension.
  */
-export class ExtensionConfigureButton<S extends ConfigurationSubject, C> extends React.PureComponent<
-    Props<S, C>,
-    State
-> {
+export class ExtensionConfigureButton<
+    S extends ConfigurationSubject,
+    C extends ConfigurationCascade<S>
+> extends React.PureComponent<Props<S, C>, State> {
     public state: State = {
         dropdownOpen: false,
     }

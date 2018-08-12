@@ -14,10 +14,9 @@ import { BrowserConsoleTracer } from 'cxp/module/jsonrpc2/trace'
 import { InitializeError } from 'cxp/module/protocol'
 import { catchError, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import { Context } from '../context'
-import { Settings } from '../copypasta'
 import { asError, isErrorLike } from '../errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
-import { ConfigurationSubject } from '../settings'
+import { ConfigurationCascade, ConfigurationSubject } from '../settings'
 import { getSavedClientTrace } from './client'
 
 /**
@@ -30,7 +29,7 @@ interface ExtensionWithManifest extends Extension, Pick<ConfiguredExtension, 'ma
  * React props or state containing the CXP controller. There should be only a single CXP controller for the whole
  * application.
  */
-export interface CXPControllerProps<C extends object = Settings> {
+export interface CXPControllerProps<S extends ConfigurationSubject, C extends ConfigurationCascade<S>> {
     /**
      * The CXP controller, which is used to communicate with the extensions and manages extensions based on the CXP
      * environment.
@@ -128,7 +127,7 @@ class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
  *
  * @template C settings type
  */
-function environmentFilter<C extends Settings>(
+function environmentFilter<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>(
     nextEnvironment: Environment<ExtensionWithManifest, C>
 ): Environment<ExtensionWithManifest, C> {
     return {
@@ -174,7 +173,7 @@ function environmentFilter<C extends Settings>(
  * It receives state updates via calls to the setEnvironment method from React components. It provides results to
  * React components via its registries and the showMessages, etc., observables.
  */
-export function createController<S extends ConfigurationSubject, C extends object = Settings>(
+export function createController<S extends ConfigurationSubject, C extends ConfigurationCascade<S>>(
     context: Context<S, C>,
     createMessageTransports: (extension: ExtensionWithManifest, options: ClientOptions) => Promise<MessageTransports>
 ): Controller<ExtensionWithManifest, C> {
