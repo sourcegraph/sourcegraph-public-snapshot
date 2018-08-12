@@ -18,8 +18,7 @@ import { Range } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { CXPComponent, CXPComponentProps } from '../../cxp/CXPComponent'
-import { USE_PLATFORM } from '../../cxp/CXPEnvironment'
+import { CXPComponentProps, USE_PLATFORM } from '../../cxp/CXPEnvironment'
 import { CXPControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -271,11 +270,32 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
         // EXPERIMENTAL: DECORATIONS
 
-        /** Emits when the URL's target blob (repository, revision, and path) changes. */
-        const modelChanges: Observable<AbsoluteRepoFile & LSPSelector> = this.componentUpdates.pipe(
-            map(props => pick(props, 'repoPath', 'rev', 'commitID', 'filePath', 'mode')),
+        /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
+        const modelChanges: Observable<
+            AbsoluteRepoFile & LSPSelector & Pick<BlobProps, 'content'>
+        > = this.componentUpdates.pipe(
+            map(props => pick(props, 'repoPath', 'rev', 'commitID', 'filePath', 'mode', 'content')),
             distinctUntilChanged((a, b) => isEqual(a, b)),
             share()
+        )
+
+        // Update the CXP state to reflect the current file.
+        this.subscriptions.add(
+            combineLatest(modelChanges, locationPositions)
+                .pipe(filter(() => USE_PLATFORM))
+                .subscribe(([model, pos]) => {
+                    this.props.cxpOnComponentChange({
+                        document: {
+                            uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
+                            languageId: model.mode,
+                            version: 0,
+                            text: model.content,
+                        },
+                        selections:
+                            pos && pos.line !== undefined ? [{ ...(lprToRange(pos) as Range), isReversed: false }] : [],
+                        visibleRanges: [], // TODO(sqs): fill these in when there are extensions that use them
+                    })
+                })
         )
 
         /** Decorations */
@@ -468,24 +488,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                             {...this.props}
                         />
                     )}
-                {USE_PLATFORM && (
-                    <CXPComponent
-                        component={{
-                            document: {
-                                uri: `git://${this.props.repoPath}?${this.props.commitID}#${this.props.filePath}`,
-                                languageId: this.props.mode,
-                                version: 0,
-                                text: this.props.content,
-                            },
-                            selections:
-                                this.state.selectedPosition && this.state.selectedPosition.line !== undefined
-                                    ? [{ ...(lprToRange(this.state.selectedPosition) as Range), isReversed: false }]
-                                    : [],
-                            visibleRanges: [], // TODO!(sqs): fill these in
-                        }}
-                        cxpOnComponentChange={this.props.cxpOnComponentChange}
-                    />
-                )}
             </div>
         )
     }

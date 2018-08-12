@@ -4,7 +4,7 @@ import {
     ConfigurationSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { Environment as CXPEnvironment } from 'cxp/module/environment/environment'
+import { Component, Environment as CXPEnvironment } from 'cxp/module/environment/environment'
 
 /** Client-side feature flag for using the new CXP controller and environment. */
 export const USE_PLATFORM = localStorage.getItem('platform') !== null
@@ -13,4 +13,12 @@ export const USE_PLATFORM = localStorage.getItem('platform') !== null
 export interface CXPEnvironmentProps {
     /** The CXP environment. */
     cxpEnvironment: CXPEnvironment<ConfiguredExtension, ConfigurationCascade<ConfigurationSubject, Settings>>
+}
+
+/** React props for components that participate in the CXP environment. */
+export interface CXPComponentProps {
+    /**
+     * Called when the CXP component changes.
+     */
+    cxpOnComponentChange: (component: Component | null) => void
 }
