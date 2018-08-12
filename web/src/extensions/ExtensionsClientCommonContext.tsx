@@ -1,8 +1,8 @@
 import { ExtensionsProps as GenericExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
 import { Settings } from '@sourcegraph/extensions-client-common/lib/copypasta'
-import { CXPExtensionWithManifest } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { importScriptsBlobURL } from '@sourcegraph/extensions-client-common/lib/cxp/webWorker'
+import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
     ConfigurationCascadeProps as GenericConfigurationCascadeProps,
     ConfigurationSubject,
@@ -102,7 +102,7 @@ export function updateUserExtensionSettings(args: { extensionID: string; enabled
 }
 
 export function createMessageTransports(
-    extension: CXPExtensionWithManifest,
+    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
     options: ClientOptions
 ): Promise<MessageTransports> {
     if (!extension.manifest) {
