@@ -3,6 +3,8 @@ import { Controller as ExtensionsContextController } from '@sourcegraph/extensio
 import { CXPControllerProps as GenericCXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { importScriptsBlobURL } from '@sourcegraph/extensions-client-common/lib/cxp/webWorker'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
+import { QueryResult } from '@sourcegraph/extensions-client-common/lib/graphql'
+import * as ECCGQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import {
     ConfigurationCascadeProps as GenericConfigurationCascadeProps,
     ConfigurationSubject,
@@ -48,7 +50,7 @@ export function createExtensionsContextController(): ExtensionsContextController
                     ${request}
                 `,
                 variables
-            ),
+            ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry'>>>,
         icons: {
             Loader: Loader as React.ComponentType<{ className: string; onClick?: () => void }>,
             Warning: Warning as React.ComponentType<{ className: string; onClick?: () => void }>,
