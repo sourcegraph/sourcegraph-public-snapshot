@@ -25,7 +25,7 @@
       "automerge": true
     },
     {
-      "packageNames": ["cxp"],
+      "packageNames": ["cxp", "@sourcegraph/extensions-client-common"],
       "assignees": ["sqs"]
     },
     {
