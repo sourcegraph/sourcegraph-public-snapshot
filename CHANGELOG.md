@@ -14,6 +14,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Support for ACME "tls-alpn-01" challenges to obtain LetsEncrypt certificates. Previously Sourcegraph only supported ACME "http-01" challenges which required port 80 to be accessible.
 - gitserver periodically removes stale lock files that git can leave behind.
 - Commits with empty trees no longer return 404.
+- Clients (browser/editor extensions) can now query configuration details from the `ClientConfiguration` GraphQL API.
 
 ### Fixed
 

@@ -290,6 +290,8 @@ var doNotRequireRestart = []string{
 	"experimentalFeatures::multipleAuthProviders",
 	"experimentalFeatures::platform",
 	"experimentalFeatures::discussions",
+	"reviewBoard",
+	"parentSourcegraph",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown

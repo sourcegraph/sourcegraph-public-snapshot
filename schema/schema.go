@@ -231,6 +231,11 @@ type OpenIDConnectAuthProvider struct {
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
 	Type               string `json:"type"`
 }
+
+// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
+type ParentSourcegraph struct {
+	Url string `json:"url,omitempty"`
+}
 type Phabricator struct {
 	Repos []*Repos `json:"repos,omitempty"`
 	Token string   `json:"token,omitempty"`
@@ -250,6 +255,9 @@ type Repository struct {
 	Path  string `json:"path"`
 	Type  string `json:"type,omitempty"`
 	Url   string `json:"url"`
+}
+type ReviewBoard struct {
+	Url string `json:"url,omitempty"`
 }
 
 // SAMLAuthProvider description: Configures the SAML authentication provider for SSO.
@@ -367,6 +375,7 @@ type SiteConfiguration struct {
 	OidcClientSecret                  string                       `json:"oidcClientSecret,omitempty"`
 	OidcEmailDomain                   string                       `json:"oidcEmailDomain,omitempty"`
 	OidcProvider                      string                       `json:"oidcProvider,omitempty"`
+	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
 	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
 	Platform                          *Platform                    `json:"platform,omitempty"`
 	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
@@ -375,6 +384,7 @@ type SiteConfiguration struct {
 	PrivateArtifactRepoUsername       string                       `json:"privateArtifactRepoUsername,omitempty"`
 	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
 	ReposList                         []*Repository                `json:"repos.list,omitempty"`
+	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
 	SamlIDProviderMetadataURL         string                       `json:"samlIDProviderMetadataURL,omitempty"`
 	SamlSPCert                        string                       `json:"samlSPCert,omitempty"`
 	SamlSPKey                         string                       `json:"samlSPKey,omitempty"`

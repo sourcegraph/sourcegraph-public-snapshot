@@ -617,6 +617,8 @@ type Query {
     configurationSubject(id: ID!): ConfigurationSubject
     # The configuration for the viewer.
     viewerConfiguration: ConfigurationCascade!
+    # The configuration for clients.
+    clientConfiguration: ClientConfigurationDetails!
     # Runs a search.
     search(
         # The search query (such as "foo" or "repo:myrepo foo").
@@ -637,6 +639,20 @@ type Query {
     ): SurveyResponseConnection!
     # The extension registry.
     extensionRegistry: ExtensionRegistry!
+}
+
+# Configuration details for the browser extension, editor extensions, etc.
+type ClientConfigurationDetails {
+    # The list of phabricator/gitlab/bitbucket/etc instance URLs that specifies which pages the content script will be injected into.
+    contentScriptUrls: [String!]!
+    # Returns details about the parent Sourcegraph instance.
+    parentSourcegraph: ParentSourcegraphDetails!
+}
+
+# Parent Sourcegraph instance
+type ParentSourcegraphDetails {
+    # Sourcegraph instance URL.
+    url: String!
 }
 
 # A search.

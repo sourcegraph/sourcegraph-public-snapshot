@@ -257,6 +257,20 @@ const SiteSchemaJSON = `{
         "$ref": "#/definitions/Repository"
       }
     },
+    "reviewBoard": {
+      "description": "JSON array of configuration for Review Board.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "description": "URL to Review Board homepage.",
+            "type": "string"
+          }
+        }
+      }
+    },
     "lightstepAccessToken": {
       "description": "Access token for sending traces to LightStep.",
       "type": "string"
@@ -370,6 +384,17 @@ const SiteSchemaJSON = `{
     "privateArtifactRepoPassword": {
       "description": "Java: The password to authenticate to the private Artifactory.",
       "type": "string"
+    },
+    "parentSourcegraph": {
+      "description": "URL to fetch unreachable repository details from. Defaults to \"https://sourcegraph.com\"",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "default": "https://sourcegraph.com"
+        }
+      }
     },
     "auth.provider": {
       "description":
