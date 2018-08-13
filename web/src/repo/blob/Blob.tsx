@@ -297,6 +297,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     })
                 })
         )
+        // Clear the CXP state's component when the blob is no longer shown.
+        this.subscriptions.add(() => this.props.cxpOnComponentChange(null))
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined
