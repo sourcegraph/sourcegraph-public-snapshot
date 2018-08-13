@@ -98,6 +98,7 @@
     "fork-ts-checker-webpack-plugin": "^0.4.2",
     "get-stream": "^3.0.0",
     "globby": "^8.0.1",
+    "graphql": "^0.13.2",
     "gulp": "^4.0.0",
     "http-proxy-middleware": "^0.18.0",
     "javascript-typescript-langserver": "^2.5.4",

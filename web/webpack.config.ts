@@ -67,7 +67,7 @@ const config: webpack.Configuration = {
         }),
     ],
     resolve: {
-        extensions: ['.ts', '.tsx', '.js'],
+        extensions: ['.mjs', '.ts', '.tsx', '.js'],
         mainFields: ['es2015', 'module', 'browser', 'main'],
         alias: rxPaths(),
     },
@@ -94,7 +94,7 @@ const config: webpack.Configuration = {
                 ],
             }))(),
             ((): webpack.RuleSetRule => ({
-                test: /\.js$/,
+                test: /\.m?js$/,
                 // Only run on dependencies where it is necessary, to speed up builds.
                 //
                 // codemirror: https://github.com/sourcegraph/sourcegraph/issues/12303
@@ -108,6 +108,11 @@ const config: webpack.Configuration = {
                     },
                 ],
             }))(),
+            {
+                test: /\.mjs$/,
+                include: path.resolve(__dirname, 'node_modules'),
+                type: 'javascript/auto',
+            },
             ((): webpack.RuleSetRule => ({
                 // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,

@@ -1722,7 +1722,7 @@ type File {
 }
 
 # A Git blob in a repository.
-type GitBlob implements TreeEntry, File2 {
+type GitBlob implements TreeEntry & File2 {
     # The full path (relative to the repository root) of this blob.
     path: String!
     # The base name (i.e., file name only) of this blob's path.
@@ -1875,7 +1875,7 @@ type UserConnection {
 }
 
 # A user.
-type User implements Node, ConfigurationSubject {
+type User implements Node & ConfigurationSubject {
     # The unique ID for the user.
     id: ID!
     # The user's username.
@@ -2107,7 +2107,7 @@ type OrgConnection {
 }
 
 # An organization, which is a group of users.
-type Org implements Node, ConfigurationSubject {
+type Org implements Node & ConfigurationSubject {
     # The unique ID for the organization.
     id: ID!
     # The organization's name. This is unique among all organizations on this Sourcegraph site.
