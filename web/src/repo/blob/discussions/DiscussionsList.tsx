@@ -94,7 +94,7 @@ class FilteredDiscussionsConnection extends FilteredConnection<
 > {}
 
 interface Props {
-    repoID: GQL.ID
+    repoID: GQL.ID | undefined
     rev: string | undefined
     filePath: string | undefined
     history: H.History

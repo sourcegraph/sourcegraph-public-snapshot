@@ -5,6 +5,7 @@ import { ResetPasswordPage } from './auth/ResetPasswordPage'
 import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
 import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
+import { DiscussionsPage } from './discussions/DiscussionsPage'
 import { ExplorePage } from './explore/ExplorePage'
 import { ExtensionsArea } from './extensions/ExtensionsArea'
 import { SurveyPage } from './marketing/SurveyPage'
@@ -109,6 +110,11 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/explore',
         component: canListAllRepositories ? ExplorePage : ErrorNotSupportedPage,
+        exact: true,
+    },
+    {
+        path: '/discussions',
+        component: window.context.discussionsEnabled ? DiscussionsPage : ErrorNotSupportedPage,
         exact: true,
     },
     {

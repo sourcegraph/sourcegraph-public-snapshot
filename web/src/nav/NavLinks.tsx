@@ -77,6 +77,13 @@ export class NavLinks extends React.PureComponent<Props> {
                         </Link>
                     </li>
                 )}
+                {window.context.discussionsEnabled && (
+                    <li className="nav-item">
+                        <Link to="/discussions" className="nav-link">
+                            Discussions
+                        </Link>
+                    </li>
+                )}
                 {platformEnabled(this.props.user) && (
                     <li className="nav-item">
                         <Link to="/extensions" className="nav-link">
