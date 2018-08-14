@@ -152,8 +152,39 @@ describe('mergeContributions', () => {
         ))
 })
 
+const FIXTURE_CONTEXT = () =>
+    new Map<string, any>(
+        Object.entries({
+            a: true,
+            b: false,
+        })
+    )
+
 describe('filterContributions', () => {
     it('handles empty contributions', () => assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, {}), {}))
     it('handles non-empty contributions', () =>
-        assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, FIXTURE_CONTRIBUTIONS_1), FIXTURE_CONTRIBUTIONS_1))
+        assert.deepStrictEqual(
+            filterContributions(FIXTURE_CONTEXT(), {
+                commands: [{ command: 'c1' }, { command: 'c2' }, { command: 'c3' }],
+                menus: {
+                    [ContributableMenu.CommandPalette]: [
+                        { command: 'c1', when: 'a' },
+                        { command: 'c2', when: 'b' },
+                        { command: 'c3' },
+                    ],
+                    [ContributableMenu.GlobalNav]: [
+                        { command: 'c1', when: 'a' },
+                        { command: 'c2' },
+                        { command: 'c3', when: 'b' },
+                    ],
+                },
+            }),
+            {
+                commands: [{ command: 'c1' }, { command: 'c2' }, { command: 'c3' }],
+                menus: {
+                    [ContributableMenu.CommandPalette]: [{ command: 'c1', when: 'a' }, { command: 'c3' }],
+                    [ContributableMenu.GlobalNav]: [{ command: 'c1', when: 'a' }, { command: 'c2' }],
+                },
+            } as Contributions
+        ))
 })
