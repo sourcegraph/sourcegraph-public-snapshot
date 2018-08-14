@@ -429,9 +429,24 @@
     },
     "auth.disableAccessTokens": {
       "description":
-        "Prevents users from creating access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
+        "DEPRECATED. Use \"auth.accessTokens.restrict\" with value \"disable\" instead.\n\nPrevents users from creating access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
       "type": "boolean",
       "default": false
+    },
+    "auth.accessTokens": {
+      "description":
+        "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allow": {
+          "description":
+            "Allow or restrict the use of access tokens. The default is \"all-users-create\", which enables all users to create access tokens. Use \"none\" to disable access tokens entirely. Use \"site-admin-create\" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).",
+          "type": "string",
+          "enum": ["all-users-create", "site-admin-create", "none"],
+          "default": "all-users-create"
+        }
+      }
     },
     "auth.public": {
       "description":

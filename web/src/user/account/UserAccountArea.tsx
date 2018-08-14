@@ -128,7 +128,7 @@ export class UserAccountArea extends React.Component<Props, State> {
                                 <UserAccountExternalAccountsPage {...routeComponentProps} {...this.props} />
                             )}
                         />
-                        {window.context.accessTokensEnabled && (
+                        {window.context.accessTokensAllow !== 'none' && (
                             <Route
                                 path={`${this.props.match.url}/tokens`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
@@ -144,7 +144,7 @@ export class UserAccountArea extends React.Component<Props, State> {
                                 )}
                             />
                         )}
-                        {window.context.accessTokensEnabled && (
+                        {window.context.accessTokensAllow !== 'none' && (
                             <Route
                                 path={`${this.props.match.url}/tokens/new`}
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490

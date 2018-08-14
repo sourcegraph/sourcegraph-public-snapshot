@@ -44,9 +44,36 @@ func MultipleAuthProvidersEnabledFromConfig(c *schema.SiteConfiguration) bool {
 	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.MultipleAuthProviders == "enabled"
 }
 
-// AccessTokensEnabled returns whether access tokens are enabled.
-func AccessTokensEnabled() bool {
-	return !Get().AuthDisableAccessTokens
+type AccessTokAllow string
+
+const (
+	AccessTokensNone  AccessTokAllow = "none"
+	AccessTokensAll                  = "all-users-create"
+	AccessTokensAdmin                = "site-admin-create"
+)
+
+// AccessTokensAllow returns whether access tokens are enabled, disabled, or restricted to creation by admin users.
+func AccessTokensAllow() AccessTokAllow {
+	if Get().AuthDisableAccessTokens {
+		return AccessTokensNone
+	}
+
+	cfg := Get().AuthAccessTokens
+	if cfg == nil {
+		return AccessTokensAll
+	}
+	switch cfg.Allow {
+	case "":
+		return AccessTokensAll
+	case string(AccessTokensAll):
+		return AccessTokensAll
+	case string(AccessTokensNone):
+		return AccessTokensNone
+	case string(AccessTokensAdmin):
+		return AccessTokensAdmin
+	default:
+		return AccessTokensNone
+	}
 }
 
 // DiscussionsEnabled returns whether code discussions are enabled.

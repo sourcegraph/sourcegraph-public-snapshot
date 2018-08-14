@@ -73,7 +73,7 @@ export const UserAccountSidebar: React.SFC<Props> = props => {
                             External accounts
                         </NavLink>
                     )}
-                    {window.context.accessTokensEnabled && (
+                    {window.context.accessTokensAllow !== 'none' && (
                         <NavLink to={`${props.match.path}/tokens`} className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}>
                             Access tokens
                         </NavLink>

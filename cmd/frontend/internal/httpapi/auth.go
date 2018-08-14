@@ -19,7 +19,8 @@ func AccessTokenAuthMiddleware(next http.Handler) http.Handler {
 		w.Header().Add("Vary", "Authorization")
 
 		if headerValue := r.Header.Get("Authorization"); headerValue != "" {
-			if !conf.AccessTokensEnabled() {
+			if !(conf.AccessTokensAllow() == conf.AccessTokensAll || conf.AccessTokensAllow() == conf.AccessTokensAdmin) {
+				// if conf.AccessTokensAllow() == conf.AccessTokensNone {
 				http.Error(w, "Access token authorization is disabled.", http.StatusUnauthorized)
 				return
 			}

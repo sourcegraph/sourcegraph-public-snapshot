@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type createAccessTokenInput struct {
@@ -28,6 +29,19 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	}
 	if err := backend.CheckSiteAdminOrSameUser(ctx, userID); err != nil {
 		return nil, err
+	}
+
+	switch conf.AccessTokensAllow() {
+	case conf.AccessTokensAll:
+		// Allow
+	case conf.AccessTokensAdmin:
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, errors.New("Access token creation has been restricted to admin users. Contact an admin user to create a new access token.")
+		}
+	case conf.AccessTokensNone:
+		fallthrough
+	default:
+		return nil, errors.New("Access token creation is disabled. Contact an admin user to enable.")
 	}
 
 	// Validate scopes.

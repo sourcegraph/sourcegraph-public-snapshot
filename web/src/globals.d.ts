@@ -81,7 +81,7 @@ interface SourcegraphContext {
     discussionsEnabled: boolean
 
     /** Whether access tokens are enabled. */
-    accessTokensEnabled: boolean
+    accessTokensAllow: 'all-users-create' | 'site-admin-create' | 'none'
 
     /** Whether the reset-password flow is enabled. */
     resetPasswordEnabled: boolean

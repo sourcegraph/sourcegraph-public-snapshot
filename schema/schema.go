@@ -17,6 +17,11 @@ type AWSCodeCommitConnection struct {
 	SecretAccessKey             string `json:"secretAccessKey"`
 }
 
+// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
+type AuthAccessTokens struct {
+	Allow string `json:"allow,omitempty"`
+}
+
 // AuthProviderCommon description: Common properties for authentication providers.
 type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
@@ -332,6 +337,7 @@ type SiteConfigSettings struct {
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AppURL                            string                       `json:"appURL,omitempty"`
+	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
 	AuthAllowSignup                   bool                         `json:"auth.allowSignup,omitempty"`
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
 	AuthOpenIDConnect                 *OpenIDConnectAuthProvider   `json:"auth.openIDConnect,omitempty"`
