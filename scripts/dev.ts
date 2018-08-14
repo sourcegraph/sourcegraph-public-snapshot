@@ -1,23 +1,24 @@
+import { noop } from 'lodash'
+import signale from 'signale'
 import webpack from 'webpack'
 import config from '../webpack/dev.config'
 import * as autoReloading from './auto-reloading'
 import * as tasks from './tasks'
 
-// tslint:disable-next-line:no-empty
-const noop = () => {}
+signale.config({ displayTimestamp: true })
+
 const triggerReload = process.env.AUTO_RELOAD === 'false' ? noop : autoReloading.initializeServer()
 
 const buildChrome = tasks.buildChrome('dev')
 const buildFirefox = tasks.buildFirefox('dev')
 
-console.log('Copying Assets...')
 tasks.copyAssets('dev')
-console.log('Done copying assets.')
 
 const compiler = webpack(config)
 
-console.info('[Webpack Dev]')
-console.info('--------------------------------')
+signale.info('Running webpack')
+
+compiler.hooks.watchRun.tap('Notify', () => signale.await('Compiling...'))
 
 compiler.watch(
     {
@@ -25,7 +26,7 @@ compiler.watch(
         poll: 1000,
     },
     (err, stats) => {
-        console.log(stats.toString('normal'))
+        console.log(stats.toString('errors-only'))
 
         if (stats.hasErrors()) {
             return

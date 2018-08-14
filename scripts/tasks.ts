@@ -2,6 +2,7 @@ import fs from 'fs'
 import _ from 'lodash'
 import path from 'path'
 import shelljs from 'shelljs'
+import signale from 'signale'
 import extensionInfo from '../chrome/extension.info.json'
 import schema from '../chrome/schema.json'
 
@@ -91,17 +92,17 @@ function buildForBrowser(browser): (env: string) => () => void {
         writeSchema(env, browser, buildDir)
 
         return () => {
-            console.log(`Building ${title} ${env} bundle...`)
+            signale.await(`Building the ${title} ${env} bundle`)
 
             copyDist(buildDir)
 
             const zipDest = path.resolve(process.cwd(), `${BUILDS_DIR}/bundles/${browserBundleZips[browser]}`)
             if (zipDest) {
                 shelljs.mkdir('-p', `./${BUILDS_DIR}/bundles`)
-                shelljs.exec(`cd ${buildDir} && zip -r ${zipDest} *`)
+                shelljs.exec(`cd ${buildDir} && zip -q -r ${zipDest} *`)
             }
 
-            console.log(`${title} ${env} bundle built.`)
+            signale.success(`Done building the ${title} ${env} bundle`)
         }
     }
 }
@@ -110,10 +111,10 @@ export const buildFirefox = buildForBrowser('firefox')
 export const buildChrome = buildForBrowser('chrome')
 
 export function buildSafari(env: BuildEnv): void {
-    console.log(`Building Safari ${env} bundle...`)
+    signale.await(`Building Safari ${env} bundle...`)
 
     shelljs.exec('cp -r build/dist/* Sourcegraph.safariextension')
     writeManifest(env, 'safari', 'Sourcegraph.safariextension')
 
-    console.log(`Safari ${env} bundle built.`)
+    signale.success(`Safari ${env} bundle built.`)
 }

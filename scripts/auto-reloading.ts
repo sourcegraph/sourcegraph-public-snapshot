@@ -1,29 +1,30 @@
-import chalk from 'chalk'
+import signale from 'signale'
 import io from 'socket.io'
 
 /**
  * Returns a trigger function that notifies the extension to reload itself.
  */
 export const initializeServer = () => {
-    const logColor = (color: string) => (message: string) => console.log(chalk[color]('auto reload: ' + message))
-    const info = logColor('blue')
-    const warn = logColor('yellow')
+    const logger = new signale.Signale({ scope: 'Auto reloading' })
 
     // Since this port is hard-coded, it must match background.tsx
     const socketIOServer = io.listen(8890)
-    info('Ready for the extension to connect.')
+    logger.await('Ready for a browser extension to connect')
     socketIOServer.on('connect', socket => {
-        info('The extension connected.')
+        logger.info('Browser extension connected')
+    })
+    socketIOServer.on('disconnect', socket => {
+        logger.info('Browser extension disconnected')
     })
 
     return () => {
         if (Object.keys(socketIOServer.clients().connected).length === 0) {
-            warn('The extension has not connected yet. Try reloading it manually. Make sure that:')
-            warn('- The extension is enabled')
-            warn('- initializeAutoReloading() is being called in the background script')
-            warn('- The extension is in developer mode (meaning you loaded it as an unpacked extension)')
+            logger.warn('No browser extension has connected yet, so no reload was triggered')
+            logger.warn("- Make sure it's enabled")
+            logger.warn("- Make sure it's in developer mode (unpacked extension)")
+            logger.warn('- Try manually reloading it 🔄')
         } else {
-            info('Triggering a reload of the extension.')
+            logger.info('Triggering a reload of browser extensions')
             socketIOServer.emit('file.change', {})
         }
     }
