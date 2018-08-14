@@ -335,6 +335,10 @@ func (c *Client) EnqueueRepoUpdateDeprecated(ctx context.Context, repo Repo) err
 
 // RequestRepoUpdate is the new protocol endpoint for synchronous requests
 // with more detailed responses. Do not use this if you are not repo-updater.
+//
+// Repo updates are not guaranteed to occur. If a repo has been updated
+// recently (within the Since duration specified in the request), the
+// update won't happen.
 func (c *Client) RequestRepoUpdate(ctx context.Context, repo Repo, since time.Duration) (*protocol.RepoUpdateResponse, error) {
 	req := &protocol.RepoUpdateRequest{
 		Repo:  repo.Name,

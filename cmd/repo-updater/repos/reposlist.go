@@ -526,18 +526,31 @@ func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateR
 			altTime := resp.Finished.Sub(*resp.Received)
 			log15.Debug("time taken/reported", "repo", repo.name, "fetchTime", repo.fetchTime, "altTime", altTime)
 		}
-		if resp.LastChanged != nil {
+		switch {
+		case resp.Error != "":
+			// A failed fetch could indicate a problem like a bad auth token, so we want to be
+			// conservative.
+			repo.interval = repo.interval * 2
+			// cap at a one-day loop.
+			if repo.interval > 24*time.Hour {
+				repo.interval = 24 * time.Hour
+			}
+			log15.Info("interval backoff due to error", "repo", repo.name, "error", resp.Error, "interval", repo.interval)
+		case resp.LastChanged != nil:
 			sinceLast := now.Sub(*resp.LastChanged)
 			repo.interval = r.interval(sinceLast)
 			log15.Debug("interval set", "repo", repo.name, "sinceLast", sinceLast, "interval", repo.interval)
-		} else {
+		default:
 			// If we don't have data on how old the repo is, we'll be aggressive,
 			// partially because we'll probably get that data "soon"; usually this
-			// would only happen during initial cloning.
+			// would only happen during initial cloning. Note, this won't happen
+			// if we get an actual error back from gitserver, and shouldn't happen
+			// in any case where gitserver didn't have an error to report.
 			repo.interval = r.interval(1 * time.Hour)
 		}
 	} else {
-		// No response at all, similarly, we try again relatively soon.
+		log15.Debug("no response data from gitserver", "repo", repo.name)
+		// No response at all, we try again relatively soon.
 		repo.interval = r.interval(1 * time.Hour)
 	}
 	// if this repo is set for auto updates, and auto-updates are not disabled,

@@ -22,6 +22,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Log level is respected in lsp-proxy logs.
 - Fixed an error where text searches could be routed to a faulty search worker.
 - SAML IdP-initiated login previously failed with the IdP set a RelayState value. This now works.
+- repo-updater backs off fetches on a repo that's failing to fetch.
 
 ### Removed
 

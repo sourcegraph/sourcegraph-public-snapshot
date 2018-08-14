@@ -445,8 +445,10 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-// handleRepoUpdate() is a synchronous (waits for update to complete or
-// time out) method so it can yield errors.
+// handleRepoUpdate is a synchronous (waits for update to complete or
+// time out) method so it can yield errors. Updates are not
+// unconditional; we debounce them based on the provided
+// interval, to avoid spam.
 func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -479,8 +481,6 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 
 		if debounce(req.Repo, req.Since) {
 			updateErr = s.doRepoUpdate(ctx, req.Repo, req.URL)
-		} else {
-			updateErr = errors.New("repo recently fetched, skipping")
 		}
 
 		// attempts to acquire these values are not contingent on the success of
