@@ -10,6 +10,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+- SAML IdP-initiated login previously failed with the IdP set a RelayState value. This now works.
+
 ### Removed
 
 ## 2.10.1
