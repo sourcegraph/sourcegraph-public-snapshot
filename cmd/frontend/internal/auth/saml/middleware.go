@@ -117,13 +117,10 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// The remaining endpoints all expect the provider ID in the POST data's RelayState.
+	traceLog("SAML RelayState", r.FormValue("RelayState"))
 	var relayState relayState
-	if err := relayState.decode(r.FormValue("RelayState")); err != nil {
-		log15.Error("Error decoding SAML relay state.", "err", err)
-		traceLog("SAML RelayState", r.FormValue("RelayState"))
-		http.Error(w, "Error decoding SAML relay state.", http.StatusForbidden)
-		return
-	}
+	relayState.decode(r.FormValue("RelayState"))
+
 	p, handled := handleGetProvider(r.Context(), w, relayState.ProviderID)
 	if handled {
 		return
@@ -139,7 +136,7 @@ func samlSPHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		actor, safeErrMsg, err := getOrCreateUser(r.Context(), p, info)
+		actor, safeErrMsg, err := getOrCreateUser(r.Context(), info)
 		if err != nil {
 			log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -228,6 +225,15 @@ func buildAuthURLRedirect(p *provider, relayState relayState) (string, error) {
 	return p.samlSP.BuildAuthURLRedirect(relayState.encode(), doc)
 }
 
+// relayState represents the decoded RelayState value in both the IdP-initiated and SP-initiated
+// login flows.
+//
+// SAML overloads the term "RelayState".
+// * In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
+//   back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
+//   the RelayState.
+// * In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
+//   is the desired post-login redirect URL in plain text.
 type relayState struct {
 	ProviderID  string `json:"k"`
 	ReturnToURL string `json:"r"`
@@ -240,10 +246,17 @@ func (s *relayState) encode() string {
 }
 
 // Decode decodes the base64-encoded JSON representation of the relay state into the receiver.
-func (s *relayState) decode(encoded string) error {
-	b, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return err
+func (s *relayState) decode(encoded string) {
+	if strings.HasPrefix(encoded, "http://") || strings.HasPrefix(encoded, "https://") || encoded == "" {
+		s.ProviderID, s.ReturnToURL = "", encoded
+		return
 	}
-	return json.Unmarshal(b, s)
+
+	if b, err := base64.StdEncoding.DecodeString(encoded); err == nil {
+		if err := json.Unmarshal(b, s); err == nil {
+			return
+		}
+	}
+
+	s.ProviderID, s.ReturnToURL = "", ""
 }
