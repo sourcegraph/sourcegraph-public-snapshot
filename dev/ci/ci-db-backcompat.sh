@@ -21,7 +21,7 @@ Running ci-db-backcompat.sh with the following parameters:
   git rev-parse --abbrev-ref HEAD: 	$(git rev-parse --abbrev-ref HEAD)
 EOF
 
-LAST_MIGRATION=$(ls -1 ./migrations/*.up.sql | cut -d'_' -f 1 | cut -d'/' -f 3 | tail -n1)
+LAST_MIGRATION=$(ls -1 ./migrations/*.up.sql | cut -d'_' -f 1 | cut -d'/' -f 3 | sort -n | tail -n1)
 COMMIT_OF_LAST_MIGRATION=$(git log --pretty=format:"%H" "./migrations/${LAST_MIGRATION}"* | tail -n1)
 COMMIT_BEFORE_LAST_MIGRATION=$(git log -n1 --pretty=format:"%H" "${COMMIT_OF_LAST_MIGRATION}"^)
 

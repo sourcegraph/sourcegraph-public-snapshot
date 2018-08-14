@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -152,7 +153,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 	createdAt := time.Now()
 	for repo, pks := range repoToPkgs {
 		if err := Transaction(ctx, globalDB, func(tx *sql.Tx) error {
-			if _, err := tx.ExecContext(ctx, `INSERT INTO repo(id, created_at) VALUES ($1, $2)`, repo, createdAt); err != nil {
+			if _, err := tx.ExecContext(ctx, `INSERT INTO repo(id, uri, created_at) VALUES ($1, $2, $3)`, repo, strconv.Itoa(int(repo)), createdAt); err != nil {
 				return err
 			}
 			if err := Pkgs.update(ctx, tx, repo, "go", pks); err != nil {
