@@ -29,7 +29,7 @@ export interface RequestMessage extends Message {
  * Predefined error codes.
  */
 export namespace ErrorCodes {
-    // Defined by JSON RPC
+    // Defined by JSON-RPC 2.0.
     export const ParseError = -32700
     export const InvalidRequest = -32600
     export const MethodNotFound = -32601
@@ -43,7 +43,7 @@ export namespace ErrorCodes {
     // Defined by the protocol.
     export const RequestCancelled = -32800
 
-    // Defined by VSCode library.
+    // Defined by this library.
     export const MessageWriteError = 1
     export const MessageReadError = 2
 }

@@ -229,7 +229,7 @@ export interface Connection<PConsole = _, PTracer = _, PTelemetry = _, PClient =
     onExit(handler: NotificationHandler<null>): void
 
     /**
-     * A proxy for VSCode's development console. See [RemoteConsole](#RemoteConsole)
+     * A proxy for the development console. See [RemoteConsole](#RemoteConsole)
      */
     console: RemoteConsole & PConsole
 
@@ -250,7 +250,7 @@ export interface Connection<PConsole = _, PTracer = _, PTelemetry = _, PClient =
     client: RemoteClient & PClient
 
     /**
-     * A proxy for VSCode's window. See [RemoteWindow](#RemoteWindow)
+     * A proxy for the window. See [RemoteWindow](#RemoteWindow)
      */
     window: RemoteWindow & PWindow
 
@@ -327,8 +327,7 @@ export interface Connection<PConsole = _, PTracer = _, PTelemetry = _, PClient =
     onDidSaveTextDocument(handler: NotificationHandler<DidSaveTextDocumentParams>): void
 
     /**
-     * Sends diagnostics computed for a given document to VSCode to render them in the
-     * user interface.
+     * Sends diagnostics computed for a given document to render them in the user interface.
      *
      * @param params The diagnostic parameters.
      */
