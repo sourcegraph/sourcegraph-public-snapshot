@@ -132,6 +132,9 @@
 
 .tree-layer {
     width: 100%;
+
+    // Remove user-agent focus ring.
+    outline: none;
 }
 
 .tree-row {
