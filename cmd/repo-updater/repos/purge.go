@@ -17,22 +17,24 @@ import (
 // RunRepositoryPurgeWorker is a worker which deletes repos which are present
 // on gitserver, but not enabled/present in our repos table.
 func RunRepositoryPurgeWorker(ctx context.Context) {
+	log := log15.Root().New("worker", "repo-purge")
+
 	// Temporary escape hatch if this feature proves to be dangerous
 	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
-		log15.Info("repository purger is disabled via env DISABLE_REPO_PURGE")
+		log.Info("repository purger is disabled via env DISABLE_REPO_PURGE")
 		return
 	}
 
 	for {
-		err := purge(ctx)
+		err := purge(ctx, log)
 		if err != nil {
-			log15.Error("failed to run repository clone purge", "error", err)
+			log.Error("failed to run repository clone purge", "error", err)
 		}
 		randSleep(10*time.Minute, time.Minute)
 	}
 }
 
-func purge(ctx context.Context) error {
+func purge(ctx context.Context, log log15.Logger) error {
 	// If we fetched enabled first we have the following race condition:
 	//
 	// 1. Fetched enabled list without repo X.
@@ -73,12 +75,12 @@ func purge(ctx context.Context) error {
 		if info, err := gitserver.DefaultClient.RepoInfo(ctx, repo); err != nil {
 			// Do not fail at this point, just log so we can remove other
 			// repos.
-			log15.Error("Failed to remove disabled repository", "repo", repo, "error", err)
+			log.Error("failed to get RepoInfo of cloned repository", "repo", repo, "error", err)
 			purgeFailed.Inc()
 			failed++
 			continue
 		} else if info.CloneTime != nil && time.Since(*info.CloneTime) < 12*time.Hour {
-			log15.Info("Skipping repository in purge since it was cloned less than 12 hours ago", "repo", repo, "age", time.Since(*info.CloneTime))
+			log.Info("skipping repository since it was cloned less than 12 hours ago", "repo", repo, "age", time.Since(*info.CloneTime))
 			purgeSkipped.Inc()
 			skipped++
 			continue
@@ -91,22 +93,22 @@ func purge(ctx context.Context) error {
 		if err != nil {
 			// Do not fail at this point, just log so we can remove other
 			// repos.
-			log15.Error("Failed to remove disabled repository", "repo", repo, "error", err)
+			log.Error("failed to remove disabled repository", "repo", repo, "error", err)
 			purgeFailed.Inc()
 			failed++
 			continue
 		}
-		log15.Info("removed disabled repository clone", "repo", repo)
+		log.Info("removed disabled repository clone", "repo", repo)
 		success++
 		purgeSuccess.Inc()
 	}
 
 	// If we did something we log with a higher level.
-	logger := log15.Root().Debug
+	statusLogger := log.Debug
 	if success > 0 || failed > 0 {
-		logger = log15.Root().Info
+		statusLogger = log.Info
 	}
-	logger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed, "skipped", skipped)
+	statusLogger("repository cloned purge finished", "enabled", len(enabled), "cloned", len(cloned)-success, "removed", success, "failed", failed, "skipped", skipped)
 
 	return nil
 }
