@@ -5,7 +5,13 @@ import { TestScheduler } from 'rxjs/testing'
 import { ContributableMenu, Contributions } from '../../protocol'
 import { Context, EMPTY_CONTEXT } from '../context/context'
 import { EMPTY_OBSERVABLE_ENVIRONMENT } from '../environment'
-import { ContributionRegistry, ContributionsEntry, filterContributions, mergeContributions } from './contribution'
+import {
+    contextFilter,
+    ContributionRegistry,
+    ContributionsEntry,
+    filterContributions,
+    mergeContributions,
+} from './contribution'
 
 const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
 
@@ -160,25 +166,51 @@ const FIXTURE_CONTEXT = () =>
         })
     )
 
+describe('contextFilter', () => {
+    it('filters', () =>
+        assert.deepStrictEqual(
+            contextFilter(
+                FIXTURE_CONTEXT(),
+                [{ x: 1 }, { x: 2, when: 'a' }, { x: 3, when: 'a' }, { x: 4, when: 'b' }],
+                x => x === 'a'
+            ),
+            [{ x: 1 }, { x: 2, when: 'a' }, { x: 3, when: 'a' }]
+        ))
+})
+
 describe('filterContributions', () => {
-    it('handles empty contributions', () => assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, {}), {}))
+    it('handles empty contributions', () =>
+        assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, {}), {} as Contributions))
+
+    it('handles empty menu contributions', () =>
+        assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, { menus: {} }), { menus: {} } as Contributions))
+
+    it('handles empty array of menu contributions', () =>
+        assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, { menus: { commandPalette: [] } }), {
+            menus: { commandPalette: [] },
+        } as Contributions))
+
     it('handles non-empty contributions', () =>
         assert.deepStrictEqual(
-            filterContributions(FIXTURE_CONTEXT(), {
-                commands: [{ command: 'c1' }, { command: 'c2' }, { command: 'c3' }],
-                menus: {
-                    [ContributableMenu.CommandPalette]: [
-                        { command: 'c1', when: 'a' },
-                        { command: 'c2', when: 'b' },
-                        { command: 'c3' },
-                    ],
-                    [ContributableMenu.GlobalNav]: [
-                        { command: 'c1', when: 'a' },
-                        { command: 'c2' },
-                        { command: 'c3', when: 'b' },
-                    ],
+            filterContributions(
+                FIXTURE_CONTEXT(),
+                {
+                    commands: [{ command: 'c1' }, { command: 'c2' }, { command: 'c3' }],
+                    menus: {
+                        [ContributableMenu.CommandPalette]: [
+                            { command: 'c1', when: 'a' },
+                            { command: 'c2', when: 'b' },
+                            { command: 'c3' },
+                        ],
+                        [ContributableMenu.GlobalNav]: [
+                            { command: 'c1', when: 'a' },
+                            { command: 'c2' },
+                            { command: 'c3', when: 'b' },
+                        ],
+                    },
                 },
-            }),
+                x => x === 'a'
+            ),
             {
                 commands: [{ command: 'c1' }, { command: 'c2' }, { command: 'c3' }],
                 menus: {
@@ -187,4 +219,16 @@ describe('filterContributions', () => {
                 },
             } as Contributions
         ))
+
+    it('throws an error if an error occurs during evaluation', () => {
+        const input: Contributions = {
+            commands: [{ command: 'c', title: 'a' }],
+            menus: { commandPalette: [{ command: 'c', when: 'a' }] },
+        }
+        assert.throws(() =>
+            filterContributions(FIXTURE_CONTEXT(), input, () => {
+                throw new Error('')
+            })
+        )
+    })
 })

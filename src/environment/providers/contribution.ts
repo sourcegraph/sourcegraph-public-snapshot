@@ -2,7 +2,8 @@ import { BehaviorSubject, combineLatest, Observable, Unsubscribable } from 'rxjs
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ContributableMenu, Contributions, MenuContributions, MenuItemContribution } from '../../protocol'
 import { isEqual } from '../../util'
-import { Context, contextFilter } from '../context/context'
+import { Context, createChildContext } from '../context/context'
+import { evaluate } from '../context/expr/evaluator'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -119,14 +120,30 @@ export function mergeContributions(contributions: Contributions[]): Contribution
     return merged
 }
 
+/** Filters out items whose `when` context expression evaluates to false (or a falsey value). */
+export function contextFilter<T extends { when?: string }>(context: Context, items: T[], evaluateExpr = evaluate): T[] {
+    const keep: T[] = []
+    for (const item of items) {
+        if (item.when !== undefined && !evaluateExpr(item.when, createChildContext(context))) {
+            continue // omit
+        }
+        keep.push(item)
+    }
+    return keep
+}
+
 /** Filters the contributions to only those that are enabled in the current context. */
-export function filterContributions(context: Context, contributions: Contributions): Contributions {
+export function filterContributions(
+    context: Context,
+    contributions: Contributions,
+    evaluateExpr = evaluate
+): Contributions {
     if (!contributions.menus) {
         return contributions
     }
     const filteredMenus: MenuContributions = {}
     for (const [menu, items] of Object.entries(contributions.menus) as [ContributableMenu, MenuItemContribution[]][]) {
-        filteredMenus[menu] = contextFilter(context, items)
+        filteredMenus[menu] = contextFilter(context, items, evaluateExpr)
     }
     return { ...contributions, menus: filteredMenus }
 }

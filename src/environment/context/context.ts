@@ -2,7 +2,6 @@ import { basename, dirname, extname } from 'path'
 import { ConfigurationCascade } from '../../protocol'
 import { Environment } from '../environment'
 import { Extension } from '../extension'
-import { evaluate } from './expr/evaluator'
 
 /**
  * Context is an arbitrary, immutable set of key-value pairs.
@@ -107,18 +106,4 @@ export function environmentContext<X extends Extension, C extends ConfigurationC
             return next.get(key)
         },
     }
-}
-
-/** Filters out items whose `when` context expression evaluates to false (or a falsey value). */
-export function contextFilter<T extends { when?: string }>(context: Context, items: T[]): T[] {
-    const keep: T[] = []
-    for (const item of items) {
-        if (item.when !== undefined) {
-            if (!evaluate(item.when, createChildContext(context))) {
-                continue // omit
-            }
-        }
-        keep.push(item)
-    }
-    return keep
 }

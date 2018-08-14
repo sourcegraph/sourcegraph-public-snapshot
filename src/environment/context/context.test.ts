@@ -1,6 +1,6 @@
 import assert from 'assert'
 import { EMPTY_ENVIRONMENT } from '../environment'
-import { Context, contextFilter, createChildContext, environmentContext } from './context'
+import { Context, createChildContext, environmentContext } from './context'
 
 const throwContext: Context = {
     get(): any {
@@ -92,26 +92,4 @@ describe('environmentContext', () => {
         assert.strictEqual(environmentContext(EMPTY_ENVIRONMENT, { get: () => 1 }).get('x'), 1)
         assert.throws(() => environmentContext(EMPTY_ENVIRONMENT, throwContext).get('x'))
     })
-})
-
-describe('contextFilter', () => {
-    const FIXTURE_CONTEXT = new Map<string, any>(
-        Object.entries({
-            a: 1,
-            b: 1,
-            c: 2,
-            x: 'y',
-        })
-    )
-
-    it('filters', () =>
-        assert.deepStrictEqual(
-            contextFilter(FIXTURE_CONTEXT, [
-                { x: 1 },
-                { x: 2, when: 'a' },
-                { x: 3, when: 'a == b' },
-                { x: 4, when: 'a == c' },
-            ]),
-            [{ x: 1 }, { x: 2, when: 'a' }, { x: 3, when: 'a == b' }]
-        ))
 })
