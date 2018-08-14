@@ -298,7 +298,7 @@ Foreign-key constraints:
          Column          |           Type           |                     Modifiers                     
 -------------------------+--------------------------+---------------------------------------------------
  id                      | integer                  | not null default nextval('repo_id_seq'::regclass)
- uri                     | citext                   | 
+ uri                     | citext                   | not null
  description             | text                     | 
  language                | text                     | 
  fork                    | boolean                  | 
@@ -317,6 +317,7 @@ Indexes:
     "repo_uri_trgm" gin (lower(uri::text) gin_trgm_ops)
 Check constraints:
     "check_external" CHECK (external_id IS NULL AND external_service_type IS NULL AND external_service_id IS NULL OR external_id IS NOT NULL AND external_service_type IS NOT NULL AND external_service_id IS NOT NULL)
+    "check_uri_nonempty" CHECK (uri <> ''::citext)
 Referenced by:
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
     TABLE "global_dep" CONSTRAINT "global_dep_repo_id" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE RESTRICT
