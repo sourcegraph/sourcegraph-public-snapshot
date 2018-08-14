@@ -83,7 +83,7 @@ func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, err
 // getOrCreateUser gets or creates a user account based on the SAML claims. It returns the
 // authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
 // that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, p *provider, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
+func getOrCreateUser(ctx context.Context, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
 	var data db.ExternalAccountData
 	auth.SetExternalAccountData(&data.AccountData, info.accountData)
 
