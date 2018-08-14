@@ -261,6 +261,8 @@ type ReviewBoard struct {
 }
 
 // SAMLAuthProvider description: Configures the SAML authentication provider for SSO.
+//
+// Note: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.
 type SAMLAuthProvider struct {
 	DisplayName                              string `json:"displayName,omitempty"`
 	IdentityProviderMetadata                 string `json:"identityProviderMetadata,omitempty"`
