@@ -265,7 +265,16 @@ export function createController<S extends ConfigurationSubject, C extends Setti
             delete (window as any).cxpenv
         }
         Object.defineProperty(window, 'cxpenv', {
-            get: () => controller.environment.environment.value,
+            get: () => {
+                // This value is synchronously available because observable has an underlying
+                // BehaviorSubject source.
+                let value: Environment | undefined
+                controller.environment.environment.subscribe(v => (value = v)).unsubscribe()
+                if (value === undefined) {
+                    throw new Error('environment was not synchronously available')
+                }
+                return value!
+            },
         })
     }
 
