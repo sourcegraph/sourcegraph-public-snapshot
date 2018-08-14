@@ -1,9 +1,17 @@
 import { BehaviorSubject, combineLatest, Observable, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
-import { ContributableMenu, Contributions, MenuContributions, MenuItemContribution } from '../../protocol'
+import {
+    ActionItem,
+    CommandContribution,
+    ContributableMenu,
+    Contributions,
+    MenuContributions,
+    MenuItemContribution,
+} from '../../protocol'
 import { isEqual } from '../../util'
-import { Context, createChildContext } from '../context/context'
-import { evaluate } from '../context/expr/evaluator'
+import { Context, createChildContext, MutableContext } from '../context/context'
+import { evaluate, evaluateTemplate } from '../context/expr/evaluator'
+import { TEMPLATE_BEGIN } from '../context/expr/lexer'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -61,14 +69,24 @@ export class ContributionRegistry {
     public readonly contributions: Observable<Contributions> = this.getContributions(this._entries)
 
     protected getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
-        const contributions = entries.pipe(
-            map(entries => mergeContributions(entries.map(e => e.contributions))),
+        return combineLatest(entries, this.context).pipe(
+            map(([entries, context]) =>
+                entries.map(({ contributions }) => {
+                    try {
+                        return evaluateContributions(context, filterContributions(context, contributions))
+                    } catch (err) {
+                        // An error during evaluation causes all of the contributions in the same entry to be
+                        // discarded.
+                        console.error('Discarding contributions: evaluating expressions or templates failed.', {
+                            contributions,
+                            err,
+                        })
+                        return {}
+                    }
+                })
+            ),
+            map(c => mergeContributions(c)),
             distinctUntilChanged((a, b) => isEqual(a, b))
-        )
-        // Emit on any change to the environment, since any environment change might change the
-        // evaluated result of templates specified by contributions.
-        return combineLatest(contributions, this.context).pipe(
-            map(([contributions, context]) => filterContributions(context, contributions))
         )
     }
 
@@ -146,4 +164,71 @@ export function filterContributions(
         filteredMenus[menu] = contextFilter(context, items, evaluateExpr)
     }
     return { ...contributions, menus: filteredMenus }
+}
+
+const DEFAULT_TEMPLATE_EVALUATOR: {
+    evaluateTemplate: (template: string, context: MutableContext) => any
+
+    /**
+     * Reports whether the string needs evaluation. Skipping evaluation for strings where it is unnecessary is an
+     * optimization.
+     */
+    needsEvaluation: (template: string) => boolean
+} = {
+    evaluateTemplate,
+    needsEvaluation: (template: string) => template.includes(TEMPLATE_BEGIN),
+}
+
+/**
+ * Evaluates expressions in contribution definitions against the given context.
+ */
+export function evaluateContributions(
+    context: Context,
+    contributions: Contributions,
+    { evaluateTemplate, needsEvaluation } = DEFAULT_TEMPLATE_EVALUATOR
+): Contributions {
+    if (!contributions.commands || contributions.commands.length === 0) {
+        return contributions
+    }
+    const evaluatedCommands: CommandContribution[] = []
+    for (const command of contributions.commands as Readonly<CommandContribution>[]) {
+        const childContext = createChildContext(context)
+        const changed: Partial<CommandContribution> = {}
+        if (command.title && needsEvaluation(command.title)) {
+            changed.title = evaluateTemplate(command.title, childContext)
+        }
+        if (command.category && needsEvaluation(command.category)) {
+            changed.category = evaluateTemplate(command.category, childContext)
+        }
+        if (command.description && needsEvaluation(command.description)) {
+            changed.description = evaluateTemplate(command.description, childContext)
+        }
+        if (command.iconURL && needsEvaluation(command.iconURL)) {
+            changed.iconURL = evaluateTemplate(command.iconURL, childContext)
+        }
+        if (command.actionItem) {
+            const changedActionItem: Partial<ActionItem> = {}
+            if (command.actionItem.label && needsEvaluation(command.actionItem.label)) {
+                changedActionItem.label = evaluateTemplate(command.actionItem.label, childContext)
+            }
+            if (command.actionItem.description && needsEvaluation(command.actionItem.description)) {
+                changedActionItem.description = evaluateTemplate(command.actionItem.description, childContext)
+            }
+            if (command.actionItem.group && needsEvaluation(command.actionItem.group)) {
+                changedActionItem.group = evaluateTemplate(command.actionItem.group, childContext)
+            }
+            if (command.actionItem.iconURL && needsEvaluation(command.actionItem.iconURL)) {
+                changedActionItem.iconURL = evaluateTemplate(command.actionItem.iconURL, childContext)
+            }
+            if (command.actionItem.iconDescription && needsEvaluation(command.actionItem.iconDescription)) {
+                changedActionItem.iconDescription = evaluateTemplate(command.actionItem.iconDescription, childContext)
+            }
+            if (Object.keys(changedActionItem).length !== 0) {
+                changed.actionItem = { ...command.actionItem, ...changedActionItem }
+            }
+        }
+        const modified = Object.keys(changed).length !== 0
+        evaluatedCommands.push(modified ? { ...command, ...changed } : command)
+    }
+    return { ...contributions, commands: evaluatedCommands }
 }

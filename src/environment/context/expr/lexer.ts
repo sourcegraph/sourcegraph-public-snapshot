@@ -143,6 +143,9 @@ function isIdentifierPart(ch: string): boolean {
     return isIdentifierStart(ch) || isDecimalDigit(ch) || ch === '.'
 }
 
+/** The token that indicates the beginning of a template string. */
+export const TEMPLATE_BEGIN = '${' // tslint:disable-line:no-invalid-template-strings
+
 /** Scans an expression. */
 export class Lexer {
     private expression = ''

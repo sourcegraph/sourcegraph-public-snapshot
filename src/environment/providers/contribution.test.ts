@@ -9,6 +9,7 @@ import {
     contextFilter,
     ContributionRegistry,
     ContributionsEntry,
+    evaluateContributions,
     filterContributions,
     mergeContributions,
 } from './contribution'
@@ -144,6 +145,35 @@ describe('ContributionRegistry', () => {
                 })
             })
         })
+
+        it('continues after error thrown during evaluation', () => {
+            scheduler().run(({ cold, expectObservable }) => {
+                const registry = new class extends ContributionRegistry {
+                    public constructor() {
+                        super(cold<Context>('a', { a: new Map() }))
+                    }
+
+                    public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
+                        return super.getContributions(entries)
+                    }
+                }()
+                expectObservable(
+                    registry.getContributions(
+                        of([
+                            {
+                                // Expression "!" will cause an error to be thrown.
+                                contributions: { menus: { commandPalette: [{ command: 'c1', when: '!' }] } },
+                            },
+                            {
+                                contributions: { menus: { commandPalette: [{ command: 'c2' }] } },
+                            },
+                        ] as ContributionsEntry[])
+                    )
+                ).toBe('a', {
+                    a: { menus: { commandPalette: [{ command: 'c2' }] } },
+                })
+            })
+        })
     })
 })
 
@@ -232,3 +262,77 @@ describe('filterContributions', () => {
         )
     })
 })
+
+// tslint:disable:no-invalid-template-strings
+describe('evaluateContributions', () => {
+    const TEST_TEMPLATE_EVALUATOR = {
+        evaluateTemplate: () => 'x',
+        needsEvaluation: (template: string) => template === 'a',
+    }
+
+    it('handles empty contributions', () =>
+        assert.deepStrictEqual(evaluateContributions(EMPTY_CONTEXT, {}), {} as Contributions))
+
+    it('handles empty array of command contributions', () =>
+        assert.deepStrictEqual(evaluateContributions(EMPTY_CONTEXT, { commands: [] }), {
+            commands: [],
+        } as Contributions))
+
+    it('handles non-empty contributions', () => {
+        const input: Contributions = {
+            commands: [
+                {
+                    command: 'c1',
+                    title: 'a',
+                    category: 'a',
+                    description: 'a',
+                    iconURL: 'a',
+                    actionItem: {
+                        label: 'a',
+                        description: 'a',
+                        group: 'a',
+                        iconDescription: 'a',
+                        iconURL: 'a',
+                    },
+                },
+                { command: 'c2', title: 'a', category: 'b' },
+                { command: 'c3', title: 'b', category: 'b', actionItem: { label: 'a', description: 'b' } },
+            ],
+        }
+        const origInput = JSON.parse(JSON.stringify(input))
+        assert.deepStrictEqual(evaluateContributions(FIXTURE_CONTEXT(), input, TEST_TEMPLATE_EVALUATOR), {
+            commands: [
+                {
+                    command: 'c1',
+                    title: 'x',
+                    category: 'x',
+                    description: 'x',
+                    iconURL: 'x',
+                    actionItem: {
+                        label: 'x',
+                        description: 'x',
+                        group: 'x',
+                        iconDescription: 'x',
+                        iconURL: 'x',
+                    },
+                },
+                { command: 'c2', title: 'x', category: 'b' },
+                { command: 'c3', title: 'b', category: 'b', actionItem: { label: 'x', description: 'b' } },
+            ],
+        } as Contributions)
+        assert.deepStrictEqual(input, origInput, 'input must not be mutated')
+    })
+
+    const TEST_THROW_EVALUATOR = {
+        evaluateTemplate: () => {
+            throw new Error('')
+        },
+        needsEvaluation: () => true,
+    }
+
+    it('throws an error if an error occurs during evaluation', () => {
+        const input: Contributions = { commands: [{ command: 'c', title: 'a' }] }
+        assert.throws(() => evaluateContributions(FIXTURE_CONTEXT(), input, TEST_THROW_EVALUATOR))
+    })
+})
+// tslint:enable:no-invalid-template-strings
