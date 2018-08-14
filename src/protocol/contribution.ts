@@ -84,12 +84,6 @@ export interface CommandContribution extends CommandItem {
      * (e.g., because the client is not graphical), then the client may hide the item from the toolbar.
      */
     actionItem?: ActionItem
-
-    /**
-     * An expression that, if given, must evaluate to true (or a truthy value) for this contribution to be
-     * displayed. The expression may use values from the context in which the contribution would be displayed.
-     */
-    when?: string
 }
 
 /** A description of how to display a button on a toolbar. */
