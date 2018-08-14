@@ -259,6 +259,7 @@ var doNotRequireRestart = []string{
 	"github",
 	"gitlab",
 	"phabricator",
+	"awsCodeCommit",
 	"bitbucketServer",
 	"repos.list",
 	"gitMaxConcurrentClones",
