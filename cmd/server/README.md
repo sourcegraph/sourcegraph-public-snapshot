@@ -10,24 +10,36 @@ This file documents information relevant to developers at Sourcegraph.
 
 ## Publishing a new version
 
-#### (0) Use the proper branch
+#### (0) Update the CHANGELOG
+
+1.  Update [CHANGELOG](../../CHANGELOG.md) on `master` (even if the release will be cut from a different branch).
+    1.  If this is a major or minor release, move any `Unreleased changes` under their own section
+        for the new `VERSION` you are releasing.
+    1.  If this is a patch release, create a new section for the `VERSION` you are releasing and
+        selectively move changelog items from `Unreleased changes` to this section.
+1.  Commit and `git push` this change directly to upstream `master`.
+
+#### (1) Use the proper release branch
 
 - New major releases (e.g. `v3.0.0`) should be tagged from `master`. Once you have tagged the release, create a long lived branch from that tag for patches to that release (e.g. `3.0`).
 - New minor releases (e.g. `v3.1.0`) should be tagged from `master`. Once you have tagged the release, create a long lived branch from that tag for patches to that release (e.g. `3.1`).
 - New patch releases (e.g. `v3.1.1`) should be tagged from the existing patch branch for the release being patched (e.g. `3.1`).
-  - Commits necessary for a patch release are cherry-picked from `master` into the patch branch before tagging a release.
+  - Commits necessary for a patch release are cherry-picked from `master` into the patch branch
+    before tagging a release.
+  - Do NOT commit any fixes or features into a patch release that are not yet in
+    `master`. Otherwise, you will end up breaking the validity of the changelog, as such orphaned
+    updates will be silently regressed in the next major/minor release.
 
 To avoid confusion between tags and branches:
 
 - Tags are always the full semantic version with a leading `v` (e.g. `v2.10.0`)
 - Branches are always the dot-separated major/minor versions with no leading `v` (e.g. `2.10`).
 
-#### (1) Create the release candidate
+#### (2) Create the release candidate
 
-1.  Update [CHANGELOG](../../CHANGELOG.md) and move any `Unreleased changes` under their own section for the new `VERSION` you are about to release.
-2.  Commit and push this change. Remember the commit hash. This is the commit you will tag as the official release if testing goes well.
+1.  Push your release branch upstream. Remember the commit hash. This is the commit you will tag as the official release if testing goes well.
 
-#### (2) Test
+#### (3) Test
 
 1.  Look in Buildkite to find the image hash (e.g. `sha256:043dce9761dd4b48f1211e7b69c0eeb2a4ee89d5a35f889fbdaea2492fb70f5d`) for the `sourcegraph/server` docker image step ([example](https://buildkite.com/sourcegraph/sourcegraph/builds/18738#eca69bac-2efd-4e99-82bd-99e9edd986f9)) of the build you just created in (1.2).
 
@@ -65,7 +77,7 @@ To avoid confusion between tags and branches:
     - Search works.
     - Code intelligence works.
 
-#### (3) Release the Sourcegraph Server Docker image
+#### (4) Release the Sourcegraph Server Docker image
 
 ```bash
 git fetch
@@ -73,7 +85,7 @@ git tag v$VERSION ${COMMIT_FROM_STEP_1.2}
 git push --tags
 ```
 
-#### (4) Update the public documentation
+#### (5) Update the public documentation
 
 1.  Check out a new branch in the [sourcegraph/website](https://github.com/sourcegraph/website) repository.
 1.  Update the old version number in the documentation to be the version number you are releasing [by editing this React component](https://github.com/sourcegraph/website/blob/master/src/components/ServerVersionNumber.tsx).
@@ -85,7 +97,7 @@ git push --tags
     ```
 1.  Create the PR on the website repository and merge it.
 
-#### (5) Notify existing instances that an update is available
+#### (6) Notify existing instances that an update is available
 
 1.  Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
 1.  Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseServerBuild` to the

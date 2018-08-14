@@ -1,3 +1,6 @@
+<!-- **NOTE:** this changelog should always be read on `master` branch. Its contents on version
+branches do not necessarily reflect the changes that have gone into that branch. -->
+
 # Changelog
 
 All notable changes to Sourcegraph Server and Data Center are documented in this file.
@@ -5,9 +8,6 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ## Unreleased changes
 
 ### Changed
-
-- Most `experimentalFeatures` in the site configuration now respond to configuration changes live, without requiring a server restart. As usual, you will be prompted for a restart after saving your configuration changes if one is required.
-- Gravatar image avatars are no longer displayed for committers.
 
 ### Added
 
@@ -21,8 +21,32 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - An issue / edge case where the Code Intelligence management admin page would incorrectly show language servers as `Running` when they had been removed from Docker.
 - Log level is respected in lsp-proxy logs.
 - Fixed an error where text searches could be routed to a faulty search worker.
+
+### Removed
+
+## 2.10.2
+
+### Changed
+
+### Added
+
+### Fixed
+
 - SAML IdP-initiated login previously failed with the IdP set a RelayState value. This now works.
 - repo-updater backs off fetches on a repo that's failing to fetch.
+
+### Removed
+
+## 2.10.1
+
+### Changed
+
+- Most `experimentalFeatures` in the site configuration now respond to configuration changes live, without requiring a server restart. As usual, you will be prompted for a restart after saving your configuration changes if one is required.
+- Gravatar image avatars are no longer displayed for committers.
+
+### Added
+
+### Fixed
 
 ### Removed
 
