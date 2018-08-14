@@ -2,9 +2,10 @@ import * as assert from 'assert'
 import { Observable, of } from 'rxjs'
 import { Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { ContributableMenu, Contributions } from '../../protocol'
-import { Context, EMPTY_CONTEXT } from '../context/context'
-import { EMPTY_OBSERVABLE_ENVIRONMENT } from '../environment'
+import { ConfigurationCascade, ContributableMenu, Contributions } from '../../protocol'
+import { EMPTY_COMPUTED_CONTEXT } from '../context/expr/evaluator'
+import { EMPTY_ENVIRONMENT, EMPTY_OBSERVABLE_ENVIRONMENT, Environment, ObservableEnvironment } from '../environment'
+import { Extension } from '../extension'
 import {
     contextFilter,
     ContributionRegistry,
@@ -47,8 +48,10 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
 }
 
 describe('ContributionRegistry', () => {
-    function create(context: Observable<Context> = EMPTY_OBSERVABLE_ENVIRONMENT.context): ContributionRegistry {
-        return new ContributionRegistry(context)
+    function create(
+        env: ObservableEnvironment<Extension, ConfigurationCascade> = EMPTY_OBSERVABLE_ENVIRONMENT
+    ): ContributionRegistry {
+        return new ContributionRegistry(env.environment)
     }
 
     it('is initially empty', () => {
@@ -98,7 +101,7 @@ describe('ContributionRegistry', () => {
                 public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
                     return super.getContributions(entries)
                 }
-            }(EMPTY_OBSERVABLE_ENVIRONMENT.context)
+            }(EMPTY_OBSERVABLE_ENVIRONMENT.environment)
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributions(
@@ -120,9 +123,9 @@ describe('ContributionRegistry', () => {
                 const registry = new class extends ContributionRegistry {
                     public constructor() {
                         super(
-                            cold<Context>('-a-b-|', {
-                                a: new Map([['x', 1], ['y', 2]]),
-                                b: new Map([['x', 1], ['y', 1]]),
+                            cold<Environment>('-a-b-|', {
+                                a: { ...EMPTY_ENVIRONMENT, context: { x: 1, y: 2 } },
+                                b: { ...EMPTY_ENVIRONMENT, context: { x: 1, y: 1 } },
                             })
                         )
                     }
@@ -150,7 +153,7 @@ describe('ContributionRegistry', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const registry = new class extends ContributionRegistry {
                     public constructor() {
-                        super(cold<Context>('a', { a: new Map() }))
+                        super(cold<Environment>('a', { a: EMPTY_ENVIRONMENT }))
                     }
 
                     public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
@@ -188,19 +191,18 @@ describe('mergeContributions', () => {
         ))
 })
 
-const FIXTURE_CONTEXT = () =>
-    new Map<string, any>(
-        Object.entries({
-            a: true,
-            b: false,
-        })
-    )
+const FIXTURE_CONTEXT = new Map<string, any>(
+    Object.entries({
+        a: true,
+        b: false,
+    })
+)
 
 describe('contextFilter', () => {
     it('filters', () =>
         assert.deepStrictEqual(
             contextFilter(
-                FIXTURE_CONTEXT(),
+                FIXTURE_CONTEXT,
                 [{ x: 1 }, { x: 2, when: 'a' }, { x: 3, when: 'a' }, { x: 4, when: 'b' }],
                 x => x === 'a'
             ),
@@ -210,20 +212,22 @@ describe('contextFilter', () => {
 
 describe('filterContributions', () => {
     it('handles empty contributions', () =>
-        assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, {}), {} as Contributions))
+        assert.deepStrictEqual(filterContributions(EMPTY_COMPUTED_CONTEXT, {}), {} as Contributions))
 
     it('handles empty menu contributions', () =>
-        assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, { menus: {} }), { menus: {} } as Contributions))
+        assert.deepStrictEqual(filterContributions(EMPTY_COMPUTED_CONTEXT, { menus: {} }), {
+            menus: {},
+        } as Contributions))
 
     it('handles empty array of menu contributions', () =>
-        assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, { menus: { commandPalette: [] } }), {
+        assert.deepStrictEqual(filterContributions(EMPTY_COMPUTED_CONTEXT, { menus: { commandPalette: [] } }), {
             menus: { commandPalette: [] },
         } as Contributions))
 
     it('handles non-empty contributions', () =>
         assert.deepStrictEqual(
             filterContributions(
-                FIXTURE_CONTEXT(),
+                FIXTURE_CONTEXT,
                 {
                     commands: [{ command: 'c1' }, { command: 'c2' }, { command: 'c3' }],
                     menus: {
@@ -256,7 +260,7 @@ describe('filterContributions', () => {
             menus: { commandPalette: [{ command: 'c', when: 'a' }] },
         }
         assert.throws(() =>
-            filterContributions(FIXTURE_CONTEXT(), input, () => {
+            filterContributions(FIXTURE_CONTEXT, input, () => {
                 throw new Error('')
             })
         )
@@ -271,10 +275,10 @@ describe('evaluateContributions', () => {
     }
 
     it('handles empty contributions', () =>
-        assert.deepStrictEqual(evaluateContributions(EMPTY_CONTEXT, {}), {} as Contributions))
+        assert.deepStrictEqual(evaluateContributions(EMPTY_COMPUTED_CONTEXT, {}), {} as Contributions))
 
     it('handles empty array of command contributions', () =>
-        assert.deepStrictEqual(evaluateContributions(EMPTY_CONTEXT, { commands: [] }), {
+        assert.deepStrictEqual(evaluateContributions(EMPTY_COMPUTED_CONTEXT, { commands: [] }), {
             commands: [],
         } as Contributions))
 
@@ -300,7 +304,7 @@ describe('evaluateContributions', () => {
             ],
         }
         const origInput = JSON.parse(JSON.stringify(input))
-        assert.deepStrictEqual(evaluateContributions(FIXTURE_CONTEXT(), input, TEST_TEMPLATE_EVALUATOR), {
+        assert.deepStrictEqual(evaluateContributions(FIXTURE_CONTEXT, input, TEST_TEMPLATE_EVALUATOR), {
             commands: [
                 {
                     command: 'c1',
@@ -332,7 +336,7 @@ describe('evaluateContributions', () => {
 
     it('throws an error if an error occurs during evaluation', () => {
         const input: Contributions = { commands: [{ command: 'c', title: 'a' }] }
-        assert.throws(() => evaluateContributions(FIXTURE_CONTEXT(), input, TEST_THROW_EVALUATOR))
+        assert.throws(() => evaluateContributions(FIXTURE_CONTEXT, input, TEST_THROW_EVALUATOR))
     })
 })
 // tslint:enable:no-invalid-template-strings

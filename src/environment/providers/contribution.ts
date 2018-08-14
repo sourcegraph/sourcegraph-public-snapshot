@@ -9,9 +9,10 @@ import {
     MenuItemContribution,
 } from '../../protocol'
 import { isEqual } from '../../util'
-import { Context, createChildContext, MutableContext } from '../context/context'
-import { evaluate, evaluateTemplate } from '../context/expr/evaluator'
+import { getComputedContextProperty } from '../context/context'
+import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'
+import { Environment } from '../environment'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -32,7 +33,7 @@ export class ContributionRegistry {
     /** All entries, including entries that are not enabled in the current context. */
     private _entries = new BehaviorSubject<ContributionsEntry[]>([])
 
-    public constructor(private context: Observable<Context>) {}
+    public constructor(private environment: Observable<Environment>) {}
 
     /** Register contributions and return an unsubscribable that deregisters the contributions. */
     public registerContributions(entry: ContributionsEntry): ContributionUnsubscribable {
@@ -69,11 +70,15 @@ export class ContributionRegistry {
     public readonly contributions: Observable<Contributions> = this.getContributions(this._entries)
 
     protected getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
-        return combineLatest(entries, this.context).pipe(
-            map(([entries, context]) =>
-                entries.map(({ contributions }) => {
+        return combineLatest(entries, this.environment).pipe(
+            map(([entries, environment]) => {
+                const computedContext = { get: (key: string) => getComputedContextProperty(environment, key) }
+                return entries.map(({ contributions }) => {
                     try {
-                        return evaluateContributions(context, filterContributions(context, contributions))
+                        return evaluateContributions(
+                            computedContext,
+                            filterContributions(computedContext, contributions)
+                        )
                     } catch (err) {
                         // An error during evaluation causes all of the contributions in the same entry to be
                         // discarded.
@@ -84,7 +89,7 @@ export class ContributionRegistry {
                         return {}
                     }
                 })
-            ),
+            }),
             map(c => mergeContributions(c)),
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
@@ -139,10 +144,14 @@ export function mergeContributions(contributions: Contributions[]): Contribution
 }
 
 /** Filters out items whose `when` context expression evaluates to false (or a falsey value). */
-export function contextFilter<T extends { when?: string }>(context: Context, items: T[], evaluateExpr = evaluate): T[] {
+export function contextFilter<T extends { when?: string }>(
+    context: ComputedContext,
+    items: T[],
+    evaluateExpr = evaluate
+): T[] {
     const keep: T[] = []
     for (const item of items) {
-        if (item.when !== undefined && !evaluateExpr(item.when, createChildContext(context))) {
+        if (item.when !== undefined && !evaluateExpr(item.when, context)) {
             continue // omit
         }
         keep.push(item)
@@ -152,7 +161,7 @@ export function contextFilter<T extends { when?: string }>(context: Context, ite
 
 /** Filters the contributions to only those that are enabled in the current context. */
 export function filterContributions(
-    context: Context,
+    context: ComputedContext,
     contributions: Contributions,
     evaluateExpr = evaluate
 ): Contributions {
@@ -167,7 +176,7 @@ export function filterContributions(
 }
 
 const DEFAULT_TEMPLATE_EVALUATOR: {
-    evaluateTemplate: (template: string, context: MutableContext) => any
+    evaluateTemplate: (template: string, context: ComputedContext) => any
 
     /**
      * Reports whether the string needs evaluation. Skipping evaluation for strings where it is unnecessary is an
@@ -183,7 +192,7 @@ const DEFAULT_TEMPLATE_EVALUATOR: {
  * Evaluates expressions in contribution definitions against the given context.
  */
 export function evaluateContributions(
-    context: Context,
+    context: ComputedContext,
     contributions: Contributions,
     { evaluateTemplate, needsEvaluation } = DEFAULT_TEMPLATE_EVALUATOR
 ): Contributions {
@@ -192,36 +201,35 @@ export function evaluateContributions(
     }
     const evaluatedCommands: CommandContribution[] = []
     for (const command of contributions.commands as Readonly<CommandContribution>[]) {
-        const childContext = createChildContext(context)
         const changed: Partial<CommandContribution> = {}
         if (command.title && needsEvaluation(command.title)) {
-            changed.title = evaluateTemplate(command.title, childContext)
+            changed.title = evaluateTemplate(command.title, context)
         }
         if (command.category && needsEvaluation(command.category)) {
-            changed.category = evaluateTemplate(command.category, childContext)
+            changed.category = evaluateTemplate(command.category, context)
         }
         if (command.description && needsEvaluation(command.description)) {
-            changed.description = evaluateTemplate(command.description, childContext)
+            changed.description = evaluateTemplate(command.description, context)
         }
         if (command.iconURL && needsEvaluation(command.iconURL)) {
-            changed.iconURL = evaluateTemplate(command.iconURL, childContext)
+            changed.iconURL = evaluateTemplate(command.iconURL, context)
         }
         if (command.actionItem) {
             const changedActionItem: Partial<ActionItem> = {}
             if (command.actionItem.label && needsEvaluation(command.actionItem.label)) {
-                changedActionItem.label = evaluateTemplate(command.actionItem.label, childContext)
+                changedActionItem.label = evaluateTemplate(command.actionItem.label, context)
             }
             if (command.actionItem.description && needsEvaluation(command.actionItem.description)) {
-                changedActionItem.description = evaluateTemplate(command.actionItem.description, childContext)
+                changedActionItem.description = evaluateTemplate(command.actionItem.description, context)
             }
             if (command.actionItem.group && needsEvaluation(command.actionItem.group)) {
-                changedActionItem.group = evaluateTemplate(command.actionItem.group, childContext)
+                changedActionItem.group = evaluateTemplate(command.actionItem.group, context)
             }
             if (command.actionItem.iconURL && needsEvaluation(command.actionItem.iconURL)) {
-                changedActionItem.iconURL = evaluateTemplate(command.actionItem.iconURL, childContext)
+                changedActionItem.iconURL = evaluateTemplate(command.actionItem.iconURL, context)
             }
             if (command.actionItem.iconDescription && needsEvaluation(command.actionItem.iconDescription)) {
-                changedActionItem.iconDescription = evaluateTemplate(command.actionItem.iconDescription, childContext)
+                changedActionItem.iconDescription = evaluateTemplate(command.actionItem.iconDescription, context)
             }
             if (Object.keys(changedActionItem).length !== 0) {
                 changed.actionItem = { ...command.actionItem, ...changedActionItem }

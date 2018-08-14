@@ -1,15 +1,14 @@
 import assert from 'assert'
 import { evaluate, evaluateTemplate } from './evaluator'
 
-const FIXTURE_CONTEXT = () =>
-    new Map<string, any>(
-        Object.entries({
-            a: 1,
-            b: 1,
-            c: 2,
-            x: 'y',
-        })
-    )
+const FIXTURE_CONTEXT = new Map<string, any>(
+    Object.entries({
+        a: 1,
+        b: 1,
+        c: 2,
+        x: 'y',
+    })
+)
 
 describe('evaluate', () => {
     // tslint:disable:no-invalid-template-strings
@@ -32,13 +31,11 @@ describe('evaluate', () => {
         '`_${x}_${a}_${a+b}`': '_y_1_2',
         '`_${`-${x}-`}_`': '_-y-_',
         'a || isnotdefined': 1, // short-circuit (if not, the use of an undefined ident would cause an error)
-        'x = 3': 3,
-        'a = a + 1': 2,
     }
     // tslint:enable:no-invalid-template-strings
     for (const [expr, want] of Object.entries(TESTS)) {
         it(expr, () => {
-            const value = evaluate(expr, FIXTURE_CONTEXT())
+            const value = evaluate(expr, FIXTURE_CONTEXT)
             assert.strictEqual(value, want)
         })
     }
@@ -56,7 +53,7 @@ describe('evaluateTemplate', () => {
     // tslint:enable:no-invalid-template-strings
     for (const [template, want] of Object.entries(TESTS)) {
         it(template, () => {
-            const value = evaluateTemplate(template, FIXTURE_CONTEXT())
+            const value = evaluateTemplate(template, FIXTURE_CONTEXT)
             assert.strictEqual(value, want)
         })
     }

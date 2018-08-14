@@ -7,7 +7,6 @@ export type Expression =
     | { Template: { parts: Expression[] } }
     | { Unary: { operator: Operator; expression: Expression } }
     | { Binary: { operator: Operator; left: Expression; right: Expression } }
-    | { Assignment: { name: Expression; value: Expression } }
 
 /**
  * Parses an expression.
@@ -145,7 +144,6 @@ export class Parser {
     //             String |
     //             Template |
     //             Number |
-    //             '(' Assignment ')' |
     //             FunctionCall
     private parsePrimary(): Expression {
         const token = this.lexer.peek()
@@ -178,7 +176,7 @@ export class Parser {
 
         if (matchOp(token, '(')) {
             this.lexer.next()
-            const expr = this.parseAssignment()
+            const expr = this.parseAdditive()
             const token = this.lexer.next()
             if (!matchOp(token, ')')) {
                 throw new SyntaxError(`Expected ")" (at ${this.lexer.index})`)
@@ -258,30 +256,9 @@ export class Parser {
         return expr
     }
 
-    // Assignment ::= Identifier '=' Assignment |
-    //                Additive
-    private parseAssignment(): Expression {
-        const expr = this.parseAdditive()
-        if (expr !== undefined && 'Identifier' in expr) {
-            const token = this.lexer.peek()
-            if (matchOp(token, '=')) {
-                this.lexer.next()
-                return {
-                    Assignment: {
-                        name: expr,
-                        value: this.parseAssignment(),
-                    },
-                }
-            }
-            return expr
-        }
-
-        return expr
-    }
-
-    // Expression ::= Assignment
+    // Expression ::= Additive
     private parseExpression(): Expression {
-        return this.parseAssignment()
+        return this.parseAdditive()
     }
 }
 

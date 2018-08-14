@@ -1,12 +1,21 @@
 import { isFunction } from '../../../util'
-import { MutableContext } from '../context'
 import { TokenType } from './lexer'
 import { Expression, Parser, TemplateParser } from './parser'
+
+/** A way to look up the value for an identifier. */
+export interface ComputedContext {
+    get(key: string): any
+}
+
+/** A computed context that returns undefined for every key. */
+export const EMPTY_COMPUTED_CONTEXT: ComputedContext = {
+    get: () => undefined,
+}
 
 /**
  * Evaluates an expression with the given context and returns the result.
  */
-export function evaluate(expr: string, context: MutableContext): any {
+export function evaluate(expr: string, context: ComputedContext): any {
     return exec(new Parser().parse(expr), context)
 }
 
@@ -16,11 +25,11 @@ export function evaluate(expr: string, context: MutableContext): any {
  * A template is a string that interpolates expressions in ${...}. It uses the same syntax as
  * JavaScript templates.
  */
-export function evaluateTemplate(template: string, context: MutableContext): any {
+export function evaluateTemplate(template: string, context: ComputedContext): any {
     return exec(new TemplateParser().parse(template), context)
 }
 
-function exec(node: Expression, context: MutableContext): any {
+function exec(node: Expression, context: ComputedContext): any {
     if ('Literal' in node) {
         switch (node.Literal.type) {
             case TokenType.String:
@@ -103,15 +112,6 @@ function exec(node: Expression, context: MutableContext): any {
             return value
         }
         throw new SyntaxError(`Undefined identifier: ${node.Identifier}`)
-    }
-
-    if ('Assignment' in node) {
-        const value = exec(node.Assignment.value, context)
-        if (!('Identifier' in node.Assignment.name)) {
-            throw new SyntaxError('Assigment target must be Identifier')
-        }
-        context.set(node.Assignment.name.Identifier, value)
-        return value
     }
 
     if ('FunctionCall' in node) {

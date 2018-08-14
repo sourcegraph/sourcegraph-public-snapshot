@@ -17,7 +17,7 @@ export class Registries<X extends Extension, C extends ConfigurationCascade> {
     constructor(private environment: ObservableEnvironment<X, C>) {}
 
     public readonly commands = new CommandRegistry()
-    public readonly contribution = new ContributionRegistry(this.environment.context)
+    public readonly contribution = new ContributionRegistry(this.environment.environment)
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentImplementation = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentLocationProviderRegistry<ReferenceParams>()

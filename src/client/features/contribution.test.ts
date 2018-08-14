@@ -11,7 +11,7 @@ const create = (): {
     feature: ContributionFeature
 } => {
     const client = {} as Client
-    const registry = new ContributionRegistry(EMPTY_OBSERVABLE_ENVIRONMENT.context)
+    const registry = new ContributionRegistry(EMPTY_OBSERVABLE_ENVIRONMENT.environment)
     const feature = new ContributionFeature(registry)
     return { client, registry, feature }
 }

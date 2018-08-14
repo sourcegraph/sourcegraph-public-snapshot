@@ -4,7 +4,7 @@ import { Range, TextDocument, TextDocumentItem } from 'vscode-languageserver-typ
 import { ConfigurationCascade } from '../protocol'
 import { Selection, URI } from '../types/textDocument'
 import { isEqual } from '../util'
-import { Context, EMPTY_CONTEXT, environmentContext } from './context/context'
+import { Context, EMPTY_CONTEXT } from './context/context'
 import { Extension } from './extension'
 
 /**
@@ -127,12 +127,16 @@ export function createObservableEnvironment<X extends Extension, C extends Confi
         map(({ configuration }) => configuration),
         distinctUntilChanged((a, b) => isEqual(a, b))
     )
+    const context = environment.pipe(
+        map(({ context }) => context),
+        distinctUntilChanged((a, b) => isEqual(a, b))
+    )
     return {
         environment,
         root,
         component,
         textDocument,
         configuration,
-        context: environment.pipe(map(environment => environmentContext(environment, environment.context))),
+        context,
     }
 }
