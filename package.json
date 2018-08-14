@@ -73,7 +73,7 @@
     "@types/mocha": "^5.2.3",
     "@types/node": "^10.5.0",
     "@types/uuid": "^3.4.3",
-    "@types/ws": "^5.1.2",
+    "@types/ws": "^6.0.0",
     "concurrently": "^3.6.0",
     "husky": "^0.14.3",
     "mocha": "^5.2.0",
