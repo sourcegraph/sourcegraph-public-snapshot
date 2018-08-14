@@ -69,7 +69,7 @@ export interface Component {
  */
 export interface ObservableEnvironment<X extends Extension, C extends ConfigurationCascade> {
     /** The environment (and changes to it). */
-    readonly environment: Observable<Environment<X, C>> & { readonly value: Environment<X, C> }
+    readonly environment: Observable<Environment<X, C>>
 
     /** The environment's root URI (and changes to it). */
     readonly root: Observable<URI | null>
@@ -86,10 +86,7 @@ export interface ObservableEnvironment<X extends Extension, C extends Configurat
 
 /** An ObservableEnvironment that always represents the empty environment and never emits changes. */
 export const EMPTY_OBSERVABLE_ENVIRONMENT: ObservableEnvironment<any, any> = {
-    environment: { ...of(EMPTY_ENVIRONMENT), value: EMPTY_ENVIRONMENT } as ObservableEnvironment<
-        any,
-        any
-    >['environment'],
+    environment: of(EMPTY_ENVIRONMENT),
     root: of(null),
     component: of(null),
     textDocument: of(null),
@@ -103,7 +100,7 @@ export const EMPTY_OBSERVABLE_ENVIRONMENT: ObservableEnvironment<any, any> = {
  * @template C configuration cascade type
  */
 export function createObservableEnvironment<X extends Extension, C extends ConfigurationCascade>(
-    environment: Observable<Environment<X, C>> & { readonly value: Environment<X, C> }
+    environment: Observable<Environment<X, C>>
 ): ObservableEnvironment<X, C> {
     const component = environment.pipe(
         map(({ component }) => component),
