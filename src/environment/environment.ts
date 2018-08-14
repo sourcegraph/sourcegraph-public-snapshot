@@ -4,6 +4,7 @@ import { Range, TextDocument, TextDocumentItem } from 'vscode-languageserver-typ
 import { ConfigurationCascade } from '../protocol'
 import { Selection, URI } from '../types/textDocument'
 import { isEqual } from '../util'
+import { Context, EMPTY_CONTEXT, environmentContext } from './context/context'
 import { Extension } from './extension'
 
 /**
@@ -34,6 +35,9 @@ export interface Environment<X extends Extension = Extension, C extends Configur
 
     /** The configuration cascade. */
     readonly configuration: C
+
+    /** Arbitrary key-value pairs that describe other application state. */
+    readonly context: Context
 }
 
 /** An empty CXP environment. */
@@ -42,6 +46,7 @@ export const EMPTY_ENVIRONMENT: Environment<any, any> = {
     component: null,
     extensions: null,
     configuration: { merged: {} },
+    context: EMPTY_CONTEXT,
 }
 
 /** An application component that displays a [TextDocument](#TextDocument). */
@@ -82,6 +87,9 @@ export interface ObservableEnvironment<X extends Extension, C extends Configurat
 
     /** The environment's configuration cascade (and changes to it). */
     readonly configuration: Observable<C>
+
+    /** The environment's context (and changes to it). */
+    readonly context: Observable<Context>
 }
 
 /** An ObservableEnvironment that always represents the empty environment and never emits changes. */
@@ -91,6 +99,7 @@ export const EMPTY_OBSERVABLE_ENVIRONMENT: ObservableEnvironment<any, any> = {
     component: of(null),
     textDocument: of(null),
     configuration: of({}),
+    context: of(EMPTY_CONTEXT),
 }
 
 /**
@@ -102,24 +111,28 @@ export const EMPTY_OBSERVABLE_ENVIRONMENT: ObservableEnvironment<any, any> = {
 export function createObservableEnvironment<X extends Extension, C extends ConfigurationCascade>(
     environment: Observable<Environment<X, C>>
 ): ObservableEnvironment<X, C> {
+    const root = environment.pipe(
+        map(({ root }) => root),
+        distinctUntilChanged()
+    )
     const component = environment.pipe(
         map(({ component }) => component),
         distinctUntilChanged((a, b) => isEqual(a, b))
     )
+    const textDocument = component.pipe(
+        map(component => (component ? component.document : null)),
+        distinctUntilChanged((a, b) => isEqual(a, b))
+    )
+    const configuration = environment.pipe(
+        map(({ configuration }) => configuration),
+        distinctUntilChanged((a, b) => isEqual(a, b))
+    )
     return {
         environment,
-        root: environment.pipe(
-            map(({ root }) => root),
-            distinctUntilChanged()
-        ),
+        root,
         component,
-        textDocument: component.pipe(
-            map(component => (component ? component.document : null)),
-            distinctUntilChanged((a, b) => isEqual(a, b))
-        ),
-        configuration: environment.pipe(
-            map(({ configuration }) => configuration),
-            distinctUntilChanged((a, b) => isEqual(a, b))
-        ),
+        textDocument,
+        configuration,
+        context: environment.pipe(map(environment => environmentContext(environment, environment.context))),
     }
 }

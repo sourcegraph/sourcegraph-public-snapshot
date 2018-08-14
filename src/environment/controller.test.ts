@@ -38,6 +38,7 @@ const FIXTURE_ENVIRONMENT: Environment<any, any> = {
     },
     extensions: [{ id: 'x' }],
     configuration: {},
+    context: new Map([]),
 }
 
 describe('Controller', () => {

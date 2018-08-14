@@ -1,4 +1,5 @@
 import * as assert from 'assert'
+import { EMPTY_OBSERVABLE_ENVIRONMENT } from '../../environment/environment'
 import { ContributionRegistry, ContributionsEntry } from '../../environment/providers/contribution'
 import { ClientCapabilities } from '../../protocol'
 import { Client } from '../client'
@@ -10,7 +11,7 @@ const create = (): {
     feature: ContributionFeature
 } => {
     const client = {} as Client
-    const registry = new ContributionRegistry()
+    const registry = new ContributionRegistry(EMPTY_OBSERVABLE_ENVIRONMENT.context)
     const feature = new ContributionFeature(registry)
     return { client, registry, feature }
 }

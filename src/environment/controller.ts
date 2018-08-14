@@ -103,7 +103,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
     private subscriptions = new Subscription()
 
     /** The registries for various providers that expose extension functionality. */
-    public readonly registries = new Registries()
+    public readonly registries: Registries<X, C>
 
     private readonly _logMessages = new Subject<LogMessageParams & MessageSource>()
     private readonly _showMessages = new Subject<ShowMessageParams & MessageSource>()
@@ -132,6 +132,8 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
                 c.client.unsubscribe()
             }
         })
+
+        this.registries = new Registries<X, C>(this.environment)
     }
 
     public setEnvironment(nextEnvironment: Environment<X, C>): void {

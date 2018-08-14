@@ -1,9 +1,11 @@
 import * as assert from 'assert'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ContributableMenu, Contributions } from '../../protocol'
-import { ContributionRegistry, ContributionsEntry, mergeContributions } from './contribution'
+import { Context, EMPTY_CONTEXT } from '../context/context'
+import { EMPTY_OBSERVABLE_ENVIRONMENT } from '../environment'
+import { ContributionRegistry, ContributionsEntry, filterContributions, mergeContributions } from './contribution'
 
 const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
 
@@ -38,13 +40,17 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
 }
 
 describe('ContributionRegistry', () => {
+    function create(context: Observable<Context> = EMPTY_OBSERVABLE_ENVIRONMENT.context): ContributionRegistry {
+        return new ContributionRegistry(context)
+    }
+
     it('is initially empty', () => {
-        assert.deepStrictEqual(new ContributionRegistry().entries.value, [])
+        assert.deepStrictEqual(create().entries.value, [])
     })
 
     it('registers and unregisters contributions', () => {
         const subscriptions = new Subscription()
-        const registry = new ContributionRegistry()
+        const registry = create()
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
         const entry2: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_2 }
 
@@ -62,7 +68,7 @@ describe('ContributionRegistry', () => {
     })
 
     it('replaces contributions', () => {
-        const registry = new ContributionRegistry()
+        const registry = create()
         const entry1: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_1 }
         const entry2: ContributionsEntry = { contributions: FIXTURE_CONTRIBUTIONS_2 }
 
@@ -80,12 +86,12 @@ describe('ContributionRegistry', () => {
     })
 
     describe('contributions observable', () => {
-        it('returns stream of results of registrations', () => {
+        it('emits stream of results of registrations', () => {
             const registry = new class extends ContributionRegistry {
                 public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
                     return super.getContributions(entries)
                 }
-            }()
+            }(EMPTY_OBSERVABLE_ENVIRONMENT.context)
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributions(
@@ -101,6 +107,37 @@ describe('ContributionRegistry', () => {
                 })
             )
         })
+
+        it('emits when context changes and filters on context', () => {
+            scheduler().run(({ cold, expectObservable }) => {
+                const registry = new class extends ContributionRegistry {
+                    public constructor() {
+                        super(
+                            cold<Context>('-a-b-|', {
+                                a: new Map([['x', 1], ['y', 2]]),
+                                b: new Map([['x', 1], ['y', 1]]),
+                            })
+                        )
+                    }
+
+                    public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
+                        return super.getContributions(entries)
+                    }
+                }()
+                expectObservable(
+                    registry.getContributions(
+                        of([
+                            {
+                                contributions: { menus: { commandPalette: [{ command: 'c', when: 'x == y' }] } },
+                            },
+                        ] as ContributionsEntry[])
+                    )
+                ).toBe('-a-b-|', {
+                    a: { menus: { commandPalette: [] } },
+                    b: { menus: { commandPalette: [{ command: 'c', when: 'x == y' }] } },
+                })
+            })
+        })
     })
 })
 
@@ -113,4 +150,10 @@ describe('mergeContributions', () => {
             mergeContributions([FIXTURE_CONTRIBUTIONS_1, FIXTURE_CONTRIBUTIONS_2, {}, { commands: [] }, { menus: {} }]),
             FIXTURE_CONTRIBUTIONS_MERGED
         ))
+})
+
+describe('filterContributions', () => {
+    it('handles empty contributions', () => assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, {}), {}))
+    it('handles non-empty contributions', () =>
+        assert.deepStrictEqual(filterContributions(EMPTY_CONTEXT, FIXTURE_CONTRIBUTIONS_1), FIXTURE_CONTRIBUTIONS_1))
 })
