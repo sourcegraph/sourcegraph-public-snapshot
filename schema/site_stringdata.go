@@ -956,7 +956,8 @@ const SiteSchemaJSON = `{
       }
     },
     "SAMLAuthProvider": {
-      "description": "Configures the SAML authentication provider for SSO.\n\nNote: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the ` + "`" + `auth.providers` + "`" + ` array.",
+      "description":
+        "Configures the SAML authentication provider for SSO.\n\nNote: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the ` + "`" + `auth.providers` + "`" + ` array.",
       "type": "object",
       "additionalProperties": false,
       "required": ["type"],
