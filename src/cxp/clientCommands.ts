@@ -20,7 +20,7 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
     subscription.add(
         controller.registries.commands.registerCommand({
             command: 'open',
-            run: async (url: string) => {
+            run: (url: string) => {
                 // The `open` client command is usually implemented by ActionItem rendering the action with the
                 // HTML <a> element, not by handling it here. Using an HTML <a> element means it is a standard
                 // link, and native system behaviors such as open-in-new-tab work.
@@ -28,6 +28,7 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
                 // If a client is not running in a web browser, this handler should be updated to call the system's
                 // default URL handler using the system (e.g., Electron) API.
                 window.open(url, '_blank')
+                return Promise.resolve()
             },
         })
     )
@@ -35,7 +36,7 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
     subscription.add(
         controller.registries.commands.registerCommand({
             command: 'updateConfiguration',
-            run: async (...anyArgs: any[]): Promise<void> => {
+            run: (...anyArgs: any[]): Promise<void> => {
                 const args = anyArgs as ActionContributionClientCommandUpdateConfiguration['commandArguments']
                 // Return with .toPromise() so that it gets executed (otherwise, the observable will never be
                 // subscribed to and will never execute the update operation).
