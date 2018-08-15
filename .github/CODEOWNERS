@@ -3,21 +3,21 @@
 # https://help.github.com/articles/about-codeowners/
 
 *git* @keegancsmith
-migrations/ @keegancsmith
+/migrations/ @keegancsmith
 monolith/ @keegancsmith
 search @keegancsmith
-web/ @felixfbecker
-xlang/ @keegancsmith
-schema/ @sqs
-web/src/site-admin/ @sqs
-web/src/settings/ @sqs
+/web/ @felixfbecker
+/xlang/ @keegancsmith
+/schema/ @sqs
+/web/src/site-admin/ @sqs
+/web/src/settings/ @sqs
 conf/ @sqs
-cmd/frontend/internal/auth/ @sqs
-dev/auth-provider/ @sqs
-dev/config.json @sqs
-client/vscode/ @chrismwendt
-cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
-web/src/tracking/ @dadlerj
+/cmd/frontend/internal/auth/ @sqs
+/dev/auth-provider/ @sqs
+/dev/config.json @sqs
+/client/vscode/ @chrismwendt
+/cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
+/web/src/tracking/ @dadlerj
 
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)
