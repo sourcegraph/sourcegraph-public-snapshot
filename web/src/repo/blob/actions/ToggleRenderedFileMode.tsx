@@ -61,7 +61,7 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
                 data-tooltip={otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}
             >
                 <ViewIcon className="icon-inline" />{' '}
-                <span className="d-md-none d-lg-inline">{otherMode === 'code' ? 'Raw' : 'Formatted'}</span>
+                <span className="d-none d-lg-inline">{otherMode === 'code' ? 'Raw' : 'Formatted'}</span>
             </ActionItem>
         )
     }

@@ -16,7 +16,7 @@ export class RepositoryGraphAction extends React.PureComponent<{
                 to={`/${encodeRepoRev(this.props.repo, this.props.rev)}/-/graph`}
                 data-tooltip="Repository graph"
             >
-                <GlobeIcon className="icon-inline" /> <span className="d-md-none d-lg-inline">Graph</span>
+                <GlobeIcon className="icon-inline" /> <span className="d-none d-lg-inline">Graph</span>
             </ActionItem>
         )
     }

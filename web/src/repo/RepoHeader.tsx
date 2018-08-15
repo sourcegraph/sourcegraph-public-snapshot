@@ -224,7 +224,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         <li className="nav-item">
                             <ActionItem to={`/${this.props.repo.uri}/-/settings`} data-tooltip="Repository settings">
                                 <GearIcon className="icon-inline" />{' '}
-                                <span className="d-md-none d-lg-inline">Settings</span>
+                                <span className="d-none d-lg-inline">Settings</span>
                             </ActionItem>
                         </li>
                     )}
