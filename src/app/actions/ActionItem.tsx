@@ -13,11 +13,11 @@ export interface ActionItemProps {
     variant?: 'actionItem'
     className?: string
 
-    /** Called when the item's command is executed. */
-    onCommandExecute?: () => void
+    /** Called when the item's action is run. */
+    onRun?: (actionID: string) => void
 
     /**
-     * Whether to set the disabled attribute on the element when command execution is started and not yet finished.
+     * Whether to set the disabled attribute on the element when execution is started and not yet finished.
      */
     disabledDuringExecution?: boolean
 
@@ -54,8 +54,8 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
                         from(this.props.cxpController.registries.commands.executeCommand(params)).pipe(
                             mapTo(null),
                             tap(() => {
-                                if (this.props.onCommandExecute) {
-                                    this.props.onCommandExecute()
+                                if (this.props.onRun) {
+                                    this.props.onRun(this.props.contribution.id)
                                 }
                             }),
                             catchError(error => [asError(error)]),

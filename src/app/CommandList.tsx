@@ -1,4 +1,5 @@
 import { ContributableMenu, Contributions } from 'cxp/module/protocol'
+import { isArray, sortBy, uniq } from 'lodash-es'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
@@ -27,6 +28,9 @@ interface State {
 
     input: string
     selectedIndex: number
+
+    /** Recently invoked actions, which should be sorted first in the list. */
+    recentActions: string[] | null
 }
 
 /** Displays a list of commands contributed by CXP extensions for a specific menu. */
@@ -34,7 +38,39 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
     Props<S, C>,
     State
 > {
-    public state: State = { input: '', selectedIndex: 0 }
+    // Persist recent actions in localStorage. Be robust to serialization errors.
+    private static RECENT_ACTIONS_STORAGE_KEY = 'commandList.recentActions'
+    private static readRecentActions(): string[] | null {
+        const value = localStorage.getItem(CommandList.RECENT_ACTIONS_STORAGE_KEY)
+        if (value === null) {
+            return null
+        }
+        try {
+            const recentActions = JSON.parse(value)
+            if (isArray(recentActions) && recentActions.every(a => typeof a === 'string')) {
+                return recentActions
+            }
+            return null
+        } catch (err) {
+            console.error('Error reading recent actions:', err)
+        }
+        CommandList.writeRecentActions(null)
+        return null
+    }
+    private static writeRecentActions(recentActions: string[] | null): void {
+        try {
+            if (recentActions === null) {
+                localStorage.removeItem(CommandList.RECENT_ACTIONS_STORAGE_KEY)
+            } else {
+                const value = JSON.stringify(recentActions)
+                localStorage.setItem(CommandList.RECENT_ACTIONS_STORAGE_KEY, value)
+            }
+        } catch (err) {
+            console.error('Error writing recent actions:', err)
+        }
+    }
+
+    public state: State = { input: '', selectedIndex: 0, recentActions: CommandList.readRecentActions() }
 
     private subscriptions = new Subscription()
 
@@ -47,6 +83,12 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
                 this.setState({ contributions })
             )
         )
+    }
+
+    public componentDidUpdate(_prevProps: Props<S, C>, prevState: State): void {
+        if (this.state.recentActions !== prevState.recentActions) {
+            CommandList.writeRecentActions(this.state.recentActions)
+        }
     }
 
     public componentWillUnmount(): void {
@@ -62,7 +104,7 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
 
         // Filter and sort by score.
         const query = this.state.input.trim()
-        const items = filterAndRankItems(allItems, this.state.input)
+        const items = filterAndRankItems(allItems, this.state.input, this.state.recentActions)
 
         // Support wrapping around.
         const selectedIndex = ((this.state.selectedIndex % items.length) + items.length) % items.length
@@ -106,7 +148,7 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
                                     pattern={query}
                                 />
                             }
-                            onCommandExecute={this.props.onSelect}
+                            onRun={this.onActionRun}
                             cxpController={this.props.cxpController}
                             extensions={this.props.extensions}
                         />
@@ -137,9 +179,6 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
             case Key.Enter: {
                 if (this.selectedItem) {
                     this.selectedItem.runAction()
-                    if (this.props.onSelect) {
-                        this.props.onSelect()
-                    }
                 }
                 break
             }
@@ -151,17 +190,47 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
     private setSelectedIndex(delta: number): void {
         this.setState(prevState => ({ selectedIndex: prevState.selectedIndex + delta }))
     }
+
+    private onActionRun = (actionID: string) => {
+        const KEEP_RECENT_ACTIONS = 10
+        this.setState(prevState => {
+            const { recentActions } = prevState
+            if (!recentActions) {
+                return { recentActions: [actionID] }
+            }
+            return { recentActions: uniq([actionID, ...recentActions]).slice(0, KEEP_RECENT_ACTIONS) }
+        })
+
+        if (this.props.onSelect) {
+            this.props.onSelect()
+        }
+    }
 }
 
-function filterAndRankItems(allItems: ActionItemProps[], query: string): ActionItemProps[] {
+export function filterAndRankItems(
+    items: Pick<ActionItemProps, 'contribution'>[],
+    query: string,
+    recentActions: string[] | null
+): ActionItemProps[] {
     if (!query) {
-        return allItems
+        if (recentActions === null) {
+            return items
+        }
+        // Show recent actions first.
+        return sortBy(
+            items,
+            (item: Pick<ActionItemProps, 'contribution'>): number | null => {
+                const index = recentActions.indexOf(item.contribution.id)
+                return index === -1 ? null : index
+            },
+            ({ contribution }) => contribution.id
+        )
     }
 
     // Memoize labels and scores.
-    const labels: string[] = new Array(allItems.length)
-    const scores: number[] = new Array(allItems.length)
-    return allItems
+    const labels: string[] = new Array(items.length)
+    const scores: number[] = new Array(items.length)
+    const scoredItems = items
         .filter((item, i) => {
             let label = labels[i]
             if (label === undefined) {
@@ -174,9 +243,11 @@ function filterAndRankItems(allItems: ActionItemProps[], query: string): ActionI
             }
             return scores[i] > 0
         })
-        .map((item, i) => ({ item, score: scores[i] }))
-        .sort((a, b) => b.score - a.score)
-        .map(({ item }) => item)
+        .map((item, i) => {
+            const index = recentActions && recentActions.indexOf(item.contribution.id)
+            return { item, score: scores[i], recentIndex: index === -1 ? null : index }
+        })
+    return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.contribution.id).map(({ item }) => item)
 }
 
 export class CommandListPopoverButton<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
