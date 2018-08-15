@@ -722,6 +722,11 @@ func (r *repoList) updateSource(source string, newList sourceRepoList) (enqueued
 		}
 	}
 	for name, value := range newList {
+		if name == "" {
+			log15.Warn("ignoring repo with empty name", "source", source, "url", value.url)
+			continue
+		}
+		log15.Info("adding repo", "source", source, "name", name, "url", value.url)
 		oldList[name] = value
 		if value.enabled {
 			enqueued++
@@ -786,6 +791,10 @@ func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repositor
 			cfg.Type = "git"
 		}
 		if cfg.Type != "git" {
+			continue
+		}
+		if cfg.Path == "" {
+			log15.Warn("ignoring repo with empty path in repos.list", "url", cfg.Url)
 			continue
 		}
 		// Check whether repo already exists, if not create an entry for it.

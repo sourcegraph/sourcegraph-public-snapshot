@@ -35,6 +35,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 - SAML IdP-initiated login previously failed with the IdP set a RelayState value. This now works.
 - repo-updater backs off fetches on a repo that's failing to fetch.
+- Attempts to add a repo with an empty string for the name are checked for and ignored.
 
 ### Removed
 
