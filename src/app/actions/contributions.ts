@@ -7,12 +7,12 @@ export function getContributedActionItems(contributions: Contributions, menu: Co
     const allItems: ActionItemProps[] = []
     const menuItems = contributions.menus && contributions.menus[menu]
     if (menuItems) {
-        for (const { command: commandID } of menuItems) {
-            const command = contributions.commands && contributions.commands.find(c => c.command === commandID)
-            if (command) {
-                allItems.push({ contribution: command })
+        for (const { action: actionID } of menuItems) {
+            const action = contributions.actions && contributions.actions.find(a => a.id === actionID)
+            if (action) {
+                allItems.push({ contribution: action })
             }
         }
     }
-    return sortBy(allItems, (item: ActionItemProps) => item.contribution.command)
+    return sortBy(allItems, (item: ActionItemProps) => item.contribution.id)
 }

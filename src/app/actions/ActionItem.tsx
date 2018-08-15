@@ -1,4 +1,4 @@
-import { CommandContribution, ExecuteCommandParams } from 'cxp/module/protocol'
+import { ActionContribution, ExecuteCommandParams } from 'cxp/module/protocol'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
@@ -9,7 +9,7 @@ import { ConfigurationSubject, Settings } from '../../settings'
 import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
 export interface ActionItemProps {
-    contribution: CommandContribution
+    contribution: ActionContribution
     variant?: 'actionItem'
     className?: string
 
