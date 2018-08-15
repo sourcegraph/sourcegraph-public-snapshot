@@ -21,17 +21,13 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
         controller.registries.commands.registerCommand({
             command: 'open',
             run: async (url: string) => {
-                // The `open` client command is implemented by ActionItem rendering the action with the HTML <a>
-                // element, not by handling it here. Using an HTML <a> element means it is a standard link, and
-                // native system behaviors such as open-in-new-tab work.
+                // The `open` client command is usually implemented by ActionItem rendering the action with the
+                // HTML <a> element, not by handling it here. Using an HTML <a> element means it is a standard
+                // link, and native system behaviors such as open-in-new-tab work.
                 //
-                // If a client is not running in a web browser, this handler should be updated to call
-                // `window.open` or the system's default URL handler using the system (e.g., Electron) API.
-                console.error(
-                    `Unable to open URL ${JSON.stringify(
-                        url
-                    )} because the CXP command handler for "open" is not implemented.`
-                )
+                // If a client is not running in a web browser, this handler should be updated to call the system's
+                // default URL handler using the system (e.g., Electron) API.
+                window.open(url, '_blank')
             },
         })
     )

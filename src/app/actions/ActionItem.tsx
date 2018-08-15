@@ -145,23 +145,25 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
     public runAction = (e: React.MouseEvent | React.KeyboardEvent) => {
         const action = (isAltEvent(e) && this.props.altAction) || this.props.action
         if (urlForClientCommandOpen(action)) {
-            // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
-            // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
-            // commands; in that case, this only ever opens the (non-alt) action.
-
-            if (this.props.onRun) {
-                this.props.onRun(action.id)
+            if (e.currentTarget.tagName === 'A' && e.currentTarget.hasAttribute('href')) {
+                // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
+                // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
+                // commands; in that case, this only ever opens the (non-alt) action.
+                if (this.props.onRun) {
+                    this.props.onRun(action.id)
+                }
+                return
             }
-        } else {
-            // If the action we're running is *not* opening a URL, then ensure the default event handler for the
-            // <LinkOrButton> doesn't run (which might open the URL).
-            e.preventDefault()
-
-            this.commandExecutions.next({
-                command: this.props.action.command,
-                arguments: this.props.action.commandArguments,
-            })
         }
+
+        // If the action we're running is *not* opening a URL by using the event target's default handler, then
+        // ensure the default event handler for the <LinkOrButton> doesn't run (which might open the URL).
+        e.preventDefault()
+
+        this.commandExecutions.next({
+            command: this.props.action.command,
+            arguments: this.props.action.commandArguments,
+        })
     }
 }
 
