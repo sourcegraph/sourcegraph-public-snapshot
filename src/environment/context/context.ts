@@ -49,6 +49,9 @@ export function getComputedContextProperty(environment: Environment, key: string
         if (!environment.component) {
             return undefined
         }
+        // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
+        // path relative to the repository's root? If it's a file on disk, then "path" could also mean the
+        // (absolute) path on the file system. Clear up that ambiguity.
         const prop = key.slice('resource.'.length)
         switch (prop) {
             case 'uri':
