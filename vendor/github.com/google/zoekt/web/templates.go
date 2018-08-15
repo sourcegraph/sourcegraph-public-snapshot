@@ -67,7 +67,7 @@ var TemplateText = map[string]string{
   .container-results {
      overflow: auto;
      max-height: calc(100% - 72px);
-  } 
+  }
   .inline-pre {
      border: unset;
      background-color: unset;
@@ -182,9 +182,9 @@ var TemplateText = map[string]string{
       </div>
     </div>
   </div>
-  <nav class="navbar navbar-default navbar-fixed-bottom">
+  <nav class="navbar navbar-default navbar-bottom">
     <div class="container">
-      <a class="navbar-text" href="about">About</a>
+      {{template "footerBoilerplate"}}
       <p class="navbar-text navbar-right">
         Used {{HumanUnit .Stats.IndexBytes}} mem for
         {{.Stats.Documents}} documents ({{HumanUnit .Stats.ContentBytes}})
@@ -195,7 +195,7 @@ var TemplateText = map[string]string{
 </body>
 </html>
 `,
-
+	"footerBoilerplate": `<a class="navbar-text" href="about">About</a>`,
 	"results": `
 <html>
 {{template "head"}}
@@ -239,8 +239,11 @@ var TemplateText = map[string]string{
       {{end}}
     </table>
     {{end}}
-    <hr>
-    <p class="text-right">
+
+  <nav class="navbar navbar-default navbar-bottom">
+    <div class="container">
+      {{template "footerBoilerplate"}}
+      <p class="navbar-text navbar-right">
       Took {{.Stats.Duration}}{{if .Stats.Wait}}(queued: {{.Stats.Wait}}){{end}} for
       {{HumanUnit .Stats.IndexBytesLoaded}}B index data,
       {{.Stats.NgramMatches}} ngram matches,
@@ -248,7 +251,9 @@ var TemplateText = map[string]string{
       {{.Stats.FilesLoaded}} docs ({{HumanUnit .Stats.ContentBytesLoaded}}B)
       loaded{{if or .Stats.FilesSkipped .Stats.ShardsSkipped}},
       {{.Stats.FilesSkipped}} docs and {{.Stats.ShardsSkipped}} shards skipped{{else}}.{{end}}
-    </p>
+      </p>
+    </div>
+  </nav>
   </div>
   {{ template "jsdep"}}
 </body>
@@ -265,30 +270,39 @@ var TemplateText = map[string]string{
     Found {{.Stats.Repos}} repositories ({{.Stats.Documents}} files, {{HumanUnit .Stats.ContentBytes}}b content)
     </b></div>
     <table class="table table-hover table-condensed">
-    <thead>
-      <tr>
-        <th>Name <a href="/search?q={{.Last.Query}}&order=name">▼</a><a href="/search?q={{.Last.Query}}&order=revname">▲</a></th>
-        <th>Last updated <a href="/search?q={{.Last.Query}}&order=revtime">▼</a><a href="/search?q={{.Last.Query}}&order=time">▲</a></th>
-        <th>Branches</th>
-        <th>Size <a href="/search?q={{.Last.Query}}&order=revsize">▼</a><a href="/search?q={{.Last.Query}}&order=size">▲</a></th>
-      </tr>
-    </thead>
-    <tbody>
-      {{range .Repos}}
-      <tr>
-        <td>{{if .URL}}<a href="{{.URL}}">{{end}}{{.Name}}{{if .URL}}</a>{{end}}</td>
-        <td><small>{{.IndexTime.Format "Jan 02, 2006 15:04"}}</small></td>
-        <td style="vertical-align: middle;">
-          {{range .Branches}}
-          {{if .URL}}<tt><a class="label label-default small" href="{{.URL}}">{{end}}{{.Name}}{{if .URL}}</a> </tt>{{end}}&nbsp;
-          {{end}}
-        </td>
-        <td><small>{{HumanUnit .Files}} files ({{HumanUnit .Size}})</small></td>
-      </tr>
-      {{end}}
-    </tbody>
-    </ul>
+      <thead>
+	<tr>
+	  <th>Name <a href="/search?q={{.Last.Query}}&order=name">▼</a><a href="/search?q={{.Last.Query}}&order=revname">▲</a></th>
+	  <th>Last updated <a href="/search?q={{.Last.Query}}&order=revtime">▼</a><a href="/search?q={{.Last.Query}}&order=time">▲</a></th>
+	  <th>Branches</th>
+	  <th>Size <a href="/search?q={{.Last.Query}}&order=revsize">▼</a><a href="/search?q={{.Last.Query}}&order=size">▲</a></th>
+	</tr>
+      </thead>
+      <tbody>
+	{{range .Repos}}
+	<tr>
+	  <td>{{if .URL}}<a href="{{.URL}}">{{end}}{{.Name}}{{if .URL}}</a>{{end}}</td>
+	  <td><small>{{.IndexTime.Format "Jan 02, 2006 15:04"}}</small></td>
+	  <td style="vertical-align: middle;">
+	    {{range .Branches}}
+	    {{if .URL}}<tt><a class="label label-default small" href="{{.URL}}">{{end}}{{.Name}}{{if .URL}}</a> </tt>{{end}}&nbsp;
+	    {{end}}
+	  </td>
+	  <td><small>{{HumanUnit .Files}} files ({{HumanUnit .Size}})</small></td>
+	</tr>
+	{{end}}
+      </tbody>
+    </table>
   </div>
+
+  <nav class="navbar navbar-default navbar-bottom">
+    <div class="container">
+      {{template "footerBoilerplate"}}
+      <p class="navbar-text navbar-right">
+      </p>
+    </div>
+  </nav>
+
   {{ template "jsdep"}}
 </body>
 </html>
@@ -306,35 +320,57 @@ var TemplateText = map[string]string{
 	 <pre id="l{{Inc $index}}" class="inline-pre"><span class="noselect"><a href="#l{{Inc $index}}">{{Inc $index}}</a>: </span>{{$ln}}</pre>
        {{end}}
      </div>
+  <nav class="navbar navbar-default navbar-bottom">
+    <div class="container">
+      {{template "footerBoilerplate"}}
+      <p class="navbar-text navbar-right">
+      </p>
+    </div>
+  </nav>
   </div>
-  {{ template "jsdep"}}
+ {{ template "jsdep"}}
 </body>
 </html>
 `,
 
 	"about": `
-<head>
+
+<html>
+  {{template "head"}}
   <title>About <em>zoekt</em></title>
-</head>
 <body>
 
-<p>
-  This is <a href="http://github.com/google/zoekt"><em>zoekt</em> (IPA: /zukt/)</a>,
-  an open-source full text search engine. It's pronounced roughly as you would
-  pronounce "zooked" in English.
-</p>
 
-<p>
-Used {{HumanUnit .Stats.IndexBytes}} memory for
-{{.Stats.Documents}} documents ({{HumanUnit .Stats.ContentBytes}})
-from {{.Stats.Repos}} repositories.
-</p>
+  <div class="jumbotron">
+    <div class="container">
+      {{template "searchbox" .Last}}
+    </div>
+  </div>
 
-<p>
+  <div class="container">
+    <p>
+      This is <a href="http://github.com/google/zoekt"><em>zoekt</em> (IPA: /zukt/)</a>,
+      an open-source full text search engine. It's pronounced roughly as you would
+      pronounce "zooked" in English.
+    </p>
+    <p>
+    {{if .Version}}<em>Zoekt</em> version {{.Version}}, uptime{{else}}Uptime{{end}} {{.Uptime}}
+    </p>
 
-{{if .Version}}<em>Zoekt</em> version {{.Version}}, uptime{{else}}Uptime{{end}} {{.Uptime}}
+    <p>
+    Used {{HumanUnit .Stats.IndexBytes}} memory for
+    {{.Stats.Documents}} documents ({{HumanUnit .Stats.ContentBytes}})
+    from {{.Stats.Repos}} repositories.
+    </p>
+  </div>
 
-</p>
+  <nav class="navbar navbar-default navbar-bottom">
+    <div class="container">
+      {{template "footerBoilerplate"}}
+      <p class="navbar-text navbar-right">
+      </p>
+    </div>
+  </nav>
 `,
 }
 

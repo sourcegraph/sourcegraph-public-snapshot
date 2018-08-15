@@ -15,6 +15,7 @@
 package zoekt
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"hash/crc64"
@@ -32,6 +33,9 @@ const ngramSize = 3
 type searchableString struct {
 	data []byte
 }
+
+// Filled by the linker (see build-deploy.sh)
+var Version string
 
 // Store character (unicode codepoint) offset (in bytes) this often.
 const runeOffsetFrequency = 100
@@ -61,6 +65,9 @@ func newPostingsBuilder() *postingsBuilder {
 	}
 }
 
+// Store trigram offsets for the given UTF-8 data. The
+// DocumentSections must correspond to rune boundaries in the UTF-8
+// data.
 func (s *postingsBuilder) newSearchableString(data []byte, byteSections []DocumentSection) (*searchableString, []DocumentSection, error) {
 	dest := searchableString{
 		data: data,
@@ -246,6 +253,10 @@ type Document struct {
 	SubRepositoryPath string
 	Language          string
 
+	// If set, something is wrong with the file contents, and this
+	// is the reason it wasn't indexed.
+	SkipReason string
+
 	// Document sections for symbols. Offsets should use bytes.
 	Symbols []DocumentSection
 }
@@ -263,25 +274,28 @@ func (b *IndexBuilder) AddFile(name string, content []byte) error {
 
 const maxTrigramCount = 20000
 
-// IsText returns false if the given contents are probably not source texts.
-func IsText(content []byte) bool {
+// CheckText returns a reason why the given contents are probably not source texts.
+func CheckText(content []byte) error {
+	if len(content) == 0 {
+		return nil
+	}
+
 	if len(content) < ngramSize {
-		return true
+		return fmt.Errorf("file size smaller than %d", ngramSize)
 	}
 
 	trigrams := map[ngram]struct{}{}
 
 	var cur [3]rune
+	byteCount := 0
 	for len(content) > 0 {
 		if content[0] == 0 {
-			return false
+			return fmt.Errorf("binary data at byte offset %d", byteCount)
 		}
 
 		r, sz := utf8.DecodeRune(content)
-		if r == utf8.RuneError && sz < 2 {
-			return false
-		}
 		content = content[sz:]
+		byteCount += sz
 
 		cur[0], cur[1], cur[2] = cur[1], cur[2], r
 		if cur[0] == 0 {
@@ -292,10 +306,10 @@ func IsText(content []byte) bool {
 		trigrams[runesToNGram(cur)] = struct{}{}
 		if len(trigrams) > maxTrigramCount {
 			// probably not text.
-			return false
+			return fmt.Errorf("number of trigrams exceeds %d", maxTrigramCount)
 		}
 	}
-	return true
+	return nil
 }
 
 func (b *IndexBuilder) populateSubRepoIndices() {
@@ -313,10 +327,21 @@ func (b *IndexBuilder) populateSubRepoIndices() {
 	}
 }
 
-// Add a file which only occurs in certain branches. The document
-// should be checked for sanity with IsText first.
+const notIndexedMarker = "NOT-INDEXED: "
+
+// Add a file which only occurs in certain branches.
 func (b *IndexBuilder) Add(doc Document) error {
 	hasher := crc64.New(crc64.MakeTable(crc64.ISO))
+
+	if idx := bytes.IndexByte(doc.Content, 0); idx >= 0 {
+		doc.SkipReason = fmt.Sprintf("binary content at byte offset %d", idx)
+		doc.Language = "binary"
+	}
+
+	if doc.SkipReason != "" {
+		doc.Content = []byte(notIndexedMarker + doc.SkipReason)
+		doc.Symbols = nil
+	}
 
 	sort.Sort(docSectionSlice(doc.Symbols))
 	var last DocumentSection

@@ -187,8 +187,9 @@ type Repository struct {
 	// {{Branch}}, {{Path}}
 	FileURLTemplate string
 
-	// The URL fragment to add to a file URL for line numbers.
-	// has access to {{LineNumber}}.
+	// The URL fragment to add to a file URL for line numbers. has
+	// access to {{LineNumber}}. The fragment should include the
+	// separator, generally '#' or ';'.
 	LineFragmentTemplate string
 
 	// All zoekt.* configuration settings.
@@ -205,6 +206,7 @@ type IndexMetadata struct {
 	IndexTime           time.Time
 	PlainASCII          bool
 	LanguageMap         map[string]byte
+	ZoektVersion        string
 }
 
 // Statistics of a (collection of) repositories.

@@ -125,6 +125,7 @@ func (b *IndexBuilder) Write(out io.Writer) error {
 		IndexFeatureVersion: FeatureVersion,
 		PlainASCII:          b.contentPostings.isPlainASCII && b.namePostings.isPlainASCII,
 		LanguageMap:         b.languageMap,
+		ZoektVersion:        Version,
 	}, &toc.metaData, w); err != nil {
 		return err
 	}

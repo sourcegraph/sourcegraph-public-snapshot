@@ -31,15 +31,13 @@ import (
 
 	"golang.org/x/net/trace"
 
+	"github.com/google/zoekt"
 	"github.com/google/zoekt/build"
 	"github.com/google/zoekt/shards"
 	"github.com/google/zoekt/web"
 )
 
 const logFormat = "2006-01-02T15-04-05.999999999Z07"
-
-// To be set from the linker.
-var Version string
 
 func divertLogs(dir string, interval time.Duration) {
 	t := time.NewTicker(interval)
@@ -72,6 +70,7 @@ func loadTemplates(tpl *template.Template, dir string) error {
 		log.Fatalf("Glob: %v", err)
 	}
 
+	log.Printf("loading templates: %v", fs)
 	for _, fn := range fs {
 		content, err := ioutil.ReadFile(fn)
 		if err != nil {
@@ -79,7 +78,7 @@ func loadTemplates(tpl *template.Template, dir string) error {
 		}
 
 		base := filepath.Base(fn)
-		base = strings.TrimSuffix(base, ".html")
+		base = strings.TrimSuffix(base, templateExtension)
 		if _, err := tpl.New(base).Parse(string(content)); err != nil {
 			return fmt.Errorf("Parse(%s): %v", fn, err)
 		}
@@ -119,8 +118,13 @@ func main() {
 
 	templateDir := flag.String("template_dir", "", "set directory from which to load custom .html.tpl template files")
 	dumpTemplates := flag.Bool("dump_templates", false, "dump templates into --template_dir and exit.")
-
+	version := flag.Bool("version", false, "Print version number")
 	flag.Parse()
+
+	if *version {
+		fmt.Printf("zoekt-webserver version %q\n", zoekt.Version)
+		os.Exit(0)
+	}
 
 	if *dumpTemplates {
 		if err := writeTemplates(*templateDir); err != nil {
@@ -151,7 +155,7 @@ func main() {
 	s := &web.Server{
 		Searcher: searcher,
 		Top:      web.Top,
-		Version:  Version,
+		Version:  zoekt.Version,
 	}
 
 	if *templateDir != "" {

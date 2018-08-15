@@ -422,7 +422,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:d810f504587a9e826905ba44c24a7d87c406b5fb00004719ccb4e2805a393b45"
+  digest = "1:71504ebc8d877d702669c667dad7ee9bd50c4c7dcc5b827174862d6c8208af2d"
   name = "github.com/google/zoekt"
   packages = [
     ".",
@@ -438,7 +438,7 @@
     "web",
   ]
   pruneopts = "NUT"
-  revision = "1895ca01b3a4cd47fbbdcb1dc405aec8c8212d95"
+  revision = "2f4b0f2a74b1ea6eb694389aedd87284e2768ccb"
   source = "github.com/sourcegraph/zoekt"
 
 [[projects]]

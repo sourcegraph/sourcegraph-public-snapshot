@@ -220,12 +220,15 @@ func (b *Builder) AddFile(name string, content []byte) error {
 }
 
 func (b *Builder) Add(doc zoekt.Document) error {
+	// We could pass the document on to the shardbuilder, but if
+	// we pass through a part of the source tree with binary/large
+	// files, the corresponding shard would be mostly empty, so
+	// insert a reason here too.
 	if len(doc.Content) > b.opts.SizeMax {
-		return nil
-	}
-
-	if !zoekt.IsText(doc.Content) {
-		return nil
+		doc.SkipReason = fmt.Sprintf("document size %d larger than limit %d", len(doc.Content), b.opts.SizeMax)
+	} else if err := zoekt.CheckText(doc.Content); err != nil {
+		doc.SkipReason = err.Error()
+		doc.Language = "binary"
 	}
 
 	b.todo = append(b.todo, &doc)

@@ -40,7 +40,7 @@ func (s *Server) formatResults(result *zoekt.SearchResult, query string, localPr
 	}
 	getFragment := func(repo string, linenum int) string {
 		if localPrint {
-			return "l" + strconv.Itoa(linenum)
+			return "#l" + strconv.Itoa(linenum)
 		}
 		if tpl := fragmentMap[repo]; tpl != nil {
 			var buf bytes.Buffer
@@ -111,10 +111,15 @@ func (s *Server) formatResults(result *zoekt.SearchResult, query string, localPr
 		}
 
 		for _, m := range f.LineMatches {
+			fragment := getFragment(f.Repository, m.LineNumber)
+			if !strings.HasPrefix(fragment, "#") && !strings.HasPrefix(fragment, ";") {
+				// TODO - remove this is backward compatibility glue.
+				fragment = "#" + fragment
+			}
 			md := Match{
 				FileName: f.FileName,
 				LineNum:  m.LineNumber,
-				URL:      fMatch.URL + "#" + getFragment(f.Repository, m.LineNumber),
+				URL:      fMatch.URL + fragment,
 			}
 
 			lastEnd := 0
