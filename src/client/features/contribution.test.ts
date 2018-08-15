@@ -87,15 +87,18 @@ describe('ContributionFeature', () => {
 
             it('overwrites existing registration', () => {
                 const { registry, feature } = create()
-                feature.register(feature.messages, { id: 'a', registerOptions: { commands: [{ command: '1' }] } })
                 feature.register(feature.messages, {
                     id: 'a',
-                    registerOptions: { commands: [{ command: '2' }] },
+                    registerOptions: { actions: [{ id: '1', command: '1' }] },
+                })
+                feature.register(feature.messages, {
+                    id: 'a',
+                    registerOptions: { actions: [{ id: '2', command: '2' }] },
                     overwriteExisting: true,
                 })
                 assert.strictEqual(registry.entries.value.length, 1)
                 assert.deepStrictEqual(registry.entries.value[0], {
-                    contributions: { commands: [{ command: '2' }] },
+                    contributions: { actions: [{ id: '2', command: '2' }] },
                 } as ContributionsEntry)
             })
         })

@@ -20,40 +20,48 @@ export interface ContributionServerCapabilities {
  * Contributions describes the functionality provided by an extension.
  */
 export interface Contributions {
-    /** Commands contributed by the extension. */
-    commands?: CommandContribution[]
+    /** Actions contributed by the extension. */
+    actions?: ActionContribution[]
 
     /** Menu items contributed by the extension. */
     menus?: MenuContributions
 }
 
-/** An item that has an associated command. */
-export interface CommandItem {
+/**
+ * An action contribution describes a command that can be invoked, along with a title, description, icon, etc.
+ */
+export interface ActionContribution {
     /**
-     * Command is an identifier for the command that is assumed to be unique. If another command with the same
-     * identifier is defined (by this extension or another extension), the behavior is undefined. To avoid
-     * collisions, the identifier conventionally is prefixed with "${EXTENSION_NAME}.".
+     * The identifier for this action, which must be unique among all contributed actions.
+     *
+     * Extensions: By convention, this is a dotted string of the form `myExtensionName.myActionName`. It is common
+     * to use the same values for `id` and `command` (for the common case where the command has only one action
+     * that mentions it).
+     */
+    id: string
+
+    /**
+     * The command that this action invokes. It can refer to a command registered by the same extension or any
+     * other extension, or to a builtin command.
+     *
+     * Extensions: The command must be registered (unless it is a builtin command). Extensions can register
+     * commands in the `initialize` response or via `client/registerCapability`.
      */
     command: string
-}
 
-/**
- * CommandContribution is a command provided by the extension that can be invoked.
- */
-export interface CommandContribution extends CommandItem {
-    /** The title that succinctly describes the action taken by this command. */
+    /** The title that succinctly describes what this action does. */
     title?: string
 
     /**
-     * The category that describes the group of related commands of which this command is a member.
+     * The category that describes the group of related actions of which this action is a member.
      *
-     * Clients: When displaying this command's title alongside titles of commands from other groups, the client
-     * should display each command as "${category}: ${title}" if the prefix is set.
+     * Clients: When displaying this action's title alongside titles of actions from other groups, the client
+     * should display each action as "${category}: ${title}" if the prefix is set.
      */
     category?: string
 
     /**
-     * A longer description of the action taken by this command.
+     * A longer description of the action taken by this action.
      *
      * Extensions: The description should not be unnecessarily repetitive with the title.
      *
@@ -62,7 +70,7 @@ export interface CommandContribution extends CommandItem {
     description?: string
 
     /**
-     * A URL to an icon for this command (data: URIs are OK).
+     * A URL to an icon for this action (data: URIs are OK).
      *
      * Clients: The client should show this icon before the title, proportionally scaling the dimensions as
      * necessary to avoid unduly enlarging the item beyond the dimensions necessary to render the text. The client
@@ -72,12 +80,12 @@ export interface CommandContribution extends CommandItem {
     iconURL?: string
 
     /**
-     * A specification of how to display this command as a button on a toolbar. The client is responsible for
+     * A specification of how to display this action as a button on a toolbar. The client is responsible for
      * displaying contributions and defining which parts of its interface are considered to be toolbars. Generally,
      * items on a toolbar are always visible and, compared to items in a dropdown menu or list, are expected to be
      * smaller and to convey information (in addition to performing an action).
      *
-     * For example, a "Toggle code coverage" command may prefer to display a summarized status (such as "Coverage:
+     * For example, a "Toggle code coverage" action may prefer to display a summarized status (such as "Coverage:
      * 77%") on a toolbar instead of the full title.
      *
      * Clients: If the label is empty and only an iconURL is set, and the client decides not to display the icon
@@ -154,8 +162,8 @@ export interface MenuContributions extends Partial<Record<ContributableMenu, Men
  * MenuItemContribution is a menu item contributed by an extension.
  */
 export interface MenuItemContribution {
-    /** The command to execute when selected (== (CommandContribution).command). */
-    command: string
+    /** The action to invoke when selected (== (ActionContribution).id). */
+    action: string
 
     /**
      * An expression that, if given, must evaluate to true (or a truthy value) for this contribution to be

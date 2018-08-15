@@ -1,8 +1,8 @@
 import { BehaviorSubject, combineLatest, Observable, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import {
+    ActionContribution,
     ActionItem,
-    CommandContribution,
     ContributableMenu,
     Contributions,
     MenuContributions,
@@ -119,11 +119,11 @@ export function mergeContributions(contributions: Contributions[]): Contribution
     }
     const merged: Contributions = {}
     for (const c of contributions) {
-        if (c.commands) {
-            if (!merged.commands) {
-                merged.commands = [...c.commands]
+        if (c.actions) {
+            if (!merged.actions) {
+                merged.actions = [...c.actions]
             } else {
-                merged.commands = [...merged.commands, ...c.commands]
+                merged.actions = [...merged.actions, ...c.actions]
             }
         }
         if (c.menus) {
@@ -196,47 +196,47 @@ export function evaluateContributions(
     contributions: Contributions,
     { evaluateTemplate, needsEvaluation } = DEFAULT_TEMPLATE_EVALUATOR
 ): Contributions {
-    if (!contributions.commands || contributions.commands.length === 0) {
+    if (!contributions.actions || contributions.actions.length === 0) {
         return contributions
     }
-    const evaluatedCommands: CommandContribution[] = []
-    for (const command of contributions.commands as Readonly<CommandContribution>[]) {
-        const changed: Partial<CommandContribution> = {}
-        if (command.title && needsEvaluation(command.title)) {
-            changed.title = evaluateTemplate(command.title, context)
+    const evaluatedActions: ActionContribution[] = []
+    for (const action of contributions.actions as Readonly<ActionContribution>[]) {
+        const changed: Partial<ActionContribution> = {}
+        if (action.title && needsEvaluation(action.title)) {
+            changed.title = evaluateTemplate(action.title, context)
         }
-        if (command.category && needsEvaluation(command.category)) {
-            changed.category = evaluateTemplate(command.category, context)
+        if (action.category && needsEvaluation(action.category)) {
+            changed.category = evaluateTemplate(action.category, context)
         }
-        if (command.description && needsEvaluation(command.description)) {
-            changed.description = evaluateTemplate(command.description, context)
+        if (action.description && needsEvaluation(action.description)) {
+            changed.description = evaluateTemplate(action.description, context)
         }
-        if (command.iconURL && needsEvaluation(command.iconURL)) {
-            changed.iconURL = evaluateTemplate(command.iconURL, context)
+        if (action.iconURL && needsEvaluation(action.iconURL)) {
+            changed.iconURL = evaluateTemplate(action.iconURL, context)
         }
-        if (command.actionItem) {
+        if (action.actionItem) {
             const changedActionItem: Partial<ActionItem> = {}
-            if (command.actionItem.label && needsEvaluation(command.actionItem.label)) {
-                changedActionItem.label = evaluateTemplate(command.actionItem.label, context)
+            if (action.actionItem.label && needsEvaluation(action.actionItem.label)) {
+                changedActionItem.label = evaluateTemplate(action.actionItem.label, context)
             }
-            if (command.actionItem.description && needsEvaluation(command.actionItem.description)) {
-                changedActionItem.description = evaluateTemplate(command.actionItem.description, context)
+            if (action.actionItem.description && needsEvaluation(action.actionItem.description)) {
+                changedActionItem.description = evaluateTemplate(action.actionItem.description, context)
             }
-            if (command.actionItem.group && needsEvaluation(command.actionItem.group)) {
-                changedActionItem.group = evaluateTemplate(command.actionItem.group, context)
+            if (action.actionItem.group && needsEvaluation(action.actionItem.group)) {
+                changedActionItem.group = evaluateTemplate(action.actionItem.group, context)
             }
-            if (command.actionItem.iconURL && needsEvaluation(command.actionItem.iconURL)) {
-                changedActionItem.iconURL = evaluateTemplate(command.actionItem.iconURL, context)
+            if (action.actionItem.iconURL && needsEvaluation(action.actionItem.iconURL)) {
+                changedActionItem.iconURL = evaluateTemplate(action.actionItem.iconURL, context)
             }
-            if (command.actionItem.iconDescription && needsEvaluation(command.actionItem.iconDescription)) {
-                changedActionItem.iconDescription = evaluateTemplate(command.actionItem.iconDescription, context)
+            if (action.actionItem.iconDescription && needsEvaluation(action.actionItem.iconDescription)) {
+                changedActionItem.iconDescription = evaluateTemplate(action.actionItem.iconDescription, context)
             }
             if (Object.keys(changedActionItem).length !== 0) {
-                changed.actionItem = { ...command.actionItem, ...changedActionItem }
+                changed.actionItem = { ...action.actionItem, ...changedActionItem }
             }
         }
         const modified = Object.keys(changed).length !== 0
-        evaluatedCommands.push(modified ? { ...command, ...changed } : command)
+        evaluatedActions.push(modified ? { ...action, ...changed } : action)
     }
-    return { ...contributions, commands: evaluatedCommands }
+    return { ...contributions, actions: evaluatedActions }
 }

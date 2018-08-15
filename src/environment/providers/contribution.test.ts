@@ -18,32 +18,32 @@ import {
 const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
 
 const FIXTURE_CONTRIBUTIONS_1: Contributions = {
-    commands: [{ command: 'c1.a', title: 'C1.A' }, { command: 'c1.b', title: 'C1.B' }],
+    actions: [{ id: '1.a', command: 'c', title: '1.A' }, { id: '1.b', command: 'c', title: '1.B' }],
     menus: {
-        [ContributableMenu.CommandPalette]: [{ command: 'c1.a' }],
-        [ContributableMenu.GlobalNav]: [{ command: 'c1.a' }, { command: 'c1.b' }],
+        [ContributableMenu.CommandPalette]: [{ action: '1.a' }],
+        [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
     },
 }
 
 const FIXTURE_CONTRIBUTIONS_2: Contributions = {
-    commands: [{ command: 'c2.a', title: 'C2.A' }, { command: 'c2.b', title: 'C2.B' }],
+    actions: [{ id: '2.a', command: 'c', title: '2.A' }, { id: '2.b', command: 'c', title: '2.B' }],
     menus: {
-        [ContributableMenu.CommandPalette]: [{ command: 'c2.a' }],
-        [ContributableMenu.EditorTitle]: [{ command: 'c2.a' }, { command: 'c2.b' }],
+        [ContributableMenu.CommandPalette]: [{ action: '2.a' }],
+        [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
     },
 }
 
 const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
-    commands: [
-        { command: 'c1.a', title: 'C1.A' },
-        { command: 'c1.b', title: 'C1.B' },
-        { command: 'c2.a', title: 'C2.A' },
-        { command: 'c2.b', title: 'C2.B' },
+    actions: [
+        { id: '1.a', command: 'c', title: '1.A' },
+        { id: '1.b', command: 'c', title: '1.B' },
+        { id: '2.a', command: 'c', title: '2.A' },
+        { id: '2.b', command: 'c', title: '2.B' },
     ],
     menus: {
-        [ContributableMenu.CommandPalette]: [{ command: 'c1.a' }, { command: 'c2.a' }],
-        [ContributableMenu.GlobalNav]: [{ command: 'c1.a' }, { command: 'c1.b' }],
-        [ContributableMenu.EditorTitle]: [{ command: 'c2.a' }, { command: 'c2.b' }],
+        [ContributableMenu.CommandPalette]: [{ action: '1.a' }, { action: '2.a' }],
+        [ContributableMenu.GlobalNav]: [{ action: '1.a' }, { action: '1.b' }],
+        [ContributableMenu.EditorTitle]: [{ action: '2.a' }, { action: '2.b' }],
     },
 }
 
@@ -138,13 +138,13 @@ describe('ContributionRegistry', () => {
                     registry.getContributions(
                         of([
                             {
-                                contributions: { menus: { commandPalette: [{ command: 'c', when: 'x == y' }] } },
+                                contributions: { menus: { commandPalette: [{ action: 'a', when: 'x == y' }] } },
                             },
                         ] as ContributionsEntry[])
                     )
                 ).toBe('-a-b-|', {
-                    a: { menus: { commandPalette: [] } },
-                    b: { menus: { commandPalette: [{ command: 'c', when: 'x == y' }] } },
+                    a: { menus: { commandPalette: [] } } as Contributions,
+                    b: { menus: { commandPalette: [{ action: 'a', when: 'x == y' }] } } as Contributions,
                 })
             })
         })
@@ -165,15 +165,15 @@ describe('ContributionRegistry', () => {
                         of([
                             {
                                 // Expression "!" will cause an error to be thrown.
-                                contributions: { menus: { commandPalette: [{ command: 'c1', when: '!' }] } },
+                                contributions: { menus: { commandPalette: [{ action: 'a1', when: '!' }] } },
                             },
                             {
-                                contributions: { menus: { commandPalette: [{ command: 'c2' }] } },
+                                contributions: { menus: { commandPalette: [{ action: 'a2' }] } },
                             },
                         ] as ContributionsEntry[])
                     )
                 ).toBe('a', {
-                    a: { menus: { commandPalette: [{ command: 'c2' }] } },
+                    a: { menus: { commandPalette: [{ action: 'a2' }] } } as Contributions,
                 })
             })
         })
@@ -186,7 +186,7 @@ describe('mergeContributions', () => {
         assert.deepStrictEqual(mergeContributions([FIXTURE_CONTRIBUTIONS_1]), FIXTURE_CONTRIBUTIONS_1))
     it('handles multiple items', () =>
         assert.deepStrictEqual(
-            mergeContributions([FIXTURE_CONTRIBUTIONS_1, FIXTURE_CONTRIBUTIONS_2, {}, { commands: [] }, { menus: {} }]),
+            mergeContributions([FIXTURE_CONTRIBUTIONS_1, FIXTURE_CONTRIBUTIONS_2, {}, { actions: [] }, { menus: {} }]),
             FIXTURE_CONTRIBUTIONS_MERGED
         ))
 })
@@ -229,35 +229,35 @@ describe('filterContributions', () => {
             filterContributions(
                 FIXTURE_CONTEXT,
                 {
-                    commands: [{ command: 'c1' }, { command: 'c2' }, { command: 'c3' }],
+                    actions: [{ id: 'a1', command: 'c' }, { id: 'a2', command: 'c' }, { id: 'a3', command: 'c' }],
                     menus: {
                         [ContributableMenu.CommandPalette]: [
-                            { command: 'c1', when: 'a' },
-                            { command: 'c2', when: 'b' },
-                            { command: 'c3' },
+                            { action: 'a1', when: 'a' },
+                            { action: 'a2', when: 'b' },
+                            { action: 'a3' },
                         ],
                         [ContributableMenu.GlobalNav]: [
-                            { command: 'c1', when: 'a' },
-                            { command: 'c2' },
-                            { command: 'c3', when: 'b' },
+                            { action: 'a1', when: 'a' },
+                            { action: 'a2' },
+                            { action: 'a3', when: 'b' },
                         ],
                     },
                 },
                 x => x === 'a'
             ),
             {
-                commands: [{ command: 'c1' }, { command: 'c2' }, { command: 'c3' }],
+                actions: [{ id: 'a1', command: 'c' }, { id: 'a2', command: 'c' }, { id: 'a3', command: 'c' }],
                 menus: {
-                    [ContributableMenu.CommandPalette]: [{ command: 'c1', when: 'a' }, { command: 'c3' }],
-                    [ContributableMenu.GlobalNav]: [{ command: 'c1', when: 'a' }, { command: 'c2' }],
+                    [ContributableMenu.CommandPalette]: [{ action: 'a1', when: 'a' }, { action: 'a3' }],
+                    [ContributableMenu.GlobalNav]: [{ action: 'a1', when: 'a' }, { action: 'a2' }],
                 },
             } as Contributions
         ))
 
     it('throws an error if an error occurs during evaluation', () => {
         const input: Contributions = {
-            commands: [{ command: 'c', title: 'a' }],
-            menus: { commandPalette: [{ command: 'c', when: 'a' }] },
+            actions: [{ id: 'a', command: 'c', title: 'a' }],
+            menus: { commandPalette: [{ action: 'a', when: 'a' }] },
         }
         assert.throws(() =>
             filterContributions(FIXTURE_CONTEXT, input, () => {
@@ -278,14 +278,15 @@ describe('evaluateContributions', () => {
         assert.deepStrictEqual(evaluateContributions(EMPTY_COMPUTED_CONTEXT, {}), {} as Contributions))
 
     it('handles empty array of command contributions', () =>
-        assert.deepStrictEqual(evaluateContributions(EMPTY_COMPUTED_CONTEXT, { commands: [] }), {
-            commands: [],
+        assert.deepStrictEqual(evaluateContributions(EMPTY_COMPUTED_CONTEXT, { actions: [] }), {
+            actions: [],
         } as Contributions))
 
     it('handles non-empty contributions', () => {
         const input: Contributions = {
-            commands: [
+            actions: [
                 {
+                    id: 'a1',
                     command: 'c1',
                     title: 'a',
                     category: 'a',
@@ -299,14 +300,15 @@ describe('evaluateContributions', () => {
                         iconURL: 'a',
                     },
                 },
-                { command: 'c2', title: 'a', category: 'b' },
-                { command: 'c3', title: 'b', category: 'b', actionItem: { label: 'a', description: 'b' } },
+                { id: 'a2', command: 'c2', title: 'a', category: 'b' },
+                { id: 'a3', command: 'c3', title: 'b', category: 'b', actionItem: { label: 'a', description: 'b' } },
             ],
         }
         const origInput = JSON.parse(JSON.stringify(input))
         assert.deepStrictEqual(evaluateContributions(FIXTURE_CONTEXT, input, TEST_TEMPLATE_EVALUATOR), {
-            commands: [
+            actions: [
                 {
+                    id: 'a1',
                     command: 'c1',
                     title: 'x',
                     category: 'x',
@@ -320,8 +322,8 @@ describe('evaluateContributions', () => {
                         iconURL: 'x',
                     },
                 },
-                { command: 'c2', title: 'x', category: 'b' },
-                { command: 'c3', title: 'b', category: 'b', actionItem: { label: 'x', description: 'b' } },
+                { id: 'a2', command: 'c2', title: 'x', category: 'b' },
+                { id: 'a3', command: 'c3', title: 'b', category: 'b', actionItem: { label: 'x', description: 'b' } },
             ],
         } as Contributions)
         assert.deepStrictEqual(input, origInput, 'input must not be mutated')
@@ -334,8 +336,23 @@ describe('evaluateContributions', () => {
         needsEvaluation: () => true,
     }
 
+    it('does not evaluate the `id` or `command` values', () => {
+        assert.deepStrictEqual(
+            evaluateContributions(
+                FIXTURE_CONTEXT,
+                {
+                    actions: [{ id: 'a', command: 'c' }],
+                },
+                TEST_THROW_EVALUATOR
+            ),
+            {
+                actions: [{ id: 'a', command: 'c' }],
+            } as Contributions
+        )
+    })
+
     it('throws an error if an error occurs during evaluation', () => {
-        const input: Contributions = { commands: [{ command: 'c', title: 'a' }] }
+        const input: Contributions = { actions: [{ id: 'a', command: 'c', title: 'a' }] }
         assert.throws(() => evaluateContributions(FIXTURE_CONTEXT, input, TEST_THROW_EVALUATOR))
     })
 })

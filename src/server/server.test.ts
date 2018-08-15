@@ -17,7 +17,9 @@ describe('Connection', () => {
             capabilities: { decoration: true },
             workspaceFolders: null,
         }
-        const initResult: InitializeResult = { capabilities: { contributions: { commands: [{ command: 'c' }] } } }
+        const initResult: InitializeResult = {
+            capabilities: { contributions: { actions: [{ id: 'c', command: 'c' }] } },
+        }
 
         serverConnection.onRequest(InitializeRequest.type, params => {
             assert.deepStrictEqual(params, initParams)
