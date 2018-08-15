@@ -131,5 +131,9 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
         return <LinkOrButton {...commonProps}>{content}</LinkOrButton>
     }
 
-    public runAction = () => this.commandExecutions.next({ command: this.props.contribution.command })
+    public runAction = () =>
+        this.commandExecutions.next({
+            command: this.props.contribution.command,
+            arguments: this.props.contribution.commandArguments,
+        })
 }
