@@ -236,9 +236,6 @@ export function evaluateContributions(
             if (action.actionItem.description && needsEvaluation(action.actionItem.description)) {
                 changedActionItem.description = evaluateTemplate(action.actionItem.description, context)
             }
-            if (action.actionItem.group && needsEvaluation(action.actionItem.group)) {
-                changedActionItem.group = evaluateTemplate(action.actionItem.group, context)
-            }
             if (action.actionItem.iconURL && needsEvaluation(action.actionItem.iconURL)) {
                 changedActionItem.iconURL = evaluateTemplate(action.actionItem.iconURL, context)
             }

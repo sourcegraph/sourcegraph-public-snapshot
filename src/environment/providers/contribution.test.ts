@@ -296,7 +296,6 @@ describe('evaluateContributions', () => {
                     actionItem: {
                         label: 'a',
                         description: 'a',
-                        group: 'a',
                         iconDescription: 'a',
                         iconURL: 'a',
                     },
@@ -319,7 +318,6 @@ describe('evaluateContributions', () => {
                     actionItem: {
                         label: 'x',
                         description: 'x',
-                        group: 'x',
                         iconDescription: 'x',
                         iconURL: 'x',
                     },

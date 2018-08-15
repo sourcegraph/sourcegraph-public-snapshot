@@ -162,16 +162,6 @@ export interface ActionItem {
     description?: string
 
     /**
-     * The group in which this item is displayed. This defines the sort order of toolbar items. The group value is
-     * an opaque string (it is just compared relative to other toolbar items' group values); there is no
-     * specification set of expected or supported values.
-     *
-     * Clients: On a toolbar, the client should sort toolbar items by (group, command), with toolbar items lacking
-     * a group sorting last. The client must not display the group value.
-     */
-    group?: string
-
-    /**
      * The icon URL for this action (data: URIs are OK).
      *
      * Clients: The client should this icon before the label (if any), proportionally scaling the dimensions as
@@ -225,4 +215,14 @@ export interface MenuItemContribution {
      * displayed. The expression may use values from the context in which the contribution would be displayed.
      */
     when?: string
+
+    /**
+     * The group in which this item is displayed. This defines the sort order of menu items. The group value is an
+     * opaque string (it is just compared relative to other items' group values); there is no specification set of
+     * expected or supported values.
+     *
+     * Clients: On a toolbar, the client should sort toolbar items by (group, action), with toolbar items lacking a
+     * group sorting last. The client must not display the group value.
+     */
+    group?: string
 }
