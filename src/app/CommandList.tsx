@@ -143,8 +143,8 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
                             ref={i === selectedIndex ? this.setSelectedItem : undefined}
                             title={
                                 <HighlightedMatches
-                                    text={`${item.contribution.category ? `${item.contribution.category}: ` : ''}${item
-                                        .contribution.title || item.contribution.command}`}
+                                    text={`${item.action.category ? `${item.action.category}: ` : ''}${item.action
+                                        .title || item.action.command}`}
                                     pattern={query}
                                 />
                             }
@@ -178,7 +178,7 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
             }
             case Key.Enter: {
                 if (this.selectedItem) {
-                    this.selectedItem.runAction()
+                    this.selectedItem.runAction(e)
                 }
                 break
             }
@@ -208,7 +208,7 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
 }
 
 export function filterAndRankItems(
-    items: Pick<ActionItemProps, 'contribution'>[],
+    items: Pick<ActionItemProps, 'action'>[],
     query: string,
     recentActions: string[] | null
 ): ActionItemProps[] {
@@ -219,11 +219,11 @@ export function filterAndRankItems(
         // Show recent actions first.
         return sortBy(
             items,
-            (item: Pick<ActionItemProps, 'contribution'>): number | null => {
-                const index = recentActions.indexOf(item.contribution.id)
+            (item: Pick<ActionItemProps, 'action'>): number | null => {
+                const index = recentActions.indexOf(item.action.id)
                 return index === -1 ? null : index
             },
-            ({ contribution }) => contribution.id
+            ({ action }) => action.id
         )
     }
 
@@ -234,8 +234,8 @@ export function filterAndRankItems(
         .filter((item, i) => {
             let label = labels[i]
             if (label === undefined) {
-                label = `${item.contribution.category ? `${item.contribution.category}: ` : ''}${item.contribution
-                    .title || item.contribution.command}`
+                label = `${item.action.category ? `${item.action.category}: ` : ''}${item.action.title ||
+                    item.action.command}`
                 labels[i] = label
             }
             if (scores[i] === undefined) {
@@ -244,10 +244,10 @@ export function filterAndRankItems(
             return scores[i] > 0
         })
         .map((item, i) => {
-            const index = recentActions && recentActions.indexOf(item.contribution.id)
+            const index = recentActions && recentActions.indexOf(item.action.id)
             return { item, score: scores[i], recentIndex: index === -1 ? null : index }
         })
-    return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.contribution.id).map(({ item }) => item)
+    return sortBy(scoredItems, 'recentIndex', 'score', ({ item }) => item.action.id).map(({ item }) => item)
 }
 
 export class CommandListPopoverButton<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<

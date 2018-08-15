@@ -14,15 +14,18 @@ describe('getContributedActionItems', () => {
                         { id: 'c', command: 'c', title: 'tc', description: 'dc' },
                     ],
                     menus: {
-                        commandPalette: [{ action: 'a', group: '2' }, { action: 'b', group: '1' }],
+                        commandPalette: [{ action: 'a', group: '2' }, { action: 'b', group: '1', alt: 'c' }],
                         'editor/title': [{ action: 'c' }],
                     },
                 },
                 ContributableMenu.CommandPalette
             ),
             [
-                { contribution: { id: 'b', command: 'b', title: 'tb', description: 'db' } },
-                { contribution: { id: 'a', command: 'a', title: 'ta', description: 'da' } },
+                {
+                    action: { id: 'b', command: 'b', title: 'tb', description: 'db' },
+                    altAction: { id: 'c', command: 'c', title: 'tc', description: 'dc' },
+                },
+                { action: { id: 'a', command: 'a', title: 'ta', description: 'da' }, altAction: undefined },
             ] as ActionItemProps[]
         ))
 })

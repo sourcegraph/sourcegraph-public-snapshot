@@ -4,14 +4,14 @@ import { ActionItemProps } from './ActionItem'
 
 describe('filterAndRankItems', () => {
     function actionIDs(items: ActionItemProps[]): string[] {
-        return items.map(({ contribution: { id } }) => id)
+        return items.map(({ action: { id } }) => id)
     }
 
     it('no query, no recentActions', () =>
         assert.deepStrictEqual(
             actionIDs(
                 filterAndRankItems(
-                    [{ contribution: { id: 'a', command: 'a' } }, { contribution: { id: 'b', command: 'b' } }],
+                    [{ action: { id: 'a', command: 'a' } }, { action: { id: 'b', command: 'b' } }],
                     '',
                     null
                 )
@@ -24,9 +24,9 @@ describe('filterAndRankItems', () => {
             actionIDs(
                 filterAndRankItems(
                     [
-                        { contribution: { id: 'a', command: 'a', title: 'a' } },
-                        { contribution: { id: 'b1', command: 'b1', title: 'b' } },
-                        { contribution: { id: 'b2', command: 'b2', title: '22b' } },
+                        { action: { id: 'a', command: 'a', title: 'a' } },
+                        { action: { id: 'b1', command: 'b1', title: 'b' } },
+                        { action: { id: 'b2', command: 'b2', title: '22b' } },
                     ],
                     'b',
                     null
@@ -38,11 +38,9 @@ describe('filterAndRankItems', () => {
     it('no query, recentActions', () =>
         assert.deepStrictEqual(
             actionIDs(
-                filterAndRankItems(
-                    [{ contribution: { id: 'a', command: 'a' } }, { contribution: { id: 'b', command: 'b' } }],
-                    '',
-                    ['b']
-                )
+                filterAndRankItems([{ action: { id: 'a', command: 'a' } }, { action: { id: 'b', command: 'b' } }], '', [
+                    'b',
+                ])
             ),
             ['b', 'a']
         ))
@@ -52,9 +50,9 @@ describe('filterAndRankItems', () => {
             actionIDs(
                 filterAndRankItems(
                     [
-                        { contribution: { id: 'a', command: 'a', title: 'a' } },
-                        { contribution: { id: 'b1', command: 'b1', title: 'b' } },
-                        { contribution: { id: 'b2', command: 'b2', title: '2b' } },
+                        { action: { id: 'a', command: 'a', title: 'a' } },
+                        { action: { id: 'b1', command: 'b1', title: 'b' } },
+                        { action: { id: 'b2', command: 'b2', title: '2b' } },
                     ],
                     'b',
                     ['b2']
