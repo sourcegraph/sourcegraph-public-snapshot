@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Key } from 'ts-key-enum'
+import { RouterLinkOrAnchor } from './RouterLinkOrAnchor'
 
 type Props = {
     /** A tooltip to display when the user hovers or focuses this element. */
@@ -59,22 +59,8 @@ export class LinkOrButton extends React.PureComponent<Props> {
             )
         }
 
-        // Render using <Link> (or <a> for external URLs).
-        if (typeof this.props.to === 'string' && /^https?:\/\//.test(this.props.to)) {
-            return (
-                <a
-                    href={this.props.to}
-                    target={this.props.target}
-                    className={className}
-                    tabIndex={0}
-                    data-tooltip={this.props['data-tooltip']}
-                >
-                    {this.props.children}
-                </a>
-            )
-        }
         return (
-            <Link
+            <RouterLinkOrAnchor
                 to={this.props.to}
                 target={this.props.target}
                 className={className}
@@ -82,7 +68,7 @@ export class LinkOrButton extends React.PureComponent<Props> {
                 data-tooltip={this.props['data-tooltip']}
             >
                 {this.props.children}
-            </Link>
+            </RouterLinkOrAnchor>
         )
     }
 
