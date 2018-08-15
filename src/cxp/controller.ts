@@ -12,18 +12,19 @@ import { MessageTransports } from 'cxp/module/jsonrpc2/connection'
 import { Message, ResponseError } from 'cxp/module/jsonrpc2/messages'
 import { BrowserConsoleTracer } from 'cxp/module/jsonrpc2/trace'
 import { InitializeError } from 'cxp/module/protocol'
-import { catchError, map, mergeMap, switchMap, take } from 'rxjs/operators'
+import { mergeMap } from 'rxjs/operators'
 import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
 import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
 import { getSavedClientTrace } from './client'
+import { registerBuiltinClientCommands, updateConfiguration } from './clientCommands'
 
 /**
  * Adds the manifest to CXP extensions in the CXP environment, so we can consult it in the createMessageTransports
  * callback (to know how to communicate with or run the extension).
  */
-interface ExtensionWithManifest extends Extension, Pick<ConfiguredExtension, 'manifest'> {}
+export interface ExtensionWithManifest extends Extension, Pick<ConfiguredExtension, 'manifest'> {}
 
 /**
  * React props or state containing the CXP controller. There should be only a single CXP controller for the whole
@@ -189,6 +190,8 @@ export function createController<S extends ConfigurationSubject, C extends Setti
         environmentFilter,
     })
 
+    registerBuiltinClientCommands(context, controller)
+
     function messageFromExtension(extension: string, message: string): string {
         return `From extension ${extension}:\n\n${message}`
     }
@@ -212,31 +215,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
         resolve(prompt(messageFromExtension(extension, message), defaultValue))
     )
     controller.configurationUpdates
-        .pipe(
-            mergeMap(params =>
-                // Find the highest-precedence subject and edit its configuration.
-                //
-                // TODO(sqs): Allow extensions to specify which subject's configuration to update
-                // (instead of always updating the highest-precedence subject's configuration).
-                context.configurationCascade.pipe(
-                    take(1),
-                    map(x => x.subjects[x.subjects.length - 1]),
-                    switchMap(subject =>
-                        context
-                            .updateExtensionSettings(subject.subject.id, {
-                                extensionID: params.extension,
-                                edit: params,
-                            })
-                            .pipe(
-                                catchError(err => {
-                                    console.error(err)
-                                    return []
-                                })
-                            )
-                    )
-                )
-            )
-        )
+        .pipe(mergeMap(params => updateConfiguration(context, params)))
         .subscribe(undefined, err => console.error(err))
 
     // Print window/logMessage log messages to the browser devtools console.

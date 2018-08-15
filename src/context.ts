@@ -20,13 +20,14 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
      */
     updateExtensionSettings(
         subject: ID,
-        args: {
-            extensionID: string
-            edit?: ConfigurationUpdateParams
-            // TODO: unclean api, allows 4 states (2 bools), but only 3 are valid (none/disabled/enabled)
-            enabled?: boolean
-            remove?: boolean
-        }
+        args:
+            | { edit?: ConfigurationUpdateParams }
+            | {
+                  extensionID: string
+                  // TODO: unclean api, allows 4 states (2 bools), but only 3 are valid (none/disabled/enabled)
+                  enabled?: boolean
+                  remove?: boolean
+              }
     ): Observable<void>
 
     /**
