@@ -24,7 +24,7 @@ type Props = {
           to: H.LocationDescriptor
 
           /** The link target (use "_self" for external URLs). */
-          target?: '_self'
+          target?: '_self' | '_blank'
 
           onSelect?: never
       })

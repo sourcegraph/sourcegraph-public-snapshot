@@ -114,16 +114,21 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
             tooltip = this.props.contribution.description
         }
 
-        return (
-            <LinkOrButton
-                data-tooltip={tooltip}
-                disabled={this.props.disabledDuringExecution && this.state.actionOrError === LOADING}
-                onSelect={this.runAction}
-                className={this.props.className}
-            >
-                {content}
-            </LinkOrButton>
-        )
+        const commonProps: LinkOrButton['props'] = {
+            'data-tooltip': tooltip,
+            disabled: this.props.disabledDuringExecution && this.state.actionOrError === LOADING,
+            className: this.props.className,
+
+            // If the command is 'open' (a builtin command), render this as a link. Otherwise render it as a button
+            // that executes the command.
+            ...(this.props.contribution.command === 'open'
+                ? {
+                      to: this.props.contribution.commandArguments && this.props.contribution.commandArguments[0],
+                      target: '_blank',
+                  }
+                : { onSelect: this.runAction }),
+        }
+        return <LinkOrButton {...commonProps}>{content}</LinkOrButton>
     }
 
     public runAction = () => this.commandExecutions.next({ command: this.props.contribution.command })
