@@ -207,8 +207,16 @@ export interface MenuContributions extends Partial<Record<ContributableMenu, Men
  * MenuItemContribution is a menu item contributed by an extension.
  */
 export interface MenuItemContribution {
-    /** The action to invoke when selected (== (ActionContribution).id). */
+    /**
+     * The action to invoke when the item is selected. The value refers to a {@link ActionContribution#id} value.
+     */
     action: string
+
+    /**
+     * An alternative action to invoke when the item is selected while pressing the Option/Alt/Meta/Ctrl/Cmd keys
+     * or using the middle mouse button. The value refers to a {@link ActionContribution#id} value.
+     */
+    alt?: string
 
     /**
      * An expression that, if given, must evaluate to true (or a truthy value) for this contribution to be
