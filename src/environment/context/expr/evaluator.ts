@@ -111,11 +111,7 @@ function exec(node: Expression, context: ComputedContext): any {
     }
 
     if ('Identifier' in node) {
-        const value = context.get(node.Identifier)
-        if (value !== undefined) {
-            return value
-        }
-        throw new SyntaxError(`Undefined identifier: ${node.Identifier}`)
+        return context.get(node.Identifier)
     }
 
     if ('FunctionCall' in node) {
