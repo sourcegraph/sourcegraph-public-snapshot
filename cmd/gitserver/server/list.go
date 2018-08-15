@@ -154,7 +154,12 @@ func listGitoliteRepos(ctx context.Context, gconf *schema.GitoliteConnection) ([
 			name := fields[len(fields)-1]
 			repoURI := gconf.Prefix + name
 
-			if strings.Contains(repoURI, "..*") || (blacklist != nil && blacklist.MatchString(repoURI)) {
+			// Gitolite's internal rules for what a regex looks like exclude `+` from
+			// consideration because of `gtk+`. The character list here is derived from
+			// Gitolite's `$REPOPAT_PATT`. Note that even when these characters would
+			// not have special meaning to a regex engine, Gitolite will treat them as
+			// proof that a string is a pattern, not a literal name.
+			if strings.ContainsAny(repoURI, "\\^$|()[]*?{},") || (blacklist != nil && blacklist.MatchString(repoURI)) {
 				blacklistCount++
 				continue
 			}
