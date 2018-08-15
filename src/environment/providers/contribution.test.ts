@@ -288,6 +288,7 @@ describe('evaluateContributions', () => {
                 {
                     id: 'a1',
                     command: 'c1',
+                    commandArguments: ['a', 'b', 'a'],
                     title: 'a',
                     category: 'a',
                     description: 'a',
@@ -310,6 +311,7 @@ describe('evaluateContributions', () => {
                 {
                     id: 'a1',
                     command: 'c1',
+                    commandArguments: ['x', 'b', 'x'],
                     title: 'x',
                     category: 'x',
                     description: 'x',
@@ -327,6 +329,21 @@ describe('evaluateContributions', () => {
             ],
         } as Contributions)
         assert.deepStrictEqual(input, origInput, 'input must not be mutated')
+    })
+
+    it('supports commandArguments with the first element non-evaluated', () => {
+        assert.deepStrictEqual(
+            evaluateContributions(
+                FIXTURE_CONTEXT,
+                {
+                    actions: [{ id: 'a', command: 'c', commandArguments: ['b', 'a', 'b', 'a'] }],
+                },
+                TEST_TEMPLATE_EVALUATOR
+            ),
+            {
+                actions: [{ id: 'a', command: 'c', commandArguments: ['b', 'x', 'b', 'x'] }],
+            } as Contributions
+        )
     })
 
     const TEST_THROW_EVALUATOR = {

@@ -44,10 +44,24 @@ export interface ActionContribution {
      * The command that this action invokes. It can refer to a command registered by the same extension or any
      * other extension, or to a builtin command.
      *
+     * The builtin command "open" can be used to open a URL (specified as a string in the first element of
+     * commandArguments) using the default URL handler on the client, instead of invoking the command on the
+     * extension.
+     *
      * Extensions: The command must be registered (unless it is a builtin command). Extensions can register
      * commands in the `initialize` response or via `client/registerCapability`.
+     *
+     * Client: If the command is "open", the client should treat the first element of commandArguments as a URL
+     * (string) to open with the default URL handler (instead of sending a request to the extension to execute this
+     * command). If the client is running in a web browser, the client should render the action as an HTML <a>
+     * element so that it behaves like a link.
      */
     command: string
+
+    /**
+     * Optional arguments to pass to the extension when the action is invoked.
+     */
+    commandArguments?: any[]
 
     /** The title that succinctly describes what this action does. */
     title?: string

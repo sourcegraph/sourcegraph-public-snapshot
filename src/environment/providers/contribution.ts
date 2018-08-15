@@ -202,6 +202,20 @@ export function evaluateContributions(
     const evaluatedActions: ActionContribution[] = []
     for (const action of contributions.actions as Readonly<ActionContribution>[]) {
         const changed: Partial<ActionContribution> = {}
+        if (action.commandArguments) {
+            for (const [i, arg] of action.commandArguments.entries()) {
+                if (typeof arg === 'string' && needsEvaluation(arg)) {
+                    const evaluatedArg = evaluateTemplate(arg, context)
+                    if (changed.commandArguments) {
+                        changed.commandArguments.push(evaluatedArg)
+                    } else {
+                        changed.commandArguments = action.commandArguments.slice(0, i).concat(evaluatedArg)
+                    }
+                } else if (changed.commandArguments) {
+                    changed.commandArguments.push(arg)
+                }
+            }
+        }
         if (action.title && needsEvaluation(action.title)) {
             changed.title = evaluateTemplate(action.title, context)
         }
