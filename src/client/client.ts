@@ -268,7 +268,7 @@ export class Client implements Unsubscribable {
 
         this.connectionPromise = null
         this.connection = null
-        this.unregisterDynamicFeatureRegistrations()
+        this.unregisterFeatures()
 
         let action: Promise<CloseAction> = Promise.resolve(CloseAction.DoNotReconnect)
         try {
@@ -348,7 +348,7 @@ export class Client implements Unsubscribable {
         } else {
             this._state.next(endState)
         }
-        this.unregisterDynamicFeatureRegistrations()
+        this.unregisterFeatures()
         if (wasConnectionActive) {
             // Shut down gracefully before closing the connection.
             const connection = this.connection!
@@ -367,9 +367,13 @@ export class Client implements Unsubscribable {
         return Promise.resolve()
     }
 
-    private unregisterDynamicFeatureRegistrations(): void {
-        for (const handler of this._dynamicFeatures.values()) {
-            handler.unregisterAll()
+    private unregisterFeatures(): void {
+        for (const feature of this.features) {
+            if (DynamicFeature.is(feature)) {
+                feature.unregisterAll()
+            } else if (feature.deinitialize) {
+                feature.deinitialize()
+            }
         }
     }
 
@@ -470,9 +474,9 @@ export class Client implements Unsubscribable {
     }
 
     public unsubscribe(): void {
-        // Immediately unregister dynamic feature registrations, even before the connection shuts down, since
-        // calling unsubscribe is evidence that the consumer doesn't want this client's data anymore.
-        this.unregisterDynamicFeatureRegistrations()
+        // Immediately unregister feature registrations, even before the connection shuts down, since calling
+        // unsubscribe is evidence that the consumer doesn't want this client's data anymore.
+        this.unregisterFeatures()
 
         if (this.needsStop()) {
             this.stop().then(null, err => console.error(err))

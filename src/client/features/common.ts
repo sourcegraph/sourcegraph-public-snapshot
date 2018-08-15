@@ -10,6 +10,9 @@ export interface StaticFeature {
     fillInitializeParams?: (params: InitializeParams) => void
     fillClientCapabilities?: (capabilities: ClientCapabilities) => void
     initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector | undefined): void
+
+    /** Free resources acquired in initialize. */
+    deinitialize?: () => void
 }
 
 /** Common arguments used when registering a dynamic feature. */
