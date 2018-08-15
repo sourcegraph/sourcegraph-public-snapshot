@@ -2,10 +2,18 @@ import { RequestHandler } from '../jsonrpc2/handlers'
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
 import { NextSignature } from '../types/middleware'
 
+/**
+ * A key path that refers to a location in a JSON document.
+ *
+ * Each successive array element specifies an index in an object or array to descend into. For example, in the
+ * object `{"a": ["x", "y"]}`, the key path `["a", 1]` refers to the value `"y"`.
+ */
+export type KeyPath = (string | number)[]
+
 /** The parameters for the configuration/update request. */
 export interface ConfigurationUpdateParams {
     /** The key path to the value. */
-    path: (string | number)[]
+    path: KeyPath
 
     /** The new value to insert at the key path. */
     value: any

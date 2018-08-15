@@ -1,3 +1,5 @@
+import { KeyPath } from '../extension'
+
 /** Partial contribution-related client capabilities. */
 export interface ContributionClientCapabilities {
     /** The window client capabilities. */
@@ -44,17 +46,26 @@ export interface ActionContribution {
      * The command that this action invokes. It can refer to a command registered by the same extension or any
      * other extension, or to a builtin command.
      *
-     * The builtin command "open" can be used to open a URL (specified as a string in the first element of
-     * commandArguments) using the default URL handler on the client, instead of invoking the command on the
-     * extension.
-     *
      * Extensions: The command must be registered (unless it is a builtin command). Extensions can register
      * commands in the `initialize` response or via `client/registerCapability`.
      *
-     * Client: If the command is "open", the client should treat the first element of commandArguments as a URL
-     * (string) to open with the default URL handler (instead of sending a request to the extension to execute this
-     * command). If the client is running in a web browser, the client should render the action as an HTML <a>
-     * element so that it behaves like a link.
+     * ## Builtin client commands
+     *
+     * Clients: All clients must handle the following commands as specified.
+     *
+     * ### `open` {@link ActionContributionClientCommandOpen}
+     *
+     * The builtin command `open` causes the client to open a URL (specified as a string in the first element of
+     * commandArguments) using the default URL handler, instead of invoking the command on the extension.
+     *
+     * Clients: The client should treat the first element of commandArguments as a URL (string) to open with the
+     * default URL handler (instead of sending a request to the extension to execute this command). If the client
+     * is running in a web browser, the client should render the action as an HTML <a> element so that it behaves
+     * like a link.
+     *
+     * ### `updateConfiguration` {@link ActionContributionClientCommandUpdateConfiguration}
+     *
+     * The builtin command `updateConfiguration` causes the client to apply an update to the configuration settings.
      */
     command: string
 
@@ -106,6 +117,36 @@ export interface ActionContribution {
      * (e.g., because the client is not graphical), then the client may hide the item from the toolbar.
      */
     actionItem?: ActionItem
+}
+
+/**
+ * Narrows the type of {@link ActionContribution} for actions that invoke the `open` client command.
+ */
+export interface ActionContributionClientCommandOpen extends ActionContribution {
+    command: 'open'
+
+    /**
+     * The arguments for the `open` client command. The first array element is a URL, which is opened by the client
+     * using the default URL handler.
+     */
+    commandArguments: [string]
+}
+
+/**
+ * Narrows the type of {@link ActionContribution} for actions that invoke the `updateConfiguration` client command.
+ */
+export interface ActionContributionClientCommandUpdateConfiguration extends ActionContribution {
+    command: 'updateConfiguration'
+
+    /**
+     * The arguments for the `updateConfiguration` client command:
+     *
+     * 1. The key path of the value (in the configuration settings) to update
+     * 2. The value to insert at the key path
+     * 3. Optional: reserved for future use (must always be `null`)
+     * 4. Optional: 'json' if the client should parse the 2nd argument using JSON.parse before inserting the value
+     */
+    commandArguments: [KeyPath, any] | [KeyPath, string, null, 'json']
 }
 
 /** A description of how to display a button on a toolbar. */
