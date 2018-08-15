@@ -1,6 +1,7 @@
 import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
+import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -410,19 +411,65 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                         ) : (
                             <tr key={entryInfo.path} className={className}>
                                 <td className="tree__cell">
-                                    <Link
-                                        className="tree__row-contents"
-                                        to={entryInfo.url}
-                                        onClick={this.linkRowClick}
-                                        data-tree-path={entryInfo.path}
-                                        draggable={false}
-                                        title={entryInfo.path}
-                                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                        style={treePadding(this.props.depth, false)}
-                                        tabIndex={-1}
-                                    >
-                                        {entryInfo.name}
-                                    </Link>
+                                    {entryInfo.submodule ? (
+                                        entryInfo.url ? (
+                                            <Link
+                                                to={entryInfo.url}
+                                                onClick={this.linkRowClick}
+                                                draggable={false}
+                                                title={'Submodule: ' + entryInfo.submodule.url}
+                                                className="tree__row-contents"
+                                                data-tree-path={entryInfo.path}
+                                            >
+                                                <div className="tree__row-contents-text">
+                                                    <span
+                                                        className="tree__row-icon"
+                                                        onClick={this.noopRowClick}
+                                                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                                        style={treePadding(this.props.depth, true)}
+                                                        tabIndex={-1}
+                                                    >
+                                                        <RepoIcon className="icon-inline" />
+                                                    </span>
+                                                    <span className="tree__row-label">
+                                                        {entryInfo.name} @ {entryInfo.submodule.commit.substr(0, 7)}
+                                                    </span>
+                                                </div>
+                                            </Link>
+                                        ) : (
+                                            <div
+                                                className="tree__row-contents"
+                                                title={'Submodule: ' + entryInfo.submodule.url}
+                                            >
+                                                <div className="tree__row-contents-text">
+                                                    <span
+                                                        className="tree__row-icon"
+                                                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                                        style={treePadding(this.props.depth, true)}
+                                                    >
+                                                        <RepoIcon className="icon-inline" />
+                                                    </span>
+                                                    <span className="tree__row-label">
+                                                        {entryInfo.name} @ {entryInfo.submodule.commit.substr(0, 7)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )
+                                    ) : (
+                                        <Link
+                                            className="tree__row-contents"
+                                            to={entryInfo.url}
+                                            onClick={this.linkRowClick}
+                                            data-tree-path={entryInfo.path}
+                                            draggable={false}
+                                            title={entryInfo.path}
+                                            // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
+                                            style={treePadding(this.props.depth, false)}
+                                            tabIndex={-1}
+                                        >
+                                            {entryInfo.name}
+                                        </Link>
+                                    )}
                                     {this.props.index === maxEntries - 1 && (
                                         <div
                                             className="tree__row-alert alert alert-warning"

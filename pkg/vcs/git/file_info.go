@@ -13,11 +13,14 @@ import (
 // arbitrary.
 const ModeSubmodule os.FileMode = 0160000 | os.ModeDevice
 
-// SubmoduleInfo holds information about a Git submodule and is
+// Submodule holds information about a Git submodule and is
 // returned in the FileInfo's Sys field by Stat/Lstat/ReadDir calls.
-type SubmoduleInfo struct {
-	// URL is the submodule repository origin URL.
+type Submodule struct {
+	// URL is the submodule repository clone URL.
 	URL string
+
+	// Path is the path of the submodule relative to the repository root.
+	Path string
 
 	// CommitID is the pinned commit ID of the submodule (in the
 	// submodule repository's commit ID space).

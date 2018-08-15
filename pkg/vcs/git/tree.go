@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"gopkg.in/src-d/go-git.v4/plumbing/format/config"
+
 	"github.com/golang/groupcache/lru"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -257,16 +259,22 @@ func lsTreeUncached(ctx context.Context, repo gitserver.Repo, commit api.CommitI
 			}
 		case "commit":
 			mode = mode | ModeSubmodule
-			cmd := gitserver.DefaultClient.Command("git", "config", "--get", "submodule."+name+".url")
+			cmd := gitserver.DefaultClient.Command("git", "show", fmt.Sprintf("%s:.gitmodules", commit))
 			cmd.Repo = repo
-			url := "" // url is not available if submodules are not initialized
+			var submodule Submodule
 			if out, err := cmd.Output(ctx); err == nil {
-				url = string(bytes.TrimSpace(out))
+
+				var cfg config.Config
+				err := config.NewDecoder(bytes.NewBuffer(out)).Decode(&cfg)
+				if err != nil {
+					return nil, fmt.Errorf("error parsing .gitmodules: %s", err)
+				}
+
+				submodule.Path = cfg.Section("submodule").Subsection(name).Option("path")
+				submodule.URL = cfg.Section("submodule").Subsection(name).Option("url")
 			}
-			sys = SubmoduleInfo{
-				URL:      url,
-				CommitID: api.CommitID(oid),
-			}
+			submodule.CommitID = api.CommitID(oid)
+			sys = submodule
 		case "tree":
 			mode = mode | os.ModeDir
 		}

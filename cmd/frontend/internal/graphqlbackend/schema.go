@@ -1591,6 +1591,16 @@ type Person {
     user: User
 }
 
+# A Git submodule
+type Submodule {
+    # The remote repository URL of the submodule.
+    url: String!
+    # The commit of the submodule.
+    commit: String!
+    # The path to which the submodule is checked out.
+    path: String!
+}
+
 # A file, directory, or other tree entry.
 interface TreeEntry {
     # The full path (relative to the repository root) of this tree entry.
@@ -1612,6 +1622,8 @@ interface TreeEntry {
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
+    # Submodule metadata if this tree points to a submodule
+    submodule: Submodule
 }
 
 # A Git tree in a repository.
@@ -1635,6 +1647,8 @@ type GitTree implements TreeEntry {
     canonicalURL: String!
     # The URLs to this tree on external services.
     externalURLs: [ExternalLink!]!
+    # Submodule metadata if this tree points to a submodule
+    submodule: Submodule
     # A list of directories in this tree.
     directories(
         # Returns the first n files in the tree.
@@ -1756,6 +1770,8 @@ type GitBlob implements TreeEntry & File2 {
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
     # Returns dependency references for the blob.
     dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
+    # Submodule metadata if this tree points to a submodule
+    submodule: Submodule
     # Symbols defined in this blob.
     symbols(
         # Returns the first n symbols from the list.

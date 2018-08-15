@@ -417,15 +417,15 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			if mode := submod.Mode(); mode&git.ModeSubmodule == 0 {
 				t.Errorf("%s: submod.Mode(): got %o, want & git.ModeSubmodule (%o) != 0", label, mode, git.ModeSubmodule)
 			}
-			si, ok := submod.Sys().(git.SubmoduleInfo)
+			si, ok := submod.Sys().(git.Submodule)
 			if !ok {
-				t.Errorf("%s: submod.Sys(): got %v, want SubmoduleInfo", label, si)
+				t.Errorf("%s: submod.Sys(): got %v, want Submodule", label, si)
 			}
 			if want := filepath.ToSlash(submodDir); si.URL != want {
-				t.Errorf("%s: (SubmoduleInfo).URL: got %q, want %q", label, si.URL, want)
+				t.Errorf("%s: (Submodule).URL: got %q, want %q", label, si.URL, want)
 			}
 			if si.CommitID != submodCommit {
-				t.Errorf("%s: (SubmoduleInfo).CommitID: got %q, want %q", label, si.CommitID, submodCommit)
+				t.Errorf("%s: (Submodule).CommitID: got %q, want %q", label, si.CommitID, submodCommit)
 			}
 		}
 

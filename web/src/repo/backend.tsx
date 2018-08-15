@@ -320,6 +320,10 @@ export const fetchTreeEntries = memoizeObservable(
                                     path
                                     isDirectory
                                     url
+                                    submodule {
+                                        url
+                                        commit
+                                    }
                                 }
                             }
                         }

@@ -2,11 +2,15 @@ package graphqlbackend
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path"
 	"time"
 
+	log15 "gopkg.in/inconshreveable/log15.v2"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 // gitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
@@ -32,7 +36,17 @@ func (r *gitTreeEntryResolver) Repository() *repositoryResolver { return r.commi
 
 func (r *gitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
-func (r *gitTreeEntryResolver) URL() string { return r.urlPath(r.commit.repoRevURL()) }
+func (r *gitTreeEntryResolver) URL() string {
+	if submodule := r.Submodule(); submodule != nil {
+		repoURI, err := cloneURLToURI(submodule.URL())
+		if err != nil {
+			log15.Error("Failed to resolve submodule repository URI from clone URL", "cloneURL", submodule.URL)
+			return ""
+		}
+		return "/" + repoURI + "@" + submodule.Commit()
+	}
+	return r.urlPath(r.commit.repoRevURL())
+}
 
 func (r *gitTreeEntryResolver) CanonicalURL() string {
 	return r.urlPath(r.commit.canonicalRepoRevURL())
@@ -56,6 +70,17 @@ func (r *gitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir()
 
 func (r *gitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.FileOrDir(ctx, r.commit.repo.repo, r.commit.inputRevOrImmutableRev(), r.path, r.stat.Mode().IsDir())
+}
+
+func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
+	if submoduleInfo, ok := r.stat.Sys().(git.Submodule); ok {
+		return &gitSubmoduleResolver{submodule: submoduleInfo}
+	}
+	return nil
+}
+
+func cloneURLToURI(cloneURL string) (string, error) {
+	return "", errors.New("Could not convert clone URL to repository URI")
 }
 
 func createFileInfo(path string, isDir bool) os.FileInfo {
