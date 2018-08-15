@@ -34,6 +34,8 @@ func NewHandler(m *mux.Router) http.Handler {
 	// Set handlers for the installed routes.
 	m.Get(apirouter.RepoShield).Handler(trace.TraceRoute(handler(serveRepoShield)))
 
+	m.Get(apirouter.RepoRefresh).Handler(trace.TraceRoute(handler(serveRepoRefresh)))
+
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 
 	m.Get(apirouter.XLang).Handler(trace.TraceRoute(handler(serveXLang)))

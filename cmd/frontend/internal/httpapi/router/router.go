@@ -13,8 +13,9 @@ const (
 
 	Registry = "registry"
 
-	RepoShield = "repo.shield"
-	Telemetry  = "telemetry"
+	RepoShield  = "repo.shield"
+	RepoRefresh = "repo.refresh"
+	Telemetry   = "telemetry"
 
 	SavedQueriesListAll        = "internal.saved-queries.list-all"
 	SavedQueriesGetInfo        = "internal.saved-queries.get-info"
@@ -69,6 +70,7 @@ func New(base *mux.Router) *mux.Router {
 	// add above repo paths.
 	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/shield").Methods("GET").Name(RepoShield)
+	repo.Path("/refresh").Methods("POST").Name(RepoRefresh)
 
 	return base
 }

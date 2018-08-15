@@ -325,7 +325,7 @@ func (c *internalClient) ReposGetInventory(ctx context.Context, repo RepoID, com
 	return &inv, nil
 }
 
-func (c *internalClient) GitoliteUpdateRepos(ctx context.Context) error {
+func (c *internalClient) GitoliteUpdateReposDeprecated(ctx context.Context) error {
 	return c.postInternal(ctx, "gitolite/update-repos", nil, nil)
 }
 

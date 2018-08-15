@@ -120,9 +120,16 @@ type Repo struct {
 	URL string
 }
 
+// MockEnqueueRepoUpdate mocks (*Client).EnqueueRepoUpdate for tests.
+var MockEnqueueRepoUpdate func(ctx context.Context, repo gitserver.Repo) error
+
 // EnqueueRepoUpdate requests that the named repository be updated in the near
 // future. It does not wait for the update.
 func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo gitserver.Repo) error {
+	if MockEnqueueRepoUpdate != nil {
+		return MockEnqueueRepoUpdate(ctx, repo)
+	}
+
 	req := &protocol.RepoUpdateRequest{
 		Repo: repo.Name,
 		URL:  repo.URL,

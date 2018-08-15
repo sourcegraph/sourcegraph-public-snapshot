@@ -16,6 +16,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Commits with empty trees no longer return 404.
 - Clients (browser/editor extensions) can now query configuration details from the `ClientConfiguration` GraphQL API.
 - The config field `auth.accessTokens.allow` allows or restricts use of access tokens. It can be set to one of three values: "all-users-create" (the default), "none" (all access tokens are disabled), and "site-admin-create" (access tokens are enabled, but only site admins can create new access tokens). The field `auth.disableAccessTokens` is now deprecated in favor of this new field.
+- A webhook endpoint now exists to trigger repository updates. For example, `curl -XPOST -H 'Authorization: token $ACCESS_TOKEN' $SOURCEGRAPH_ORIGIN/.api/repos/$REPO_URI/-/refresh`.
 
 ### Fixed
 
