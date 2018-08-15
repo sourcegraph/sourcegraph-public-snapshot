@@ -2,10 +2,26 @@ import { basename, dirname, extname } from 'path'
 import { Environment } from '../environment'
 
 /**
- * A context is an immutable map of keys to values.
+ * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
+ * ...update}` in JavaScript except that null values in the update result in deletion of the property.
+ */
+export function applyContextUpdate(base: Context, update: Context): Context {
+    const result = { ...base }
+    for (const [key, value] of Object.entries(update)) {
+        if (value === null) {
+            delete result[key]
+        } else {
+            result[key] = value
+        }
+    }
+    return result
+}
+
+/**
+ * Context is an arbitrary, immutable set of key-value pairs.
  */
 export interface Context {
-    [key: string]: string | number | boolean
+    [key: string]: string | number | boolean | Context | null
 }
 
 /** A context that has no properties. */
@@ -60,6 +76,9 @@ export function getComputedContextProperty(environment: Environment, key: string
             case 'type':
                 return 'textEditor'
         }
+    }
+    if (key === 'context') {
+        return environment.context
     }
     return environment.context[key]
 }

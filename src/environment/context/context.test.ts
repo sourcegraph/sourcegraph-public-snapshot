@@ -1,6 +1,16 @@
 import assert from 'assert'
 import { EMPTY_ENVIRONMENT, Environment } from '../environment'
-import { getComputedContextProperty } from './context'
+import { applyContextUpdate, Context, getComputedContextProperty } from './context'
+
+describe('applyContextUpdate', () => {
+    it('merges properties', () =>
+        assert.deepStrictEqual(applyContextUpdate({ a: 1, b: null, c: 2, d: 3, e: null }, { a: null, b: 1, c: 3 }), {
+            b: 1,
+            c: 3,
+            d: 3,
+            e: null,
+        } as Context))
+})
 
 describe('getComputedContextProperty', () => {
     it('provides config', () => {

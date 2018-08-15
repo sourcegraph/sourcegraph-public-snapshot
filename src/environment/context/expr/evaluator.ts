@@ -29,6 +29,10 @@ export function evaluateTemplate(template: string, context: ComputedContext): an
     return exec(new TemplateParser().parse(template), context)
 }
 
+const FUNCS: { [name: string]: (...args: any[]) => any } = {
+    get: (obj: any, key: string): any => obj[key],
+}
+
 function exec(node: Expression, context: ComputedContext): any {
     if ('Literal' in node) {
         switch (node.Literal.type) {
@@ -116,7 +120,7 @@ function exec(node: Expression, context: ComputedContext): any {
 
     if ('FunctionCall' in node) {
         const expr = node.FunctionCall
-        const func = context.get(expr.name)
+        const func = FUNCS[expr.name]
         if (isFunction(func)) {
             const args = expr.args.map(arg => exec(arg, context))
             return func.apply(null, args)

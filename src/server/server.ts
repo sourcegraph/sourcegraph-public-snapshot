@@ -98,6 +98,7 @@ import {
 import { RemoteClient, RemoteClientImpl } from './features/client'
 import { Remote } from './features/common'
 import { ConnectionLogger, RemoteConsole } from './features/console'
+import { RemoteContext, RemoteContextImpl } from './features/context'
 import { Telemetry, TelemetryImpl } from './features/telemetry'
 import { Tracer, TracerImpl } from './features/tracer'
 import { RemoteWindow, RemoteWindowImpl } from './features/window'
@@ -114,8 +115,15 @@ export interface _ {}
 /**
  * Interface to describe the shape of the server connection.
  */
-export interface Connection<PConsole = _, PTracer = _, PTelemetry = _, PClient = _, PWindow = _, PWorkspace = _>
-    extends Unsubscribable {
+export interface Connection<
+    PConsole = _,
+    PContext = _,
+    PTracer = _,
+    PTelemetry = _,
+    PClient = _,
+    PWindow = _,
+    PWorkspace = _
+> extends Unsubscribable {
     /**
      * Start listening on the input stream for messages to process.
      */
@@ -232,6 +240,9 @@ export interface Connection<PConsole = _, PTracer = _, PTelemetry = _, PClient =
      * A proxy for the development console. See [RemoteConsole](#RemoteConsole)
      */
     console: RemoteConsole & PConsole
+
+    /** A proxy for the client's context. */
+    context: RemoteContext & PContext
 
     /**
      * A proxy to send trace events to the client.
@@ -525,6 +536,11 @@ export function combineConsoleFeatures<O, T>(one: ConsoleFeature<O>, two: Consol
     return (Base: new () => RemoteConsole): new () => RemoteConsole & O & T => two(one(Base)) as any
 }
 
+export type ContextFeature<P> = Feature<RemoteContext, P>
+export function combineContextFeatures<O, T>(one: ContextFeature<O>, two: ContextFeature<T>): ContextFeature<O & T> {
+    return (Base: new () => RemoteContext): new () => RemoteContext & O & T => two(one(Base)) as any
+}
+
 export type TelemetryFeature<P> = Feature<Telemetry, P>
 export function combineTelemetryFeatures<O, T>(
     one: TelemetryFeature<O>,
@@ -555,9 +571,18 @@ export function combineWorkspaceFeatures<O, T>(
 }
 // tslint:enable no-inferred-empty-object-type
 
-export interface Features<PConsole = _, PTracer = _, PTelemetry = _, PClient = _, PWindow = _, PWorkspace = _> {
+export interface Features<
+    PConsole = _,
+    PContext = _,
+    PTracer = _,
+    PTelemetry = _,
+    PClient = _,
+    PWindow = _,
+    PWorkspace = _
+> {
     __brand: 'features'
     console?: ConsoleFeature<PConsole>
+    context?: ContextFeature<PContext>
     tracer?: TracerFeature<PTracer>
     telemetry?: TelemetryFeature<PTelemetry>
     client?: ClientFeature<PClient>
@@ -566,22 +591,25 @@ export interface Features<PConsole = _, PTracer = _, PTelemetry = _, PClient = _
 }
 export function combineFeatures<
     OConsole,
+    OContext,
     OTracer,
     OTelemetry,
     OClient,
     OWindow,
     OWorkspace,
     TConsole,
+    TContext,
     TTracer,
     TTelemetry,
     TClient,
     TWindow,
     TWorkspace
 >(
-    one: Features<OConsole, OTracer, OTelemetry, OClient, OWindow, OWorkspace>,
-    two: Features<TConsole, TTracer, TTelemetry, TClient, TWindow, TWorkspace>
+    one: Features<OConsole, OContext, OTracer, OTelemetry, OClient, OWindow, OWorkspace>,
+    two: Features<TConsole, TContext, TTracer, TTelemetry, TClient, TWindow, TWorkspace>
 ): Features<
     OConsole & TConsole,
+    OContext & TContext,
     OTracer & TTracer,
     OTelemetry & TTelemetry,
     OClient & TClient,
@@ -599,6 +627,7 @@ export function combineFeatures<
     }
     const result: Features<
         OConsole & TConsole,
+        OContext & TContext,
         OTracer & TTracer,
         OTelemetry & TTelemetry,
         OClient & TClient,
@@ -607,6 +636,7 @@ export function combineFeatures<
     > = {
         __brand: 'features',
         console: combine(one.console, two.console, combineConsoleFeatures),
+        context: combine(one.context, two.context, combineContextFeatures),
         tracer: combine(one.tracer, two.tracer, combineTracerFeatures),
         telemetry: combine(one.telemetry, two.telemetry, combineTelemetryFeatures),
         client: combine(one.client, two.client, combineClientFeatures),
@@ -624,17 +654,28 @@ export function combineFeatures<
  * @param strategy An optional connection strategy to control additional settings
  * @return a [connection](#IConnection)
  */
-export function createConnection<PConsole = _, PTracer = _, PTelemetry = _, PClient = _, PWindow = _, PWorkspace = _>(
+export function createConnection<
+    PConsole = _,
+    PContext = _,
+    PTracer = _,
+    PTelemetry = _,
+    PClient = _,
+    PWindow = _,
+    PWorkspace = _
+>(
     transports: MessageTransports,
     strategy?: ConnectionStrategy,
-    factories?: Features<PConsole, PTracer, PTelemetry, PClient, PWindow, PWorkspace>
-): Connection<PConsole, PTracer, PTelemetry, PClient, PWindow, PWorkspace> {
+    factories?: Features<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow, PWorkspace>
+): Connection<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow, PWorkspace> {
     // tslint:disable no-inferred-empty-object-type
     const logger = (factories && factories.console
         ? new (factories.console(ConnectionLogger))()
         : new ConnectionLogger()) as ConnectionLogger & PConsole
     const connection = createMessageConnection(transports, logger, strategy)
     logger.rawAttach(connection)
+    const context = (factories && factories.context
+        ? new (factories.context(RemoteContextImpl))()
+        : new RemoteContextImpl()) as RemoteContext & PContext
     const tracer = (factories && factories.tracer
         ? new (factories.tracer(TracerImpl))()
         : new TracerImpl()) as TracerImpl & PTracer
@@ -650,13 +691,13 @@ export function createConnection<PConsole = _, PTracer = _, PTelemetry = _, PCli
     const workspace = (factories && factories.workspace
         ? new (factories.workspace(RemoteWorkspaceImpl))()
         : new RemoteWorkspaceImpl()) as RemoteWorkspace & PWorkspace
-    const allRemotes: Remote[] = [logger, tracer, telemetry, client, remoteWindow, workspace]
+    const allRemotes: Remote[] = [logger, context, tracer, telemetry, client, remoteWindow, workspace]
     // tslint:enable no-inferred-empty-object-type
 
     let shutdownHandler: RequestHandler<null, void, void> | undefined
     let initializeHandler: RequestHandler<InitializeParams, InitializeResult, InitializeError> | undefined
     let exitHandler: NotificationHandler<null> | undefined
-    const protocolConnection: Connection<PConsole, PTracer, PTelemetry, PClient, PWindow, PWorkspace> = {
+    const protocolConnection: Connection<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow, PWorkspace> = {
         listen: (): void => connection.listen(),
 
         sendRequest: <R>(type: string | RPCMessageType, ...params: any[]): Promise<R> =>
@@ -686,6 +727,9 @@ export function createConnection<PConsole = _, PTracer = _, PTelemetry = _, PCli
 
         get console(): RemoteConsole & PConsole {
             return logger
+        },
+        get context(): RemoteContext & PContext {
+            return context
         },
         get telemetry(): Telemetry & PTelemetry {
             return telemetry

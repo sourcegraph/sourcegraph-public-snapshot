@@ -6,6 +6,7 @@ import {
     ConfigurationFeature,
     ConfigurationUpdateFeature,
 } from '../client/features/configuration'
+import { ContextFeature } from '../client/features/context'
 import { ContributionFeature } from '../client/features/contribution'
 import { TextDocumentDecorationFeature } from '../client/features/decoration'
 import { TextDocumentHoverFeature } from '../client/features/hover'
@@ -29,7 +30,9 @@ import {
     ShowMessageParams,
     ShowMessageRequestParams,
 } from '../protocol'
+import { ContextUpdateParams } from '../protocol/context'
 import { isEqual } from '../util'
+import { applyContextUpdate, EMPTY_CONTEXT } from './context/context'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment, ObservableEnvironment } from './environment'
 import { Extension } from './extension'
 import { Registries } from './registries'
@@ -141,6 +144,11 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
             nextEnvironment = this.options.environmentFilter(nextEnvironment)
         }
 
+        // External consumers don't see context, and their setEnvironment args lack context.
+        if (nextEnvironment.context === EMPTY_CONTEXT) {
+            nextEnvironment = { ...nextEnvironment, context: this._environment.value.context }
+        }
+
         if (isEqual(this._environment.value, nextEnvironment)) {
             return // no change
         }
@@ -213,6 +221,14 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
                     new Promise<void>(resolve =>
                         this._configurationUpdates.next({ ...params, extension: client.id, resolve })
                     )
+            )
+        )
+        client.registerFeature(
+            new ContextFeature(client, (params: ContextUpdateParams) =>
+                this.setEnvironment({
+                    ...this._environment.value,
+                    context: applyContextUpdate(this._environment.value.context, params.updates),
+                })
             )
         )
         client.registerFeature(new ContributionFeature(this.registries.contribution))
