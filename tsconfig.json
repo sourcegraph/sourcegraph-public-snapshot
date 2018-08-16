@@ -18,6 +18,7 @@
     "downlevelIteration": true,
     "forceConsistentCasingInFileNames": true,
     "noImplicitThis": true,
+    "noErrorTruncation": true,
     "plugins": [
       {
         "name": "tslint-language-service",
