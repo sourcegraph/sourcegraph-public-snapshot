@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import * as GQL from '../../../backend/graphqlschema'
-import { FilteredConnection } from '../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { UserAvatar } from '../../../user/UserAvatar'
 import { openFromJS, toPrettyBlobURL } from '../../../util/url'
@@ -130,7 +130,7 @@ export class DiscussionsList extends React.PureComponent<Props> {
         )
     }
 
-    private fetchThreads = (args: { first?: number; query?: string }): Observable<GQL.IDiscussionThreadConnection> =>
+    private fetchThreads = (args: FilteredConnectionQueryArgs): Observable<GQL.IDiscussionThreadConnection> =>
         fetchDiscussionThreads({
             first: args.first,
             targetRepositoryID: this.props.repoID,
