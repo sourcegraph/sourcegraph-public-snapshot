@@ -592,6 +592,8 @@ type Query {
     discussionThreads(
         # Returns the first n threads from the list.
         first: Int
+        # Return discussion threads matching the query.
+        query: String
         # When present, lists only the thread with this ID.
         threadID: ID
         # When present, lists only the threads created by this author.

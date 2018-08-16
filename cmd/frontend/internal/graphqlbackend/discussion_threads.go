@@ -169,6 +169,7 @@ func (s *schemaResolver) Discussions(ctx context.Context) (*discussionsMutationR
 
 func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	connectionArgs
+	Query                *string
 	ThreadID             *graphql.ID
 	AuthorUserID         *graphql.ID
 	TargetRepositoryID   *graphql.ID
@@ -184,6 +185,7 @@ func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 
 	opt := &db.DiscussionThreadsListOptions{
 		TargetRepoPath: args.TargetRepositoryPath,
+		TitleQuery:     args.Query,
 	}
 	args.connectionArgs.set(&opt.LimitOffset)
 
