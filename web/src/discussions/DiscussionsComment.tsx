@@ -3,11 +3,11 @@ import copy from 'copy-to-clipboard'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../../../backend/graphqlschema'
-import { Markdown } from '../../../components/Markdown'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { eventLogger } from '../../../tracking/eventLogger'
-import { UserAvatar } from '../../../user/UserAvatar'
+import * as GQL from '../backend/graphqlschema'
+import { Markdown } from '../components/Markdown'
+import { Timestamp } from '../components/time/Timestamp'
+import { eventLogger } from '../tracking/eventLogger'
+import { UserAvatar } from '../user/UserAvatar'
 
 interface Props {
     comment: GQL.IDiscussionComment
