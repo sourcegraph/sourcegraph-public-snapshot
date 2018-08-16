@@ -96,6 +96,7 @@ export function createThread(input: GQL.IDiscussionThreadCreateInput): Observabl
  */
 export function fetchDiscussionThreads(opts: {
     first?: number
+    query?: string
     threadID?: GQL.ID
     authorUserID?: GQL.ID
     targetRepositoryID?: GQL.ID
@@ -105,6 +106,7 @@ export function fetchDiscussionThreads(opts: {
         gql`
             query DiscussionThreads(
                 $first: Int
+                $query: String
                 $threadID: ID
                 $authorUserID: ID
                 $targetRepositoryID: ID
@@ -112,6 +114,7 @@ export function fetchDiscussionThreads(opts: {
             ) {
                 discussionThreads(
                     first: $first
+                    query: $query
                     threadID: $threadID
                     authorUserID: $authorUserID
                     targetRepositoryID: $targetRepositoryID

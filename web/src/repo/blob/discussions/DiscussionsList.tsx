@@ -132,7 +132,7 @@ export class DiscussionsList extends React.PureComponent<Props> {
 
     private fetchThreads = (args: FilteredConnectionQueryArgs): Observable<GQL.IDiscussionThreadConnection> =>
         fetchDiscussionThreads({
-            first: args.first,
+            ...args,
             targetRepositoryID: this.props.repoID,
             targetRepositoryPath: this.props.filePath,
         })
