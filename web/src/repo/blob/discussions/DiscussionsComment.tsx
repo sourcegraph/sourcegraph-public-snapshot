@@ -12,10 +12,6 @@ import { UserAvatar } from '../../../user/UserAvatar'
 interface Props {
     comment: GQL.IDiscussionComment
     threadID: GQL.ID
-    repoID: GQL.ID
-    rev: string | undefined
-    filePath: string
-    history: H.History
     location: H.Location
 }
 
