@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
@@ -35,7 +36,7 @@ func (r *discussionCommentResolver) Author(ctx context.Context) (*userResolver, 
 
 func (r *discussionCommentResolver) Contents() string { return r.c.Contents }
 func (r *discussionCommentResolver) HTML(args *struct{ Options *markdownOptions }) string {
-	return renderMarkdown(r.c.Contents)
+	return markdown.Render(r.c.Contents, nil)
 }
 func (r *discussionCommentResolver) CreatedAt(ctx context.Context) string {
 	return r.c.CreatedAt.Format(time.RFC3339)

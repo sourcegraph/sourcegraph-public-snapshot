@@ -9,12 +9,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/microcosm-cc/bluemonday"
 	"github.com/pkg/errors"
-	gfm "github.com/shurcooL/github_flavored_markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -189,27 +188,12 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		}{
 			ThreadTitle:         n.thread.Title,
 			CommentContents:     n.comment.Contents,
-			CommentContentsHTML: template.HTML(renderMarkdown(n.comment.Contents)),
+			CommentContentsHTML: template.HTML(markdown.Render(n.comment.Contents, nil)),
 			URL:                 url,
 			RepoName:            repoShortName,
 			UniqueValue:         fmt.Sprint(n.comment.ID),
 		},
 	})
-}
-
-// TODO(slimsag:discussions): ASAP: remove this copy-pasta
-func renderMarkdown(content string) string {
-	unsafeHTML := gfm.Markdown([]byte(content))
-
-	p := bluemonday.UGCPolicy()
-	p.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
-	p.AllowAttrs("rel").Matching(regexp.MustCompile(`^nofollow$`)).OnElements("a")
-	p.AllowAttrs("class").Matching(regexp.MustCompile(`^anchor$`)).OnElements("a")
-	p.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
-	p.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
-	p.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
-	p.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
-	return string(p.SanitizeBytes(unsafeHTML))
 }
 
 func (n *notifier) threadCommentURL(ctx context.Context) (string, error) {

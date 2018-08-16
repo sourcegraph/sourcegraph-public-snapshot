@@ -7,15 +7,13 @@ import (
 	"html/template"
 	"net/http"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
 
-	"github.com/microcosm-cc/bluemonday"
-	gfm "github.com/shurcooL/github_flavored_markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/highlight"
@@ -45,7 +43,7 @@ func (r *gitTreeEntryResolver) RichHTML(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return renderMarkdown(content), nil
+	return markdown.Render(content, nil), nil
 }
 
 type markdownOptions struct {
@@ -56,21 +54,7 @@ func (*schemaResolver) RenderMarkdown(args *struct {
 	Markdown string
 	Options  *markdownOptions
 }) string {
-	return renderMarkdown(args.Markdown)
-}
-
-func renderMarkdown(content string) string {
-	unsafeHTML := gfm.Markdown([]byte(content))
-
-	p := bluemonday.UGCPolicy()
-	p.AllowAttrs("name").Matching(bluemonday.SpaceSeparatedTokens).OnElements("a")
-	p.AllowAttrs("rel").Matching(regexp.MustCompile(`^nofollow$`)).OnElements("a")
-	p.AllowAttrs("class").Matching(regexp.MustCompile(`^anchor$`)).OnElements("a")
-	p.AllowAttrs("aria-hidden").Matching(regexp.MustCompile(`^true$`)).OnElements("a")
-	p.AllowAttrs("type").Matching(regexp.MustCompile(`^checkbox$`)).OnElements("input")
-	p.AllowAttrs("checked", "disabled").Matching(regexp.MustCompile(`^$`)).OnElements("input")
-	p.AllowAttrs("class").Matching(regexp.MustCompile("^language-[a-zA-Z0-9]+$")).OnElements("code")
-	return string(p.SanitizeBytes(unsafeHTML))
+	return markdown.Render(args.Markdown, nil)
 }
 
 func (r *gitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
