@@ -16,23 +16,11 @@ import {
     ResolvedRevSpec,
     RevSpec,
 } from '../repo'
-import {
-    getModeFromPath,
-    isPrivateRepository,
-    repoUrlCache,
-    sourcegraphUrl,
-    supportedModes,
-    useCXP,
-} from '../util/context'
+import { getModeFromPath, isPrivateRepository, repoUrlCache, sourcegraphUrl, supportedModes } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL } from '../util/url'
 import { normalizeAjaxError } from './errors'
 import { getHeaders } from './headers'
-import {
-    fetchDefinition as fetchDefinition2,
-    fetchHover as fetchHover2,
-    fetchServerCapabilities as fetchServerCapabilities2,
-} from './lsp2'
 
 export interface LSPRequest {
     method: string
@@ -106,13 +94,6 @@ export const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Obs
         return of({ contents: [] })
     }
 
-    if (useCXP) {
-        return fetchHover2({
-            ...(pos as Pick<typeof pos, Exclude<keyof typeof pos, 'language' | 'referencesMode'>>),
-            mode,
-        })
-    }
-
     const body = wrapLSP(
         {
             method: 'textDocument/hover',
@@ -153,13 +134,6 @@ const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Obser
     const mode = getModeFromPath(pos.filePath)
     if (!mode || !supportedModes.has(mode)) {
         return of([])
-    }
-
-    if (useCXP) {
-        return fetchDefinition2({
-            ...(pos as Pick<typeof pos, Exclude<keyof typeof pos, 'language' | 'referencesMode'>>),
-            mode,
-        })
     }
 
     const body = wrapLSP(
@@ -251,13 +225,6 @@ export const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observab
     const mode = getModeFromPath(pos.filePath)
     if (!mode || unsupportedModes.has(mode)) {
         return error(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
-    }
-
-    if (useCXP) {
-        return fetchServerCapabilities2({
-            ...(pos as Pick<typeof pos, Exclude<keyof typeof pos, 'language' | 'filePath'>>),
-            mode,
-        })
     }
 
     const body = wrapLSP(
