@@ -670,7 +670,7 @@ const SiteSchemaJSON = `{
         },
         "repositoryPathPattern": {
           "description":
-            "The pattern used to generate a the corresponding Sourcegraph repository path for a GitHub or GitHub Enterprise repository. In the pattern, the variable \"{host}\" is replaced with the GitHub host (such as github.example.com), and \"{nameWithOwner}\" is replaced with the GitHub repository's \"owner/path\" (such as \"myorg/myrepo\").\n\nFor example, if your GitHub Enterprise URL is https://github.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of \"{host}/{nameWithOwner}\" would mean that a GitHub repository at https://github.example.com/myorg/myrepo is available on Sourcegraph at https://src.example.com/github.example.com/myorg/myrepo.",
+            "The pattern used to generate the corresponding Sourcegraph repository path for a GitHub or GitHub Enterprise repository. In the pattern, the variable \"{host}\" is replaced with the GitHub host (such as github.example.com), and \"{nameWithOwner}\" is replaced with the GitHub repository's \"owner/path\" (such as \"myorg/myrepo\").\n\nFor example, if your GitHub Enterprise URL is https://github.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of \"{host}/{nameWithOwner}\" would mean that a GitHub repository at https://github.example.com/myorg/myrepo is available on Sourcegraph at https://src.example.com/github.example.com/myorg/myrepo.",
           "type": "string",
           "default": "{host}/{nameWithOwner}"
         },
