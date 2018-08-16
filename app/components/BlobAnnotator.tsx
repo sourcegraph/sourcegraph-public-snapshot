@@ -74,6 +74,8 @@ export class BlobAnnotator extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
 
+        this.state = {}
+
         this.fileExtension = getPathExtension(this.props.filePath)
         this.isDelta = this.props.isDelta || (this.props.isCommit || this.props.isPullRequest)
         this.updateCodeCells()
