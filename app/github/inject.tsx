@@ -17,7 +17,7 @@ import { forkJoin, of, Subject } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 import { findElementWithOffset, getTargetLineAndOffset, GitHubBlobUrl } from '.'
 import storage from '../../extension/storage'
-import { createJumpURLFetcher, fetchHover, JumpURLLocation } from '../backend/lsp'
+import { createJumpURLFetcher, JumpURLLocation, lspViaAPIXlang, lspViaCXP, SimpleCXPFns } from '../backend/lsp'
 import { Alerts } from '../components/Alerts'
 import { BlobAnnotator } from '../components/BlobAnnotator'
 import { CodeViewToolbar } from '../components/CodeViewToolbar'
@@ -30,7 +30,7 @@ import { CodeCell, DiffResolvedRevSpec } from '../repo'
 import { resolveRev, retryWhenCloneInProgressError } from '../repo/backend'
 import { getTableDataCell, hideTooltip } from '../repo/tooltips'
 import { RepoRevSidebar } from '../tree/RepoRevSidebar'
-import { eventLogger } from '../util/context'
+import { eventLogger, useCXP } from '../util/context'
 import {
     inlineSymbolSearchEnabled,
     renderMermaidGraphsEnabled,
@@ -87,9 +87,9 @@ export function injectGitHubApplication(marker: HTMLElement): void {
 function injectCodeIntelligence(): void {
     const { repoPath } = parseURL()
 
-    const hoverifier = createCodeIntelligenceContainer({ repoPath })
+    const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleCXPFns: lspViaAPIXlang })
 
-    injectBlobAnnotators(hoverifier)
+    injectBlobAnnotators()
 
     injectCodeSnippetAnnotator(hoverifier, getCodeCommentContainers(), '.border.rounded-1.my-2', blobDOMFunctions)
     injectCodeSnippetAnnotator(
@@ -319,6 +319,7 @@ function injectCodeSnippetAnnotator(
                     baseCommitID={commitID}
                     baseRev={commitID}
                     buttonProps={buttonProps}
+                    simpleCXPFns={lspViaAPIXlang}
                 />,
                 mount
             )
@@ -373,7 +374,7 @@ function injectServerBanner(): void {
     render(<Alerts repoPath={repoPath} />, mount)
 }
 
-function createCodeIntelligenceContainer(options?: { repoPath: string }): Hoverifier {
+function createCodeIntelligenceContainer(options: { repoPath: string; simpleCXPFns: SimpleCXPFns }): Hoverifier {
     const overlayMountID = 'sg-tooltip-mount'
 
     let overlayMount = document.getElementById(overlayMountID)
@@ -404,7 +405,7 @@ function createCodeIntelligenceContainer(options?: { repoPath: string }): Hoveri
 
     const relativeElement = document.body
 
-    const fetchJumpURL = createJumpURLFetcher((def: JumpURLLocation) => {
+    const fetchJumpURL = createJumpURLFetcher(options.simpleCXPFns.fetchDefinition, (def: JumpURLLocation) => {
         const rev = def.rev
         // If we're provided options, we can make the j2d URL more specific.
         if (options) {
@@ -447,9 +448,9 @@ function createCodeIntelligenceContainer(options?: { repoPath: string }): Hoveri
             location.href = path
         },
         fetchHover: ({ line, character, part, ...rest }) =>
-            fetchHover({ ...rest, position: { line, character } }).pipe(
-                map(hover => (hover ? (hover as HoverMerged) : hover))
-            ),
+            options.simpleCXPFns
+                .fetchHover({ ...rest, position: { line, character } })
+                .pipe(map(hover => (hover ? (hover as HoverMerged) : hover))),
         fetchJumpURL,
         logTelemetryEvent: () => eventLogger.logCodeIntelligenceEvent(),
     })
@@ -492,19 +493,19 @@ const LinkComponent: LinkComponent = ({ to, children, ...rest }) => (
     </a>
 )
 
-function injectBlobAnnotators(hoverifier: Hoverifier): void {
+function injectBlobAnnotators(): void {
     const { repoPath, isDelta, filePath, rev } = parseURL()
     if (!filePath && !isDelta) {
         return
     }
 
-    function addBlobAnnotator(file: HTMLElement): void {
+    function addBlobAnnotator(file: HTMLElement, hoverifier: Hoverifier, simpleCXPFns: SimpleCXPFns): void {
         const diffLoader = file.querySelector('.js-diff-load-container')
         if (diffLoader) {
             const observer = new MutationObserver(() => {
                 const element = diffLoader.querySelector('.diff-table')
                 if (element) {
-                    addBlobAnnotator(file)
+                    addBlobAnnotator(file, hoverifier, simpleCXPFns)
                     observer.disconnect()
                 }
             })
@@ -525,6 +526,7 @@ function injectBlobAnnotators(hoverifier: Hoverifier): void {
                         baseCommitID={commitID}
                         baseRev={commitID}
                         buttonProps={buttonProps}
+                        simpleCXPFns={simpleCXPFns}
                     />,
                     mount
                 )
@@ -533,8 +535,7 @@ function injectBlobAnnotators(hoverifier: Hoverifier): void {
                 .pipe(retryWhenCloneInProgressError())
                 .subscribe(
                     commitID => {
-                        // This won't get called if there wasn't a hoverifier
-                        hoverifier!.hoverify({
+                        hoverifier.hoverify({
                             dom: blobDOMFunctions,
                             positionEvents: of(file).pipe(findPositionsFromEvents(blobDOMFunctions)),
                             resolveContext: () => ({
@@ -597,13 +598,13 @@ function injectBlobAnnotators(hoverifier: Hoverifier): void {
                             baseCommitID={resolvedRevSpec.baseCommitID}
                             headCommitID={resolvedRevSpec.headCommitID}
                             buttonProps={buttonProps}
+                            simpleCXPFns={simpleCXPFns}
                         />,
                         mount
                     )
                 }
 
-                // This won't get called if there wasn't a hoverifier
-                hoverifier!.hoverify({
+                hoverifier.hoverify({
                     dom: diffDomFunctions,
                     positionEvents: of(file).pipe(findPositionsFromEvents(diffDomFunctions)),
                     resolveContext: ({ part }) => ({
@@ -618,47 +619,65 @@ function injectBlobAnnotators(hoverifier: Hoverifier): void {
     }
 
     // Get first loaded files and annotate them.
-    const files = getFileContainers()
-    for (const file of Array.from(files)) {
-        addBlobAnnotator(file as HTMLElement)
-    }
-    const mutationObserver = new MutationObserver(mutations => {
-        for (const mutation of mutations) {
-            const nodes = Array.prototype.slice.call(mutation.addedNodes)
-            for (const node of nodes) {
-                if (node && node.classList && node.classList.contains('file') && node.classList.contains('js-file')) {
-                    const intersectionObserver = new IntersectionObserver(
-                        entries => {
-                            for (const file of entries) {
-                                // File is an IntersectionObserverEntry, which has `isIntersecting` as a prop, but TS
-                                // complains that it does not exist.
-                                if ((file as any).isIntersecting && !file.target.classList.contains('annotated')) {
-                                    file.target.classList.add('annotated')
-                                    addBlobAnnotator(file.target as HTMLElement)
+    const files = Array.from(getFileContainers())
+
+    // Heuristic to detect if this page is a single code file (CXP currently
+    // only supports one file at a time).
+    const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
+
+    if (isSingleCodeFile) {
+        const simpleCXPFns = useCXP ? lspViaCXP : lspViaAPIXlang
+        const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleCXPFns })
+        addBlobAnnotator(files[0] as HTMLElement, hoverifier, simpleCXPFns)
+    } else {
+        const simpleCXPFns = lspViaAPIXlang
+        const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleCXPFns })
+        for (const file of files) {
+            addBlobAnnotator(file as HTMLElement, hoverifier, simpleCXPFns)
+        }
+        const mutationObserver = new MutationObserver(mutations => {
+            for (const mutation of mutations) {
+                const nodes = Array.prototype.slice.call(mutation.addedNodes)
+                for (const node of nodes) {
+                    if (
+                        node &&
+                        node.classList &&
+                        node.classList.contains('file') &&
+                        node.classList.contains('js-file')
+                    ) {
+                        const intersectionObserver = new IntersectionObserver(
+                            entries => {
+                                for (const file of entries) {
+                                    // File is an IntersectionObserverEntry, which has `isIntersecting` as a prop, but TS
+                                    // complains that it does not exist.
+                                    if ((file as any).isIntersecting && !file.target.classList.contains('annotated')) {
+                                        file.target.classList.add('annotated')
+                                        addBlobAnnotator(file.target as HTMLElement, hoverifier, simpleCXPFns)
+                                    }
                                 }
+                            },
+                            {
+                                rootMargin: '200px',
+                                threshold: 0,
                             }
-                        },
-                        {
-                            rootMargin: '200px',
-                            threshold: 0,
-                        }
-                    )
-                    intersectionObserver.observe(node)
+                        )
+                        intersectionObserver.observe(node)
+                    }
                 }
             }
+        })
+        const filebucket = document.getElementById('files')
+        if (!filebucket) {
+            return
         }
-    })
-    const filebucket = document.getElementById('files')
-    if (!filebucket) {
-        return
-    }
 
-    mutationObserver.observe(filebucket, {
-        childList: true,
-        subtree: true,
-        attributes: false,
-        characterData: false,
-    })
+        mutationObserver.observe(filebucket, {
+            childList: true,
+            subtree: true,
+            attributes: false,
+            characterData: false,
+        })
+    }
 }
 
 function injectBlobAnnotatorsOld(): void {

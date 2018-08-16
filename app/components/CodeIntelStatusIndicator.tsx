@@ -9,7 +9,7 @@ import { Link } from 'react-router-dom'
 import { forkJoin, Observable, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '../backend/errors'
-import { EMODENOTFOUND, fetchServerCapabilities } from '../backend/lsp'
+import { EMODENOTFOUND, SimpleCXPFns } from '../backend/lsp'
 import { isPhabricator } from '../context'
 import { AbsoluteRepoFile } from '../repo'
 import { fetchLangServer } from '../repo/backend'
@@ -48,13 +48,13 @@ const propsToStateUpdate = (obs: Observable<CodeIntelStatusIndicatorProps>) =>
     obs.pipe(
         map(({ filePath, ...rest }) => ({ ...rest, filePath, language: getModeFromPath(filePath) })),
         distinctUntilChanged((a, b) => a.language === a.language),
-        switchMap(({ repoPath, commitID, filePath, language }) => {
+        switchMap(({ repoPath, commitID, filePath, language, simpleCXPFns }) => {
             if (!language) {
                 return [null]
             }
             return forkJoin(
                 fetchLangServer(language),
-                fetchServerCapabilities({ repoPath, commitID, filePath, language })
+                simpleCXPFns.fetchServerCapabilities({ repoPath, commitID, filePath, language })
             ).pipe(
                 map(
                     ([langServer, capabilities]): LangServer => ({
@@ -78,6 +78,7 @@ interface CodeIntelStatusIndicatorProps extends AbsoluteRepoFile {
      * @param enabled is whether code intelligence is enabled or not.
      */
     onChange?: (enabled: boolean) => void
+    simpleCXPFns: SimpleCXPFns
 }
 interface CodeIntelStatusIndicatorState {
     /** The language server, error, undefined while loading or null if no langserver registered. */

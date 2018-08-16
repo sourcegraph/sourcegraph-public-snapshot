@@ -1,7 +1,8 @@
+import { HoverMerged } from 'cxp/module/types/hover'
 import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import * as _ from 'lodash'
 import marked from 'marked'
-import { Hover, MarkedString } from 'vscode-languageserver-types'
+import { MarkedString, MarkupContent } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, parseBrowserRepoURL } from '.'
 import { makeCloseIcon, makeSourcegraphIcon } from '../components/Icons'
 import { getModeFromPath, sourcegraphUrl } from '../util/context'
@@ -43,7 +44,7 @@ const referencesIconSVG =
 const definitionIconSVG =
     '<svg width="11px" height="9px"><path fill="#24292e" xmlns="http://www.w3.org/2000/svg" id="path10_fill" d="M 6.325 8.4C 6.125 8.575 5.8 8.55 5.625 8.325C 5.55 8.25 5.5 8.125 5.5 8L 5.5 6C 2.95 6 1.4 6.875 0.825 8.7C 0.775 8.875 0.6 9 0.425 9C 0.2 9 -4.44089e-16 8.8 -4.44089e-16 8.575C -4.44089e-16 8.575 -4.44089e-16 8.575 -4.44089e-16 8.55C 0.125 4.825 1.925 2.675 5.5 2.5L 5.5 0.5C 5.5 0.225 5.725 8.88178e-16 6 8.88178e-16C 6.125 8.88178e-16 6.225 0.05 6.325 0.125L 10.825 3.875C 11.025 4.05 11.075 4.375 10.9 4.575C 10.875 4.6 10.85 4.625 10.825 4.65L 6.325 8.4Z"/></svg>'
 
-export interface TooltipData extends Partial<Hover> {
+export interface TooltipData extends Partial<HoverMerged> {
     target: HTMLElement
     ctx: AbsoluteRepoFilePosition
     defUrl?: string
@@ -219,20 +220,22 @@ export function updateTooltip(data: TooltipData, docked: boolean, actions: Actio
         if (!data.contents) {
             return
         }
-        const contentsArray: MarkedString[] = Array.isArray(data.contents)
+        const contentsArray: (MarkupContent | MarkedString)[] = Array.isArray(data.contents)
             ? data.contents
-            : ([data.contents] as MarkedString[])
+            : ([data.contents] as (MarkupContent | MarkedString)[])
         if (contentsArray.length === 0) {
             return
         }
         const firstContent = contentsArray[0]
         const title: string = typeof firstContent === 'string' ? firstContent : firstContent.value
         let doc: string | undefined
-        for (const markedString of contentsArray.slice(1)) {
-            if (typeof markedString === 'string') {
-                doc = markedString
-            } else if (markedString.language === 'markdown') {
-                doc = markedString.value
+        for (const content of contentsArray.slice(1)) {
+            if (typeof content === 'string') {
+                doc = content
+            } else if ('language' in content && content.language === 'markdown') {
+                doc = content.value
+            } else if ('kind' in content && content.kind === 'markdown') {
+                doc = content.value
             }
         }
         if (!title) {

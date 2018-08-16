@@ -93,6 +93,7 @@
     "@types/uuid": "3.4.3",
     "bluebird": "^3.3.4",
     "bootstrap": "^4.0.0",
+    "cxp": "^10.1.0",
     "cypress-browser-extension-plugin": "^0.1.0",
     "downshift": "^2.0.14",
     "formdata-polyfill": "^3.0.9",

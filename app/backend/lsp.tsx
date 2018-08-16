@@ -1,8 +1,9 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { Observable, of, OperatorFunction, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { Definition, Hover } from 'vscode-languageserver-types'
+import { Definition } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
     AbsoluteRepo,
@@ -30,7 +31,7 @@ export interface LSPRequest {
 /** LSP proxy error code for unsupported modes */
 export const EMODENOTFOUND = -32000
 
-export function isEmptyHover(hover: Hover | null): boolean {
+export function isEmptyHover(hover: HoverMerged | null): boolean {
     return !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
 }
 
@@ -88,7 +89,7 @@ const extractLSPResponse: OperatorFunction<AjaxResponse, any> = source =>
         map(lspResponses => lspResponses[1] && lspResponses[1].result)
     )
 
-export const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<Hover | null> => {
+const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<HoverMerged | null> => {
     const mode = getModeFromPath(pos.filePath)
     if (!mode || !supportedModes.has(mode)) {
         return of({ contents: [] })
@@ -172,7 +173,10 @@ const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Obser
     }).pipe(extractLSPResponse)
 }, makeRepoURI)
 
-export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Observable<string | null> {
+export function fetchJumpURL(
+    fetchDefinition: SimpleCXPFns['fetchDefinition'],
+    pos: AbsoluteRepoFilePosition
+): Observable<string | null> {
     return fetchDefinition(pos).pipe(
         map(def => {
             const defArray = Array.isArray(def) ? def : [def]
@@ -189,7 +193,10 @@ export function fetchJumpURL(pos: AbsoluteRepoFilePosition): Observable<string |
 }
 
 export type JumpURLLocation = RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & { part?: DiffPart }
-export function createJumpURLFetcher(buildURL: (pos: JumpURLLocation) => string): JumpURLFetcher {
+export function createJumpURLFetcher(
+    fetchDefinition: SimpleCXPFns['fetchDefinition'],
+    buildURL: (pos: JumpURLLocation) => string
+): JumpURLFetcher {
     return ({ line, character, part, commitID, repoPath, ...rest }) =>
         fetchDefinition({ ...rest, commitID, repoPath, position: { line, character } }).pipe(
             map(def => {
@@ -220,7 +227,7 @@ export function createJumpURLFetcher(buildURL: (pos: JumpURLLocation) => string)
  */
 const unsupportedModes = new Set<string>()
 
-export const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<ServerCapabilities | undefined> => {
+const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<ServerCapabilities | undefined> => {
     // Check if mode is known to not be supported
     const mode = getModeFromPath(pos.filePath)
     if (!mode || unsupportedModes.has(mode)) {
@@ -286,4 +293,22 @@ function canFetchForURL(url: string): boolean {
         return false
     }
     return true
+}
+
+export interface SimpleCXPFns {
+    fetchHover: (pos: AbsoluteRepoFilePosition) => Observable<HoverMerged | null>
+    fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Definition>
+    fetchServerCapabilities: (pos: AbsoluteRepoLanguageFile) => Observable<ServerCapabilities | undefined>
+}
+
+export const lspViaAPIXlang: SimpleCXPFns = {
+    fetchHover,
+    fetchDefinition,
+    fetchServerCapabilities,
+}
+
+export const lspViaCXP: SimpleCXPFns = {
+    fetchHover: () => of({ contents: ['Mock CXP hover'] }),
+    fetchDefinition,
+    fetchServerCapabilities,
 }

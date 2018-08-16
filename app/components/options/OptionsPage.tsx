@@ -248,7 +248,7 @@ export class OptionsPage extends React.Component<{}, State> {
                                     type="checkbox"
                                     {...safariInputAttributes as any}
                                 />{' '}
-                                <div className="options__input-label">Use new LSP client implementation</div>
+                                <div className="options__input-label">Enable CXP</div>
                             </Label>
                         </FormGroup>
                         <FormGroup check={true}>

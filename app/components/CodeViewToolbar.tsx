@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import storage from '../../extension/storage'
+import { SimpleCXPFns } from '../backend/lsp'
 import { setServerUrls } from '../util/context'
 import { CodeIntelStatusIndicator } from './CodeIntelStatusIndicator'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
@@ -23,6 +24,8 @@ interface CodeViewToolbarProps {
     onEnabledChange?: (enabled: boolean) => void
 
     buttonProps: ButtonProps
+
+    simpleCXPFns: SimpleCXPFns
 }
 
 export class CodeViewToolbar extends React.PureComponent<CodeViewToolbarProps> {
@@ -44,6 +47,7 @@ export class CodeViewToolbar extends React.PureComponent<CodeViewToolbarProps> {
                     commitID={this.props.baseCommitID}
                     filePath={this.props.filePath}
                     onChange={this.props.onEnabledChange}
+                    simpleCXPFns={this.props.simpleCXPFns}
                 />
                 <OpenOnSourcegraph
                     label={`View File${this.props.headCommitID ? ' (base)' : ''}`}
