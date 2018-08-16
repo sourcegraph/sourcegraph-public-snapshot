@@ -4,7 +4,7 @@ import { Context } from './context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
 import { ConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent, GraphQLDocument } from './graphql'
-import { SourcegraphExtension } from './schema/extension.schema'
+import { CXPExtensionManifest } from './schema/extension.schema'
 import * as GQL from './schema/graphqlschema'
 import { ConfigurationCascade, ConfigurationSubject, Settings } from './settings'
 import { parseJSONCOrError } from './util'
@@ -156,7 +156,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
                     configuredExtensions.push({
                         id: registryExtension.extensionID,
                         manifest: registryExtension.manifest
-                            ? parseJSONCOrError<SourcegraphExtension>(registryExtension.manifest.raw)
+                            ? parseJSONCOrError<CXPExtensionManifest>(registryExtension.manifest.raw)
                             : null,
                         rawManifest:
                             (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) || null,

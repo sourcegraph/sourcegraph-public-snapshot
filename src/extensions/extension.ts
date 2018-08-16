@@ -1,6 +1,6 @@
 import { Extension } from 'cxp/module/environment/extension'
 import { ErrorLike, isErrorLike } from '../errors'
-import { SourcegraphExtension } from '../schema/extension.schema'
+import { CXPExtensionManifest } from '../schema/extension.schema'
 import * as GQL from '../schema/graphqlschema'
 import { Settings } from '../settings'
 
@@ -18,7 +18,7 @@ export interface ConfiguredExtension<
     >
 > extends Extension {
     /** The parsed extension manifest, null if there is none, or a parse error. */
-    manifest: SourcegraphExtension | null | ErrorLike
+    manifest: CXPExtensionManifest | null | ErrorLike
 
     /** The raw extension manifest (JSON), or null if there is none. */
     rawManifest: string | null
