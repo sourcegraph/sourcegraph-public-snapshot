@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/felixfbecker/stringscore"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
@@ -165,6 +167,10 @@ type DiscussionThreadsListOptions struct {
 	// LimitOffset specifies SQL LIMIT and OFFSET counts. It may be nil (no limit / offset).
 	*LimitOffset
 
+	// TitleQuery, when non-nil, specifies that only threads whose title
+	// matches this string should be returned.
+	TitleQuery *string
+
 	// ThreadID, when non-nil, specifies that only the thread with this ID
 	// should be returned. This is the same as DiscussionThreads.Get, except in
 	// the same API format.
@@ -192,7 +198,12 @@ func (t *discussionThreads) List(ctx context.Context, opts *DiscussionThreadsLis
 	}
 	conds := t.getListSQL(opts)
 	q := sqlf.Sprintf("WHERE %s ORDER BY id DESC %s", sqlf.Join(conds, "AND"), opts.LimitOffset.SQL())
-	return t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+
+	threads, err := t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return nil, err
+	}
+	return t.fuzzyFilterThreads(opts, threads), nil
 }
 
 func (t *discussionThreads) Count(ctx context.Context, opts *DiscussionThreadsListOptions) (int, error) {
@@ -202,9 +213,48 @@ func (t *discussionThreads) Count(ctx context.Context, opts *DiscussionThreadsLi
 	if opts == nil {
 		return 0, errors.New("options must not be nil")
 	}
+	if opts.TitleQuery != nil {
+		// TitleQuery requires post-query filtering (we must grab at least the
+		// title of the thread). So we take the easy way out here and just
+		// actually determine the results to find the count.
+		threads, err := t.List(ctx, opts)
+		return len(threads), err
+	}
 	conds := t.getListSQL(opts)
 	q := sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "AND"))
 	return t.getCountBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
+func (t *discussionThreads) fuzzyFilterThreads(opts *DiscussionThreadsListOptions, threads []*types.DiscussionThread) []*types.DiscussionThread {
+	if opts.TitleQuery != nil && strings.TrimSpace(*opts.TitleQuery) != "" {
+		var (
+			scoresByThread  = make(map[*types.DiscussionThread]int, len(threads))
+			threadsToRemove []*types.DiscussionThread
+		)
+		for _, t := range threads {
+			score := stringscore.Score(t.Title, *opts.TitleQuery)
+			if score > 0 {
+				scoresByThread[t] = score
+			} else {
+				threadsToRemove = append(threadsToRemove, t)
+			}
+		}
+		for _, rm := range threadsToRemove {
+			for i, t := range threads {
+				if t == rm {
+					threads = append(threads[:i], threads[i+1:]...)
+					break
+				}
+			}
+		}
+
+		// TODO(slimsag:discussions): future: whether or not to sort based on
+		// best match here should be optional.
+		sort.Slice(threads, func(i, j int) bool {
+			return scoresByThread[threads[i]] > scoresByThread[threads[j]]
+		})
+	}
+	return threads
 }
 
 func (t *discussionThreads) Delete(ctx context.Context, threadID int64) error {
@@ -225,6 +275,9 @@ func (t *discussionThreads) Delete(ctx context.Context, threadID int64) error {
 func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds []*sqlf.Query) {
 	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	if opts.TitleQuery != nil && strings.TrimSpace(*opts.TitleQuery) != "" {
+		conds = append(conds, sqlf.Sprintf("title LIKE %v", extraFuzzy(*opts.TitleQuery)))
+	}
 	if opts.ThreadID != nil {
 		conds = append(conds, sqlf.Sprintf("id=%v", *opts.ThreadID))
 	}
@@ -387,4 +440,23 @@ func (t *discussionThreads) getTargetRepo(ctx context.Context, targetRepoID int6
 		return nil, err
 	}
 	return tr, nil
+}
+
+// extraFuzzy turns a string like "cat" into "%c%a%t%". It can be used with a
+// LIKE query to filter out results that cannot possibly match a fuzzy search
+// query. This returns 'extra fuzzy' results, which are usually subsequently
+// filtered in Go using github.com/felixfbecker/stringscore.
+func extraFuzzy(s string) string {
+	if strings.TrimSpace(s) == "" {
+		return ""
+	}
+	input := []rune(s)
+
+	result := make([]rune, 0, 1+(len(input)*2))
+	result = append(result, '%')
+	for _, r := range input {
+		result = append(result, r)
+		result = append(result, '%')
+	}
+	return string(result)
 }
