@@ -26,4 +26,5 @@ compiler.run((err, stats) => {
     tasks.buildSafari('prod')
     buildChrome()
     buildFirefox()
+    tasks.copyPhabricator()
 })

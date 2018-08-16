@@ -3,6 +3,7 @@ verifyConditions:
   - semantic-release-firefox
   - semantic-release-chrome
   - '@semantic-release/github'
+  - '@semantic-release/npm'
 prepare:
   # Build bundles and output them to the dist folders
   - path: '@semantic-release/exec'
@@ -33,6 +34,9 @@ prepare:
   - path: semantic-release-chrome
     asset: &chromeAssetPath sourcegraph-extension-chrome.zip
     distFolder: &chromeDistFolder build/chrome
+  # Update package.json version for Phabricator bundle on npm
+  - path: '@semantic-release/npm'
+    pkgRoot: &phabricatorPkgRoot build/phabricator
 publish:
   # Publish to Mozilla Add-on store
   - path: semantic-release-firefox
@@ -70,6 +74,9 @@ publish:
     asset: *chromeAssetPath
     distFolder: *chromeDistFolder
     extensionId: dgjhfomjieaadpoljlnidmbgkdffpack
+  # Publish Phabricator bundle to npm so it can be bundled with Sourcegraph Server
+  - path: '@semantic-release/npm'
+    pkgRoot: *phabricatorPkgRoot
   # Create release on GitHub
   - path: '@semantic-release/github'
     assets:

@@ -35,6 +35,7 @@ compiler.watch(
         tasks.buildSafari('dev')
         buildChrome()
         buildFirefox()
+        tasks.copyPhabricator()
         triggerReload()
     }
 )

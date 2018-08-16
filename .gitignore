@@ -2,8 +2,12 @@ node_modules
 npm-debug.log
 .DS_Store
 
-dist/
-build/
+# Ignore build/ except for the Phabricator package.json
+/build/*
+!/build/phabricator/
+/build/phabricator/*
+!/build/phabricator/package.json
+!/build/phabricator/package-lock.json
 
 .checksum
 .extension
