@@ -6,7 +6,8 @@ import { EventLogger } from '../tracking/EventLogger'
 
 export let eventLogger = new EventLogger()
 
-export let sourcegraphUrl = window.localStorage.SOURCEGRAPH_URL || window.SOURCEGRAPH_URL || 'https://sourcegraph.com'
+export let sourcegraphUrl =
+    window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL || 'https://sourcegraph.com'
 
 export let serverUrls = [sourcegraphUrl]
 

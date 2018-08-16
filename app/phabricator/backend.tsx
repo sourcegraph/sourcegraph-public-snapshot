@@ -329,7 +329,7 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
  */
 export function getSourcegraphURLFromConduit(): Promise<string> {
     return new Promise((resolve, reject) => {
-        const url = window.localStorage.SOURCEGRAPH_URL || window.SOURCEGRAPH_URL
+        const url = window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL
         if (url) {
             return resolve(url)
         }
@@ -425,11 +425,14 @@ function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabricator
             // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
             // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
             // in the browser extension options menu.
-            const callsignMappings =
-                window.localStorage.PHABRICATOR_CALLSIGN_MAPPINGS || window.PHABRICATOR_CALLSIGN_MAPPINGS
+            type Mappings = { callsign: string; path: string }[]
+            const mappingsString = window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS')
+            const callsignMappings = mappingsString
+                ? (JSON.parse(mappingsString) as Mappings)
+                : window.PHABRICATOR_CALLSIGN_MAPPINGS || []
             const details = convertToDetails(repo)
             if (callsignMappings) {
-                for (const mapping of JSON.parse(callsignMappings)) {
+                for (const mapping of callsignMappings) {
                     if (mapping.callsign === repo.fields.callsign) {
                         return resolve({
                             callsign: repo.fields.callsign,

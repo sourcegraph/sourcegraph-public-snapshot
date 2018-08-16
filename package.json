@@ -81,7 +81,7 @@
     "tslint": "^5.8.0",
     "tslint-language-service": "^0.9.6",
     "tslint-webpack-plugin": "^1.0.0",
-    "typescript": "^2.9.2",
+    "typescript": "^3.0.1",
     "web-ext": "^2.5.0",
     "webpack": "^4.6.0"
   },
