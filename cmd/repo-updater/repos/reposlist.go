@@ -726,7 +726,17 @@ func (r *repoList) updateSource(source string, newList sourceRepoList) (enqueued
 			log15.Warn("ignoring repo with empty name", "source", source, "url", value.url)
 			continue
 		}
-		log15.Info("adding repo", "source", source, "name", name, "url", value.url)
+		old, ok := oldList[name]
+		switch {
+		case !ok:
+			log15.Info("adding repo", "source", source, "name", name, "url", value.url)
+		case value.url != old.url, value.enabled != old.enabled:
+			log15.Debug("updating repo", "source", source, "name", name, "url", value.url)
+		default:
+			// No change in whether or not it's enabled, no change in URL, we
+			// can ignore this one.
+			continue
+		}
 		oldList[name] = value
 		if value.enabled {
 			enqueued++
