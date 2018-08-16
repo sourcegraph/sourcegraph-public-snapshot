@@ -4,14 +4,11 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	"net/url"
-	"path"
 	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
@@ -135,11 +132,11 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		return nil
 	}
 
-	url, err := n.threadCommentURL(ctx)
+	url, err := URLToInlineComment(ctx, n.thread, n.comment)
 	if err != nil {
-		return errors.Wrap(err, "threadURL")
+		return errors.Wrap(err, "URLToInlineComment")
 	}
-	if url == "" {
+	if url == nil {
 		return nil // can't generate a link to this thread target type
 	}
 
@@ -189,39 +186,11 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			ThreadTitle:         n.thread.Title,
 			CommentContents:     n.comment.Contents,
 			CommentContentsHTML: template.HTML(markdown.Render(n.comment.Contents, nil)),
-			URL:                 url,
+			URL:                 url.String(),
 			RepoName:            repoShortName,
 			UniqueValue:         fmt.Sprint(n.comment.ID),
 		},
 	})
-}
-
-func (n *notifier) threadCommentURL(ctx context.Context) (string, error) {
-	t := n.thread
-	c := n.comment
-	u := &url.URL{}
-	switch {
-	case t.TargetRepo != nil:
-		repo, err := db.Repos.Get(ctx, t.TargetRepo.RepoID)
-		if err != nil {
-			return "", errors.Wrap(err, "db.Repos.Get")
-		}
-		u.Path = string(repo.URI)
-		if t.TargetRepo.Path != nil {
-			u.Path = path.Join(u.Path, "-", "blob", *t.TargetRepo.Path)
-		}
-		// TODO(slimsag:discussions): frontend doesn't link to the comment directly
-		// unless these are in this exact order. Why?
-		//fragment := url.Values{}
-		//fragment.Set("tab", "discussions")
-		//fragment.Set("threadID", strconv.FormatInt(t.ID, 10))
-		//fragment.Set("commentID", strconv.FormatInt(c.ID, 10))
-		//u.Fragment = fragment.Encode()
-		u.Fragment = fmt.Sprintf("tab=discussions&threadID=%v&commentID=%v", t.ID, c.ID)
-	default:
-		return "", nil // can't generate a link to this target type
-	}
-	return globals.AppURL.ResolveReference(u).String(), nil
 }
 
 var mentions = regexp.MustCompile(`(^|\s)@(\S*)`)
