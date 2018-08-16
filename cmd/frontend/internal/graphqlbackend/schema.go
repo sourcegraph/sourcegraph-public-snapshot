@@ -2359,6 +2359,12 @@ type DiscussionThread {
     # The target of this discussion thread.
     target: DiscussionThreadTarget!
 
+    # The URL at which this thread can be viewed inline (i.e. in the file blob view).
+    #
+    # This will be null if the thread target is not DiscussionThreadTargetRepo
+    # OR if it was created without a path string.
+    inlineURL: String
+
     # The date when the discussion thread was created.
     createdAt: String!
 
@@ -2402,6 +2408,11 @@ type DiscussionComment {
     # render them. Suggested rendering when the string contains only whitespace
     # is "<em>(no comment text)</em>".
     html(options: MarkdownOptions): String!
+
+    # The URL at which this thread can be viewed inline (i.e. in the file blob view).
+    #
+    # This will be null if the thread was created without a path string.
+    inlineURL: String
 
     # The date when the discussion thread was created.
     createdAt: String!

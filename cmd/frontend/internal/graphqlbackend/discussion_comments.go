@@ -38,6 +38,17 @@ func (r *discussionCommentResolver) Contents() string { return r.c.Contents }
 func (r *discussionCommentResolver) HTML(args *struct{ Options *markdownOptions }) string {
 	return markdown.Render(r.c.Contents, nil)
 }
+func (r *discussionCommentResolver) InlineURL(ctx context.Context) (*string, error) {
+	thread, err := db.DiscussionThreads.Get(ctx, r.c.ThreadID)
+	if err != nil {
+		return nil, errors.Wrap(err, "DiscussionThreads.Get")
+	}
+	url, err := discussions.URLToInlineComment(ctx, thread, r.c)
+	if err != nil {
+		return nil, err
+	}
+	return strptr(url.String()), nil
+}
 func (r *discussionCommentResolver) CreatedAt(ctx context.Context) string {
 	return r.c.CreatedAt.Format(time.RFC3339)
 }

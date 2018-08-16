@@ -294,6 +294,14 @@ func (d *discussionThreadResolver) Target(ctx context.Context) *discussionThread
 	return &discussionThreadTargetResolver{t: d.t}
 }
 
+func (d *discussionThreadResolver) InlineURL(ctx context.Context) (*string, error) {
+	url, err := discussions.URLToInlineThread(ctx, d.t)
+	if err != nil {
+		return nil, err
+	}
+	return strptr(url.String()), nil
+}
+
 func (d *discussionThreadResolver) CreatedAt(ctx context.Context) string {
 	return d.t.CreatedAt.Format(time.RFC3339)
 }
