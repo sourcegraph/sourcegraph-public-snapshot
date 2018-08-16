@@ -1,28 +1,8 @@
-// This file is going away soon and was copy+pasted from the webapp,
-// so I don't want to do the work to migrate it
-// Once it is deleted the rxjs-compat dependency can be removed too.
-// tslint:disable
-
 import { isEmpty } from 'lodash'
 import * as React from 'react'
-import 'rxjs/add/observable/fromEvent'
-import 'rxjs/add/observable/interval'
-import 'rxjs/add/observable/merge'
-import 'rxjs/add/operator/catch'
-import 'rxjs/add/operator/debounceTime'
-import 'rxjs/add/operator/do'
-import 'rxjs/add/operator/filter'
-import 'rxjs/add/operator/map'
-import 'rxjs/add/operator/switchMap'
-import 'rxjs/add/operator/take'
-import 'rxjs/add/operator/takeUntil'
-import 'rxjs/add/operator/zip'
-import { Observable } from 'rxjs/Observable'
-import { Subject } from 'rxjs/Subject'
-import { Subscription } from 'rxjs/Subscription'
+import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'rxjs'
+import { catchError, debounceTime, filter, map, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
 import { fetchHover, fetchJumpURL, isEmptyHover } from '../backend/lsp'
-import { CodeIntelStatusIndicator, isCodeIntelligenceEnabled } from './CodeIntelStatusIndicator'
-import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 import * as github from '../github/util'
 import {
     AbsoluteRepoFile,
@@ -32,6 +12,7 @@ import {
     OpenInSourcegraphProps,
     PositionSpec,
 } from '../repo'
+import { fetchBlobContentLines } from '../repo/backend'
 import {
     convertNode,
     createTooltips,
@@ -44,7 +25,8 @@ import {
 } from '../repo/tooltips'
 import { eventLogger, getPathExtension } from '../util/context'
 import { parseHash } from '../util/url'
-import { fetchBlobContentLines } from '../repo/backend'
+import { CodeIntelStatusIndicator, isCodeIntelligenceEnabled } from './CodeIntelStatusIndicator'
+import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
     className: string
@@ -83,7 +65,6 @@ interface State {
 }
 
 export class BlobAnnotator extends React.Component<Props, State> {
-    public state: State = {}
     public fileExtension: string
     public isDelta: boolean
     private fixedTooltip = new Subject<Props>()
@@ -221,83 +202,86 @@ export class BlobAnnotator extends React.Component<Props, State> {
         }
         this.subscriptions.add(
             this.fixedTooltip
-                .do(() => {
-                    // always hide any existing tooltip when change
-                    hideTooltip()
-                })
-                .filter(props => {
-                    const position = props.position
-                    if (!position || !isCodeIntelligenceEnabled(this.props.filePath)) {
+                .pipe(
+                    tap(() => {
+                        // always hide any existing tooltip when change
+                        hideTooltip()
+                    }),
+                    filter(props => {
+                        const position = props.position
+                        if (!position || !isCodeIntelligenceEnabled(this.props.filePath)) {
+                            this.setFixedTooltip()
+                            return false
+                        }
+                        if (position.line && position.character) {
+                            const cell = this.getCodeCell(position.line)
+                            const el = this.props.findElementWithOffset(
+                                cell,
+                                position.line,
+                                position.character!,
+                                this.diffSpec()
+                            )
+                            if (el) {
+                                const tokenCell = this.props.findTokenCell(cell, el)
+                                tokenCell.classList.add('selection-highlight-sticky')
+                                return true
+                            }
+                        }
                         this.setFixedTooltip()
                         return false
-                    }
-                    if (position.line && position.character) {
-                        const cell = this.getCodeCell(position.line)
-                        const el = this.props.findElementWithOffset(
-                            cell,
-                            position.line,
-                            position.character!,
+                    }),
+                    map(props => props.position!),
+                    map(pos =>
+                        this.props.findElementWithOffset(
+                            this.getCodeCell(pos.line),
+                            pos.line,
+                            pos.character,
                             this.diffSpec()
                         )
-                        if (el) {
-                            const tokenCell = this.props.findTokenCell(cell, el)
-                            tokenCell.classList.add('selection-highlight-sticky')
-                            return true
+                    ),
+                    filter(el => !!el),
+                    map((target: HTMLElement) => {
+                        const loc = this.props.getTargetLineAndOffset(target!, this.diffSpec())
+                        const data = { target, loc }
+                        if (!data.loc) {
+                            return null
                         }
-                    }
-                    this.setFixedTooltip()
-                    return false
-                })
-                .map(props => props.position!)
-                .map(pos =>
-                    this.props.findElementWithOffset(
-                        this.getCodeCell(pos.line),
-                        pos.line,
-                        pos.character,
-                        this.diffSpec()
-                    )
+                        const ctx = { ...this.props, position: data.loc! }
+                        return { target: data.target, ctx }
+                    }),
+                    switchMap(data => {
+                        if (data === null) {
+                            return [null]
+                        }
+                        const { target, ctx } = data
+                        return this.getTooltip(target, ctx).pipe(
+                            tap(tooltip => {
+                                if (!tooltip) {
+                                    this.setFixedTooltip()
+                                    return
+                                }
+
+                                const contents = tooltip.contents
+                                if (!contents || isEmptyHover({ contents })) {
+                                    this.setFixedTooltip()
+                                    return
+                                }
+
+                                this.setFixedTooltip(tooltip)
+                                // Show the tooltip with j2d and findRef buttons. We don't want to wait for
+                                // a response from getDefinition before showing this, as the response can take some time
+                                // for JS and TS when private packages are used.
+                                updateTooltip(tooltip, true, this.tooltipActions(ctx), this.props.isBase)
+                            }),
+                            zip(this.getDefinition(ctx)),
+                            map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined } as TooltipData)),
+                            catchError(e => {
+                                const data: TooltipData = { target, ctx }
+                                return [data]
+                            })
+                        )
+                    })
                 )
-                .filter(el => !!el)
-                .map((target: HTMLElement) => {
-                    const loc = this.props.getTargetLineAndOffset(target!, this.diffSpec())
-                    const data = { target, loc }
-                    if (!data.loc) {
-                        return null
-                    }
-                    const ctx = { ...this.props, position: data.loc! }
-                    return { target: data.target, ctx }
-                })
-                .switchMap(data => {
-                    if (data === null) {
-                        return [null]
-                    }
-                    const { target, ctx } = data
-                    return this.getTooltip(target, ctx)
-                        .do(tooltip => {
-                            if (!tooltip) {
-                                this.setFixedTooltip()
-                                return
-                            }
-
-                            const contents = tooltip.contents
-                            if (!contents || isEmptyHover({ contents })) {
-                                this.setFixedTooltip()
-                                return
-                            }
-
-                            this.setFixedTooltip(tooltip)
-                            // Show the tooltip with j2d and findRef buttons. We don't want to wait for
-                            // a response from getDefinition before showing this, as the response can take some time
-                            // for JS and TS when private packages are used.
-                            updateTooltip(tooltip, true, this.tooltipActions(ctx), this.props.isBase)
-                        })
-                        .zip(this.getDefinition(ctx))
-                        .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined } as TooltipData))
-                        .catch(e => {
-                            const data: TooltipData = { target, ctx }
-                            return [data]
-                        })
-                })
                 .subscribe(data => {
                     if (!data) {
                         this.setFixedTooltip()
@@ -318,48 +302,53 @@ export class BlobAnnotator extends React.Component<Props, State> {
         )
 
         this.subscriptions.add(
-            Observable.fromEvent<MouseEvent>(ref, 'mouseover', { passive: true })
-                .debounceTime(50)
-                .map(e => e.target as HTMLElement)
-                .filter(() => isCodeIntelligenceEnabled(this.props.filePath))
-                .filter(this.props.filterTarget)
-                .filter(target => {
-                    if (!target.lastChild) {
-                        return false
-                    }
-                    if (!target.lastChild.textContent || target.lastChild.textContent.trim().length === 0) {
-                        return false
-                    }
-                    return true
-                })
-                .map(target => {
-                    const td = getTableDataCell(target)
-                    if (!td) {
-                        return target
-                    }
+            fromEvent<MouseEvent>(ref, 'mouseover', { passive: true })
+                .pipe<TooltipData>(
+                    debounceTime(50),
+                    map(e => e.target as HTMLElement),
+                    filter(() => isCodeIntelligenceEnabled(this.props.filePath)),
+                    filter(this.props.filterTarget),
+                    filter(target => {
+                        if (!target.lastChild) {
+                            return false
+                        }
+                        if (!target.lastChild.textContent || target.lastChild.textContent.trim().length === 0) {
+                            return false
+                        }
+                        return true
+                    }),
+                    map(target => {
+                        const td = getTableDataCell(target)
+                        if (!td) {
+                            return target
+                        }
 
-                    const cell = this.props.getNodeToConvert(td)
-                    if (cell && !cell.classList.contains('annotated')) {
-                        cell.classList.add('annotated')
-                        convertNode(cell)
-                    }
-                    return target.classList.contains('wrapped-node') ? target : this.props.findTokenCell(td, target)
-                })
-                .map(target => ({ target, loc: this.props.getTargetLineAndOffset(target, this.diffSpec()) }))
-                .filter(data => Boolean(data.loc))
-                .map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } }))
-                .switchMap(({ target, ctx }) => {
-                    const tooltip = this.getTooltip(target, ctx)
-                    this.subscriptions.add(tooltip.subscribe(this.logTelemetryOnTooltip))
-                    const tooltipWithJ2D: Observable<TooltipData> = tooltip
-                        .zip(this.getDefinition(ctx))
-                        .map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
-                    const loading = this.getLoadingTooltip(target, ctx, tooltip)
-                    return Observable.merge(loading, tooltip, tooltipWithJ2D).catch(e => {
-                        const data: TooltipData = { target, ctx }
-                        return [data]
+                        const cell = this.props.getNodeToConvert(td)
+                        if (cell && !cell.classList.contains('annotated')) {
+                            cell.classList.add('annotated')
+                            convertNode(cell)
+                        }
+                        return target.classList.contains('wrapped-node') ? target : this.props.findTokenCell(td, target)
+                    }),
+                    map(target => ({ target, loc: this.props.getTargetLineAndOffset(target, this.diffSpec()) })),
+                    filter(data => Boolean(data.loc)),
+                    map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } })),
+                    switchMap(({ target, ctx }) => {
+                        const tooltip = this.getTooltip(target, ctx)
+                        this.subscriptions.add(tooltip.subscribe(this.logTelemetryOnTooltip))
+                        const tooltipWithJ2D: Observable<TooltipData> = tooltip.pipe(
+                            zip(this.getDefinition(ctx)),
+                            map(([tooltip, defUrl]) => ({ ...tooltip, defUrl: defUrl || undefined }))
+                        )
+                        const loading = this.getLoadingTooltip(target, ctx, tooltip)
+                        return merge(loading, tooltip, tooltipWithJ2D).pipe(
+                            catchError(e => {
+                                const data: TooltipData = { target, ctx }
+                                return [data]
+                            })
+                        )
                     })
-                })
+                )
                 .subscribe(data => {
                     if (isTooltipVisible(this.props, !this.props.isBase) || isOtherFileTooltipVisible(this.props)) {
                         // If another tooltip is visible for the diff, ignore this mouseover.
@@ -371,7 +360,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
                 })
         )
         this.subscriptions.add(
-            Observable.fromEvent<MouseEvent>(ref, 'mouseout', { passive: true }).subscribe(e => {
+            fromEvent<MouseEvent>(ref, 'mouseout', { passive: true }).subscribe(e => {
                 for (const el of this.props.fileElement.querySelectorAll('.selection-highlight')) {
                     el.classList.remove('selection-highlight')
                 }
@@ -387,28 +376,30 @@ export class BlobAnnotator extends React.Component<Props, State> {
             })
         )
         this.subscriptions.add(
-            Observable.fromEvent<MouseEvent>(ref, 'mouseup', { passive: true })
-                .debounceTime(50)
-                .map(e => e.target as HTMLElement)
-                .filter(() => isCodeIntelligenceEnabled(this.props.filePath))
-                .filter(this.props.filterTarget)
-                .filter(target => {
-                    if (!target) {
-                        return false
-                    }
-                    const tooltip = document.querySelector('.sg-tooltip')
-                    if (tooltip && tooltip.contains(target)) {
-                        return false
-                    }
-                    if (!target.lastChild) {
-                        return false
-                    }
-                    if (!target.lastChild.textContent || target.lastChild.textContent.trim().length === 0) {
-                        return false
-                    }
+            fromEvent<MouseEvent>(ref, 'mouseup', { passive: true })
+                .pipe(
+                    debounceTime(50),
+                    map(e => e.target as HTMLElement),
+                    filter(() => isCodeIntelligenceEnabled(this.props.filePath)),
+                    filter(this.props.filterTarget),
+                    filter(target => {
+                        if (!target) {
+                            return false
+                        }
+                        const tooltip = document.querySelector('.sg-tooltip')
+                        if (tooltip && tooltip.contains(target)) {
+                            return false
+                        }
+                        if (!target.lastChild) {
+                            return false
+                        }
+                        if (!target.lastChild.textContent || target.lastChild.textContent.trim().length === 0) {
+                            return false
+                        }
 
-                    return true
-                })
+                        return true
+                    })
+                )
                 .subscribe(target => {
                     const row = (target as Element).closest('tr') as HTMLTableRowElement | null
                     if (!row) {
@@ -503,16 +494,17 @@ export class BlobAnnotator extends React.Component<Props, State> {
      * tooltip is defined, it will update the target styling.
      */
     private getTooltip(target: HTMLElement, ctx: AbsoluteRepoFilePosition): Observable<TooltipData> {
-        return fetchHover(ctx)
-            .do(data => {
+        return fetchHover(ctx).pipe(
+            tap(data => {
                 if (isEmptyHover(data)) {
                     // short-cirtuit, no tooltip data
                     return
                 }
                 target.style.cursor = 'pointer'
                 target.classList.add('selection-highlight')
-            })
-            .map(data => ({ target, ctx, ...data }))
+            }),
+            map(data => ({ target, ctx, ...data }))
+        )
     }
     /**
      * getDefinition wraps the asynchronous fetch of tooltip data from the Sourcegraph API.
@@ -531,10 +523,11 @@ export class BlobAnnotator extends React.Component<Props, State> {
         ctx: AbsoluteRepoFilePosition,
         tooltip: Observable<TooltipData>
     ): Observable<TooltipData> {
-        return Observable.interval(500)
-            .take(1)
-            .takeUntil(tooltip)
-            .map(() => ({ target, ctx, loading: true }))
+        return interval(500).pipe(
+            take(1),
+            takeUntil(tooltip),
+            map(() => ({ target, ctx, loading: true }))
+        )
     }
 
     private setFixedTooltip = (data?: TooltipData) => {
