@@ -85,11 +85,18 @@ export function injectGitHubApplication(marker: HTMLElement): void {
 }
 
 function injectCodeIntelligence(): void {
-    const { repoPath } = parseURL()
+    const { repoPath, filePath } = parseURL()
 
-    const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleCXPFns: lspViaAPIXlang })
+    const files = Array.from(getFileContainers())
 
-    injectBlobAnnotators()
+    // Heuristic to detect if this page is a single code file (CXP currently
+    // only supports one file at a time).
+    const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
+
+    const simpleCXPFns = isSingleCodeFile && useCXP ? lspViaCXP : lspViaAPIXlang
+    const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleCXPFns })
+
+    injectBlobAnnotators(hoverifier, files, simpleCXPFns)
 
     injectCodeSnippetAnnotator(hoverifier, getCodeCommentContainers(), '.border.rounded-1.my-2', blobDOMFunctions)
     injectCodeSnippetAnnotator(
@@ -493,7 +500,7 @@ const LinkComponent: LinkComponent = ({ to, children, ...rest }) => (
     </a>
 )
 
-function injectBlobAnnotators(): void {
+function injectBlobAnnotators(hoverifier: Hoverifier, files: HTMLElement[], simpleCXPFns: SimpleCXPFns): void {
     const { repoPath, isDelta, filePath, rev } = parseURL()
     if (!filePath && !isDelta) {
         return
@@ -618,66 +625,46 @@ function injectBlobAnnotators(): void {
             })
     }
 
-    // Get first loaded files and annotate them.
-    const files = Array.from(getFileContainers())
-
-    // Heuristic to detect if this page is a single code file (CXP currently
-    // only supports one file at a time).
-    const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
-
-    if (isSingleCodeFile) {
-        const simpleCXPFns = useCXP ? lspViaCXP : lspViaAPIXlang
-        const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleCXPFns })
-        addBlobAnnotator(files[0] as HTMLElement, hoverifier, simpleCXPFns)
-    } else {
-        const simpleCXPFns = lspViaAPIXlang
-        const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleCXPFns })
-        for (const file of files) {
-            addBlobAnnotator(file as HTMLElement, hoverifier, simpleCXPFns)
-        }
-        const mutationObserver = new MutationObserver(mutations => {
-            for (const mutation of mutations) {
-                const nodes = Array.prototype.slice.call(mutation.addedNodes)
-                for (const node of nodes) {
-                    if (
-                        node &&
-                        node.classList &&
-                        node.classList.contains('file') &&
-                        node.classList.contains('js-file')
-                    ) {
-                        const intersectionObserver = new IntersectionObserver(
-                            entries => {
-                                for (const file of entries) {
-                                    // File is an IntersectionObserverEntry, which has `isIntersecting` as a prop, but TS
-                                    // complains that it does not exist.
-                                    if ((file as any).isIntersecting && !file.target.classList.contains('annotated')) {
-                                        file.target.classList.add('annotated')
-                                        addBlobAnnotator(file.target as HTMLElement, hoverifier, simpleCXPFns)
-                                    }
+    for (const file of files) {
+        addBlobAnnotator(file as HTMLElement, hoverifier, simpleCXPFns)
+    }
+    const mutationObserver = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
+            const nodes = Array.prototype.slice.call(mutation.addedNodes)
+            for (const node of nodes) {
+                if (node && node.classList && node.classList.contains('file') && node.classList.contains('js-file')) {
+                    const intersectionObserver = new IntersectionObserver(
+                        entries => {
+                            for (const file of entries) {
+                                // File is an IntersectionObserverEntry, which has `isIntersecting` as a prop, but TS
+                                // complains that it does not exist.
+                                if ((file as any).isIntersecting && !file.target.classList.contains('annotated')) {
+                                    file.target.classList.add('annotated')
+                                    addBlobAnnotator(file.target as HTMLElement, hoverifier, simpleCXPFns)
                                 }
-                            },
-                            {
-                                rootMargin: '200px',
-                                threshold: 0,
                             }
-                        )
-                        intersectionObserver.observe(node)
-                    }
+                        },
+                        {
+                            rootMargin: '200px',
+                            threshold: 0,
+                        }
+                    )
+                    intersectionObserver.observe(node)
                 }
             }
-        })
-        const filebucket = document.getElementById('files')
-        if (!filebucket) {
-            return
         }
-
-        mutationObserver.observe(filebucket, {
-            childList: true,
-            subtree: true,
-            attributes: false,
-            characterData: false,
-        })
+    })
+    const filebucket = document.getElementById('files')
+    if (!filebucket) {
+        return
     }
+
+    mutationObserver.observe(filebucket, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false,
+    })
 }
 
 function injectBlobAnnotatorsOld(): void {
