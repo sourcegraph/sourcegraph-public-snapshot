@@ -16,6 +16,7 @@ import {
 } from 'rxjs/operators'
 import getCaretCoordinates from 'textarea-caret'
 import { Key } from 'ts-key-enum'
+import { GQL } from '../../types/gqlschema'
 import { getContext } from '../backend/context'
 import { asError, ErrorLike, isErrorLike } from '../backend/errors'
 import { fetchSymbols } from '../backend/search'

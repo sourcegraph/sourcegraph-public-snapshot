@@ -14,6 +14,7 @@ import {
     take,
     toArray,
 } from 'rxjs/operators'
+import { GQL } from '../../types/gqlschema'
 import { getContext } from './context'
 import { createAggregateError } from './errors'
 import { queryGraphQL } from './graphql'

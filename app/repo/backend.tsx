@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs'
 import { catchError, delay, filter, map, retryWhen } from 'rxjs/operators'
 import { AbsoluteRepoFile, makeRepoURI, parseBrowserRepoURL } from '.'
+import { GQL } from '../../types/gqlschema'
 import { getContext } from '../backend/context'
 import {
     CloneInProgressError,
