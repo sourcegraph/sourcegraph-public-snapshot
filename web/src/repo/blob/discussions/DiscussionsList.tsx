@@ -27,8 +27,6 @@ const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
 
     // TODO(slimsag:discussions): future: need to explain to user how to create
     // a thread in case they get here without selecting lines first.
-
-    // TODO(slimsag:discussions): future: UserAvatar renders off-center when users do not have profile pictures.
     return (
         <li
             className={'discussions-list__row' + (currentURL === inlineURL ? ' discussions-list__row--active' : '')}
