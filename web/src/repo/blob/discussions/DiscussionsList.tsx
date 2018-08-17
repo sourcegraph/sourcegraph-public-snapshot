@@ -25,8 +25,6 @@ const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
     const preventDefault = (e: React.MouseEvent<HTMLAnchorElement>) => e.preventDefault()
     const stopPropagation = (e: React.MouseEvent<HTMLAnchorElement>) => e.stopPropagation()
 
-    // TODO(slimsag:discussions): future: need to explain to user how to create
-    // a thread in case they get here without selecting lines first.
     return (
         <li
             className={'discussions-list__row' + (currentURL === inlineURL ? ' discussions-list__row--active' : '')}
