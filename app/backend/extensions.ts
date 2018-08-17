@@ -111,6 +111,13 @@ export const gqlConfigurationCascade = storage.observeSync('sourcegraphURL').pip
                 if (!data || !data.viewerConfiguration) {
                     throw createAggregateError(errors)
                 }
+
+                for (const subject of data.viewerConfiguration.subjects) {
+                    // User/org/global settings cannot be edited from the
+                    // browser extension (only client settings can).
+                    subject.viewerCanAdminister = false
+                }
+
                 return data.viewerConfiguration
             })
         )
