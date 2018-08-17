@@ -204,3 +204,7 @@ required = [
 [[constraint]]
   branch = "master"
   name = "golang.org/x/time"
+
+[[constraint]]
+  name = "gopkg.in/src-d/go-git.v4"
+  version = "4.6.0"

@@ -1209,6 +1209,19 @@
   revision = "3df7b3563cfe5626e5b109992a6c0b07edadfaa4"
 
 [[projects]]
+  digest = "1:ccca1dcd18bc54e23b517a3c5babeff2e3924a7d8fc1932162225876cfe4bfb0"
+  name = "github.com/src-d/gcfg"
+  packages = [
+    ".",
+    "scanner",
+    "token",
+    "types",
+  ]
+  pruneopts = "NUT"
+  revision = "f187355171c936ac84a82793659ebb4936bc1c23"
+  version = "v1.3.0"
+
+[[projects]]
   branch = "master"
   digest = "1:525b7dcc678232ab5727630baebf1235fe273adc8261e3b00a3c3098528f5e56"
   name = "github.com/temoto/robotstxt-go"
@@ -1526,12 +1539,28 @@
   version = "v2.1.6"
 
 [[projects]]
+  digest = "1:6f9d8617940f5a9497ec64113fdde398394942d1bee0263215927f6ce9b95610"
+  name = "gopkg.in/src-d/go-git.v4"
+  packages = ["plumbing/format/config"]
+  pruneopts = "NUT"
+  revision = "7b6c1266556f59ac436fada3fa6106d4a84f9b56"
+  version = "v4.6.0"
+
+[[projects]]
   branch = "v2"
   digest = "1:5c46c30f329ff35689d1caf2be02b4a8f036cbd3dac4f2e16581edea24ebbbfb"
   name = "gopkg.in/urfave/cli.v2"
   packages = ["."]
   pruneopts = "NUT"
   revision = "d3ae77c26ac8db90639677e4831a728d33c36111"
+
+[[projects]]
+  digest = "1:b233ad4ec87ac916e7bf5e678e98a2cb9e8b52f6de6ad3e11834fc7a71b8e3bf"
+  name = "gopkg.in/warnings.v0"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "ec4a0fea49c7b46c2aeb0b51aac55779c607e52b"
+  version = "v0.1.2"
 
 [[projects]]
   digest = "1:7c95b35057a0ff2e19f707173cc1a947fa43a6eb5c4d300d196ece0334046082"
@@ -1857,6 +1886,7 @@
     "google.golang.org/api/googleapi/transport",
     "gopkg.in/inconshreveable/log15.v2",
     "gopkg.in/jpoehls/gophermail.v0",
+    "gopkg.in/src-d/go-git.v4/plumbing/format/config",
     "gopkg.in/yaml.v2",
     "honnef.co/go/tools/cmd/staticcheck",
     "honnef.co/go/tools/cmd/unused",
