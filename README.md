@@ -1,10 +1,15 @@
 # Sourcegraph browser extensions
 
 [![build](https://travis-ci.org/sourcegraph/browser-extensions.svg?branch=master)](https://travis-ci.org/sourcegraph/browser-extensions)
-[![chrome version](https://img.shields.io/chrome-web-store/v/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
+[![dependencies](https://david-dm.org/sourcegraph/browser-extensions/status.svg)](https://david-dm.org/sourcegraph/browser-extensions)
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
+![license](https://img.shields.io/badge/license-MIT-blue.svg)
+
+[![chrome version](https://img.shields.io/chrome-web-store/v/dgjhfomjieaadpoljlnidmbgkdffpack.svg?logo=Google%20Chrome&logoColor=white)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome users](https://img.shields.io/chrome-web-store/users/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
-[![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
-[![firefox version](https://img.shields.io/amo/v/sourcegraph.svg)](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
+[![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)  
+[![firefox version](https://img.shields.io/amo/v/sourcegraph.svg?logo=Mozilla%20Firefox&logoColor=white)](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
 [![firefox users](https://img.shields.io/amo/users/sourcegraph.svg)](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
 [![firefox rating](https://img.shields.io/amo/rating/sourcegraph.svg)](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
 
