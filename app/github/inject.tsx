@@ -9,15 +9,23 @@ import {
 } from '@sourcegraph/codeintellify'
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
+import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
+import { createController, ExtensionWithManifest } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
+import { Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
+import { Controller as CXPController } from 'cxp/module/environment/controller'
 import { identity } from 'lodash'
 import mermaid from 'mermaid'
 import * as React from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
-import { forkJoin, of, Subject } from 'rxjs'
+import { combineLatest, forkJoin, of, Subject } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
 import { findElementWithOffset, getTargetLineAndOffset, GitHubBlobUrl } from '.'
 import storage from '../../extension/storage'
-import { createJumpURLFetcher, JumpURLLocation, lspViaAPIXlang, lspViaCXP, SimpleCXPFns } from '../backend/lsp'
+import { createMessageTransports } from '../backend/cxp'
+import { createExtensionsContextController } from '../backend/extensions'
+import { createJumpURLFetcher, createLSPViaCXP, JumpURLLocation, lspViaAPIXlang, SimpleCXPFns } from '../backend/lsp'
 import { Alerts } from '../components/Alerts'
 import { BlobAnnotator } from '../components/BlobAnnotator'
 import { CodeViewToolbar } from '../components/CodeViewToolbar'
@@ -26,11 +34,11 @@ import { EnableSourcegraphServerButton } from '../components/EnableSourcegraphSe
 import { ServerAuthButton } from '../components/ServerAuthButton'
 import { SymbolsDropdownContainer } from '../components/SymbolsDropdownContainer'
 import { WithResolvedRev } from '../components/WithResolvedRev'
-import { CodeCell, DiffResolvedRevSpec } from '../repo'
+import { AbsoluteRepo, AbsoluteRepoFile, CodeCell, DiffResolvedRevSpec } from '../repo'
 import { resolveRev, retryWhenCloneInProgressError } from '../repo/backend'
 import { getTableDataCell, hideTooltip } from '../repo/tooltips'
 import { RepoRevSidebar } from '../tree/RepoRevSidebar'
-import { eventLogger, useCXP } from '../util/context'
+import { eventLogger, getModeFromPath, useCXP } from '../util/context'
 import {
     inlineSymbolSearchEnabled,
     renderMermaidGraphsEnabled,
@@ -93,10 +101,62 @@ function injectCodeIntelligence(): void {
     // only supports one file at a time).
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
 
-    const simpleCXPFns = isSingleCodeFile && useCXP ? lspViaCXP : lspViaAPIXlang
+    let extensionsContextController: Controller<ConfigurationSubject, Settings> | undefined
+    let cxpController:
+        | CXPController<ExtensionWithManifest, ConfigurationCascade<ConfigurationSubject, Settings>>
+        | undefined
+    let simpleCXPFns = lspViaAPIXlang
+
+    if (isSingleCodeFile && useCXP && filePath) {
+        extensionsContextController = createExtensionsContextController()
+        cxpController = createController(extensionsContextController.context, createMessageTransports)
+        simpleCXPFns = createLSPViaCXP(cxpController)
+
+        const constExtensionsContextController = extensionsContextController
+        const constCXPController = cxpController
+
+        resolveRev({ repoPath, rev: parseURL().rev })
+            .pipe(retryWhenCloneInProgressError())
+            .subscribe(commitID => {
+                combineLatest(
+                    constExtensionsContextController.viewerConfiguredExtensions,
+                    constExtensionsContextController.context.configurationCascade
+                ).subscribe(
+                    ([configuredExtensions, configurationCascade]) => {
+                        const toURI = (ctx: AbsoluteRepo) => `git://${ctx.repoPath}?${ctx.commitID}`
+                        const toURIWithPath = (ctx: AbsoluteRepoFile) =>
+                            `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
+
+                        const fileElement = document.querySelector('tbody')
+                        const gitHubCurrentFileContent = fileElement ? fileElement.innerText : ''
+
+                        constCXPController.setEnvironment({
+                            root: toURI({ repoPath, commitID }),
+                            component: {
+                                document: {
+                                    uri: toURIWithPath({ repoPath, commitID, filePath }),
+                                    languageId: getModeFromPath(filePath) || 'could not determine mode',
+                                    version: 0,
+                                    text: gitHubCurrentFileContent,
+                                },
+                                selections: [],
+                                visibleRanges: [],
+                            },
+                            extensions: configuredExtensions,
+                            configuration: configurationCascade,
+                            context: {},
+                        })
+                    },
+                    err => {
+                        console.error('Error fetching viewer configured extensions via GraphQL: %O', err)
+                    }
+                )
+            })
+    }
+
     const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleCXPFns })
 
-    injectBlobAnnotators(hoverifier, files, simpleCXPFns)
+    injectBlobAnnotators(hoverifier, files, lspViaAPIXlang, extensionsContextController, cxpController)
 
     injectCodeSnippetAnnotator(hoverifier, getCodeCommentContainers(), '.border.rounded-1.my-2', blobDOMFunctions)
     injectCodeSnippetAnnotator(
@@ -500,7 +560,13 @@ const LinkComponent: LinkComponent = ({ to, children, ...rest }) => (
     </a>
 )
 
-function injectBlobAnnotators(hoverifier: Hoverifier, files: HTMLElement[], simpleCXPFns: SimpleCXPFns): void {
+function injectBlobAnnotators(
+    hoverifier: Hoverifier,
+    files: HTMLElement[],
+    simpleCXPFns: SimpleCXPFns,
+    extensions?: Controller<ConfigurationSubject, Settings>,
+    cxpController?: CXPController<ExtensionWithManifest, ConfigurationCascade<ConfigurationSubject, Settings>>
+): void {
     const { repoPath, isDelta, filePath, rev } = parseURL()
     if (!filePath && !isDelta) {
         return
@@ -534,6 +600,8 @@ function injectBlobAnnotators(hoverifier: Hoverifier, files: HTMLElement[], simp
                         baseRev={commitID}
                         buttonProps={buttonProps}
                         simpleCXPFns={simpleCXPFns}
+                        cxpController={cxpController}
+                        extensions={extensions}
                     />,
                     mount
                 )

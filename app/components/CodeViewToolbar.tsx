@@ -1,5 +1,14 @@
+import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
+import { ExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
+import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import {
+    ConfigurationCascadeProps,
+    ConfigurationSubject,
+    Settings,
+} from '@sourcegraph/extensions-client-common/lib/settings'
+import { ContributableMenu } from 'cxp/module/protocol'
 import * as React from 'react'
-
+import { Subscription } from 'rxjs'
 import storage from '../../extension/storage'
 import { SimpleCXPFns } from '../backend/lsp'
 import { setServerUrls } from '../util/context'
@@ -12,7 +21,9 @@ export interface ButtonProps {
     iconStyle?: React.CSSProperties
 }
 
-interface CodeViewToolbarProps {
+interface CodeViewToolbarProps
+    extends Partial<ExtensionsProps<ConfigurationSubject, Settings>>,
+        Partial<CXPControllerProps<ConfigurationSubject, Settings>> {
     repoPath: string
     filePath: string
 
@@ -28,18 +39,49 @@ interface CodeViewToolbarProps {
     simpleCXPFns: SimpleCXPFns
 }
 
-export class CodeViewToolbar extends React.PureComponent<CodeViewToolbarProps> {
+interface CodeViewToolbarState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {}
+
+export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeViewToolbarState> {
+    public state: CodeViewToolbarState = {
+        configurationCascade: { subjects: [], merged: {} },
+    }
+
+    private subscriptions = new Subscription()
+
     public componentDidMount(): void {
         storage.onChanged(items => {
             if (items.serverUrls && items.serverUrls.newValue) {
                 setServerUrls(items.serverUrls.newValue)
             }
         })
+
+        if (this.props.extensions) {
+            this.subscriptions.add(
+                this.props.extensions.context.configurationCascade.subscribe(
+                    configurationCascade => this.setState({ configurationCascade }),
+                    err => console.error(err)
+                )
+            )
+        }
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {
         return (
             <div style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}>
+                <ul className="nav">
+                    {this.props.cxpController &&
+                        this.props.extensions && (
+                            <ActionsNavItems
+                                menu={ContributableMenu.EditorTitle}
+                                cxpController={this.props.cxpController}
+                                extensions={this.props.extensions}
+                            />
+                        )}
+                </ul>
                 <CodeIntelStatusIndicator
                     key="code-intel-status"
                     userIsSiteAdmin={false}

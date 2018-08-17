@@ -1,12 +1,16 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
-import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
+import { Controller } from 'cxp/module/environment/controller'
+import { Extension } from 'cxp/module/environment/extension'
+import { ConfigurationCascade, TextDocumentPositionParams } from 'cxp/module/protocol'
+import { HoverMerged } from 'cxp/module/types/hover'
 import { Observable, of, OperatorFunction, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { Definition } from 'vscode-languageserver-types'
+import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
     AbsoluteRepo,
+    AbsoluteRepoFile,
     AbsoluteRepoFilePosition,
     AbsoluteRepoLanguageFile,
     FileSpec,
@@ -307,8 +311,26 @@ export const lspViaAPIXlang: SimpleCXPFns = {
     fetchServerCapabilities,
 }
 
-export const lspViaCXP: SimpleCXPFns = {
-    fetchHover: () => of({ contents: ['Mock CXP hover'] }),
-    fetchDefinition,
+export const toTextDocumentIdentifier = (pos: AbsoluteRepoFile): TextDocumentIdentifier => ({
+    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
+})
+
+const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocumentPositionParams => ({
+    textDocument: toTextDocumentIdentifier(pos),
+    position: {
+        character: pos.position.character! - 1,
+        line: pos.position.line - 1,
+    },
+})
+
+export const createLSPViaCXP = <X extends Extension, C extends ConfigurationCascade>(
+    cxpController: Controller<X, C>
+) => ({
+    fetchHover: pos =>
+        cxpController.registries.textDocumentHover
+            .getHover(toTextDocumentPositionParams(pos))
+            .pipe(map(hover => (hover === null ? HoverMerged.from([]) : hover))),
+    fetchDefinition: pos =>
+        cxpController.registries.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos)),
     fetchServerCapabilities,
-}
+})

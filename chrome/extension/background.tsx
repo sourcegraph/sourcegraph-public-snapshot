@@ -4,6 +4,11 @@ import '../../app/util/polyfill'
 
 import { without } from 'lodash'
 
+import { ExtensionPlatform } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
+import { URI } from 'cxp/module/types/textDocument'
+import { from } from 'rxjs'
+import { ajax } from 'rxjs/ajax'
+import { take } from 'rxjs/operators'
 import initializeCli from '../../app/cli'
 import { setServerUrls, setSourcegraphUrl } from '../../app/util/context'
 import * as browserAction from '../../extension/browserAction'
@@ -297,3 +302,157 @@ function setDefaultBrowserAction(): void {
     browserAction.setBadgeText({ text: '' })
     browserAction.setPopup({ popup: 'options.html?popup=true' })
 }
+
+/**
+ * Fetches JavaScript from a URL and runs it in a web worker.
+ */
+function spawnWebWorkerFromURL(url: string): Promise<Worker> {
+    return ajax({
+        url,
+        crossDomain: true,
+        responseType: 'blob',
+    })
+        .toPromise()
+        .then(response => new Worker(window.URL.createObjectURL(response.response)))
+}
+
+/**
+ * Connects a port and worker by forwarding messages from one to the other and
+ * vice versa.
+ */
+const connectPortAndWorker = (port: chrome.runtime.Port, worker: Worker) => {
+    worker.addEventListener('message', m => {
+        port.postMessage(m.data)
+    })
+    port.onMessage.addListener(m => {
+        worker.postMessage(m)
+    })
+    port.onDisconnect.addListener(() => worker.terminate())
+}
+
+/**
+ * Connects a port and WebSocket by forwarding messages from one to the other and
+ * vice versa.
+ */
+const connectPortAndWebSocket = (port: chrome.runtime.Port, webSocket: WebSocket) => {
+    webSocket.addEventListener('error', err => console.error(err))
+    webSocket.addEventListener('message', m => {
+        port.postMessage(JSON.parse(m.data))
+    })
+    port.onMessage.addListener(m => {
+        webSocket.send(JSON.stringify(m))
+    })
+    port.onDisconnect.addListener(() => webSocket.close())
+    webSocket.addEventListener('close', () => port.disconnect())
+}
+
+/**
+ * Either creates a web worker or connects to a WebSocket based on the given
+ * platform, then connects the given port to it.
+ */
+const spawnAndConnect = ({
+    connectionInfo,
+    port,
+}: {
+    connectionInfo: ExtensionConnectionInfo
+    port: chrome.runtime.Port
+}): Promise<void> =>
+    new Promise((resolve, reject) => {
+        switch (connectionInfo.platform.type) {
+            case 'bundle':
+                spawnWebWorkerFromURL(connectionInfo.platform.url)
+                    .then(worker => {
+                        connectPortAndWorker(port, worker)
+                        resolve()
+                    })
+                    .catch(reject)
+                break
+            case 'websocket':
+                const webSocket = new WebSocket(connectionInfo.platform.url)
+                webSocket.addEventListener('open', () => {
+                    connectPortAndWebSocket(port, webSocket)
+                    resolve()
+                })
+                webSocket.addEventListener('error', reject)
+                break
+            case 'tcp':
+                // The language server CXP extensions on Sourcegraph are specified as
+                // TCP endpoints, but they are also served over WebSockets by lsp-proxy
+                // on the Sourcegraph instance. Since we can't connect to a TCP endpoint
+                // in the browser, we connect to lsp-proxy via WebSockets instead.
+                return from(storage.observeSync('sourcegraphURL'))
+                    .pipe(take(1))
+                    .toPromise()
+                    .then(urlString => {
+                        const url = new URL(urlString)
+                        url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+                        url.pathname = '.api/lsp'
+                        url.searchParams.set('mode', connectionInfo.extensionID)
+                        url.searchParams.set('rootUri', connectionInfo.rootURI || '')
+
+                        const webSocket = new WebSocket(url.href)
+                        webSocket.addEventListener('open', () => {
+                            connectPortAndWebSocket(port, webSocket)
+                            resolve()
+                        })
+                        webSocket.addEventListener('error', reject)
+                    })
+            default:
+                reject(
+                    `Cannot connect to extension of type ${
+                        connectionInfo.platform.type
+                    }. Must be either bundle or websocket. ${connectionInfo.platform}`
+                )
+        }
+    })
+
+/**
+ * The information necessary to connect to a CXP extension.
+ */
+export interface ExtensionConnectionInfo {
+    extensionID: string
+    platform: ExtensionPlatform
+    rootURI: URI
+}
+
+/**
+ * Executes the callback only on the first message that's received on the port.
+ */
+export const onFirstMessage = (port: chrome.runtime.Port, callback: (message: any) => void) => {
+    const cb = message => {
+        port.onMessage.removeListener(cb)
+        callback(message)
+    }
+    port.onMessage.addListener(cb)
+}
+
+// This is the bridge between content scripts (that want to connect to CXP
+// extensions) and the background script (that spawns JS bundles or connects to
+// WebSocket endpoints).:
+chrome.runtime.onConnect.addListener(port => {
+    // When a content script wants to create a connection to a CXP extension, it
+    // first connects to the background script on a random port and sends a
+    // message containing the platform information for that CXP extension (e.g.
+    // a JS bundle at localhost:1234/index.js).
+    onFirstMessage(port, (connectionInfo: ExtensionConnectionInfo) => {
+        // The background script receives the message and attempts to spawn the
+        // extension:
+        spawnAndConnect({ connectionInfo, port }).then(
+            // If spawning succeeds, the background script sends {} (so the
+            // content script knows it succeeded) and the port follows CXP
+            // after that.
+            () => {
+                // Success is represented by the absence of an error
+                port.postMessage({})
+            },
+            // If spawning fails, the background script sends { error } (so the
+            // content script knows it failed) and the port is immediately
+            // disconnected. There is always a 1-1 correspondence between ports
+            // and content scripts, so this won't disrupt any other connections.
+            error => {
+                port.postMessage({ error })
+                port.disconnect()
+            }
+        )
+    })
+})
