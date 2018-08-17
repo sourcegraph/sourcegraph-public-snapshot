@@ -61,14 +61,16 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                     <span className="discussions-comment__top-right-area">
                         {/* TODO(slimsag:discussions): timestamp should not wrap around on small screen widths */}
                         <Timestamp date={comment.createdAt} />
-                        <Link
-                            className="btn btn-link btn-sm discussions-comment__share"
-                            data-tooltip="Copy link to this comment"
-                            to={this.getShareLinkURL()}
-                            onClick={this.onShareLinkClick}
-                        >
-                            {this.state.copiedLink ? 'Copied!' : <LinkIcon className="icon-inline" />}
-                        </Link>
+                        {this.props.comment.inlineURL && (
+                            <Link
+                                className="btn btn-link btn-sm discussions-comment__share"
+                                data-tooltip="Copy link to this comment"
+                                to={this.props.comment.inlineURL}
+                                onClick={this.onShareLinkClick}
+                            >
+                                {this.state.copiedLink ? 'Copied!' : <LinkIcon className="icon-inline" />}
+                            </Link>
+                        )}
                     </span>
                 </div>
                 <div className="discussions-comment__content">
@@ -84,20 +86,11 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         }
         eventLogger.log('ShareCommentButtonClicked')
         event.preventDefault()
-        copy(this.getShareLinkURL())
+        copy(this.props.comment.inlineURL!) // ! because this method is only called when inlineURL exists
         this.setState({ copiedLink: true })
         setTimeout(() => {
             this.setState({ copiedLink: false })
         }, 1000)
-    }
-
-    private getShareLinkURL(): string {
-        const hash = new URLSearchParams()
-        hash.set('tab', 'discussions')
-        hash.set('threadID', this.props.threadID)
-        hash.set('commentID', this.props.comment.id)
-        const loc = this.props.location
-        return new URL(loc.pathname + loc.search + '#' + hash.toString(), window.location.href).href
     }
 
     private setScrollToElement = (ref: HTMLElement | null) => {

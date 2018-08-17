@@ -12,6 +12,7 @@ const discussionCommentFieldsFragment = gql`
             ...UserFields
         }
         html
+        inlineURL
         createdAt
         updatedAt
     }
@@ -48,6 +49,7 @@ const discussionThreadFieldsFragment = gql`
                 }
             }
         }
+        inlineURL
         createdAt
         updatedAt
         archivedAt
