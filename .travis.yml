@@ -1,0 +1,48 @@
+language: node_js
+
+node_js:
+  - '10'
+
+env:
+  global:
+    - FORCE_COLOR=1
+
+cache:
+  directories:
+    - ~/.npm
+    - ~/.cache
+
+install:
+  - npm ci
+
+jobs:
+  include:
+    - stage: test
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      script:
+        - npm run prettier
+        - npm run tslint
+        - npm run build
+    - stage: test
+      env:
+        - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true  
+      script:
+        - npm run build
+        - npm run test:e2e
+    - stage: release
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+      script: semantic-release
+
+stages:
+  - test
+  - name: release
+    if: branch = release AND type = push AND fork = false
+
+branches:
+  only:
+    - master
+    - release
+    - /renovate\/.+/

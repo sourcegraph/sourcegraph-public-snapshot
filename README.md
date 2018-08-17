@@ -1,6 +1,6 @@
 # Sourcegraph browser extensions
 
-[![build](https://badge.buildkite.com/59c6f8596c7823a61a1d7341805fd83515999ec114c9fb7ae2.svg)](https://buildkite.com/sourcegraph/browser-extensions)
+[![build](https://travis-ci.org/sourcegraph/browser-extensions.svg?branch=master)](https://travis-ci.org/sourcegraph/browser-extensions)
 [![chrome version](https://img.shields.io/chrome-web-store/v/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome users](https://img.shields.io/chrome-web-store/users/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
 [![chrome rating](https://img.shields.io/chrome-web-store/rating/dgjhfomjieaadpoljlnidmbgkdffpack.svg)](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
