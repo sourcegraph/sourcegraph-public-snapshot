@@ -23,7 +23,7 @@
     "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
     "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
     "typecheck": "tsc -p tsconfig.json",
-    "build:assets": "typescript-json-schema --noExtraProps --required --include src/protocol/contribution.ts --out lib/protocol/contribution.schema.json tsconfig.dist.module.json Contributions",
+    "build:assets": "typescript-json-schema --id 'https://sourcegraph.com/v1/contribution.schema.json#' --noExtraProps --required --include src/protocol/contribution.ts --out lib/protocol/contribution.schema.json tsconfig.dist.module.json Contributions",
     "build:commonjs": "tsc -p tsconfig.dist.commonjs.json",
     "build:module": "tsc -p tsconfig.dist.module.json",
     "build": "npm run build:commonjs && npm run build:module && npm run build:assets",
