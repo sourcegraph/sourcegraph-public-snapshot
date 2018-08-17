@@ -4,8 +4,8 @@ import { isArray } from 'lodash-es'
 import { Observable, Subscription, Unsubscribable } from 'rxjs'
 import { catchError, map, switchMap, take } from 'rxjs/operators'
 import { Context } from '../context'
+import { ConfiguredExtension } from '../extensions/extension'
 import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
-import { ExtensionWithManifest } from './controller'
 
 /**
  * Registers the builtin client commands that are required by CXP. See
@@ -13,7 +13,7 @@ import { ExtensionWithManifest } from './controller'
  */
 export function registerBuiltinClientCommands<S extends ConfigurationSubject, C extends Settings>(
     context: Pick<Context<S, C>, 'configurationCascade' | 'updateExtensionSettings'>,
-    controller: Controller<ExtensionWithManifest, ConfigurationCascade<S, C>>
+    controller: Controller<ConfiguredExtension, ConfigurationCascade<S, C>>
 ): Unsubscribable {
     const subscription = new Subscription()
 

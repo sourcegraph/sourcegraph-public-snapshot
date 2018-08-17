@@ -1,24 +1,20 @@
 import { ClientOptions } from 'cxp/module/client/client'
 import { ClientKey, Controller } from 'cxp/module/environment/controller'
 import { Environment } from 'cxp/module/environment/environment'
-import { Extension } from 'cxp/module/environment/extension'
 import { MessageTransports } from 'cxp/module/jsonrpc2/connection'
 import { BrowserConsoleTracer } from 'cxp/module/jsonrpc2/trace'
-import { mergeMap } from 'rxjs/operators'
+import { Contributions } from 'cxp/module/protocol'
+import { Unsubscribable } from 'rxjs'
+import { filter, map, mergeMap } from 'rxjs/operators'
 import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
+import { CXPExtensionManifest } from '../schema/extension.schema'
 import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
 import { getSavedClientTrace } from './client'
 import { registerBuiltinClientCommands, updateConfiguration } from './clientCommands'
 import { ErrorHandler } from './errorHandler'
 import { log } from './log'
-
-/**
- * Adds the manifest to CXP extensions in the CXP environment, so we can consult it in the createMessageTransports
- * callback (to know how to communicate with or run the extension).
- */
-export interface ExtensionWithManifest extends Extension, Pick<ConfiguredExtension, 'manifest'> {}
 
 /**
  * React props or state containing the CXP controller. There should be only a single CXP controller for the whole
@@ -29,7 +25,7 @@ export interface CXPControllerProps<S extends ConfigurationSubject, C extends Se
      * The CXP controller, which is used to communicate with the extensions and manages extensions based on the CXP
      * environment.
      */
-    cxpController: Controller<ExtensionWithManifest, ConfigurationCascade<S, C>>
+    cxpController: Controller<ConfiguredExtension, ConfigurationCascade<S, C>>
 }
 
 /**
@@ -39,8 +35,8 @@ export interface CXPControllerProps<S extends ConfigurationSubject, C extends Se
  * @template CC settings type
  */
 function environmentFilter<S extends ConfigurationSubject, CC extends ConfigurationCascade<S>>(
-    nextEnvironment: Environment<ExtensionWithManifest, CC>
-): Environment<ExtensionWithManifest, CC> {
+    nextEnvironment: Environment<ConfiguredExtension, CC>
+): Environment<ConfiguredExtension, CC> {
     return {
         ...nextEnvironment,
         extensions:
@@ -84,10 +80,10 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
  */
 export function createController<S extends ConfigurationSubject, C extends Settings>(
     context: Context<S, C>,
-    createMessageTransports: (extension: ExtensionWithManifest, options: ClientOptions) => Promise<MessageTransports>
-): Controller<ExtensionWithManifest, ConfigurationCascade<S, C>> {
-    const controller = new Controller<ExtensionWithManifest, ConfigurationCascade<S, C>>({
-        clientOptions: (key: ClientKey, options: ClientOptions, extension: ExtensionWithManifest) => {
+    createMessageTransports: (extension: ConfiguredExtension, options: ClientOptions) => Promise<MessageTransports>
+): Controller<ConfiguredExtension, ConfigurationCascade<S, C>> {
+    const controller = new Controller<ConfiguredExtension, ConfigurationCascade<S, C>>({
+        clientOptions: (key: ClientKey, options: ClientOptions, extension: ConfiguredExtension) => {
             const errorHandler = new ErrorHandler(extension.id)
             return {
                 createMessageTransports: () => createMessageTransports(extension, options),
@@ -101,6 +97,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
     })
 
     registerBuiltinClientCommands(context, controller)
+    registerExtensionContributions(controller)
 
     function messageFromExtension(extension: string, message: string): string {
         return `From extension ${extension}:\n\n${message}`
@@ -168,4 +165,27 @@ export function createController<S extends ConfigurationSubject, C extends Setti
     }
 
     return controller
+}
+
+/**
+ * Registers the builtin client commands that are required by CXP. See
+ * {@link module:cxp/module/protocol/contribution.ActionContribution#command} for documentation.
+ */
+function registerExtensionContributions<S extends ConfigurationSubject, C extends Settings>(
+    controller: Controller<ConfiguredExtension, ConfigurationCascade<S, C>>
+): Unsubscribable {
+    const contributions = controller.environment.environment.pipe(
+        map(({ extensions }) => extensions),
+        filter((extensions): extensions is ConfiguredExtension[] => !!extensions),
+        map(extensions =>
+            extensions
+                .map(({ manifest }) => manifest)
+                .filter((manifest): manifest is CXPExtensionManifest => manifest !== null && !isErrorLike(manifest))
+                .map(({ contributes }) => contributes)
+                .filter((contributions): contributions is Contributions => !!contributions)
+        )
+    )
+    return controller.registries.contribution.registerContributions({
+        contributions,
+    })
 }

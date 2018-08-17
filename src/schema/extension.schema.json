@@ -165,12 +165,18 @@
       "description": "Features contributed by this extension. Extensions may also register certain types of contributions dynamically.",
       "type": "object",
       "additionalProperties": false,
-      "properties": {
-        "configuration": {
-          "description": "The JSON Schema for the configuration settings used by this extension. This schema is merged with the Sourcegraph settings schema. The final schema for settings is the union of Sourcegraph settings and all added extensions' settings.",
-          "$ref": "http://json-schema.org/draft-07/schema#"
-        }
-      }
+      "allOf": [
+        {
+          "type": "object",
+          "properties": {
+            "configuration": {
+              "description": "The JSON Schema for the configuration settings used by this extension. This schema is merged with the Sourcegraph settings schema. The final schema for settings is the union of Sourcegraph settings and all added extensions' settings.",
+              "$ref": "http://json-schema.org/draft-07/schema#"
+            }
+          }
+        },
+        { "$ref": "./contribution.schema.json" }
+      ]
     }
   }
 }
