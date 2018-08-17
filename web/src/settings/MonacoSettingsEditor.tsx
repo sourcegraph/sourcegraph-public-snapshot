@@ -1,4 +1,5 @@
 import * as jsonc from '@sqs/jsonc-parser'
+import contributionSchema from 'cxp/lib/protocol/contribution.schema.json'
 import * as monaco from 'monaco-editor'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
@@ -156,6 +157,12 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                 {
                     uri: 'https://sourcegraph.com/v1/settings.schema.json#',
                     schema: settingsSchema,
+                },
+                {
+                    // This is the literal relative URI used in extension.schema.json to refer to the contributions
+                    // JSON Schema.
+                    uri: './contribution.schema.json',
+                    schema: contributionSchema,
                 },
             ],
         })

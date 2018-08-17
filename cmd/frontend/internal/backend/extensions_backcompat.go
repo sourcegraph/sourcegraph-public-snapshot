@@ -114,7 +114,7 @@ func init() {
 				addr = "xlang-" + addr
 			}
 
-			x := schema.SourcegraphExtension{
+			x := schema.CXPExtensionManifest{
 				Title:       title,
 				Description: description,
 				Readme:      readme,

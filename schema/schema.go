@@ -92,6 +92,17 @@ type BundleTarget struct {
 	Url         string `json:"url"`
 }
 
+// CXPExtensionManifest description: The CXP extension manifest describes the extension and the features it provides.
+type CXPExtensionManifest struct {
+	ActivationEvents []string                `json:"activationEvents"`
+	Args             *map[string]interface{} `json:"args,omitempty"`
+	Contributes      *Contributions          `json:"contributes,omitempty"`
+	Description      string                  `json:"description,omitempty"`
+	Platform         ExtensionPlatform       `json:"platform"`
+	Readme           string                  `json:"readme,omitempty"`
+	Title            string                  `json:"title,omitempty"`
+}
+
 // Contributions description: Features contributed by this extension. Extensions may also register certain types of contributions dynamically.
 type Contributions struct {
 	Configuration *jsonschema.Schema `json:"configuration,omitempty"`
@@ -409,17 +420,6 @@ type SiteConfiguration struct {
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.
 type SlackNotificationsConfig struct {
 	WebhookURL string `json:"webhookURL"`
-}
-
-// SourcegraphExtension description: Configuration for a Sourcegraph extension.
-type SourcegraphExtension struct {
-	ActivationEvents []string                `json:"activationEvents"`
-	Args             *map[string]interface{} `json:"args,omitempty"`
-	Contributes      *Contributions          `json:"contributes,omitempty"`
-	Description      string                  `json:"description,omitempty"`
-	Platform         ExtensionPlatform       `json:"platform"`
-	Readme           string                  `json:"readme,omitempty"`
-	Title            string                  `json:"title,omitempty"`
 }
 
 // TCPTarget description: An existing TCP server that serves this extension's functionality.
