@@ -320,15 +320,25 @@ window.addEventListener('keyup', (e: KeyboardEvent) => {
     }
 })
 
-document.body.addEventListener(
-    'click',
-    (e: MouseEvent) => {
-        if (!isInsideCodeContainer(e.target as HTMLElement)) {
-            hideTooltip()
-        }
-    },
-    { passive: true } as any
-)
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    addDocumentClickListener()
+} else {
+    window.addEventListener('load', () => {
+        addDocumentClickListener()
+    })
+}
+
+function addDocumentClickListener(): void {
+    document.body.addEventListener(
+        'click',
+        (e: MouseEvent) => {
+            if (!isInsideCodeContainer(e.target as HTMLElement)) {
+                hideTooltip()
+            }
+        },
+        { passive: true } as any
+    )
+}
 
 window.addEventListener(
     'resize',
