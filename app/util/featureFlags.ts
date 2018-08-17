@@ -6,7 +6,7 @@ import { FeatureFlags } from '../../extension/types'
  * @param key is the key the feature flag is stored under.
  */
 export function get<K extends keyof FeatureFlags>(key: K): Promise<FeatureFlags[K]> {
-    return new Promise(resolve => storage.getSync(({ featureFlags }) => resolve(featureFlags[key])))
+    return new Promise(resolve => storage.getSync(({ featureFlags }) => resolve(featureFlags && featureFlags[key])))
 }
 
 /**
