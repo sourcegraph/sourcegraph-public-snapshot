@@ -35,8 +35,12 @@
       "automerge": true
     },
     {
-      "packageNames": ["cxp"],
+      "packageNames": ["cxp", "@sourcegraph/extensions-client-common"],
       "assignees": ["chrismwendt"]
+    },
+    {
+      "packageNames": ["@sourcegraph/codeintellify"],
+      "assignees": ["felixfbecker", "ijsnow"]
     }
   ]
 }
