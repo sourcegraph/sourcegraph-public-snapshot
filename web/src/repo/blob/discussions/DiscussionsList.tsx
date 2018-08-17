@@ -7,7 +7,7 @@ import * as GQL from '../../../backend/graphqlschema'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
 import { Timestamp } from '../../../components/time/Timestamp'
 import { UserAvatar } from '../../../user/UserAvatar'
-import { openFromJS, toPrettyBlobURL } from '../../../util/url'
+import { openFromJS } from '../../../util/url'
 import { fetchDiscussionThreads } from './DiscussionsBackend'
 
 interface DiscussionNodeProps {
@@ -18,28 +18,10 @@ interface DiscussionNodeProps {
 const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
     const currentURL = location.pathname + location.search + location.hash
 
-    const hash = new URLSearchParams()
-    hash.set('tab', 'discussions')
-    hash.set('threadID', node.id)
+    // TODO(slimsag:discussions): Improve rendering of discussions when there is no inline URL
+    const inlineURL = node.inlineURL || ''
 
-    let rev = node.target.branch && node.target.branch.displayName
-    if (rev === null) {
-        rev = node.target.revision && node.target.revision.displayName
-    }
-
-    const discussionURL =
-        (node.target.path
-            ? toPrettyBlobURL({
-                  repoPath: node.target.repository && node.target.repository.name,
-                  rev: rev || '',
-                  filePath: node.target.path || '',
-              })
-            : location.pathname) +
-        location.search +
-        '#' +
-        hash.toString()
-
-    const openDiscussion = (e: any) => openFromJS(discussionURL, e)
+    const openDiscussion = (e: any) => openFromJS(inlineURL, e)
     const preventDefault = (e: React.MouseEvent<HTMLAnchorElement>) => e.preventDefault()
     const stopPropagation = (e: React.MouseEvent<HTMLAnchorElement>) => e.stopPropagation()
 
@@ -49,7 +31,7 @@ const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
     // TODO(slimsag:discussions): future: UserAvatar renders off-center when users do not have profile pictures.
     return (
         <li
-            className={'discussions-list__row' + (currentURL === discussionURL ? ' discussions-list__row--active' : '')}
+            className={'discussions-list__row' + (currentURL === inlineURL ? ' discussions-list__row--active' : '')}
             onClick={openDiscussion}
         >
             <div className="discussions-list__row-top-line">
