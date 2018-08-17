@@ -1,4 +1,3 @@
-import * as querystring from 'query-string'
 import * as React from 'react'
 import { FormGroup, Input, Label } from 'reactstrap'
 import * as browserAction from '../../../extension/browserAction'
@@ -42,15 +41,15 @@ export class OptionsPage extends React.Component<{}, State> {
         super(props)
 
         const search = window.location.search
-        const params = querystring.parse(search)
+        const params = new URLSearchParams(search)
 
         this.state = {
             inlineSymbolSearchEnabled: false,
             renderMermaidGraphsEnabled: false,
             repositoryFileTreeEnabled: false,
             executeSearchEnabled: false,
-            displayHeader: params.popup || params.fullPage,
-            isPopup: params.popup,
+            displayHeader: params.has('popup') || params.has('fullPage'),
+            isPopup: params.has('popup'),
             version: '',
             extensionDisabled: false,
             canShowDisableExtension: false,

@@ -108,7 +108,6 @@
     "node-sass-import-once": "^1.2.0",
     "omnicli": "0.1.13",
     "open-color": "^1.6.3",
-    "query-string": "^4.3.4",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
     "react-icon-base": "^2.0.0",

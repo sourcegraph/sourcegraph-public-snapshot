@@ -1,5 +1,3 @@
-import queryString from 'query-string'
-
 /**
  * BitbucketState contains a dynamic set of properties based on the current page.
  */
@@ -214,16 +212,14 @@ export function getRevisionState(state: BitbucketState): { headRev: string; base
     }
 
     // Parse the URL to see if it contains the previous commit info.
-    const query = queryString.parse(window.location.search)
-    if (query) {
-        if (query.until) {
-            headRev = query.until
-        } else if (query.at) {
-            headRev = query.at
-        }
-        if (query.since) {
-            baseRev = query.since
-        }
+    const query = new URLSearchParams(window.location.search)
+    if (query.has('until')) {
+        headRev = query.get('until')!
+    } else if (query.has('at')) {
+        headRev = query.get('at')!
+    }
+    if (query.has('since')) {
+        baseRev = query.get('since')!
     }
     if (!headRev) {
         return undefined

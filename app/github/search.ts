@@ -1,5 +1,3 @@
-import queryString from 'query-string'
-
 import storage from '../../extension/storage'
 import { resolveRev } from '../repo/backend'
 import { getPlatformName, repoUrlCache, sourcegraphUrl } from '../util/context'
@@ -40,17 +38,19 @@ export function initSearch(): void {
             return
         }
 
-        const searchQuery = queryString.parse(window.location.search).q
-        const linkProps = getSourcegraphURLProps(searchQuery)
+        const searchQuery = new URLSearchParams(window.location.search).get('q')
+        if (searchQuery) {
+            const linkProps = getSourcegraphURLProps(searchQuery)
 
-        if (linkProps) {
-            // Ensure that we open the correct sourcegraph server url by checking which
-            // server instance can access the repository.
-            resolveRev({ repoPath: linkProps.repo }).subscribe(() => {
-                const baseUrl = repoUrlCache[linkProps.repo] || sourcegraphUrl
-                const url = `${baseUrl}/${linkProps.url}`
-                window.open(url, '_blank')
-            })
+            if (linkProps) {
+                // Ensure that we open the correct sourcegraph server url by checking which
+                // server instance can access the repository.
+                resolveRev({ repoPath: linkProps.repo }).subscribe(() => {
+                    const baseUrl = repoUrlCache[linkProps.repo] || sourcegraphUrl
+                    const url = `${baseUrl}/${linkProps.url}`
+                    window.open(url, '_blank')
+                })
+            }
         }
     })
 }

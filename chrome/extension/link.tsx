@@ -1,16 +1,15 @@
-import * as querystring from 'query-string'
 import storage from '../../extension/storage'
 
-const search = window.location.search
-const searchParams = querystring.parse(search)
+const searchParams = new URLSearchParams(window.location.search)
 
-if (searchParams && searchParams.sourceurl) {
+const sourceUrl = searchParams.get('sourceurl')
+if (sourceUrl) {
     storage.getSync(items => {
         const serverUrls = items.serverUrls || []
-        serverUrls.push(searchParams.sourceurl)
+        serverUrls.push(sourceUrl)
         storage.setSync({
             serverUrls: [...new Set([...serverUrls, 'https://sourcegraph.com'])],
-            serverUserId: searchParams.userId || items.serverUserId,
+            serverUserId: searchParams.get('userId') || items.serverUserId,
         })
     })
 }
