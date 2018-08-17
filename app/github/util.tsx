@@ -62,14 +62,6 @@ export function isInlineCommentContainer(file: HTMLElement): boolean {
 }
 
 /**
- * isPrivateRepo returns true of the current document is for a private
- * repository URI.
- */
-export function isPrivateRepo(): boolean {
-    return document.getElementsByClassName('label label-private v-align-middle').length > 0
-}
-
-/**
  * getDeltaFileName returns the path of the file container. It assumes
  * the file container is for a diff (i.e. a commit or pull request view).
  */
