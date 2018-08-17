@@ -3,7 +3,7 @@ import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { PageTitle } from '../components/PageTitle'
-import { DiscussionsList } from '../repo/blob/discussions/DiscussionsList'
+import { DiscussionsList } from '../discussions/DiscussionsList'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends RouteComponentProps<any> {

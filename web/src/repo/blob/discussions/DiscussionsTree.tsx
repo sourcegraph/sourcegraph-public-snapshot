@@ -1,8 +1,8 @@
 import * as H from 'history'
 import * as React from 'react'
 import * as GQL from '../../../backend/graphqlschema'
+import { DiscussionsList } from '../../../discussions/DiscussionsList'
 import { DiscussionsCreate } from './DiscussionsCreate'
-import { DiscussionsList } from './DiscussionsList'
 import { DiscussionsThread } from './DiscussionsThread'
 
 interface Props {

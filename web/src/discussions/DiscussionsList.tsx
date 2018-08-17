@@ -3,12 +3,12 @@ import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
-import * as GQL from '../../../backend/graphqlschema'
-import { FilteredConnection, FilteredConnectionQueryArgs } from '../../../components/FilteredConnection'
-import { Timestamp } from '../../../components/time/Timestamp'
-import { UserAvatar } from '../../../user/UserAvatar'
-import { openFromJS } from '../../../util/url'
-import { fetchDiscussionThreads } from './DiscussionsBackend'
+import * as GQL from '../backend/graphqlschema'
+import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
+import { Timestamp } from '../components/time/Timestamp'
+import { UserAvatar } from '../user/UserAvatar'
+import { openFromJS } from '../util/url'
+import { fetchDiscussionThreads } from '../repo/blob/discussions/DiscussionsBackend'
 
 interface DiscussionNodeProps {
     node: GQL.IDiscussionThread
