@@ -117,9 +117,6 @@ var (
 
 func init() {
 	configFilePath = os.Getenv("SOURCEGRAPH_CONFIG_FILE")
-	if configFilePath == "" {
-		configFilePath = "/etc/sourcegraph/config.json"
-	}
 
 	// Read configuration initially.
 	if err := initConfig(false); err != nil {
@@ -168,9 +165,7 @@ func init() {
 }
 
 func readConfig() (string, error) {
-	_, disableConfig := os.LookupEnv("DISABLE_CONFIG")
-	if strings.HasSuffix(os.Args[0], ".test") || disableConfig {
-		// No config to load when running tests.
+	if configFilePath == "" {
 		return "", nil
 	}
 	data, err := ioutil.ReadFile(configFilePath)
@@ -305,6 +300,10 @@ var doNotRequireRestart = []string{
 // Write writes the JSON configuration to the config file. If the file is unknown
 // or it's not editable, an error is returned.
 func Write(input string) error {
+	if !IsWritable() {
+		return errors.New("configuration is not writable")
+	}
+
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
 	after, err := parseConfig(input)
@@ -432,9 +431,15 @@ func AppendConfig(dest, src *schema.SiteConfiguration) *schema.SiteConfiguration
 	return dest
 }
 
+// IsWritable reports whether the config can be overwritten.
+func IsWritable() bool { return configFilePath != "" }
+
 // IsDirty reports whether the config has been changed since this process started.
 // This can occur when config is read from a file and the file has changed on disk.
 func IsDirty() bool {
+	if configFilePath == "" {
+		return false
+	}
 	data, err := ioutil.ReadFile(configFilePath)
 	return err != nil || string(data) != raw
 }

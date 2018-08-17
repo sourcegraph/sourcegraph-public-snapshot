@@ -224,13 +224,15 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 func (r *siteConfigurationResolver) CanUpdate() bool {
 	// We assume the is-admin check has already been performed before constructing
 	// our receiver.
-	//
-	// Disallow updating if the site can't be auto-restarted.
-	return processrestart.CanRestart()
+	return conf.IsWritable() && processrestart.CanRestart()
 }
 
 func (r *siteConfigurationResolver) Source() string {
-	return conf.FilePath()
+	s := conf.FilePath()
+	if !conf.IsWritable() {
+		s += " (read-only)"
+	}
+	return s
 }
 
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
