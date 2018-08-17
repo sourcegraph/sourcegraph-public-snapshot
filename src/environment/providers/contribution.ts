@@ -1,5 +1,5 @@
-import { BehaviorSubject, combineLatest, Observable, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { BehaviorSubject, combineLatest, isObservable, Observable, of, Unsubscribable } from 'rxjs'
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import {
     ActionContribution,
     ActionItem,
@@ -8,7 +8,7 @@ import {
     MenuContributions,
     MenuItemContribution,
 } from '../../protocol'
-import { isEqual } from '../../util'
+import { flatten, isEqual } from '../../util'
 import { getComputedContextProperty } from '../context/context'
 import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'
@@ -16,8 +16,14 @@ import { Environment } from '../environment'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
-    /** The contributions. */
-    contributions: Contributions
+    /**
+     * The contributions, either as a value or an observable.
+     *
+     * If an observable is used, it should be a cold Observable and emit (e.g., its current value) upon
+     * subscription. The {@link ContributionRegistry#contributions} observable blocks until all observables have
+     * emitted.
+     */
+    contributions: Contributions | Observable<Contributions | Contributions[]>
 }
 
 /**
@@ -70,10 +76,21 @@ export class ContributionRegistry {
     public readonly contributions: Observable<Contributions> = this.getContributions(this._entries)
 
     protected getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
-        return combineLatest(entries, this.environment).pipe(
-            map(([entries, environment]) => {
+        return combineLatest(
+            entries.pipe(
+                switchMap(entries =>
+                    combineLatest(
+                        ...entries.map(
+                            entry => (isObservable(entry.contributions) ? entry.contributions : of(entry.contributions))
+                        )
+                    )
+                )
+            ),
+            this.environment
+        ).pipe(
+            map(([multiContributions, environment]) => {
                 const computedContext = { get: (key: string) => getComputedContextProperty(environment, key) }
-                return entries.map(({ contributions }) => {
+                return flatten(multiContributions).map(contributions => {
                     try {
                         return evaluateContributions(
                             computedContext,

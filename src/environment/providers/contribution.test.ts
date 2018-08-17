@@ -118,6 +118,33 @@ describe('ContributionRegistry', () => {
             )
         })
 
+        it('supports registration of an observable', () => {
+            const registry = new class extends ContributionRegistry {
+                public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
+                    return super.getContributions(entries)
+                }
+            }(EMPTY_OBSERVABLE_ENVIRONMENT.environment)
+            scheduler().run(({ cold, expectObservable }) =>
+                expectObservable(
+                    registry.getContributions(
+                        cold<ContributionsEntry[]>('-a-----|', {
+                            a: [
+                                {
+                                    contributions: cold<Contributions>('--b-c-|', {
+                                        b: FIXTURE_CONTRIBUTIONS_1,
+                                        c: [FIXTURE_CONTRIBUTIONS_2],
+                                    }),
+                                },
+                            ],
+                        })
+                    )
+                ).toBe('---b-c-|', {
+                    b: FIXTURE_CONTRIBUTIONS_1,
+                    c: FIXTURE_CONTRIBUTIONS_2,
+                })
+            )
+        })
+
         it('emits when context changes and filters on context', () => {
             scheduler().run(({ cold, expectObservable }) => {
                 const registry = new class extends ContributionRegistry {
