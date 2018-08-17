@@ -17,8 +17,8 @@ func TestForbidAllMiddleware(t *testing.T) {
 	}))
 
 	t.Run("disabled", func(t *testing.T) {
-		conf.MockGetData = &schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}}}
-		defer func() { conf.MockGetData = nil }()
+		conf.Mock(&schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}}})
+		defer conf.Mock(nil)
 
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
@@ -32,8 +32,8 @@ func TestForbidAllMiddleware(t *testing.T) {
 	})
 
 	t.Run("enabled", func(t *testing.T) {
-		conf.MockGetData = &schema.SiteConfiguration{}
-		defer func() { conf.MockGetData = nil }()
+		conf.Mock(&schema.SiteConfiguration{})
+		defer conf.Mock(nil)
 
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)

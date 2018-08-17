@@ -187,11 +187,12 @@ func TestCanonicalURL(t *testing.T) {
 	}
 	for i, test := range tests {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			conf.MockGetData = &schema.SiteConfiguration{AppURL: test.appURL, HttpToHttpsRedirect: test.httpToHttpsRedirect}
+			mock := &schema.SiteConfiguration{AppURL: test.appURL, HttpToHttpsRedirect: test.httpToHttpsRedirect}
 			if test.canonicalURLRedirect != "" {
-				conf.MockGetData.ExperimentalFeatures = &schema.ExperimentalFeatures{CanonicalURLRedirect: test.canonicalURLRedirect}
+				mock.ExperimentalFeatures = &schema.ExperimentalFeatures{CanonicalURLRedirect: test.canonicalURLRedirect}
 			}
-			defer func() { conf.MockGetData = nil }()
+			conf.Mock(mock)
+			defer conf.Mock(nil)
 			req := httptest.NewRequest("GET", test.url, nil)
 			req.Header.Set("X-Forwarded-Proto", test.xForwardedProto)
 			if redirect := handle(t, req); redirect != test.wantRedirect {
@@ -201,8 +202,8 @@ func TestCanonicalURL(t *testing.T) {
 	}
 
 	t.Run("httpToHttpsRedirect invalid value", func(t *testing.T) {
-		conf.MockGetData = &schema.SiteConfiguration{HttpToHttpsRedirect: "invalid"}
-		defer func() { conf.MockGetData = nil }()
+		conf.Mock(&schema.SiteConfiguration{HttpToHttpsRedirect: "invalid"})
+		defer conf.Mock(nil)
 		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		req := httptest.NewRequest("GET", "/", nil)
 		rr := httptest.NewRecorder()
@@ -216,8 +217,8 @@ func TestCanonicalURL(t *testing.T) {
 	})
 
 	t.Run("appURL invalid value", func(t *testing.T) {
-		conf.MockGetData = &schema.SiteConfiguration{AppURL: "invalid"}
-		defer func() { conf.MockGetData = nil }()
+		conf.Mock(&schema.SiteConfiguration{AppURL: "invalid"})
+		defer conf.Mock(nil)
 		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		req := httptest.NewRequest("GET", "/", nil)
 		rr := httptest.NewRecorder()
@@ -231,8 +232,8 @@ func TestCanonicalURL(t *testing.T) {
 	})
 
 	t.Run("experimentalFeatures.canonicalURLRedirect invalid value", func(t *testing.T) {
-		conf.MockGetData = &schema.SiteConfiguration{AppURL: "http://example.com", ExperimentalFeatures: &schema.ExperimentalFeatures{CanonicalURLRedirect: "invalid"}}
-		defer func() { conf.MockGetData = nil }()
+		conf.Mock(&schema.SiteConfiguration{AppURL: "http://example.com", ExperimentalFeatures: &schema.ExperimentalFeatures{CanonicalURLRedirect: "invalid"}})
+		defer conf.Mock(nil)
 		h := CanonicalURL(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 		req := httptest.NewRequest("GET", "/", nil)
 		rr := httptest.NewRecorder()

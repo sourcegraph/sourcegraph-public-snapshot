@@ -152,11 +152,11 @@ func TestMiddleware(t *testing.T) {
 	idpHTTPServer, idpServer := newSAMLIDPServer(t)
 	defer idpHTTPServer.Close()
 
-	conf.MockGetData = &schema.SiteConfiguration{
+	conf.Mock(&schema.SiteConfiguration{
 		AppURL:               "http://example.com",
 		ExperimentalFeatures: &schema.ExperimentalFeatures{},
-	}
-	defer func() { conf.MockGetData = nil }()
+	})
+	defer conf.Mock(nil)
 
 	config := withConfigDefaults(&schema.SAMLAuthProvider{
 		Type: "saml",

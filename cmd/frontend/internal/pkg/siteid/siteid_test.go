@@ -23,7 +23,7 @@ func TestGet(t *testing.T) {
 		inited = false
 		siteID = ""
 		db.Mocks = db.MockStores{}
-		conf.MockGetData = nil
+		conf.Mock(nil)
 	}
 
 	{
@@ -79,7 +79,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("from JSON site config", func(t *testing.T) {
 		defer reset()
-		conf.MockGetData = &schema.SiteConfiguration{SiteID: "a"}
+		conf.Mock(&schema.SiteConfiguration{SiteID: "a"})
 
 		if err := tryInit(); err != nil {
 			t.Fatal(err)
@@ -94,7 +94,7 @@ func TestGet(t *testing.T) {
 
 	t.Run("JSON site config takes precedence over DB", func(t *testing.T) {
 		defer reset()
-		conf.MockGetData = &schema.SiteConfiguration{SiteID: "a"}
+		conf.Mock(&schema.SiteConfiguration{SiteID: "a"})
 		db.Mocks.SiteConfig.Get = func(ctx context.Context) (*types.SiteConfig, error) {
 			return &types.SiteConfig{SiteID: "b"}, nil
 		}

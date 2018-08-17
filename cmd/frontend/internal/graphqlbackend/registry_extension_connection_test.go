@@ -13,8 +13,8 @@ import (
 
 func TestFilteringExtensionIDs(t *testing.T) {
 	t.Run("filterStripLocalExtensionIDs on localhost", func(t *testing.T) {
-		conf.MockGetData = &schema.SiteConfiguration{AppURL: "http://localhost:3080"}
-		defer func() { conf.MockGetData = nil }()
+		conf.Mock(&schema.SiteConfiguration{AppURL: "http://localhost:3080"})
+		defer conf.Mock(nil)
 		input := []string{"localhost:3080/owner1/name1", "owner2/name2"}
 		want := []string{"owner1/name1"}
 		got := filterStripLocalExtensionIDs(input)

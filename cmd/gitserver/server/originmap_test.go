@@ -9,6 +9,9 @@ import (
 )
 
 func TestMap(t *testing.T) {
+	originMaps.mu.Lock()
+	originMaps.mockForTesting = true
+	originMaps.mu.Unlock()
 	type testc struct {
 		in       string
 		exp      []prefixAndOrgin
@@ -75,6 +78,9 @@ func TestMap(t *testing.T) {
 }
 
 func TestDefaults(t *testing.T) {
+	originMaps.mu.Lock()
+	originMaps.mockForTesting = true
+	originMaps.mu.Unlock()
 	tests := []struct {
 		repo   api.RepoURI
 		origin string

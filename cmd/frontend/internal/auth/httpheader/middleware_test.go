@@ -27,8 +27,8 @@ func TestMiddleware(t *testing.T) {
 	}))
 
 	const headerName = "x-sso-user-header"
-	conf.MockGetData = &schema.SiteConfiguration{AuthProvider: "http-header", AuthUserIdentityHTTPHeader: headerName}
-	defer func() { conf.MockGetData = nil }()
+	conf.Mock(&schema.SiteConfiguration{AuthProvider: "http-header", AuthUserIdentityHTTPHeader: headerName})
+	defer conf.Mock(nil)
 
 	t.Run("not sent", func(t *testing.T) {
 		rr := httptest.NewRecorder()

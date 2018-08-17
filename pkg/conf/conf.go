@@ -49,12 +49,22 @@ func Raw() string {
 // be done in such a way that it responds to config changes while the process
 // is running.
 func Get() *schema.SiteConfiguration {
-	if MockGetData != nil {
-		return MockGetData
-	}
 	cfgMu.RLock()
 	defer cfgMu.RUnlock()
+	if mockGetData != nil {
+		return mockGetData
+	}
 	return cfg
+}
+
+var mockGetData *schema.SiteConfiguration
+
+// Mock sets up mock data for the site configuration. It uses the configuration
+// mutex, to avoid possible races between test code and possible config watchers.
+func Mock(mockery *schema.SiteConfiguration) {
+	cfgMu.Lock()
+	defer cfgMu.Unlock()
+	mockGetData = mockery
 }
 
 // GetTODO denotes code that may or may not be using configuration correctly.
@@ -64,9 +74,6 @@ func Get() *schema.SiteConfiguration {
 func GetTODO() *schema.SiteConfiguration {
 	return Get()
 }
-
-// MockGetData is overridden in tests that need to mock site config.
-var MockGetData *schema.SiteConfiguration
 
 var (
 	watchersMu sync.Mutex

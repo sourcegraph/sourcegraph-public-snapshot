@@ -55,6 +55,11 @@ type originMapsT struct {
 
 	// reposListOriginMap is a mapping from repo URI (path) to repo origin (clone URL).
 	reposListOriginMap map[string]string
+
+	// mockForTesting can be set by tests to prevent the config watcher from
+	// trying to update things while those tests are running, as tests may cheat
+	// and write directly to parts of originMaps.
+	mockForTesting bool
 }
 
 func (o *originMapsT) getOriginMap() []prefixAndOrgin {
@@ -72,7 +77,11 @@ func (o *originMapsT) getReposListOriginMap() map[string]string {
 func (o *originMapsT) setup() error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-
+	// Don't try to make changes to the setup while tests are running, as tests
+	// may also be writing to the setup.
+	if o.mockForTesting {
+		return nil
+	}
 	// Clear the map values.
 	o.originMap = nil
 	o.gitoliteHostMap = nil

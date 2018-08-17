@@ -10,14 +10,15 @@ import (
 )
 
 func TestServer_handleGet(t *testing.T) {
-	conf.MockGetData = &schema.SiteConfiguration{
+	conf.Mock(&schema.SiteConfiguration{
 		Gitolite: []*schema.GitoliteConnection{{
 			Blacklist: "isblaclist.*",
 			Prefix:    "mygitolite.host/",
 			Host:      "git@mygitolite.host",
 			PhabricatorMetadataCommand: `echo ${REPO} | tr a-z A-Z`,
 		}},
-	}
+	})
+	defer conf.Mock(nil)
 
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
@@ -46,14 +47,15 @@ func TestServer_handleGet(t *testing.T) {
 }
 
 func TestServer_handleGet_invalid(t *testing.T) {
-	conf.MockGetData = &schema.SiteConfiguration{
+	conf.Mock(&schema.SiteConfiguration{
 		Gitolite: []*schema.GitoliteConnection{{
 			Blacklist: "isblaclist.*",
 			Prefix:    "mygitolite.host/",
 			Host:      "git@mygitolite.host",
 			PhabricatorMetadataCommand: `echo "Something went wrong this is not a valid callsign"`,
 		}},
-	}
+	})
+	defer conf.Mock(nil)
 
 	s := &Server{ReposDir: "/testroot"}
 	h := s.Handler()
