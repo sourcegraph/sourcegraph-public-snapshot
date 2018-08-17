@@ -1,7 +1,6 @@
-import { without } from 'lodash'
 import * as React from 'react'
 import { AuthRequiredError } from '../backend/errors'
-import { serverUrls, sourcegraphUrl } from '../util/context'
+import { sourcegraphUrl } from '../util/context'
 import { Button } from './Button'
 
 interface Props {
@@ -18,10 +17,7 @@ export class ServerAuthButton extends React.Component<Props, {}> {
         if (this.props.error) {
             url = this.props.error.url
         } else {
-            url =
-                sourcegraphUrl !== 'https://sourcegraph.com'
-                    ? sourcegraphUrl
-                    : without(serverUrls, 'https://sourcegraph.com')[0]
+            url = sourcegraphUrl !== 'https://sourcegraph.com' ? sourcegraphUrl : undefined
         }
         if (!url) {
             return null

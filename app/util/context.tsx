@@ -9,8 +9,6 @@ export let eventLogger = new EventLogger()
 export let sourcegraphUrl =
     window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL || 'https://sourcegraph.com'
 
-export let serverUrls = [sourcegraphUrl]
-
 export let executeSearchEnabled = false
 
 export let renderMermaidGraphsEnabled = false
@@ -29,7 +27,6 @@ export const repoUrlCache: UrlCache = {}
 
 if (window.SG_ENV === 'EXTENSION') {
     storage.getSync(items => {
-        serverUrls = items.serverUrls
         sourcegraphUrl = items.sourcegraphURL
 
         executeSearchEnabled = items.executeSearchEnabled
@@ -45,10 +42,6 @@ if (window.SG_ENV === 'EXTENSION') {
 
 export function setSourcegraphUrl(url: string): void {
     sourcegraphUrl = url
-}
-
-export function setServerUrls(urls: string[]): void {
-    serverUrls = urls
 }
 
 export function isBrowserExtension(): boolean {

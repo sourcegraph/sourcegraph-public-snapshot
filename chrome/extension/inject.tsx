@@ -7,12 +7,10 @@ import { injectGitHubApplication } from '../../app/github/inject'
 import { injectPhabricatorApplication } from '../../app/phabricator/app'
 import { injectSourcegraphApp } from '../../app/sourcegraph/inject'
 import {
-    isOnlySourcegraphDotCom,
     setExecuteSearchEnabled,
     setInlineSymbolSearchEnabled,
     setRenderMermaidGraphsEnabled,
     setRepositoryFileTreeEnabled,
-    setServerUrls,
     setSourcegraphUrl,
     setUseCXP,
 } from '../../app/util/context'
@@ -62,10 +60,6 @@ function injectApplication(): void {
             document.querySelector('.bitbucket-header-logo') ||
             document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
 
-        if (isOnlySourcegraphDotCom(items.serverUrls) && !items.hasSeenServerModal) {
-            runtime.sendMessage({ type: 'setBadgeText', payload: '1' })
-        }
-
         if (!isSourcegraphServer && !document.getElementById('ext-style-sheet')) {
             if (window.safari) {
                 runtime.sendMessage({
@@ -84,7 +78,6 @@ function injectApplication(): void {
 
         if (isGitHub || isGitHubEnterprise) {
             setSourcegraphUrl(sourcegraphServerUrl)
-            setServerUrls(items.serverUrls)
             setRenderMermaidGraphsEnabled(
                 items.renderMermaidGraphsEnabled === undefined ? false : items.renderMermaidGraphsEnabled
             )
@@ -108,7 +101,6 @@ function injectApplication(): void {
             document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
         ) {
             setSourcegraphUrl(sourcegraphServerUrl)
-            setServerUrls(items.serverUrls)
             injectBitbucketServer()
         }
         setUseCXP(items.useCXP === undefined ? false : items.useCXP)

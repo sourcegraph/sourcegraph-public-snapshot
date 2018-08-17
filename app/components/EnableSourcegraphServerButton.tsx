@@ -1,7 +1,6 @@
-import { without } from 'lodash'
 import * as React from 'react'
 import * as github from '../github/util'
-import { isOnlySourcegraphDotCom, serverUrls, sourcegraphUrl } from '../util/context'
+import { sourcegraphUrl } from '../util/context'
 import { Button } from './Button'
 
 export class EnableSourcegraphServerButton extends React.Component<{}, {}> {
@@ -10,7 +9,7 @@ export class EnableSourcegraphServerButton extends React.Component<{}, {}> {
         if (!repoName) {
             return null
         }
-        const isOnlySourcegraph = isOnlySourcegraphDotCom(serverUrls)
+        const isOnlySourcegraph = sourcegraphUrl === 'https://sourcegraph.com'
         const label = isOnlySourcegraph ? 'Configure Sourcegraph' : 'View Repository'
         const ariaLabel = isOnlySourcegraph
             ? 'Install Sourcegraph for search and code intelligence on private repositories'
@@ -22,11 +21,7 @@ export class EnableSourcegraphServerButton extends React.Component<{}, {}> {
         const iconStyle = isOnlySourcegraph
             ? { filter: 'grayscale(100%)', marginTop: '-1px', paddingRight: '4px', fontSize: '18px' }
             : undefined
-        const baseUrl =
-            sourcegraphUrl !== 'https://sourcegraph.com'
-                ? sourcegraphUrl
-                : without(serverUrls, 'https://sourcegraph.com')[0]
-        const url = isOnlySourcegraph ? 'https://about.sourcegraph.com' : `${baseUrl}/${repoPath}`
+        const url = isOnlySourcegraph ? 'https://about.sourcegraph.com' : `${sourcegraphUrl}/${repoPath}`
         return (
             <Button
                 iconStyle={iconStyle}

@@ -56,6 +56,12 @@ export const getContentScripts = () => {
     return []
 }
 
+export const openOptionsPage = (callback?: () => void): void => {
+    if (chrome && chrome.runtime && chrome.runtime.openOptionsPage) {
+        chrome.runtime.openOptionsPage(callback)
+    }
+}
+
 function getSafariExtensionVersion(): Promise<string> {
     return fetch(getURL('manifest.json'))
         .then(res => res.json())

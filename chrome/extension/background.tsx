@@ -2,15 +2,15 @@
 // prettier-ignore
 import '../../app/util/polyfill'
 
-import { without } from 'lodash'
-
 import { ExtensionPlatform } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
 import { URI } from 'cxp/module/types/textDocument'
+import { without } from 'lodash'
 import { from } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { take } from 'rxjs/operators'
+import { resolveClientConfiguration } from '../../app/backend/server'
 import initializeCli from '../../app/cli'
-import { setServerUrls, setSourcegraphUrl } from '../../app/util/context'
+import { setSourcegraphUrl } from '../../app/util/context'
 import * as browserAction from '../../extension/browserAction'
 import * as omnibox from '../../extension/omnibox'
 import * as permissions from '../../extension/permissions'
@@ -43,7 +43,26 @@ const configureOmnibox = (serverUrl: string) => {
 
 initializeCli(omnibox)
 
-storage.getSync(({ sourcegraphURL }) => configureOmnibox(sourcegraphURL))
+storage.getSync(({ sourcegraphURL }) => {
+    resolveClientConfiguration().subscribe(
+        config => {
+            // ClientConfiguration is the new storage option.
+            // Request permissions for the urls.
+            storage.setSync({
+                clientConfiguration: {
+                    parentSourcegraph: {
+                        url: config.parentSourcegraph.url,
+                    },
+                    contentScriptUrls: config.contentScriptUrls,
+                },
+            })
+        },
+        () => {
+            /* noop */
+        }
+    )
+    configureOmnibox(sourcegraphURL)
+})
 
 storage.getManaged(items => {
     if (!items.enterpriseUrls || !items.enterpriseUrls.length) {
@@ -62,13 +81,6 @@ storage.getManaged(items => {
 storage.onChanged((changes, areaName) => {
     if (areaName === 'managed') {
         storage.getSync(items => {
-            if (changes.serverUrls && changes.serverUrls.newValue) {
-                const serverUrls = [...new Set([...items.serverUrls, ...changes.serverUrls.newValue])]
-                setServerUrls(serverUrls)
-                if (serverUrls.length) {
-                    storage.setSync({ serverUrls, sourcegraphURL: serverUrls[0] })
-                }
-            }
             if (changes.enterpriseUrls && changes.enterpriseUrls.newValue) {
                 handleManagedPermissionRequest(changes.enterpriseUrls.newValue)
             }
@@ -78,10 +90,24 @@ storage.onChanged((changes, areaName) => {
 
     if (changes.sourcegraphURL && changes.sourcegraphURL.newValue) {
         setSourcegraphUrl(changes.sourcegraphURL.newValue)
+        resolveClientConfiguration().subscribe(
+            config => {
+                // ClientConfiguration is the new storage option.
+                // Request permissions for the urls.
+                storage.setSync({
+                    clientConfiguration: {
+                        parentSourcegraph: {
+                            url: config.parentSourcegraph.url,
+                        },
+                        contentScriptUrls: config.contentScriptUrls,
+                    },
+                })
+            },
+            () => {
+                /* noop */
+            }
+        )
         configureOmnibox(changes.sourcegraphURL.newValue)
-    }
-    if (changes.serverUrls && changes.serverUrls.newValue) {
-        setServerUrls(changes.serverUrls.newValue)
     }
 })
 
@@ -154,6 +180,19 @@ storage.addSyncMigration((items, set, remove) => {
 
     if (!items.inlineSymbolSearchEnabled) {
         set({ inlineSymbolSearchEnabled: true })
+    }
+
+    if (items.serverUrls) {
+        if (items.sourcegraphURL) {
+            if (items.sourcegraphURL === 'https://sourcegraph.com') {
+                const urls = without(items.serverUrls, 'https://sourcegraph.com')
+                if (urls.length) {
+                    set({ sourcegraphURL: urls[0], serverUrls: [urls[0]] })
+                }
+            } else {
+                set({ serverUrls: [items.sourcegraphURL] })
+            }
+        }
     }
 })
 
@@ -285,23 +324,19 @@ function handleManagedPermissionRequest(managedUrls: string[]): void {
             setDefaultBrowserAction()
             return
         }
-        browserAction.setPopup({ popup: '' })
-        browserAction.setBadgeText({ text: '1' })
         browserAction.onClicked(() => {
-            permissions.request(managedUrls).then(added => {
-                if (!added) {
-                    return
-                }
-                setDefaultBrowserAction()
-            })
+            runtime.openOptionsPage()
         })
     })
 }
 
 function setDefaultBrowserAction(): void {
     browserAction.setBadgeText({ text: '' })
-    browserAction.setPopup({ popup: 'options.html?popup=true' })
 }
+
+browserAction.onClicked(() => {
+    runtime.openOptionsPage()
+})
 
 /**
  * Fetches JavaScript from a URL and runs it in a web worker.

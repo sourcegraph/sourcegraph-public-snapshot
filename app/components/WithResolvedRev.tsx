@@ -10,7 +10,6 @@ import {
     ERNOSOURCEGRAPHURL,
 } from '../backend/errors'
 import { resolveRev } from '../repo/backend'
-import { setServerUrls } from '../util/context'
 
 interface WithResolvedRevProps {
     component: any
@@ -90,8 +89,7 @@ export class WithResolvedRev extends React.Component<WithResolvedRevProps, WithR
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
         storage.onChanged(items => {
-            if (items.serverUrls && items.serverUrls.newValue) {
-                setServerUrls(items.serverUrls.newValue)
+            if (items.sourcegraphURL && items.sourcegraphURL.newValue) {
                 this.componentUpdates.next(this.props)
             }
         })

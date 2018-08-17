@@ -105,7 +105,7 @@ export const gqlConfigurationCascade = storage.observeSync('sourcegraphURL').pip
                 ${configurationCascadeFragment}
             `[graphQLContent],
             {},
-            [url]
+            url
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.viewerConfiguration) {
@@ -169,7 +169,7 @@ export function createExtensionsContextController(): ExtensionsContextController
             storage.observeSync('sourcegraphURL').pipe(
                 take(1),
                 mergeMap(url =>
-                    queryGraphQL(getContext({ repoKey: '', isRepoSpecific: false }), request, variables, [url])
+                    queryGraphQL(getContext({ repoKey: '', isRepoSpecific: false }), request, variables, url)
                 )
             ),
         icons: {

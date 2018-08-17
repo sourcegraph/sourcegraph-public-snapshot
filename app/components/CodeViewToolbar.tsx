@@ -9,9 +9,7 @@ import {
 import { ContributableMenu } from 'cxp/module/protocol'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import storage from '../../extension/storage'
 import { SimpleCXPFns } from '../backend/lsp'
-import { setServerUrls } from '../util/context'
 import { CodeIntelStatusIndicator } from './CodeIntelStatusIndicator'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
@@ -49,12 +47,6 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        storage.onChanged(items => {
-            if (items.serverUrls && items.serverUrls.newValue) {
-                setServerUrls(items.serverUrls.newValue)
-            }
-        })
-
         if (this.props.extensions) {
             this.subscriptions.add(
                 this.props.extensions.context.configurationCascade.subscribe(

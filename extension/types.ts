@@ -12,10 +12,12 @@ export interface PhabricatorMapping {
  */
 export interface FeatureFlags {
     newTooltips: boolean
+    optionsPage: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
     newTooltips: true,
+    optionsPage: false,
 }
 
 export interface StorageItems {
@@ -47,10 +49,18 @@ export interface StorageItems {
      * Storage for feature flags
      */
     featureFlags: FeatureFlags
+    clientConfiguration: ClientConfigurationDetails
     /**
      * Overrides settings from Sourcegraph.
      */
     clientSettings: string
+}
+
+interface ClientConfigurationDetails {
+    contentScriptUrls: string[]
+    parentSourcegraph: {
+        url: string
+    }
 }
 
 export const defaultStorageItems: StorageItems = {
@@ -75,6 +85,12 @@ export const defaultStorageItems: StorageItems = {
     disableExtension: false,
     useCXP: false,
     featureFlags: featureFlagDefaults,
+    clientConfiguration: {
+        contentScriptUrls: [],
+        parentSourcegraph: {
+            url: 'https://sourcegraph.com',
+        },
+    },
     clientSettings: '',
 }
 
