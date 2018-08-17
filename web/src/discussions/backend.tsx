@@ -1,9 +1,9 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { mutateGraphQL, queryGraphQL } from '../../../backend/graphql'
-import { gql } from '../../../backend/graphql'
-import * as GQL from '../../../backend/graphqlschema'
-import { createAggregateError } from '../../../util/errors'
+import { mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { gql } from '../backend/graphql'
+import * as GQL from '../backend/graphqlschema'
+import { createAggregateError } from '../util/errors'
 
 const discussionCommentFieldsFragment = gql`
     fragment DiscussionCommentFields on DiscussionComment {

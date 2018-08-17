@@ -8,7 +8,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/F
 import { Timestamp } from '../components/time/Timestamp'
 import { UserAvatar } from '../user/UserAvatar'
 import { openFromJS } from '../util/url'
-import { fetchDiscussionThreads } from '../repo/blob/discussions/DiscussionsBackend'
+import { fetchDiscussionThreads } from './backend'
 
 interface DiscussionNodeProps {
     node: GQL.IDiscussionThread

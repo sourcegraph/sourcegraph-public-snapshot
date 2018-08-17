@@ -7,8 +7,8 @@ import { catchError, concat, filter, map, mergeMap, startWith, tap, withLatestFr
 import { Form } from '../../../components/Form'
 import { Markdown } from '../../../components/Markdown'
 import { Spacer, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../../../components/Tabs'
+import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { renderMarkdown } from './DiscussionsBackend'
 import { DiscussionsInputMentionOverlay, OnBlurHandler, OnKeyDownFilter } from './DiscussionsInputMentionOverlay'
 
 interface Props {
