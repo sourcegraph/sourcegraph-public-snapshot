@@ -21,11 +21,19 @@ import * as React from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
 import { combineLatest, forkJoin, of, Subject } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
+import { Disposable } from 'vscode-languageserver'
 import { findElementWithOffset, getTargetLineAndOffset, GitHubBlobUrl } from '.'
 import storage from '../../extension/storage'
-import { createMessageTransports } from '../backend/cxp'
+import { applyDecoration, createMessageTransports } from '../backend/cxp'
 import { createExtensionsContextController } from '../backend/extensions'
-import { createJumpURLFetcher, createLSPViaCXP, JumpURLLocation, lspViaAPIXlang, SimpleCXPFns } from '../backend/lsp'
+import {
+    createJumpURLFetcher,
+    createLSPViaCXP,
+    JumpURLLocation,
+    lspViaAPIXlang,
+    SimpleCXPFns,
+    toTextDocumentIdentifier,
+} from '../backend/lsp'
 import { Alerts } from '../components/Alerts'
 import { BlobAnnotator } from '../components/BlobAnnotator'
 import { CodeViewToolbar } from '../components/CodeViewToolbar'
@@ -146,6 +154,35 @@ function injectCodeIntelligence(): void {
                             configuration: configurationCascade,
                             context: {},
                         })
+
+                        let oldDecorations: Disposable[] = []
+
+                        constCXPController.registries.textDocumentDecoration
+                            .getDecorations(
+                                toTextDocumentIdentifier({
+                                    commitID,
+                                    filePath,
+                                    repoPath,
+                                })
+                            )
+                            .subscribe(decorations => {
+                                for (const old of oldDecorations) {
+                                    old.dispose()
+                                }
+                                oldDecorations = []
+                                for (const decoration of decorations || []) {
+                                    try {
+                                        oldDecorations.push(
+                                            applyDecoration({
+                                                fileElement: files[0],
+                                                decoration,
+                                            })
+                                        )
+                                    } catch (e) {
+                                        console.warn(e)
+                                    }
+                                }
+                            })
                     },
                     err => {
                         console.error('Error fetching viewer configured extensions via GraphQL: %O', err)
