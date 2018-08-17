@@ -11,7 +11,7 @@ import { TextDocumentLocationProviderRegistry } from './providers/location'
  * Registries is a container for all provider registries.
  *
  * @template X extension type
- * @template C settings type
+ * @template C configuration cascade type
  */
 export class Registries<X extends Extension, C extends ConfigurationCascade> {
     constructor(private environment: ObservableEnvironment<X, C>) {}

@@ -35,6 +35,7 @@ describe('Client', () => {
                                 root: null,
                                 rootUri: null,
                                 capabilities: { experimental: 'test' },
+                                configurationCascade: { merged: {} },
                                 trace: Trace.toString(Trace.Off),
                                 workspaceFolders: null,
                                 initializationOptions: 'test',

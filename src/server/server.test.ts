@@ -15,6 +15,7 @@ describe('Connection', () => {
         const initParams: InitializeParams = {
             root: null,
             capabilities: { decoration: true },
+            configurationCascade: { merged: {} },
             workspaceFolders: null,
         }
         const initResult: InitializeResult = {

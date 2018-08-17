@@ -37,7 +37,7 @@ export class ConfigurationChangeNotificationFeature<C extends ConfigurationCasca
         this.configurationCascade
             .pipe(first())
             .subscribe(configurationCascade => {
-                ensure(params, 'initializationOptions')!.settings = configurationCascade
+                params.configurationCascade = configurationCascade
                 sync = true
             })
             .unsubscribe()

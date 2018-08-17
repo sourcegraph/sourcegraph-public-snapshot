@@ -3,6 +3,13 @@ import { NotificationType, RequestType } from '../jsonrpc2/messages'
 import { NextSignature } from '../types/middleware'
 
 /**
+ * Settings is a JSON document of key-value pairs containing configuration settings for extensions.
+ */
+export interface Settings {
+    [key: string]: any
+}
+
+/**
  * A key path that refers to a location in a JSON document.
  *
  * Each successive array element specifies an index in an object or array to descend into. For example, in the
@@ -95,9 +102,22 @@ export interface DidChangeConfigurationParams {
 }
 
 /**
- * The merged configuration from a configuration cascade.
+ * The configuration cascade, which describes the configuration at multiple levels (subjects), depending on the
+ * client. The merged configuration is the result of shallow-merging configuration objects from all subjects, in
+ * order from lower to higher precedence.
+ *
+ * For example, the client might support configuring settings globally and per-user, and it is designed so that
+ * user settings override global settings. Then there would be two subjects, one for global settings and one for
+ * the user.
  */
 export interface ConfigurationCascade {
-    /** The final settings, merged from all levels in the cascade. */
-    merged: any
+    /** The final settings, merged from all subjects in the cascade. */
+    merged: Settings
+
+    /**
+     * The configuration subjects in the cascade, from lower to higher precedence.
+     *
+     * Extensions: The merged settings value usually suffices.
+     */
+    subjects?: { settings: Settings }[]
 }
