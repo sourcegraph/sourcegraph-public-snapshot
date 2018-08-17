@@ -2,7 +2,7 @@
 // prettier-ignore
 import '../../app/util/polyfill'
 
-import { ExtensionPlatform } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
+import { CXPExtensionManifest } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
 import { URI } from 'cxp/module/types/textDocument'
 import { without } from 'lodash'
 import { from } from 'rxjs'
@@ -446,7 +446,7 @@ const spawnAndConnect = ({
  */
 export interface ExtensionConnectionInfo {
     extensionID: string
-    platform: ExtensionPlatform
+    platform: CXPExtensionManifest['platform']
     rootURI: URI
 }
 

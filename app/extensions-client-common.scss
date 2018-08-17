@@ -24,6 +24,18 @@ $body-color-dark: #f2f4f8;
     --extension-card-bg: #{$color-bg-2};
 }
 
+.command-list {
+    @import 'node_modules/bootstrap/scss/list-group';
+    @import 'node_modules/bootstrap/scss/forms';
+    @import 'node_modules/bootstrap/scss/input-group';
+}
+
+.cxp-global {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+}
+
 .configured-extensions-list {
     h1 {
         font-size: 32px;
@@ -73,12 +85,6 @@ $body-color-dark: #f2f4f8;
     .icon-inline {
         margin-right: 4px;
     }
-}
-.cxp-command-list .list-group-item {
-    padding: 8px 10px;
-}
-.cxp-command-list .form {
-    display: flex;
 }
 .toggle--off::-webkit-slider-runnable-track {
     color: #eee;

@@ -28,8 +28,9 @@ export interface Storage {
 }
 
 const get = (area: chrome.storage.StorageArea) => (callback: (items: StorageItems) => void) => area.get(callback)
-const set = (area: chrome.storage.StorageArea) => (items: Partial<StorageItems>, callback?: () => void) =>
+const set = (area: chrome.storage.StorageArea) => (items: Partial<StorageItems>, callback?: () => void) => {
     area.set(items, callback)
+}
 const getItem = (area: chrome.storage.StorageArea) => (
     key: keyof StorageItems,
     callback: (items: StorageItems) => void

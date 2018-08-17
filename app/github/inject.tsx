@@ -9,18 +9,22 @@ import {
 } from '@sourcegraph/codeintellify'
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
+import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
+import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
-import { createController, ExtensionWithManifest } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
-import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
+import { createController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
 import { Controller as CXPController } from 'cxp/module/environment/controller'
+import { ContributableMenu } from 'cxp/module/protocol'
 import { identity } from 'lodash'
 import mermaid from 'mermaid'
 import * as React from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
 import { combineLatest, forkJoin, of, Subject } from 'rxjs'
-import { filter, map, withLatestFrom } from 'rxjs/operators'
+import { filter, map, take, withLatestFrom } from 'rxjs/operators'
 import { Disposable } from 'vscode-languageserver'
 import { findElementWithOffset, getTargetLineAndOffset, GitHubBlobUrl } from '.'
 import storage from '../../extension/storage'
@@ -111,7 +115,7 @@ function injectCodeIntelligence(): void {
 
     let extensionsContextController: Controller<ConfigurationSubject, Settings> | undefined
     let cxpController:
-        | CXPController<ExtensionWithManifest, ConfigurationCascade<ConfigurationSubject, Settings>>
+        | CXPController<ConfiguredExtension, ConfigurationCascade<ConfigurationSubject, Settings>>
         | undefined
     let simpleCXPFns = lspViaAPIXlang
 
@@ -122,6 +126,11 @@ function injectCodeIntelligence(): void {
 
         const constExtensionsContextController = extensionsContextController
         const constCXPController = cxpController
+
+        injectCXPGlobalComponents({
+            cxpController: constCXPController,
+            extensionsContextController: constExtensionsContextController,
+        })
 
         resolveRev({ repoPath, rev: parseURL().rev })
             .pipe(retryWhenCloneInProgressError())
@@ -138,21 +147,23 @@ function injectCodeIntelligence(): void {
                         const fileElement = document.querySelector('tbody')
                         const gitHubCurrentFileContent = fileElement ? fileElement.innerText : ''
 
-                        constCXPController.setEnvironment({
-                            root: toURI({ repoPath, commitID }),
-                            component: {
-                                document: {
-                                    uri: toURIWithPath({ repoPath, commitID, filePath }),
-                                    languageId: getModeFromPath(filePath) || 'could not determine mode',
-                                    version: 0,
-                                    text: gitHubCurrentFileContent,
+                        constCXPController.environment.environment.pipe(take(1)).subscribe(previous => {
+                            constCXPController.setEnvironment({
+                                root: toURI({ repoPath, commitID }),
+                                component: {
+                                    document: {
+                                        uri: toURIWithPath({ repoPath, commitID, filePath }),
+                                        languageId: getModeFromPath(filePath) || 'could not determine mode',
+                                        version: 0,
+                                        text: gitHubCurrentFileContent,
+                                    },
+                                    selections: [],
+                                    visibleRanges: [],
                                 },
-                                selections: [],
-                                visibleRanges: [],
-                            },
-                            extensions: configuredExtensions,
-                            configuration: configurationCascade,
-                            context: {},
+                                extensions: configuredExtensions,
+                                configuration: configurationCascade,
+                                context: previous.context,
+                            })
                         })
 
                         let oldDecorations: Disposable[] = []
@@ -236,6 +247,39 @@ function hideFileTree(): void {
         return
     }
     tree.parentNode.removeChild(tree)
+}
+
+function injectCXPGlobalComponents({
+    cxpController,
+    extensionsContextController,
+}: {
+    cxpController: CXPController<ConfiguredExtension, ConfigurationCascade<ConfigurationSubject, Settings>>
+    extensionsContextController: Controller<ConfigurationSubject, Settings>
+}): void {
+    const statusElem = document.createElement('div')
+    statusElem.className = 'cxp-global'
+    document.body.appendChild(statusElem)
+    render(
+        <ExtensionStatusPopover
+            cxpController={cxpController}
+            caretIcon={extensionsContextController.context.icons.CaretDown}
+            loaderIcon={extensionsContextController.context.icons.Loader}
+        />,
+        statusElem
+    )
+    const headerElem = document.querySelector('div.HeaderMenu')
+    if (headerElem) {
+        const commandListElem = document.createElement('div')
+        headerElem.appendChild(commandListElem)
+        render(
+            <CommandListPopoverButton
+                cxpController={cxpController}
+                menu={ContributableMenu.CommandPalette}
+                extensions={extensionsContextController}
+            />,
+            commandListElem
+        )
+    }
 }
 
 const specChanges = new Subject<{ repoPath: string; commitID: string }>()
@@ -602,7 +646,7 @@ function injectBlobAnnotators(
     files: HTMLElement[],
     simpleCXPFns: SimpleCXPFns,
     extensions?: Controller<ConfigurationSubject, Settings>,
-    cxpController?: CXPController<ExtensionWithManifest, ConfigurationCascade<ConfigurationSubject, Settings>>
+    cxpController?: CXPController<ConfiguredExtension, ConfigurationCascade<ConfigurationSubject, Settings>>
 ): void {
     const { repoPath, isDelta, filePath, rev } = parseURL()
     if (!filePath && !isDelta) {
