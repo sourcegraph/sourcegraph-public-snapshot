@@ -47,6 +47,10 @@ export interface StorageItems {
      * Storage for feature flags
      */
     featureFlags: FeatureFlags
+    /**
+     * Overrides settings from Sourcegraph.
+     */
+    clientSettings: string
 }
 
 export const defaultStorageItems: StorageItems = {
@@ -71,6 +75,7 @@ export const defaultStorageItems: StorageItems = {
     disableExtension: false,
     useCXP: false,
     featureFlags: featureFlagDefaults,
+    clientSettings: '',
 }
 
 export type StorageChange = { [key in keyof StorageItems]: chrome.storage.StorageChange }

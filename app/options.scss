@@ -103,6 +103,7 @@
         color: #2b3750;
         cursor: pointer;
         margin-bottom: 0;
+        display: block;
 
         &-checkbox {
             width: 15px;
@@ -119,6 +120,15 @@
 
         &-label {
             padding-top: 2px;
+        }
+
+        &-textarea {
+            width: 100%;
+            font-size: 14px;
+            border-color: #e4e9f1;
+            margin-bottom: 1rem;
+            height: 18rem;
+            font-family: $code-font-family;
         }
     }
 

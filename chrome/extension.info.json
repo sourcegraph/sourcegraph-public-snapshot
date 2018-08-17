@@ -21,7 +21,8 @@
     "scripts": ["js/background.bundle.js", "js/link.bundle.js"]
   },
   "options_ui": {
-    "page": "options.html"
+    "page": "cxp.html",
+    "open_in_tab": true
   },
   "storage": {
     "managed_schema": "schema.json"

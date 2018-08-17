@@ -69,6 +69,8 @@ $theme-colors-light: (
 @import 'node_modules/bootstrap/scss/alert';
 @import 'node_modules/bootstrap/scss/card';
 @import 'node_modules/bootstrap/scss/utilities/text';
+@import 'node_modules/bootstrap/scss/nav';
+@import 'node_modules/bootstrap/scss/popover';
 @import './global-styles/card';
 @import './global-styles/icons';
 @import './repo/tooltips';
@@ -82,3 +84,5 @@ $theme-colors-light: (
 @import './components/codeIntelStatusIndicator';
 @import 'node_modules/@sourcegraph/codeintellify/lib/HoverOverlay.scss';
 @import 'node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
+
+@import './extensions-client-common';

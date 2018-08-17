@@ -1,3 +1,5 @@
+import { QueryResult } from '@sourcegraph/extensions-client-common/lib/graphql'
+import { IQuery } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import { without } from 'lodash'
 import sortBy from 'lodash/sortBy'
 import { Observable, throwError } from 'rxjs'
@@ -8,14 +10,6 @@ import { isPrivateRepository, repoUrlCache, serverUrls, sourcegraphUrl } from '.
 import { RequestContext } from './context'
 import { AuthRequiredError, createAuthRequiredError, NoSourcegraphURLError } from './errors'
 import { getHeaders } from './headers'
-
-/**
- * Interface for the response result of a GraphQL query
- */
-export interface QueryResult {
-    data?: GQL.IQuery
-    errors?: GQL.IGraphQLResponseError[]
-}
 
 /**
  * Interface for the response result of a GraphQL mutation
@@ -133,10 +127,16 @@ function shouldResponseTriggerRetryOrError(response: any): boolean {
  *
  * @param query The GraphQL query
  * @param variables A key/value object with variable values
+ * @param variables An array of Sourcegraph URLs to potentially query
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export function queryGraphQL(ctx: RequestContext, query: string, variables: any = {}): Observable<QueryResult> {
-    return requestGraphQL(ctx, query, variables, serverUrls) as Observable<QueryResult>
+export function queryGraphQL(
+    ctx: RequestContext,
+    query: string,
+    variables: any = {},
+    urls: string[] = serverUrls
+): Observable<QueryResult<IQuery>> {
+    return requestGraphQL(ctx, query, variables, urls) as Observable<QueryResult<IQuery>>
 }
 
 /**
