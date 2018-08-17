@@ -42,7 +42,6 @@
       ".ts"
     ],
     "exclude": [
-      "examples/",
       "**/*.d.ts",
       "**/*.test.ts",
       "**/*.js"

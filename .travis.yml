@@ -1,26 +1,24 @@
-
 language: node_js
 node_js: '10'
 
 cache:
-  directories:
-    - ~/.npm
+    directories:
+        - ~/.npm
 
 env:
-  global:
-    - FORCE_COLOR=1
+    global:
+        - FORCE_COLOR=1
 
 script:
-  - npm run prettier
-  - npm run tslint
-  - npm run build
-  - (cd examples/extensions/hello-world && npm install --no-package-lock --ignore-scripts)
-  - npm run typecheck
-  - npm run cover
-  - ./node_modules/.bin/nyc report --reporter json
-  - bash <(curl -s https://codecov.io/bash)
+    - npm run prettier
+    - npm run tslint
+    - npm run build
+    - npm run typecheck
+    - npm run cover
+    - ./node_modules/.bin/nyc report --reporter json
+    - bash <(curl -s https://codecov.io/bash)
 
 deploy:
-  provider: script
-  skip_cleanup: true
-  script: npm run semantic-release
+    provider: script
+    skip_cleanup: true
+    script: npm run semantic-release
