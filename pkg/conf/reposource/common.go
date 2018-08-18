@@ -29,18 +29,19 @@ type RepoSource interface {
 func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	cfg := conf.Get()
 
-	repoSources := make([]RepoSource, 0, len(cfg.Gitlab)+
-		len(cfg.Github)+
+	repoSources := make([]RepoSource, 0, len(cfg.Github)+
+		len(cfg.Gitlab)+
 		len(cfg.BitbucketServer)+
 		len(cfg.AwsCodeCommit)+
-		len(cfg.Gitolite)+
-		1 /* for repos.list */)
+		1+ /* for repos.list */
+		len(cfg.Gitolite))
+
 	repoSources = append(repoSources, reposListInstance)
-	for _, c := range cfg.Gitlab {
-		repoSources = append(repoSources, GitLab{c})
-	}
 	for _, c := range cfg.Github {
 		repoSources = append(repoSources, GitHub{c})
+	}
+	for _, c := range cfg.Gitlab {
+		repoSources = append(repoSources, GitLab{c})
 	}
 	for _, c := range cfg.BitbucketServer {
 		repoSources = append(repoSources, BitbucketServer{c})
@@ -48,10 +49,6 @@ func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	for _, c := range cfg.AwsCodeCommit {
 		repoSources = append(repoSources, AWS{c})
 	}
-	for _, c := range cfg.Gitolite {
-		repoSources = append(repoSources, Gitolite{c})
-	}
-
 	for _, ch := range repoSources {
 		repoURI, err := ch.CloneURLToRepoURI(cloneURL)
 		if err != nil {
@@ -61,6 +58,10 @@ func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 			return repoURI, nil
 		}
 	}
+	for _, c := range cfg.Gitolite {
+		repoSources = append(repoSources, Gitolite{c})
+	}
+
 	return "", nil
 }
 
