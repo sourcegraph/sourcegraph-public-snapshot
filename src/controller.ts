@@ -6,7 +6,7 @@ import { ConfiguredExtension } from './extensions/extension'
 import { gql, graphQLContent, GraphQLDocument } from './graphql'
 import { CXPExtensionManifest } from './schema/extension.schema'
 import * as GQL from './schema/graphqlschema'
-import { ConfigurationCascade, ConfigurationSubject, Settings } from './settings'
+import { ConfigurationCascadeOrError, ConfigurationSubject, Settings } from './settings'
 import { parseJSONCOrError } from './util'
 
 /**
@@ -72,7 +72,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
     }
 
     public withRegistryMetadata(
-        cascade: ConfigurationCascade<ConfigurationSubject, Settings>
+        cascade: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
     ): Observable<ConfiguredExtension[]> {
         if (isErrorLike(cascade.merged)) {
             return throwError(cascade.merged)

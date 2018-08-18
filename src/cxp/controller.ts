@@ -32,7 +32,7 @@ export interface CXPControllerProps<S extends ConfigurationSubject, C extends Se
  * Filter the environment to omit extensions that should not be activated (based on their manifest's
  * activationEvents).
  *
- * @template CC settings type
+ * @template CC configuration cascade type
  */
 function environmentFilter<S extends ConfigurationSubject, CC extends ConfigurationCascade<S>>(
     nextEnvironment: Environment<ConfiguredExtension, CC>

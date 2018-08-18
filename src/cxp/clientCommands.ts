@@ -1,9 +1,10 @@
 import { Controller } from 'cxp/module/environment/controller'
 import { ActionContributionClientCommandUpdateConfiguration, ConfigurationUpdateParams } from 'cxp/module/protocol'
 import { isArray } from 'lodash-es'
-import { Observable, Subscription, Unsubscribable } from 'rxjs'
-import { catchError, map, switchMap, take } from 'rxjs/operators'
+import { Subscription, throwError, Unsubscribable } from 'rxjs'
+import { switchMap, take } from 'rxjs/operators'
 import { Context } from '../context'
+import { isErrorLike } from '../errors'
 import { ConfiguredExtension } from '../extensions/extension'
 import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
 
@@ -40,7 +41,7 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
                 const args = anyArgs as ActionContributionClientCommandUpdateConfiguration['commandArguments']
                 // Return with .toPromise() so that it gets executed (otherwise, the observable will never be
                 // subscribed to and will never execute the update operation).
-                return updateConfiguration(context, convertUpdateConfigurationCommandArgs(args)).toPromise()
+                return updateConfiguration(context, convertUpdateConfigurationCommandArgs(args))
             },
         })
     )
@@ -48,25 +49,36 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
     return subscription
 }
 
-/** Applies an edit to the configuration settings of the highest-precedence subject. */
+/**
+ * Applies an edit to the configuration settings of the highest-precedence subject.
+ */
 export function updateConfiguration<S extends ConfigurationSubject, C extends Settings>(
     context: Pick<Context<S, C>, 'configurationCascade' | 'updateExtensionSettings'>,
     params: ConfigurationUpdateParams
-): Observable<void> {
+): Promise<void> {
     // TODO(sqs): Allow extensions to specify which subject's configuration to update
     // (instead of always updating the highest-precedence subject's configuration).
-    return context.configurationCascade.pipe(
-        take(1),
-        map(x => x.subjects[x.subjects.length - 1]),
-        switchMap(subject =>
-            context.updateExtensionSettings(subject.subject.id, { edit: params }).pipe(
-                catchError(err => {
-                    console.error(err)
-                    return []
-                })
-            )
+    return context.configurationCascade
+        .pipe(
+            take(1),
+            switchMap(x => {
+                if (!x.subjects) {
+                    return throwError(new Error('unable to update configuration: no configuration subjects available'))
+                }
+                if (isErrorLike(x.subjects)) {
+                    return throwError(
+                        new Error(
+                            `unable to update configuration: error retrieving configuration subjects: ${
+                                x.subjects.message
+                            }`
+                        )
+                    )
+                }
+                const subject = x.subjects[x.subjects.length - 1].subject
+                return context.updateExtensionSettings(subject.id, { edit: params })
+            })
         )
-    )
+        .toPromise()
 }
 
 /**

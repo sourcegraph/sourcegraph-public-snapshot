@@ -59,7 +59,10 @@ describe('gqlToCascade', () => {
         })
         assert.strictEqual(isErrorLike(value.merged) && value.merged.message, SETTINGS_ERROR_FOR_FIXTURE_USER.message)
         assert.strictEqual(
-            isErrorLike(value.subjects[1].settings) && (value.subjects[1].settings as ErrorLike).message,
+            value.subjects &&
+                !isErrorLike(value.subjects) &&
+                isErrorLike(value.subjects[1].settings) &&
+                (value.subjects[1].settings as ErrorLike).message,
             SETTINGS_ERROR_FOR_FIXTURE_USER.message
         )
     })

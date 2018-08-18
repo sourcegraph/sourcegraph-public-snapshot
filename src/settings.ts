@@ -39,6 +39,8 @@ export type ConfigurationSubject = Pick<GQL.IConfigurationSubject, 'id' | 'setti
  * A cascade of settings from multiple subjects, from lowest precedence to highest precedence, and the final
  * settings, merged in order of precedence from the settings for each subject in the cascade.
  *
+ * Callers that need to represent the null/error states should use {@link ConfigurationCascade}.
+ *
  * @template S the configuration subject type
  * @template C the settings type
  */
@@ -48,16 +50,42 @@ export interface ConfigurationCascade<S extends ConfigurationSubject, C extends 
      */
     subjects: ConfiguredSubject<S, C>[]
 
+    merged: C
+}
+
+/**
+ * A configuration cascade that also supports representing subjects with no settings or whose settings triggered an
+ * error.
+ *
+ * Callers that don't need to represent the null/error states should use {@link ConfigurationCascade}.
+ *
+ * @template S the configuration subject type
+ * @template C the settings type
+ */
+export interface ConfigurationCascadeOrError<S extends ConfigurationSubject, C extends Settings = Settings>
+    extends Pick<ConfigurationCascade<S, C>, Exclude<keyof ConfigurationCascade<S, C>, 'subjects' | 'merged'>> {
+    /**
+     * The settings for each subject in the cascade, from lowest to highest precedence, null if there are none, or
+     * an error.
+     *
+     * @see ConfigurationCascade#subjects
+     */
+    subjects: ConfiguredSubjectOrError<S, C>[] | ErrorLike | null
+
     /**
      * The final settings (merged in order of precedence from the settings for each subject in the cascade), an
      * error (if any occurred while retrieving, parsing, or merging the settings), or null if there are no settings
      * from any of the subjects.
+     *
+     * @see ConfigurationCascade#merged
      */
     merged: C | ErrorLike | null
 }
 
 /**
  * A subject and its settings.
+ *
+ * Callers that need to represent the null/error states should use {@link ConfiguredSubjectOrError}.
  *
  * @template S the configuration subject type
  * @template C the settings type
@@ -66,6 +94,17 @@ export interface ConfiguredSubject<S extends ConfigurationSubject, C extends Set
     /** The subject. */
     subject: S
 
+    /** The subject's settings. */
+    settings: C
+}
+
+/**
+ * A subject and its settings, or null if there are no settings, or an error.
+ *
+ * Callers that don't need to represent the null/error states should use {@link ConfiguredSubject}.
+ */
+export interface ConfiguredSubjectOrError<S extends ConfigurationSubject, C extends Settings = Settings>
+    extends Pick<ConfiguredSubject<S, C>, Exclude<keyof ConfiguredSubject<S, C>, 'settings'>> {
     /**
      * The subject's settings (if any), an error (if any occurred while retrieving or parsing the settings), or
      * null if there are no settings.
@@ -87,8 +126,11 @@ export function gqlToCascade<S extends ConfigurationSubject, C extends Settings>
     subjects,
 }: {
     subjects: (S & SubjectConfigurationContents)[]
-}): ConfigurationCascade<S, C> {
-    const cascade: ConfigurationCascade<S, C> = { subjects: [], merged: null }
+}): ConfigurationCascadeOrError<S, C> {
+    const cascade: ConfigurationCascadeOrError<S, C> & { subjects: ConfiguredSubjectOrError<S, C>[] } = {
+        subjects: [],
+        merged: null,
+    }
     const allSettings: C[] = []
     const allSettingsErrors: ErrorLike[] = []
     for (const subject of subjects) {
@@ -191,5 +233,5 @@ export function subjectLabel(subject: ConfigurationSubject): string {
  * React partial props for components needing the configuration cascade.
  */
 export interface ConfigurationCascadeProps<S extends ConfigurationSubject, C extends Settings> {
-    configurationCascade: ConfigurationCascade<S, C>
+    configurationCascade: ConfigurationCascadeOrError<S, C>
 }

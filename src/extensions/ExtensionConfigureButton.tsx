@@ -9,7 +9,7 @@ import { asError, ErrorLike, isErrorLike } from '../errors'
 import {
     ConfigurationCascadeProps,
     ConfigurationSubject,
-    ConfiguredSubject,
+    ConfiguredSubjectOrError,
     Settings,
     SUBJECT_TYPE_ORDER,
     subjectLabel,
@@ -19,7 +19,7 @@ import { ConfiguredExtension, isExtensionAdded, isExtensionEnabled } from './ext
 
 interface ExtensionConfiguredSubject {
     extension: ConfiguredExtension
-    subject: ConfiguredSubject<ConfigurationSubject, Settings>
+    subject: ConfiguredSubjectOrError<ConfigurationSubject, Settings>
 }
 
 /** A dropdown menu item for a extension-subject item that links to the subject's settings.  */
@@ -288,9 +288,9 @@ export const ADDED_AND_CAN_ADMINISTER: ExtensionConfigurationSubjectsFilter = {
 
 export function filterItems<S extends ConfigurationSubject>(
     extensionID: string,
-    items: ConfiguredSubject<S>[],
+    items: ConfiguredSubjectOrError<S>[],
     filter: ExtensionConfigurationSubjectsFilter
-): ConfiguredSubject<S>[] {
+): ConfiguredSubjectOrError<S>[] {
     return items.filter(item => {
         const isAdded = isExtensionAdded(item.settings, extensionID)
         if (isAdded && !filter.added) {
@@ -356,6 +356,13 @@ export class ExtensionConfigureButton<S extends ConfigurationSubject, C extends 
     }
 
     public render(): JSX.Element | null {
+        if (!this.props.configurationCascade.subjects) {
+            return null
+        }
+        if (isErrorLike(this.props.configurationCascade.subjects)) {
+            // TODO: Show error.
+            return null
+        }
         return (
             <ButtonDropdown isOpen={this.state.dropdownOpen} toggle={this.toggle} group={this.props.caret !== false}>
                 <DropdownToggle caret={this.props.caret !== false} color="" className={this.props.buttonClassName}>
