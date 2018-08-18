@@ -104,7 +104,6 @@ import { RemoteContext, RemoteContextImpl } from './features/context'
 import { Telemetry, TelemetryImpl } from './features/telemetry'
 import { Tracer, TracerImpl } from './features/tracer'
 import { RemoteWindow, RemoteWindowImpl } from './features/window'
-import { RemoteWorkspace, RemoteWorkspaceImpl } from './features/workspace'
 
 // Copied from vscode-jsonrpc to avoid adding extraneous dependencies.
 
@@ -117,15 +116,8 @@ export interface _ {}
 /**
  * Interface to describe the shape of the server connection.
  */
-export interface Connection<
-    PConsole = _,
-    PContext = _,
-    PTracer = _,
-    PTelemetry = _,
-    PClient = _,
-    PWindow = _,
-    PWorkspace = _
-> extends Unsubscribable {
+export interface Connection<PConsole = _, PContext = _, PTracer = _, PTelemetry = _, PClient = _, PWindow = _>
+    extends Unsubscribable {
     /**
      * Start listening on the input stream for messages to process.
      */
@@ -269,11 +261,6 @@ export interface Connection<
      * A proxy for the window. See [RemoteWindow](#RemoteWindow)
      */
     window: RemoteWindow & PWindow
-
-    /**
-     * A proxy to talk to the client's workspace.
-     */
-    workspace: RemoteWorkspace & PWorkspace
 
     /**
      * Installs a handler for the `DidChangeConfiguration` notification.
@@ -567,24 +554,9 @@ export type WindowFeature<P> = Feature<RemoteWindow, P>
 export function combineWindowFeatures<O, T>(one: WindowFeature<O>, two: WindowFeature<T>): WindowFeature<O & T> {
     return (Base: new () => RemoteWindow): new () => RemoteWindow & O & T => two(one(Base)) as any
 }
-export type WorkspaceFeature<P> = Feature<RemoteWorkspace, P>
-export function combineWorkspaceFeatures<O, T>(
-    one: WorkspaceFeature<O>,
-    two: WorkspaceFeature<T>
-): WorkspaceFeature<O & T> {
-    return (Base: new () => RemoteWorkspace): new () => RemoteWorkspace & O & T => two(one(Base)) as any
-}
 // tslint:enable no-inferred-empty-object-type
 
-export interface Features<
-    PConsole = _,
-    PContext = _,
-    PTracer = _,
-    PTelemetry = _,
-    PClient = _,
-    PWindow = _,
-    PWorkspace = _
-> {
+export interface Features<PConsole = _, PContext = _, PTracer = _, PTelemetry = _, PClient = _, PWindow = _> {
     __brand: 'features'
     console?: ConsoleFeature<PConsole>
     context?: ContextFeature<PContext>
@@ -592,7 +564,6 @@ export interface Features<
     telemetry?: TelemetryFeature<PTelemetry>
     client?: ClientFeature<PClient>
     window?: WindowFeature<PWindow>
-    workspace?: WorkspaceFeature<PWorkspace>
 }
 export function combineFeatures<
     OConsole,
@@ -601,25 +572,22 @@ export function combineFeatures<
     OTelemetry,
     OClient,
     OWindow,
-    OWorkspace,
     TConsole,
     TContext,
     TTracer,
     TTelemetry,
     TClient,
-    TWindow,
-    TWorkspace
+    TWindow
 >(
-    one: Features<OConsole, OContext, OTracer, OTelemetry, OClient, OWindow, OWorkspace>,
-    two: Features<TConsole, TContext, TTracer, TTelemetry, TClient, TWindow, TWorkspace>
+    one: Features<OConsole, OContext, OTracer, OTelemetry, OClient, OWindow>,
+    two: Features<TConsole, TContext, TTracer, TTelemetry, TClient, TWindow>
 ): Features<
     OConsole & TConsole,
     OContext & TContext,
     OTracer & TTracer,
     OTelemetry & TTelemetry,
     OClient & TClient,
-    OWindow & TWindow,
-    OWorkspace & TWorkspace
+    OWindow & TWindow
 > {
     function combine<O, T>(one: O | undefined, two: T | undefined, func: (one: O, two: T) => any): any {
         if (one && two) {
@@ -636,8 +604,7 @@ export function combineFeatures<
         OTracer & TTracer,
         OTelemetry & TTelemetry,
         OClient & TClient,
-        OWindow & TWindow,
-        OWorkspace & TWorkspace
+        OWindow & TWindow
     > = {
         __brand: 'features',
         console: combine(one.console, two.console, combineConsoleFeatures),
@@ -646,7 +613,6 @@ export function combineFeatures<
         telemetry: combine(one.telemetry, two.telemetry, combineTelemetryFeatures),
         client: combine(one.client, two.client, combineClientFeatures),
         window: combine(one.window, two.window, combineWindowFeatures),
-        workspace: combine(one.workspace, two.workspace, combineWorkspaceFeatures),
     }
     return result
 }
@@ -659,19 +625,11 @@ export function combineFeatures<
  * @param strategy An optional connection strategy to control additional settings
  * @return a [connection](#IConnection)
  */
-export function createConnection<
-    PConsole = _,
-    PContext = _,
-    PTracer = _,
-    PTelemetry = _,
-    PClient = _,
-    PWindow = _,
-    PWorkspace = _
->(
+export function createConnection<PConsole = _, PContext = _, PTracer = _, PTelemetry = _, PClient = _, PWindow = _>(
     transports: MessageTransports,
     strategy?: ConnectionStrategy,
-    factories?: Features<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow, PWorkspace>
-): Connection<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow, PWorkspace> {
+    factories?: Features<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow>
+): Connection<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow> {
     const subscription = new Subscription()
 
     // tslint:disable no-inferred-empty-object-type
@@ -697,10 +655,7 @@ export function createConnection<
     const remoteWindow = (factories && factories.window
         ? new (factories.window(RemoteWindowImpl))()
         : new RemoteWindowImpl()) as RemoteWindow & PWindow
-    const workspace = (factories && factories.workspace
-        ? new (factories.workspace(RemoteWorkspaceImpl))()
-        : new RemoteWorkspaceImpl()) as RemoteWorkspace & PWorkspace
-    const allRemotes: Remote[] = [logger, context, configuration, tracer, telemetry, client, remoteWindow, workspace]
+    const allRemotes: Remote[] = [logger, context, configuration, tracer, telemetry, client, remoteWindow]
     // tslint:enable no-inferred-empty-object-type
 
     for (const remote of allRemotes) {
@@ -712,7 +667,7 @@ export function createConnection<
     let shutdownHandler: RequestHandler<null, void, void> | undefined
     let initializeHandler: RequestHandler<InitializeParams, InitializeResult, InitializeError> | undefined
     let exitHandler: NotificationHandler<null> | undefined
-    const protocolConnection: Connection<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow, PWorkspace> = {
+    const protocolConnection: Connection<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow> = {
         listen: (): void => connection.listen(),
 
         sendRequest: <R>(type: string | RPCMessageType, ...params: any[]): Promise<R> =>
@@ -760,9 +715,6 @@ export function createConnection<
         },
         get window(): RemoteWindow & PWindow {
             return remoteWindow
-        },
-        get workspace(): RemoteWorkspace & PWorkspace {
-            return workspace
         },
 
         onDidChangeConfiguration: handler =>
