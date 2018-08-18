@@ -105,19 +105,10 @@ import { Telemetry, TelemetryImpl } from './features/telemetry'
 import { Tracer, TracerImpl } from './features/tracer'
 import { RemoteWindow, RemoteWindowImpl } from './features/window'
 
-// Copied from vscode-jsonrpc to avoid adding extraneous dependencies.
-
-/**
- * An empty interface for new proposed API.
- */
-// tslint:disable-next-line:class-name
-export interface _ {}
-
 /**
  * Interface to describe the shape of the server connection.
  */
-export interface Connection<PConsole = _, PContext = _, PTracer = _, PTelemetry = _, PClient = _, PWindow = _>
-    extends Unsubscribable {
+export interface Connection extends Unsubscribable {
     /**
      * Start listening on the input stream for messages to process.
      */
@@ -233,10 +224,10 @@ export interface Connection<PConsole = _, PContext = _, PTracer = _, PTelemetry 
     /**
      * A proxy for the development console. See [RemoteConsole](#RemoteConsole)
      */
-    console: RemoteConsole & PConsole
+    console: RemoteConsole
 
     /** A proxy for the client's context. */
-    context: RemoteContext & PContext
+    context: RemoteContext
 
     /** A proxy for the client's configuration. */
     configuration: RemoteConfiguration<ConfigurationCascade>
@@ -244,23 +235,23 @@ export interface Connection<PConsole = _, PContext = _, PTracer = _, PTelemetry 
     /**
      * A proxy to send trace events to the client.
      */
-    tracer: Tracer & PTracer
+    tracer: Tracer
 
     /**
      * A proxy to send telemetry events to the client.
      */
-    telemetry: Telemetry & PTelemetry
+    telemetry: Telemetry
 
     /**
      * A proxy interface for the language client interface to register for requests or
      * notifications.
      */
-    client: RemoteClient & PClient
+    client: RemoteClient
 
     /**
      * A proxy for the window. See [RemoteWindow](#RemoteWindow)
      */
-    window: RemoteWindow & PWindow
+    window: RemoteWindow
 
     /**
      * Installs a handler for the `DidChangeConfiguration` notification.
@@ -518,105 +509,6 @@ export interface Connection<PConsole = _, PContext = _, PTracer = _, PTelemetry 
     unsubscribe(): void
 }
 
-export interface IConnection extends Connection {}
-
-export type Feature<B, P> = (Base: new () => B) => new () => B & P
-
-// tslint:disable no-inferred-empty-object-type
-export type ConsoleFeature<P> = Feature<RemoteConsole, P>
-export function combineConsoleFeatures<O, T>(one: ConsoleFeature<O>, two: ConsoleFeature<T>): ConsoleFeature<O & T> {
-    return (Base: new () => RemoteConsole): new () => RemoteConsole & O & T => two(one(Base)) as any
-}
-
-export type ContextFeature<P> = Feature<RemoteContext, P>
-export function combineContextFeatures<O, T>(one: ContextFeature<O>, two: ContextFeature<T>): ContextFeature<O & T> {
-    return (Base: new () => RemoteContext): new () => RemoteContext & O & T => two(one(Base)) as any
-}
-
-export type TelemetryFeature<P> = Feature<Telemetry, P>
-export function combineTelemetryFeatures<O, T>(
-    one: TelemetryFeature<O>,
-    two: TelemetryFeature<T>
-): TelemetryFeature<O & T> {
-    return (Base: new () => Telemetry): new () => Telemetry & O & T => two(one(Base)) as any
-}
-
-export type TracerFeature<P> = Feature<Tracer, P>
-export function combineTracerFeatures<O, T>(one: TracerFeature<O>, two: TracerFeature<T>): TracerFeature<O & T> {
-    return (Base: new () => Tracer): new () => Tracer & O & T => two(one(Base)) as any
-}
-
-export type ClientFeature<P> = Feature<RemoteClient, P>
-export function combineClientFeatures<O, T>(one: ClientFeature<O>, two: ClientFeature<T>): ClientFeature<O & T> {
-    return (Base: new () => RemoteClient): new () => RemoteClient & O & T => two(one(Base)) as any
-}
-export type WindowFeature<P> = Feature<RemoteWindow, P>
-export function combineWindowFeatures<O, T>(one: WindowFeature<O>, two: WindowFeature<T>): WindowFeature<O & T> {
-    return (Base: new () => RemoteWindow): new () => RemoteWindow & O & T => two(one(Base)) as any
-}
-// tslint:enable no-inferred-empty-object-type
-
-export interface Features<PConsole = _, PContext = _, PTracer = _, PTelemetry = _, PClient = _, PWindow = _> {
-    __brand: 'features'
-    console?: ConsoleFeature<PConsole>
-    context?: ContextFeature<PContext>
-    tracer?: TracerFeature<PTracer>
-    telemetry?: TelemetryFeature<PTelemetry>
-    client?: ClientFeature<PClient>
-    window?: WindowFeature<PWindow>
-}
-export function combineFeatures<
-    OConsole,
-    OContext,
-    OTracer,
-    OTelemetry,
-    OClient,
-    OWindow,
-    TConsole,
-    TContext,
-    TTracer,
-    TTelemetry,
-    TClient,
-    TWindow
->(
-    one: Features<OConsole, OContext, OTracer, OTelemetry, OClient, OWindow>,
-    two: Features<TConsole, TContext, TTracer, TTelemetry, TClient, TWindow>
-): Features<
-    OConsole & TConsole,
-    OContext & TContext,
-    OTracer & TTracer,
-    OTelemetry & TTelemetry,
-    OClient & TClient,
-    OWindow & TWindow
-> {
-    function combine<O, T>(one: O | undefined, two: T | undefined, func: (one: O, two: T) => any): any {
-        if (one && two) {
-            return func(one, two)
-        } else if (one) {
-            return one
-        } else {
-            return two
-        }
-    }
-    const result: Features<
-        OConsole & TConsole,
-        OContext & TContext,
-        OTracer & TTracer,
-        OTelemetry & TTelemetry,
-        OClient & TClient,
-        OWindow & TWindow
-    > = {
-        __brand: 'features',
-        console: combine(one.console, two.console, combineConsoleFeatures),
-        context: combine(one.context, two.context, combineContextFeatures),
-        tracer: combine(one.tracer, two.tracer, combineTracerFeatures),
-        telemetry: combine(one.telemetry, two.telemetry, combineTelemetryFeatures),
-        client: combine(one.client, two.client, combineClientFeatures),
-        window: combine(one.window, two.window, combineWindowFeatures),
-    }
-    return result
-}
-
 /**
  * Creates a new connection.
  *
@@ -625,38 +517,20 @@ export function combineFeatures<
  * @param strategy An optional connection strategy to control additional settings
  * @return a [connection](#IConnection)
  */
-export function createConnection<PConsole = _, PContext = _, PTracer = _, PTelemetry = _, PClient = _, PWindow = _>(
-    transports: MessageTransports,
-    strategy?: ConnectionStrategy,
-    factories?: Features<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow>
-): Connection<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow> {
+export function createConnection(transports: MessageTransports, strategy?: ConnectionStrategy): Connection {
     const subscription = new Subscription()
 
-    // tslint:disable no-inferred-empty-object-type
-    const logger = (factories && factories.console
-        ? new (factories.console(ConnectionLogger))()
-        : new ConnectionLogger()) as ConnectionLogger & PConsole
+    const logger = new ConnectionLogger()
     const connection = createMessageConnection(transports, logger, strategy)
     subscription.add(connection)
     logger.rawAttach(connection)
-    const context = (factories && factories.context
-        ? new (factories.context(RemoteContextImpl))()
-        : new RemoteContextImpl()) as RemoteContext & PContext
+    const context = new RemoteContextImpl()
     const configuration = new RemoteConfiguration<ConfigurationCascade>()
-    const tracer = (factories && factories.tracer
-        ? new (factories.tracer(TracerImpl))()
-        : new TracerImpl()) as TracerImpl & PTracer
-    const telemetry = (factories && factories.telemetry
-        ? new (factories.telemetry(TelemetryImpl))()
-        : new TelemetryImpl()) as Telemetry & PTelemetry
-    const client = (factories && factories.client
-        ? new (factories.client(RemoteClientImpl))()
-        : new RemoteClientImpl()) as RemoteClient & PClient
-    const remoteWindow = (factories && factories.window
-        ? new (factories.window(RemoteWindowImpl))()
-        : new RemoteWindowImpl()) as RemoteWindow & PWindow
+    const tracer = new TracerImpl()
+    const telemetry = new TelemetryImpl()
+    const client = new RemoteClientImpl()
+    const remoteWindow = new RemoteWindowImpl()
     const allRemotes: Remote[] = [logger, context, configuration, tracer, telemetry, client, remoteWindow]
-    // tslint:enable no-inferred-empty-object-type
 
     for (const remote of allRemotes) {
         if (isUnsubscribable(remote)) {
@@ -667,7 +541,7 @@ export function createConnection<PConsole = _, PContext = _, PTracer = _, PTelem
     let shutdownHandler: RequestHandler<null, void, void> | undefined
     let initializeHandler: RequestHandler<InitializeParams, InitializeResult, InitializeError> | undefined
     let exitHandler: NotificationHandler<null> | undefined
-    const protocolConnection: Connection<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow> = {
+    const protocolConnection: Connection = {
         listen: (): void => connection.listen(),
 
         sendRequest: <R>(type: string | RPCMessageType, ...params: any[]): Promise<R> =>
@@ -695,25 +569,25 @@ export function createConnection<PConsole = _, PContext = _, PTracer = _, PTelem
         onShutdown: handler => (shutdownHandler = handler),
         onExit: handler => (exitHandler = handler),
 
-        get console(): RemoteConsole & PConsole {
+        get console(): RemoteConsole {
             return logger
         },
-        get context(): RemoteContext & PContext {
+        get context(): RemoteContext {
             return context
         },
         get configuration(): RemoteConfiguration<ConfigurationCascade> {
             return configuration
         },
-        get telemetry(): Telemetry & PTelemetry {
+        get telemetry(): Telemetry {
             return telemetry
         },
-        get tracer(): Tracer & PTracer {
+        get tracer(): Tracer {
             return tracer
         },
-        get client(): RemoteClient & PClient {
+        get client(): RemoteClient {
             return client
         },
-        get window(): RemoteWindow & PWindow {
+        get window(): RemoteWindow {
             return remoteWindow
         },
 
@@ -823,14 +697,6 @@ export function createConnection<PConsole = _, PContext = _, PTracer = _, PTelem
     })
 
     return protocolConnection
-}
-
-// Export the protocol currently in proposed state.
-
-export namespace ProposedFeatures {
-    export const all: Features<_, _, _, _, _, _> = {
-        __brand: 'features',
-    }
 }
 
 function isUnsubscribable(value: any): value is Unsubscribable {

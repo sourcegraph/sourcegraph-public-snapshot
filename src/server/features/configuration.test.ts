@@ -7,10 +7,10 @@ import {
     DidChangeConfigurationParams,
     Settings,
 } from '../../protocol'
-import { IConnection } from '../server'
+import { Connection } from '../server'
 import { RemoteConfiguration, setValueAtKeyPath } from './configuration'
 
-const EMPTY_MOCK_CONNECTION: IConnection = {
+const EMPTY_MOCK_CONNECTION: Connection = {
     onDidChangeConfiguration: () => void 0,
     sendRequest: () => Promise.resolve(void 0),
 } as any
@@ -19,7 +19,7 @@ const FIXTURE_CONFIGURATION_CASCADE: ConfigurationCascade<Settings> = { merged: 
 
 describe('RemoteConfigurationImpl', () => {
     const create = (
-        connection: IConnection = EMPTY_MOCK_CONNECTION,
+        connection: Connection = EMPTY_MOCK_CONNECTION,
         configurationCascade = FIXTURE_CONFIGURATION_CASCADE
     ): RemoteConfiguration<Settings> => {
         const remote = new RemoteConfiguration<Settings>()

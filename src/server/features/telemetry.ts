@@ -1,5 +1,5 @@
 import { InitializeParams, ServerCapabilities, TelemetryEventNotification } from '../../protocol'
-import { IConnection } from '../server'
+import { Connection } from '../server'
 import { Remote } from './common'
 
 /**
@@ -16,13 +16,13 @@ export interface Telemetry extends Remote {
 }
 
 export class TelemetryImpl implements Telemetry {
-    private _connection?: IConnection
+    private _connection?: Connection
 
-    public attach(connection: IConnection): void {
+    public attach(connection: Connection): void {
         this._connection = connection
     }
 
-    public get connection(): IConnection {
+    public get connection(): Connection {
         if (!this._connection) {
             throw new Error('Remote is not attached to a connection yet.')
         }

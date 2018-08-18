@@ -10,7 +10,7 @@ import {
     Settings,
 } from '../../protocol/configuration'
 import { isEqual } from '../../util'
-import { IConnection } from '../server'
+import { Connection } from '../server'
 import { Remote } from './common'
 
 /**
@@ -20,7 +20,7 @@ import { Remote } from './common'
  */
 export class RemoteConfiguration<C extends Settings> implements Remote, Unsubscribable {
     private subscription = new Subscription()
-    private _connection?: IConnection
+    private _connection?: Connection
     private _configurationCascade = new BehaviorSubject<ConfigurationCascade<C>>({ merged: {} as C })
     private onChange = new Emitter<void>()
 
@@ -49,7 +49,7 @@ export class RemoteConfiguration<C extends Settings> implements Remote, Unsubscr
      */
     public readonly onDidChangeConfiguration: Event<void> = this.onChange.event
 
-    public attach(connection: IConnection): void {
+    public attach(connection: Connection): void {
         this._connection = connection
 
         // Listen for `workspace/didChangeConfiguration` notifications from the client.
@@ -61,7 +61,7 @@ export class RemoteConfiguration<C extends Settings> implements Remote, Unsubscr
         )
     }
 
-    public get connection(): IConnection {
+    public get connection(): Connection {
         if (!this._connection) {
             throw new Error('Remote is not attached to a connection yet.')
         }

@@ -1,6 +1,6 @@
 import { Unsubscribable } from 'rxjs'
 import { InitializeParams, ServerCapabilities } from '../../protocol'
-import { IConnection } from '../server'
+import { Connection } from '../server'
 
 /**
  * A proxy for values and methods that exist on the remote client.
@@ -11,12 +11,12 @@ export interface Remote extends Partial<Unsubscribable> {
      *
      * @param connection The connection this remote is operating on.
      */
-    attach(connection: IConnection): void
+    attach(connection: Connection): void
 
     /**
      * The connection this remote is attached to.
      */
-    connection: IConnection
+    connection: Connection
 
     /**
      * Called to initialize the remote with the given

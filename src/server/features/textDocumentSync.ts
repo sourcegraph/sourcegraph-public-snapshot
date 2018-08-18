@@ -17,7 +17,7 @@ import {
     WillSaveTextDocumentParams,
 } from '../../protocol'
 import { isFunction } from '../../util'
-import { IConnection } from '../server'
+import { Connection } from '../server'
 
 /**
  * A manager for simple text documents
@@ -135,7 +135,7 @@ export class TextDocuments {
      *
      * @param connection The connection to listen on.
      */
-    public listen(connection: IConnection): void {
+    public listen(connection: Connection): void {
         interface UpdateableDocument extends TextDocument {
             update(event: TextDocumentContentChangeEvent, version: number): void
         }

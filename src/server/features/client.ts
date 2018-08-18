@@ -11,7 +11,7 @@ import {
     UnregistrationParams,
 } from '../../protocol'
 import { UnregistrationRequest } from '../../protocol/registration'
-import { IConnection } from '../server'
+import { Connection } from '../server'
 import { Remote } from './common'
 
 /**
@@ -83,7 +83,7 @@ export interface BulkUnregistration extends Unsubscribable {
 class BulkUnregistrationImpl implements BulkUnregistration {
     private _unregistrations: Map<string, Unregistration> = new Map<string, Unregistration>()
 
-    constructor(private _connection: IConnection | undefined, unregistrations: Unregistration[]) {
+    constructor(private _connection: Connection | undefined, unregistrations: Unregistration[]) {
         for (const unregistration of unregistrations) {
             this._unregistrations.set(unregistration.method, unregistration)
         }
@@ -93,7 +93,7 @@ class BulkUnregistrationImpl implements BulkUnregistration {
         return !!this._connection
     }
 
-    public attach(connection: IConnection): void {
+    public attach(connection: Connection): void {
         this._connection = connection
     }
 
@@ -198,13 +198,13 @@ export interface RemoteClient extends Remote {
 }
 
 export class RemoteClientImpl implements RemoteClient {
-    private _connection?: IConnection
+    private _connection?: Connection
 
-    public attach(connection: IConnection): void {
+    public attach(connection: Connection): void {
         this._connection = connection
     }
 
-    public get connection(): IConnection {
+    public get connection(): Connection {
         if (!this._connection) {
             throw new Error('Remote is not attached to a connection yet.')
         }
