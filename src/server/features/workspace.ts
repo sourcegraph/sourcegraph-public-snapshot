@@ -3,7 +3,7 @@ import {
     ApplyWorkspaceEditParams,
     ApplyWorkspaceEditRequest,
     ApplyWorkspaceEditResponse,
-    ClientCapabilities,
+    InitializeParams,
     ServerCapabilities,
 } from '../../protocol'
 import { Configuration, ConfigurationFeature } from '../configuration'
@@ -41,7 +41,7 @@ class _RemoteWorkspaceImpl implements _RemoteWorkspace {
         return this._connection
     }
 
-    public initialize(_capabilities: ClientCapabilities): void {
+    public initialize(_params: InitializeParams): void {
         /* noop */
     }
 

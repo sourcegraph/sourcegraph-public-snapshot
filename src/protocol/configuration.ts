@@ -109,15 +109,17 @@ export interface DidChangeConfigurationParams {
  * For example, the client might support configuring settings globally and per-user, and it is designed so that
  * user settings override global settings. Then there would be two subjects, one for global settings and one for
  * the user.
+ *
+ * @template S the settings type
  */
-export interface ConfigurationCascade {
+export interface ConfigurationCascade<C extends Settings = Settings> {
     /** The final settings, merged from all subjects in the cascade. */
-    merged: Settings
+    merged: C
 
     /**
      * The configuration subjects in the cascade, from lower to higher precedence.
      *
      * Extensions: The merged settings value usually suffices.
      */
-    subjects?: { settings: Settings }[]
+    subjects?: { settings: C }[]
 }

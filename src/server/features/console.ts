@@ -1,5 +1,5 @@
 import { Logger, MessageConnection } from '../../jsonrpc2/connection'
-import { ClientCapabilities, LogMessageNotification, MessageType, ServerCapabilities } from '../../protocol'
+import { InitializeParams, LogMessageNotification, MessageType, ServerCapabilities } from '../../protocol'
 import { IConnection } from '../server'
 import { Remote } from './common'
 
@@ -61,7 +61,7 @@ export class ConnectionLogger implements Logger, RemoteConsole {
         /* noop */
     }
 
-    public initialize(_capabilities: ClientCapabilities): void {
+    public initialize(_params: InitializeParams): void {
         /* noop */
     }
 

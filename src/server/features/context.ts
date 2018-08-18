@@ -1,5 +1,5 @@
 import { Context } from '../../environment/context/context'
-import { ClientCapabilities, ServerCapabilities } from '../../protocol'
+import { InitializeParams, ServerCapabilities } from '../../protocol'
 import { ContextUpdateNotification, ContextUpdateParams } from '../../protocol/context'
 import { IConnection } from '../server'
 import { Remote } from './common'
@@ -32,7 +32,7 @@ export class RemoteContextImpl implements RemoteContext {
         return this._connection
     }
 
-    public initialize(_capabilities: ClientCapabilities): void {
+    public initialize(_params: InitializeParams): void {
         /* noop */
     }
 

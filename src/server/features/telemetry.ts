@@ -1,4 +1,4 @@
-import { ClientCapabilities, ServerCapabilities, TelemetryEventNotification } from '../../protocol'
+import { InitializeParams, ServerCapabilities, TelemetryEventNotification } from '../../protocol'
 import { IConnection } from '../server'
 import { Remote } from './common'
 
@@ -29,7 +29,7 @@ export class TelemetryImpl implements Telemetry {
         return this._connection
     }
 
-    public initialize(_capabilities: ClientCapabilities): void {
+    public initialize(_params: InitializeParams): void {
         /* noop */
     }
 

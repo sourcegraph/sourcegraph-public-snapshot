@@ -1,4 +1,4 @@
-import { Unsubscribable } from 'rxjs'
+import { Subscription, Unsubscribable } from 'rxjs'
 import {
     CodeAction,
     CodeLens,
@@ -43,6 +43,7 @@ import {
     CompletionParams,
     CompletionRequest,
     CompletionResolveRequest,
+    ConfigurationCascade,
     DefinitionRequest,
     DidChangeConfigurationNotification,
     DidChangeConfigurationParams,
@@ -97,6 +98,7 @@ import {
 } from '../protocol'
 import { RemoteClient, RemoteClientImpl } from './features/client'
 import { Remote } from './features/common'
+import { RemoteConfiguration } from './features/configuration'
 import { ConnectionLogger, RemoteConsole } from './features/console'
 import { RemoteContext, RemoteContextImpl } from './features/context'
 import { Telemetry, TelemetryImpl } from './features/telemetry'
@@ -243,6 +245,9 @@ export interface Connection<
 
     /** A proxy for the client's context. */
     context: RemoteContext & PContext
+
+    /** A proxy for the client's configuration. */
+    configuration: RemoteConfiguration<ConfigurationCascade>
 
     /**
      * A proxy to send trace events to the client.
@@ -667,15 +672,19 @@ export function createConnection<
     strategy?: ConnectionStrategy,
     factories?: Features<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow, PWorkspace>
 ): Connection<PConsole, PContext, PTracer, PTelemetry, PClient, PWindow, PWorkspace> {
+    const subscription = new Subscription()
+
     // tslint:disable no-inferred-empty-object-type
     const logger = (factories && factories.console
         ? new (factories.console(ConnectionLogger))()
         : new ConnectionLogger()) as ConnectionLogger & PConsole
     const connection = createMessageConnection(transports, logger, strategy)
+    subscription.add(connection)
     logger.rawAttach(connection)
     const context = (factories && factories.context
         ? new (factories.context(RemoteContextImpl))()
         : new RemoteContextImpl()) as RemoteContext & PContext
+    const configuration = new RemoteConfiguration<ConfigurationCascade>()
     const tracer = (factories && factories.tracer
         ? new (factories.tracer(TracerImpl))()
         : new TracerImpl()) as TracerImpl & PTracer
@@ -691,8 +700,14 @@ export function createConnection<
     const workspace = (factories && factories.workspace
         ? new (factories.workspace(RemoteWorkspaceImpl))()
         : new RemoteWorkspaceImpl()) as RemoteWorkspace & PWorkspace
-    const allRemotes: Remote[] = [logger, context, tracer, telemetry, client, remoteWindow, workspace]
+    const allRemotes: Remote[] = [logger, context, configuration, tracer, telemetry, client, remoteWindow, workspace]
     // tslint:enable no-inferred-empty-object-type
+
+    for (const remote of allRemotes) {
+        if (isUnsubscribable(remote)) {
+            subscription.add(remote)
+        }
+    }
 
     let shutdownHandler: RequestHandler<null, void, void> | undefined
     let initializeHandler: RequestHandler<InitializeParams, InitializeResult, InitializeError> | undefined
@@ -730,6 +745,9 @@ export function createConnection<
         },
         get context(): RemoteContext & PContext {
             return context
+        },
+        get configuration(): RemoteConfiguration<ConfigurationCascade> {
+            return configuration
         },
         get telemetry(): Telemetry & PTelemetry {
             return telemetry
@@ -785,7 +803,7 @@ export function createConnection<
         onColorPresentation: handler => connection.onRequest(ColorPresentationRequest.type, handler),
         onExecuteCommand: handler => connection.onRequest(ExecuteCommandRequest.type, handler),
 
-        unsubscribe: () => connection.unsubscribe(),
+        unsubscribe: () => subscription.unsubscribe(),
     }
     for (const remote of allRemotes) {
         remote.attach(protocolConnection)
@@ -799,7 +817,7 @@ export function createConnection<
             params.capabilities = {}
         }
         for (const remote of allRemotes) {
-            remote.initialize(params.capabilities)
+            remote.initialize(params)
         }
         if (initializeHandler) {
             const result = initializeHandler(params, new CancellationTokenSource().token)
@@ -861,4 +879,8 @@ export namespace ProposedFeatures {
     export const all: Features<_, _, _, _, _, _> = {
         __brand: 'features',
     }
+}
+
+function isUnsubscribable(value: any): value is Unsubscribable {
+    return value.unsubscribe
 }

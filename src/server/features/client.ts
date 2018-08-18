@@ -2,7 +2,7 @@ import { Unsubscribable } from 'rxjs'
 import uuidv4 from 'uuid/v4'
 import { MessageType as RPCMessageType, NotificationType, RequestType } from '../../jsonrpc2/messages'
 import {
-    ClientCapabilities,
+    InitializeParams,
     Registration,
     RegistrationParams,
     RegistrationRequest,
@@ -211,7 +211,7 @@ export class RemoteClientImpl implements RemoteClient {
         return this._connection
     }
 
-    public initialize(_capabilities: ClientCapabilities): void {
+    public initialize(_params: InitializeParams): void {
         /* noop */
     }
 

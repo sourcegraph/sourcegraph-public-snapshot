@@ -1,5 +1,5 @@
 import {
-    ClientCapabilities,
+    InitializeParams,
     MessageActionItem,
     MessageType,
     ServerCapabilities,
@@ -63,7 +63,7 @@ export class RemoteWindowImpl implements RemoteWindow {
         return this._connection
     }
 
-    public initialize(_capabilities: ClientCapabilities): void {
+    public initialize(_params: InitializeParams): void {
         /* noop */
     }
 

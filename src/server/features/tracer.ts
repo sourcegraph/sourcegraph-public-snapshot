@@ -1,5 +1,5 @@
 import { LogTraceNotification, Trace } from '../../jsonrpc2/trace'
-import { ClientCapabilities, ServerCapabilities } from '../../protocol'
+import { InitializeParams, ServerCapabilities } from '../../protocol'
 import { IConnection } from '../server'
 import { Remote } from './common'
 
@@ -33,7 +33,7 @@ export class TracerImpl implements Tracer {
         return this._connection
     }
 
-    public initialize(_capabilities: ClientCapabilities): void {
+    public initialize(_params: InitializeParams): void {
         /* noop */
     }
 
