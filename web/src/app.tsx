@@ -36,8 +36,9 @@ registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 import { createController as createCXPController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
-    ConfigurationCascade,
+    ConfigurationCascadeOrError,
     ConfigurationSubject,
+    ConfiguredSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
@@ -186,7 +187,7 @@ class App extends React.Component<{}, AppState> {
             navbarSearchQuery: '',
             showHelpPopover: false,
             showHistoryPopover: false,
-            configurationCascade: { subjects: [], merged: {} },
+            configurationCascade: { subjects: null, merged: null },
             extensions,
             cxpEnvironment: CXP_EMPTY_ENVIRONMENT,
             cxpController: createCXPController(extensions.context, createMessageTransports),
@@ -327,7 +328,7 @@ class App extends React.Component<{}, AppState> {
     }
 
     private onConfigurationCascadeChange(
-        configurationCascade: ConfigurationCascade<ConfigurationSubject, Settings>
+        configurationCascade: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
     ): void {
         this.setState(
             prevState => {
@@ -335,13 +336,24 @@ class App extends React.Component<{}, AppState> {
                     configurationCascade,
                     cxpEnvironment: prevState.cxpEnvironment,
                 }
-                if (configurationCascade.merged !== null && !isErrorLike(configurationCascade.merged)) {
+                if (
+                    configurationCascade.subjects !== null &&
+                    !isErrorLike(configurationCascade.subjects) &&
+                    configurationCascade.merged !== null &&
+                    !isErrorLike(configurationCascade.merged)
+                ) {
                     // Only update CXP environment configuration if the configuration was successfully parsed.
                     //
                     // TODO(sqs): Think through how this error should be handled.
                     update.cxpEnvironment = {
                         ...prevState.cxpEnvironment,
-                        configuration: configurationCascade,
+                        configuration: {
+                            subjects: configurationCascade.subjects.filter(
+                                (subject): subject is ConfiguredSubject<ConfigurationSubject, Settings> =>
+                                    subject.settings !== null && !isErrorLike(subject.settings)
+                            ),
+                            merged: configurationCascade.merged,
+                        },
                     }
                 }
                 return update

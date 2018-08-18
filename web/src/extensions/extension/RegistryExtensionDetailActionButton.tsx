@@ -9,6 +9,7 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/extensions/ExtensionConfigureButton'
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import * as React from 'react'
+import { isErrorLike } from '../../util/errors'
 import { ConfigurationCascadeProps, ExtensionsProps } from '../ExtensionsClientCommonContext'
 
 interface Props extends ConfigurationCascadeProps, ExtensionsProps {
@@ -37,6 +38,13 @@ interface Props extends ConfigurationCascadeProps, ExtensionsProps {
  * - "Disabled" (no action) if the extension is added and disabled.
  */
 export const RegistryExtensionDetailActionButton: React.SFC<Props> = props => {
+    if (props.configurationCascade.subjects === null) {
+        return null
+    }
+    if (isErrorLike(props.configurationCascade.subjects)) {
+        // TODO: Show error.
+        return null
+    }
     if (props.configurationCascade.subjects.every(s => !isExtensionAdded(s.settings, props.extension.id))) {
         return (
             <ExtensionConfigureButton
