@@ -1,4 +1,4 @@
-import { KeyPath } from '../extension'
+import { KeyPath } from './configuration'
 
 /** Partial contribution-related client capabilities. */
 export interface ContributionClientCapabilities {

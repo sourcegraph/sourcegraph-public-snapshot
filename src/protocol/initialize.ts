@@ -1,7 +1,7 @@
-import { ConfigurationCascade } from '../extension'
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
 import { URI } from '../types/textDocument'
 import { ClientCapabilities, ServerCapabilities } from './capabilities'
+import { ConfigurationCascade } from './configuration'
 import { WorkspaceFoldersInitializeParams } from './workspaceFolder'
 
 /**
