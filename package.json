@@ -77,7 +77,6 @@
     "@sourcegraph/tsconfig": "^3.0.0",
     "@sourcegraph/tslint-config": "^12.0.0",
     "@sqs/jsonc-parser": "^1.0.3",
-    "@types/graphql": "^0.13.3",
     "@types/lodash-es": "^4.17.1",
     "@types/mocha": "^5.2.3",
     "@types/node": "^10.5.0",
