@@ -2,7 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"os"
 	"path"
 	"time"
@@ -10,6 +10,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -40,7 +41,7 @@ func (r *gitTreeEntryResolver) URL() string {
 	if submodule := r.Submodule(); submodule != nil {
 		repoURI, err := cloneURLToURI(submodule.URL())
 		if err != nil {
-			log15.Error("Failed to resolve submodule repository URI from clone URL", "cloneURL", submodule.URL)
+			log15.Error("Failed to resolve submodule repository URI from clone URL", "cloneURL", submodule.URL())
 			return ""
 		}
 		return "/" + repoURI + "@" + submodule.Commit()
@@ -80,7 +81,14 @@ func (r *gitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 }
 
 func cloneURLToURI(cloneURL string) (string, error) {
-	return "", errors.New("Could not convert clone URL to repository URI")
+	repoURI, err := reposource.CloneURLToRepoURI(cloneURL)
+	if err != nil {
+		return "", err
+	}
+	if repoURI == "" {
+		return "", fmt.Errorf("No matching code host found for %s", cloneURL)
+	}
+	return string(repoURI), nil
 }
 
 func createFileInfo(path string, isDir bool) os.FileInfo {
