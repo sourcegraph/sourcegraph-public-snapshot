@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -27,7 +28,7 @@ func GitLabExternalRepoSpec(proj *gitlab.Project, baseURL url.URL) *api.External
 	return &api.ExternalRepoSpec{
 		ID:          strconv.Itoa(proj.ID),
 		ServiceType: GitLabServiceType,
-		ServiceID:   normalizeBaseURL(&baseURL).String(),
+		ServiceID:   NormalizeBaseURL(&baseURL).String(),
 	}
 }
 
@@ -197,14 +198,7 @@ func RunGitLabRepositorySyncWorker(ctx context.Context) {
 }
 
 func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.RepoURI {
-	repositoryPathPattern := conn.config.RepositoryPathPattern
-	if repositoryPathPattern == "" {
-		repositoryPathPattern = "{host}/{pathWithNamespace}"
-	}
-	return api.RepoURI(strings.NewReplacer(
-		"{host}", conn.baseURL.Hostname(),
-		"{pathWithNamespace}", proj.PathWithNamespace,
-	).Replace(repositoryPathPattern))
+	return reposource.GitLabRepoURI(conn.config.RepositoryPathPattern, conn.baseURL.Hostname(), proj.PathWithNamespace)
 }
 
 // updateGitLabProjects ensures that all provided repositories exist in the repository table.
@@ -233,7 +227,7 @@ func newGitLabConnection(config *schema.GitLabConnection) (*gitlabConnection, er
 	if err != nil {
 		return nil, err
 	}
-	baseURL = normalizeBaseURL(baseURL)
+	baseURL = NormalizeBaseURL(baseURL)
 
 	transport, err := cachedTransportWithCertTrusted(config.Certificate)
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 
 	"github.com/pkg/errors"
@@ -31,7 +32,7 @@ func GitHubExternalRepoSpec(repo *github.Repository, baseURL url.URL) *api.Exter
 	return &api.ExternalRepoSpec{
 		ID:          repo.ID,
 		ServiceType: GitHubServiceType,
-		ServiceID:   normalizeBaseURL(&baseURL).String(),
+		ServiceID:   NormalizeBaseURL(&baseURL).String(),
 	}
 }
 
@@ -279,14 +280,7 @@ func RunGitHubRepositorySyncWorker(ctx context.Context) {
 }
 
 func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository) api.RepoURI {
-	repositoryPathPattern := conn.config.RepositoryPathPattern
-	if repositoryPathPattern == "" {
-		repositoryPathPattern = "{host}/{nameWithOwner}"
-	}
-	return api.RepoURI(strings.NewReplacer(
-		"{host}", conn.originalHostname,
-		"{nameWithOwner}", repo.NameWithOwner,
-	).Replace(repositoryPathPattern))
+	return reposource.GitHubRepoURI(conn.config.RepositoryPathPattern, conn.originalHostname, repo.NameWithOwner)
 }
 
 // updateGitHubRepositories ensures that all provided repositories have been added and updated on Sourcegraph.
@@ -316,7 +310,7 @@ func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, er
 	if err != nil {
 		return nil, err
 	}
-	baseURL = normalizeBaseURL(baseURL)
+	baseURL = NormalizeBaseURL(baseURL)
 	originalHostname := baseURL.Hostname()
 
 	// GitHub.com's API is hosted on api.github.com.

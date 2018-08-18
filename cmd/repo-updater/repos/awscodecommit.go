@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -169,13 +170,7 @@ func RunAWSCodeCommitRepositorySyncWorker(ctx context.Context) {
 }
 
 func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awscodecommit.Repository) api.RepoURI {
-	repositoryPathPattern := conn.config.RepositoryPathPattern
-	if repositoryPathPattern == "" {
-		repositoryPathPattern = "{name}"
-	}
-	return api.RepoURI(strings.NewReplacer(
-		"{name}", repo.Name,
-	).Replace(repositoryPathPattern))
+	return reposource.AWSRepoURI(conn.config.RepositoryPathPattern, repo.Name)
 }
 
 // updateAWSCodeCommitRepositories ensures that all provided repositories have been added and updated on Sourcegraph.

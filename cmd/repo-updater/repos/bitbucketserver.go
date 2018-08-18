@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/time/rate"
@@ -81,22 +82,14 @@ func bitbucketServerRepoInfo(config *schema.BitbucketServerConnection, repo *bit
 		log15.Error("malformed bitbucket config, invalid URL", "url", config.Url, "error", err)
 		return nil
 	}
-	host = normalizeBaseURL(host)
+	host = NormalizeBaseURL(host)
 
 	// URI
-	repositoryPathPattern := config.RepositoryPathPattern
-	if repositoryPathPattern == "" {
-		repositoryPathPattern = "{host}/{projectKey}/{repositorySlug}"
-	}
 	project := "UNKNOWN"
 	if repo.Project != nil {
 		project = repo.Project.Key
 	}
-	repoURI := api.RepoURI(strings.NewReplacer(
-		"{host}", host.Hostname(),
-		"{projectKey}", project,
-		"{repositorySlug}", repo.Slug,
-	).Replace(repositoryPathPattern))
+	repoURI := reposource.BitbucketServerRepoURI(config.RepositoryPathPattern, host.Hostname(), project, repo.Slug)
 
 	// Clone URL
 	var cloneURL string
@@ -296,7 +289,7 @@ func newBitbucketServerConnection(config *schema.BitbucketServerConnection) (*bi
 	if err != nil {
 		return nil, err
 	}
-	baseURL = normalizeBaseURL(baseURL)
+	baseURL = NormalizeBaseURL(baseURL)
 
 	transport, err := cachedTransportWithCertTrusted(config.Certificate)
 	if err != nil {
