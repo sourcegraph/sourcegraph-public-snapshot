@@ -29,6 +29,10 @@
       "assignees": ["sqs"]
     },
     {
+      "packageNames": ["@sourcegraph/phabricator-extension"],
+      "assignees": ["KattMingMing"]
+    },
+    {
       "paths": ["client/vscode"],
       "assignees": ["chrismwendt"]
     }

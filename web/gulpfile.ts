@@ -3,14 +3,13 @@ import { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } from '@gql2ts/language-typescript'
 import log from 'fancy-log'
 import globby from 'globby'
 import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'graphql'
-import * as gulp from 'gulp'
+import gulp from 'gulp'
 import httpProxyMiddleware from 'http-proxy-middleware'
 import { compile as compileJSONSchema } from 'json-schema-to-typescript'
 // @ts-ignore
 import convert from 'koa-connect'
 import mkdirp from 'mkdirp-promise'
-import { readFile, writeFile } from 'mz/fs'
-import { stat } from 'mz/fs'
+import { readFile, stat, writeFile } from 'mz/fs'
 import * as path from 'path'
 import PluginError from 'plugin-error'
 import { format, resolveConfig } from 'prettier'
@@ -20,9 +19,22 @@ import tsUnusedExports from 'ts-unused-exports'
 import createWebpackCompiler, { Stats } from 'webpack'
 import serve from 'webpack-serve'
 import webpackConfig from './webpack.config'
+const PHABRICATOR_EXTENSION_FILES = './node_modules/@sourcegraph/phabricator-extension/dist/**'
 
-export const build = gulp.series(gulp.parallel(schemaTypes, graphQLTypes), webpack)
-export const watch = gulp.parallel(watchSchemaTypes, watchGraphQLTypes, webpackServe)
+/**
+ * Copies the bundles from the `@sourcegraph/phabricator-extension` package over to the ui/assets
+ * folder so they can be served by the webapp.
+ * The package is published from https://github.com/sourcegraph/browser-extensions
+ */
+export function phabricator(): NodeJS.ReadWriteStream {
+    return gulp.src(PHABRICATOR_EXTENSION_FILES).pipe(gulp.dest('../ui/assets/extension'))
+}
+
+export const watchPhabricator = gulp.series(phabricator, async () => {
+    await new Promise<never>((_, reject) => {
+        gulp.watch(PHABRICATOR_EXTENSION_FILES, phabricator).on('error', reject)
+    })
+})
 
 const WEBPACK_STATS_OPTIONS = {
     all: false,
@@ -201,3 +213,6 @@ export async function unusedExports(): Promise<void> {
         )
     }
 }
+
+export const build = gulp.parallel(phabricator, gulp.series(gulp.parallel(schemaTypes, graphQLTypes), webpack))
+export const watch = gulp.parallel(watchPhabricator, watchSchemaTypes, watchGraphQLTypes, webpackServe)
