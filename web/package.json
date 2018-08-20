@@ -127,7 +127,7 @@
     "ts-node": "^7.0.0",
     "ts-unused-exports": "^2.0.5",
     "tsify": "^4.0.0",
-    "tslint": "^5.10.0",
+    "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",
     "typescript": "~3.0.0",
     "uglifyjs-webpack-plugin": "^1.2.4",
