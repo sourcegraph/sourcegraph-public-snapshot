@@ -12,9 +12,10 @@ import (
 // RepoSource is a wrapper around a repository source (typically a code host config) that provides a
 // method to map clone URLs to repo URIs using only the configuration (i.e., no network requests).
 type RepoSource interface {
-	// CloneURLToRepoURI maps a clone URL to the expected repo URI for the repository on the code
-	// host.  It does not actually check if the repository exists in the code host. It merely does
-	// the mapping based on the rules set in the code host config.
+	// CloneURLToRepoURI maps a Git clone URL (format documented here:
+	// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the expected repo URI for the
+	// repository on the code host.  It does not actually check if the repository exists in the code
+	// host. It merely does the mapping based on the rules set in the code host config.
 	//
 	// If the clone URL does not correspond to a repository that could exist on the code host, the
 	// empty string is returned and err is nil. If there is an unrelated error, an error is
@@ -22,10 +23,11 @@ type RepoSource interface {
 	CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error)
 }
 
-// CloneURLToRepoURI maps a clone URL to the corresponding repo URI if there exists a code host
-// configuration that matches the clone URL. Returns the empty string and nil error if a matching
-// code host could not be found. This function does not actually check the code host to see if the
-// repository actually exists.
+// CloneURLToRepoURI maps a Git clone URL (format documented here:
+// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo URI if there
+// exists a code host configuration that matches the clone URL. Returns the empty string and nil
+// error if a matching code host could not be found. This function does not actually check the code
+// host to see if the repository actually exists.
 func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	cfg := conf.Get()
 
