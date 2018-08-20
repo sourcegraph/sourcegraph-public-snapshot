@@ -932,7 +932,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a5a1083d21e600f742fc711258b880d2bdbe6457547d947c458881872d322f0b"
+  digest = "1:28c9636d6f091b1d58a9f304158bd0d3e3331ed18290bd71c70d9cd2e648f49f"
   name = "github.com/russellhaering/gosaml2"
   packages = [
     ".",
@@ -940,7 +940,7 @@
     "uuid",
   ]
   pruneopts = "NUT"
-  revision = "b304b7e0137405a6064ca2559fa6d2fc0abb9617"
+  revision = "1b78a6b415381e4295922c0d3e630f11e487aee2"
   source = "github.com/sourcegraph/gosaml2"
 
 [[projects]]
