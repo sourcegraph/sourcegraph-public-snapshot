@@ -153,7 +153,7 @@ func (sp *SAMLServiceProvider) buildAuthURLFromDocument(relayState, binding stri
 		ctx := sp.SigningContext()
 		qs.Add("SigAlg", ctx.GetSignatureMethodIdentifier())
 		var rawSignature []byte
-		if rawSignature, err = ctx.SignString(qs.Encode()); err != nil {
+		if rawSignature, err = ctx.SignString(signatureInputString(qs.Get("SAMLRequest"), qs.Get("RelayState"), qs.Get("SigAlg"))); err != nil {
 			return "", fmt.Errorf("unable to sign query string of redirect URL: %v", err)
 		}
 
@@ -193,4 +193,26 @@ func (sp *SAMLServiceProvider) AuthRedirect(w http.ResponseWriter, r *http.Reque
 
 	http.Redirect(w, r, url, http.StatusFound)
 	return nil
+}
+
+// signatureInputString constructs the string to be fed into the signature algorithm, as described
+// in section 3.4.4.1 of
+// https://www.oasis-open.org/committees/download.php/56779/sstc-saml-bindings-errata-2.0-wd-06.pdf
+func signatureInputString(samlRequest, relayState, sigAlg string) string {
+	var params [][2]string
+	if relayState == "" {
+		params = [][2]string{{"SAMLRequest", samlRequest}, {"SigAlg", sigAlg}}
+	} else {
+		params = [][2]string{{"SAMLRequest", samlRequest}, {"RelayState", relayState}, {"SigAlg", sigAlg}}
+	}
+
+	var buf bytes.Buffer
+	for _, kv := range params {
+		k, v := kv[0], kv[1]
+		if buf.Len() > 0 {
+			buf.WriteByte('&')
+		}
+		buf.WriteString(url.QueryEscape(k) + "=" + url.QueryEscape(v))
+	}
+	return buf.String()
 }

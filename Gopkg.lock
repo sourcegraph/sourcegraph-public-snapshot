@@ -738,7 +738,7 @@
     "types",
     "uuid"
   ]
-  revision = "b304b7e0137405a6064ca2559fa6d2fc0abb9617"
+  revision = "1b78a6b415381e4295922c0d3e630f11e487aee2"
   source = "github.com/sourcegraph/gosaml2"
 
 [[projects]]
