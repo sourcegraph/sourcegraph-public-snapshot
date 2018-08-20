@@ -5,7 +5,7 @@ import { map, tap } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
 import { createThread } from '../../../discussions/backend'
 import { parseHash } from '../../../util/url'
-import { DiscussionsInput } from './DiscussionsInput'
+import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
 
 interface Props {
@@ -45,7 +45,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                         )}
                     <DiscussionsInput
                         submitLabel="Create discussion"
-                        noExplicitTitle={true}
+                        titleMode={TitleMode.Implicit}
                         onTitleChange={this.onTitleChange}
                         onSubmit={this.onSubmit}
                         {...this.props}

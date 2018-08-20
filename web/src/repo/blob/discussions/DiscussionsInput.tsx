@@ -11,6 +11,20 @@ import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { DiscussionsInputMentionOverlay, OnBlurHandler, OnKeyDownFilter } from './DiscussionsInputMentionOverlay'
 
+/**
+ * How & whether or not to render a title input field.
+ */
+export enum TitleMode {
+    /** Explicitly show a separate title input field. */
+    Explicit,
+
+    /** Implicitly use the first line of the main textarea as the title field (like Git commit messages). */
+    Implicit,
+
+    /** No title input at all, e.g. for replying to discussion threads.  */
+    None,
+}
+
 interface Props {
     location: H.Location
     history: H.History
@@ -21,11 +35,8 @@ interface Props {
     /** Called when the submit button is clicked. */
     onSubmit: (title: string, comment: string) => Observable<void>
 
-    /**
-     * Whether or not to hide the title portion of the input and instead use an
-     * implicit git-commit-message style title field.
-     */
-    noExplicitTitle?: boolean
+    /** How & whether or not to render a title input field. */
+    titleMode: TitleMode
 
     /** Called when the title value changes. */
     onTitleChange?: (title: string) => void
@@ -98,7 +109,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     startWith({ textAreaValue: '', selectionStart: 0, element: undefined }),
                     map(
                         (textArea): Update => state => {
-                            if (this.props.noExplicitTitle) {
+                            if (this.props.titleMode === TitleMode.Implicit) {
                                 this.titleInputChanges.next(textArea.textAreaValue.split('\n')[0])
                             }
                             return { ...state, textArea }
@@ -194,7 +205,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
 
         return (
             <Form className="discussions-input" onSubmit={this.nextSubmit}>
-                {!this.props.noExplicitTitle && (
+                {this.props.titleMode === TitleMode.Explicit && (
                     <input
                         className="form-control discussions-input__title"
                         placeholder="Title"
@@ -237,7 +248,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                             onBlur={this.onBlurHandler}
                             value={textArea.textAreaValue}
                             ref={this.setTextAreaRef}
-                            autoFocus={this.props.noExplicitTitle}
+                            autoFocus={this.props.titleMode !== TitleMode.Explicit}
                         />
                     </div>
                     <div key="preview" className="discussions-input__preview">
@@ -266,7 +277,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
 
     /** Trims the implicit title string out of the comment (e.g. textarea value). */
     private trimImplicitTitle = (comment: string): string => {
-        if (!this.props.noExplicitTitle) {
+        if (this.props.titleMode !== TitleMode.Implicit) {
             return comment
         }
         return comment

@@ -10,7 +10,7 @@ import { addCommentToThread, fetchDiscussionThreadAndComments } from '../../../d
 import { DiscussionsComment } from '../../../discussions/DiscussionsComment'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { formatHash } from '../../../util/url'
-import { DiscussionsInput } from './DiscussionsInput'
+import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
 
 interface Props {
@@ -108,7 +108,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                         <DiscussionsInput
                             key="input"
                             submitLabel="Comment"
-                            noExplicitTitle={true}
+                            titleMode={TitleMode.None}
                             onSubmit={this.onSubmit}
                             {...this.props}
                         />
