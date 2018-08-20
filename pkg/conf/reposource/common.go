@@ -23,12 +23,12 @@ type repoSource interface {
 	cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error)
 }
 
-// cloneURLToRepoURI maps a Git clone URL (format documented here:
+// CloneURLToRepoURI maps a Git clone URL (format documented here:
 // https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo URI if there
 // exists a code host configuration that matches the clone URL. Returns the empty string and nil
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
-func cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	cfg := conf.Get()
 
 	repoSources := make([]repoSource, 0, len(cfg.Github)+
