@@ -1,5 +1,5 @@
 import fs from 'fs'
-import _ from 'lodash'
+import { omit, pick } from 'lodash'
 import path from 'path'
 import shelljs from 'shelljs'
 import signale from 'signale'
@@ -8,9 +8,6 @@ import extensionInfo from '../chrome/extension.info.json'
 import schema from '../chrome/schema.json'
 
 export type BuildEnv = 'dev' | 'prod'
-
-const omit = _.omit
-const pick = _.pick
 
 const BUILDS_DIR = 'build'
 
