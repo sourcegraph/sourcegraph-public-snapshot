@@ -36,7 +36,6 @@ func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 		1+ /* for repos.list */
 		len(cfg.Gitolite))
 
-	repoSources = append(repoSources, reposListInstance)
 	for _, c := range cfg.Github {
 		repoSources = append(repoSources, GitHub{c})
 	}
@@ -49,6 +48,10 @@ func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	for _, c := range cfg.AwsCodeCommit {
 		repoSources = append(repoSources, AWS{c})
 	}
+	repoSources = append(repoSources, reposListInstance)
+	for _, c := range cfg.Gitolite {
+		repoSources = append(repoSources, Gitolite{c})
+	}
 	for _, ch := range repoSources {
 		repoURI, err := ch.CloneURLToRepoURI(cloneURL)
 		if err != nil {
@@ -57,9 +60,6 @@ func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 		if repoURI != "" {
 			return repoURI, nil
 		}
-	}
-	for _, c := range cfg.Gitolite {
-		repoSources = append(repoSources, Gitolite{c})
 	}
 
 	return "", nil
