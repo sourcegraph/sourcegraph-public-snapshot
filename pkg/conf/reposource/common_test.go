@@ -19,12 +19,12 @@ func TestParseCloneURL(t *testing.T) {
 		output *url.URL
 	}{
 		{
-			input: "git@github.com/gorilla/mux.git",
+			input: "git@github.com:gorilla/mux.git",
 			output: &url.URL{
 				Scheme: "",
 				User:   url.User("git"),
 				Host:   "github.com",
-				Path:   "/gorilla/mux.git",
+				Path:   "gorilla/mux.git",
 			},
 		}, {
 			input: "https://github.com/gorilla/mux.git",
@@ -54,6 +54,76 @@ func TestParseCloneURL(t *testing.T) {
 				Scheme: "ssh",
 				Host:   "github.com",
 				Path:   "/gorilla/mux.git",
+			},
+		}, {
+			input: "ssh://git@github.com:/my/repo.git",
+			output: &url.URL{
+				Scheme: "ssh",
+				User:   url.User("git"),
+				Host:   "github.com:",
+				Path:   "/my/repo.git",
+			},
+		}, {
+			input: "git://git@github.com:/my/repo.git",
+			output: &url.URL{
+				Scheme: "git",
+				User:   url.User("git"),
+				Host:   "github.com:",
+				Path:   "/my/repo.git",
+			},
+		}, {
+			input: "user@host.xz:/path/to/repo.git/",
+			output: &url.URL{
+				User: url.User("user"),
+				Host: "host.xz",
+				Path: "/path/to/repo.git/",
+			},
+		}, {
+			input: "host.xz:/path/to/repo.git/",
+			output: &url.URL{
+				Host: "host.xz",
+				Path: "/path/to/repo.git/",
+			},
+		}, {
+			input: "ssh://user@host.xz:port/path/to/repo.git/",
+			output: &url.URL{
+				Scheme: "ssh",
+				User:   url.User("user"),
+				Host:   "host.xz:port",
+				Path:   "/path/to/repo.git/",
+			},
+		}, {
+			input: "host.xz:~user/path/to/repo.git/",
+			output: &url.URL{
+				Host: "host.xz",
+				Path: "~user/path/to/repo.git/",
+			},
+		}, {
+			input: "ssh://host.xz/~/path/to/repo.git",
+			output: &url.URL{
+				Scheme: "ssh",
+				Host:   "host.xz",
+				Path:   "/~/path/to/repo.git",
+			},
+		}, {
+			input: "git://host.xz/~user/path/to/repo.git/",
+			output: &url.URL{
+				Scheme: "git",
+				Host:   "host.xz",
+				Path:   "/~user/path/to/repo.git/",
+			},
+		}, {
+			input: "file:///path/to/repo.git/",
+			output: &url.URL{
+				Scheme: "file",
+				Path:   "/path/to/repo.git/",
+			},
+		}, {
+			input: "file://~/path/to/repo.git/",
+			output: &url.URL{
+				Scheme: "file",
+				Host:   "~",
+				Path:   "/path/to/repo.git/",
 			},
 		},
 	}

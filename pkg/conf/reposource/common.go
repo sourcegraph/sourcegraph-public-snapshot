@@ -82,7 +82,7 @@ func NormalizeBaseURL(baseURL *url.URL) *url.URL {
 // parseCloneURL parses a git clone URL into a URL struct. It supports the SCP-style git@host:path
 // syntax that is common among code hosts.
 func parseCloneURL(cloneURL string) (*url.URL, error) {
-	if strings.HasPrefix(cloneURL, "https://") || strings.HasPrefix(cloneURL, "http://") || strings.HasPrefix(cloneURL, "ssh://") {
+	if strings.HasPrefix(cloneURL, "https://") || strings.HasPrefix(cloneURL, "http://") || strings.HasPrefix(cloneURL, "ssh://") || strings.HasPrefix(cloneURL, "git://") || strings.HasPrefix(cloneURL, "rsync://") || strings.HasPrefix(cloneURL, "file://") {
 		return url.Parse(cloneURL)
 	}
 
@@ -92,6 +92,7 @@ func parseCloneURL(cloneURL string) (*url.URL, error) {
 		return nil, err
 	}
 	u.Scheme = ""
+	u.Path = strings.TrimPrefix(u.Path, "/")
 	return u, nil
 }
 

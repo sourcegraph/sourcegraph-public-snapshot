@@ -16,6 +16,7 @@ func TestGitHub_cloneURLToRepoURI(t *testing.T) {
 		},
 		urls: []urlURI{
 			{"git@github.com:gorilla/mux.git", "github.com/gorilla/mux"},
+			{"git@github.com:/gorilla/mux.git", "github.com/gorilla/mux"},
 			{"https://github.com/gorilla/mux.git", "github.com/gorilla/mux"},
 			{"https://oauth2:ACCESS_TOKEN@github.com/gorilla/mux.git", "github.com/gorilla/mux"},
 

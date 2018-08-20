@@ -16,6 +16,7 @@ func TestGitLab_cloneURLToRepoURI(t *testing.T) {
 		},
 		urls: []urlURI{
 			{"git@gitlab.com:beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
+			{"git@gitlab.com:/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
 			{"https://gitlab.com/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
 			{"https://oauth2:ACCESS_TOKEN@gitlab.com/beyang/public-repo.git", "gitlab.com/beyang/public-repo"},
 
