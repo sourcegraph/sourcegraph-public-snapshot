@@ -28,6 +28,18 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Removed
 
+## 2.10.3
+
+### Changed
+
+### Added
+
+### Fixed
+
+- The SAML AuthnRequest signature when using HTTP redirect binding is now computed using a URL query string with correct ordering of parameters. Previously, the ordering was incorrect and caused errors when the IdP was configured to check the signature in the AuthnRequest.
+
+### Removed
+
 ## 2.10.2
 
 ### Changed
