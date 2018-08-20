@@ -69,7 +69,7 @@
     "postcss-loader": "^2.0.8",
     "prettier": "1.14.0",
     "sass-loader": "^6.0.6",
-    "semantic-release": "^15.9.3",
+    "semantic-release": "^15.9.9",
     "semantic-release-chrome": "^1.0.1",
     "semantic-release-firefox": "^1.1.1",
     "shelljs": "^0.8.0",
