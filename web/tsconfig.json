@@ -16,7 +16,8 @@
     "noErrorTruncation": true,
     "plugins": [
       {
-        "name": "tslint-language-service"
+        "name": "tslint-language-service",
+        "configFile": "./tslint.json"
       }
     ]
   },
