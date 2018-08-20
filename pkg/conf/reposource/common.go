@@ -65,7 +65,7 @@ func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	return "", nil
 }
 
-// NormalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant
+// NormalizeBaseURL modifies the input and returns a normalized form of the base URL with insignificant
 // differences (such as in presence of a trailing slash, or hostname case) eliminated. Its return value should be
 // used for the (ExternalRepoSpec).ServiceID field (and passed to XyzExternalRepoSpec) instead of a non-normalized
 // base URL.
