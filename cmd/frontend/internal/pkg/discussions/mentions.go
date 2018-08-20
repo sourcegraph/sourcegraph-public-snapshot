@@ -98,6 +98,12 @@ func (n *notifier) subscribers(ctx context.Context) ([]string, error) {
 		subscribers []string
 		set         = make(map[string]struct{})
 	)
+	for _, mention := range parseMentions(n.thread.Title) {
+		if _, ok := set[mention]; !ok {
+			set[mention] = struct{}{}
+			subscribers = append(subscribers, mention)
+		}
+	}
 	for _, comment := range comments {
 		commentAuthor, err := db.Users.GetByID(ctx, comment.AuthorUserID)
 		if err != nil {
