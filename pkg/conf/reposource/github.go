@@ -11,9 +11,9 @@ type GitHub struct {
 	*schema.GitHubConnection
 }
 
-var _ RepoSource = GitHub{}
+var _ repoSource = GitHub{}
 
-func (c GitHub) CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func (c GitHub) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err

@@ -12,6 +12,8 @@ import (
 )
 
 var (
+	// reposListInstance is the global instance of the repos.list repoSource. Do NOT reference this
+	// directly; use getReposListInstance() instead.
 	reposListInstance *reposList
 	reposListMu       sync.Mutex
 )
@@ -26,12 +28,10 @@ func init() {
 	})
 }
 
-func ReposListCloneURLToRepoURI(cloneURL string) (api.RepoURI, error) {
+func getReposListInstance() *reposList {
 	reposListMu.Lock()
-	r := reposListInstance
-	reposListMu.Unlock()
-
-	return r.CloneURLToRepoURI(cloneURL)
+	defer reposListMu.Unlock()
+	return reposListInstance
 }
 
 type reposList struct {
@@ -40,7 +40,7 @@ type reposList struct {
 	cloneURLToURI map[string]string
 }
 
-var _ RepoSource = (*reposList)(nil)
+var _ repoSource = (*reposList)(nil)
 
 func newReposList(repos []*schema.Repository) *reposList {
 	cloneURLToURI := map[string]string{}
@@ -52,7 +52,7 @@ func newReposList(repos []*schema.Repository) *reposList {
 	}
 }
 
-func (c *reposList) CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func (c *reposList) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	return api.RepoURI(c.cloneURLToURI[normalizeCloneURL(cloneURL)]), nil
 }
 

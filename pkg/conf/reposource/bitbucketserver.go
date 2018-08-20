@@ -11,9 +11,9 @@ type BitbucketServer struct {
 	*schema.BitbucketServerConnection
 }
 
-var _ RepoSource = BitbucketServer{}
+var _ repoSource = BitbucketServer{}
 
-func (c BitbucketServer) CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func (c BitbucketServer) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err

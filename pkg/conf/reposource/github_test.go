@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestGitHub_CloneURLToRepoURI(t *testing.T) {
+func TestGitHub_cloneURLToRepoURI(t *testing.T) {
 	var tests = []struct {
 		conn schema.GitHubConnection
 		urls []urlURI
@@ -41,7 +41,7 @@ func TestGitHub_CloneURLToRepoURI(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoURI, err := GitHub{&test.conn}.CloneURLToRepoURI(u.cloneURL)
+			repoURI, err := GitHub{&test.conn}.cloneURLToRepoURI(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}

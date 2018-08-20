@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestGitolite_CloneURLToRepoURI(t *testing.T) {
+func TestGitolite_cloneURLToRepoURI(t *testing.T) {
 	var tests = []struct {
 		conn schema.GitoliteConnection
 		urls []urlURI
@@ -49,7 +49,7 @@ func TestGitolite_CloneURLToRepoURI(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoURI, err := Gitolite{&test.conn}.CloneURLToRepoURI(u.cloneURL)
+			repoURI, err := Gitolite{&test.conn}.cloneURLToRepoURI(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestAWS_CloneURLToRepoURI(t *testing.T) {
+func TestAWS_cloneURLToRepoURI(t *testing.T) {
 	var tests = []struct {
 		conn schema.AWSCodeCommitConnection
 		urls []urlURI
@@ -38,7 +38,7 @@ func TestAWS_CloneURLToRepoURI(t *testing.T) {
 
 	for _, test := range tests {
 		for _, u := range test.urls {
-			repoURI, err := AWS{&test.conn}.CloneURLToRepoURI(u.cloneURL)
+			repoURI, err := AWS{&test.conn}.cloneURLToRepoURI(u.cloneURL)
 			if err != nil {
 				t.Fatal(err)
 			}

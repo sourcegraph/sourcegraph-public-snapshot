@@ -11,9 +11,9 @@ type GitLab struct {
 	*schema.GitLabConnection
 }
 
-var _ RepoSource = GitLab{}
+var _ repoSource = GitLab{}
 
-func (c GitLab) CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func (c GitLab) cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err

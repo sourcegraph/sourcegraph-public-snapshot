@@ -9,10 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
-// RepoSource is a wrapper around a repository source (typically a code host config) that provides a
+// repoSource is a wrapper around a repository source (typically a code host config) that provides a
 // method to map clone URLs to repo URIs using only the configuration (i.e., no network requests).
-type RepoSource interface {
-	// CloneURLToRepoURI maps a Git clone URL (format documented here:
+type repoSource interface {
+	// cloneURLToRepoURI maps a Git clone URL (format documented here:
 	// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the expected repo URI for the
 	// repository on the code host.  It does not actually check if the repository exists in the code
 	// host. It merely does the mapping based on the rules set in the code host config.
@@ -20,18 +20,18 @@ type RepoSource interface {
 	// If the clone URL does not correspond to a repository that could exist on the code host, the
 	// empty string is returned and err is nil. If there is an unrelated error, an error is
 	// returned.
-	CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error)
+	cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error)
 }
 
-// CloneURLToRepoURI maps a Git clone URL (format documented here:
+// cloneURLToRepoURI maps a Git clone URL (format documented here:
 // https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo URI if there
 // exists a code host configuration that matches the clone URL. Returns the empty string and nil
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
-func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
+func cloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	cfg := conf.Get()
 
-	repoSources := make([]RepoSource, 0, len(cfg.Github)+
+	repoSources := make([]repoSource, 0, len(cfg.Github)+
 		len(cfg.Gitlab)+
 		len(cfg.BitbucketServer)+
 		len(cfg.AwsCodeCommit)+
@@ -50,12 +50,12 @@ func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	for _, c := range cfg.AwsCodeCommit {
 		repoSources = append(repoSources, AWS{c})
 	}
-	repoSources = append(repoSources, reposListInstance)
+	repoSources = append(repoSources, getReposListInstance())
 	for _, c := range cfg.Gitolite {
 		repoSources = append(repoSources, Gitolite{c})
 	}
 	for _, ch := range repoSources {
-		repoURI, err := ch.CloneURLToRepoURI(cloneURL)
+		repoURI, err := ch.cloneURLToRepoURI(cloneURL)
 		if err != nil {
 			return "", err
 		}
