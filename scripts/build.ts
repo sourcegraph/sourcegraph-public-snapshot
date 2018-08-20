@@ -6,25 +6,24 @@ import * as tasks from './tasks'
 const buildChrome = tasks.buildChrome('prod')
 const buildFirefox = tasks.buildFirefox('prod')
 
-signale.info('[Copy assets]')
-signale.info('--------------------------------')
 tasks.copyAssets('prod')
 
 const compiler = webpack(config)
 
-signale.info('[Webpack Build]')
-signale.info('--------------------------------')
-
+signale.await('Webpack compilation')
 compiler.run((err, stats) => {
-    console.log(stats.toString('normal'))
+    console.log(stats.toString(tasks.WEBPACK_STATS_OPTIONS))
 
     if (stats.hasErrors()) {
+        signale.error('Webpack compilation error')
         process.exit(1)
         return
     }
+    signale.success('Webpack compilation done')
 
     tasks.buildSafari('prod')
     buildChrome()
     buildFirefox()
     tasks.copyPhabricator()
+    signale.success('Build done')
 })

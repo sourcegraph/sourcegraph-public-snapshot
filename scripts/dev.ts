@@ -25,11 +25,13 @@ compiler.watch(
         aggregateTimeout: 300,
     },
     (err, stats) => {
-        console.log(stats.toString('errors-only'))
+        console.log(stats.toString(tasks.WEBPACK_STATS_OPTIONS))
 
         if (stats.hasErrors()) {
+            signale.error('Webpack compilation error')
             return
         }
+        signale.success('Webpack compilation done')
 
         tasks.buildSafari('dev')
         buildChrome()

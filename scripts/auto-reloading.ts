@@ -6,6 +6,7 @@ import io from 'socket.io'
  */
 export const initializeServer = () => {
     const logger = new signale.Signale({ scope: 'Auto reloading' })
+    logger.config({ displayTimestamp: true })
 
     // Since this port is hard-coded, it must match background.tsx
     const socketIOServer = io.listen(8890)

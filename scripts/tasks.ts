@@ -3,6 +3,7 @@ import _ from 'lodash'
 import path from 'path'
 import shelljs from 'shelljs'
 import signale from 'signale'
+import { Stats } from 'webpack'
 import extensionInfo from '../chrome/extension.info.json'
 import schema from '../chrome/schema.json'
 
@@ -13,6 +14,14 @@ const pick = _.pick
 
 const BUILDS_DIR = 'build'
 
+export const WEBPACK_STATS_OPTIONS = {
+    all: false,
+    timings: true,
+    errors: true,
+    warnings: true,
+    colors: true,
+} as Stats.ToStringOptions
+
 function ensurePaths(): void {
     shelljs.mkdir('-p', 'build/dist')
     shelljs.mkdir('-p', 'build/bundles')
@@ -21,11 +30,13 @@ function ensurePaths(): void {
 }
 
 export function copyAssets(env: BuildEnv): void {
+    signale.await('Copy assets')
     const dir = 'build/dist'
     shelljs.rm('-rf', dir)
     shelljs.mkdir('-p', dir)
     shelljs.cp('-R', 'chrome/assets/*', dir)
     shelljs.cp('-R', 'chrome/views/*', dir)
+    signale.success('Assets copied')
 }
 
 function copyDist(toDir: string): void {
