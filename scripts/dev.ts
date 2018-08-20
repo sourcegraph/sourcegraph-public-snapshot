@@ -23,7 +23,6 @@ compiler.hooks.watchRun.tap('Notify', () => signale.await('Compiling...'))
 compiler.watch(
     {
         aggregateTimeout: 300,
-        poll: 1000,
     },
     (err, stats) => {
         console.log(stats.toString('errors-only'))
