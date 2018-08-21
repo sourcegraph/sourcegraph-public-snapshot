@@ -86,9 +86,13 @@ const throwNoopErr = () => {
     throw new Error('do not call browser extension apis from an in page script')
 }
 
-const addMigration = (area: chrome.storage.StorageArea) => (migrate: MigrateFunc) => {
-    area.get(items => {
-        migrate(items as StorageItems, area.set, area.remove)
+const addMigration = (
+    get: Storage['getSync'],
+    set: Storage['setSync'],
+    remove: (keys: string | string[], callback?: (() => void) | undefined) => void
+) => (migrate: MigrateFunc) => {
+    get(items => {
+        migrate(items as StorageItems, set, remove)
     })
 }
 
@@ -126,8 +130,12 @@ export default ((): Storage => {
             setLocal: set(localStorageArea),
             observeLocal: observe(localStorageArea),
 
-            addSyncMigration: addMigration(syncStorageArea),
-            addLocalMigration: addMigration(localStorageArea),
+            addSyncMigration: addMigration(get(syncStorageArea), set(syncStorageArea), (keys, callback) =>
+                syncStorageArea.remove(keys, callback)
+            ),
+            addLocalMigration: addMigration(get(localStorageArea), set(localStorageArea), (keys, callback) =>
+                localStorageArea.remove(keys, callback)
+            ),
 
             onChanged,
         }
