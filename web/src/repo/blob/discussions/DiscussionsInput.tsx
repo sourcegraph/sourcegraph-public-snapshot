@@ -156,7 +156,9 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     this.submits.pipe(tap(e => e.preventDefault())),
 
                     // cmd+enter (darwin) or ctrl+enter (linux/win)
-                    this.textAreaKeyDowns.pipe(filter(e => (e.ctrlKey || e.metaKey) && e.key === 'Enter'))
+                    this.textAreaKeyDowns.pipe(
+                        filter(e => (e.ctrlKey || e.metaKey) && e.key === 'Enter' && this.canSubmit())
+                    )
                 ).pipe(
                     tap(e => eventLogger.log('RepliedToDiscussion')), // TODO(slimsag:discussions): not the right event for creating a thread
                     withLatestFrom(
@@ -201,7 +203,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const { titleInputValue, textArea, submitting, error, previewLoading, previewHTML } = this.state
+        const { titleInputValue, textArea, error, previewLoading, previewHTML } = this.state
 
         return (
             <Form className="discussions-input" onSubmit={this.nextSubmit}>
@@ -260,7 +262,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     <button
                         type="submit"
                         className="btn btn-primary discussions-input__button"
-                        disabled={submitting || !textArea.textAreaValue.trim()}
+                        disabled={!this.canSubmit()}
                     >
                         {this.props.submitLabel}
                     </button>
@@ -284,6 +286,13 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
             .split('\n')
             .slice(1)
             .join('\n')
+    }
+
+    private canSubmit = (): boolean => {
+        const textAreaEmpty = !this.state.textArea.textAreaValue.trim()
+        const titleRequired = this.props.titleMode !== TitleMode.None
+        const titleEmpty = !this.state.titleInputValue.trim()
+        return !this.state.submitting && !textAreaEmpty && (!titleRequired || !titleEmpty)
     }
 
     private setOnBlurHandler = (h: OnBlurHandler) => {
