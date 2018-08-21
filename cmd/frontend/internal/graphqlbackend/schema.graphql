@@ -2417,19 +2417,15 @@ type DiscussionComment {
 
     # The actual markdown contents of the comment.
     #
-    # Empty comments are allowed, so that users can create a discussion thread
-    # with a title and no comment contents. Thus, clients should be prepared to
-    # render them. Suggested rendering when the string contains only whitespace
-    # is "_(no comment text)_".
+    # If the comment was created without any contents (after trimming whitespace)
+    # then the title of the thread will be returned.
     contents: String!
 
     # The markdown contents rendered as an HTML string. It is already sanitized
     # and escaped and thus is always safe to render.
     #
-    # Empty comments are allowed, so that users can create a discussion thread
-    # with a title and no comment contents. Thus, clients should be prepared to
-    # render them. Suggested rendering when the string contains only whitespace
-    # is "<em>(no comment text)</em>".
+    # If the comment was created without any contents (after trimming whitespace)
+    # then the title of the thread will be returned.
     html(options: MarkdownOptions): String!
 
     # The URL at which this thread can be viewed inline (i.e. in the file blob view).

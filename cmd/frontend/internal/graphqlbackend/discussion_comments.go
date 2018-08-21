@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,9 +35,22 @@ func (r *discussionCommentResolver) Author(ctx context.Context) (*userResolver, 
 	return userByIDInt32(ctx, r.c.AuthorUserID)
 }
 
-func (r *discussionCommentResolver) Contents() string { return r.c.Contents }
-func (r *discussionCommentResolver) HTML(args *struct{ Options *markdownOptions }) string {
-	return markdown.Render(r.c.Contents, nil)
+func (r *discussionCommentResolver) Contents(ctx context.Context) (string, error) {
+	if strings.TrimSpace(r.c.Contents) != "" {
+		return r.c.Contents, nil
+	}
+	thread, err := db.DiscussionThreads.Get(ctx, r.c.ThreadID)
+	if err != nil {
+		return "", errors.Wrap(err, "DiscussionThreads.Get")
+	}
+	return thread.Title, nil
+}
+func (r *discussionCommentResolver) HTML(ctx context.Context, args *struct{ Options *markdownOptions }) (string, error) {
+	contents, err := r.Contents(ctx)
+	if err != nil {
+		return "", err
+	}
+	return markdown.Render(contents, nil), nil
 }
 func (r *discussionCommentResolver) InlineURL(ctx context.Context) (*string, error) {
 	thread, err := db.DiscussionThreads.Get(ctx, r.c.ThreadID)

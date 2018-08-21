@@ -74,7 +74,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                     </span>
                 </div>
                 <div className="discussions-comment__content">
-                    <Markdown dangerousInnerHTML={comment.html !== '' ? comment.html : '<em>(no comment text)</em>'} />
+                    <Markdown dangerousInnerHTML={comment.html} />
                 </div>
             </div>
         )
