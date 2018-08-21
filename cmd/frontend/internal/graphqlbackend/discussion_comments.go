@@ -111,6 +111,10 @@ func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, ar
 		return nil, errors.New("no current user")
 	}
 
+	if strings.TrimSpace(args.Contents) == "" {
+		return nil, errors.New("cannot add empty comments to threads")
+	}
+
 	// Create the comment on the thread.
 	threadID, err := unmarshalDiscussionID(args.ThreadID)
 	if err != nil {
