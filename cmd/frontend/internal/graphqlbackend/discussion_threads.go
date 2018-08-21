@@ -370,7 +370,9 @@ func (r *discussionThreadsConnectionResolver) Nodes(ctx context.Context) ([]*dis
 }
 
 func (r *discussionThreadsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := db.DiscussionThreads.Count(ctx, r.opt)
+	withoutLimit := *r.opt
+	withoutLimit.LimitOffset = nil
+	count, err := db.DiscussionThreads.Count(ctx, &withoutLimit)
 	return int32(count), err
 }
 

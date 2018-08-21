@@ -180,7 +180,9 @@ func (r *discussionCommentsConnectionResolver) Nodes(ctx context.Context) ([]*di
 }
 
 func (r *discussionCommentsConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := db.DiscussionComments.Count(ctx, r.opt)
+	withoutLimit := *r.opt
+	withoutLimit.LimitOffset = nil
+	count, err := db.DiscussionComments.Count(ctx, &withoutLimit)
 	return int32(count), err
 }
 
