@@ -110,6 +110,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                             submitLabel="Comment"
                             titleMode={TitleMode.None}
                             onSubmit={this.onSubmit}
+                            onSubmitErrorPrefix={'Error creating comment: '}
                             {...this.props}
                         />
                     </div>

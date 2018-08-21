@@ -35,6 +35,9 @@ interface Props {
     /** Called when the submit button is clicked. */
     onSubmit: (title: string, comment: string) => Observable<void>
 
+    /** String to prefix any error thrown by onSubmit with before display. */
+    onSubmitErrorPrefix?: string
+
     /** How & whether or not to render a title input field. */
     titleMode: TitleMode
 
@@ -142,7 +145,13 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                     catchError(
                                         (error): Update[] => {
                                             console.error(error)
-                                            return [state => ({ ...state, error, previewLoading: false })]
+                                            return [
+                                                state => ({
+                                                    ...state,
+                                                    error: new Error('error rendering markdown: ' + error),
+                                                    previewLoading: false,
+                                                }),
+                                            ]
                                         }
                                     )
                                 )
@@ -182,7 +191,15 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                     catchError(
                                         (error): Update[] => {
                                             console.error(error)
-                                            return [state => ({ ...state, error, submitting: false })]
+                                            return [
+                                                state => ({
+                                                    ...state,
+                                                    error: this.props.onSubmitErrorPrefix
+                                                        ? new Error(this.props.onSubmitErrorPrefix + error)
+                                                        : error,
+                                                    submitting: false,
+                                                }),
+                                            ]
                                         }
                                     )
                                 )
@@ -270,7 +287,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                 {error && (
                     <div className="discussions-input__error alert alert-danger">
                         <ErrorIcon className="icon-inline discussions-input__error-icon" />
-                        Error posting comment: {error.message}
+                        {error.message}
                     </div>
                 )}
             </Form>
@@ -317,5 +334,3 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
 
     private setTextAreaRef = (ref: HTMLTextAreaElement) => (this.textAreaRef = ref)
 }
-
-// TODO(slimsag:discussions): ASAP: "Error posting comment" should have different message for thread creation

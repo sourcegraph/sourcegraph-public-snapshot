@@ -48,6 +48,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                         titleMode={TitleMode.Implicit}
                         onTitleChange={this.onTitleChange}
                         onSubmit={this.onSubmit}
+                        onSubmitErrorPrefix={'Error creating thread: '}
                         {...this.props}
                     />
                 </div>
