@@ -71,7 +71,7 @@ export class ConnectionCard extends React.Component<Props, State> {
             )
         }
         const hasPermissions = this.contentScriptUrls.every(val => permissionOrigins.indexOf(`${val}/*`) >= 0)
-        if (!hasPermissions) {
+        if (!hasPermissions && !permissionOrigins.includes('<all_urls>')) {
             return (
                 <div className="pt-2">
                     <Alert color="warning">
