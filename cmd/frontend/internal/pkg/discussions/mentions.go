@@ -215,7 +215,7 @@ var (
 	sharedCommentTextTemplate = `
 {{.CommentContents}}
 
-Reply on Sourcegraph:
+View and reply on Sourcegraph:
 
   {{.URL}}
 `
@@ -236,7 +236,7 @@ Reply on Sourcegraph:
 }
 </script>
 {{.CommentContentsHTML}}
-<p><a href="{{.URL}}">Reply on Sourcegraph</a></p>
+<p><a href="{{.URL}}">View and reply on Sourcegraph</a></p>
 <!-- this ensures Gmail doesn't trim the email -->
 <span style="opacity: 0">{{.UniqueValue}}</span>
 </body>
