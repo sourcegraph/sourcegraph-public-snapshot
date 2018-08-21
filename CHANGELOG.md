@@ -27,6 +27,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Gitolite integration should correctly detect names which Gitolite would consider to be patterns, and not treat them as repositories.
 - repo-updater backs off fetches on a repo that's failing to fetch.
 - Attempts to add a repo with an empty string for the name are checked for and ignored.
+- Fixed an issue where non-site-admin authenticated users could modify global settings (not site configuration), other organizations' settings, and other users' settings.
 
 ### Removed
 

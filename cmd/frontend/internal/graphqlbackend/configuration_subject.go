@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	graphql "github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
@@ -36,9 +37,17 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 		return &configurationSubject{site: s}, nil
 
 	case *userResolver:
+		// 🚨 SECURITY: Only the user and site admins are allowed to view the user's settings.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, s.user.ID); err != nil {
+			return nil, err
+		}
 		return &configurationSubject{user: s}, nil
 
 	case *orgResolver:
+		// 🚨 SECURITY: Check that the current user is a member of the org.
+		if err := backend.CheckOrgAccess(ctx, s.org.ID); err != nil {
+			return nil, err
+		}
 		return &configurationSubject{org: s}, nil
 
 	default:

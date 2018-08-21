@@ -50,6 +50,14 @@ func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct
 	// TODO(sqs): support multiple mutations running in a single query that all
 	// increment the settings.
 
+	// 🚨 SECURITY: Check whether the viewer can administer this subject (which is equivalent to
+	// being able to mutate its configuration).
+	if canAdmin, err := subject.ViewerCanAdminister(ctx); err != nil {
+		return nil, err
+	} else if !canAdmin {
+		return nil, errors.New("viewer is not allowed to edit this configuration")
+	}
+
 	return &configurationMutationResolver{
 		input:   args.Input,
 		subject: subject,
