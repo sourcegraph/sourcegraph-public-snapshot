@@ -184,7 +184,7 @@ export class ConnectionCard extends React.Component<Props, State> {
                     return
                 }
                 setSourcegraphUrl(this.urlInput.value)
-                storage.setSync({ sourcegraphURL: this.urlInput.value })
+                storage.setSync({ sourcegraphURL: this.urlInput.value, serverUrls: [this.urlInput.value] })
                 this.checkConnection()
             }
         )
