@@ -14,36 +14,10 @@ export interface CXPExtensionManifest {
     title?: string
     description?: string
     readme?: string
-    platform: BundleTarget | DockerTarget | WebSocketTarget | TcpTarget | ExecTarget
+    url: string
     activationEvents: string[]
     args?: {
         [k: string]: any
     }
     contributes?: Contributions & { configuration?: { [key: string]: any } }
-}
-
-export interface BundleTarget {
-    type: 'bundle'
-    contentType?: string
-    url: string
-}
-
-export interface DockerTarget {
-    type: 'docker'
-    image: string
-}
-
-export interface WebSocketTarget {
-    type: 'websocket'
-    url: string
-}
-
-export interface TcpTarget {
-    type: 'tcp'
-    address: string
-}
-
-export interface ExecTarget {
-    type: 'exec'
-    command: string
 }

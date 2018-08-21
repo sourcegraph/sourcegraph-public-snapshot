@@ -5,7 +5,7 @@
   "description": "The CXP extension manifest describes the extension and the features it provides.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["platform", "activationEvents"],
+  "required": ["url", "activationEvents"],
   "properties": {
     "title": {
       "description": "The title of the extension. If not specified, the extension ID is used.",
@@ -21,8 +21,10 @@
       "type": "string",
       "format": "markdown"
     },
-    "platform": {
-      "$ref": "#/definitions/ExtensionPlatform"
+    "url": {
+      "description": "A URL to a file containing the bundled JavaScript source code of this extension.",
+      "type": "string",
+      "format": "uri"
     },
     "activationEvents": {
       "description": "A list of events that cause this extension to be activated. '*' means that it will always be activated.",
@@ -46,121 +48,6 @@
     }
   },
   "definitions": {
-    "ExtensionPlatform": {
-      "description": "The platform targeted by this extension.",
-      "type": "object",
-      "required": ["type"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "enum": ["bundle", "docker", "websocket", "tcp", "exec"]
-        }
-      },
-      "oneOf": [
-        { "$ref": "#/definitions/BundleTarget" },
-        { "$ref": "#/definitions/DockerTarget" },
-        { "$ref": "#/definitions/WebSocketTarget" },
-        { "$ref": "#/definitions/TCPTarget" },
-        { "$ref": "#/definitions/ExecTarget" }
-      ],
-      "!go": {
-        "taggedUnionType": true
-      }
-    },
-    "BundleTarget": {
-      "description": "A JavaScript file that is run as a Web Worker to provide this extension's functionality.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "url"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "bundle",
-          "enum": ["bundle"]
-        },
-        "contentType": {
-          "description": "The MIME type of the source code. Only \"application/javascript\" (the default) is supported.",
-          "type": "string",
-          "const": "application/javascript",
-          "default": "application/javascript"
-        },
-        "url": {
-          "description": "A URL to a file containing the JavaScript source code to execute for this extension.",
-          "type": "string",
-          "format": "uri"
-        }
-      }
-    },
-    "DockerTarget": {
-      "description": "A specification of how to run a Docker container to provide this extension's functionality.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "image"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "docker",
-          "enum": ["docker"]
-        },
-        "image": {
-          "description": "The Docker image to run.",
-          "type": "string"
-        }
-      }
-    },
-    "WebSocketTarget": {
-      "description": "An existing WebSocket URL endpoint that serves this extension's functionality.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "url"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "websocket",
-          "enum": ["websocket"]
-        },
-        "url": {
-          "description": "The WebSocket URL to communicate with.",
-          "type": "string",
-          "format": "uri",
-          "pattern": "^(http|ws)s?://"
-        }
-      }
-    },
-    "TCPTarget": {
-      "description": "An existing TCP server that serves this extension's functionality.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "address"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "tcp",
-          "enum": ["tcp"]
-        },
-        "address": {
-          "description": "The TCP address (`host:port`) of the server to communicate with.",
-          "type": "string"
-        }
-      }
-    },
-    "ExecTarget": {
-      "description": "An local executable to run and communicate with over stdin/stdout to provide this extension's functionality.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["type", "command"],
-      "properties": {
-        "type": {
-          "type": "string",
-          "const": "exec",
-          "enum": ["exec"]
-        },
-        "command": {
-          "description": "The path to the executable to run.",
-          "type": "string"
-        }
-      }
-    },
     "Contributions": {
       "description": "Features contributed by this extension. Extensions may also register certain types of contributions dynamically.",
       "type": "object",
