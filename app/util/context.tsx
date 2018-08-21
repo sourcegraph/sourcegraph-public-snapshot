@@ -86,35 +86,6 @@ export function setUseCXP(value: boolean): void {
 }
 
 /**
- * supportedModes are the language modes for which hover and definition calls
- * will be made. Each of these modes corresponds to a built-in
- * language server.
- */
-export const supportedModes = new Set<string>([
-    'go',
-    'javascript',
-    'typescript',
-    'java',
-    'python',
-    'php',
-    'bash',
-    'clojure',
-    'cpp',
-    'cs',
-    'css',
-    'dockerfile',
-    'elixir',
-    'haskell',
-    'html',
-    'lua',
-    'ocaml',
-    'r',
-    'ruby',
-    'rust',
-    'swift',
-])
-
-/**
  * modeToHighlightJsName gets the highlight.js name of the language given a
  * mode.
  */

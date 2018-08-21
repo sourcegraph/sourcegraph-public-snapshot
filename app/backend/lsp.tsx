@@ -21,7 +21,7 @@ import {
     ResolvedRevSpec,
     RevSpec,
 } from '../repo'
-import { getModeFromPath, isPrivateRepository, repoUrlCache, sourcegraphUrl, supportedModes } from '../util/context'
+import { getModeFromPath, isPrivateRepository, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL } from '../util/url'
 import { normalizeAjaxError } from './errors'
@@ -34,6 +34,11 @@ export interface LSPRequest {
 
 /** LSP proxy error code for unsupported modes */
 export const EMODENOTFOUND = -32000
+
+/**
+ * Modes that are known to not be supported because the server replied with a mode not found error
+ */
+const unsupportedModes = new Set<string>()
 
 export function isEmptyHover(hover: HoverMerged | null): boolean {
     return !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
@@ -95,7 +100,7 @@ const extractLSPResponse: OperatorFunction<AjaxResponse, any> = source =>
 
 const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<HoverMerged | null> => {
     const mode = getModeFromPath(pos.filePath)
-    if (!mode || !supportedModes.has(mode)) {
+    if (!mode || unsupportedModes.has(mode)) {
         return of({ contents: [] })
     }
 
@@ -137,7 +142,7 @@ const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable
 
 const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<Definition> => {
     const mode = getModeFromPath(pos.filePath)
-    if (!mode || !supportedModes.has(mode)) {
+    if (!mode || unsupportedModes.has(mode)) {
         return of([])
     }
 
@@ -225,11 +230,6 @@ export function createJumpURLFetcher(
             })
         )
 }
-
-/**
- * Modes that are known to not be supported because the server replied with a mode not found error
- */
-const unsupportedModes = new Set<string>()
 
 const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<ServerCapabilities | undefined> => {
     // Check if mode is known to not be supported
