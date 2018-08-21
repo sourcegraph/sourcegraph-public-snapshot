@@ -6,11 +6,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/randstring"
 )
 
@@ -49,18 +46,4 @@ func CheckActorHasTag(ctx context.Context, tag string) error {
 		}
 	}
 	return fmt.Errorf("actor lacks required tag %q", tag)
-}
-
-// PlatformTag is the user tag indicating that the user has the platform experiment enabled.
-const PlatformTag = "platform"
-
-// CheckActorHasPlatformEnabled reports whether the platform experiment is enabled for the context's actor.
-func CheckActorHasPlatformEnabled(ctx context.Context) error {
-	if conf.Platform() == nil {
-		return errors.New("platform is disabled")
-	}
-	if !envvar.SourcegraphDotComMode() {
-		return nil // enabled for all non-Sourcegraph.com users
-	}
-	return CheckActorHasTag(ctx, PlatformTag) // enabled for "platform"-tagged Sourcegraph.com users
 }

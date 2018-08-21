@@ -8,7 +8,7 @@ import { NavLink } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { SIDEBAR_BUTTON_CLASS, SIDEBAR_CARD_CLASS, SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS } from '../components/Sidebar'
-import { platformEnabled } from '../user/tags'
+import { USE_PLATFORM } from '../cxp/CXPEnvironment'
 
 interface Props {
     history: H.History
@@ -108,7 +108,7 @@ export class SiteAdminSidebar extends React.Component<Props, State> {
                         </NavLink>
                     </div>
                 </div>
-                {platformEnabled(this.props.user) && (
+                {USE_PLATFORM && (
                     <div className={SIDEBAR_CARD_CLASS}>
                         <div className="card-header">
                             <PuzzleIcon className="icon-inline" /> Registry

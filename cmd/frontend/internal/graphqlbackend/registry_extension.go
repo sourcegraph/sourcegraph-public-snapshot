@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 func registryExtensionByID(ctx context.Context, id graphql.ID) (*registryExtensionMultiResolver, error) {
@@ -34,8 +35,8 @@ func registryExtensionByID(ctx context.Context, id graphql.ID) (*registryExtensi
 }
 
 func registryExtensionByIDInt32(ctx context.Context, id int32) (*registryExtensionDBResolver, error) {
-	if err := backend.CheckActorHasPlatformEnabled(ctx); err != nil {
-		return nil, err
+	if !conf.IsPlatformEnabled() {
+		return nil, errors.New("platform disabled")
 	}
 	x, err := db.RegistryExtensions.GetByID(ctx, id)
 	if err != nil {

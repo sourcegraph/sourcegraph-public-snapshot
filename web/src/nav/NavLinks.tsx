@@ -9,10 +9,10 @@ import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
 import { HistoryPopoverContainer } from '../components/HistoryPopoverContainer'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { USE_PLATFORM } from '../cxp/CXPEnvironment'
 import { CXPControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { eventLogger } from '../tracking/eventLogger'
-import { platformEnabled } from '../user/tags'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
@@ -56,7 +56,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         </a>
                     </li>
                 )}
-                {platformEnabled(this.props.user) && (
+                {USE_PLATFORM && (
                     <ActionsNavItems
                         menu={ContributableMenu.GlobalNav}
                         cxpController={this.props.cxpController}
@@ -84,7 +84,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         </Link>
                     </li>
                 )}
-                {platformEnabled(this.props.user) && (
+                {USE_PLATFORM && (
                     <li className="nav-item">
                         <Link to="/extensions" className="nav-link">
                             Extensions
@@ -99,7 +99,7 @@ export class NavLinks extends React.PureComponent<Props> {
                             </Link>
                         </li>
                     )}
-                {platformEnabled(this.props.user) && (
+                {USE_PLATFORM && (
                     <CommandListPopoverButton
                         menu={ContributableMenu.CommandPalette}
                         cxpController={this.props.cxpController}

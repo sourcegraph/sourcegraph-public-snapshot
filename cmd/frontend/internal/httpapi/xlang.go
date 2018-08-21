@@ -18,7 +18,6 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
@@ -185,14 +184,6 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 
 		// Update span operation name now that we have a mode.
 		span.SetOperationName(fmt.Sprintf("LSP HTTP gateway: %s: %s", mode, method))
-	}
-
-	// 🚨 SECURITY: Only allow explicitly tagged users to use extensions.
-	if strings.Contains(mode, "/") {
-		if err := backend.CheckActorHasPlatformEnabled(r.Context()); err != nil {
-			log15.Warn("Rejected xlang (CXP) API access by actor for whom the platform is not enabled.", "actor", actor.FromContext(r.Context()), "mode", mode, "error", err)
-			return &errcode.HTTPErr{Status: http.StatusForbidden, Err: errors.New("platform is not enabled")}
-		}
 	}
 
 	// Check consistency against the URL. The URL route params are for

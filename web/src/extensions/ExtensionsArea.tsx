@@ -4,7 +4,7 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
-import { platformEnabled } from '../user/tags'
+import { USE_PLATFORM } from '../cxp/CXPEnvironment'
 import { ExtensionArea } from './extension/ExtensionArea'
 import { ExtensionsAreaHeader } from './ExtensionsAreaHeader'
 import { ConfigurationCascadeProps, ExtensionsProps } from './ExtensionsClientCommonContext'
@@ -58,7 +58,7 @@ export class ExtensionsArea extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!this.props.user || !platformEnabled(this.props.user)) {
+        if (!this.props.user || !USE_PLATFORM) {
             // TODO(sqs): allow users who are not authenticated
             return <NotFoundPage />
         }

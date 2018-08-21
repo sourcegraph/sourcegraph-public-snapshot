@@ -7,13 +7,11 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -201,15 +199,7 @@ func (r *userResolver) Tags(ctx context.Context) ([]string, error) {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
 		return nil, err
 	}
-	tags := r.user.Tags
-
-	// TEMP: Automatically add the "platform" experiment tag for non-Sourcegraph.com users when
-	// experimentalFeatures.platform is on.
-	if conf.Platform() != nil && !envvar.SourcegraphDotComMode() {
-		tags = append([]string{backend.PlatformTag}, tags...)
-	}
-
-	return tags, nil
+	return r.user.Tags, nil
 }
 
 func (r *userResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseResolver, error) {
