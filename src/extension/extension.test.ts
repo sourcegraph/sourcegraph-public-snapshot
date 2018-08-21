@@ -1,15 +1,13 @@
 import * as assert from 'assert'
 import { createConnection as createClientConnection } from '../client/connection'
-import { InitializeParams, InitializeRequest, InitializeResult } from '../protocol'
+import { InitializedNotification, InitializeParams, InitializeRequest, InitializeResult } from '../protocol'
 import { createMessageTransports } from '../test/integration/helpers'
-import { createConnection as createServerConnection } from './server'
+import { activateExtension } from './extension'
 
-describe('Connection', () => {
+describe('activateExtension', () => {
     it('initialize request parameters and result', async () => {
         const [clientTransports, serverTransports] = createMessageTransports()
-        const serverConnection = createServerConnection(serverTransports)
         const clientConnection = createClientConnection(clientTransports)
-        serverConnection.listen()
         clientConnection.listen()
 
         const initParams: InitializeParams = {
@@ -19,14 +17,19 @@ describe('Connection', () => {
             workspaceFolders: null,
         }
         const initResult: InitializeResult = {
-            capabilities: { contributions: { actions: [{ id: 'c', command: 'c' }] } },
+            capabilities: {
+                decorationProvider: true,
+                textDocumentSync: { openClose: true },
+            },
         }
 
-        serverConnection.onRequest(InitializeRequest.type, params => {
-            assert.deepStrictEqual(params, initParams)
-            return initResult
-        })
-        const result = await clientConnection.sendRequest(InitializeRequest.type, initParams)
+        const [, result] = await Promise.all([
+            activateExtension<{}>(serverTransports, () => void 0),
+            clientConnection.sendRequest(InitializeRequest.type, initParams).then(result => {
+                clientConnection.sendNotification(InitializedNotification.type, initParams)
+                return result
+            }),
+        ])
         assert.deepStrictEqual(result, initResult)
     })
 })

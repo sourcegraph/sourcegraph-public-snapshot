@@ -58,5 +58,5 @@ export function executeCommand(commands: CommandEntry[], params: ExecuteCommandP
     if (!command) {
         throw new Error(`command not found: ${JSON.stringify(params.command)}`)
     }
-    return command.run(...(params.arguments || []))
+    return Promise.resolve(command.run(...(params.arguments || [])))
 }
