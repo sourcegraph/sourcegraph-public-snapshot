@@ -110,7 +110,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     map(
                         (textArea): Update => state => {
                             if (this.props.titleMode === TitleMode.Implicit) {
-                                this.titleInputChanges.next(textArea.textAreaValue.split('\n')[0])
+                                this.titleInputChanges.next(textArea.textAreaValue.trimLeft().split('\n')[0])
                             }
                             return { ...state, textArea }
                         }
@@ -283,6 +283,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
             return comment
         }
         return comment
+            .trimLeft()
             .split('\n')
             .slice(1)
             .join('\n')
