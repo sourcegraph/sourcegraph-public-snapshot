@@ -59,7 +59,7 @@
   "sideEffects": false,
   "dependencies": {
     "bootstrap": "^4.1.3",
-    "cxp": "^10.2.0",
+    "cxp": "^11.2.0",
     "lodash-es": "^4.17.10",
     "react": "^16.4.2",
     "react-dom": "^16.4.2",
