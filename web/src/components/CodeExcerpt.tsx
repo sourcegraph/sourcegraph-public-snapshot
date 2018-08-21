@@ -42,6 +42,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
     private propsChanges = new Subject<Props>()
     private visibilityChanges = new Subject<boolean>()
     private subscriptions = new Subscription()
+    private visibilitySensorOffset = { bottom: -500 }
 
     public constructor(props: Props) {
         super(props)
@@ -109,7 +110,11 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
         }
 
         return (
-            <VisibilitySensor onChange={this.onChangeVisibility} partialVisibility={true}>
+            <VisibilitySensor
+                onChange={this.onChangeVisibility}
+                partialVisibility={true}
+                offset={this.visibilitySensorOffset}
+            >
                 <code className={`code-excerpt ${this.props.className || ''}`}>
                     {this.state.blobLines && (
                         <div

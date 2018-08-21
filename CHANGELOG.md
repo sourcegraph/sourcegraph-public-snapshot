@@ -28,6 +28,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - repo-updater backs off fetches on a repo that's failing to fetch.
 - Attempts to add a repo with an empty string for the name are checked for and ignored.
 - Fixed an issue where non-site-admin authenticated users could modify global settings (not site configuration), other organizations' settings, and other users' settings.
+- Search results are rendered more eagerly, resulting in fewer blank file previews
 
 ### Removed
 
