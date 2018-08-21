@@ -47,7 +47,6 @@ export SRC_FRONTEND_INTERNAL=localhost:3090
 export SRC_PROF_HTTP=
 export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
-export INSECURE_ALLOW_EXTENSION_TARGETS='localhost:* 127.0.0.1:* *://localhost:* *://127.0.0.1:* *.tcp.ngrok.io:* *://*.ngrok.io x.sgdev.org:* *.x.sgdev.org:* *://x.sgdev.org:* *://x.sgdev.org:*/* *://x.sgdev.org/*' # CI:LOCALHOST_OK
 export DEPLOY_TYPE=dev
 
 export SOURCEGRAPH_EXPAND_CONFIG_VARS=1 # experiment: interpolate ${var} and $var in site config JSON
