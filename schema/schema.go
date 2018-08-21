@@ -85,39 +85,20 @@ type BuiltinAuthProvider struct {
 	Type        string `json:"type"`
 }
 
-// BundleTarget description: A JavaScript file that is run as a Web Worker to provide this extension's functionality.
-type BundleTarget struct {
-	ContentType string `json:"contentType,omitempty"`
-	Type        string `json:"type"`
-	Url         string `json:"url"`
-}
-
 // CXPExtensionManifest description: The CXP extension manifest describes the extension and the features it provides.
 type CXPExtensionManifest struct {
 	ActivationEvents []string                `json:"activationEvents"`
 	Args             *map[string]interface{} `json:"args,omitempty"`
 	Contributes      *Contributions          `json:"contributes,omitempty"`
 	Description      string                  `json:"description,omitempty"`
-	Platform         ExtensionPlatform       `json:"platform"`
 	Readme           string                  `json:"readme,omitempty"`
 	Title            string                  `json:"title,omitempty"`
+	Url              string                  `json:"url"`
 }
 
 // Contributions description: Features contributed by this extension. Extensions may also register certain types of contributions dynamically.
 type Contributions struct {
 	Configuration *jsonschema.Schema `json:"configuration,omitempty"`
-}
-
-// DockerTarget description: A specification of how to run a Docker container to provide this extension's functionality.
-type DockerTarget struct {
-	Image string `json:"image"`
-	Type  string `json:"type"`
-}
-
-// ExecTarget description: An local executable to run and communicate with over stdin/stdout to provide this extension's functionality.
-type ExecTarget struct {
-	Command string `json:"command"`
-	Type    string `json:"type"`
 }
 
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
@@ -130,56 +111,6 @@ type ExperimentalFeatures struct {
 	Platform              *bool  `json:"platform,omitempty"`
 	UpdateScheduler       string `json:"updateScheduler,omitempty"`
 }
-
-// ExtensionPlatform description: The platform targeted by this extension.
-type ExtensionPlatform struct {
-	Bundle    *BundleTarget
-	Docker    *DockerTarget
-	Websocket *WebSocketTarget
-	Tcp       *TCPTarget
-	Exec      *ExecTarget
-}
-
-func (v ExtensionPlatform) MarshalJSON() ([]byte, error) {
-	if v.Bundle != nil {
-		return json.Marshal(v.Bundle)
-	}
-	if v.Docker != nil {
-		return json.Marshal(v.Docker)
-	}
-	if v.Websocket != nil {
-		return json.Marshal(v.Websocket)
-	}
-	if v.Tcp != nil {
-		return json.Marshal(v.Tcp)
-	}
-	if v.Exec != nil {
-		return json.Marshal(v.Exec)
-	}
-	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
-}
-func (v *ExtensionPlatform) UnmarshalJSON(data []byte) error {
-	var d struct {
-		DiscriminantProperty string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &d); err != nil {
-		return err
-	}
-	switch d.DiscriminantProperty {
-	case "bundle":
-		return json.Unmarshal(data, &v.Bundle)
-	case "docker":
-		return json.Unmarshal(data, &v.Docker)
-	case "exec":
-		return json.Unmarshal(data, &v.Exec)
-	case "tcp":
-		return json.Unmarshal(data, &v.Tcp)
-	case "websocket":
-		return json.Unmarshal(data, &v.Websocket)
-	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"bundle", "docker", "websocket", "tcp", "exec"})
-}
-
 type GitHubConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
 	GitURLType                  string   `json:"gitURLType,omitempty"`
@@ -420,16 +351,4 @@ type SiteConfiguration struct {
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.
 type SlackNotificationsConfig struct {
 	WebhookURL string `json:"webhookURL"`
-}
-
-// TCPTarget description: An existing TCP server that serves this extension's functionality.
-type TCPTarget struct {
-	Address string `json:"address"`
-	Type    string `json:"type"`
-}
-
-// WebSocketTarget description: An existing WebSocket URL endpoint that serves this extension's functionality.
-type WebSocketTarget struct {
-	Type string `json:"type"`
-	Url  string `json:"url"`
 }

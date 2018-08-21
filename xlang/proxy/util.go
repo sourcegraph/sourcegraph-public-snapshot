@@ -37,7 +37,7 @@ func (e *errorList) error() error {
 
 // getInitializationOptions returns the initializationOptions value to use in an LSP
 // initialize request.
-func getInitializationOptions(ctx context.Context, lang string) (map[string]interface{}, error) {
+func getInitializationOptions(ctx context.Context, lang string) map[string]interface{} {
 	// HACK: if a ${lang}_bg request, strip the trailing suffix. We should really clean up the logic
 	// that handles background language servers to deal with them in a more principled fashion. In
 	// the meantime, this unbreaks background language server requests.
@@ -46,10 +46,8 @@ func getInitializationOptions(ctx context.Context, lang string) (map[string]inte
 	}
 	for _, ls := range conf.EnabledLangservers() {
 		if ls.Language == lang {
-			return ls.InitializationOptions, nil
+			return ls.InitializationOptions
 		}
 	}
-	// TODO(extensions): Clean this up: remove these 2 similar funcs
-	// getInitializationOptions{,ForExtension}.
-	return getInitializationOptionsForExtension(ctx, lang)
+	return nil
 }

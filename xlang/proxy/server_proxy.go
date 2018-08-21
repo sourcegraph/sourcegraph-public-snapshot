@@ -506,10 +506,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*cxp.InitializeRes
 		},
 	}
 
-	initOpts, err := getInitializationOptions(ctx, c.id.mode)
-	if err != nil {
-		return nil, err
-	}
+	initOpts := getInitializationOptions(ctx, c.id.mode)
 	var mergedSettings *json.RawMessage
 	if c.id.initOpts != "" {
 		tmp := json.RawMessage(c.id.initOpts)
@@ -521,7 +518,7 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*cxp.InitializeRes
 	}
 
 	var res cxp.InitializeResult
-	err = c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
+	err := c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
 	if err != nil {
 		if errors.Cause(err) == context.DeadlineExceeded {
 			err = errors.Wrapf(err, "%s language server failed to respond to initalize within %s for rootURI %s", c.id.mode, timeout, c.id.rootURI.String())

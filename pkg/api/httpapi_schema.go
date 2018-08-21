@@ -69,7 +69,3 @@ type PhabricatorRepoCreateRequest struct {
 	Callsign string `json:"callsign"`
 	URL      string `json:"url"`
 }
-
-type ExtensionRequest struct {
-	ExtensionID string `json:"extensionID"`
-}

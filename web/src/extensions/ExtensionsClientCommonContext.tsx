@@ -17,7 +17,6 @@ import Menu from '@sourcegraph/icons/lib/Menu'
 import Warning from '@sourcegraph/icons/lib/Warning'
 import { ClientOptions } from 'cxp/module/client/client'
 import { MessageTransports } from 'cxp/module/jsonrpc2/connection'
-import { createWebSocketMessageTransports } from 'cxp/module/jsonrpc2/transports/browserWebSocket'
 import { createWebWorkerMessageTransports } from 'cxp/module/jsonrpc2/transports/webWorker'
 import { ConfigurationUpdateParams } from 'cxp/module/protocol'
 import { isEqual } from 'lodash'
@@ -111,36 +110,16 @@ export function createMessageTransports(
     options: ClientOptions
 ): Promise<MessageTransports> {
     if (!extension.manifest) {
-        throw new Error(`unable to connect to extension ${JSON.stringify(extension.id)}: no manifest found`)
+        throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no manifest found`)
     }
     if (isErrorLike(extension.manifest)) {
         throw new Error(
-            `unable to connect to extension ${JSON.stringify(extension.id)}: invalid manifest: ${
-                extension.manifest.message
-            }`
+            `unable to run extension ${JSON.stringify(extension.id)}: invalid manifest: ${extension.manifest.message}`
         )
     }
-    if (extension.manifest.platform.type === 'bundle') {
-        const APPLICATION_JSON_MIME_TYPE = 'application/json'
-        if (
-            typeof extension.manifest.platform.contentType === 'string' &&
-            extension.manifest.platform.contentType !== APPLICATION_JSON_MIME_TYPE
-        ) {
-            // Until these are supported, prevent people from
-            throw new Error(
-                `unable to run extension ${JSON.stringify(extension.id)} bundle: content type ${JSON.stringify(
-                    extension.manifest.platform.contentType
-                )} is not supported (use ${JSON.stringify(APPLICATION_JSON_MIME_TYPE)})`
-            )
-        }
-        const worker = new Worker(importScriptsBlobURL(extension.id, extension.manifest.platform.url))
+    if (extension.manifest.url) {
+        const worker = new Worker(importScriptsBlobURL(extension.id, extension.manifest.url))
         return Promise.resolve(createWebWorkerMessageTransports(worker))
     }
-
-    // Include ?mode=&repo= in the url to make it easier to find the correct WebSocket connection in (e.g.) the
-    // Chrome network inspector. It does not affect any behaviour.
-    const url = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/.api/lsp?mode=${
-        extension.id
-    }&rootUri=${options.root}`
-    return createWebSocketMessageTransports(new WebSocket(url))
+    throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)
 }

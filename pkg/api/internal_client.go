@@ -243,11 +243,6 @@ func (c *internalClient) SendEmail(ctx context.Context, message txemail.Message)
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
-func (c *internalClient) Extension(ctx context.Context, extensionID string) (extension *schema.CXPExtensionManifest, err error) {
-	err = c.postInternal(ctx, "extension", &ExtensionRequest{ExtensionID: extensionID}, &extension)
-	return extension, err
-}
-
 func (c *internalClient) DefsRefreshIndex(ctx context.Context, uri RepoURI, commitID CommitID) error {
 	return c.postInternal(ctx, "defs/refresh-index", &DefsRefreshIndexRequest{
 		RepoURI:  uri,

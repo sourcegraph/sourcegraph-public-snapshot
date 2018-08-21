@@ -107,23 +107,14 @@ func init() {
 				title += " (unavailable)"
 				readme += "\n\n## Status: unavailable\nThis language server is unavailable because no TCP address is specified for it in site configuration."
 			}
-			addr = strings.TrimPrefix(addr, "tcp://")
-
-			if ls.Address == "" && conf.IsDataCenter(conf.DeployType()) {
-				// Data Center uses an "xlang-" prefix for these.
-				addr = "xlang-" + addr
-			}
 
 			x := schema.CXPExtensionManifest{
 				Title:       title,
 				Description: description,
 				Readme:      readme,
-				Platform: schema.ExtensionPlatform{
-					Tcp: &schema.TCPTarget{
-						Type:    "tcp",
-						Address: addr,
-					},
-				},
+				// The same extension is used for each language server (for now). It is built from
+				// https://github.com/sourcegraph/cx-langserver-http.
+				Url:              "https://storage.googleapis.com/sourcegraph-cx-dev/cx-langserver-http.js",
 				ActivationEvents: []string{"onLanguage:" + ls.Language},
 			}
 			if ls.InitializationOptions != nil {
