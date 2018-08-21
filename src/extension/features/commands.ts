@@ -18,7 +18,7 @@ import { Commands, CXP } from '../api'
  * @return The {@link CXP#commands} value.
  */
 export function createExtCommands(ext: Pick<CXP<any>, 'rawConnection'>): Commands {
-    // TODO!(sqs): move CommandRegistry to somewhere general since it's now used by the controller AND extension
+    // TODO: move CommandRegistry to somewhere general since it's now used by the controller AND extension
     const commandRegistry = new CommandRegistry()
     ext.rawConnection.onRequest(ExecuteCommandRequest.type, params => commandRegistry.executeCommand(params))
     return {

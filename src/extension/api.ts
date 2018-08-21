@@ -147,7 +147,7 @@ export interface Windows extends Observable<Window[]> {
     /**
      * Display a prompt and request text input from the user.
      *
-     * @todo TODO!(sqs): always shows on the active window if any; how to pass this as a param?
+     * @todo TODO: always shows on the active window if any; should pass window as a param?
      *
      * @param message The message to show.
      * @param defaultValue The default value for the user input, or undefined for no default.
