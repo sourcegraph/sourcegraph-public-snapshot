@@ -236,6 +236,7 @@ export class DiscussionsInputMentionOverlay extends React.PureComponent<Props> {
                 err => console.error(err)
             )
         )
+        this.componentUpdates.next(this.props)
     }
 
     public componentDidUpdate(): void {

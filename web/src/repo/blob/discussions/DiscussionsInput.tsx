@@ -209,6 +209,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                 )
             ).subscribe(updateState => this.setState(state => updateState(state)), err => console.error(err))
         )
+        this.componentUpdates.next(this.props)
     }
 
     public componentDidUpdate(): void {

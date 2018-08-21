@@ -64,6 +64,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                     err => console.error(err)
                 )
         )
+        this.componentUpdates.next(this.props)
     }
 
     public componentDidUpdate(): void {
