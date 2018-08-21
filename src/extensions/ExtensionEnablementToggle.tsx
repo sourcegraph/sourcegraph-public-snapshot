@@ -3,7 +3,7 @@ import { combineLatest, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsProps } from '../context'
 import { asError, ErrorLike, isErrorLike } from '../errors'
-import { ConfigurationCascadeProps, ConfigurationSubject, ID, Settings } from '../settings'
+import { ConfigurationCascadeProps, ConfigurationSubject, Settings } from '../settings'
 import { Toggle } from '../ui/generic/Toggle'
 import { ConfiguredExtension, isExtensionEnabled } from './extension'
 
@@ -13,7 +13,7 @@ interface Props<S extends ConfigurationSubject, C extends Settings>
     extension: ConfiguredExtension
 
     /** The subject whose settings are edited when the user toggles enablement using this component. */
-    subject: ID
+    subject: Pick<ConfigurationSubject, 'id' | 'viewerCanAdminister'>
 
     /**
      * Called when this component results in the extension's enablement state being changed.
@@ -65,7 +65,7 @@ export class ExtensionEnablementToggle<S extends ConfigurationSubject, C extends
                 .pipe(
                     switchMap(enabled =>
                         this.props.extensions.context
-                            .updateExtensionSettings(this.props.subject, {
+                            .updateExtensionSettings(this.props.subject.id, {
                                 extensionID: this.props.extension.id,
                                 enabled,
                             })
@@ -113,6 +113,7 @@ export class ExtensionEnablementToggle<S extends ConfigurationSubject, C extends
                 <Toggle
                     value={isEnabled}
                     title={isEnabled ? 'Enabled (slide to disable)' : 'Disabled (slide to enable)'}
+                    disabled={!this.props.subject.viewerCanAdminister}
                     onToggle={this.onChange}
                     tabIndex={this.props.tabIndex}
                 />

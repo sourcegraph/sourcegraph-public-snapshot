@@ -2,9 +2,10 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ExtensionsProps } from '../../context'
 import { isErrorLike } from '../../errors'
-import { ConfigurationCascadeProps, ConfigurationSubject, ID, Settings } from '../../settings'
+import { ConfigurationCascadeProps, ConfigurationSubject, Settings } from '../../settings'
 import { LinkOrSpan } from '../../ui/generic/LinkOrSpan'
 import { ConfiguredExtension, isExtensionAdded, isExtensionEnabled } from '../extension'
+import { ExtensionConfigurationState } from '../ExtensionConfigurationState'
 import {
     ADDED_AND_CAN_ADMINISTER,
     ALL_CAN_ADMINISTER,
@@ -18,7 +19,7 @@ interface Props<S extends ConfigurationSubject, C extends Settings>
     extends ConfigurationCascadeProps<S, C>,
         ExtensionsProps<S, C> {
     node: ConfiguredExtension
-    subject: ID
+    subject: Pick<ConfigurationSubject, 'id' | 'viewerCanAdminister'>
     onDidUpdate: () => void
 }
 
@@ -70,57 +71,66 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
                                     </li>
                                 )}
                             <li className="extension-card-spacer" />
-                            {props.subject && (
-                                <>
-                                    {isExtensionAdded(props.configurationCascade.merged, node.id) &&
-                                        !isExtensionEnabled(props.configurationCascade.merged, node.id) && (
+                            {props.subject &&
+                                (props.subject.viewerCanAdminister ? (
+                                    <>
+                                        {isExtensionAdded(props.configurationCascade.merged, node.id) &&
+                                            !isExtensionEnabled(props.configurationCascade.merged, node.id) && (
+                                                <li className="nav-item">
+                                                    <ExtensionConfigureButton
+                                                        extension={node}
+                                                        onUpdate={props.onDidUpdate}
+                                                        header="Remove extension for..."
+                                                        itemFilter={ADDED_AND_CAN_ADMINISTER}
+                                                        itemComponent={ExtensionConfiguredSubjectItemForRemove}
+                                                        buttonClassName="btn-outline-link btn-sm py-0 mr-1"
+                                                        caret={false}
+                                                        configurationCascade={this.props.configurationCascade}
+                                                        extensions={this.props.extensions}
+                                                    >
+                                                        Remove
+                                                    </ExtensionConfigureButton>
+                                                </li>
+                                            )}
+                                        {isExtensionAdded(props.configurationCascade.merged, node.id) &&
+                                            props.subject.viewerCanAdminister && (
+                                                <li className="nav-item">
+                                                    <ExtensionEnablementToggle
+                                                        extension={node}
+                                                        subject={props.subject}
+                                                        onChange={props.onDidUpdate}
+                                                        tabIndex={-1}
+                                                        configurationCascade={this.props.configurationCascade}
+                                                        extensions={this.props.extensions}
+                                                    />
+                                                </li>
+                                            )}
+                                        {!isExtensionAdded(props.configurationCascade.merged, node.id) && (
                                             <li className="nav-item">
                                                 <ExtensionConfigureButton
                                                     extension={node}
                                                     onUpdate={props.onDidUpdate}
-                                                    header="Remove extension for..."
-                                                    itemFilter={ADDED_AND_CAN_ADMINISTER}
-                                                    itemComponent={ExtensionConfiguredSubjectItemForRemove}
-                                                    buttonClassName="btn-outline-link btn-sm py-0 mr-1"
+                                                    header="Add extension for..."
+                                                    itemFilter={ALL_CAN_ADMINISTER}
+                                                    itemComponent={ExtensionConfiguredSubjectItemForAdd}
+                                                    buttonClassName="btn-primary btn-sm"
                                                     caret={false}
                                                     configurationCascade={this.props.configurationCascade}
                                                     extensions={this.props.extensions}
                                                 >
-                                                    Remove
+                                                    Add
                                                 </ExtensionConfigureButton>
                                             </li>
                                         )}
-                                    {isExtensionAdded(props.configurationCascade.merged, node.id) && (
-                                        <li className="nav-item">
-                                            <ExtensionEnablementToggle
-                                                extension={node}
-                                                subject={props.subject}
-                                                onChange={props.onDidUpdate}
-                                                tabIndex={-1}
-                                                configurationCascade={this.props.configurationCascade}
-                                                extensions={this.props.extensions}
-                                            />
-                                        </li>
-                                    )}
-                                    {!isExtensionAdded(props.configurationCascade.merged, node.id) && (
-                                        <li className="nav-item">
-                                            <ExtensionConfigureButton
-                                                extension={node}
-                                                onUpdate={props.onDidUpdate}
-                                                header="Add extension for..."
-                                                itemFilter={ALL_CAN_ADMINISTER}
-                                                itemComponent={ExtensionConfiguredSubjectItemForAdd}
-                                                buttonClassName="btn-primary btn-sm"
-                                                caret={false}
-                                                configurationCascade={this.props.configurationCascade}
-                                                extensions={this.props.extensions}
-                                            >
-                                                Add
-                                            </ExtensionConfigureButton>
-                                        </li>
-                                    )}
-                                </>
-                            )}
+                                    </>
+                                ) : (
+                                    <li className="nav-item">
+                                        <ExtensionConfigurationState
+                                            isAdded={isExtensionAdded(props.configurationCascade.merged, node.id)}
+                                            isEnabled={isExtensionEnabled(props.configurationCascade.merged, node.id)}
+                                        />
+                                    </li>
+                                ))}
                         </ul>
                     </div>
                 </div>

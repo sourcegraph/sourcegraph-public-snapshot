@@ -16,7 +16,7 @@ import { ExtensionsProps } from '../../context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../errors'
 import { gql, graphQLContent } from '../../graphql'
 import * as GQL from '../../schema/graphqlschema'
-import { ConfigurationCascadeProps, ConfigurationSubject, ID, Settings } from '../../settings'
+import { ConfigurationCascadeProps, ConfigurationSubject, Settings } from '../../settings'
 import { ConfiguredExtension } from '../extension'
 import { ExtensionCard } from './ExtensionCard'
 
@@ -60,7 +60,7 @@ interface Props<S extends ConfigurationSubject, C extends Settings>
     extends ConfigurationCascadeProps<S, C>,
         ExtensionsProps<S, C>,
         RouteComponentProps<{}> {
-    subject: ID
+    subject: Pick<ConfigurationSubject, 'id' | 'viewerCanAdminister'>
     emptyElement?: React.ReactFragment
 }
 

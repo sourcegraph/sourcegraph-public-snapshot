@@ -363,20 +363,26 @@ export class ExtensionConfigureButton<S extends ConfigurationSubject, C extends 
             // TODO: Show error.
             return null
         }
+        const configurableSubjects = filterItems(
+            this.props.extension.id,
+            this.props.configurationCascade.subjects,
+            this.props.itemFilter
+        )
         return (
             <ButtonDropdown isOpen={this.state.dropdownOpen} toggle={this.toggle} group={this.props.caret !== false}>
-                <DropdownToggle caret={this.props.caret !== false} color="" className={this.props.buttonClassName}>
+                <DropdownToggle
+                    caret={this.props.caret !== false}
+                    color=""
+                    className={this.props.buttonClassName}
+                    disabled={configurableSubjects.length === 0}
+                >
                     {this.props.children}
                 </DropdownToggle>
                 <DropdownMenu>
                     <ExtensionConfigurationSubjectsDropdownItems
                         header={this.props.header}
                         itemComponent={this.props.itemComponent}
-                        items={filterItems(
-                            this.props.extension.id,
-                            this.props.configurationCascade.subjects,
-                            this.props.itemFilter
-                        ).map(subject => ({
+                        items={configurableSubjects.map(subject => ({
                             subject,
                             extension: this.props.extension,
                         }))}
