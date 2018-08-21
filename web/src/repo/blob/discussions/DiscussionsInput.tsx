@@ -260,7 +260,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                     <button
                         type="submit"
                         className="btn btn-primary discussions-input__button"
-                        disabled={submitting || !textArea.textAreaValue}
+                        disabled={submitting || !textArea.textAreaValue.trim()}
                     >
                         {this.props.submitLabel}
                     </button>
