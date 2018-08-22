@@ -34,27 +34,15 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## 2.10.3
 
-### Changed
-
-### Added
-
 ### Fixed
 
 - The SAML AuthnRequest signature when using HTTP redirect binding is now computed using a URL query string with correct ordering of parameters. Previously, the ordering was incorrect and caused errors when the IdP was configured to check the signature in the AuthnRequest.
 
-### Removed
-
 ## 2.10.2
-
-### Changed
-
-### Added
 
 ### Fixed
 
 - SAML IdP-initiated login previously failed with the IdP set a RelayState value. This now works.
-
-### Removed
 
 ## 2.10.1
 
@@ -63,26 +51,16 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Most `experimentalFeatures` in the site configuration now respond to configuration changes live, without requiring a server restart. As usual, you will be prompted for a restart after saving your configuration changes if one is required.
 - Gravatar image avatars are no longer displayed for committers.
 
-### Added
-
-### Fixed
-
-### Removed
-
 ## 2.10.0
 
 ### Changed
 
 - In the file tree, if a directory that contains only a single directory is expanded, its child directory is now expanded automatically.
 
-### Added
-
 ### Fixed
 
 - Fixed an issue where Sourcegraph Server would not start code intelligence containers properly when the Sourcegraph Server container was shut down non-gracefully.
 - Fixed an issue where the file tree would return an error when navigating between repositories.
-
-### Removed
 
 ## 2.9.4
 
