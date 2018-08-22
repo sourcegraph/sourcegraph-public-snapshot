@@ -12,7 +12,6 @@ import { UserAccountAccountPage } from './UserAccountAccountPage'
 import { UserAccountCreateAccessTokenPage } from './UserAccountCreateAccessTokenPage'
 import { UserAccountEmailsPage } from './UserAccountEmailsPage'
 import { UserAccountExternalAccountsPage } from './UserAccountExternalAccountsPage'
-import { UserAccountIntegrationsPage } from './UserAccountIntegrationsPage'
 import { UserAccountProfilePage } from './UserAccountProfilePage'
 import { UserAccountSidebar } from './UserAccountSidebar'
 import { UserAccountTokensPage } from './UserAccountTokensPage'
@@ -159,12 +158,6 @@ export class UserAccountArea extends React.Component<Props, State> {
                                 )}
                             />
                         )}
-                        <Route
-                            path={`${this.props.match.url}/integrations`}
-                            key="hardcoded-key"
-                            component={UserAccountIntegrationsPage}
-                            exact={true}
-                        />
                         <Route component={NotFoundPage} key="hardcoded-key" />
                     </Switch>
                 </div>

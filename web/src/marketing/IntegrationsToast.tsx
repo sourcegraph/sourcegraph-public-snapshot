@@ -2,7 +2,6 @@ import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import { History, UnregisterCallback } from 'history'
 import * as React from 'react'
 import { matchPath } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
@@ -91,11 +90,11 @@ export class IntegrationsToast extends React.Component<Props, State> {
                 subtitle="Get Sourcegraph code search while reading code on GitHub and more."
                 cta={
                     <div>
-                        <Link to="/settings/integrations">
+                        <a target="_blank" href="https://about.sourcegraph.com/docs/integrations/">
                             <button type="button" className="btn btn-primary" onClick={this.onClickConfigure}>
                                 Configure
                             </button>
-                        </Link>
+                        </a>
                     </div>
                 }
                 onDismiss={this.onDismiss}
