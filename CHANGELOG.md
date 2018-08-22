@@ -32,6 +32,15 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Removed
 
+## 2.10.4
+
+### Fixed
+
+- Fixed an issue that caused the frontend to return a HTTP 500 and log an error message like:
+  ```
+  lvl=eror msg="ui HTTP handler error response" method=GET status_code=500 error="Post http://127.0.0.1:3182/repo-lookup: context canceled"
+  ```
+
 ## 2.10.3
 
 ### Fixed
