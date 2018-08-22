@@ -22,7 +22,6 @@ describe('ExtWindows', () => {
     it('starts empty', () => {
         const { extWindows } = create()
         assert.deepStrictEqual(observableValue(extWindows), [{ isActive: true, activeComponent: null }] as Window[])
-        assert.deepStrictEqual(extWindows.all, [{ isActive: true, activeComponent: null }] as Window[])
         assert.deepStrictEqual(extWindows.activeWindow, { isActive: true, activeComponent: null } as Window)
     })
 
@@ -36,7 +35,6 @@ describe('ExtWindows', () => {
                 { isActive: true, activeComponent: { isActive: true, resource: 'file:///a' } },
             ]
             assert.deepStrictEqual(observableValue(extWindows), expectedWindows)
-            assert.deepStrictEqual(extWindows.all, expectedWindows)
             assert.deepStrictEqual(extWindows.activeWindow, expectedWindows[0])
         })
 

@@ -41,10 +41,6 @@ export class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Ob
         })
     }
 
-    public get all(): Window[] {
-        return this.value
-    }
-
     public get activeWindow(): Window | null {
         return this.value.find(({ isActive }) => isActive) || null
     }

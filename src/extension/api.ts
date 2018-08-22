@@ -149,11 +149,6 @@ export interface Configuration<C> extends Observable<C> {
  */
 export interface Windows extends Observable<Window[]> {
     /**
-     * All application windows on the client.
-     */
-    all: Window[]
-
-    /**
      * Display a prompt and request text input from the user.
      *
      * @todo TODO: always shows on the active window if any; should pass window as a param?
