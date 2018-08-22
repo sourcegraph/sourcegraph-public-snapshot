@@ -35,13 +35,6 @@ export function parseSearchURLQuery(query: string): SearchOptions | undefined {
     }
 }
 
-/**
- * Returns whether the two sets of search options are equal.
- */
-export function searchOptionsEqual(a: SearchOptions, b: SearchOptions): boolean {
-    return a.query === b.query
-}
-
 export function searchQueryForRepoRev(repoPath: string, rev?: string): string {
     return `repo:${quoteIfNeeded(`^${escapeRegExp(repoPath)}$${rev ? `@${abbreviateOID(rev)}` : ''}`)} `
 }
