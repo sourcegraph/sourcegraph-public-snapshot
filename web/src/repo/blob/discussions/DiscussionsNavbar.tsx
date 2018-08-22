@@ -15,7 +15,7 @@ interface Props {
 
 export class DiscussionsNavbar extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
-        // TODO(slimsag:discussions): ASAP: make ID number smaller and grey like on thread list
+        // TODO(slimsag:discussions): make ID number smaller and grey like on thread list
         const { threadID, threadTitle, commentID, commentContent, filePath, location } = this.props
         return (
             <div className="discussions-navbar">

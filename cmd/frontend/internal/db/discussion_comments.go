@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
-// TODO(slimsag:discussions): tests for DiscussionComments.List
-// TODO(slimsag:discussions): tests for DiscussionComments.Count
+// TODO(slimsag:discussions): future: tests for DiscussionComments.List
+// TODO(slimsag:discussions): future: tests for DiscussionComments.Count
 
 // discussionComments provides access to the `discussion_comments` table.
 //

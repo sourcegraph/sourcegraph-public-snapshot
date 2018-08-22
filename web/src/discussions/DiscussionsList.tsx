@@ -18,7 +18,7 @@ interface DiscussionNodeProps {
 const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
     const currentURL = location.pathname + location.search + location.hash
 
-    // TODO(slimsag:discussions): Improve rendering of discussions when there is no inline URL
+    // TODO(slimsag:discussions): future: Improve rendering of discussions when there is no inline URL
     const inlineURL = node.inlineURL || ''
 
     const openDiscussion = (e: any) => openFromJS(inlineURL, e)

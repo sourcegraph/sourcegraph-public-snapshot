@@ -234,7 +234,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         value={titleInputValue}
                     />
                 )}
-                {/* TODO(slimsag:discussions): ASAP: local storage persistence is not ideal here. */}
+                {/* TODO(slimsag:discussions): local storage persistence is not ideal here. */}
                 <TabsWithLocalStorageViewStatePersistence
                     tabs={[{ id: 'write', label: 'Write' }, { id: 'preview', label: 'Preview' }]}
                     storageKey="discussions-input-last-tab"

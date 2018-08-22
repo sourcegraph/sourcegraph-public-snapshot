@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// TODO(slimsag:discussions): test that DiscussionThreadsListOptions.AuthorUserID works
+// TODO(slimsag:discussions): future: test that DiscussionThreadsListOptions.AuthorUserID works
 
 func TestDiscussionThreads_CreateGet(t *testing.T) {
 	if testing.Short() {

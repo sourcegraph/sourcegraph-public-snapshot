@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
-// TODO(slimsag:discussions): test that DiscussionCommentsListOptions.AuthorUserID works
-// TODO(slimsag:discussions): test that DiscussionCommentsListOptions.ThreadID works
+// TODO(slimsag:discussions): future: test that DiscussionCommentsListOptions.AuthorUserID works
+// TODO(slimsag:discussions): future: test that DiscussionCommentsListOptions.ThreadID works
 
 func TestDiscussionComments_Create(t *testing.T) {
 	if testing.Short() {

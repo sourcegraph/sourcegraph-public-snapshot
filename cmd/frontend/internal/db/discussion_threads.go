@@ -16,8 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
-// TODO(slimsag:discussions): tests for DiscussionThreadsListOptions.TargetRepoID
-// TODO(slimsag:discussions): tests for DiscussionThreadsListOptions.TargetRepoPath
+// TODO(slimsag:discussions): future: tests for DiscussionThreadsListOptions.TargetRepoID
+// TODO(slimsag:discussions): future: tests for DiscussionThreadsListOptions.TargetRepoPath
 
 // discussionThreads provides access to the `discussion_threads*` tables.
 //
