@@ -24,7 +24,7 @@ var (
 	// Server installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseServerBuild = newBuild("2.10.2")
+	latestReleaseServerBuild = newBuild("2.10.4")
 
 	// latestReleaseDataCenterBuild is only used by sourcegraph.com to tell existing
 	// Data Center installations what the latest version is. The version here _must_ be
