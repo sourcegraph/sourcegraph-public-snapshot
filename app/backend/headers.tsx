@@ -1,5 +1,9 @@
 import { getExtensionVersionSync, getPlatformName } from '../util/context'
 
+/**
+ * getHeaders returns the required headers for making requests to Sourcegraph server instances.
+ * Requests can be blocked for various reasons and therefore the HTTP request MUST use the headers returned here.
+ */
 export function getHeaders(): { [name: string]: string } | undefined {
     if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION) {
         return undefined
@@ -16,6 +20,7 @@ export function getHeaders(): { [name: string]: string } | undefined {
     //   the server's CORS rules. (See
     //   https://stackoverflow.com/questions/17478731/whats-the-point-of-the-x-requested-with-header for more
     //   info.)
+    // - Using application/json as the Content-Type or Accept result in CORS blocking the request.
     //
     // The browsers all handle this situation differently.
     //

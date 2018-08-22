@@ -247,11 +247,7 @@ const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<Serv
     return ajax({
         method: 'POST',
         url: `${url}/.api/xlang/initialize`,
-        headers: {
-            ...getHeaders(),
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-        },
+        headers: getHeaders(),
         crossDomain: true,
         withCredentials: true,
         body: JSON.stringify(
