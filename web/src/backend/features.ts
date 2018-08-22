@@ -33,6 +33,14 @@ export interface ModeSpec {
 export { HoverMerged } // reexport to avoid needing to change all import sites - TODO(sqs): actually go change all them
 
 /**
+ * A value that can be passed to several `getXyz` functions to force the use of the old (non-CXP) code paths, even
+ * when the `platform` feature flag is enabled.
+ *
+ * This is used by pages (such as diff and compare) that are not yet supported by CXP.
+ */
+export const FORCE_NO_CXP = { cxpController: null }
+
+/**
  * Fetches hover information for the given location.
  *
  * @param ctx the location
@@ -40,9 +48,9 @@ export { HoverMerged } // reexport to avoid needing to change all import sites -
  */
 export function getHover(
     ctx: LSPTextDocumentPositionParams,
-    { cxpController }: CXPControllerProps
+    { cxpController }: CXPControllerProps | typeof FORCE_NO_CXP
 ): Observable<HoverMerged | null> {
-    if (USE_PLATFORM) {
+    if (cxpController && USE_PLATFORM) {
         return cxpController.registries.textDocumentHover.getHover({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
@@ -62,9 +70,9 @@ export function getHover(
  */
 export function getDefinition(
     ctx: LSPTextDocumentPositionParams,
-    { cxpController }: CXPControllerProps
+    { cxpController }: CXPControllerProps | typeof FORCE_NO_CXP
 ): Observable<Definition> {
-    if (USE_PLATFORM) {
+    if (cxpController && USE_PLATFORM) {
         return cxpController.registries.textDocumentDefinition.getLocation({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
@@ -89,7 +97,7 @@ export function getDefinition(
  */
 export function getJumpURL(
     ctx: LSPTextDocumentPositionParams,
-    extensions: CXPControllerProps
+    extensions: CXPControllerProps | typeof FORCE_NO_CXP
 ): Observable<string | null> {
     return getDefinition(ctx, extensions).pipe(
         map(def => {

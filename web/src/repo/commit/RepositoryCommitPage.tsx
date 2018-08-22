@@ -13,7 +13,7 @@ import { RouteComponentProps } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { getHover, getJumpURL } from '../../backend/features'
+import { FORCE_NO_CXP, getHover, getJumpURL } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
@@ -126,8 +126,8 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             ),
             pushHistory: path => this.props.history.push(path),
             logTelemetryEvent,
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
-            fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_CXP),
+            fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_CXP),
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
