@@ -234,10 +234,10 @@ func TestRegistryExtensions(t *testing.T) {
 			t.Errorf("got UpdatedAt %v, want recent", x1.UpdatedAt)
 		}
 		if x1.Name != x.Name {
-			t.Errorf("got name %q, want %q", x1.Manifest, x.Name)
+			t.Errorf("got name %q, want %q", *x1.Manifest, x.Name)
 		}
 		if x1.Manifest == nil || (*x1.Manifest != manifest) {
-			t.Errorf("got data %q, want %q", x1.Manifest, manifest)
+			t.Errorf("got data %q, want %q", *x1.Manifest, manifest)
 		}
 	})
 }
