@@ -41,11 +41,13 @@ To avoid confusion between tags and branches:
 
 #### (2) Create the release candidate
 
-1.  Push your release branch upstream. Remember the commit hash. This is the commit you will tag as the official release if testing goes well.
+Push your release branch upstream. Remember the commit hash. This is the commit you will tag as the official release if testing goes well.
+
+If you are creating a patch release, you will want to push to `docker-images-patch/server` to create a docker image that you can test.
 
 #### (3) Test
 
-1.  Look in Buildkite to find the image hash (e.g. `sha256:043dce9761dd4b48f1211e7b69c0eeb2a4ee89d5a35f889fbdaea2492fb70f5d`) for the `sourcegraph/server` docker image step ([example](https://buildkite.com/sourcegraph/sourcegraph/builds/18738#eca69bac-2efd-4e99-82bd-99e9edd986f9)) of the build you just created in (1.2).
+1.  Look in Buildkite to find the image hash (e.g. `sha256:043dce9761dd4b48f1211e7b69c0eeb2a4ee89d5a35f889fbdaea2492fb70f5d`) for the `sourcegraph/server` docker image step ([example](https://buildkite.com/sourcegraph/sourcegraph/builds/18738#eca69bac-2efd-4e99-82bd-99e9edd986f9)) of the release candidate build you just created in step 2.
 
 1.  Run the latest container from a clean state:
 
