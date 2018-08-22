@@ -25,9 +25,9 @@ func TestSearchCommitsInRepo(t *testing.T) {
 			t.Errorf("got %q, want %q", opt.Query.Pattern, want)
 		}
 		if want := []string{
+			"--no-prefix",
 			"--max-count=" + strconv.Itoa(defaultMaxSearchResults+1),
 			"--unified=0",
-			"--no-prefix",
 			"--regexp-ignore-case",
 			"rev",
 		}; !reflect.DeepEqual(opt.Args, want) {

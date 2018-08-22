@@ -98,12 +98,12 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 	maxResults := int(op.info.FileMatchLimit)
 
 	args := []string{
+		"--no-prefix",
 		"--max-count=" + strconv.Itoa(maxResults+1),
 	}
 	if op.diff {
 		args = append(args,
 			"--unified=0",
-			"--no-prefix",
 		)
 	}
 	if op.info.IsRegExp {
@@ -255,7 +255,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 			}
 		}
 
-		if rawResult.Diff != nil {
+		if rawResult.Diff != nil && op.diff {
 			results[i].diffPreview = &highlightedString{
 				value:      rawResult.Diff.Raw,
 				highlights: fromVCSHighlights(rawResult.DiffHighlights),
