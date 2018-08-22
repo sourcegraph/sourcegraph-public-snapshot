@@ -19,6 +19,7 @@ prepare:
         - .git/**
         - .github
         - .github/**
+        - .npmrc # This is added by semantic-release and would cause npm install to fail for the reviewer because it references NPM_TOKEN
         - build
         - build/**
         - ci
