@@ -7,6 +7,7 @@ import { createThread } from '../../../discussions/backend'
 import { parseHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
     repoID: GQL.ID
@@ -49,11 +50,16 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                         onTitleChange={this.onTitleChange}
                         onSubmit={this.onSubmit}
                         onSubmitErrorPrefix={'Error creating thread: '}
+                        onBeforeSubmit={this.beforeSubmit}
                         {...this.props}
                     />
                 </div>
             </div>
         )
+    }
+
+    private beforeSubmit(): void {
+        eventLogger.log('CreatedDiscussion')
     }
 
     private onSubmit = (title: string, contents: string) => {

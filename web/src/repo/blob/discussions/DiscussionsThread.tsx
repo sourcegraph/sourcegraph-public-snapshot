@@ -112,6 +112,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                             titleMode={TitleMode.None}
                             onSubmit={this.onSubmit}
                             onSubmitErrorPrefix={'Error creating comment: '}
+                            onBeforeSubmit={this.beforeSubmit}
                             {...this.props}
                         />
                     </div>
@@ -144,6 +145,10 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                   hash
               )
             : '#' + hash.toString()
+    }
+
+    private beforeSubmit(): void {
+        eventLogger.log('RepliedToDiscussion')
     }
 
     private onSubmit = (title: string, contents: string) =>
