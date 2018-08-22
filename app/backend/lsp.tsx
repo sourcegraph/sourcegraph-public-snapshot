@@ -7,7 +7,7 @@ import { Observable, of, OperatorFunction, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
-import { DidOpenTextDocumentParams, InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
+import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
     AbsoluteRepo,
     AbsoluteRepoFile,
@@ -237,19 +237,6 @@ const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<Serv
     if (!mode || unsupportedModes.has(mode)) {
         return error(Object.assign(new Error('Language not supported'), { code: EMODENOTFOUND }))
     }
-
-    const body = wrapLSP(
-        {
-            method: 'textDocument/didOpen',
-            params: {
-                textDocument: {
-                    uri: `git://${pos.repoPath}?${pos.commitID}#${pos.filePath}`,
-                },
-            } as DidOpenTextDocumentParams,
-        },
-        pos,
-        pos.filePath
-    )
     const url = repoUrlCache[pos.repoPath] || sourcegraphUrl
     if (!url) {
         throw new Error('Error fetching server capabilities. No URL found.')
@@ -259,11 +246,28 @@ const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<Serv
     }
     return ajax({
         method: 'POST',
-        url: `${url}/.api/xlang/textDocument/didOpen`,
-        headers: getHeaders(),
+        url: `${url}/.api/xlang/initialize`,
+        headers: {
+            ...getHeaders(),
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+        },
         crossDomain: true,
         withCredentials: true,
-        body: JSON.stringify(body),
+        body: JSON.stringify(
+            [
+                {
+                    id: 0,
+                    method: 'initialize',
+                    params: {
+                        rootUri: `git://${pos.repoPath}?${pos.commitID}`,
+                        initializationOptions: { mode },
+                    },
+                },
+                { id: 1, method: 'shutdown' },
+                { method: 'exit' },
+            ].filter(m => m !== null)
+        ),
         async: true,
     }).pipe(
         tap(response => {
