@@ -46,8 +46,8 @@ import {
 import { Alerts } from '../components/Alerts'
 import { BlobAnnotator } from '../components/BlobAnnotator'
 import { CodeViewToolbar } from '../components/CodeViewToolbar'
+import { ConfigureSourcegraphButton } from '../components/ConfigureSourcegraphButton'
 import { ContextualSourcegraphButton } from '../components/ContextualSourcegraphButton'
-import { EnableSourcegraphServerButton } from '../components/EnableSourcegraphServerButton'
 import { ServerAuthButton } from '../components/ServerAuthButton'
 import { SymbolsDropdownContainer } from '../components/SymbolsDropdownContainer'
 import { WithResolvedRev } from '../components/WithResolvedRev'
@@ -288,7 +288,7 @@ function inject(): void {
                 injectCodeSnippetAnnotatorOld(getRepoCodeSearchContainers(), '.d-inline-block', true)
             }
         })
-        .catch(err => console.log('could not get feature flag', err))
+        .catch(err => console.error('could not get feature flag', err))
 
     injectServerBanner()
     injectOpenOnSourcegraphButton()
@@ -1146,7 +1146,7 @@ function injectOpenOnSourcegraphButton(): void {
                     repoPath={repoPath}
                     rev={rev}
                     defaultBranch={'HEAD'}
-                    notFoundComponent={EnableSourcegraphServerButton}
+                    notFoundComponent={ConfigureSourcegraphButton}
                     requireAuthComponent={ServerAuthButton}
                 />,
                 container

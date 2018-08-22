@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { AuthRequiredError } from '../backend/errors'
-import { sourcegraphUrl } from '../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, sourcegraphUrl } from '../util/context'
 import { Button } from './Button'
 
 interface Props {
@@ -17,7 +17,7 @@ export class ServerAuthButton extends React.Component<Props, {}> {
         if (this.props.error) {
             url = this.props.error.url
         } else {
-            url = sourcegraphUrl !== 'https://sourcegraph.com' ? sourcegraphUrl : undefined
+            url = sourcegraphUrl !== DEFAULT_SOURCEGRAPH_URL ? sourcegraphUrl : undefined
         }
         if (!url) {
             return null

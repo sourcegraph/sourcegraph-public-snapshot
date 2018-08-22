@@ -7,7 +7,7 @@ import { without } from 'lodash'
 import { ajax } from 'rxjs/ajax'
 import { resolveClientConfiguration } from '../../app/backend/server'
 import initializeCli from '../../app/cli'
-import { setSourcegraphUrl } from '../../app/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../app/util/context'
 import * as browserAction from '../../extension/browserAction'
 import * as omnibox from '../../extension/omnibox'
 import * as permissions from '../../extension/permissions'
@@ -41,6 +41,12 @@ const configureOmnibox = (serverUrl: string) => {
 initializeCli(omnibox)
 
 storage.getSync(({ sourcegraphURL }) => {
+    // If no sourcegraphURL is set ensure we default back to https://sourcegraph.com.
+    if (!sourcegraphURL) {
+        storage.setSync({ sourcegraphURL: DEFAULT_SOURCEGRAPH_URL })
+        setSourcegraphUrl(DEFAULT_SOURCEGRAPH_URL)
+    }
+
     resolveClientConfiguration().subscribe(
         config => {
             // ClientConfiguration is the new storage option.
@@ -181,8 +187,8 @@ storage.addSyncMigration((items, set, remove) => {
 
     if (items.serverUrls) {
         if (items.sourcegraphURL) {
-            if (items.sourcegraphURL === 'https://sourcegraph.com') {
-                const urls = without(items.serverUrls, 'https://sourcegraph.com')
+            if (items.sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+                const urls = without(items.serverUrls, DEFAULT_SOURCEGRAPH_URL)
                 if (urls.length) {
                     set({ sourcegraphURL: urls[0], serverUrls: [urls[0]] })
                 }
@@ -244,6 +250,10 @@ runtime.onMessage((message, _, cb) => {
 
         case 'setBadgeText':
             browserAction.setBadgeText({ text: message.payload })
+            return
+        case 'openOptionsPage':
+            runtime.openOptionsPage()
+            return true
     }
 
     return

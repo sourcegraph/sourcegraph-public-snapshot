@@ -1,3 +1,4 @@
+import { isBackground } from '../app/context'
 import { getURL } from './extension'
 import safariMessager from './safari/SafariMessager'
 
@@ -5,7 +6,17 @@ const safari = window.safari
 const chrome = global.chrome
 
 export interface Message {
-    type: string
+    type:
+        | 'setIdentity'
+        | 'getIdentity'
+        | 'setEnterpriseUrl'
+        | 'setSourcegraphUrl'
+        | 'removeEnterpriseUrl'
+        | 'insertCSS'
+        | 'setBadgeText'
+        | 'openOptionsPage'
+        | 'fetched-files'
+        | 'repo-closed'
     payload?: any
 }
 
@@ -56,9 +67,18 @@ export const getContentScripts = () => {
     return []
 }
 
+/**
+ * openOptionsPage opens the options.html page. This must be called from the background script.
+ * @param callback Called when the options page is opened.
+ */
 export const openOptionsPage = (callback?: () => void): void => {
-    if (chrome && chrome.runtime && chrome.runtime.openOptionsPage) {
-        chrome.runtime.openOptionsPage(callback)
+    if (chrome && chrome.runtime) {
+        if (!isBackground) {
+            throw new Error('openOptionsPage must be called from the extension background script.')
+        }
+        if (chrome.runtime.openOptionsPage) {
+            chrome.runtime.openOptionsPage(callback)
+        }
     }
 }
 

@@ -7,6 +7,8 @@ import {
     CardBody,
     CardHeader,
     Col,
+    FormGroup,
+    FormText,
     Input,
     InputGroup,
     InputGroupAddon,
@@ -18,7 +20,7 @@ import storage from '../../../extension/storage'
 import { StorageItems } from '../../../extension/types'
 import { GQL } from '../../../types/gqlschema'
 import { fetchSite } from '../../backend/server'
-import { setSourcegraphUrl, sourcegraphUrl } from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, isSourcegraphDotCom, setSourcegraphUrl, sourcegraphUrl } from '../../util/context'
 
 interface Props {
     currentUser: GQL.IUser | undefined
@@ -29,6 +31,7 @@ interface Props {
 interface State {
     site?: GQL.ISite
     isUpdatingURL: boolean
+    error: boolean
 }
 
 export class ConnectionCard extends React.Component<Props, State> {
@@ -39,6 +42,7 @@ export class ConnectionCard extends React.Component<Props, State> {
         super(props)
         this.state = {
             isUpdatingURL: false,
+            error: false,
         }
     }
 
@@ -53,13 +57,14 @@ export class ConnectionCard extends React.Component<Props, State> {
 
     private sourcegraphServerAlert = (): JSX.Element => {
         const { permissionOrigins } = this.props
-        if (sourcegraphUrl === 'https://sourcegraph.com') {
+        if (isSourcegraphDotCom()) {
             return (
                 <div className="pt-2">
                     <Alert color="warning">Add a Server URL to enable support on private code.</Alert>
                 </div>
             )
         }
+
         const { site } = this.state
         if (!site) {
             return (
@@ -139,13 +144,13 @@ export class ConnectionCard extends React.Component<Props, State> {
         if (!site) {
             return <Badge color="danger">Unable to connect</Badge>
         }
-        if (sourcegraphUrl === 'https://sourcegraph.com') {
+        if (isSourcegraphDotCom()) {
             return <Badge color="warning">Limited functionality</Badge>
         }
         return <Badge color="success">Connected</Badge>
     }
 
-    private updateButtonClicked = () => {
+    private updateButtonClicked = (): void => {
         this.setState(
             () => ({ isUpdatingURL: true }),
             () => {
@@ -157,7 +162,7 @@ export class ConnectionCard extends React.Component<Props, State> {
         )
     }
 
-    private requestPermissions = () => {
+    private requestPermissions = (): void => {
         permissions.request(this.contentScriptUrls).then(
             () => {
                 /** noop */
@@ -168,35 +173,53 @@ export class ConnectionCard extends React.Component<Props, State> {
         )
     }
 
-    private cancelButtonClicked = () => {
+    private cancelButtonClicked = (): void => {
         this.setState(() => ({ isUpdatingURL: false }))
+        if (!this.urlInput) {
+            return
+        }
+        this.urlInput.value = sourcegraphUrl
+        this.urlInput.blur()
     }
 
-    private updateRef = (ref: HTMLInputElement | null) => {
+    private updateRef = (ref: HTMLInputElement | null): void => {
         this.urlInput = ref
     }
 
-    private saveUrlButtonClicked = () => {
+    private saveUrlButtonClicked = (): void => {
+        if (!this.urlInput) {
+            return
+        }
+        try {
+            // If there is no url in the input use https://sourcegraph.com.
+            const url = new URL(this.urlInput.value || DEFAULT_SOURCEGRAPH_URL)
+            // (TODO): Remove serverUrl setting after release.
+            storage.setSync({ sourcegraphURL: url.origin, serverUrls: [url.origin] })
+            setSourcegraphUrl(url.origin)
+            this.checkConnection()
+            this.urlInput.value = url.origin
+            this.setState({ isUpdatingURL: false, error: false })
+        } catch {
+            this.handleInvalidUrl()
+        }
+    }
+
+    private handleInvalidUrl = (): void => {
         this.setState(
-            () => ({ isUpdatingURL: false }),
+            () => ({ error: true }),
             () => {
-                if (!this.urlInput) {
-                    return
-                }
-                setSourcegraphUrl(this.urlInput.value)
-                storage.setSync({ sourcegraphURL: this.urlInput.value, serverUrls: [this.urlInput.value] })
-                this.checkConnection()
+                setTimeout(() => this.setState({ error: false }), 2000)
             }
         )
     }
 
-    private handleKeyPress = (e: React.KeyboardEvent<HTMLElement>) => {
+    private handleKeyPress = (e: React.KeyboardEvent<HTMLElement>): void => {
         if (e.charCode === 13) {
             this.saveUrlButtonClicked()
         }
     }
 
-    private checkConnection = () => {
+    private checkConnection = (): void => {
         fetchSite().subscribe(
             site => {
                 this.setState(() => ({ site }))
@@ -217,46 +240,52 @@ export class ConnectionCard extends React.Component<Props, State> {
                         <CardBody>
                             <Col className="px-0">
                                 <ListGroupItemHeading>Server connection</ListGroupItemHeading>
-                                <InputGroup>
-                                    <Input
-                                        innerRef={this.updateRef}
-                                        readOnly={!isUpdatingURL}
-                                        defaultValue={sourcegraphUrl}
-                                        onKeyPress={this.handleKeyPress}
-                                    />
-                                    {!isUpdatingURL && (
-                                        <InputGroupAddon className="input-group-append" addonType="append">
-                                            <Button
-                                                onClick={this.updateButtonClicked}
-                                                color="primary"
-                                                className="btn btn-primary btn-sm"
-                                                size="sm"
-                                            >
-                                                Update
-                                            </Button>
-                                        </InputGroupAddon>
-                                    )}
-                                    {isUpdatingURL && (
-                                        <InputGroupAddon className="input-group-append" addonType="append">
-                                            <Button
-                                                onClick={this.saveUrlButtonClicked}
-                                                color="primary"
-                                                className="btn btn-primary btn-sm"
-                                                size="sm"
-                                            >
-                                                Save
-                                            </Button>
-                                            <Button
-                                                onClick={this.cancelButtonClicked}
-                                                color="secondary"
-                                                className="btn btn-secondary btn-sm"
-                                                size="sm"
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </InputGroupAddon>
-                                    )}
-                                </InputGroup>
+                                <FormGroup>
+                                    <InputGroup>
+                                        <Input
+                                            invalid={!!this.state.error}
+                                            type="url"
+                                            required={true}
+                                            innerRef={this.updateRef}
+                                            readOnly={!isUpdatingURL}
+                                            defaultValue={sourcegraphUrl}
+                                            onKeyPress={this.handleKeyPress}
+                                        />
+                                        {!isUpdatingURL && (
+                                            <InputGroupAddon className="input-group-append" addonType="append">
+                                                <Button
+                                                    onClick={this.updateButtonClicked}
+                                                    color="primary"
+                                                    className="btn btn-primary btn-sm"
+                                                    size="sm"
+                                                >
+                                                    Update
+                                                </Button>
+                                            </InputGroupAddon>
+                                        )}
+                                        {isUpdatingURL && (
+                                            <InputGroupAddon className="input-group-append" addonType="append">
+                                                <Button
+                                                    onClick={this.saveUrlButtonClicked}
+                                                    color="primary"
+                                                    className="btn btn-primary btn-sm"
+                                                    size="sm"
+                                                >
+                                                    Save
+                                                </Button>
+                                                <Button
+                                                    onClick={this.cancelButtonClicked}
+                                                    color="secondary"
+                                                    className="btn btn-secondary btn-sm"
+                                                    size="sm"
+                                                >
+                                                    Cancel
+                                                </Button>
+                                            </InputGroupAddon>
+                                        )}
+                                    </InputGroup>
+                                    {this.state.error && <FormText color="muted">Please enter a valid URL.</FormText>}
+                                </FormGroup>
                                 <ListGroupItemHeading className="pt-3">
                                     Status: {this.serverStatusText()}
                                     <Button

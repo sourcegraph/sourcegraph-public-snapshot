@@ -37,15 +37,6 @@ function injectApplication(): void {
             return
         }
 
-        // This has a default value so it should always be defined.
-        // In safari, if the storage hasn't been initialized yet, this
-        // will be undefined so we want to return early.
-        // When safari's storage is initialized, we fire a custom event that will
-        // re-run this function.
-        if (!items.sourcegraphURL) {
-            return
-        }
-
         const srcgEl = document.getElementById('sourcegraph-chrome-webstore-item')
         const sourcegraphServerUrl = items.sourcegraphURL || 'https://sourcegraph.com'
         const isSourcegraphServer = window.location.origin === sourcegraphServerUrl || !!srcgEl

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button, Modal, ModalBody, ModalFooter, ModalHeader } from 'reactstrap'
 import storage from '../../../extension/storage'
-import { isOnlySourcegraphDotCom } from '../../util/context'
+import { isSourcegraphDotCom } from '../../util/context'
 import {
     LEARN_MORE_URL,
     QUICK_START_URL,
@@ -22,7 +22,7 @@ export class ServerModal extends React.Component<{}, State> {
 
     public componentDidMount(): void {
         storage.getSync(items => {
-            this.setState(() => ({ modal: isOnlySourcegraphDotCom(items.serverUrls) && !items.hasSeenServerModal }))
+            this.setState(() => ({ modal: isSourcegraphDotCom(items.sourcegraphURL) && !items.hasSeenServerModal }))
         })
     }
 

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import storage from '../../extension/storage'
 import { resolveRev } from '../repo/backend'
-import { sourcegraphUrl } from '../util/context'
+import { isSourcegraphDotCom } from '../util/context'
 import { NeedsRepositoryConfigurationAlert } from './NeedsRepositoryConfigurationAlert'
 import { NeedsServerConfigurationAlert } from './ServerAlert'
 
@@ -49,13 +49,11 @@ export class Alerts extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const isSourcegraphUrl = sourcegraphUrl === 'https://sourcegraph.com'
-
-        if (this.state.needsConfig && isSourcegraphUrl && this.state.alerts.includes(SERVER_CONFIGURATION_KEY)) {
+        if (this.state.needsConfig && isSourcegraphDotCom() && this.state.alerts.includes(SERVER_CONFIGURATION_KEY)) {
             return <NeedsServerConfigurationAlert alertKey={SERVER_CONFIGURATION_KEY} onClose={this.updateAlerts} />
         }
 
-        if (this.state.needsConfig && this.state.alerts.includes(REPO_CONFIGURATION_KEY) && !isSourcegraphUrl) {
+        if (this.state.needsConfig && this.state.alerts.includes(REPO_CONFIGURATION_KEY) && !isSourcegraphDotCom()) {
             return (
                 <NeedsRepositoryConfigurationAlert
                     repoPath={this.props.repoPath}

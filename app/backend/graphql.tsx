@@ -4,7 +4,7 @@ import { Observable, throwError } from 'rxjs'
 import { ajax } from 'rxjs/ajax'
 import { catchError, map } from 'rxjs/operators'
 import { GQL } from '../../types/gqlschema'
-import { isPrivateRepository, repoUrlCache, sourcegraphUrl } from '../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, isPrivateRepository, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { RequestContext } from './context'
 import { AuthRequiredError, createAuthRequiredError, NoSourcegraphURLError } from './errors'
 import { getHeaders } from './headers'
@@ -33,7 +33,7 @@ function requestGraphQL(
     authError?: AuthRequiredError
 ): Observable<GQL.IGraphQLResponseRoot> {
     // Check if it's a private repo - if so don't make a request to Sourcegraph.com.
-    if (isPrivateRepository() && url === 'https://sourcegraph.com') {
+    if (isPrivateRepository() && url === DEFAULT_SOURCEGRAPH_URL) {
         return throwError(new NoSourcegraphURLError())
     }
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
@@ -66,7 +66,7 @@ function requestGraphQL(
                 authError = createAuthRequiredError(url)
             }
 
-            if (!retry || url === 'https://sourcegraph.com') {
+            if (!retry || url === DEFAULT_SOURCEGRAPH_URL) {
                 // If there was an auth error and we tried all of the possible URLs throw the auth error.
                 if (authError) {
                     throw authError
@@ -75,7 +75,7 @@ function requestGraphQL(
                 // We just tried the last url
                 throw err
             }
-            return requestGraphQL(ctx, request, variables, 'https://sourcegraph.com', retry, authError)
+            return requestGraphQL(ctx, request, variables, DEFAULT_SOURCEGRAPH_URL, retry, authError)
         })
     )
 }

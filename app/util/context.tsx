@@ -4,10 +4,12 @@ import * as runtime from '../../extension/runtime'
 import storage from '../../extension/storage'
 import { EventLogger } from '../tracking/EventLogger'
 
+export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
+
 export let eventLogger = new EventLogger()
 
 export let sourcegraphUrl =
-    window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL || 'https://sourcegraph.com'
+    window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL || DEFAULT_SOURCEGRAPH_URL
 
 export let executeSearchEnabled = false
 
@@ -48,18 +50,13 @@ export function isBrowserExtension(): boolean {
     return window.SOURCEGRAPH_PHABRICATOR_EXTENSION || false
 }
 
-export function isOnlySourcegraphDotCom(urls: string[]): boolean {
-    // HACK (@kingy): If no urls are passed in return true since the default URL is sourcegraph.com.
-    // this fixes safari from failing after install.
-    if (!urls) {
-        return true
-    }
-    return !urls.some(url => url !== 'https://sourcegraph.com')
+export function isSourcegraphDotCom(url: string = sourcegraphUrl): boolean {
+    return url === DEFAULT_SOURCEGRAPH_URL
 }
 
 export function checkIsOnlySourcegraphDotCom(handler: (res: boolean) => void): void {
     if (window.SG_ENV === 'EXTENSION') {
-        storage.getSync(items => handler(isOnlySourcegraphDotCom(items.serverUrls)))
+        storage.getSync(items => handler(isSourcegraphDotCom(items.sourcegraphURL)))
     } else {
         handler(false)
     }
@@ -673,4 +670,11 @@ export function isPrivateRepository(): boolean {
         return false
     }
     return !!header.querySelector('.private')
+}
+
+export function canFetchForURL(url: string): boolean {
+    if (url === DEFAULT_SOURCEGRAPH_URL && isPrivateRepository()) {
+        return false
+    }
+    return true
 }

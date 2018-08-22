@@ -1,4 +1,4 @@
-import { repoUrlCache, sourcegraphUrl } from '../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { getContext } from './context'
 import { mutateGraphQLNoRetry } from './graphql'
 
@@ -12,7 +12,7 @@ export const logUserEvent = (event: string, uid: string): void => {
     const ctx = getContext({ isRepoSpecific: true })
     const url = repoUrlCache[ctx.repoKey] || sourcegraphUrl
     // Only send the request if this is a private, self-hosted Sourcegraph instance.
-    if (!url || url === 'https://sourcegraph.com') {
+    if (!url || url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
     mutateGraphQLNoRetry(

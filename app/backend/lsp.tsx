@@ -21,7 +21,7 @@ import {
     ResolvedRevSpec,
     RevSpec,
 } from '../repo'
-import { getModeFromPath, isPrivateRepository, repoUrlCache, sourcegraphUrl } from '../util/context'
+import { canFetchForURL, getModeFromPath, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL } from '../util/url'
 import { normalizeAjaxError } from './errors'
@@ -290,13 +290,6 @@ const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<Serv
         }),
         map(results => (results[0] as InitializeResult).capabilities)
     )
-}
-
-function canFetchForURL(url: string): boolean {
-    if (url === 'https://sourcegraph.com' && isPrivateRepository()) {
-        return false
-    }
-    return true
 }
 
 export interface SimpleCXPFns {

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Button } from 'reactstrap'
 import storage from '../../../extension/storage'
-import { isOnlySourcegraphDotCom } from '../../util/context'
+import { isSourcegraphDotCom } from '../../util/context'
 import {
     LEARN_MORE_URL,
     QUICK_START_URL,
@@ -22,7 +22,7 @@ export class ServerInstallation extends React.Component<{}, State> {
 
     public componentDidMount(): void {
         storage.getSync(items => {
-            this.setState(() => ({ showSection: isOnlySourcegraphDotCom(items.serverUrls) }))
+            this.setState(() => ({ showSection: isSourcegraphDotCom(items.sourcegraphURL) }))
         })
     }
 

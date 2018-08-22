@@ -4,7 +4,7 @@ import storage from '../../extension/storage'
 import { getContext } from '../backend/context'
 import { mutateGraphQL } from '../backend/graphql'
 import { isExtension } from '../context'
-import { sourcegraphUrl } from '../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, sourcegraphUrl } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { normalizeRepoPath } from './util'
 
@@ -258,7 +258,7 @@ interface CreatePhabricatorRepoOptions {
 export const createPhabricatorRepo = memoizeObservable(
     (options: CreatePhabricatorRepoOptions): Observable<void> =>
         mutateGraphQL(
-            getContext({ repoKey: options.repoPath, blacklist: ['https://sourcegraph.com'] }),
+            getContext({ repoKey: options.repoPath, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
             `mutation addPhabricatorRepo(
             $callsign: String!,
             $repoPath: String!
@@ -478,7 +478,7 @@ interface ResolveStagingOptions {
 export const resolveStagingRev = memoizeObservable(
     (options: ResolveStagingOptions): Observable<string | null> =>
         mutateGraphQL(
-            getContext({ repoKey: options.repoName, blacklist: ['https://sourcegraph.com'] }),
+            getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
             `mutation ResolveStagingRev(
                 $repoName: String!,
                 $diffID: ID!,
