@@ -1,6 +1,7 @@
 import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
 import { ExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
 import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { ISite, IUser } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import {
     ConfigurationCascadeProps,
     ConfigurationSubject,
@@ -10,6 +11,7 @@ import { ContributableMenu } from 'cxp/module/protocol'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { SimpleCXPFns } from '../backend/lsp'
+import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { CodeIntelStatusIndicator } from './CodeIntelStatusIndicator'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
@@ -37,7 +39,10 @@ interface CodeViewToolbarProps
     simpleCXPFns: SimpleCXPFns
 }
 
-interface CodeViewToolbarState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {}
+interface CodeViewToolbarState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {
+    site?: ISite
+    currentUser?: IUser
+}
 
 export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeViewToolbarState> {
     public state: CodeViewToolbarState = {
@@ -55,6 +60,8 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                 )
             )
         }
+        this.subscriptions.add(fetchSite().subscribe(site => this.setState(() => ({ site }))))
+        this.subscriptions.add(fetchCurrentUser().subscribe(currentUser => this.setState(() => ({ currentUser }))))
     }
 
     public componentWillUnmount(): void {
@@ -62,6 +69,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     }
 
     public render(): JSX.Element | null {
+        const { site, currentUser } = this.state
         return (
             <div style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}>
                 <ul className="nav">
@@ -76,12 +84,13 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                 </ul>
                 <CodeIntelStatusIndicator
                     key="code-intel-status"
-                    userIsSiteAdmin={false}
+                    userIsSiteAdmin={currentUser ? currentUser.siteAdmin : false}
                     repoPath={this.props.repoPath}
                     commitID={this.props.baseCommitID}
                     filePath={this.props.filePath}
                     onChange={this.props.onEnabledChange}
                     simpleCXPFns={this.props.simpleCXPFns}
+                    site={site}
                 />
                 <OpenOnSourcegraph
                     label={`View File${this.props.headCommitID ? ' (base)' : ''}`}

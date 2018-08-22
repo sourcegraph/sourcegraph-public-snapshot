@@ -1,3 +1,4 @@
+import { ISite } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ServerCapabilities } from 'javascript-typescript-langserver/lib/request-type'
 import { isEqual, upperFirst } from 'lodash'
@@ -5,7 +6,7 @@ import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import PowerPlugIcon from 'mdi-react/PowerPlugIcon'
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Button } from 'reactstrap'
 import { forkJoin, Observable, Subject } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '../backend/errors'
@@ -13,7 +14,7 @@ import { EMODENOTFOUND, SimpleCXPFns } from '../backend/lsp'
 import { isPhabricator } from '../context'
 import { AbsoluteRepoFile } from '../repo'
 import { fetchLangServer } from '../repo/backend'
-import { getModeFromPath } from '../util/context'
+import { getModeFromPath, sourcegraphUrl } from '../util/context'
 
 interface LangServer {
     displayName?: string
@@ -79,11 +80,12 @@ interface CodeIntelStatusIndicatorProps extends AbsoluteRepoFile {
      */
     onChange?: (enabled: boolean) => void
     simpleCXPFns: SimpleCXPFns
+    site?: ISite
 }
 interface CodeIntelStatusIndicatorState {
     /** The language server, error, undefined while loading or null if no langserver registered. */
     langServerOrError?: LangServer | ErrorLike | null
-    /** Whether code intelligence is enabled or not. */
+    /** Whether code intelligence is toggled on or off. */
     enabled: boolean
 }
 export class CodeIntelStatusIndicator extends React.Component<
@@ -173,6 +175,52 @@ export class CodeIntelStatusIndicator extends React.Component<
         this.setState(({ enabled }) => ({ enabled: !enabled }))
     }
 
+    private handleNoCodeIntelligence = (language?: string) => {
+        const { site, userIsSiteAdmin } = this.props
+        if (site) {
+            const { hasCodeIntelligence } = site
+            if (!hasCodeIntelligence) {
+                if (!userIsSiteAdmin) {
+                    return (
+                        <>
+                            <h3>Code intelligence disabled</h3>
+                            Code intelligence is disabled. Contact your site admin to enable language servers. Code
+                            intelligence is available for open source repositories.
+                        </>
+                    )
+                }
+
+                return (
+                    <>
+                        <h3>Code intelligence disabled</h3>
+                        Enable code intelligence for jump to definition, hover tooltips, and find references.
+                        <div>
+                            <Button
+                                color="primary"
+                                size="sm"
+                                className="mt-1"
+                                href={`${sourcegraphUrl}/site-admin/code-intelligence`}
+                                target="_blank"
+                            >
+                                Enable
+                            </Button>
+                        </div>
+                    </>
+                )
+            }
+        }
+        return (
+            <>
+                <h3>No language server connected</h3>
+                Check{' '}
+                <a href="http://langserver.org/" target="_blank">
+                    langserver.org
+                </a>{' '}
+                for {language} language servers
+            </>
+        )
+    }
+
     public render(): JSX.Element {
         const language = getModeFromPath(this.props.filePath)
         const buttonClass = isPhabricator
@@ -195,14 +243,7 @@ export class CodeIntelStatusIndicator extends React.Component<
                         ) : isErrorLike(this.state.langServerOrError) ? (
                             <span className="text-danger">{upperFirst(this.state.langServerOrError.message)}</span>
                         ) : this.state.langServerOrError === null ? (
-                            <>
-                                <h3>No language server connected</h3>
-                                Check{' '}
-                                <a href="http://langserver.org/" target="_blank">
-                                    langserver.org
-                                </a>{' '}
-                                for {language} language servers
-                            </>
+                            this.handleNoCodeIntelligence(language)
                         ) : (
                             <>
                                 <h3>
@@ -266,7 +307,7 @@ export class CodeIntelStatusIndicator extends React.Component<
                                 )}
                                 {this.props.userIsSiteAdmin && (
                                     <p className="mt-2 mb-0">
-                                        <Link to="/site-admin/code-intelligence">Manage</Link>
+                                        <a href={`${sourcegraphUrl}/site-admin/code-intelligence`}>Manage</a>
                                     </p>
                                 )}
                                 {this.state.langServerOrError.issuesURL && (
