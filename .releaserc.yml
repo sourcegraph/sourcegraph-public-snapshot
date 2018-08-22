@@ -44,6 +44,8 @@ publish:
     distFolder: *firefoxDistFolder
     addOnSlug: sourcegraph
     notesToReviewer: |
+      This extension is open source at https://github.com/sourcegraph/browser-extensions
+
       Running from source:
 
       1.  With npm 6 installed, run `npm install`
