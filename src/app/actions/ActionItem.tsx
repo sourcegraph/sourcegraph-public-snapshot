@@ -24,7 +24,7 @@ export interface ActionItemProps {
     variant?: 'actionItem'
     className?: string
 
-    /** Called when the item's action is run. */
+    /** Called when the item's action is run (possibly deferred). */
     onRun?: (actionID: string) => void
 
     /**
@@ -150,7 +150,12 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
                 // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
                 // commands; in that case, this only ever opens the (non-alt) action.
                 if (this.props.onRun) {
-                    this.props.onRun(action.id)
+                    // Defer calling onRun until after the URL has been opened. If we call it immediately, then in
+                    // CommandList it immediately updates the (most-recent-first) ordering of the ActionItems, and
+                    // the URL actually changes underneath us before the URL is opened. There is no harm to
+                    // deferring this call; onRun's documentation allows this.
+                    const onRun = this.props.onRun
+                    setTimeout(() => onRun(action.id))
                 }
                 return
             }
