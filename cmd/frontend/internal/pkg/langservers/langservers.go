@@ -971,7 +971,7 @@ func createLSPBridge() {
 		if !strings.Contains(err.Error(), "network with name lsp already exists") {
 			log15.Error("langservers: error creating Docker lsp bridge network", "error", err)
 		}
-		return
+		// Don't return here because we want to try connecting our container to the network below.
 	}
 
 	// Connect this container to the LSP bridge network we just created.
