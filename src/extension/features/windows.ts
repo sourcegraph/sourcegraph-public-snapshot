@@ -10,7 +10,13 @@ import {
 } from '../../protocol'
 import { Observable, SourcegraphExtensionAPI, Window, Windows } from '../api'
 
-class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observable<Window[]> {
+/**
+ * Implements the Sourcegraph extension API's {@link SourcegraphExtensionAPI#windows} value.
+ *
+ * @param ext The Sourcegraph extension API handle.
+ * @return The {@link SourcegraphExtensionAPI#windows} value.
+ */
+export class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observable<Window[]> {
     constructor(private ext: Pick<SourcegraphExtensionAPI<any>, 'rawConnection'>) {
         super([
             {
@@ -25,10 +31,10 @@ class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observabl
         })
         ext.rawConnection.onNotification(DidCloseTextDocumentNotification.type, params => {
             if (
-                this.active &&
-                this.active.activeComponent &&
-                this.active.activeComponent.resource &&
-                this.active.activeComponent.resource === params.textDocument.uri
+                this.activeWindow &&
+                this.activeWindow.activeComponent &&
+                this.activeWindow.activeComponent.resource &&
+                this.activeWindow.activeComponent.resource === params.textDocument.uri
             ) {
                 this.next([{ ...this.value[0], activeComponent: null }])
             }
@@ -39,7 +45,7 @@ class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observabl
         return this.value
     }
 
-    public get active(): Window | null {
+    public get activeWindow(): Window | null {
         return this.value.find(({ isActive }) => isActive) || null
     }
 
@@ -55,16 +61,4 @@ class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observabl
     }
 
     public readonly [Symbol.observable] = () => this
-}
-
-/**
- * Creates the Sourcegraph extension API's {@link SourcegraphExtensionAPI#windows} value.
- *
- * @param ext The Sourcegraph extension API handle.
- * @return The {@link SourcegraphExtensionAPI#windows} value.
- */
-export function createExtWindows<C>(
-    ext: Pick<SourcegraphExtensionAPI<C>, 'rawConnection'>
-): Windows & Observable<Window[]> {
-    return new ExtWindows(ext)
 }

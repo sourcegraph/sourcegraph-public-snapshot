@@ -35,6 +35,12 @@ export interface SourcegraphExtensionAPI<C = Settings> {
     windows: Windows
 
     /**
+     * The active window, or `null` if there is no active window. The active window is the window that was
+     * focused most recently.
+     */
+    activeWindow: Window | null
+
+    /**
      * Command registration and execution.
      */
     commands: Commands
@@ -146,12 +152,6 @@ export interface Windows extends Observable<Window[]> {
      * All application windows on the client.
      */
     all: Window[]
-
-    /**
-     * The active window, or `null` if there is no active window. The active window is the window that was
-     * focused most recently.
-     */
-    active: Window | null
 
     /**
      * Display a prompt and request text input from the user.

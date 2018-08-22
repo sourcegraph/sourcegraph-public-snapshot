@@ -8,14 +8,14 @@ import {
     ShowInputParams,
     ShowInputRequest,
 } from '../../protocol'
-import { Observable, Window, Windows } from '../api'
+import { Window } from '../api'
 import { observableValue } from '../util'
-import { createExtWindows } from './windows'
+import { ExtWindows } from './windows'
 
 describe('ExtWindows', () => {
-    function create(): { extWindows: Windows & Observable<Window[]>; mockConnection: MockMessageConnection } {
+    function create(): { extWindows: ExtWindows; mockConnection: MockMessageConnection } {
         const mockConnection = new MockMessageConnection()
-        const extWindows = createExtWindows({ rawConnection: mockConnection })
+        const extWindows = new ExtWindows({ rawConnection: mockConnection })
         return { extWindows, mockConnection }
     }
 
@@ -23,7 +23,7 @@ describe('ExtWindows', () => {
         const { extWindows } = create()
         assert.deepStrictEqual(observableValue(extWindows), [{ isActive: true, activeComponent: null }] as Window[])
         assert.deepStrictEqual(extWindows.all, [{ isActive: true, activeComponent: null }] as Window[])
-        assert.deepStrictEqual(extWindows.active, { isActive: true, activeComponent: null } as Window)
+        assert.deepStrictEqual(extWindows.activeWindow, { isActive: true, activeComponent: null } as Window)
     })
 
     describe('component', () => {
@@ -37,7 +37,7 @@ describe('ExtWindows', () => {
             ]
             assert.deepStrictEqual(observableValue(extWindows), expectedWindows)
             assert.deepStrictEqual(extWindows.all, expectedWindows)
-            assert.deepStrictEqual(extWindows.active, expectedWindows[0])
+            assert.deepStrictEqual(extWindows.activeWindow, expectedWindows[0])
         })
 
         it('handles when the open resource is closed', () => {

@@ -12,14 +12,17 @@ import { Commands, Configuration, ExtensionContext, Observable, SourcegraphExten
 import { createExtCommands } from './features/commands'
 import { createExtConfiguration } from './features/configuration'
 import { createExtContext } from './features/context'
-import { createExtWindows } from './features/windows'
+import { ExtWindows } from './features/windows'
 
 class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
     public readonly configuration: Configuration<C> & Observable<C>
-    public readonly windows: Windows & Observable<Window[]>
+    public get windows(): Windows & Observable<Window[]> {
+        return this._windows
+    }
     public readonly commands: Commands
     public readonly context: ExtensionContext
 
+    private _windows: ExtWindows
     private subscription = new Subscription()
 
     constructor(public readonly rawConnection: MessageConnection, public readonly initializeParams: InitializeParams) {
@@ -29,13 +32,17 @@ class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
             this,
             initializeParams.configurationCascade as ConfigurationCascade<C>
         )
-        this.windows = createExtWindows(this)
+        this._windows = new ExtWindows(this)
         this.commands = createExtCommands(this)
         this.context = createExtContext(this)
     }
 
     public get root(): URI | null {
         return this.initializeParams.root
+    }
+
+    public get activeWindow(): Window | null {
+        return this._windows.activeWindow
     }
 
     public close(): void {
