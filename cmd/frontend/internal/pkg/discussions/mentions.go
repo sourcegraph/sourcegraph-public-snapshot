@@ -145,6 +145,9 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 	if url == nil {
 		return nil // can't generate a link to this thread target type
 	}
+	q := url.Query()
+	q.Set("utm_source", "email")
+	url.RawQuery = q.Encode()
 
 	email, verified, err := db.UserEmails.GetPrimaryEmail(ctx, user.ID)
 	if err != nil && !errcode.IsNotFound(err) {
