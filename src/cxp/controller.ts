@@ -1,11 +1,12 @@
 import { ClientOptions } from 'cxp/module/client/client'
-import { ClientKey, Controller } from 'cxp/module/environment/controller'
+import { ClientKey, Controller as BaseController } from 'cxp/module/environment/controller'
 import { Environment } from 'cxp/module/environment/environment'
 import { MessageTransports } from 'cxp/module/jsonrpc2/connection'
 import { BrowserConsoleTracer } from 'cxp/module/jsonrpc2/trace'
-import { Contributions } from 'cxp/module/protocol'
-import { Unsubscribable } from 'rxjs'
+import { Contributions, ExecuteCommandParams, MessageType } from 'cxp/module/protocol'
+import { Subject, Unsubscribable } from 'rxjs'
 import { filter, map, mergeMap } from 'rxjs/operators'
+import { Notification } from '../app/notifications/notification'
 import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
@@ -17,6 +18,37 @@ import { ErrorHandler } from './errorHandler'
 import { log } from './log'
 
 /**
+ * Extends the base CXP {@link BaseController} class to add functionality that is useful to this package's
+ * consumers.
+ */
+export class Controller<S extends ConfigurationSubject, C extends Settings> extends BaseController<
+    ConfiguredExtension,
+    ConfigurationCascade<S, C>
+> {
+    /**
+     * Global notification messages that should be displayed to the user, from the following sources:
+     *
+     * - CXP window/showMessage notifications from extensions
+     * - Errors thrown or returned in command invocation
+     */
+    public readonly notifications = new Subject<Notification>()
+
+    /**
+     * Executes the command (registered in the CommandRegistry) specified in params. If an error is thrown, the error
+     * is returned *and* emitted on the {@link Controller#notifications} observable.
+     *
+     * All callers should execute commands using this method instead of calling
+     * {@link cxp:CommandRegistry#executeCommand} directly (to ensure errors are emitted as notifications).
+     */
+    public executeCommand(params: ExecuteCommandParams): Promise<any> {
+        return this.registries.commands.executeCommand(params).catch(err => {
+            this.notifications.next({ message: err, type: MessageType.Error, source: params.command })
+            return Promise.reject(err)
+        })
+    }
+}
+
+/**
  * React props or state containing the CXP controller. There should be only a single CXP controller for the whole
  * application.
  */
@@ -25,7 +57,7 @@ export interface CXPControllerProps<S extends ConfigurationSubject, C extends Se
      * The CXP controller, which is used to communicate with the extensions and manages extensions based on the CXP
      * environment.
      */
-    cxpController: Controller<ConfiguredExtension, ConfigurationCascade<S, C>>
+    cxpController: Controller<S, C>
 }
 
 /**
@@ -81,8 +113,8 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
 export function createController<S extends ConfigurationSubject, C extends Settings>(
     context: Context<S, C>,
     createMessageTransports: (extension: ConfiguredExtension, options: ClientOptions) => Promise<MessageTransports>
-): Controller<ConfiguredExtension, ConfigurationCascade<S, C>> {
-    const controller = new Controller<ConfiguredExtension, ConfigurationCascade<S, C>>({
+): Controller<S, C> {
+    const controller = new Controller<S, C>({
         clientOptions: (key: ClientKey, options: ClientOptions, extension: ConfiguredExtension) => {
             const errorHandler = new ErrorHandler(extension.id)
             return {
@@ -99,10 +131,14 @@ export function createController<S extends ConfigurationSubject, C extends Setti
     registerBuiltinClientCommands(context, controller)
     registerExtensionContributions(controller)
 
+    // Show messages (that don't need user input) as global notifications.
+    controller.showMessages.subscribe(({ message, type, extension }) =>
+        controller.notifications.next({ message, type, source: extension })
+    )
+
     function messageFromExtension(extension: string, message: string): string {
         return `From extension ${extension}:\n\n${message}`
     }
-    controller.showMessages.subscribe(({ extension, message }) => alert(messageFromExtension(extension, message)))
     controller.showMessageRequests.subscribe(({ extension, message, actions, resolve }) => {
         if (!actions || actions.length === 0) {
             alert(messageFromExtension(extension, message))
@@ -172,7 +208,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
  * {@link module:cxp/module/protocol/contribution.ActionContribution#command} for documentation.
  */
 function registerExtensionContributions<S extends ConfigurationSubject, C extends Settings>(
-    controller: Controller<ConfiguredExtension, ConfigurationCascade<S, C>>
+    controller: Controller<S, C>
 ): Unsubscribable {
     const contributions = controller.environment.environment.pipe(
         map(({ extensions }) => extensions),

@@ -62,15 +62,15 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
             this.commandExecutions
                 .pipe(
                     mergeMap(params =>
-                        from(this.props.cxpController.registries.commands.executeCommand(params)).pipe(
+                        from(this.props.cxpController.executeCommand(params)).pipe(
                             mapTo(null),
+                            catchError(error => [asError(error)]),
+                            map(c => ({ actionOrError: c })),
                             tap(() => {
                                 if (this.props.onRun) {
                                     this.props.onRun(this.props.action.id)
                                 }
                             }),
-                            catchError(error => [asError(error)]),
-                            map(c => ({ actionOrError: c })),
                             startWith<Pick<State, 'actionOrError'>>({ actionOrError: LOADING })
                         )
                     )

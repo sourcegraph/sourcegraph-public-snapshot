@@ -1,0 +1,27 @@
+.notification-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.notification-item__content {
+    flex: 1;
+    display: flex;
+}
+
+.notification-item__close {
+    cursor: pointer;
+    flex: 0;
+    font-size: 1.25rem;
+    line-height: 1.25rem;
+    background-color: transparent;
+    border-width: 0;
+    outline: 0 !important;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.notification-item__close:hover,
+.notification-item__close:focus {
+    opacity: 1;
+}
