@@ -20,6 +20,8 @@ export const featureFlagDefaults: FeatureFlags = {
     optionsPage: false,
 }
 
+// TODO(chris) Switch to Partial<StorageItems> to eliminate bugs caused by
+// missing items.
 export interface StorageItems {
     sourcegraphURL: string
     gitHubEnterpriseURL: string

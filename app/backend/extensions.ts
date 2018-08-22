@@ -41,7 +41,7 @@ const storageConfigurationCascade: Observable<
                 settings: clientSettings,
             },
         ],
-        merged: clientSettings,
+        merged: clientSettings || {},
     }))
 )
 
