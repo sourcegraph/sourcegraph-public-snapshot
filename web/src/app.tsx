@@ -3,11 +3,8 @@
 import { URL, URLSearchParams } from 'whatwg-url'
 // The polyfill does not expose createObjectURL, which we need for creating data: URIs for Web
 // Workers. So retain it.
-//
-// tslint:disable-next-line:no-unbound-method
-const createObjectURL = window.URL ? window.URL.createObjectURL : null
+URL.createObjectURL = window.URL.createObjectURL
 Object.assign(window, { URL, URLSearchParams })
-;(window.URL.createObjectURL as any) = createObjectURL
 
 // Load only a subset of the highlight.js languages
 import { registerLanguage } from 'highlight.js/lib/highlight'
