@@ -65,8 +65,8 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
     private onSubmit = (title: string, contents: string) => {
         const lpr = parseHash(window.location.hash)
 
-        // lpr is one-based, discussions is zero-based unlike LSP.
-        // lpr endings are inclusive, discussions is exclusive like LSP.
+        // lpr is one-based, discussions is zero-based (like LSP).
+        // lpr endings are inclusive, discussions is exclusive (like LSP).
         const startLine = lpr.line ? lpr.line - 1 : 0
         const startCharacter = lpr.character ? lpr.character - 1 : 0
         const endLine = lpr.endLine ? lpr.endLine : startLine + 1
