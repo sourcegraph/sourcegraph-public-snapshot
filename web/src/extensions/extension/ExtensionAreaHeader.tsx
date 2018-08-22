@@ -2,7 +2,7 @@ import { isExtensionAdded, isExtensionEnabled } from '@sourcegraph/extensions-cl
 import LockIcon from '@sourcegraph/icons/lib/Lock'
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import * as React from 'react'
-import { NavLink, RouteComponentProps } from 'react-router-dom'
+import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { isErrorLike } from '../../util/errors'
 import { ExtensionAreaPageProps } from './ExtensionArea'
 import { ExtensionConfigurationState } from './ExtensionConfigurationState'
@@ -46,17 +46,36 @@ export const ExtensionAreaHeader: React.SFC<Props> = (props: Props) => (
                             <ExtensionConfigurationState
                                 isAdded={isExtensionAdded(props.configurationCascade.merged, props.extension.id)}
                                 isEnabled={isExtensionEnabled(props.configurationCascade.merged, props.extension.id)}
-                                enabledIconOnly={true}
+                                enabledIconOnly={!!props.authenticatedUser}
                                 className="mr-2"
                             />
-                            <RegistryExtensionDetailActionButton
-                                extension={props.extension}
-                                onUpdate={props.onDidUpdateExtension}
-                                nonButtonClassName="d-block"
-                                configurationCascade={props.configurationCascade}
-                                extensions={props.extensions}
-                            />
+                            {props.authenticatedUser && (
+                                <RegistryExtensionDetailActionButton
+                                    extension={props.extension}
+                                    onUpdate={props.onDidUpdateExtension}
+                                    nonButtonClassName="d-block"
+                                    configurationCascade={props.configurationCascade}
+                                    extensions={props.extensions}
+                                />
+                            )}
                         </div>
+                        {!props.authenticatedUser && (
+                            <div className="d-flex align-items-center mt-3 mb-2">
+                                <Link to="/sign-in" className="btn btn-primary mr-2">
+                                    Sign in to{' '}
+                                    {isExtensionEnabled(props.configurationCascade.merged, props.extension.id)
+                                        ? 'configure'
+                                        : 'enable'}
+                                </Link>
+                                <small className="text-muted">
+                                    An account is required to{' '}
+                                    {isExtensionEnabled(props.configurationCascade.merged, props.extension.id)
+                                        ? ''
+                                        : 'enable and'}{' '}
+                                    configure extensions.
+                                </small>
+                            </div>
+                        )}
                     </div>
                     <div className="area-header__nav mt-3">
                         <div className="area-header__nav-links">

@@ -42,6 +42,7 @@ export function refreshCurrentUser(): Observable<never> {
                 session {
                     canSignOut
                 }
+                viewerCanAdminister
             }
         }
     `).pipe(

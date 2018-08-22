@@ -55,7 +55,10 @@ func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct
 	if canAdmin, err := subject.ViewerCanAdminister(ctx); err != nil {
 		return nil, err
 	} else if !canAdmin {
-		return nil, errors.New("viewer is not allowed to edit this configuration")
+		if !actor.FromContext(ctx).IsAuthenticated() {
+			return nil, errors.New("to edit settings, you must sign in or sign up")
+		}
+		return nil, errors.New("viewer is not allowed to edit these settings")
 	}
 
 	return &configurationMutationResolver{

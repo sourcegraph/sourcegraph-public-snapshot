@@ -33,6 +33,7 @@ registerLanguage('ruby', require('highlight.js/lib/languages/ruby'))
 registerLanguage('rust', require('highlight.js/lib/languages/rust'))
 registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
+import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
 import { createController as createCXPController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
@@ -58,7 +59,7 @@ import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
-import { CXPComponentProps, CXPEnvironmentProps } from './cxp/CXPEnvironment'
+import { CXPComponentProps, CXPEnvironmentProps, USE_PLATFORM } from './cxp/CXPEnvironment'
 import { CXPRootProps } from './cxp/CXPRoot'
 import { LinkExtension } from './extension/Link'
 import {
@@ -87,6 +88,13 @@ interface LayoutProps
         CXPComponentProps,
         CXPRootProps {
     user: GQL.IUser | null
+
+    /**
+     * The subject GraphQL node ID of the viewer, which is used to look up the viewer's configuration settings.
+     * This is either the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
+     */
+    viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
+
     isLightTheme: boolean
     onThemeChange: () => void
     navbarSearchQuery: string
@@ -174,6 +182,12 @@ interface AppState extends ConfigurationCascadeProps, ExtensionsProps, CXPEnviro
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
+
+/** A fallback configuration subject that can be constructed synchronously at initialization time. */
+const SITE_SUBJECT_NO_ADMIN: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'> = {
+    id: window.context.siteGQLID,
+    viewerCanAdminister: false,
+}
 
 /**
  * The root component
@@ -273,30 +287,49 @@ class App extends React.Component<{}, AppState> {
                 <Route path="/" render={this.renderLayout} />
             </BrowserRouter>,
             <Tooltip key={1} />,
+            USE_PLATFORM ? <Notifications key={2} cxpController={this.state.cxpController} /> : null,
         ]
     }
 
-    private renderLayout = (props: RouteComponentProps<any>) => (
-        <Layout
-            {...props}
-            /* Checked for undefined in render() above */
-            user={this.state.user as GQL.IUser | null}
-            isLightTheme={this.state.isLightTheme}
-            onThemeChange={this.onThemeChange}
-            navbarSearchQuery={this.state.navbarSearchQuery}
-            onNavbarQueryChange={this.onNavbarQueryChange}
-            showHelpPopover={this.state.showHelpPopover}
-            showHistoryPopover={this.state.showHistoryPopover}
-            onHelpPopoverToggle={this.onHelpPopoverToggle}
-            onHistoryPopoverToggle={this.onHistoryPopoverToggle}
-            configurationCascade={this.state.configurationCascade}
-            extensions={this.state.extensions}
-            cxpEnvironment={this.state.cxpEnvironment}
-            cxpOnComponentChange={this.cxpOnComponentChange}
-            cxpOnRootChange={this.cxpOnRootChange}
-            cxpController={this.state.cxpController}
-        />
-    )
+    private renderLayout = (props: RouteComponentProps<any>) => {
+        let viewerSubject: LayoutProps['viewerSubject']
+        if (this.state.user) {
+            viewerSubject = this.state.user
+        } else if (
+            this.state.configurationCascade &&
+            !isErrorLike(this.state.configurationCascade) &&
+            this.state.configurationCascade.subjects &&
+            !isErrorLike(this.state.configurationCascade.subjects) &&
+            this.state.configurationCascade.subjects.length > 0
+        ) {
+            viewerSubject = this.state.configurationCascade.subjects[0].subject
+        } else {
+            viewerSubject = SITE_SUBJECT_NO_ADMIN
+        }
+
+        return (
+            <Layout
+                {...props}
+                /* Checked for undefined in render() above */
+                user={this.state.user as GQL.IUser | null}
+                viewerSubject={viewerSubject}
+                isLightTheme={this.state.isLightTheme}
+                onThemeChange={this.onThemeChange}
+                navbarSearchQuery={this.state.navbarSearchQuery}
+                onNavbarQueryChange={this.onNavbarQueryChange}
+                showHelpPopover={this.state.showHelpPopover}
+                showHistoryPopover={this.state.showHistoryPopover}
+                onHelpPopoverToggle={this.onHelpPopoverToggle}
+                onHistoryPopoverToggle={this.onHistoryPopoverToggle}
+                configurationCascade={this.state.configurationCascade}
+                extensions={this.state.extensions}
+                cxpEnvironment={this.state.cxpEnvironment}
+                cxpOnComponentChange={this.cxpOnComponentChange}
+                cxpOnRootChange={this.cxpOnRootChange}
+                cxpController={this.state.cxpController}
+            />
+        )
+    }
 
     private onThemeChange = () => {
         this.setState(

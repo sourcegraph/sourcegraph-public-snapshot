@@ -19,6 +19,8 @@ interface Props extends RouteComponentProps<{ extensionID: string }>, Configurat
      */
     user: GQL.IUser | null
 
+    viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
+
     isLightTheme: boolean
 }
 
@@ -27,7 +29,10 @@ interface Props extends RouteComponentProps<{ extensionID: string }>, Configurat
  */
 export interface ExtensionsAreaPageProps extends ConfigurationCascadeProps, ExtensionsProps {
     /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser
+    authenticatedUser: GQL.IUser | null
+
+    /** The subject whose extensions and configuration to display. */
+    subject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
 }
 
 const LOADING: 'loading' = 'loading'
@@ -58,8 +63,7 @@ export class ExtensionsArea extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!this.props.user || !USE_PLATFORM) {
-            // TODO(sqs): allow users who are not authenticated
+        if (!USE_PLATFORM) {
             return <NotFoundPage />
         }
 
@@ -67,6 +71,7 @@ export class ExtensionsArea extends React.Component<Props, State> {
             authenticatedUser: this.props.user,
             configurationCascade: this.props.configurationCascade,
             extensions: this.props.extensions,
+            subject: this.props.viewerSubject,
         }
 
         return (
