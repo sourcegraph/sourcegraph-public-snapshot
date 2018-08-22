@@ -13,8 +13,13 @@ import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/
 import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
 import { createController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { isErrorLike } from '@sourcegraph/extensions-client-common/lib/errors'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import {
+    ConfigurationCascadeOrError,
+    ConfiguredSubject,
+    Settings,
+} from '@sourcegraph/extensions-client-common/lib/settings'
 import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
 import { Controller as CXPController } from 'cxp/module/environment/controller'
@@ -147,6 +152,61 @@ function injectCodeIntelligence(): void {
                         const fileElement = document.querySelector('tbody')
                         const gitHubCurrentFileContent = fileElement ? fileElement.innerText : ''
 
+                        // This is rather specific to extensions-client-common
+                        // and could be moved to that package in the future.
+                        const logThenDropConfigurationErrors = (
+                            cascadeOrError: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
+                        ): ConfigurationCascade<ConfigurationSubject, Settings> => {
+                            const EMPTY_CASCADE: ConfigurationCascade<ConfigurationSubject, Settings> = {
+                                subjects: [],
+                                merged: {},
+                            }
+                            if (!cascadeOrError.subjects) {
+                                console.error('invalid configuration: no configuration subjects available')
+                                return EMPTY_CASCADE
+                            }
+                            if (!cascadeOrError.merged) {
+                                console.error('invalid configuration: no merged configuration available')
+                                return EMPTY_CASCADE
+                            }
+                            if (isErrorLike(cascadeOrError.subjects)) {
+                                console.error(
+                                    `invalid configuration: error in configuration subjects: ${
+                                        cascadeOrError.subjects.message
+                                    }`
+                                )
+                                return EMPTY_CASCADE
+                            }
+                            if (isErrorLike(cascadeOrError.merged)) {
+                                console.error(
+                                    `invalid configuration: error in merged configuration: ${
+                                        cascadeOrError.merged.message
+                                    }`
+                                )
+                                return EMPTY_CASCADE
+                            }
+                            return {
+                                subjects: cascadeOrError.subjects.filter(
+                                    (subject): subject is ConfiguredSubject<ConfigurationSubject, Settings> => {
+                                        if (!subject) {
+                                            console.error('invalid configuration: no configuration subjects available')
+                                            return false
+                                        }
+                                        if (isErrorLike(subject)) {
+                                            console.error(
+                                                `invalid configuration: error in configuration subjects: ${
+                                                    subject.message
+                                                }`
+                                            )
+                                            return false
+                                        }
+                                        return true
+                                    }
+                                ),
+                                merged: cascadeOrError.merged,
+                            }
+                        }
+
                         constCXPController.environment.environment.pipe(take(1)).subscribe(previous => {
                             constCXPController.setEnvironment({
                                 root: toURI({ repoPath, commitID }),
@@ -161,7 +221,7 @@ function injectCodeIntelligence(): void {
                                     visibleRanges: [],
                                 },
                                 extensions: configuredExtensions,
-                                configuration: configurationCascade,
+                                configuration: logThenDropConfigurationErrors(configurationCascade),
                                 context: previous.context,
                             })
                         })

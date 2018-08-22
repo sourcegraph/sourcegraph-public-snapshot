@@ -2,6 +2,7 @@ import { Controller as ExtensionsContextController } from '@sourcegraph/extensio
 import { gql, graphQLContent } from '@sourcegraph/extensions-client-common/lib/graphql'
 import {
     ConfigurationCascade,
+    ConfigurationCascadeOrError,
     ConfigurationSubject,
     gqlToCascade,
     mergeSettings,
@@ -12,7 +13,7 @@ import * as JSONC from '@sqs/jsonc-parser'
 import { applyEdits } from '@sqs/jsonc-parser'
 import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { ConfigurationUpdateParams } from 'cxp/module/protocol'
-import { flatten, isEqual } from 'lodash'
+import { isEqual } from 'lodash'
 import Alert from 'mdi-react/AlertIcon'
 import MenuDown from 'mdi-react/MenuDownIcon'
 import Menu from 'mdi-react/MenuIcon'
@@ -44,11 +45,22 @@ const storageConfigurationCascade: Observable<
     }))
 )
 
-const mergeCascades: (
-    ...cascades: ConfigurationCascade<ConfigurationSubject, Settings>[]
-) => ConfigurationCascade<ConfigurationSubject, Settings> = (...cascades) => ({
-    subjects: flatten(cascades.map(cascade => cascade.subjects)),
-    merged: mergeSettings(cascades.map(cascade => cascade.merged).filter((v): v is Settings => !!v && !isErrorLike(v))),
+const mergeCascades = (
+    cascadeOrError: ConfigurationCascadeOrError<ConfigurationSubject, Settings>,
+    cascade: ConfigurationCascade<ConfigurationSubject, Settings>
+): ConfigurationCascadeOrError<ConfigurationSubject, Settings> => ({
+    subjects:
+        cascadeOrError.subjects === null
+            ? cascade.subjects
+            : isErrorLike(cascadeOrError.subjects)
+                ? cascadeOrError.subjects
+                : [...cascadeOrError.subjects, ...cascade.subjects],
+    merged:
+        cascadeOrError.merged === null
+            ? cascade.merged
+            : isErrorLike(cascadeOrError.merged)
+                ? cascadeOrError.merged
+                : mergeSettings([cascadeOrError.merged, cascade.merged]),
 })
 
 const configurationCascadeFragment = gql`

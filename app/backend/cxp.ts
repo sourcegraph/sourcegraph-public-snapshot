@@ -40,24 +40,14 @@ export function createMessageTransports(
             }`
         )
     }
-    if (['websocket', 'tcp', 'bundle'].includes(extension.manifest.platform.type)) {
-        return createPlatformMessageTransports({
-            extensionID: extension.id,
-            platform: extension.manifest.platform,
-            rootURI: options.root,
-        }).catch(err => {
-            console.error('Error connecting to', extension.id + ':', err)
-            throw err
-        })
-    } else {
-        return Promise.reject(
-            new Error(
-                `Unable to connect to CXP extension ${JSON.stringify(extension.id)}: type ${JSON.stringify(
-                    extension.manifest.platform.type
-                )} is not supported`
-            )
-        )
-    }
+    return createPlatformMessageTransports({
+        extensionID: extension.id,
+        jsBundleURL: extension.manifest.url,
+        rootURI: options.root,
+    }).catch(err => {
+        console.error('Error connecting to', extension.id + ':', err)
+        throw err
+    })
 }
 
 const mergeDisposables = (...disposables: Disposable[]): Disposable => ({
