@@ -4,6 +4,7 @@
   "timezone": "America/Los_Angeles",
   "schedule": ["on the 1st through 7th day of the month"],
   "lockFileMaintenance": {
+    "enabled": true,
     "schedule": ["on the 1st through 7th day of the month"]
   },
   "updateNotScheduled": true,
