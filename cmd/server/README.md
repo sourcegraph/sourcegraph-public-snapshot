@@ -13,10 +13,14 @@ This file documents information relevant to developers at Sourcegraph.
 #### (0) Update the CHANGELOG
 
 1.  Update [CHANGELOG](../../CHANGELOG.md) on `master` (even if the release will be cut from a different branch).
+
     1.  If this is a major or minor release, move any `Unreleased changes` under their own section
         for the new `VERSION` you are releasing.
     1.  If this is a patch release, create a new section for the `VERSION` you are releasing and
         selectively move changelog items from `Unreleased changes` to this section.
+
+    **Remove any empty sections in the changelog**.
+
 1.  Commit and `git push` this change directly to upstream `master`.
 
 #### (1) Use the proper release branch
