@@ -35,9 +35,6 @@ interface Props {
     /** Called when the submit button is clicked. */
     onSubmit: (title: string, comment: string) => Observable<void>
 
-    /** String to prefix any error thrown by onSubmit with before display. */
-    onSubmitErrorPrefix?: string
-
     /** How & whether or not to render a title input field. */
     titleMode: TitleMode
 
@@ -197,9 +194,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                             return [
                                                 state => ({
                                                     ...state,
-                                                    error: this.props.onSubmitErrorPrefix
-                                                        ? new Error(this.props.onSubmitErrorPrefix + error)
-                                                        : error,
+                                                    error,
                                                     submitting: false,
                                                 }),
                                             ]

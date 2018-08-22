@@ -3,7 +3,7 @@ import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
 import { Redirect } from 'react-router'
-import { combineLatest, Subject, Subscription } from 'rxjs'
+import { combineLatest, Subject, Subscription, throwError } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, repeatWhen, startWith, switchMap, tap } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
 import { addCommentToThread, fetchDiscussionThreadAndComments } from '../../../discussions/backend'
@@ -12,6 +12,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { formatHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
+import { asError } from '../../../util/errors'
 
 interface Props {
     threadID: GQL.ID
@@ -111,7 +112,6 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                             submitLabel="Comment"
                             titleMode={TitleMode.None}
                             onSubmit={this.onSubmit}
-                            onSubmitErrorPrefix={'Error creating comment: '}
                             onBeforeSubmit={this.beforeSubmit}
                             {...this.props}
                         />
@@ -154,6 +154,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
     private onSubmit = (title: string, contents: string) =>
         addCommentToThread(this.props.threadID, contents).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => void 0)
+            map(thread => void 0),
+            catchError(e => throwError('Error creating comment: ' + asError(e).message))
         )
 }

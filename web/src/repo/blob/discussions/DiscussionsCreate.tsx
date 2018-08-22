@@ -1,13 +1,15 @@
 import * as H from 'history'
 import InformationVariantIcon from 'mdi-react/InformationVariantIcon'
 import * as React from 'react'
-import { map, tap } from 'rxjs/operators'
+import { map, tap, catchError } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
 import { createThread } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { parseHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
+import { throwError } from 'rxjs'
+import { asError } from '../../../util/errors'
 
 interface Props {
     repoID: GQL.ID
@@ -49,7 +51,6 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                         titleMode={TitleMode.Implicit}
                         onTitleChange={this.onTitleChange}
                         onSubmit={this.onSubmit}
-                        onSubmitErrorPrefix={'Error creating thread: '}
                         onBeforeSubmit={this.beforeSubmit}
                         {...this.props}
                     />
@@ -91,7 +92,8 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                 // TODO(slimsag:discussions): ASAP: focus the new thread's range
                 this.props.history.push(location.pathname + location.search + '#' + hash.toString())
             }),
-            map(thread => void 0)
+            map(thread => void 0),
+            catchError(e => throwError('Error creating thread: ' + asError(e).message))
         )
     }
 
