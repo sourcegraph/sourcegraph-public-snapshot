@@ -87,7 +87,7 @@ If you are creating a patch release, you will want to push to `docker-images-pat
 
 ```bash
 git fetch
-git tag v$VERSION ${COMMIT_FROM_STEP_1.2}
+git tag v$VERSION ${COMMIT_FROM_STEP_2}
 git push --tags
 ```
 
