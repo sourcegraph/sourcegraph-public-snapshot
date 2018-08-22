@@ -40,9 +40,6 @@ interface Props {
 
     /** Called when the title value changes. */
     onTitleChange?: (title: string) => void
-
-    /** Called prior to onSubmit being invoked. */
-    onBeforeSubmit?: () => void
 }
 
 interface State {
@@ -169,7 +166,6 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         filter(e => (e.ctrlKey || e.metaKey) && e.key === 'Enter' && this.canSubmit())
                     )
                 ).pipe(
-                    tap(e => this.props.onBeforeSubmit && this.props.onBeforeSubmit()),
                     withLatestFrom(
                         this.textAreaChanges,
                         this.titleInputChanges.pipe(startWith('')),

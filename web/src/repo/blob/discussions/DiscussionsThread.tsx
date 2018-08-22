@@ -9,10 +9,10 @@ import * as GQL from '../../../backend/graphqlschema'
 import { addCommentToThread, fetchDiscussionThreadAndComments } from '../../../discussions/backend'
 import { DiscussionsComment } from '../../../discussions/DiscussionsComment'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { asError } from '../../../util/errors'
 import { formatHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
-import { asError } from '../../../util/errors'
 
 interface Props {
     threadID: GQL.ID
@@ -112,7 +112,6 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                             submitLabel="Comment"
                             titleMode={TitleMode.None}
                             onSubmit={this.onSubmit}
-                            onBeforeSubmit={this.beforeSubmit}
                             {...this.props}
                         />
                     </div>
@@ -147,14 +146,12 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
             : '#' + hash.toString()
     }
 
-    private beforeSubmit = (): void => {
+    private onSubmit = (title: string, contents: string) => {
         eventLogger.log('RepliedToDiscussion')
-    }
-
-    private onSubmit = (title: string, contents: string) =>
-        addCommentToThread(this.props.threadID, contents).pipe(
+        return addCommentToThread(this.props.threadID, contents).pipe(
             tap(thread => this.setState({ thread })),
             map(thread => void 0),
             catchError(e => throwError('Error creating comment: ' + asError(e).message))
         )
+    }
 }

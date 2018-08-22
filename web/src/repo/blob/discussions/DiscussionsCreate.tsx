@@ -1,15 +1,15 @@
 import * as H from 'history'
 import InformationVariantIcon from 'mdi-react/InformationVariantIcon'
 import * as React from 'react'
-import { map, tap, catchError } from 'rxjs/operators'
+import { throwError } from 'rxjs'
+import { catchError, map, tap } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
 import { createThread } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { asError } from '../../../util/errors'
 import { parseHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
-import { throwError } from 'rxjs'
-import { asError } from '../../../util/errors'
 
 interface Props {
     repoID: GQL.ID
@@ -51,7 +51,6 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                         titleMode={TitleMode.Implicit}
                         onTitleChange={this.onTitleChange}
                         onSubmit={this.onSubmit}
-                        onBeforeSubmit={this.beforeSubmit}
                         {...this.props}
                     />
                 </div>
@@ -59,11 +58,9 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
         )
     }
 
-    private beforeSubmit = (): void => {
-        eventLogger.log('CreatedDiscussion')
-    }
-
     private onSubmit = (title: string, contents: string) => {
+        eventLogger.log('CreatedDiscussion')
+
         const lpr = parseHash(window.location.hash)
 
         // lpr is one-based, discussions is zero-based (like LSP).
