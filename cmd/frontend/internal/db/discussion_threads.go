@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 // TODO(slimsag:discussions): tests for DiscussionThreadsListOptions.TargetRepoID
@@ -64,7 +65,13 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 	if newThread.DeletedAt != nil {
 		return nil, errors.New("newThread.DeletedAt must not be specified")
 	}
-	if newThread.TargetRepo == nil {
+	if newThread.TargetRepo != nil {
+		if rev := newThread.TargetRepo.Revision; rev != nil {
+			if !git.IsAbsoluteRevision(*rev) {
+				return nil, errors.New("newThread.TargetRepo.Revision must be an absolute Git revision (40 character SHA-1 hash)")
+			}
+		}
+	} else {
 		return nil, errors.New("newThread must have a target")
 	}
 

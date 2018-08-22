@@ -340,12 +340,13 @@ input DiscussionThreadTargetRepoInput {
     # talking about a specific path but rather just the repository generally.
     path: String
 
-    # The branch (but not exact revision) that the thread was referencing, if
-    # any.
+    # The branch or other human-readable Git ref (e.g. "HEAD~2", but not exact
+    # Git revision), that the thread was referencing, if any.
     branch: String
 
-    # The exact revision that the thread was referencing, if any.
-    revision: String
+    # The exact Git object ID (OID / 40-character SHA-1 hash) which the thread
+    # was referencing, if any.
+    revision: GitObjectID!
 
     # The selection that the thread was referencing, if any.
     selection: DiscussionThreadTargetRepoSelectionInput
@@ -2356,8 +2357,8 @@ type DiscussionThreadTargetRepo {
     # talking about a specific path but rather just the repository generally.
     path: String
 
-    # The branch (but not exact revision) that the thread was referencing, if
-    # any.
+    # The branch or other human-readable Git ref (e.g. "HEAD~2", but not exact
+    # Git revision), that the thread was referencing, if any.
     branch: GitRef
 
     # The exact revision that the thread was referencing, if any.

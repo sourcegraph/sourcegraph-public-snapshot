@@ -44,7 +44,7 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a9637"),
+			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
 		},
 	})
 	if err != nil {
@@ -104,7 +104,7 @@ func TestDiscussionThreads_Update(t *testing.T) {
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a9637"),
+			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
 		},
 	})
 	if err != nil {
@@ -156,7 +156,7 @@ func TestDiscussionThreads_Count(t *testing.T) {
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a9637"),
+			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
 		},
 	})
 	if err != nil {
@@ -220,7 +220,7 @@ func TestDiscussionThreads_List(t *testing.T) {
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a9637"),
+			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
 		},
 	})
 	if err != nil {
@@ -284,7 +284,7 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a9637"),
+			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
 		},
 	})
 	if err != nil {

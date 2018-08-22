@@ -44,7 +44,7 @@ func TestDiscussionComments_Create(t *testing.T) {
 			RepoID:   repo.ID,
 			Path:     strPtr("foo/bar/mux.go"),
 			Branch:   strPtr("master"),
-			Revision: strPtr("0c1a9637"),
+			Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
 		},
 	})
 	if err != nil {
