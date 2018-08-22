@@ -147,7 +147,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
             : '#' + hash.toString()
     }
 
-    private beforeSubmit(): void {
+    private beforeSubmit = (): void => {
         eventLogger.log('RepliedToDiscussion')
     }
 

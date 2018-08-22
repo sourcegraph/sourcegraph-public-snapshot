@@ -4,10 +4,10 @@ import * as React from 'react'
 import { map, tap } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
 import { createThread } from '../../../discussions/backend'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { parseHash } from '../../../util/url'
 import { DiscussionsInput, TitleMode } from './DiscussionsInput'
 import { DiscussionsNavbar } from './DiscussionsNavbar'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
     repoID: GQL.ID
@@ -58,7 +58,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
         )
     }
 
-    private beforeSubmit(): void {
+    private beforeSubmit = (): void => {
         eventLogger.log('CreatedDiscussion')
     }
 
