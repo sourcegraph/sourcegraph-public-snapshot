@@ -59,6 +59,13 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
     private onSubmit = (title: string, contents: string) => {
         const lpr = parseHash(window.location.hash)
 
+        // lpr is one-based, discussions is zero-based unlike LSP.
+        // lpr endings are inclusive, discussions is exclusive like LSP.
+        const startLine = lpr.line ? lpr.line - 1 : 0
+        const startCharacter = lpr.character ? lpr.character - 1 : 0
+        const endLine = lpr.endLine ? lpr.endLine : startLine + 1
+        const endCharacter = lpr.endCharacter || 0
+
         return createThread({
             title,
             contents,
@@ -67,17 +74,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                 path: this.props.filePath,
                 branch: this.props.rev,
                 revision: this.props.commitID,
-
-                // TODO(slimsag:discussions): ASAP: capture proper selection info here
-                selection: {
-                    startLine: lpr.line || 0,
-                    startCharacter: lpr.character || 0,
-                    endLine: lpr.endLine || 0,
-                    endCharacter: lpr.endCharacter || 0,
-                    linesBefore: '',
-                    lines: '',
-                    linesAfter: '',
-                },
+                selection: { startLine, startCharacter, endLine, endCharacter },
             },
         }).pipe(
             tap(thread => {

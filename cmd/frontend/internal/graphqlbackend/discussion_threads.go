@@ -38,9 +38,9 @@ type discussionThreadTargetRepoSelectionInput struct {
 	StartCharacter int32
 	EndLine        int32
 	EndCharacter   int32
-	LinesBefore    string
-	Lines          string
-	LinesAfter     string
+	LinesBefore    *string
+	Lines          *string
+	LinesAfter     *string
 }
 
 type discussionThreadTargetRepoInput struct {
@@ -51,7 +51,7 @@ type discussionThreadTargetRepoInput struct {
 	Selection  *discussionThreadTargetRepoSelectionInput
 }
 
-func (d *discussionThreadTargetRepoInput) convert() (*types.DiscussionThreadTargetRepo, error) {
+func (d *discussionThreadTargetRepoInput) convert(ctx context.Context) (*types.DiscussionThreadTargetRepo, error) {
 	repoID, err := unmarshalRepositoryID(d.Repository)
 	if err != nil {
 		return nil, err
@@ -67,11 +67,95 @@ func (d *discussionThreadTargetRepoInput) convert() (*types.DiscussionThreadTarg
 		tr.EndLine = &d.Selection.EndLine
 		tr.StartCharacter = &d.Selection.StartCharacter
 		tr.EndCharacter = &d.Selection.EndCharacter
-		tr.LinesBefore = &d.Selection.LinesBefore
-		tr.Lines = &d.Selection.Lines
-		tr.LinesAfter = &d.Selection.LinesAfter
+
+		if d.Selection.Lines == nil {
+			// The caller wishes for us to populate the lines using repository
+			// data. We do this now.
+			if err := d.populateLinesFromRepository(ctx); err != nil {
+				return nil, err
+			}
+		}
+		tr.LinesBefore = d.Selection.LinesBefore
+		tr.Lines = d.Selection.Lines
+		tr.LinesAfter = d.Selection.LinesAfter
 	}
 	return tr, err
+}
+
+// validate checks the validity of the input and returns an error, if any.
+func (d *discussionThreadTargetRepoInput) validate() error {
+	if d.Selection != nil {
+		// Check that the caller either specified all line fields or didn't specify
+		// any at all (specifying some but not others makes no sense, see the
+		// schema for details).
+		equal := func(a, b, c bool) bool {
+			return a != b || b != c
+		}
+		if ds := d.Selection; equal(ds.LinesBefore != nil, ds.Lines != nil, ds.LinesAfter != nil) {
+			return errors.New("DiscussionThreadTargetRepoSelectionInput: linesBefore, lines, and linesAfter must all be null or non-null (not mixed)")
+		}
+		if d.Selection.Lines == nil {
+			if d.Path == nil {
+				return errors.New("DiscussionThreadTargetRepoSelectionInput: when lines are null, path field must be specified")
+			}
+			if d.Branch == nil && d.Revision == nil {
+				return errors.New("DiscussionThreadTargetRepoSelectionInput: when lines are null, branch or revision field must be specified")
+			}
+		}
+	}
+	return nil
+}
+
+// populateLinesFromRepository populates the d.LinesBefore, d.Lines and
+// d.LinesAfter fields by pulling the information directly from the repository.
+//
+// Precondition: d.Selection != nil && d.validate() == nil
+func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context) error {
+	if d.Selection == nil {
+		panic("precondition failed")
+	}
+	repo, err := repositoryByID(ctx, d.Repository)
+	if err != nil {
+		return err
+	}
+
+	// First we must get the commit resolver with whichever revision is more
+	// precise (branches can change revisions).
+	var rev string
+	if d.Revision != nil {
+		rev = *d.Revision
+	} else if d.Branch != nil {
+		rev = *d.Branch
+	} else {
+		panic("precondition failed (protected by validation)")
+	}
+	commit, err := repo.Commit(ctx, &repositoryCommitArgs{Rev: rev})
+	if err != nil {
+		return err
+	}
+
+	// Now we can actually get the file content.
+	if d.Path == nil {
+		panic("precondition failed (protected by validation)")
+	}
+	blob, err := commit.Blob(ctx, &struct{ Path string }{Path: *d.Path})
+	if err != nil {
+		return err
+	}
+	fileContent, err := blob.Content(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Grab the lines for the selection, populate the struct, and we're finished.
+	linesBefore, lines, linesAfter := discussions.LinesForSelection(fileContent, discussions.LineRange{
+		StartLine: int(d.Selection.StartLine),
+		EndLine:   int(d.Selection.EndLine),
+	})
+	d.Selection.LinesBefore = &linesBefore
+	d.Selection.Lines = &lines
+	d.Selection.LinesAfter = &linesAfter
+	return nil
 }
 
 func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *struct {
@@ -96,7 +180,10 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		Title:        args.Input.Title,
 	}
 	if args.Input.TargetRepo != nil {
-		newThread.TargetRepo, err = args.Input.TargetRepo.convert()
+		if err := args.Input.TargetRepo.validate(); err != nil {
+			return nil, err
+		}
+		newThread.TargetRepo, err = args.Input.TargetRepo.convert(ctx)
 		if err != nil {
 			return nil, err
 		}

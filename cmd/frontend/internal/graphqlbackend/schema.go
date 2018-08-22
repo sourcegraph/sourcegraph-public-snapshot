@@ -287,7 +287,7 @@ input DiscussionThreadTargetRepoSelectionInput {
     # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
     startCharacter: Int!
 
-    # The line that the selection ends on (zero-based, inclusive).
+    # The line that the selection ends on (zero-based, exclusive).
     endLine: Int!
 
     # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
@@ -297,16 +297,31 @@ input DiscussionThreadTargetRepoSelectionInput {
     # on.
     #
     # This is an arbitrary number of lines, and may be zero lines, but typically 3.
-    linesBefore: String!
+    #
+    # If null, this information will be gathered from the repository itself
+    # automatically. This will result in an error if the selection is invalid or
+    # the DiscussionThreadTargetRepoInput specified an invalid path or
+    # branch/revision.
+    linesBefore: String
 
     # The literal textual (UTF-8) lines of the selection. i.e. all lines
-    # between and including startLine and endLine.
-    lines: String!
+    # startLine through endLine.
+    #
+    # If null, this information will be gathered from the repository itself
+    # automatically. This will result in an error if the selection is invalid or
+    # the DiscussionThreadTargetRepoInput specified an invalid path or
+    # branch/revision.
+    lines: String
 
     # The literal textual (UTF-8) lines after the line the selection ended on.
     #
     # This is an arbitrary number of lines, and may be zero lines, but typically 3.
-    linesAfter: String!
+    #
+    # If null, this information will be gathered from the repository itself
+    # automatically. This will result in an error if the selection is invalid or
+    # the DiscussionThreadTargetRepoInput specified an invalid path or
+    # branch/revision.
+    linesAfter: String
 }
 
 # A discussion thread that is centered around:
@@ -2303,7 +2318,7 @@ type DiscussionThreadTargetRepoSelection {
     # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
     startCharacter: Int!
 
-    # The line that the selection ends on (zero-based, inclusive).
+    # The line that the selection ends on (zero-based, exclusive).
     endLine: Int!
 
     # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
@@ -2316,7 +2331,7 @@ type DiscussionThreadTargetRepoSelection {
     linesBefore: String!
 
     # The literal textual (UTF-8) lines of the selection. i.e. all lines
-    # between and including startLine and endLine.
+    # startLine through endLine.
     lines: String!
 
     # The literal textual (UTF-8) lines after the line the selection ended on.
