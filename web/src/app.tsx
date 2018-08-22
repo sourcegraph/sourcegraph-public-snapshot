@@ -216,24 +216,26 @@ class App extends React.Component<{}, AppState> {
             currentUser.subscribe(user => this.setState({ user }), error => this.setState({ user: null }))
         )
 
-        this.subscriptions.add(this.state.cxpController)
+        if (USE_PLATFORM) {
+            this.subscriptions.add(this.state.cxpController)
 
-        this.subscriptions.add(
-            this.state.extensions.context.configurationCascade.subscribe(
-                v => this.onConfigurationCascadeChange(v),
-                err => console.error(err)
+            this.subscriptions.add(
+                this.state.extensions.context.configurationCascade.subscribe(
+                    v => this.onConfigurationCascadeChange(v),
+                    err => console.error(err)
+                )
             )
-        )
 
-        // Keep CXP controller's extensions up-to-date.
-        //
-        // TODO(sqs): handle loading and errors
-        this.subscriptions.add(
-            this.state.extensions.viewerConfiguredExtensions.subscribe(
-                extensions => this.onViewerConfiguredExtensionsChange(extensions),
-                err => console.error(err)
+            // Keep CXP controller's extensions up-to-date.
+            //
+            // TODO(sqs): handle loading and errors
+            this.subscriptions.add(
+                this.state.extensions.viewerConfiguredExtensions.subscribe(
+                    extensions => this.onViewerConfiguredExtensionsChange(extensions),
+                    err => console.error(err)
+                )
             )
-        )
+        }
     }
 
     public componentWillUnmount(): void {
