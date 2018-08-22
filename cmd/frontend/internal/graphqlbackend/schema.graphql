@@ -2366,6 +2366,10 @@ type DiscussionThreadTargetRepo {
 
     # The branch or other human-readable Git ref (e.g. "HEAD~2", but not exact
     # Git revision), that the thread was referencing, if any.
+    #
+    # TODO(slimsag:discussions): Consider renaming this to e.g. "ref" or
+    # something else which properly communicates "this can be any Git
+    # branch/tag/abbreviated revision/ref *except* an absolute Git revision"
     branch: GitRef
 
     # The exact revision that the thread was referencing, if any.
