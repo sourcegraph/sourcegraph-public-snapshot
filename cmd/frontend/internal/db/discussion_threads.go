@@ -203,7 +203,6 @@ func (t *discussionThreads) List(ctx context.Context, opts *DiscussionThreadsLis
 	if opts == nil {
 		return nil, errors.New("options must not be nil")
 	}
-	t.dogfoodMigration()
 	conds := t.getListSQL(opts)
 	q := sqlf.Sprintf("WHERE %s ORDER BY id DESC %s", sqlf.Join(conds, "AND"), opts.LimitOffset.SQL())
 
