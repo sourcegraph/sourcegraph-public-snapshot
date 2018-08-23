@@ -131,11 +131,10 @@ export class RegistryExtensionNewReleasePage extends React.PureComponent<Props, 
         } else {
             manifestValue = `// This extension manifest describes the extension, how to run it, and when to activate it.
 {
-  // How does Sourcegraph communicate with the extension?
-  "platform": {
-    "type": "tcp", // also supported: websocket, exec
-    "address": "host:port" // set other field(s) depending on the platform type
-  },
+  "title": "My Extension",
+
+  // The bundled JavaScript source file for the extension.
+  "url": "https://example.com/extension.js",
 
   // "*" means the extension is always activated (for every file and repository). Use "onLanguage:foo"
   // to only activate it when the user views a file associated with the "foo" language.
