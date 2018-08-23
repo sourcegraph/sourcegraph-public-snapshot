@@ -142,7 +142,7 @@
     "@sqs/jsonc-parser": "^1.0.3",
     "bootstrap": "^4.0.0",
     "copy-to-clipboard": "^3.0.7",
-    "cxp": "^11.2.0",
+    "cxp": "^11.2.1",
     "d3-axis": "^1.0.7",
     "d3-scale": "^1.0.7",
     "d3-selection": "^1.2.0",
