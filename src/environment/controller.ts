@@ -139,7 +139,17 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
         this.registries = new Registries<X, C>(this.environment)
     }
 
+    /**
+     * Detect when setEnvironment is called within a setEnvironment call, which probably means there is a bug.
+     */
+    private inSetEnvironment = false
+
     public setEnvironment(nextEnvironment: Environment<X, C>): void {
+        if (this.inSetEnvironment) {
+            throw new Error('setEnvironment may not be called recursively')
+        }
+        this.inSetEnvironment = true
+
         if (this.options.environmentFilter) {
             nextEnvironment = this.options.environmentFilter(nextEnvironment)
         }
@@ -150,11 +160,13 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
         }
 
         if (isEqual(this._environment.value, nextEnvironment)) {
+            this.inSetEnvironment = false
             return // no change
         }
 
         this._environment.next(nextEnvironment)
         this.onEnvironmentChange()
+        this.inSetEnvironment = false
     }
 
     private onEnvironmentChange(): void {
@@ -224,7 +236,9 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
         )
         client.registerFeature(
             new ContextFeature(client, (params: ContextUpdateParams) =>
-                this.setEnvironment({
+                // Set environment manually, not via Controller#setEnvironment, to avoid recursive setEnvironment calls
+                // (when this callback is called during setEnvironment's teardown of unused clients).
+                this._environment.next({
                     ...this._environment.value,
                     context: applyContextUpdate(this._environment.value.context, params.updates),
                 })
