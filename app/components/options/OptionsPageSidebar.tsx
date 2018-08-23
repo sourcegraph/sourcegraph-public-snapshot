@@ -28,7 +28,7 @@ export class OptionsPageSidebar extends React.Component<Props, {}> {
                 <div className={SIDEBAR_CARD_CLASS}>
                     <div className="card-header">
                         <SourcegraphIcon className="mr-1" />
-                        Sourcegraph extension
+                        Sourcegraph Extension
                     </div>
                     <div className="list-group list-group-flush">
                         <NavLink to="/" className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS} exact={true}>

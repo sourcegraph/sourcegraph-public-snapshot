@@ -11,7 +11,6 @@ import {
     FormText,
     Input,
     InputGroup,
-    InputGroupAddon,
     ListGroupItemHeading,
     Row,
 } from 'reactstrap'
@@ -85,7 +84,7 @@ export class ConnectionCard extends React.Component<Props, State> {
                             <Button
                                 onClick={this.requestPermissions}
                                 color="primary"
-                                className="btn btn-primary btn-sm"
+                                className="btn btn-secondary btn-sm"
                                 size="sm"
                             >
                                 Grant permissions
@@ -112,10 +111,10 @@ export class ConnectionCard extends React.Component<Props, State> {
                                     <Button
                                         href={`${sourcegraphUrl}/site-admin/code-intelligence`}
                                         color="primary"
-                                        className="btn btn-primary btn-sm"
+                                        className="btn btn-secondary btn-sm"
                                         size="sm"
                                     >
-                                        Enable code intellligence
+                                        Enable Code Intellligence
                                     </Button>
                                 </div>
                             </div>
@@ -130,7 +129,7 @@ export class ConnectionCard extends React.Component<Props, State> {
                 <Alert color="success">
                     You are connected to your server and code intelligence is fully functional.
                     <div className="pt-2">
-                        <Button href={sourcegraphUrl} color="primary" className="btn btn-primary btn-sm" size="sm">
+                        <Button href={sourcegraphUrl} color="primary" className="btn btn-secondary btn-sm" size="sm">
                             Open Sourcegraph
                         </Button>
                     </div>
@@ -142,10 +141,10 @@ export class ConnectionCard extends React.Component<Props, State> {
     private serverStatusText = (): JSX.Element => {
         const { site } = this.state
         if (!site) {
-            return <Badge color="danger">Unable to connect</Badge>
+            return <Badge color="danger">Unable to Connect</Badge>
         }
         if (isSourcegraphDotCom()) {
-            return <Badge color="warning">Limited functionality</Badge>
+            return <Badge color="warning">Limited Functionality</Badge>
         }
         return <Badge color="success">Connected</Badge>
     }
@@ -236,10 +235,10 @@ export class ConnectionCard extends React.Component<Props, State> {
             <Row className="pb-3">
                 <Col>
                     <Card>
-                        <CardHeader>Sourcegraph configuration</CardHeader>
+                        <CardHeader>Sourcegraph Configuration</CardHeader>
                         <CardBody>
                             <Col className="px-0">
-                                <ListGroupItemHeading>Server connection</ListGroupItemHeading>
+                                <ListGroupItemHeading>Server Connection</ListGroupItemHeading>
                                 <FormGroup>
                                     <InputGroup>
                                         <Input
@@ -248,40 +247,37 @@ export class ConnectionCard extends React.Component<Props, State> {
                                             required={true}
                                             innerRef={this.updateRef}
                                             readOnly={!isUpdatingURL}
+                                            disabled={!isUpdatingURL}
                                             defaultValue={sourcegraphUrl}
                                             onKeyPress={this.handleKeyPress}
                                         />
                                         {!isUpdatingURL && (
-                                            <InputGroupAddon className="input-group-append" addonType="append">
-                                                <Button
-                                                    onClick={this.updateButtonClicked}
-                                                    color="primary"
-                                                    className="btn btn-primary btn-sm"
-                                                    size="sm"
-                                                >
-                                                    Update
-                                                </Button>
-                                            </InputGroupAddon>
+                                            <Button
+                                                onClick={this.updateButtonClicked}
+                                                color="primary"
+                                                className="btn btn-secondary btn-sm"
+                                                size="sm"
+                                            >
+                                                Update
+                                            </Button>
                                         )}
                                         {isUpdatingURL && (
-                                            <InputGroupAddon className="input-group-append" addonType="append">
+                                            <div>
                                                 <Button
                                                     onClick={this.saveUrlButtonClicked}
                                                     color="primary"
-                                                    className="btn btn-primary btn-sm"
-                                                    size="sm"
+                                                    className="btn btn-primary"
                                                 >
                                                     Save
                                                 </Button>
                                                 <Button
                                                     onClick={this.cancelButtonClicked}
                                                     color="secondary"
-                                                    className="btn btn-secondary btn-sm"
-                                                    size="sm"
+                                                    className="btn btn-secondary"
                                                 >
                                                     Cancel
                                                 </Button>
-                                            </InputGroupAddon>
+                                            </div>
                                         )}
                                     </InputGroup>
                                     {this.state.error && <FormText color="muted">Please enter a valid URL.</FormText>}
@@ -291,10 +287,10 @@ export class ConnectionCard extends React.Component<Props, State> {
                                     <Button
                                         onClick={this.checkConnection}
                                         size="sm"
-                                        color="primary"
+                                        color="secondary"
                                         className="float-right"
                                     >
-                                        Check connection
+                                        Check Connection
                                     </Button>
                                 </ListGroupItemHeading>
                                 {this.sourcegraphServerAlert()}

@@ -6,7 +6,7 @@ export const ConfigWarning: React.SFC<{}> = () => (
         <Alert className="options__alert-warning">
             Warning: changing the below options may break your browser extension.{' '}
             <a href="https://about.sourcegraph.com/docs/server/" className="options__alert-link" target="_blank">
-                Learn more
+                Learn More
             </a>
             .
         </Alert>

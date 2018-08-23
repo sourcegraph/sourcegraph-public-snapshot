@@ -41,7 +41,7 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
             <Row className="pb-3">
                 <Col>
                     <Card>
-                        <CardHeader>Feature flags</CardHeader>
+                        <CardHeader>Feature Flags</CardHeader>
                         <CardBody>
                             <Form>
                                 <FormGroup check={true}>

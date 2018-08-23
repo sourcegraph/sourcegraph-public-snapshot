@@ -88,7 +88,7 @@ export class SupportedCodeHosts extends React.Component<{}, State> {
     public render(): JSX.Element | null {
         return (
             <div>
-                <div className="options__section-header">Supported code hosts</div>
+                <div className="options__section-header">Supported Code Hosts</div>
                 <div className="options__section-contents">
                     <ButtonGroup>
                         <Button disabled={true}>GitHub</Button> <Button disabled={true}>Phabricator</Button>{' '}
