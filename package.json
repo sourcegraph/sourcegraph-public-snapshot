@@ -30,7 +30,7 @@
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --opts mocha.opts",
     "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",
     "watch:typecheck": "tsc -p tsconfig.json -w",
-    "watch:build:assets": "nodemon --watch src/protocol/contribution.ts --exec 'npm run build:assets || exit 1'",
+    "watch:build:assets": "npm run build:assets && nodemon --watch src/protocol/contribution.ts --exec 'npm run build:assets || exit 1'",
     "watch:build:commonjs": "tsc -p tsconfig.dist.commonjs.json -w",
     "watch:build:module": "tsc -p tsconfig.dist.module.json -w",
     "watch:build": "concurrently --kill-others 'npm:watch:build:*'",
