@@ -29,8 +29,6 @@ prepare:
         - cypress/**
         - node_modules
         - node_modules/**
-        - Sourcegraph.safariextension
-        - Sourcegraph.safariextension/**
         - sources.zip
   # Update Chrome manifest version and zip extension
   - path: semantic-release-chrome
