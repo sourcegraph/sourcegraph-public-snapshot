@@ -39,8 +39,6 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
             command: 'updateConfiguration',
             run: (...anyArgs: any[]): Promise<void> => {
                 const args = anyArgs as ActionContributionClientCommandUpdateConfiguration['commandArguments']
-                // Return with .toPromise() so that it gets executed (otherwise, the observable will never be
-                // subscribed to and will never execute the update operation).
                 return updateConfiguration(context, convertUpdateConfigurationCommandArgs(args))
             },
         })
