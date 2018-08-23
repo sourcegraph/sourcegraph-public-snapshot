@@ -165,7 +165,9 @@ export class Client implements Unsubscribable {
                 connection.listen()
                 return this.initialize(connection)
             })
-            .then(null, () => {
+            .then(null, err => {
+                console.error(err)
+
                 // Only update state if it pertains to the same connection we started with.
                 if (activateConnection === this.connection && this._state.value !== ClientState.Stopped) {
                     this._state.next(ClientState.ActivateFailed)
