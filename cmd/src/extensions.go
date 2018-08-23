@@ -10,12 +10,15 @@ var extensionsCommands commander
 func init() {
 	usage := `'src extensions' is a tool that manages extensions in the extension registry on a Sourcegraph instance.
 
+EXPERIMENTAL: Extensions are experimental functionality on Sourcegraph and in the 'src' tool.
+
 Usage:
 
 	src extensions command [command options]
 
 The commands are:
 
+	publish    publish the extension in the current directory
 	list       lists extensions
 	get        gets an extension
 

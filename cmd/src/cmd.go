@@ -1,10 +1,12 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 // command is a subcommand handler and its flag set.
@@ -125,3 +127,16 @@ type exitCodeError struct {
 const (
 	graphqlErrorsExitCode = 2
 )
+
+func didYouMeanOtherCommand(actual string, suggested []string) *command {
+	fullSuggestions := make([]string, len(suggested))
+	for i, s := range suggested {
+		fullSuggestions[i] = "src " + s
+	}
+	msg := fmt.Sprintf("src: unknown subcommand %q\n\nDid you mean:\n\n\t%s", actual, strings.Join(fullSuggestions, "\n\t"))
+	return &command{
+		flagSet:   flag.NewFlagSet(actual, flag.ExitOnError),
+		handler:   func(args []string) error { return errors.New(msg) },
+		usageFunc: func() { log.Println(msg) },
+	}
+}
