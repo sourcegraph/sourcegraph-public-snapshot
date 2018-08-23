@@ -164,6 +164,11 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     uri: './contribution.schema.json',
                     schema: contributionSchema,
                 },
+                {
+                    // This is the absolute URI of the contributions JSON Schema.
+                    uri: 'https://sourcegraph.com/v1/contribution.schema.json#',
+                    schema: contributionSchema,
+                },
             ],
         })
 
