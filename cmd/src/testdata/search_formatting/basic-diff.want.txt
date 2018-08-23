@@ -55,7 +55,7 @@
 
 [38;5;239m--------------------------------------------------------------------------------
 [0m[38;5;239m([0m[38;5;237mhttps://sourcegraph.com/github.com/golang/oauth2/-/commit/921ae394b9430ed4fb549668d7b087601bd60a81[0m[38;5;239m)
-[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mBob Briski[0m [38;5;68m"jira: add JIRA provider"[0m [38;5;23m(4 months ago)[0m
+[0m[0m[38;5;23mgithub.com/golang/oauth2[0m › [38;5;2mBob Briski[0m [38;5;68m"jira: add JIRA provider"[0m [38;5;23m(5 months ago)[0m
 [38;5;239m--------------------------------------------------------------------------------
 [0m  diff --git jira/jira.go jira/jira.go
   new file mode 100644
