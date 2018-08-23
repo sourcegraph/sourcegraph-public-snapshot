@@ -25,11 +25,12 @@ The options are:
 
 The commands are:
 
-	search        search for results on Sourcegraph
-	api           interacts with the Sourcegraph GraphQL API
-	repos,repo    manages repositories
-	users,user    manages users
-	orgs,org      manages organizations
+	search          search for results on Sourcegraph
+	api             interacts with the Sourcegraph GraphQL API
+	repos,repo      manages repositories
+	users,user      manages users
+	orgs,org        manages organizations
+	extensions,ext  manages extensions (experimental)
 
 Use "src [command] -h" for more information about a command.
 
