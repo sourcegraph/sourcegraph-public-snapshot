@@ -38,7 +38,7 @@ import { Extension } from './extension'
 import { Registries } from './registries'
 
 /** The minimal unique identifier for a client. */
-export interface ClientKey extends Pick<InitializeParams, 'root' | 'initializationOptions'> {
+export interface ClientKey extends Pick<InitializeParams, 'root'> {
     id: string
 }
 
@@ -191,7 +191,6 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
             // Construct client.
             const clientOptions: ClientOptions = {
                 root: key.root,
-                initializationOptions: { ...key.initializationOptions }, // key is immutable so we can diff it
                 documentSelector: ['*'],
                 createMessageTransports: null as any, // will be overwritten by Object.assign call below
             }
@@ -287,15 +286,7 @@ function computeClients<X extends Extension>(
         return clients
     }
     for (const x of environment.extensions) {
-        clients.push({
-            id: x.id,
-            root: environment.root,
-            initializationOptions: {
-                // TODO(sqs): Add a type for InitializationOptions sent to the Sourcegraph CXP proxy.
-                session: 'cxp', // the special 'cxp' value makes each connection an isolated session
-                mode: x.id,
-            },
-        })
+        clients.push({ id: x.id, root: environment.root })
     }
     return clients
 }
