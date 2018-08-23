@@ -51,7 +51,10 @@
     "Contributions": {
       "description": "Features contributed by this extension. Extensions may also register certain types of contributions dynamically.",
       "type": "object",
-      "additionalProperties": false,
+      "propertyNames": {
+        "$comment": "This properties object must be manually updated to reflect all properties in the allOf entries, so that the JSON Schema does not allow unknown properties in this object.",
+        "enum": ["configuration", "actions", "menus"]
+      },
       "allOf": [
         {
           "type": "object",
