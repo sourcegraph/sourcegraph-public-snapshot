@@ -7,6 +7,8 @@ export interface ActionsProps<S extends ConfigurationSubject, C extends Settings
     extends CXPControllerProps<S, C>,
         ExtensionsProps<S, C> {
     menu: ContributableMenu
+    actionItemClass?: string
+    listClass?: string
 }
 
 export interface ActionsState {

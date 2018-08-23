@@ -37,13 +37,14 @@ export class ActionsNavItems<S extends ConfigurationSubject, C extends Settings>
         return (
             <>
                 {getContributedActionItems(this.state.contributions, this.props.menu).map((item, i) => (
-                    <li key={i} className="nav-item">
+                    <li key={i} className={this.props.listClass || 'nav-item'}>
                         <ActionItem
                             key={i}
                             {...item}
                             variant="actionItem"
                             cxpController={this.props.cxpController}
                             extensions={this.props.extensions}
+                            className={this.props.actionItemClass}
                         />
                     </li>
                 ))}

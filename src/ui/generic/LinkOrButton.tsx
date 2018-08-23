@@ -40,6 +40,7 @@ export class LinkOrButton extends React.PureComponent<Props> {
         const commonProps = {
             className,
             'data-tooltip': this.props['data-tooltip'],
+            'aria-label': this.props['data-tooltip'],
             tabIndex: 0,
             onClick: this.onAnchorClick,
             onKeyPress: this.onAnchorKeyPress,
