@@ -134,7 +134,7 @@ func TestRegistryExtensions(t *testing.T) {
 	xu := createAndGet(t, user.ID, 0, "xu")
 	xo := createAndGet(t, 0, org.ID, "xo")
 
-	t.Run("List/Count publishers", func(t *testing.T) {
+	t.Run("List/Count/Get publishers", func(t *testing.T) {
 		publishers, err := RegistryExtensions.ListPublishers(ctx, RegistryPublishersListOptions{})
 		if err != nil {
 			t.Fatal(err)
@@ -150,6 +150,19 @@ func TestRegistryExtensions(t *testing.T) {
 			t.Fatal(err)
 		} else if want := 2; n != 2 {
 			t.Errorf("got count %d, want %d", n, want)
+		}
+
+		for _, p := range []*RegistryPublisher{&xo.Publisher, &xu.Publisher} {
+			got, err := RegistryExtensions.GetPublisher(ctx, p.NonCanonicalName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(got, p) {
+				t.Errorf("got %+v, want %+v", got, p)
+			}
+		}
+		if _, err := RegistryExtensions.GetPublisher(ctx, "doesntexist"); !errcode.IsNotFound(err) {
+			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 	})
 

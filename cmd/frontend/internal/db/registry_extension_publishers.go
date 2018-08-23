@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 )
@@ -18,6 +19,18 @@ type RegistryPublisher struct {
 
 // IsZero reports whether p is the zero value.
 func (p RegistryPublisher) IsZero() bool { return p == RegistryPublisher{} }
+
+// RegistryExtensionPublisherNotFoundError occurs when a registry extension publisher is not found.
+type RegistryExtensionPublisherNotFoundError struct {
+	args []interface{}
+}
+
+// NotFound implements errcode.NotFounder.
+func (err RegistryExtensionPublisherNotFoundError) NotFound() bool { return true }
+
+func (err RegistryExtensionPublisherNotFoundError) Error() string {
+	return fmt.Sprintf("registry extension publisher not found: %v", err.args)
+}
 
 // RegistryPublishersListOptions contains options for listing publishers of extensions in the
 // registry.
@@ -38,7 +51,7 @@ func (o RegistryPublishersListOptions) sqlConditions() []*sqlf.Query {
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
 // options.
 func (s *registryExtensions) ListPublishers(ctx context.Context, opt RegistryPublishersListOptions) ([]*RegistryPublisher, error) {
-	return s.listPublishers(ctx, opt.LimitOffset)
+	return s.listPublishers(ctx, nil, opt.LimitOffset)
 }
 
 func (s *registryExtensions) publishersSQLCTE() *sqlf.Query {
@@ -49,14 +62,17 @@ func (s *registryExtensions) publishersSQLCTE() *sqlf.Query {
 ) `)
 }
 
-func (s *registryExtensions) listPublishers(ctx context.Context, limitOffset *LimitOffset) ([]*RegistryPublisher, error) {
+func (s *registryExtensions) listPublishers(ctx context.Context, conds []*sqlf.Query, limitOffset *LimitOffset) ([]*RegistryPublisher, error) {
+	conds = append(conds, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`%s
 SELECT user_id, org_id, COALESCE(users.username, orgs.name) AS non_canonical_name FROM publishers
 LEFT JOIN users ON users.id=user_id
 LEFT JOIN orgs ON orgs.id=org_id
+WHERE (%s)
 ORDER BY org_id ASC NULLS LAST, user_id ASC NULLS LAST
 %s`,
 		s.publishersSQLCTE(),
+		sqlf.Join(conds, ") AND ("),
 		limitOffset.SQL(),
 	)
 
@@ -90,4 +106,28 @@ func (s *registryExtensions) CountPublishers(ctx context.Context, opt RegistryPu
 		return 0, err
 	}
 	return count, nil
+}
+
+// GePublisher gets the registry publisher with the given name.
+func (s *registryExtensions) GetPublisher(ctx context.Context, name string) (*RegistryPublisher, error) {
+	var userID, orgID sql.NullInt64
+	var p RegistryPublisher
+	q := sqlf.Sprintf(`
+WITH publishers AS (
+  (SELECT id AS user_id, NULL AS org_id, username AS non_canonical_name FROM users WHERE username=%s AND deleted_at IS NULL)
+  UNION
+  (SELECT NULL AS user_id, id AS org_id, name AS non_canonical_name FROM orgs WHERE name=%s AND deleted_at IS NULL)
+)
+SELECT user_id, org_id, non_canonical_name FROM publishers ORDER BY user_id NULLS LAST LIMIT 1
+`, name, name)
+	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID, &orgID, &p.NonCanonicalName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &RegistryExtensionPublisherNotFoundError{[]interface{}{"name", name}}
+		}
+		return nil, err
+	}
+	p.UserID = int32(userID.Int64)
+	p.OrgID = int32(orgID.Int64)
+	return &p, nil
 }

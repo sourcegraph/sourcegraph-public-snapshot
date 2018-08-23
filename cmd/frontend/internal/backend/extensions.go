@@ -6,12 +6,10 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 	"time"
 
 	"github.com/gregjones/httpcache"
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -30,6 +28,63 @@ func init() {
 	}
 }
 
+// SplitExtensionID splits an extension ID of the form [host/]publisher/name (where [host/] is the
+// optional registry prefix), such as "alice/myextension" or
+// "sourcegraph.example.com/bob/myextension". It returns the components, or a non-nil error if
+// parsing failed.
+func SplitExtensionID(extensionID string) (prefix, publisher, name string, err error) {
+	parts := strings.Split(extensionID, "/")
+	if len(parts) == 0 || len(parts) == 1 {
+		return "", "", "", fmt.Errorf("invalid extension ID: %q (2+ slash-separated path components required)", extensionID)
+	}
+	name = parts[len(parts)-1] // last
+	if name == "" {
+		return "", "", "", fmt.Errorf("invalid extension ID: %q (trailing slash is forbidden)", extensionID)
+	}
+	publisher = parts[len(parts)-2] // 2nd to last
+	if publisher == "" {
+		return "", "", "", fmt.Errorf("invalid extension ID: %q (empty publisher)", extensionID)
+	}
+	prefix = strings.Join(parts[:len(parts)-2], "/") // prefix
+	return
+}
+
+// ParseExtensionID parses an extension ID of the form [host/]publisher/name (where [host/] is the
+// optional registry prefix), such as "alice/myextension" or
+// "sourcegraph.example.com/bob/myextension". It validates that the registry prefix is correct given
+// the current configuration.
+func ParseExtensionID(extensionID string) (prefix, extensionIDWithoutPrefix string, isLocal bool, err error) {
+	prefix, publisher, name, err := SplitExtensionID(extensionID)
+	if err != nil {
+		return "", "", false, err
+	}
+
+	configuredPrefix := GetLocalRegistryExtensionIDPrefix()
+	if prefix != "" {
+		// Extension ID is host/publisher/name.
+		if configuredPrefix == nil {
+			// Don't look up fully qualified extensions from Sourcegraph.com; it only cares about
+			// its own extensions.
+			return "", "", false, fmt.Errorf("remote extension lookup is not supported for host %q", prefix)
+		}
+
+		// Local extension on non-Sourcegraph.com instance.
+		if prefix != *configuredPrefix {
+			return "", "", false, fmt.Errorf("remote extension lookup is forbidden (extension ID prefix %q, allowed prefixes are \"\" (default) and %q (local))", prefix, *configuredPrefix)
+		}
+		isLocal = true
+	} else {
+		// Extension ID is publisher/name.
+		if configuredPrefix == nil {
+			// Local extension on Sourcegraph.com instance.
+			isLocal = true
+		}
+	}
+
+	extensionIDWithoutPrefix = publisher + "/" + name
+	return prefix, extensionIDWithoutPrefix, isLocal, nil
+}
+
 // GetExtensionByExtensionID gets the extension with the given extension ID.
 //
 // It returns either a local or remote extension, depending on what the extension ID refers to.
@@ -41,44 +96,18 @@ func init() {
 //
 // BACKCOMPAT: It also synthesizes registry extensions from known language servers.
 func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local *db.RegistryExtension, remote *registry.Extension, err error) {
-	parts := strings.SplitN(extensionID, "/", 3)
-	if len(parts) == 0 || len(parts) == 1 {
-		return nil, nil, fmt.Errorf("invalid extension ID: %q", extensionID)
+	_, extensionIDWithoutPrefix, isLocal, err := ParseExtensionID(extensionID)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	prefix := GetLocalRegistryExtensionIDPrefix()
-
-	var isLocal bool
-	switch len(parts) {
-	case 3: // extension ID is host/publisher/name
-		if prefix == nil {
-			// Don't look up fully qualified extensions from Sourcegraph.com; it only cares about
-			// its own extensions.
-			return nil, nil, errors.New("remote extension lookup disabled")
-		}
-
-		// Local extension on non-Sourcegraph.com instance.
-		if parts[0] != *prefix {
-			return nil, nil, fmt.Errorf("external extension lookup on non-default registry is forbidden (extension ID prefix %q, allowed prefixes are \"\" (default) and %q (local))", parts[0], *prefix)
-		}
-		extensionID = path.Join(parts[1], parts[2])
-		isLocal = true
-
-	case 2: // extension ID is publisher/name
-
+	if isLocal {
 		// BACKCOMPAT: First, look up among extensions synthesized from known language servers.
 		if x, err := getSynthesizedRegistryExtension(ctx, "extensionID", extensionID); x != nil || err != nil {
 			return nil, x, err
 		}
 
-		if prefix == nil {
-			// Local extension on Sourcegraph.com instance.
-			isLocal = true
-		}
-	}
-
-	if isLocal {
-		x, err := db.RegistryExtensions.GetByExtensionID(ctx, extensionID)
+		x, err := db.RegistryExtensions.GetByExtensionID(ctx, extensionIDWithoutPrefix)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -88,7 +117,7 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local *
 		return x, nil, nil
 	}
 
-	x, err := GetRemoteRegistryExtension(ctx, "extensionID", extensionID)
+	x, err := GetRemoteRegistryExtension(ctx, "extensionID", extensionIDWithoutPrefix)
 	if err != nil {
 		return nil, nil, err
 	}

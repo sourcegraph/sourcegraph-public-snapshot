@@ -148,7 +148,18 @@ export class RegistryExtensionNewReleasePage extends React.PureComponent<Props, 
             <div className="registry-extension-new-release-page">
                 <PageTitle title="Publish new release" />
                 <h2>Publish new release</h2>
-                <p>All users of this extension will be automatically updated to the new release.</p>
+                <p>
+                    Use the{' '}
+                    <a href="https://github.com/sourcegraph/src-cli" target="_blank">
+                        <code>src</code> CLI tool
+                    </a>{' '}
+                    to publish a new release:
+                </p>
+                <pre>
+                    <code>$ src extensions publish</code>
+                </pre>
+                <hr />
+                <p>Or manually edit and submit an updated extension manifest to publish a new release:</p>
                 <Form onSubmit={this.onSubmit} className="mb-3">
                     <div className="form-group">
                         <label htmlFor="registry-extension-edit-page__manifest" className="sr-only">

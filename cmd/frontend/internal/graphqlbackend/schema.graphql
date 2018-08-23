@@ -3033,7 +3033,7 @@ type ExtensionRegistryMutation {
         extension: ID!
         # The new name for the extension, or null to leave unchanged.
         name: String
-        # The new manifest for the extension, or null to leave unchanged.
+        # The new manifest for the extension (as JSON), or null to leave unchanged.
         manifest: String
     ): ExtensionRegistryUpdateExtensionResult!
     # Delete an extension from the extension registry.
@@ -3043,6 +3043,22 @@ type ExtensionRegistryMutation {
         # The ID of the extension to delete.
         extension: ID!
     ): EmptyResponse!
+    # Publish an extension in the extension registry, creating it (if it doesn't yet exist) or updating it (if it
+    # does).
+    #
+    # This is a helper that wraps multiple other GraphQL mutations to expose a single API for publishing an
+    # extension.
+    publishExtension(
+        # The extension ID of the extension to publish. If a host prefix (e.g., "sourcegraph.example.com/") is
+        # needed and it is not included, it is automatically prepended.
+        #
+        # Examples: "alice/myextension", "acmecorp/myextension"
+        extensionID: String!
+        # The extension manifest (as JSON).
+        manifest: String!
+        # Force publish even if there are warnings (such as invalid JSON warnings).
+        force: Boolean = false
+    ): ExtensionRegistryCreateExtensionResult!
 }
 
 # The result of Mutation.extensionRegistry.createExtension.
@@ -3054,6 +3070,12 @@ type ExtensionRegistryCreateExtensionResult {
 # The result of Mutation.extensionRegistry.updateExtension.
 type ExtensionRegistryUpdateExtensionResult {
     # The newly updated extension.
+    extension: RegistryExtension!
+}
+
+# The result of Mutation.extensionRegistry.publishExtension.
+type ExtensionRegistryPublishExtensionResult {
+    # The extension that was just published.
     extension: RegistryExtension!
 }
 
