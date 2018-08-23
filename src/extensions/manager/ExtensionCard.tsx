@@ -30,7 +30,7 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
     public render(): JSX.Element | null {
         const { node, ...props } = this.props
         return (
-            <div className="col-sm-6 col-md-6 col-lg-4 pb-4">
+            <div className="d-flex col-sm-6 col-md-6 col-lg-4 pb-4">
                 <div className="extension-card card">
                     <LinkOrSpan
                         to={node.registryExtension && node.registryExtension.url}
