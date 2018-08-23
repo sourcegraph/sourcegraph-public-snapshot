@@ -247,7 +247,6 @@ func (c *cmdReader) Read(p []byte) (int, error) {
 		if len(stderr) > 100 {
 			stderr = stderr[:100] + "... (truncated)"
 		}
-
 		if errorMsg := c.trailer.Get("X-Exec-Error"); errorMsg != "" {
 			return 0, fmt.Errorf("%s (stderr: %q)", errorMsg, stderr)
 		}

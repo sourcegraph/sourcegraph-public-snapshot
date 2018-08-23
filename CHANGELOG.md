@@ -30,6 +30,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Fixed an issue where non-site-admin authenticated users could modify global settings (not site configuration), other organizations' settings, and other users' settings.
 - Search results are rendered more eagerly, resulting in fewer blank file previews
 - An issue where automatic code intelligence would fail to connect to the underlying `lsp` network, leading to `dial tcp: lookup lang on 0.0.0.0:53: no such host` errors.
+- More useful error messages from lsp-proxy when a language server can't get a requested revision of a repository.
 
 ### Removed
 

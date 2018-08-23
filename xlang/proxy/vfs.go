@@ -7,9 +7,12 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -22,15 +25,19 @@ import (
 //
 // It is a var so that it can be mocked in tests.
 var NewRemoteRepoVFS = func(ctx context.Context, cloneURL *url.URL, commitID api.CommitID) (FileSystem, error) {
-	repo := api.RepoURI(cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git"))
-
+	repo, err := reposource.CloneURLToRepoURI(cloneURL.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "can't determine repo name for URL")
+	}
+	if repo == "" {
+		// best effort fallback
+		repo = api.RepoURI(cloneURL.Host + strings.TrimSuffix(cloneURL.Path, ".git"))
+	}
 	// We can get to this point without checking if (repo, commit) actually
 	// exists. Its better to fail sooner, otherwise the error can cause a
 	// later process to fail (since ArchiveFS fetches lazily). So we check
 	// existence first.
-	cmd := gitserver.DefaultClient.Command("git", "rev-parse", string(commitID)+"^0")
-	cmd.Repo = gitserver.Repo{Name: repo}
-	err := cmd.Run(ctx)
+	_, err = git.ResolveRevision(ctx, gitserver.Repo{Name: repo}, nil, string(commitID), &git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
 		return nil, err
 	}

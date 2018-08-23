@@ -3,10 +3,12 @@ package git
 import (
 	"context"
 	"io"
+	"strings"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 )
@@ -16,6 +18,31 @@ type ArchiveOptions struct {
 	Treeish string   // the tree or commit to produce an archive for
 	Format  string   // format of the resulting archive (usually "tar" or "zip")
 	Paths   []string // if nonempty, only include these paths
+}
+
+// archiveReader wraps the StdoutReader yielded by gitserver's
+// Cmd.StdoutReader with one that knows how to report a repository-not-found
+// error more carefully.
+type archiveReader struct {
+	base io.ReadCloser
+	repo api.RepoURI
+	spec string
+}
+
+// Read checks the known output behavior of the StdoutReader.
+func (a *archiveReader) Read(p []byte) (int, error) {
+	n, err := a.base.Read(p)
+	if err != nil {
+		// handle the special case where git archive failed because of an invalid spec
+		if strings.Contains(err.Error(), "Not a valid object") {
+			return 0, &RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
+		}
+	}
+	return n, err
+}
+
+func (a *archiveReader) Close() error {
+	return a.base.Close()
 }
 
 // Archive produces an archive from a Git repository.
@@ -63,7 +90,8 @@ func Archive(ctx context.Context, repo gitserver.Repo, opt ArchiveOptions) (_ io
 		}
 		return nil, err
 	}
-	return rc, nil
+	ar := &archiveReader{base: rc, repo: repo.Name, spec: opt.Treeish}
+	return ar, nil
 }
 
 type badRequestError struct{ msg string }
