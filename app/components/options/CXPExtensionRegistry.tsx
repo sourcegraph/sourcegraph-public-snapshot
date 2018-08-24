@@ -9,11 +9,18 @@ import { RouteComponentProps } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { createExtensionsContextController } from '../../../app/backend/extensions'
 import { BrowserSettingsEditor } from '../../../chrome/extension/cxp'
+import { GQL } from '../../../types/gqlschema'
 
 interface OptionsPageProps extends RouteComponentProps<{}> {}
 interface OptionsPageState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {}
 
 const extensionsContextController = createExtensionsContextController()
+
+/** A fallback configuration subject that can be constructed synchronously at initialization time. */
+const CLIENT_SUBJECT: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'> = {
+    id: 'Client',
+    viewerCanAdminister: true,
+}
 
 export class CXPExtensionRegistry extends React.Component<OptionsPageProps, OptionsPageState> {
     public state: OptionsPageState = {
@@ -34,13 +41,9 @@ export class CXPExtensionRegistry extends React.Component<OptionsPageProps, Opti
     public render(): JSX.Element {
         return (
             <>
-                <div>
-                    Known issue: the extension links go nowhere. To view details, visit your Sourcegraph instance (e.g.{' '}
-                    <a href="https://sourcegraph.com/extensions">sourcegraph.com/extensions</a>)
-                </div>
                 <ExtensionsList
                     {...this.props}
-                    subject={'Client'}
+                    subject={CLIENT_SUBJECT}
                     configurationCascade={this.state.configurationCascade}
                     extensions={extensionsContextController}
                 />

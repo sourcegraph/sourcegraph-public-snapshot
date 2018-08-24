@@ -35,7 +35,10 @@ interface CodeViewToolbarProps
     onEnabledChange?: (enabled: boolean) => void
 
     buttonProps: ButtonProps
-
+    actionsNavItemClassProps?: {
+        listClass?: string
+        actionItemClass?: string
+    }
     simpleCXPFns: SimpleCXPFns
 }
 
@@ -72,14 +75,18 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
         const { site, currentUser } = this.state
         return (
             <div style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}>
-                <ul className="nav">
+                <ul className={`nav ${this.props.extensions ? 'pr-1' : ''}`}>
                     {this.props.cxpController &&
                         this.props.extensions && (
-                            <ActionsNavItems
-                                menu={ContributableMenu.EditorTitle}
-                                cxpController={this.props.cxpController}
-                                extensions={this.props.extensions}
-                            />
+                            <div className="BtnGroup">
+                                <ActionsNavItems
+                                    menu={ContributableMenu.EditorTitle}
+                                    cxpController={this.props.cxpController}
+                                    extensions={this.props.extensions}
+                                    listClass="BtnGroup"
+                                    actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
+                                />
+                            </div>
                         )}
                 </ul>
                 <CodeIntelStatusIndicator

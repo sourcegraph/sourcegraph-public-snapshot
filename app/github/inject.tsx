@@ -12,9 +12,8 @@ import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
 import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
-import { createController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { Controller as CXPController, createController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { isErrorLike } from '@sourcegraph/extensions-client-common/lib/errors'
-import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
     ConfigurationCascadeOrError,
     ConfiguredSubject,
@@ -22,7 +21,6 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
-import { Controller as CXPController } from 'cxp/module/environment/controller'
 import { ContributableMenu } from 'cxp/module/protocol'
 import { identity } from 'lodash'
 import mermaid from 'mermaid'
@@ -86,6 +84,11 @@ const buttonProps = {
     style: { marginRight: '5px', textDecoration: 'none', color: 'inherit' },
 }
 
+const actionsNavItemClassProps = {
+    listClass: 'BtnGroup',
+    actionItemClass: 'btn btn-sm tooltipped tooltipped-n BtnGroup-item',
+}
+
 function refreshModules(): void {
     for (const el of Array.from(document.getElementsByClassName('sourcegraph-app-annotator'))) {
         el.remove()
@@ -119,9 +122,7 @@ function injectCodeIntelligence(): void {
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
 
     let extensionsContextController: Controller<ConfigurationSubject, Settings> | undefined
-    let cxpController:
-        | CXPController<ConfiguredExtension, ConfigurationCascade<ConfigurationSubject, Settings>>
-        | undefined
+    let cxpController: CXPController<ConfigurationSubject, Settings> | undefined
     let simpleCXPFns = lspViaAPIXlang
 
     if (isSingleCodeFile && useCXP && filePath) {
@@ -313,7 +314,7 @@ function injectCXPGlobalComponents({
     cxpController,
     extensionsContextController,
 }: {
-    cxpController: CXPController<ConfiguredExtension, ConfigurationCascade<ConfigurationSubject, Settings>>
+    cxpController: CXPController<ConfigurationSubject, Settings>
     extensionsContextController: Controller<ConfigurationSubject, Settings>
 }): void {
     const statusElem = document.createElement('div')
@@ -528,6 +529,7 @@ function injectCodeSnippetAnnotator(
                     baseRev={commitID}
                     buttonProps={buttonProps}
                     simpleCXPFns={lspViaAPIXlang}
+                    actionsNavItemClassProps={actionsNavItemClassProps}
                 />,
                 mount
             )
@@ -706,7 +708,7 @@ function injectBlobAnnotators(
     files: HTMLElement[],
     simpleCXPFns: SimpleCXPFns,
     extensions?: Controller<ConfigurationSubject, Settings>,
-    cxpController?: CXPController<ConfiguredExtension, ConfigurationCascade<ConfigurationSubject, Settings>>
+    cxpController?: CXPController<ConfigurationSubject, Settings>
 ): void {
     const { repoPath, isDelta, filePath, rev } = parseURL()
     if (!filePath && !isDelta) {
@@ -743,6 +745,7 @@ function injectBlobAnnotators(
                         simpleCXPFns={simpleCXPFns}
                         cxpController={cxpController}
                         extensions={extensions}
+                        actionsNavItemClassProps={actionsNavItemClassProps}
                     />,
                     mount
                 )
@@ -815,6 +818,7 @@ function injectBlobAnnotators(
                             headCommitID={resolvedRevSpec.headCommitID}
                             buttonProps={buttonProps}
                             simpleCXPFns={simpleCXPFns}
+                            actionsNavItemClassProps={actionsNavItemClassProps}
                         />,
                         mount
                     )

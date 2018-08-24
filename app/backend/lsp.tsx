@@ -1,7 +1,7 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
-import { Controller } from 'cxp/module/environment/controller'
-import { Extension } from 'cxp/module/environment/extension'
-import { ConfigurationCascade, TextDocumentPositionParams } from 'cxp/module/protocol'
+import { Controller as CXPController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import { TextDocumentPositionParams } from 'cxp/module/protocol'
 import { HoverMerged } from 'cxp/module/types/hover'
 import { Observable, of, OperatorFunction, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
@@ -316,9 +316,7 @@ const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocume
     },
 })
 
-export const createLSPViaCXP = <X extends Extension, C extends ConfigurationCascade>(
-    cxpController: Controller<X, C>
-) => ({
+export const createLSPViaCXP = (cxpController: CXPController<ConfigurationSubject, Settings>) => ({
     fetchHover: pos =>
         cxpController.registries.textDocumentHover
             .getHover(toTextDocumentPositionParams(pos))
