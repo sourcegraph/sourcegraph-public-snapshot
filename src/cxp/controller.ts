@@ -80,7 +80,8 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
  */
 export function createController<S extends ConfigurationSubject, C extends Settings>(
     context: Context<S, C>,
-    createMessageTransports: (extension: ConfiguredExtension, options: ClientOptions) => Promise<MessageTransports>
+    createMessageTransports: (extension: ConfiguredExtension, options: ClientOptions) => Promise<MessageTransports>,
+    experimentalClientCapabilities?: any
 ): Controller<ConfiguredExtension, ConfigurationCascade<S, C>> {
     const controller = new Controller<ConfiguredExtension, ConfigurationCascade<S, C>>({
         clientOptions: (key: ClientKey, options: ClientOptions, extension: ConfiguredExtension) => {
@@ -91,6 +92,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
                 errorHandler,
                 trace: getSavedClientTrace(key),
                 tracer: new BrowserConsoleTracer(extension.id),
+                experimentalClientCapabilities,
             }
         },
         environmentFilter,
