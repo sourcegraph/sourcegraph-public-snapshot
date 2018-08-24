@@ -112,3 +112,16 @@ $body-color-dark: #f2f4f8;
     // Match color of the text
     fill: currentColor;
 }
+
+.configured-extensions-list {
+    .btn.btn-sm {
+        font-size: 12px;
+    }
+    .extension-card {
+        .dropdown {
+            button {
+                margin: 0.25rem 0;
+            }
+        }
+    }
+}
