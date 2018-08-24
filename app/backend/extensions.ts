@@ -136,7 +136,12 @@ export const gqlConfigurationCascade = storage.observeSync('sourcegraphURL').pip
     )
 )
 
-export function createExtensionsContextController(): ExtensionsContextController<ConfigurationSubject, Settings> {
+export function createExtensionsContextController(
+    sourcegraphUrl: string
+): ExtensionsContextController<ConfigurationSubject, Settings> {
+    const sourcegraphLanguageServerURL = new URL(sourcegraphUrl)
+    sourcegraphLanguageServerURL.pathname = '.api/xlang'
+
     return new ExtensionsContextController<ConfigurationSubject, Settings>({
         configurationCascade: combineLatest(gqlConfigurationCascade, storageConfigurationCascade).pipe(
             map(([gqlCascade, storageCascade]) => mergeCascades(gqlToCascade(gqlCascade), storageCascade)),
@@ -192,6 +197,9 @@ export function createExtensionsContextController(): ExtensionsContextController
         },
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
+        },
+        experimentalClientCapabilities: {
+            sourcegraphLanguageServerURL: sourcegraphLanguageServerURL.href,
         },
     })
 }

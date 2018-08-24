@@ -10,11 +10,12 @@ import { Subscription } from 'rxjs'
 import { createExtensionsContextController } from '../../../app/backend/extensions'
 import { BrowserSettingsEditor } from '../../../chrome/extension/cxp'
 import { GQL } from '../../../types/gqlschema'
+import { sourcegraphUrl } from '../../util/context'
 
 interface OptionsPageProps extends RouteComponentProps<{}> {}
 interface OptionsPageState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {}
 
-const extensionsContextController = createExtensionsContextController()
+const extensionsContextController = createExtensionsContextController(sourcegraphUrl)
 
 /** A fallback configuration subject that can be constructed synchronously at initialization time. */
 const CLIENT_SUBJECT: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'> = {

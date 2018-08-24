@@ -126,7 +126,7 @@ function injectCodeIntelligence(): void {
     let simpleCXPFns = lspViaAPIXlang
 
     if (isSingleCodeFile && useCXP && filePath) {
-        extensionsContextController = createExtensionsContextController()
+        extensionsContextController = createExtensionsContextController(sourcegraphUrl)
         cxpController = createController(extensionsContextController.context, createMessageTransports)
         simpleCXPFns = createLSPViaCXP(cxpController)
 
