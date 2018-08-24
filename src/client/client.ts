@@ -55,6 +55,14 @@ export interface ClientOptions {
 
     /** Logs messages sent to and received from the server, and trace log messages sent from the server. */
     tracer?: Tracer
+
+    /**
+     * Experimental capabilities implemented by the client (that are not defined
+     * by the CXP specification). These capabilities are passed verbatim to
+     * extensions in the initialize request's capabilities.experimental
+     * property.
+     */
+    experimentalClientCapabilities?: any
 }
 
 /** The client options, after defaults have been set that make certain fields required. */
@@ -63,6 +71,7 @@ interface ResolvedClientOptions extends Pick<ClientOptions, Exclude<keyof Client
     errorHandler: ErrorHandler
     middleware: Readonly<Middleware>
     tracer: Tracer
+    experimentalClientCapabilities: any
 }
 
 /** The possible states of a client. */
@@ -121,6 +130,7 @@ export class Client implements Unsubscribable {
             errorHandler: options.errorHandler || new DefaultErrorHandler(),
             middleware: options.middleware || {},
             tracer: options.tracer || noopTracer,
+            experimentalClientCapabilities: options.experimentalClientCapabilities || {},
         }
         this._trace = trace || Trace.Off
     }
@@ -193,7 +203,9 @@ export class Client implements Unsubscribable {
 
         const initParams: InitializeParams = {
             root: this.options.root,
-            capabilities: {},
+            capabilities: {
+                experimental: this.options.experimentalClientCapabilities,
+            },
             configurationCascade: { merged: {} },
             initializationOptions: isFunction(this.options.initializationOptions)
                 ? this.options.initializationOptions()

@@ -78,7 +78,13 @@ export interface ControllerOptions<X extends Extension, C extends ConfigurationC
         extension: X
     ) => Pick<
         ClientOptions,
-        'middleware' | 'createMessageTransports' | 'errorHandler' | 'initializationFailedHandler' | 'trace' | 'tracer'
+        | 'middleware'
+        | 'createMessageTransports'
+        | 'errorHandler'
+        | 'initializationFailedHandler'
+        | 'trace'
+        | 'tracer'
+        | 'experimentalClientCapabilities'
     >
 
     /**
