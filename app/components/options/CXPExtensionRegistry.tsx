@@ -39,6 +39,10 @@ export class CXPExtensionRegistry extends React.Component<OptionsPageProps, Opti
         )
     }
 
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     public render(): JSX.Element {
         return (
             <>
