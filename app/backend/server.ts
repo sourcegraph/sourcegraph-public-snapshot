@@ -29,7 +29,7 @@ export const resolveClientConfiguration = (): Observable<IClientConfigurationDet
         }, catchError((err, caught) => caught))
     )
 
-export const fetchCurrentUser = (): Observable<GQL.IUser> =>
+export const fetchCurrentUser = (): Observable<GQL.IUser | undefined> =>
     queryGraphQLNoRetry(
         getContext({ repoKey: '' }),
         `query CurrentUser() {
@@ -47,7 +47,7 @@ export const fetchCurrentUser = (): Observable<GQL.IUser> =>
     ).pipe(
         map(result => {
             if (!result || !result.data || !result.data.currentUser) {
-                throw new Error('No current user')
+                return undefined
             }
             return result.data.currentUser
         }, catchError((err, caught) => caught))
