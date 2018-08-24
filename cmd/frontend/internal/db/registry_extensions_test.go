@@ -253,4 +253,14 @@ func TestRegistryExtensions(t *testing.T) {
 			t.Errorf("got data %q, want %q", *x1.Manifest, manifest)
 		}
 	})
+
+	t.Run("Create with same publisher and name", func(t *testing.T) {
+		_, err := RegistryExtensions.Create(ctx, user.ID, 0, "zzz")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := RegistryExtensions.Create(ctx, user.ID, 0, "zzz"); err == nil {
+			t.Fatal("err == nil")
+		}
+	})
 }
