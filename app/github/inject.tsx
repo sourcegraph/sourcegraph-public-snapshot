@@ -331,6 +331,7 @@ function injectCXPGlobalComponents({
     const headerElem = document.querySelector('div.HeaderMenu')
     if (headerElem) {
         const commandListElem = document.createElement('div')
+        commandListElem.className = 'command-palette-button'
         headerElem.appendChild(commandListElem)
         render(
             <CommandListPopoverButton
