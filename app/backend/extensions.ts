@@ -163,7 +163,11 @@ export function createExtensionsContextController(
                 if (args.edit) {
                     clientSettings = applyEdits(
                         clientSettings,
-                        setProperty(clientSettings, args.edit.path, args.edit.value, format)
+                        // TODO(chris): remove `.slice()` (which guards against
+                        // mutation) once
+                        // https://github.com/Microsoft/node-jsonc-parser/pull/12
+                        // is merged in.
+                        setProperty(clientSettings, args.edit.path.slice(), args.edit.value, format)
                     )
                 } else if (typeof args.enabled === 'boolean') {
                     clientSettings = applyEdits(
