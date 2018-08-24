@@ -6,6 +6,8 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -22,7 +24,8 @@ Examples:
           "name":      "myextension",
           "publisher": "alice",
           "title":     "My Extension",
-          "url":       "https://example.com/bundled-extension.js"
+          "main":      "dist/myext.js",
+          "scripts":   {"sourcegraph:prepublish": "parcel build --out-file dist/myext.js src/myext.ts"}
         }
     	$ src extensions publish
 
@@ -36,6 +39,7 @@ Examples:
 	}
 	var (
 		extensionIDFlag = flagSet.String("extension-id", "", `Override the extension ID in the manifest. (default: read from -manifest file)`)
+		urlFlag         = flagSet.String("url", "", `Override the URL for the bundle. (example: set to http://localhost:1234/myext.js for local dev with parcel)`)
 		manifestFlag    = flagSet.String("manifest", "package.json", `The extension manifest file.`)
 		forceFlag       = flagSet.Bool("force", false, `Force publish the extension, even if there are validation problems or other warnings.`)
 		apiFlags        = newAPIFlags(flagSet)
@@ -55,7 +59,7 @@ Examples:
 				return err
 			}
 		}
-		manifest, err = updateExtensionIDInManifest(manifest, extensionID)
+		manifest, err = updatePropertyInManifest(manifest, "extensionID", extensionID)
 		if err != nil {
 			return err
 		}
@@ -64,15 +68,36 @@ Examples:
 			return err
 		}
 
+		var bundle *string
+		if *urlFlag != "" {
+			manifest, err = updatePropertyInManifest(manifest, "url", *urlFlag)
+			if err != nil {
+				return err
+			}
+		} else {
+			// Prepare and upload bundle.
+			if err := runManifestPrepublishScript(manifest, filepath.Dir(*manifestFlag)); err != nil {
+				return err
+			}
+
+			var err error
+			bundle, err = readBundleFileInManifest(manifest, filepath.Dir(*manifestFlag))
+			if err != nil {
+				return err
+			}
+		}
+
 		query := `mutation PublishExtension(
   $extensionID: String!,
   $manifest: String!,
+  $bundle: String
   $force: Boolean!,
 ) {
   extensionRegistry {
     publishExtension(
       extensionID: $extensionID,
       manifest: $manifest,
+      bundle: $bundle,
       force: $force,
     ) {
       extension {
@@ -98,6 +123,7 @@ Examples:
 			vars: map[string]interface{}{
 				"extensionID": extensionID,
 				"manifest":    string(manifest),
+				"bundle":      bundle,
 				"force":       *forceFlag,
 			},
 			result: &result,
@@ -121,6 +147,32 @@ Examples:
 
 	// Catch the mistake of omitting the "extensions" subcommand.
 	commands = append(commands, didYouMeanOtherCommand("publish", []string{"extensions publish", "ext publish        (alias)"}))
+}
+
+func runManifestPrepublishScript(manifest []byte, dir string) error {
+	var o struct {
+		Scripts struct {
+			SourcegraphPrepublish string `json:"sourcegraph:prepublish"`
+		} `json:"scripts"`
+	}
+	if err := json.Unmarshal(manifest, &o); err != nil {
+		return err
+	}
+
+	if o.Scripts.SourcegraphPrepublish == "" {
+		return nil
+	}
+	cmd := exec.Command("bash", "-c", o.Scripts.SourcegraphPrepublish)
+	cmd.Env = append(os.Environ(), fmt.Sprintf("PATH=%s:%s", filepath.Join(dir, "node_modules", ".bin"), os.Getenv("PATH")))
+	cmd.Dir = dir
+	cmd.Stdout = os.Stderr
+	cmd.Stderr = os.Stderr
+	fmt.Fprintf(os.Stderr, "# sourcegraph:prepublish: %s\n", o.Scripts.SourcegraphPrepublish)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("sourcegraph:prepublish script failed: %s (see output above)", err)
+	}
+	fmt.Fprintln(os.Stderr)
+	return nil
 }
 
 func readExtensionIDFromManifest(manifest []byte) (string, error) {
@@ -148,7 +200,7 @@ func readExtensionIDFromManifest(manifest []byte) (string, error) {
 	return publisher + "/" + name, nil
 }
 
-func updateExtensionIDInManifest(manifest []byte, extensionID string) (updatedManifest []byte, err error) {
+func updatePropertyInManifest(manifest []byte, property, value string) (updatedManifest []byte, err error) {
 	var o map[string]interface{}
 	if err := json.Unmarshal(manifest, &o); err != nil {
 		return nil, err
@@ -156,7 +208,7 @@ func updateExtensionIDInManifest(manifest []byte, extensionID string) (updatedMa
 	if o == nil {
 		o = map[string]interface{}{}
 	}
-	o["extensionID"] = extensionID
+	o[property] = value
 	return json.MarshalIndent(o, "", "  ")
 }
 
@@ -185,4 +237,23 @@ func addReadmeToManifest(manifest []byte, dir string) ([]byte, error) {
 	}
 	o["readme"] = readme
 	return json.MarshalIndent(o, "", "  ")
+}
+
+func readBundleFileInManifest(manifest []byte, dir string) (*string, error) {
+	var o struct {
+		Main string `json:"main"`
+	}
+	if err := json.Unmarshal(manifest, &o); err != nil {
+		return nil, err
+	}
+	if o.Main == "" {
+		return nil, nil
+	}
+	mainPath := filepath.Join(dir, o.Main)
+	data, err := ioutil.ReadFile(mainPath)
+	if err != nil {
+		return nil, fmt.Errorf(`extension manifest "main" bundle file: %s`, err)
+	}
+	tmp := string(data)
+	return &tmp, nil
 }

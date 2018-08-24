@@ -60,6 +60,7 @@ fragment RegistryExtensionFields on RegistryExtension {
         raw
         title
         description
+        bundleURL
     }
 }
 `
@@ -79,5 +80,6 @@ type Extension struct {
 		Raw         string
 		Title       string
 		Description string
+		BundleURL   string
 	}
 }

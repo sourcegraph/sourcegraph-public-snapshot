@@ -37,15 +37,15 @@ func TestReadExtensionIDFromManifest(t *testing.T) {
 	})
 }
 
-func TestUpdateExtensionIDInManifest(t *testing.T) {
+func TestUpdatePropertyInManifest(t *testing.T) {
 	tests := map[string]string{
-		`{}`:                  `{"extensionID": "x"}`,
-		`{"a":1}`:             `{"a":1, "extensionID": "x"}`,
-		`{"extensionID":"a"}`: `{"extensionID": "x"}`,
+		`{}`:        `{"p": "x"}`,
+		`{"a":1}`:   `{"a":1, "p": "x"}`,
+		`{"p":"a"}`: `{"p": "x"}`,
 	}
 	for manifest, want := range tests {
 		t.Run(manifest, func(t *testing.T) {
-			got, err := updateExtensionIDInManifest([]byte(manifest), "x")
+			got, err := updatePropertyInManifest([]byte(manifest), "p", "x")
 			if err != nil {
 				t.Fatal(err)
 			}
