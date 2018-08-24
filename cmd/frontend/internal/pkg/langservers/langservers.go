@@ -374,8 +374,38 @@ func Start(language string) error {
 	return start(language)
 }
 
-// Stop stops the language server Docker container for the specified language.
+// Stop stops the language server Docker container for the specified language,
+// if the specified language is the only active user of it. For example, if
+// javascript is being stopped but typescript is still enabled in the site
+// config, this function is no-op.
 func Stop(language string) error {
+	if err := CanManage(); err != nil {
+		return err
+	}
+
+	// Determine if the container is in use according to the site config.
+	inUse := false
+	for _, lang := range relatedLanguages(language) {
+		state, err := State(lang)
+		if err != nil {
+			return err
+		}
+		if state == StateEnabled {
+			inUse = true
+		}
+	}
+	if inUse {
+		return nil // Container is in use, so don't stop it.
+	}
+	return ForceStop(language)
+}
+
+// ForceStop stops the language server Docker container for the specified language.
+//
+// If the language server for the specified language provides multiple languages
+// (e.g. javascript and typescript are provided by the same language server),
+// both will be stopped.
+func ForceStop(language string) error {
 	if err := CanManage(); err != nil {
 		return err
 	}
@@ -718,16 +748,53 @@ func validate(language string) error {
 	return nil
 }
 
+// multiLanguageProviders maps a single sourcegraph/codeintel-$KEY container to the
+// multiple languages it provides. For example, sourcegraph/codeintel-typescript
+// provides both "typescript" and "javascript" languages.
+//
+// Docker images that do not provide multiple languages do not need to be
+// listed here.
+var multiLanguageProviders = map[string][]string{
+	// sourcegraph/codeintel-typescript provides "typescript" and "javascript" languages.
+	"typescript": []string{
+		"typescript",
+		"javascript",
+	},
+}
+
 // mapLanguage handles mapping languages like "javascript" to "typescript" as
 // "sourcegraph/codeintel-javascript" does not exist but rather is the same
 // "sourcegraph/codeintel-typescript" Docker image & container.
 func mapLanguage(language string) string {
-	switch language {
-	case "javascript":
-		return "typescript"
-	default:
-		return language
+	for provider, multiLanguages := range multiLanguageProviders {
+		for _, multiLanguage := range multiLanguages {
+			if language == multiLanguage {
+				return provider
+			}
+		}
 	}
+	return language
+}
+
+// relatedLanguages returns a list of all languages that are provided by the
+// specified language's Docker image. Examples:
+//
+// 	relatedLanguages("typescript") == []string{"typescript", "javascript"}
+// 	relatedLanguages("javascript") == []string{"typescript", "javascript"}
+// 	relatedLanguages("go") == []string{"go"}
+//
+func relatedLanguages(language string) []string {
+	for provider, multiLanguages := range multiLanguageProviders {
+		if language == provider {
+			return multiLanguages
+		}
+		for _, multiLanguage := range multiLanguages {
+			if language == multiLanguage {
+				return multiLanguages
+			}
+		}
+	}
+	return []string{language}
 }
 
 func haveDockerSocket() (bool, error) {
@@ -1006,7 +1073,7 @@ func stopAllLanguageServers() {
 				// No container for this language running.
 				return
 			}
-			if err := Stop(language); err != nil {
+			if err := ForceStop(language); err != nil {
 				log15.Error("langservers: error stopping language server", "language", language, "error", err)
 			}
 		})
