@@ -123,6 +123,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
                 errorHandler,
                 trace: getSavedClientTrace(key),
                 tracer: new BrowserConsoleTracer(extension.id),
+                experimentalClientCapabilities: context.experimentalClientCapabilities,
             }
         },
         environmentFilter,
