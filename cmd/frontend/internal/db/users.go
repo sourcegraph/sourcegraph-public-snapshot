@@ -196,6 +196,11 @@ func (*users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *ty
 		return nil, errCannotCreateUser{"initial_site_admin_must_be_first_user"}
 	}
 
+	// Reserve username in shared users+orgs namespace.
+	if _, err := tx.ExecContext(ctx, "INSERT INTO names(name, user_id) VALUES($1, $2)", info.Username, id); err != nil {
+		return nil, errCannotCreateUser{errorCodeUsernameExists}
+	}
+
 	if info.Email != "" {
 		var err error
 		if info.EmailIsVerified {
@@ -274,11 +279,31 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 		return Mocks.Users.Update(id, update)
 	}
 
+	tx, err := globalDB.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
 	fieldUpdates := []*sqlf.Query{
 		sqlf.Sprintf("updated_at=now()"), // always update updated_at timestamp
 	}
 	if update.Username != "" {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("username=%s", update.Username))
+
+		// Ensure new username is available in shared users+orgs namespace.
+		if _, err := tx.ExecContext(ctx, "UPDATE names SET name=$1 WHERE user_id=$2", update.Username, id); err != nil {
+			return err
+		}
 	}
 	strOrNil := func(s string) *string {
 		if s == "" {
@@ -293,7 +318,7 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("avatar_url=%s", strOrNil(*update.AvatarURL)))
 	}
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
-	res, err := globalDB.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	res, err := tx.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Constraint == "users_username" {
 			return errCannotCreateUser{errorCodeUsernameExists}
@@ -337,6 +362,11 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 	}
 	if rows == 0 {
 		return userNotFoundErr{args: []interface{}{id}}
+	}
+
+	// Release the username so it can be used by another user or org.
+	if _, err := tx.ExecContext(ctx, "DELETE FROM names WHERE user_id=$1", id); err != nil {
+		return err
 	}
 
 	if _, err := tx.ExecContext(ctx, "UPDATE access_tokens SET deleted_at=now() WHERE subject_user_id=$1 OR creator_user_id=$1", id); err != nil {
