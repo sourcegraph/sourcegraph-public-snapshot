@@ -28,6 +28,10 @@ $body-color-dark: #f2f4f8;
     @import 'node_modules/bootstrap/scss/list-group';
     @import 'node_modules/bootstrap/scss/forms';
     @import 'node_modules/bootstrap/scss/input-group';
+
+    a {
+        cursor: pointer;
+    }
 }
 
 .cxp-global {
