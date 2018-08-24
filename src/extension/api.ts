@@ -1,7 +1,8 @@
 import { Subscription } from 'rxjs'
+import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { Context } from '../environment/context/context'
 import { MessageConnection } from '../jsonrpc2/connection'
-import { InitializeParams, Settings } from '../protocol'
+import { InitializeParams, Settings, TextDocumentDecoration } from '../protocol'
 import { URI } from '../types/textDocument'
 
 /**
@@ -159,6 +160,14 @@ export interface Windows extends Observable<Window[]> {
      * @returns The user's input, or null if the user (or the client) canceled the input request.
      */
     showInputBox(message: string, defaultValue?: string): Promise<string | null>
+
+    /**
+     * Sets the decorations for the given document. All previous decorations for the document are cleared.
+     *
+     * @param resource The document to decorate.
+     * @param decorations The decorations to apply to the document.
+     */
+    setDecorations(resource: TextDocumentIdentifier, decorations: TextDocumentDecoration[]): void
 }
 
 /**

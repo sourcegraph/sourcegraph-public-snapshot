@@ -1,5 +1,13 @@
 import { BehaviorSubject } from 'rxjs'
-import { DidCloseTextDocumentNotification, DidOpenTextDocumentNotification, ShowInputRequest } from '../../protocol'
+import { TextDocumentIdentifier } from 'vscode-languageserver-types'
+import {
+    DidCloseTextDocumentNotification,
+    DidOpenTextDocumentNotification,
+    ShowInputRequest,
+    TextDocumentDecoration,
+    TextDocumentPublishDecorationsNotification,
+    TextDocumentPublishDecorationsParams,
+} from '../../protocol'
 import { CXP, Observable, Window, Windows } from '../api'
 
 class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observable<Window[]> {
@@ -37,6 +45,13 @@ class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observabl
 
     public showInputBox(message: string, defaultValue?: string): Promise<string | null> {
         return this.ext.rawConnection.sendRequest(ShowInputRequest.type, { message, defaultValue })
+    }
+
+    public setDecorations(resource: TextDocumentIdentifier, decorations: TextDocumentDecoration[]): void {
+        return this.ext.rawConnection.sendNotification(TextDocumentPublishDecorationsNotification.type, {
+            textDocument: resource,
+            decorations,
+        } as TextDocumentPublishDecorationsParams)
     }
 
     public readonly [Symbol.observable] = () => this
