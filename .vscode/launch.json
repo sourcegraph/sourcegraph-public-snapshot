@@ -36,6 +36,18 @@
       }
     },
     {
+      "type": "node",
+      "request": "launch",
+      "name": "Gulp",
+      "cwd": "${workspaceFolder}/web",
+      "program": "${workspaceFolder}/web/node_modules/gulp/bin/gulp.js",
+      "args": ["webpack"],
+      "env": {
+        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
+      },
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
       "name": "ui",
       "type": "chrome",
       "request": "attach",
