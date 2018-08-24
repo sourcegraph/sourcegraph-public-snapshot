@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 )
 
 func init() {
@@ -55,6 +56,10 @@ Examples:
 			}
 		}
 		manifest, err = updateExtensionIDInManifest(manifest, extensionID)
+		if err != nil {
+			return err
+		}
+		manifest, err = addReadmeToManifest(manifest, filepath.Dir(*manifestFlag))
 		if err != nil {
 			return err
 		}
@@ -152,5 +157,32 @@ func updateExtensionIDInManifest(manifest []byte, extensionID string) (updatedMa
 		o = map[string]interface{}{}
 	}
 	o["extensionID"] = extensionID
+	return json.MarshalIndent(o, "", "  ")
+}
+
+func addReadmeToManifest(manifest []byte, dir string) ([]byte, error) {
+	var readme string
+	filenames := []string{"README.md", "README.txt", "README", "readme.md", "readme.txt", "readme", "Readme.md", "Readme.txt", "Readme"}
+	for _, f := range filenames {
+		data, err := ioutil.ReadFile(filepath.Join(dir, f))
+		if err != nil {
+			continue
+		}
+		readme = string(data)
+		break
+	}
+
+	if readme == "" {
+		return manifest, nil
+	}
+
+	var o map[string]interface{}
+	if err := json.Unmarshal(manifest, &o); err != nil {
+		return nil, err
+	}
+	if o == nil {
+		o = map[string]interface{}{}
+	}
+	o["readme"] = readme
 	return json.MarshalIndent(o, "", "  ")
 }
