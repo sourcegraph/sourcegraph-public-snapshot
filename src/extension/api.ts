@@ -1,7 +1,7 @@
 import { Subscription } from 'rxjs'
 import { Context } from '../environment/context/context'
 import { MessageConnection } from '../jsonrpc2/connection'
-import { Settings } from '../protocol'
+import { InitializeParams, Settings } from '../protocol'
 import { URI } from '../types/textDocument'
 
 /**
@@ -10,6 +10,11 @@ import { URI } from '../types/textDocument'
  * @template C the extension's settings
  */
 export interface CXP<C = Settings> {
+    /**
+     * The params passed by the client in the `initialize` request.
+     */
+    initializeParams: InitializeParams
+
     /**
      * The root URI of the workspace in which this extension is running.
      *
