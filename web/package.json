@@ -18,8 +18,17 @@
     "lint": "npm run tslint && gulp unusedExports && npm run stylelint",
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e 'src/schema/**' 'src/**/*.ts?(x)' 'types/**/*.ts?(x)' './*.ts?(x)'",
     "stylelint": "stylelint --quiet 'src/**/*.scss'",
-    "stylelint-compact": "npm run stylelint -- --custom-formatter ./node_modules/stylelint-formatter-compact/index.js"
+    "stylelint-compact": "npm run stylelint -- --custom-formatter ./node_modules/stylelint-formatter-compact/index.js",
+    "bundlesize": "GITHUB_TOKEN= bundlesize"
   },
+  "bundlesize": [
+    {
+      "path": "../ui/assets/styles/app.bundle.css"
+    },
+    {
+      "path": "../ui/assets/scripts/app.bundle.js"
+    }
+  ],
   "nyc": {
     "include": [
       "src/**/*.ts?(x)"
@@ -93,6 +102,7 @@
     "babelify": "^8.0.0",
     "bluebird": "^3.5.1",
     "browserify": "^16.2.2",
+    "bundlesize": "^0.17.0",
     "chai": "^4.1.2",
     "css-loader": "^1.0.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
