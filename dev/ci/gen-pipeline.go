@@ -245,6 +245,7 @@ func main() {
 		Cmd("npm ci"),
 		Cmd("cd web"),
 		Cmd("npm ci"),
+		Cmd("npm run browserslist"),
 		Cmd("NODE_ENV=production npm run build -- --color"),
 		Cmd("GITHUB_TOKEN= npm run bundlesize"))
 

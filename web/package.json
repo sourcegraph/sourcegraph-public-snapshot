@@ -19,7 +19,8 @@
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json -e 'src/schema/**' 'src/**/*.ts?(x)' 'types/**/*.ts?(x)' './*.ts?(x)'",
     "stylelint": "stylelint --quiet 'src/**/*.scss'",
     "stylelint-compact": "npm run stylelint -- --custom-formatter ./node_modules/stylelint-formatter-compact/index.js",
-    "bundlesize": "GITHUB_TOKEN= bundlesize"
+    "bundlesize": "GITHUB_TOKEN= bundlesize",
+    "browserslist": "browserslist"
   },
   "bundlesize": [
     {
