@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"html/template"
+	"path"
 	"regexp"
 	"strings"
 
@@ -158,7 +159,12 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		return nil
 	}
 
-	var repoShortName string
+	var (
+		repoShortName   string
+		fileName        string
+		codeContextText string
+		codeContextHTML template.HTML
+	)
 	if n.thread.TargetRepo != nil {
 		repo, err := db.Repos.Get(ctx, n.thread.TargetRepo.RepoID)
 		if err != nil {
@@ -169,6 +175,15 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			split = split[len(split)-2:]
 		}
 		repoShortName = strings.Join(split, "/")
+		if n.thread.TargetRepo.Path != nil {
+			fileName = path.Base(*n.thread.TargetRepo.Path)
+		}
+
+		codeContextText = formatTargetRepoLinesText(n.thread.TargetRepo)
+		codeContextHTML, err = formatTargetRepoLinesHTML(ctx, n.thread.TargetRepo)
+		if err != nil {
+			return errors.Wrap(err, "formatTargetRepoLinesHTML")
+		}
 	}
 
 	commentAuthor, err := db.Users.GetByID(ctx, n.comment.AuthorUserID)
@@ -185,19 +200,30 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		FromName: fromName,
 		Template: n.template,
 		Data: struct {
-			ThreadTitle         string
-			CommentContents     string
-			CommentContentsHTML template.HTML
-			URL                 string
-			RepoName            string
-			UniqueValue         string
+			ThreadTitle           string
+			CommentAuthorUsername string
+			CommentContents       string
+			CommentContentsHTML   template.HTML
+			URL                   string
+			UniqueValue           string
+
+			// These fields may be empty strings depending on the type of comment..
+			RepoName        string
+			FileName        string
+			CodeContextText string
+			CodeContextHTML template.HTML
 		}{
-			ThreadTitle:         n.thread.Title,
-			CommentContents:     n.comment.Contents,
-			CommentContentsHTML: template.HTML(markdown.Render(n.comment.Contents, nil)),
-			URL:                 url.String(),
-			RepoName:            repoShortName,
-			UniqueValue:         fmt.Sprint(n.comment.ID),
+			ThreadTitle:           n.thread.Title,
+			CommentAuthorUsername: commentAuthor.Username,
+			CommentContents:       n.comment.Contents,
+			CommentContentsHTML:   template.HTML(markdown.Render(n.comment.Contents, nil)),
+			URL:                   url.String(),
+			UniqueValue:           fmt.Sprint(n.comment.ID),
+
+			RepoName:        repoShortName,
+			FileName:        fileName,
+			CodeContextText: codeContextText,
+			CodeContextHTML: codeContextHTML,
 		},
 	})
 }
@@ -215,12 +241,28 @@ func parseMentions(contents string) []string {
 }
 
 var (
+	sharedCommentSubjectTemplate = `
+{{- with .RepoName -}}
+	{{- "[" -}}{{- . -}}{{- "] " -}}
+{{- end -}}
+{{- .ThreadTitle -}}
+`
+
 	sharedCommentTextTemplate = `
-{{.CommentContents}}
-
-View and reply on Sourcegraph:
-
-  {{.URL}}
+{{- "@" -}}{{- .CommentAuthorUsername -}}{{- " commented" -}}
+	{{- with .FileName -}}{{- " on " -}}{{- . -}}{{- end -}}
+	{{- ":\n" -}}
+{{- .CommentContents -}}
+{{- with .CodeContextText -}}
+	{{- "\n" -}}
+	{{- "--------------------------------------------------------------------------------\n" -}}
+	{{- . -}}
+{{- end -}}
+{{- "\n" -}}
+{{- "View and reply on Sourcegraph:\n" -}}
+{{- "\n" -}}
+{{- "  " -}}{{- .URL -}}
+{{- "\n" -}}
 `
 
 	sharedCommentHTMLTemplate = `
@@ -238,7 +280,11 @@ View and reply on Sourcegraph:
 	"description": "View this discussion on Sourcegraph"
 }
 </script>
+<p><strong>@{{.CommentAuthorUsername}}</strong> commented{{with .FileName}} on <strong>{{.}}</strong>{{end}}:</p>
 {{.CommentContentsHTML}}
+{{with .CodeContextHTML}}
+	{{.}}
+{{end}}
 <p><a href="{{.URL}}">View and reply on Sourcegraph</a></p>
 <!-- this ensures Gmail doesn't trim the email -->
 <span style="opacity: 0">{{.UniqueValue}}</span>
@@ -247,13 +293,13 @@ View and reply on Sourcegraph:
 `
 
 	newThreadEmailTemplate = txemail.MustValidate(txemail.Templates{
-		Subject: `[{{.RepoName}}] {{.ThreadTitle}}`,
+		Subject: sharedCommentSubjectTemplate,
 		Text:    sharedCommentTextTemplate,
 		HTML:    sharedCommentHTMLTemplate,
 	})
 
 	newCommentEmailTemplate = txemail.MustValidate(txemail.Templates{
-		Subject: `[{{.RepoName}}] {{.ThreadTitle}}`,
+		Subject: sharedCommentSubjectTemplate,
 		Text:    sharedCommentTextTemplate,
 		HTML:    sharedCommentHTMLTemplate,
 	})
