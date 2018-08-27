@@ -346,7 +346,7 @@ input DiscussionThreadTargetRepoInput {
 
     # The exact Git object ID (OID / 40-character SHA-1 hash) which the thread
     # was referencing, if any.
-    revision: GitObjectID!
+    revision: GitObjectID
 
     # The selection that the thread was referencing, if any.
     selection: DiscussionThreadTargetRepoSelectionInput
