@@ -9,6 +9,7 @@ import { Markdown } from '../../../components/Markdown'
 import { Spacer, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../../../components/Tabs'
 import { renderMarkdown } from '../../../discussions/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { asError } from '../../../util/errors'
 import { DiscussionsInputMentionOverlay, OnBlurHandler, OnKeyDownFilter } from './DiscussionsInputMentionOverlay'
 
 /**
@@ -46,7 +47,7 @@ interface State {
     titleInputValue: string
     textArea: { textAreaValue: string; selectionStart: number; element?: HTMLElement }
     submitting: boolean
-    error?: any
+    error?: Error
 
     previewLoading?: boolean
     previewHTML?: string
@@ -190,7 +191,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                                             return [
                                                 state => ({
                                                     ...state,
-                                                    error,
+                                                    error: asError(error),
                                                     submitting: false,
                                                 }),
                                             ]
