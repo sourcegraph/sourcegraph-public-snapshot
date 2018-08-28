@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 )
 
 // ValidateExtensionManifest validates a JSON extension manifest for syntax.
@@ -18,7 +19,7 @@ import (
 // TODO(sqs): Also validate it against the JSON Schema.
 func ValidateExtensionManifest(text string) error {
 	var o interface{}
-	return json.Unmarshal([]byte(text), &o)
+	return jsonc.Unmarshal(text, &o)
 }
 
 // GetExtensionManifestWithBundleURL returns the extension manifest as JSON. If there are no
@@ -33,7 +34,7 @@ func GetExtensionManifestWithBundleURL(ctx context.Context, extensionID string, 
 	if release != nil {
 		// Add URL to bundle if necessary.
 		var o map[string]interface{}
-		if err := json.Unmarshal([]byte(release.Manifest), &o); err != nil {
+		if err := jsonc.Unmarshal(release.Manifest, &o); err != nil {
 			return nil, fmt.Errorf("parsing extension manifest for extension with ID %d (release tag %q): %s", registryExtensionID, releaseTag, err)
 		}
 		if o == nil {
