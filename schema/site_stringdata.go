@@ -444,6 +444,9 @@ const SiteSchemaJSON = `{
     "email.smtp": {
       "$ref": "#/definitions/SMTPServerConfig"
     },
+    "email.imap": {
+      "$ref": "#/definitions/IMAPServerConfig"
+    },
     "email.address": {
       "description": "The \"from\" address for emails sent by this server.",
       "type": "string",
@@ -1074,6 +1077,30 @@ const SiteSchemaJSON = `{
         },
         "domain": {
           "description": "The HELO domain to provide to the SMTP server (if needed).",
+          "type": "string"
+        }
+      }
+    },
+    "IMAPServerConfig": {
+      "description": "Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "port"],
+      "properties": {
+        "host": {
+          "description": "The IMAP server host.",
+          "type": "string"
+        },
+        "port": {
+          "description": "The IMAP server port.",
+          "type": "integer"
+        },
+        "username": {
+          "description": "The username to use when communicating with the IMAP server.",
+          "type": "string"
+        },
+        "password": {
+          "description": "The username to use when communicating with the IMAP server.",
           "type": "string"
         }
       }

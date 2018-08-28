@@ -142,6 +142,14 @@ type HTTPHeaderAuthProvider struct {
 	Type           string `json:"type"`
 	UsernameHeader string `json:"usernameHeader"`
 }
+
+// IMAPServerConfig description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
+type IMAPServerConfig struct {
+	Host     string `json:"host"`
+	Password string `json:"password,omitempty"`
+	Port     int    `json:"port"`
+	Username string `json:"username,omitempty"`
+}
 type Langservers struct {
 	Address               string                 `json:"address,omitempty"`
 	Disabled              bool                   `json:"disabled,omitempty"`
@@ -300,6 +308,7 @@ type SiteConfiguration struct {
 	DisablePublicRepoRedirects        bool                         `json:"disablePublicRepoRedirects,omitempty"`
 	DontIncludeSymbolResultsByDefault bool                         `json:"dontIncludeSymbolResultsByDefault,omitempty"`
 	EmailAddress                      string                       `json:"email.address,omitempty"`
+	EmailImap                         *IMAPServerConfig            `json:"email.imap,omitempty"`
 	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`
 	ExecuteGradleOriginalRootPaths    string                       `json:"executeGradleOriginalRootPaths,omitempty"`
 	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
