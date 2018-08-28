@@ -5,6 +5,7 @@ import { LinkOrSpan } from '../../components/LinkOrSpan'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
+import { isErrorLike } from '../../util/errors'
 import { extensionIDPrefix } from '../extension/extension'
 import { ExtensionAreaPageProps } from '../extension/ExtensionArea'
 import { ExtensionREADME } from '../extension/RegistryExtensionREADME'
@@ -81,9 +82,24 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                 )}
                             <dt className="border-top pt-2">Resources</dt>
                             <dd className="border-bottom pb-2">
-                                <Link to={`${this.props.extension.registryExtension!.url}/-/manifest`}>
-                                    Manifest (JSON)
+                                <Link
+                                    to={`${this.props.extension.registryExtension!.url}/-/manifest`}
+                                    className="d-block"
+                                >
+                                    Manifest (package.json)
                                 </Link>
+                                {this.props.extension.manifest &&
+                                    !isErrorLike(this.props.extension.manifest) &&
+                                    this.props.extension.manifest.url && (
+                                        <a
+                                            href={this.props.extension.manifest.url}
+                                            rel="nofollow"
+                                            target="_blank"
+                                            className="d-block"
+                                        >
+                                            Source code (JavaScript)
+                                        </a>
+                                    )}
                             </dd>
                         </dl>
                     </small>
