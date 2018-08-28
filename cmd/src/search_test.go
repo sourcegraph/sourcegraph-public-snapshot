@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -92,6 +93,8 @@ func TestSearchOutput(t *testing.T) {
 				t.Fatal(err)
 			}
 			got := buf.String()
+			normalizeTimeAgo(&got)
+			normalizeTimeAgo(tst.want)
 			if got != *tst.want {
 				t.Logf("'%s.want.txt' does not match '%s.got.txt'", testName, testName)
 				gotFile := filepath.Join(dataDir, testName+".got.txt")
@@ -108,4 +111,11 @@ func TestSearchOutput(t *testing.T) {
 			}
 		})
 	}
+}
+
+var nMonthsAgoPattern = regexp.MustCompile(`\d+ months? ago`)
+
+// normalizeTimeAgo makes tests not depend on the current time.
+func normalizeTimeAgo(s *string) {
+	*s = nMonthsAgoPattern.ReplaceAllString(*s, "N months ago")
 }
