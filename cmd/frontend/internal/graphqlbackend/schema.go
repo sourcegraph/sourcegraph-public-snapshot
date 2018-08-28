@@ -3026,8 +3026,6 @@ type ExtensionRegistryMutation {
         extension: ID!
         # The new name for the extension, or null to leave unchanged.
         name: String
-        # The new manifest for the extension (as JSON), or null to leave unchanged.
-        manifest: String
     ): ExtensionRegistryUpdateExtensionResult!
     # Delete an extension from the extension registry.
     #
@@ -3049,6 +3047,10 @@ type ExtensionRegistryMutation {
         extensionID: String!
         # The extension manifest (as JSON).
         manifest: String!
+        # The bundled JavaScript source of the extension.
+        bundle: String
+        # This field is ignored until Sourcegraph 2.11. Backported from post-2.11.
+        sourceMap: String
         # Force publish even if there are warnings (such as invalid JSON warnings).
         force: Boolean = false
     ): ExtensionRegistryCreateExtensionResult!
@@ -3116,6 +3118,8 @@ type ExtensionManifest {
     title: String
     # The description specified in the manifest, if any.
     description: String
+    # The URL to the bundled JavaScript source code for the extension, if any.
+    bundleURL: String
 }
 
 # A list of registry extensions.

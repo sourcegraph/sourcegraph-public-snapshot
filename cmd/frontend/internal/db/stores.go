@@ -24,5 +24,6 @@ var (
 
 	OrgInvitations = &orgInvitations{}
 
-	RegistryExtensions = &registryExtensions{}
+	RegistryExtensions        = &registryExtensions{}
+	RegistryExtensionReleases = &registryExtensionReleases{}
 )

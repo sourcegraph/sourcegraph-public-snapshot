@@ -152,28 +152,6 @@
   version = "1.0.0"
 
 [[projects]]
-  digest = "1:47bab1d4fec5d8cef5f4ec71389480c61f5564f83a6908bbf6acc0623840a66d"
-  name = "github.com/emersion/go-imap"
-  packages = [
-    ".",
-    "client",
-    "commands",
-    "responses",
-    "utf7",
-  ]
-  pruneopts = "NUT"
-  revision = "db2527e3b3931fbb4b4e650165816f3570f73875"
-  version = "v1.0.0-beta.1"
-
-[[projects]]
-  branch = "master"
-  digest = "1:a957ea8aac9dca83f9b2f4a0dc7d84ad373a5e481e7684df0d5c31c5a3b3b99b"
-  name = "github.com/emersion/go-sasl"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "7e096a0a6197b89989e8cc31016daa67c8c62051"
-
-[[projects]]
   digest = "1:f8e6f07329067bc182633dcb19a3df53ce5d454b551e1b5a1cac2163748648d9"
   name = "github.com/emicklei/go-restful"
   packages = [
@@ -1783,8 +1761,6 @@
     "github.com/crewjam/saml/samlidp",
     "github.com/davecgh/go-spew/spew",
     "github.com/daviddengcn/go-colortext",
-    "github.com/emersion/go-imap",
-    "github.com/emersion/go-imap/client",
     "github.com/fatih/astrewrite",
     "github.com/fatih/color",
     "github.com/felixfbecker/stringscore",

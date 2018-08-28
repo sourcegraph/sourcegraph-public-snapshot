@@ -284,6 +284,29 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.registry_extension_releases"
+```
+        Column         |           Type           |                                Modifiers                                 
+-----------------------+--------------------------+--------------------------------------------------------------------------
+ id                    | bigint                   | not null default nextval('registry_extension_releases_id_seq'::regclass)
+ registry_extension_id | integer                  | not null
+ creator_user_id       | integer                  | not null
+ release_version       | citext                   | 
+ release_tag           | citext                   | not null
+ manifest              | text                     | not null
+ bundle                | text                     | 
+ created_at            | timestamp with time zone | not null default now()
+ deleted_at            | timestamp with time zone | 
+Indexes:
+    "registry_extension_releases_pkey" PRIMARY KEY, btree (id)
+    "registry_extension_releases_version" UNIQUE, btree (registry_extension_id, release_version) WHERE release_version IS NOT NULL
+    "registry_extension_releases_registry_extension_id" btree (registry_extension_id, release_tag, created_at DESC) WHERE deleted_at IS NULL
+Foreign-key constraints:
+    "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
+    "registry_extension_releases_registry_extension_id_fkey" FOREIGN KEY (registry_extension_id) REFERENCES registry_extensions(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
 # Table "public.registry_extensions"
 ```
       Column       |           Type           |                            Modifiers                             
@@ -308,6 +331,8 @@ Check constraints:
 Foreign-key constraints:
     "registry_extensions_publisher_org_id_fkey" FOREIGN KEY (publisher_org_id) REFERENCES orgs(id)
     "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
+Referenced by:
+    TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_registry_extension_id_fkey" FOREIGN KEY (registry_extension_id) REFERENCES registry_extensions(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -521,6 +546,7 @@ Referenced by:
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT

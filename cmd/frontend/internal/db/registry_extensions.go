@@ -22,7 +22,6 @@ type RegistryExtension struct {
 	UUID      string
 	Publisher RegistryPublisher
 	Name      string
-	Manifest  *string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
@@ -226,7 +225,7 @@ WHERE (%s) AND x.deleted_at IS NULL`,
 func (s *registryExtensions) list(ctx context.Context, conds, order []*sqlf.Query, limitOffset *LimitOffset) ([]*RegistryExtension, error) {
 	order = append(order, sqlf.Sprintf("TRUE"))
 	q := sqlf.Sprintf(`
-SELECT x.id, x.uuid, x.publisher_user_id, x.publisher_org_id, x.name, x.manifest, x.created_at, x.updated_at,
+SELECT x.id, x.uuid, x.publisher_user_id, x.publisher_org_id, x.name, x.created_at, x.updated_at,
   `+extensionIDExpr+` AS non_canonical_extension_id, `+extensionPublisherNameExpr+` AS non_canonical_publisher_name
 %s
 ORDER BY %s, x.id ASC
@@ -246,7 +245,7 @@ ORDER BY %s, x.id ASC
 	for rows.Next() {
 		var t RegistryExtension
 		var publisherUserID, publisherOrgID sql.NullInt64
-		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.Manifest, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &t.Publisher.NonCanonicalName); err != nil {
+		if err := rows.Scan(&t.ID, &t.UUID, &publisherUserID, &publisherOrgID, &t.Name, &t.CreatedAt, &t.UpdatedAt, &t.NonCanonicalExtensionID, &t.Publisher.NonCanonicalName); err != nil {
 			return nil, err
 		}
 		t.Publisher.UserID = int32(publisherUserID.Int64)
@@ -269,14 +268,14 @@ func (s *registryExtensions) Count(ctx context.Context, opt RegistryExtensionsLi
 }
 
 // Update updates information about the registry extension.
-func (*registryExtensions) Update(ctx context.Context, id int32, name, manifest *string) error {
+func (*registryExtensions) Update(ctx context.Context, id int32, name *string) error {
 	if Mocks.RegistryExtensions.Update != nil {
-		return Mocks.RegistryExtensions.Update(id, name, manifest)
+		return Mocks.RegistryExtensions.Update(id, name)
 	}
 
 	res, err := globalDB.ExecContext(ctx,
-		"UPDATE registry_extensions SET name=COALESCE($2, name), manifest=COALESCE($3, manifest), updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
-		id, name, manifest,
+		"UPDATE registry_extensions SET name=COALESCE($2, name),  updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
+		id, name,
 	)
 	if err != nil {
 		return err
@@ -317,6 +316,6 @@ type MockRegistryExtensions struct {
 	GetByID          func(id int32) (*RegistryExtension, error)
 	GetByUUID        func(uuid string) (*RegistryExtension, error)
 	GetByExtensionID func(extensionID string) (*RegistryExtension, error)
-	Update           func(id int32, name, manifest *string) error
+	Update           func(id int32, name *string) error
 	Delete           func(id int32) error
 }

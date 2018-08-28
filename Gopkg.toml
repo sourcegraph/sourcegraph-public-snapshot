@@ -199,10 +199,6 @@ required = [
 
 [[constraint]]
   branch = "master"
-  name = "github.com/google/pprof"
-
-[[constraint]]
-  branch = "master"
   name = "golang.org/x/time"
 
 [[constraint]]

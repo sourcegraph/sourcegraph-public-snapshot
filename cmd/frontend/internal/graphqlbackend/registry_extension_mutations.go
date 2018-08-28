@@ -172,7 +172,6 @@ func (*extensionRegistryResolver) PublishExtension(ctx context.Context, args *st
 		ReleaseTag:          "release",
 		Manifest:            args.Manifest,
 		Bundle:              args.Bundle,
-		SourceMap:           args.SourceMap,
 	}
 	if _, err := db.RegistryExtensionReleases.Create(ctx, &release); err != nil {
 		return nil, err

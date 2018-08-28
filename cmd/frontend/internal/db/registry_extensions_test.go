@@ -235,8 +235,7 @@ func TestRegistryExtensions(t *testing.T) {
 
 	t.Run("Update", func(t *testing.T) {
 		x := xu
-		const manifest = `"d"`
-		if err := RegistryExtensions.Update(ctx, x.ID, nil, strptr(manifest)); err != nil {
+		if err := RegistryExtensions.Update(ctx, x.ID, nil); err != nil {
 			t.Fatal(err)
 		}
 		x1, err := RegistryExtensions.GetByID(ctx, x.ID)
@@ -247,10 +246,7 @@ func TestRegistryExtensions(t *testing.T) {
 			t.Errorf("got UpdatedAt %v, want recent", x1.UpdatedAt)
 		}
 		if x1.Name != x.Name {
-			t.Errorf("got name %q, want %q", *x1.Manifest, x.Name)
-		}
-		if x1.Manifest == nil || (*x1.Manifest != manifest) {
-			t.Errorf("got data %q, want %q", *x1.Manifest, manifest)
+			t.Errorf("got name %q, want %q", x1.Name, x.Name)
 		}
 	})
 
