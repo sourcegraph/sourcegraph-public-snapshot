@@ -28,6 +28,8 @@ const (
 	ResetPasswordInit = "reset-password.init"
 	ResetPasswordCode = "reset-password.code"
 
+	RegistryExtensionBundle = "registry.extension.bundle"
+
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
 
@@ -67,6 +69,8 @@ func newRouter() *mux.Router {
 	base.Path("/-/sign-out").Methods("GET").Name(SignOut)
 	base.Path("/-/reset-password-init").Methods("POST").Name(ResetPasswordInit)
 	base.Path("/-/reset-password-code").Methods("POST").Name(ResetPasswordCode)
+
+	base.Path("/-/static/extension/{RegistryExtensionReleaseID}").Methods("GET").Name(RegistryExtensionBundle)
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 	base.Path("/-/editor").Methods("GET").Name(Editor)

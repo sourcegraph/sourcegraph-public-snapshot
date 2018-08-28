@@ -53,3 +53,14 @@ func (r *extensionManifestResolver) Description() (*string, error) {
 	}
 	return &parsed.Description, nil
 }
+
+func (r *extensionManifestResolver) BundleURL() (*string, error) {
+	parsed, err := r.parse()
+	if parsed == nil || err != nil {
+		return nil, err
+	}
+	if parsed.Url == "" {
+		return nil, nil
+	}
+	return &parsed.Url, nil
+}

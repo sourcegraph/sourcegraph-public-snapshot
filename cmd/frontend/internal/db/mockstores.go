@@ -25,5 +25,6 @@ type MockStores struct {
 
 	OrgInvitations MockOrgInvitations
 
-	RegistryExtensions MockRegistryExtensions
+	RegistryExtensions        MockRegistryExtensions
+	RegistryExtensionReleases MockRegistryExtensionReleases
 }

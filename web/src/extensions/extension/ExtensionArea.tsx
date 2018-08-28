@@ -212,11 +212,7 @@ export class ExtensionArea extends React.Component<Props> {
                             exact={true}
                             // tslint:disable-next-line:jsx-no-lambda
                             render={routeComponentProps => (
-                                <RegistryExtensionNewReleasePage
-                                    {...routeComponentProps}
-                                    {...transferProps}
-                                    isLightTheme={this.props.isLightTheme}
-                                />
+                                <RegistryExtensionNewReleasePage {...routeComponentProps} {...transferProps} />
                             )}
                         />
                         <Route key="hardcoded-key" component={NotFoundPage} />

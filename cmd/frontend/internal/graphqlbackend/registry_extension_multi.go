@@ -58,11 +58,11 @@ func (r *registryExtensionMultiResolver) Name() string {
 	return r.remote.Name()
 }
 
-func (r *registryExtensionMultiResolver) Manifest() *extensionManifestResolver {
+func (r *registryExtensionMultiResolver) Manifest(ctx context.Context) (*extensionManifestResolver, error) {
 	if r.local != nil {
-		return r.local.Manifest()
+		return r.local.Manifest(ctx)
 	}
-	return r.remote.Manifest()
+	return r.remote.Manifest(), nil
 }
 
 func (r *registryExtensionMultiResolver) CreatedAt() *string {

@@ -29,7 +29,11 @@ var (
 		}
 		xs := make([]*registry.Extension, len(vs))
 		for i, v := range vs {
-			xs[i] = toRegistryAPIExtension(v)
+			x, err := toRegistryAPIExtension(ctx, v)
+			if err != nil {
+				return nil, err
+			}
+			xs[i] = x
 		}
 		return xs, nil
 	}
@@ -39,7 +43,7 @@ var (
 		if err != nil {
 			return nil, err
 		}
-		return toRegistryAPIExtension(x), nil
+		return toRegistryAPIExtension(ctx, x)
 	}
 
 	registryGetByExtensionID = func(ctx context.Context, extensionID string) (*registry.Extension, error) {
@@ -47,11 +51,16 @@ var (
 		if err != nil {
 			return nil, err
 		}
-		return toRegistryAPIExtension(x), nil
+		return toRegistryAPIExtension(ctx, x)
 	}
 )
 
-func toRegistryAPIExtension(v *db.RegistryExtension) *registry.Extension {
+func toRegistryAPIExtension(ctx context.Context, v *db.RegistryExtension) (*registry.Extension, error) {
+	manifest, err := backend.GetExtensionManifestWithBundleURL(ctx, v.NonCanonicalExtensionID, v.ID, "release")
+	if err != nil {
+		return nil, err
+	}
+
 	baseURL := strings.TrimSuffix(conf.Get().AppURL, "/")
 	return &registry.Extension{
 		UUID:        v.UUID,
@@ -61,11 +70,11 @@ func toRegistryAPIExtension(v *db.RegistryExtension) *registry.Extension {
 			URL:  baseURL + router.RegistryPublisherExtensions(v.Publisher.UserID != 0, v.Publisher.OrgID != 0, v.Publisher.NonCanonicalName),
 		},
 		Name:      v.Name,
-		Manifest:  v.Manifest,
+		Manifest:  manifest,
 		CreatedAt: v.CreatedAt,
 		UpdatedAt: v.UpdatedAt,
 		URL:       baseURL + router.Extension(v.NonCanonicalExtensionID),
-	}
+	}, nil
 }
 
 func init() {

@@ -1,7 +1,6 @@
 import { ExtensionsProps as GenericExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
 import { CXPControllerProps as GenericCXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
-import { importScriptsBlobURL } from '@sourcegraph/extensions-client-common/lib/cxp/webWorker'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { QueryResult } from '@sourcegraph/extensions-client-common/lib/graphql'
 import * as ECCGQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
@@ -118,8 +117,25 @@ export function createMessageTransports(
         )
     }
     if (extension.manifest.url) {
-        const worker = new Worker(importScriptsBlobURL(extension.id, extension.manifest.url))
-        return Promise.resolve(createWebWorkerMessageTransports(worker))
+        const url = extension.manifest.url
+        return fetch(url)
+            .then(resp => {
+                if (resp.status !== 200) {
+                    return resp
+                        .text()
+                        .then(text => Promise.reject(new Error(`loading bundle from ${url} failed: ${text}`)))
+                }
+                return resp.text()
+            })
+            .then(bundleSource => {
+                const blobURL = window.URL.createObjectURL(
+                    new Blob([bundleSource], {
+                        type: 'application/javascript',
+                    })
+                )
+                const worker = new Worker(blobURL)
+                return createWebWorkerMessageTransports(worker)
+            })
     }
     throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)
 }

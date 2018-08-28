@@ -34,8 +34,12 @@ func (r *registryExtensionDBResolver) Publisher(ctx context.Context) (*registryP
 }
 
 func (r *registryExtensionDBResolver) Name() string { return r.v.Name }
-func (r *registryExtensionDBResolver) Manifest() *extensionManifestResolver {
-	return newExtensionManifestResolver(r.v.Manifest)
+func (r *registryExtensionDBResolver) Manifest(ctx context.Context) (*extensionManifestResolver, error) {
+	manifest, err := backend.GetExtensionManifestWithBundleURL(ctx, r.v.NonCanonicalExtensionID, r.v.ID, "release")
+	if err != nil {
+		return nil, err
+	}
+	return newExtensionManifestResolver(manifest), nil
 }
 
 func (r *registryExtensionDBResolver) CreatedAt() *string {
