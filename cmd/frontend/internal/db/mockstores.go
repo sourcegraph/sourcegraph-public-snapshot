@@ -6,8 +6,9 @@ var Mocks MockStores
 type MockStores struct {
 	AccessTokens MockAccessTokens
 
-	DiscussionThreads  MockDiscussionThreads
-	DiscussionComments MockDiscussionComments
+	DiscussionThreads         MockDiscussionThreads
+	DiscussionComments        MockDiscussionComments
+	DiscussionMailReplyTokens MockDiscussionMailReplyTokens
 
 	GlobalDeps MockGlobalDeps
 	Pkgs       MockPkgs
