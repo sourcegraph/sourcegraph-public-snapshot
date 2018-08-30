@@ -16,8 +16,11 @@ import (
 
 // Message describes an email message to be sent.
 type Message struct {
-	FromName string   // email "From" address proper name
-	To       []string // email "To" recipients
+	FromName   string   // email "From" address proper name
+	To         []string // email "To" recipients
+	ReplyTo    *string  // optional "ReplyTo" address
+	MessageID  *string  // optional "Message-ID" header
+	References []string // optional "References" header list
 
 	Template Templates   // unparsed subject/body templates
 	Data     interface{} // template data
@@ -31,6 +34,25 @@ func Render(message Message) (*gophermail.Message, error) {
 			Name: "Sourcegraph",
 		},
 		Headers: mail.Header{},
+	}
+	if message.ReplyTo != nil {
+		if err := m.SetReplyTo(*message.ReplyTo); err != nil {
+			return nil, err
+		}
+	}
+	if message.MessageID != nil {
+		m.Headers["Message-ID"] = []string{*message.MessageID}
+	}
+	if len(message.References) > 0 {
+		// gophermail does not support lists, so we must build it ourself.
+		var refsList string
+		for _, ref := range message.References {
+			if refsList != "" {
+				refsList += " "
+			}
+			refsList += fmt.Sprintf("<%s>", ref)
+		}
+		m.Headers["References"] = []string{refsList}
 	}
 
 	parsed, err := ParseTemplate(message.Template)
