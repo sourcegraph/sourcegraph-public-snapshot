@@ -56,7 +56,10 @@ func (r *schemaResolver) ConfigurationMutation(ctx context.Context, args *struct
 		return nil, err
 	} else if !canAdmin {
 		if !actor.FromContext(ctx).IsAuthenticated() {
-			return nil, errors.New("to edit settings, you must sign in or sign up")
+			// TODO(sqs): Quick hack to show a less confusing error message when an anon user
+			// toggles code coverage on Sourcegraph.com. Make the extension actually show a friendly
+			// message and/or implement anon user settings on Sourcegraph.com.
+			return nil, errors.New("to toggle coverage or edit settings, you must sign in or sign up")
 		}
 		return nil, errors.New("viewer is not allowed to edit these settings")
 	}
