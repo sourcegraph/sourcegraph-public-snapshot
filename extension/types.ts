@@ -12,12 +12,10 @@ export interface PhabricatorMapping {
  */
 export interface FeatureFlags {
     newTooltips: boolean
-    optionsPage: boolean
 }
 
 export const featureFlagDefaults: FeatureFlags = {
     newTooltips: true,
-    optionsPage: false,
 }
 
 // TODO(chris) Switch to Partial<StorageItems> to eliminate bugs caused by
