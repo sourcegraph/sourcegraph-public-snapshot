@@ -9,6 +9,7 @@ import { resolveClientConfiguration } from '../../app/backend/server'
 import initializeCli from '../../app/cli'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../app/util/context'
 import * as browserAction from '../../extension/browserAction'
+import * as contextMenus from '../../extension/contextMenu'
 import * as omnibox from '../../extension/omnibox'
 import * as permissions from '../../extension/permissions'
 import * as runtime from '../../extension/runtime'
@@ -153,6 +154,11 @@ permissions.onRemoved(permissions => {
 })
 
 storage.addSyncMigration((items, set, remove) => {
+    if (!items.hasEnableDomainContextMenu) {
+        createEnableDomainContextMenu(() => {
+            storage.setSync({ hasEnableDomainContextMenu: true })
+        })
+    }
     if (items.phabricatorURL) {
         remove('phabricatorURL')
 
@@ -258,6 +264,30 @@ runtime.onMessage((message, _, cb) => {
 
     return
 })
+
+const ENABLE_SOURCEGRAPH_CONTEXT_MENU = 'ENABLE_SOURCEGRAPH_CONTEXT_MENU'
+function createEnableDomainContextMenu(callback?: () => void): void {
+    contextMenus.create(
+        {
+            id: ENABLE_SOURCEGRAPH_CONTEXT_MENU,
+            title: 'Enable Sourcegraph on this domain',
+            contexts: ['browser_action'],
+            onclick: (_: chrome.contextMenus.OnClickData, tab: chrome.tabs.Tab): void => {
+                if (!tab.url) {
+                    console.error('Could not get tab url to request permissions.')
+                    return
+                }
+                try {
+                    const url = new URL(tab.url)
+                    permissions.request([url.origin])
+                } catch {
+                    console.error('Could not get tab url to request permissions')
+                }
+            },
+        },
+        callback
+    )
+}
 
 function requestPermissionsForEnterpriseUrls(urls: string[], cb: (res?: any) => void): void {
     storage.getSync(items => {
