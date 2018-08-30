@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { NavLink } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { useCXP } from '../../util/context'
+import storage from '../../../extension/storage'
 import { SourcegraphIcon } from '../Icons'
 
 export const SIDEBAR_CARD_CLASS = 'card mb-3'
@@ -12,11 +12,26 @@ interface Props {
     className: string
 }
 
+interface State {
+    useCXP: boolean
+}
+
 /**
  * Sidebar for the options page.
  */
-export class OptionsPageSidebar extends React.Component<Props, {}> {
+export class OptionsPageSidebar extends React.Component<Props, State> {
     private subscriptions = new Subscription()
+
+    constructor(props: Props) {
+        super(props)
+        this.state = {
+            useCXP: false,
+        }
+    }
+
+    public componentDidMount(): void {
+        this.subscriptions.add(storage.observeSync('useCXP').subscribe(useCXP => this.setState(() => ({ useCXP }))))
+    }
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
@@ -34,7 +49,7 @@ export class OptionsPageSidebar extends React.Component<Props, {}> {
                         <NavLink to="/" className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS} exact={true}>
                             Configuration
                         </NavLink>
-                        {useCXP && (
+                        {this.state.useCXP && (
                             <NavLink to="/extensions" className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS} exact={true}>
                                 Extensions
                             </NavLink>
