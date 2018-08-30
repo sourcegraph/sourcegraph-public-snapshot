@@ -59,12 +59,7 @@ const config: webpack.Configuration = {
         // Same for "advanced" languages
         new webpack.IgnorePlugin(/^\.\/.+$/, /\/node_modules\/monaco-editor\/esm\/vs\/language\/(?!json)/),
         new webpack.IgnorePlugin(/\.flow$/, /.*/),
-        new ForkTsCheckerWebpackPlugin({
-            checkSyntacticErrors: true,
-            // TODO(sqs): enable this in the future
-            //
-            // tslint: true,
-        }),
+        new ForkTsCheckerWebpackPlugin({ checkSyntacticErrors: true }),
     ],
     resolve: {
         extensions: ['.mjs', '.ts', '.tsx', '.js'],
