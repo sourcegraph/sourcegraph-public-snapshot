@@ -28,6 +28,11 @@ func TestTrimGmailReplyQuote(t *testing.T) {
 			input: "test\r\n\r\nreply?\r\n\r\nOn Thu, Aug 30, 2018 at 3:49 PM, Stephen Gutekanst <\r\nstephen.gutekanst@gmail.com> wrote:\r\n\r\n> test reply?\r\n>\r\n> On Thu, Aug 30, 2018 at 3:46 PM, stephen <notifications@sourcegraph.com>\r\n> wrote:\r\n>\r\n>> *@stephen* commented on *mux.go*:\r\n>>\r\n>> Another reply!\r\n>> 169\r\n>> 170 // GetRoute returns a route registered with the given name. This\r\n>> method\r\n>> 171 // was renamed to Get() and remains here for backwards compatibility.\r\n>> 172 func (r *Router) GetRoute(name string) *Route {\r\n>> 173 return r.getNamedRoutes()[name]\r\n>> 174 }\r\n>> 175\r\n>>\r\n>> View and reply on Sourcegraph\r\n>> <http://localhost:3080/github.com/gorilla/mux/-/blob/mux.go?utm_source=email#tab=discussions&threadID=44&commentID=276>\r\n>> 276\r\n>>\r\n>\r\n>\r\n>\r\n> --\r\n> Follow me on twitter @slimsag <https://twitter.com/slimsag>.\r\n>\r\n\r\n\r\n\r\n-- \r\nFollow me on twitter @slimsag <https://twitter.com/slimsag>.\r\n",
 			want:  "test\r\n\r\nreply?\r\n",
 		},
+		{
+			name:  "best-effort",
+			input: "test\r\n\r\nreply?\r\n\r\nOn Thu, Aug 30, 2018 at 3:49 PM, JUNK wrote:\r\n> JUNK\r\nA whole lot of\r\nA whole lot of\r\nA whole lot of\r\nA whole lot of\r\ngarbage\r\n",
+			want:  "test\r\n\r\nreply?\r\n",
+		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {

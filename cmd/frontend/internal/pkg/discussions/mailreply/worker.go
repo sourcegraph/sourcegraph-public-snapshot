@@ -150,7 +150,7 @@ func workForever(ctx context.Context) {
 	}
 }
 
-var gmailQuoteMatch = regexp.MustCompile(`(\r\n|\n).*On .* at .*, .*(\r\n|\n)*.*wrote\:.*(\r\n|\n)+>.*(\r\n|\n)+>.*`)
+var gmailQuoteMatch = regexp.MustCompile(`(\r\n|\n).*On .* at .*, (.|\r\n|\n)*wrote\:(.|\r\n|\n)*(\r\n|\n)+(>.*(\r\n|\n))+(.|\r\n|\n)*`)
 
 // trimGmailReplyQuote trims the gmail reply quotation out of the given
 // message. This is a best-effort approach. In specific, it looks for the
