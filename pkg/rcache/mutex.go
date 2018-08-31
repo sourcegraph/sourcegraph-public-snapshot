@@ -32,10 +32,14 @@ var (
 // release, true`. Release must be called to free the lock. When the lock is
 // free the returned context is cancelled.
 func TryAcquireMutex(ctx context.Context, name string) (context.Context, func(), bool) {
+	// We return a canceled context if we fail, so create the context here
+	ctx, cancel := context.WithCancel(ctx)
+
 	name = fmt.Sprintf("%s:mutex:%s", globalPrefix, name)
 	mu, err := redsync.NewMutexWithPool(name, []*redis.Pool{pool})
 	if err != nil {
 		log15.Warn("failed to create redis mutex", "name", name, "error", err)
+		cancel()
 		return ctx, nil, false
 	}
 	mu.Expiry = mutexExpiry
@@ -43,9 +47,9 @@ func TryAcquireMutex(ctx context.Context, name string) (context.Context, func(),
 	mu.Delay = mutexDelay
 	err = mu.Lock()
 	if err != nil {
+		cancel()
 		return ctx, nil, false
 	}
-	ctx, cancel := context.WithCancel(ctx)
 	unlockedC := make(chan interface{})
 	go func() {
 		ticker := time.NewTicker(mu.Expiry / 2)
