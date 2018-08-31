@@ -208,3 +208,7 @@ required = [
 [[constraint]]
   name = "gopkg.in/src-d/go-git.v4"
   version = "4.6.0"
+
+[[constraint]]
+  name = "github.com/emersion/go-imap"
+  version = "1.0.0-beta.1"
