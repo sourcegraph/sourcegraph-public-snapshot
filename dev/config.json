@@ -89,11 +89,17 @@
   "repoListUpdateInterval": 1,
   "email.address": "noreply+${USER}@sourcegraph.com", // ${USER} is interpolated when SOURCEGRAPH_EXPAND_CONFIG_VARS=1
   "email.smtp": {
-    "host": "smtp.mandrillapp.com",
+    "host": "smtp.gmail.com",
     "port": 587,
     "authentication": "PLAIN",
-    "username": "beyang@sourcegraph.com",
-    "password": "Gk9_YjhgJMvKu4OW9SK2aw"
+    "username": "notifications@sourcegraph.com",
+    "password": "oyytqrfkalikjilf"
+  },
+  "email.imap": {
+    "host": "imap.gmail.com",
+    "port": 993,
+    "username": "notifications@sourcegraph.com",
+    "password": "oyytqrfkalikjilf"
   },
   "langservers": [
     {
