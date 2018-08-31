@@ -58,6 +58,24 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.discussion_mail_reply_tokens"
+```
+   Column   |           Type           | Modifiers 
+------------+--------------------------+-----------
+ token      | text                     | not null
+ user_id    | integer                  | not null
+ thread_id  | bigint                   | not null
+ deleted_at | timestamp with time zone | 
+Indexes:
+    "discussion_mail_reply_tokens_pkey" PRIMARY KEY, btree (token)
+    "discussion_mail_reply_tokens_token_idx" btree (token)
+    "discussion_mail_reply_tokens_user_id_thread_id_idx" btree (user_id, thread_id)
+Foreign-key constraints:
+    "discussion_mail_reply_tokens_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+    "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+
+```
+
 # Table "public.discussion_threads"
 ```
      Column     |           Type           |                            Modifiers                            
@@ -79,6 +97,7 @@ Foreign-key constraints:
     "discussion_threads_target_repo_id_fk" FOREIGN KEY (target_repo_id) REFERENCES discussion_threads_target_repo(id) ON DELETE RESTRICT
 Referenced by:
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
+    TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
     TABLE "discussion_threads_target_repo" CONSTRAINT "discussion_threads_target_repo_thread_id_fkey" FOREIGN KEY (thread_id) REFERENCES discussion_threads(id) ON DELETE RESTRICT
 
 ```
@@ -541,6 +560,7 @@ Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "discussion_comments" CONSTRAINT "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "discussion_mail_reply_tokens" CONSTRAINT "discussion_mail_reply_tokens_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "discussion_threads" CONSTRAINT "discussion_threads_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "names" CONSTRAINT "names_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
