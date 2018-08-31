@@ -98,6 +98,11 @@ func CanSendEmail() bool {
 	return Get().EmailSmtp != nil
 }
 
+// CanReadEmail tells if an IMAP server is configured and reading email is possible.
+func CanReadEmail() bool {
+	return Get().EmailImap != nil
+}
+
 // HasGitHubDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func HasGitHubDotComToken() bool {

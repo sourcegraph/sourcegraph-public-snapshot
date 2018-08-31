@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -154,6 +155,7 @@ func Main() error {
 		bg.StartLangServers(context.Background())
 	})
 	goroutine.Go(func() { bg.MigrateExternalAccounts(context.Background()) })
+	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	go useractivity.MigrateUserActivityData(context.Background())
 

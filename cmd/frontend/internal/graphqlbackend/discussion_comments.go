@@ -120,6 +120,7 @@ func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
+	// TODO(slimsag:discussions): Unify this discussion thread creation code with the mailreply worker?
 	newComment := &types.DiscussionComment{
 		ThreadID:     threadID,
 		AuthorUserID: currentUser.user.ID,

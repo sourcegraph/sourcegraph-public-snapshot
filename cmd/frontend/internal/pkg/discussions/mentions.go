@@ -139,6 +139,57 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 		return nil
 	}
 
+	var (
+		replyTo    *string
+		messageID  *string
+		references []string
+	)
+	if conf.CanReadEmail() {
+		// Generate a secure token that will allow the notified user to reply
+		// via email securely.
+		//
+		// 🚨 SECURITY: It is crucial that the user ID and thread ID passed here
+		// are correct, as the token effectively grants anonymous posting in the
+		// specified thread on the specified user's behalf.
+		secureToken, err := db.DiscussionMailReplyTokens.Generate(ctx, user.ID, n.thread.ID)
+		if err != nil {
+			return errors.Wrap(err, "DiscussionMailReplyTokens.Generate")
+		}
+
+		conf := conf.Get()
+		emailParts := strings.Split(conf.EmailImap.Username, "@")
+		secureReplyTo := fmt.Sprintf("%s+%s@%s", emailParts[0], secureToken, emailParts[1])
+		replyTo = &secureReplyTo
+
+		// Generate a unique message ID. This is used by e.g. Gmail to uniquely
+		// identify this email message and so that we can reference it in later
+		// messages and have them all properly show up in the same email thread.
+		msgID := func(commentID int64) string {
+			return fmt.Sprintf("%s+%d.%d@%s", emailParts[0], n.thread.ID, commentID, emailParts[1])
+		}
+		id := msgID(n.comment.ID)
+		messageID = &id
+
+		// Get a list of prior comments in the thread and generate the
+		// references list. This makes e.g. Gmail understand that this email is
+		// part of the thread.
+		comments, err := db.DiscussionComments.List(ctx, &db.DiscussionCommentsListOptions{
+			LimitOffset: &db.LimitOffset{
+				Limit: 100,
+			},
+			ThreadID: &n.thread.ID,
+		})
+		if err != nil {
+			return errors.Wrap(err, "DiscussionComments.List")
+		}
+		for _, comment := range comments {
+			if comment.ID == n.comment.ID {
+				continue
+			}
+			references = append(references, msgID(comment.ID))
+		}
+	}
+
 	url, err := URLToInlineComment(ctx, n.thread, n.comment)
 	if err != nil {
 		return errors.Wrap(err, "URLToInlineComment")
@@ -196,9 +247,12 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 	}
 
 	return txemail.Send(ctx, txemail.Message{
-		To:       []string{email},
-		FromName: fromName,
-		Template: n.template,
+		To:         []string{email},
+		FromName:   fromName,
+		ReplyTo:    replyTo,
+		MessageID:  messageID,
+		References: references,
+		Template:   n.template,
 		Data: struct {
 			ThreadTitle           string
 			CommentAuthorUsername string
@@ -206,6 +260,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			CommentContentsHTML   template.HTML
 			URL                   string
 			UniqueValue           string
+			CanReply              bool
 
 			// These fields may be empty strings depending on the type of comment..
 			RepoName        string
@@ -219,6 +274,7 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			CommentContentsHTML:   template.HTML(markdown.Render(n.comment.Contents, nil)),
 			URL:                   url.String(),
 			UniqueValue:           fmt.Sprint(n.comment.ID),
+			CanReply:              conf.CanReadEmail(),
 
 			RepoName:        repoShortName,
 			FileName:        fileName,
@@ -259,7 +315,12 @@ var (
 	{{- . -}}
 {{- end -}}
 {{- "\n" -}}
-{{- "View and reply on Sourcegraph:\n" -}}
+{{- "—\n" -}}
+{{- if .CanReply -}}
+	{{- "Reply to this email directly, or view it on Sourcegraph:\n" -}}
+{{- else -}}
+	{{- "View and reply on Sourcegraph:\n" -}}
+{{- end -}}
 {{- "\n" -}}
 {{- "  " -}}{{- .URL -}}
 {{- "\n" -}}
@@ -285,13 +346,16 @@ var (
 {{with .CodeContextHTML}}
 	{{.}}
 {{end}}
-<p><a href="{{.URL}}">View and reply on Sourcegraph</a></p>
+{{if .CanReply}}
+	<p style="font-size: small; color: #666;">—<br/>Reply to this email directly or <a href="{{.URL}}">view it on Sourcegraph</a>.</p>
+{{else}}
+	<p style="font-size: small; color: #666;">—<br/><a href="{{.URL}}">View and reply on Sourcegraph</a></p>
+{{end}}
 <!-- this ensures Gmail doesn't trim the email -->
 <span style="opacity: 0">{{.UniqueValue}}</span>
 </body>
 </html>
 `
-
 	newThreadEmailTemplate = txemail.MustValidate(txemail.Templates{
 		Subject: sharedCommentSubjectTemplate,
 		Text:    sharedCommentTextTemplate,
