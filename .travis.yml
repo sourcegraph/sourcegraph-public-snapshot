@@ -24,3 +24,8 @@ deploy:
   script: npm run semantic-release
   on:
     branch: master
+
+branches:
+  only:
+    - master
+    - /^renovate\/.+/
