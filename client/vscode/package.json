@@ -47,7 +47,7 @@
     "@types/node": "6.0.114",
     "@types/request": "2.47.1",
     "@types/request-promise-native": "1.0.15",
-    "@types/uuid": "3.4.3",
+    "@types/uuid": "3.4.4",
     "@types/ws": "5.1.2",
     "mocha": "^5.0.0",
     "typescript": "^3.0.0"
