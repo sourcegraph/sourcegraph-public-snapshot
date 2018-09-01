@@ -1344,13 +1344,14 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:951002c2ab44a37db6035465897f91189a7cba530a21e72202391c658d96c3af"
+  digest = "1:94221f2f9d7f705dae342e9f4b7bb8d0a8572d84c64e97a606ee1cc37f2f8bc6"
   name = "golang.org/x/net"
   packages = [
     "context",
     "context/ctxhttp",
     "html",
     "html/atom",
+    "html/charset",
     "http/httpguts",
     "http2",
     "http2/hpack",
@@ -1393,19 +1394,29 @@
   revision = "b126b21c05a91c856b027c16779c12e3bf236954"
 
 [[projects]]
-  digest = "1:72add669e7807372acde385b2508ec450feb54c12d054401e818f4fad762b19a"
+  digest = "1:2c4e3b27329379d7b5f889038b48086140ea60708fb92e4b19d6a775926ea30b"
   name = "golang.org/x/text"
   packages = [
     "collate",
     "collate/build",
     "encoding",
+    "encoding/charmap",
+    "encoding/htmlindex",
+    "encoding/internal",
     "encoding/internal/identifier",
+    "encoding/japanese",
+    "encoding/korean",
+    "encoding/simplifiedchinese",
+    "encoding/traditionalchinese",
+    "encoding/unicode",
     "internal/colltab",
     "internal/gen",
     "internal/tag",
     "internal/triegen",
     "internal/ucd",
+    "internal/utf8internal",
     "language",
+    "runes",
     "secure/bidirule",
     "transform",
     "unicode/bidi",
@@ -1900,6 +1911,7 @@
     "golang.org/x/net/context/ctxhttp",
     "golang.org/x/net/html",
     "golang.org/x/net/html/atom",
+    "golang.org/x/net/html/charset",
     "golang.org/x/net/trace",
     "golang.org/x/oauth2",
     "golang.org/x/sys/unix",
