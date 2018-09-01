@@ -2,6 +2,7 @@ package mailreply
 
 import (
 	"bytes"
+	"encoding/base64"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -77,11 +78,22 @@ func (m *Message) TextContent() ([]byte, error) {
 
 		contentType := strings.ToLower(part.Header.Get("Content-Type"))
 		if contentType == `text/plain; charset=utf-8` || contentType == `text/plain; charset="utf-8"` {
-			slurp, err := ioutil.ReadAll(part)
-			if err != nil {
-				return nil, errors.Wrap(err, "ReadAll(2)")
+			encoding := strings.ToLower(part.Header.Get("Content-Transfer-Encoding"))
+			switch encoding {
+			case "base64": // common when e.g. replying on gmail with emojis
+				slurp, err := ioutil.ReadAll(base64.NewDecoder(base64.StdEncoding, part))
+				if err != nil {
+					return nil, errors.Wrap(err, "ReadAll(2)")
+				}
+				return slurp, nil
+			default:
+				// "quoted-printable" (plain text) or other where we hope for the best.
+				slurp, err := ioutil.ReadAll(part)
+				if err != nil {
+					return nil, errors.Wrap(err, "ReadAll(3)")
+				}
+				return slurp, nil
 			}
-			return slurp, nil
 		}
 	}
 }
