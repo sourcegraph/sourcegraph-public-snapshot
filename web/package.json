@@ -114,7 +114,7 @@
     "gulp": "^4.0.0",
     "http-proxy-middleware": "^0.18.0",
     "javascript-typescript-langserver": "^2.5.4",
-    "jsdom": "^11.11.0",
+    "jsdom": "^12.0.0",
     "json-schema-to-typescript": "^5.2.2",
     "koa-connect": "^2.0.1",
     "mkdirp-promise": "^5.0.1",
