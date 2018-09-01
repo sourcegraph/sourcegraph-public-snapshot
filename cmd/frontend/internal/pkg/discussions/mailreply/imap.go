@@ -3,11 +3,15 @@ package mailreply
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"mime"
 	"mime/multipart"
+	"mime/quotedprintable"
 	"net"
 	"net/mail"
+	"net/textproto"
 	"strconv"
 	"strings"
 
@@ -15,6 +19,7 @@ import (
 	"github.com/emersion/go-imap/client"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"golang.org/x/net/html/charset"
 )
 
 // Message represents an IMAP message.
@@ -76,26 +81,60 @@ func (m *Message) TextContent() ([]byte, error) {
 			return nil, errors.Wrap(err, "NextPart")
 		}
 
-		contentType := strings.ToLower(part.Header.Get("Content-Type"))
-		if contentType == `text/plain; charset=utf-8` || contentType == `text/plain; charset="utf-8"` {
-			encoding := strings.ToLower(part.Header.Get("Content-Transfer-Encoding"))
-			switch encoding {
-			case "base64": // common when e.g. replying on gmail with emojis
-				slurp, err := ioutil.ReadAll(base64.NewDecoder(base64.StdEncoding, part))
-				if err != nil {
-					return nil, errors.Wrap(err, "ReadAll(2)")
-				}
-				return slurp, nil
-			default:
-				// "quoted-printable" (plain text) or other where we hope for the best.
-				slurp, err := ioutil.ReadAll(part)
-				if err != nil {
-					return nil, errors.Wrap(err, "ReadAll(3)")
-				}
-				return slurp, nil
+		text, err := messagePartTextContent(part, part.Header)
+		if err != nil {
+			return nil, errors.Wrap(err, "partTextContent")
+		}
+		if text != nil {
+			slurp, err := ioutil.ReadAll(text)
+			if err != nil {
+				return nil, errors.Wrap(err, "ReadAll(2)")
 			}
+			return slurp, nil
 		}
 	}
+}
+
+func messagePartTextContent(part io.ReadCloser, header textproto.MIMEHeader) (io.Reader, error) {
+	defer part.Close()
+	var (
+		mediaType string
+		params    map[string]string
+		err       error
+	)
+	if _, ok := header["Content-Type"]; ok {
+		mediaType, params, err = mime.ParseMediaType(header.Get("Content-Type"))
+		if err != nil {
+			return nil, errors.Wrap(err, "ParseMediaType")
+		}
+	} else {
+		mediaType = "text/plain"
+		params = map[string]string{"charset": "utf-8"}
+	}
+
+	// We are only interested in text content, so eliminate other possibilities
+	// now (HTML, etc).
+	if mediaType != "text/plain" {
+		return nil, fmt.Errorf("content type %q not supported", header.Get("Content-Type"))
+	}
+
+	// Handle decoding the content first, if needed.
+	var decoded io.Reader
+	contentTransferEncoding := header.Get("Content-Transfer-Encoding")
+	switch strings.ToLower(contentTransferEncoding) {
+	case "", "7bit", "8bit":
+		// noop, content is not encoded or is otherwise UTF-8 compatible.
+		decoded = part
+	case "quoted-printable": // very common "mostly plain text" encoding.
+		decoded = quotedprintable.NewReader(part)
+	case "base64": // common when e.g. replying from gmail with only emojis
+		decoded = base64.NewDecoder(base64.StdEncoding, part)
+	default:
+		return nil, nil // we do not know how to handle this encoding
+	}
+
+	// Handle possible character sets, if needed.
+	return charset.NewReaderLabel(strings.ToLower(params["charset"]), decoded)
 }
 
 // NewMailReader returns a new reader that reads mail from the configured IMAP
