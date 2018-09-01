@@ -4,6 +4,7 @@ import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
 // @ts-ignore
 import rxPaths from 'rxjs/_esm5/path-mapping'
+import UglifyJsPlugin from 'uglifyjs-webpack-plugin'
 import * as webpack from 'webpack'
 
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
@@ -37,6 +38,17 @@ const config: webpack.Configuration = {
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     optimization: {
         minimize: process.env.NODE_ENV === 'production',
+        minimizer: [
+            new UglifyJsPlugin({
+                uglifyOptions: {
+                    compress: {
+                        // // Don't inline functions, which causes name collisions with uglify-es:
+                        // https://github.com/mishoo/UglifyJS2/issues/2842
+                        inline: 1,
+                    },
+                },
+            }),
+        ],
     },
     entry: {
         app: path.join(__dirname, 'src/app.tsx'),
