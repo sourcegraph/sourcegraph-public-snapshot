@@ -1,12 +1,10 @@
 {
-  "plugins": ["syntax-dynamic-import", "lodash"],
+  "plugins": ["@babel/plugin-syntax-dynamic-import", "babel-plugin-lodash"],
   "presets": [
     [
-      "env",
+      "@babel/preset-env",
       {
-        "targets": {
-          "useBuiltIns": true
-        },
+        "useBuiltIns": "entry",
         "modules": false
       }
     ]

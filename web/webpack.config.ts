@@ -24,6 +24,15 @@ const workerPoolSCSS = {
     poolTimeout: usingWebpackServe ? Infinity : 2000,
 }
 
+const babelLoader: webpack.RuleSetUseItem = {
+    loader: 'babel-loader',
+    options: {
+        cacheDirectory: true,
+        // Workaround for https://github.com/babel/babel-loader/issues/624
+        extends: path.join(__dirname, '.babelrc'),
+    },
+}
+
 const config: webpack.Configuration = {
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     optimization: {
@@ -73,7 +82,7 @@ const config: webpack.Configuration = {
                 include: path.resolve(__dirname, 'src'),
                 use: [
                     { loader: 'thread-loader', options: workerPool },
-                    'babel-loader',
+                    babelLoader,
                     ((): webpack.NewLoader => ({
                         loader: 'ts-loader',
                         options: {
@@ -90,18 +99,7 @@ const config: webpack.Configuration = {
             }))(),
             ((): webpack.RuleSetRule => ({
                 test: /\.m?js$/,
-                // Only run on dependencies where it is necessary, to speed up builds.
-                //
-                // codemirror: https://github.com/sourcegraph/sourcegraph/issues/12303
-                use: [
-                    { loader: 'thread-loader', options: workerPool },
-                    {
-                        loader: 'babel-loader',
-                        options: {
-                            cacheDirectory: true,
-                        },
-                    },
-                ],
+                use: [{ loader: 'thread-loader', options: workerPool }, babelLoader],
             }))(),
             {
                 test: /\.mjs$/,
