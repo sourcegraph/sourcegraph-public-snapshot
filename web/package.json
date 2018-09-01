@@ -55,7 +55,7 @@
     "@sourcegraph/tsconfig": "^3.0.0",
     "@sourcegraph/tslint-config": "^12.0.0",
     "@types/babelify": "7.3.6",
-    "@types/bluebird": "3.5.23",
+    "@types/bluebird": "3.5.24",
     "@types/browserify": "12.0.33",
     "@types/chai": "4.1.4",
     "@types/d3-axis": "1.0.10",
