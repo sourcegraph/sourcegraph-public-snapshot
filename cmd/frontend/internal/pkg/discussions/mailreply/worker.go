@@ -33,6 +33,7 @@ func StartWorker() {
 			var (
 				release func()
 				ok      bool
+				ctx     context.Context
 			)
 			ctx, release, ok = rcache.TryAcquireMutex(context.Background(), "discussionsMailReplyWorker")
 			if !ok {
