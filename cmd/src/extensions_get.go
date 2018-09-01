@@ -49,8 +49,8 @@ Examples:
 }` + registryExtensionFragment
 
 		extensionID := *extensionIDFlag
-		if extensionID == "" && len(args) == 1 {
-			extensionID = args[0]
+		if extensionID == "" && flagSet.NArg() == 1 {
+			extensionID = flagSet.Arg(0)
 		}
 
 		var result struct {
