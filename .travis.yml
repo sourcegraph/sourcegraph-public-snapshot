@@ -22,3 +22,5 @@ deploy:
   provider: script
   skip_cleanup: true
   script: npm run semantic-release
+  on:
+    branch: master
