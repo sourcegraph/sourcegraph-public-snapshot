@@ -170,7 +170,10 @@ export class Blob extends React.Component<BlobProps, BlobState> {
         })
         this.subscriptions.add(
             hoverifier.hoverify({
-                positionEvents: this.codeViewElements.pipe(findPositionsFromEvents(domFunctions)),
+                positionEvents: this.codeViewElements.pipe(
+                    filter(isDefined),
+                    findPositionsFromEvents(domFunctions)
+                ),
                 positionJumps: locationPositions.pipe(
                     withLatestFrom(this.codeViewElements, this.blobElements),
                     map(([position, codeView, scrollElement]) => ({
