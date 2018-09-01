@@ -40,6 +40,14 @@ func TestMessagePartTextContent(t *testing.T) {
 			want: "Hello world!",
 		},
 		{
+			name:  "content_type/windows_1252",
+			input: "Hello world!",
+			header: textproto.MIMEHeader{
+				"Content-Type": []string{`text/plain; charset="Windows-1252"`},
+			},
+			want: "Hello world!",
+		},
+		{
 			name:   "content_type/none",
 			input:  "Hello world!",
 			header: textproto.MIMEHeader{},
