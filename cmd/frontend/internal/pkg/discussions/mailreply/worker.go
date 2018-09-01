@@ -25,7 +25,6 @@ func StartWorker() {
 		if !conf.DiscussionsEnabled() {
 			return
 		}
-		ctx := context.Background()
 
 		// Only one frontend instance should ever run this worker, so we use a
 		// distributed lock to guarantee this. If the frontend with the lock
@@ -35,10 +34,11 @@ func StartWorker() {
 				release func()
 				ok      bool
 			)
-			ctx, release, ok = rcache.TryAcquireMutex(ctx, "discussionsMailReplyWorker")
+			ctx, release, ok = rcache.TryAcquireMutex(context.Background(), "discussionsMailReplyWorker")
 			if !ok {
 				// Failed to acquire the mutex. Wait before trying again.
 				time.Sleep(30 * time.Second)
+				continue
 			}
 
 			// Acquired the mutex, perform work under it.
