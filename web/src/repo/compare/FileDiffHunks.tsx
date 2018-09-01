@@ -3,8 +3,10 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { NEVER, Subject, Subscription } from 'rxjs'
+import { filter } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { isDefined } from '../../util/types'
 
 const DiffBoundary: React.SFC<{
     /** The "lines" property is set for end boundaries (only for start boundaries and between hunks). */
@@ -246,7 +248,10 @@ export class FileDiffHunks extends React.Component<Props, State> {
         this.subscriptions.add(
             this.props.hoverifier.hoverify({
                 dom: diffDomFunctions,
-                positionEvents: this.codeElements.pipe(findPositionsFromEvents(diffDomFunctions)),
+                positionEvents: this.codeElements.pipe(
+                    filter(isDefined),
+                    findPositionsFromEvents(diffDomFunctions)
+                ),
                 positionJumps: NEVER, // TODO support diff URLs
                 resolveContext: hoveredToken => {
                     // if part is undefined, it doesn't matter whether we chose head or base, the line stayed the same

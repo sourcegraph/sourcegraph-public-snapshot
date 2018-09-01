@@ -59,7 +59,9 @@ export function getHover(
             },
         })
     }
-    return forkJoin(getModes(ctx).map(({ mode }) => fetchHover({ ...ctx, mode }))).pipe(map(HoverMerged.from))
+    return forkJoin(getModes(ctx).map(({ mode }) => fetchHover({ ...ctx, mode }))).pipe(
+        map(hovers => HoverMerged.from(hovers))
+    )
 }
 
 /**

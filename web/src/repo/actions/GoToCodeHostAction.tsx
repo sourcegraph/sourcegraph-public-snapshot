@@ -46,7 +46,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                     distinctUntilChanged((a, b) => a.repo === b.repo && a.rev === b.rev && a.filePath === b.filePath),
                     switchMap(({ repo, rev, filePath }) => {
                         if (!repo || !filePath) {
-                            return of({ fileExternalLinksOrError: null })
+                            return of<Pick<State, 'fileExternalLinksOrError'>>({ fileExternalLinksOrError: null })
                         }
                         return merge(
                             of({ fileExternalLinksOrError: undefined }),

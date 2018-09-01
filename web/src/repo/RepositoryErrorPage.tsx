@@ -115,7 +115,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                     withLatestFrom(this.componentUpdates),
                     switchMap(([, { repo }]) =>
                         merge<Pick<State, 'addedOrError'>>(
-                            of({ addedOrError: 'loading' }),
+                            of<Pick<State, 'addedOrError'>>({ addedOrError: 'loading' }),
                             addRepository(repo).pipe(
                                 switchMap(({ id }) => setRepositoryEnabled(id, true)),
                                 map(c => true),
@@ -168,8 +168,8 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                 .pipe(
                     withLatestFrom(this.componentUpdates),
                     switchMap(([, { repoID }]) =>
-                        merge<Pick<State, 'enabledOrError'>>(
-                            of({ enabledOrError: 'loading' }),
+                        merge(
+                            of<Pick<State, 'enabledOrError'>>({ enabledOrError: 'loading' }),
                             setRepositoryEnabled(repoID!, true).pipe(
                                 map(c => true),
 
