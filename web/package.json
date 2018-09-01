@@ -106,6 +106,7 @@
     "browserify": "^16.2.2",
     "bundlesize": "^0.17.0",
     "chai": "^4.1.2",
+    "core-js": "^2.5.7",
     "css-loader": "^1.0.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "fork-ts-checker-webpack-plugin": "^0.4.9",
