@@ -30,6 +30,7 @@ The commands are:
 	repos,repo      manages repositories
 	users,user      manages users
 	orgs,org        manages organizations
+	config          manages global, org, and user settings
 	extensions,ext  manages extensions (experimental)
 
 Use "src [command] -h" for more information about a command.

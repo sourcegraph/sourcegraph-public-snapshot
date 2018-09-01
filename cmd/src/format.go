@@ -9,6 +9,7 @@ import (
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
+	"github.com/sourcegraph/jsonx"
 )
 
 func parseTemplate(text string) (*template.Template, error) {
@@ -18,6 +19,9 @@ func parseTemplate(text string) (*template.Template, error) {
 		"json": func(v interface{}) (string, error) {
 			b, err := marshalIndent(v)
 			return string(b), err
+		},
+		"jsonIndent": func(jsonStr string) (string, error) {
+			return jsonx.ApplyEdits(jsonStr, jsonx.Format(jsonStr, jsonx.FormatOptions{TabSize: 2})...)
 		},
 		"msDuration": func(ms int) time.Duration {
 			return time.Duration(ms) * time.Millisecond
