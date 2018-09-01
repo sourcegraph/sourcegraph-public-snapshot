@@ -108,7 +108,7 @@
     "css-loader": "^1.0.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "fork-ts-checker-webpack-plugin": "^0.4.9",
-    "get-stream": "^3.0.0",
+    "get-stream": "^4.0.0",
     "globby": "^8.0.1",
     "graphql": "^0.13.2",
     "gulp": "^4.0.0",
