@@ -2647,9 +2647,6 @@ interface ConfigurationSubject {
 
 # The configurations for all of the relevant configuration subjects, plus the merged configuration.
 type ConfigurationCascade {
-    # The default settings, which are applied first and the lowest priority behind
-    # all configuration subjects' settings.
-    defaults: Configuration
     # The other configuration subjects that are applied with lower precedence than this subject to
     # form the final configuration. For example, a user in 2 organizations would have the following
     # configuration subjects: site (global settings), org 1, org 2, and the user.

@@ -28,15 +28,6 @@ type configurationCascadeResolver struct {
 	subject              *configurationSubject
 }
 
-func (r *configurationCascadeResolver) Defaults() *configurationResolver {
-	return &configurationResolver{
-		contents: `// This is the default configuration. Override it to configure settings.
-{
-  /* default configuration is empty */
-}`,
-	}
-}
-
 var mockConfigurationCascadeSubjects func() ([]*configurationSubject, error)
 
 func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configurationSubject, error) {
@@ -90,7 +81,7 @@ func viewerMergedConfiguration(ctx context.Context) (*configurationResolver, err
 }
 
 func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurationResolver, error) {
-	configs := []string{r.Defaults().Contents()}
+	var configs []string
 	subjects, err := r.Subjects(ctx)
 	if err != nil {
 		return nil, err

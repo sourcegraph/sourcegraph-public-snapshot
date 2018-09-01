@@ -22,9 +22,6 @@ export function refreshConfiguration(): Observable<never> {
 
 const configurationCascadeFragment = gql`
     fragment ConfigurationCascadeFields on ConfigurationCascade {
-        defaults {
-            contents
-        }
         subjects {
             __typename
             ... on Org {
