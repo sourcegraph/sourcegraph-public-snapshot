@@ -20,7 +20,7 @@
   "scripts": {
     "commitmsg": "commitlint -e $GIT_PARAMS",
     "semantic-release": "semantic-release",
-    "prettier": "prettier '**/*.{js?(on),ts}' --write --list-different",
+    "prettier": "prettier '**/{*.{js?(on),ts,yml},.*.yml}' --write --list-different",
     "tslint": "tslint -c tslint.json -p tsconfig.json './src/**/*.ts'",
     "typecheck": "tsc -p tsconfig.json",
     "build:assets": "typescript-json-schema --id 'https://sourcegraph.com/v1/contribution.schema.json' --noExtraProps --required --include src/protocol/contribution.ts --out lib/protocol/contribution.schema.json tsconfig.dist.module.json Contributions && node -e \"/* Deletes the top-level additionalProperties property in the file. */ fs = require('fs');f = process.argv[1];o = JSON.parse(fs.readFileSync(f, 'utf8'));delete o.additionalProperties;fs.writeFileSync(f, JSON.stringify(o, null, 4))\" lib/protocol/contribution.schema.json",
@@ -67,7 +67,7 @@
   "devDependencies": {
     "@commitlint/cli": "^7.0.0",
     "@commitlint/config-conventional": "^7.0.1",
-    "@sourcegraph/prettierrc": "^2.1.1",
+    "@sourcegraph/prettierrc": "^2.2.0",
     "@sourcegraph/tsconfig": "^3.0.0",
     "@sourcegraph/tslint-config": "^12.0.0",
     "@types/minimatch": "^3.0.3",
@@ -81,7 +81,7 @@
     "mocha": "^5.2.0",
     "nodemon": "^1.18.2",
     "nyc": "^12.0.2",
-    "prettier": "^1.13.6",
+    "prettier": "1.14.2",
     "semantic-release": "^15.6.3",
     "source-map-support": "^0.5.6",
     "ts-node": "^7.0.0",
