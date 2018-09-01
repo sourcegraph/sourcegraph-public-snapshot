@@ -9,7 +9,7 @@ export type HoverMerged = Pick<Hover, Exclude<keyof Hover, 'contents'>> & {
 
 export namespace HoverMerged {
     /** Create a merged hover from the given individual hovers. */
-    export function from(values: Hover[]): HoverMerged | null {
+    export function from(values: (Hover | null)[]): HoverMerged | null {
         const contents: HoverMerged['contents'] = []
         let range: HoverMerged['range']
         for (const result of values) {
