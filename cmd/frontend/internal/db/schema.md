@@ -225,23 +225,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.org_tags"
-```
-   Column   |           Type           |                       Modifiers                       
-------------+--------------------------+-------------------------------------------------------
- id         | integer                  | not null default nextval('org_tags_id_seq'::regclass)
- org_id     | integer                  | not null
- name       | text                     | not null
- created_at | timestamp with time zone | not null default now()
- updated_at | timestamp with time zone | not null default now()
- deleted_at | timestamp with time zone | 
-Indexes:
-    "org_tags_pkey" PRIMARY KEY, btree (id)
-Foreign-key constraints:
-    "org_tags_references_users" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
-
-```
-
 # Table "public.orgs"
 ```
       Column       |           Type           |                     Modifiers                     
@@ -264,7 +247,6 @@ Referenced by:
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE
     TABLE "org_invitations" CONSTRAINT "org_invitations_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id)
     TABLE "org_members" CONSTRAINT "org_members_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
-    TABLE "org_tags" CONSTRAINT "org_tags_references_users" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_org_id_fkey" FOREIGN KEY (publisher_org_id) REFERENCES orgs(id)
     TABLE "settings" CONSTRAINT "settings_references_orgs" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE RESTRICT
 
@@ -513,23 +495,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.user_tags"
-```
-   Column   |           Type           |                       Modifiers                        
-------------+--------------------------+--------------------------------------------------------
- id         | integer                  | not null default nextval('user_tags_id_seq'::regclass)
- user_id    | integer                  | not null
- name       | text                     | not null
- created_at | timestamp with time zone | not null default now()
- updated_at | timestamp with time zone | not null default now()
- deleted_at | timestamp with time zone | 
-Indexes:
-    "user_tags_pkey" PRIMARY KEY, btree (id)
-Foreign-key constraints:
-    "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
-
-```
-
 # Table "public.users"
 ```
       Column       |           Type           |                     Modifiers                      
@@ -573,6 +538,5 @@ Referenced by:
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_emails" CONSTRAINT "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "user_external_accounts" CONSTRAINT "user_external_accounts_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
-    TABLE "user_tags" CONSTRAINT "user_tags_references_users" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 
 ```
