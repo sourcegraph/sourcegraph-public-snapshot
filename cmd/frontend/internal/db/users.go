@@ -477,6 +477,8 @@ type UsersListOptions struct {
 	// UserIDs specifies a list of user IDs to include.
 	UserIDs []int32
 
+	Tag string // only include users with this tag
+
 	*LimitOffset
 }
 
@@ -518,6 +520,9 @@ func (*users) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 			}
 			conds = append(conds, sqlf.Sprintf("u.id IN (%s)", sqlf.Join(items, ",")))
 		}
+	}
+	if opt.Tag != "" {
+		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
 	}
 	return conds
 }

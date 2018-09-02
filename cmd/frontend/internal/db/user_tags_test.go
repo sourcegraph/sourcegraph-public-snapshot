@@ -32,6 +32,20 @@ func TestUsers_SetTag(t *testing.T) {
 			t.Errorf("got tags %v, want %v", u.Tags, wantTags)
 		}
 	}
+	checkUsersWithTag := func(t *testing.T, tag string, wantUsers []int32) {
+		t.Helper()
+		users, err := Users.List(ctx, &UsersListOptions{Tag: tag})
+		if err != nil {
+			t.Fatal(err)
+		}
+		userIDs := make([]int32, len(users))
+		for i, u := range users {
+			userIDs[i] = u.ID
+		}
+		if !reflect.DeepEqual(userIDs, wantUsers) {
+			t.Errorf("got user IDs %v, want %v", userIDs, wantUsers)
+		}
+	}
 
 	t.Run("fails on nonexistent user", func(t *testing.T) {
 		if err := Users.SetTag(ctx, 1234 /* doesn't exist */, "t", true); !errcode.IsNotFound(err) {
@@ -44,6 +58,7 @@ func TestUsers_SetTag(t *testing.T) {
 
 	t.Run("tags begins empty", func(t *testing.T) {
 		checkTags(t, u.ID, []string{})
+		checkUsersWithTag(t, "t1", []int32{})
 	})
 
 	t.Run("adds and removes tag", func(t *testing.T) {
@@ -51,6 +66,7 @@ func TestUsers_SetTag(t *testing.T) {
 			t.Fatal(err)
 		}
 		checkTags(t, u.ID, []string{"t1"})
+		checkUsersWithTag(t, "t1", []int32{u.ID})
 
 		t.Run("deduplicates", func(t *testing.T) {
 			if err := Users.SetTag(ctx, u.ID, "t1", true); err != nil {
@@ -63,11 +79,15 @@ func TestUsers_SetTag(t *testing.T) {
 			t.Fatal(err)
 		}
 		checkTags(t, u.ID, []string{"t1", "t2"})
+		checkUsersWithTag(t, "t1", []int32{u.ID})
+		checkUsersWithTag(t, "t2", []int32{u.ID})
 
 		if err := Users.SetTag(ctx, u.ID, "t1", false); err != nil {
 			t.Fatal(err)
 		}
 		checkTags(t, u.ID, []string{"t2"})
+		checkUsersWithTag(t, "t1", []int32{})
+		checkUsersWithTag(t, "t2", []int32{u.ID})
 
 		t.Run("removing nonexistent tag is noop", func(t *testing.T) {
 			if err := Users.SetTag(ctx, u.ID, "t1", false); err != nil {
@@ -80,5 +100,6 @@ func TestUsers_SetTag(t *testing.T) {
 			t.Fatal(err)
 		}
 		checkTags(t, u.ID, []string{})
+		checkUsersWithTag(t, "t2", []int32{})
 	})
 }

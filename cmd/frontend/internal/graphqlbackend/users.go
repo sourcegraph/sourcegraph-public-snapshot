@@ -16,11 +16,15 @@ import (
 func (r *schemaResolver) Users(args *struct {
 	connectionArgs
 	Query        *string
+	Tag          *string
 	ActivePeriod *string
 }) *userConnectionResolver {
 	var opt db.UsersListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query
+	}
+	if args.Tag != nil {
+		opt.Tag = *args.Tag
 	}
 	args.connectionArgs.set(&opt.LimitOffset)
 	return &userConnectionResolver{opt: opt, activePeriod: args.ActivePeriod}

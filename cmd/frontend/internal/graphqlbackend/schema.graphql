@@ -609,6 +609,8 @@ type Query {
         first: Int
         # Return users whose usernames or display names match the query.
         query: String
+        # Return only users with the given tag.
+        tag: String
         # Returns users who have been active in a given period of time.
         activePeriod: UserActivePeriod
     ): UserConnection!
