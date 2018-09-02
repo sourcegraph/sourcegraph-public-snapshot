@@ -195,6 +195,23 @@ type Mutation {
     #
     # Only site admins and any member of the organization may perform this mutation.
     removeUserFromOrganization(user: ID!, organization: ID!): EmptyResponse
+    # Adds or removes a tag on a user.
+    #
+    # Tags are used internally by Sourcegraph as feature flags for experimental features.
+    #
+    # Only site admins may perform this mutation.
+    setTag(
+        # The ID of the user whose tags to set.
+        #
+        # (This parameter is named "node" to make it easy to support tagging other types of nodes
+        # other than users in the future.)
+        node: ID!
+        # The tag to set.
+        tag: String!
+        # The desired state of the tag on the user (whether to add or remove): true to add, false to
+        # remove.
+        present: Boolean!
+    ): EmptyResponse!
     # Adds a Phabricator repository to Sourcegraph.
     addPhabricatorRepo(
         # The callsign, for example "MUX".
