@@ -45,6 +45,7 @@ func StartWorker() {
 			// Acquired the mutex, perform work under it.
 			log15.Debug("discussions: mailreply worker running")
 			workForever(ctx)
+			log15.Debug("discussions: mailreply worker stopped", "ctx", ctx.Err())
 			release()
 		}
 	})
