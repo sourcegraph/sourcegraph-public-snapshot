@@ -20,6 +20,7 @@ The commands are:
 	get        gets a user
 	create     creates a user account
 	delete     deletes a user account
+	tag        add/remove a tag on a user
 
 Use "src users [command] -h" for more information about a command.
 `
