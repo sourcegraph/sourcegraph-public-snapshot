@@ -167,7 +167,7 @@
     "lodash": "^4.17.10",
     "marked": "^0.4.0",
     "mdi-react": "^4.0.0",
-    "monaco-editor": "^0.13.1",
+    "monaco-editor": "^0.14.0",
     "open-color": "^1.6.2",
     "pretty-bytes": "^5.0.0",
     "react": "^16.4.2",
