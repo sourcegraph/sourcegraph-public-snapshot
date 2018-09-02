@@ -111,7 +111,7 @@ func workForever(ctx context.Context) {
 
 			contents := strings.TrimSpace(string(trimGmailReplyQuote(textContent)))
 			if contents == "" {
-				log15.Debug("discussions: mailreply worker: ignoring email with no effective content", "subject", msg.Envelope.Subject)
+				log15.Debug("discussions: mailreply worker: ignoring email with no effective content", "subject", msg.Envelope.Subject, "content", string(textContent))
 				msg.MarkSeenAndDeleted()
 				continue // ignore empty replies
 			}
