@@ -602,14 +602,6 @@
   revision = "0fb14efe8c47ae851c0034ed7a448854d3d34cf3"
 
 [[projects]]
-  branch = "master"
-  digest = "1:13e1cc32c06b9bb721c4d613b3898f3dd937eb05c29daee7ebc8522e2d1b3e8f"
-  name = "github.com/hjr265/redsync.go"
-  packages = ["redsync"]
-  pruneopts = "NUT"
-  revision = "688f6d364b799fa311a6de70b2bb9a4a669221da"
-
-[[projects]]
   digest = "1:16b4a648997ea1b8f115a4f09ad555ed17a0b6ff66919dadba6712907f063b0a"
   name = "github.com/honeycombio/libhoney-go"
   packages = ["."]
@@ -1562,6 +1554,14 @@
   revision = "62941eab772c480c968feea68faba37f941cc931"
 
 [[projects]]
+  digest = "1:52ab1176bbcfcdcbf1ee91e3bdae4a2a826c7d0ff7ae2899928df40f0c85c63b"
+  name = "gopkg.in/redsync.v1"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "98dabdf1c8574561bf976911c14ff652c47b1ddf"
+  version = "v1.0.1"
+
+[[projects]]
   digest = "1:c25ddb3b9fc4ec258f94a4e10b5e7eab434e3e5a5a21fef1dbe1749155abf7b2"
   name = "gopkg.in/square/go-jose.v2"
   packages = [
@@ -1852,7 +1852,6 @@
     "github.com/graph-gophers/graphql-go/trace",
     "github.com/gregjones/httpcache",
     "github.com/hashicorp/go-multierror",
-    "github.com/hjr265/redsync.go/redsync",
     "github.com/honeycombio/libhoney-go",
     "github.com/joho/godotenv",
     "github.com/jteeuwen/go-bindata/go-bindata",
@@ -1924,6 +1923,7 @@
     "google.golang.org/api/googleapi/transport",
     "gopkg.in/inconshreveable/log15.v2",
     "gopkg.in/jpoehls/gophermail.v0",
+    "gopkg.in/redsync.v1",
     "gopkg.in/src-d/go-git.v4/plumbing/format/config",
     "gopkg.in/yaml.v2",
     "honnef.co/go/tools/cmd/staticcheck",
