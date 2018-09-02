@@ -64,6 +64,7 @@ export class ExtensionConfiguredSubjectItemForAdd<
 > extends React.PureComponent<
     {
         item: ExtensionConfiguredSubject
+        confirm?: () => boolean
         onUpdate: () => void
         onComplete: () => void
     } & ExtensionsProps<S, C>,
@@ -125,7 +126,9 @@ export class ExtensionConfiguredSubjectItemForAdd<
     }
 
     private onClick: React.MouseEventHandler<HTMLElement> = () => {
-        this.addClicks.next()
+        if (!this.props.confirm || this.props.confirm()) {
+            this.addClicks.next()
+        }
     }
 }
 
@@ -141,6 +144,7 @@ export class ExtensionConfiguredSubjectItemForRemove<
 > extends React.PureComponent<
     {
         item: ExtensionConfiguredSubject
+        confirm?: () => boolean
         onUpdate: () => void
         onComplete: () => void
     } & ExtensionsProps<S, C>,
@@ -199,7 +203,9 @@ export class ExtensionConfiguredSubjectItemForRemove<
     }
 
     private onClick: React.MouseEventHandler<HTMLElement> = () => {
-        this.removeClicks.next()
+        if (!this.props.confirm || this.props.confirm()) {
+            this.removeClicks.next()
+        }
     }
 }
 
@@ -218,7 +224,7 @@ class ExtensionConfigurationSubjectsDropdownItems<
          * feedback about the error (because it is shown in the menu item).
          */
         onComplete: () => void
-    } & Pick<Props<S, C>, 'header' | 'itemComponent' | 'onUpdate'> &
+    } & Pick<Props<S, C>, 'header' | 'itemComponent' | 'confirm' | 'onUpdate'> &
         ExtensionsProps<S, C>
 > {
     public render(): JSX.Element | null {
@@ -336,6 +342,12 @@ interface Props<S extends ConfigurationSubject, C extends Settings>
     /** Whether to show the caret on the dropdown toggle. */
     caret?: boolean
 
+    /**
+     * Called to confirm the primary action. If the callback returns false, the action is not
+     * performed.
+     */
+    confirm?: () => boolean
+
     /** Called when the component performs an update that requires the parent component to refresh data. */
     onUpdate: () => void
 }
@@ -386,6 +398,7 @@ export class ExtensionConfigureButton<S extends ConfigurationSubject, C extends 
                             subject,
                             extension: this.props.extension,
                         }))}
+                        confirm={this.props.confirm}
                         onUpdate={this.props.onUpdate}
                         onComplete={this.onComplete}
                         extensions={this.props.extensions}

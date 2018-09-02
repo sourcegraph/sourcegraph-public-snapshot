@@ -117,6 +117,7 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
                                                     caret={false}
                                                     configurationCascade={this.props.configurationCascade}
                                                     extensions={this.props.extensions}
+                                                    confirm={this.confirmAdd}
                                                 >
                                                     Add
                                                 </ExtensionConfigureButton>
@@ -135,6 +136,21 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
                     </div>
                 </div>
             </div>
+        )
+    }
+
+    private confirmAdd = (): boolean => {
+        // Either `"title" (id)` (if there is a title in the manifest) or else just `id`. It is
+        // important to show the ID because it indicates who the publisher is and allows
+        // disambiguation from other similarly titled extensions.
+        let displayName: string
+        if (this.props.node.manifest && !isErrorLike(this.props.node.manifest) && this.props.node.manifest.title) {
+            displayName = `${JSON.stringify(this.props.node.manifest.title)} (${this.props.node.id})`
+        } else {
+            displayName = this.props.node.id
+        }
+        return confirm(
+            `Add Sourcegraph extension ${displayName}?\n\nIt can:\n- Read repositories and files you view using Sourcegraph\n- Read and change your Sourcegraph settings`
         )
     }
 }
