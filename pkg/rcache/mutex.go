@@ -6,9 +6,7 @@ import (
 
 	"context"
 
-	"github.com/garyburd/redigo/redis"
-	"github.com/hjr265/redsync.go/redsync"
-	log15 "gopkg.in/inconshreveable/log15.v2"
+	"gopkg.in/redsync.v1"
 )
 
 var (
@@ -36,23 +34,21 @@ func TryAcquireMutex(ctx context.Context, name string) (context.Context, func(),
 	ctx, cancel := context.WithCancel(ctx)
 
 	name = fmt.Sprintf("%s:mutex:%s", globalPrefix, name)
-	mu, err := redsync.NewMutexWithPool(name, []*redis.Pool{pool})
-	if err != nil {
-		log15.Warn("failed to create redis mutex", "name", name, "error", err)
-		cancel()
-		return ctx, nil, false
-	}
-	mu.Expiry = mutexExpiry
-	mu.Tries = mutexTries
-	mu.Delay = mutexDelay
-	err = mu.Lock()
+	mu := redsync.New([]redsync.Pool{pool}).NewMutex(
+		name,
+		redsync.SetExpiry(mutexExpiry),
+		redsync.SetTries(mutexTries),
+		redsync.SetRetryDelay(mutexDelay),
+	)
+
+	err := mu.Lock()
 	if err != nil {
 		cancel()
 		return ctx, nil, false
 	}
 	unlockedC := make(chan interface{})
 	go func() {
-		ticker := time.NewTicker(mu.Expiry / 2)
+		ticker := time.NewTicker(mutexExpiry / 2)
 		for {
 			select {
 			case <-ctx.Done():
@@ -63,7 +59,7 @@ func TryAcquireMutex(ctx context.Context, name string) (context.Context, func(),
 				return
 			case <-ticker.C:
 				// TODO simple retry
-				if !mu.Touch() {
+				if !mu.Extend() {
 					cancel()
 				}
 			}
