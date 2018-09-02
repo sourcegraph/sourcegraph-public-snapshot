@@ -88,7 +88,9 @@ func workForever(ctx context.Context) {
 				// Verify the token.
 				userID, threadID, err = db.DiscussionMailReplyTokens.Get(ctx, token)
 				if err == db.ErrInvalidToken {
-					continue // Invalid token / attacker
+					log15.Debug("discussions: mailreply worker: ignoring email with invalid authorization token", "subject", msg.Envelope.Subject, "mailbox_name", toAddress.MailboxName)
+					msg.MarkSeenAndDeleted()
+					break // Invalid token / attacker
 				}
 				if err != nil {
 					log15.Error("discussions: mailreply worker: error while looking up token", "error", err)
@@ -109,6 +111,8 @@ func workForever(ctx context.Context) {
 
 			contents := strings.TrimSpace(string(trimGmailReplyQuote(textContent)))
 			if contents == "" {
+				log15.Debug("discussions: mailreply worker: ignoring email with no effective content", "subject", msg.Envelope.Subject)
+				msg.MarkSeenAndDeleted()
 				continue // ignore empty replies
 			}
 
