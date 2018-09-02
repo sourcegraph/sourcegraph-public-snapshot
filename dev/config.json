@@ -95,12 +95,6 @@
     "username": "notifications@sourcegraph.com",
     "password": "oyytqrfkalikjilf"
   },
-  "email.imap": {
-    "host": "imap.gmail.com",
-    "port": 993,
-    "username": "notifications@sourcegraph.com",
-    "password": "oyytqrfkalikjilf"
-  },
   "langservers": [
     {
       "address": "tcp://localhost:4389",
