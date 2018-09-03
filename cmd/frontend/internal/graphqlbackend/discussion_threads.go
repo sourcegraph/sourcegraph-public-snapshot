@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -348,6 +349,189 @@ func (r *discussionThreadTargetRepoResolver) Selection() *discussionThreadTarget
 		return nil
 	}
 	return &discussionThreadTargetRepoSelectionResolver{t: r.t}
+}
+
+func (r *discussionThreadTargetRepoResolver) RelativePath(ctx context.Context, args *struct {
+	Rev string
+}) (*string, error) {
+	if r.t.Path == nil {
+		return nil, nil
+	}
+	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	if err != nil {
+		return nil, err
+	}
+	if r.t.Revision == nil && r.t.Branch == nil {
+		// The thread wasn't created on a specific revision or branch, so we
+		// cannot walk the history. Instead, we must assume its location and
+		// check in the relative revision.
+		commit, err := repo.Commit(ctx, &repositoryCommitArgs{Rev: args.Rev})
+		if err != nil {
+			return nil, err
+		}
+		_, err = commit.File(ctx, &struct{ Path string }{Path: *r.t.Path})
+		if err != nil {
+			// File does not exist in this revision.
+			return nil, nil
+		}
+		return r.t.Path, nil // File exists at that path.
+	}
+
+	var rev string
+	if r.t.Revision != nil {
+		rev = *r.t.Revision
+	} else if r.t.Branch != nil {
+		rev = *r.t.Branch
+	}
+	comparison, err := repo.Comparison(ctx, &repositoryComparisonInput{
+		Base: &rev,
+		Head: &args.Rev,
+	})
+	if err != nil {
+		return nil, err
+	}
+	currentPath := *r.t.Path
+	fileDiffs, err := comparison.FileDiffs(&struct{ First *int32 }{}).Nodes(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for _, fileDiff := range fileDiffs {
+		oldPath := fileDiff.OldPath()
+		newPath := fileDiff.NewPath()
+
+		if oldPath == nil && newPath != nil {
+			// newPath was added. We don't need to do anything because this
+			// could only indicate the file we're tracking was added.
+		} else if oldPath != nil && newPath == nil {
+			// oldPath was removed
+			if currentPath == *oldPath {
+				// The file we are tracking was removed!
+				return nil, nil
+			}
+		} else if oldPath != nil && newPath != nil {
+			// oldPath was renamed to newPath
+			if currentPath == *oldPath {
+				// The file we are tracking was renamed.
+				currentPath = *newPath
+			}
+		}
+	}
+	return &currentPath, nil
+}
+
+type discussionSelectionRangeResolver struct {
+	startLine, startCharacter, endLine, endCharacter int32
+}
+
+func (r *discussionSelectionRangeResolver) StartLine() int32      { return r.startLine }
+func (r *discussionSelectionRangeResolver) StartCharacter() int32 { return r.startCharacter }
+func (r *discussionSelectionRangeResolver) EndLine() int32        { return r.endLine }
+func (r *discussionSelectionRangeResolver) EndCharacter() int32   { return r.endCharacter }
+
+func discussionSelectionRelativeTo(oldSel *types.DiscussionThreadTargetRepo, newContent string) *discussionSelectionRangeResolver {
+	mustFindLines := 4
+
+	search := func(searchForLines string) *discussionSelectionRangeResolver {
+		if len(strings.Split(searchForLines, "\n")) < mustFindLines {
+			// We do not have enough search lines to find a good match.
+			return nil
+		}
+		matches := strings.Count(newContent, searchForLines)
+		switch {
+		case matches > 1:
+			// The lines we are searching for produced too many matches.
+			return nil
+		case matches == 1:
+			// We found a perfect match.
+			idx := strings.Index(newContent, searchForLines)
+			startLine := int32(len(strings.Split(newContent[:idx], "\n")))
+			return &discussionSelectionRangeResolver{
+				startCharacter: *oldSel.StartCharacter,
+				endCharacter:   *oldSel.EndCharacter,
+				startLine:      startLine,
+				endLine:        startLine + int32(len(*oldSel.Lines)),
+			}
+		default:
+			return nil
+		}
+	}
+
+	// Start removing lines until we find a result (or fail to find one).
+	allLines := *oldSel.LinesBefore
+	allLines = append(allLines, *oldSel.Lines...)
+	allLines = append(allLines, *oldSel.LinesAfter...)
+	removeLines := 0
+	for {
+		if removeLines > len(allLines) {
+			return nil
+		}
+		// Try removing N lines from the top.
+		if r := search(strings.Join(allLines[removeLines:], "\n")); r != nil {
+			offset := int32(len(*oldSel.LinesBefore) - 1 - removeLines)
+			r.startLine += offset
+			r.endLine += offset
+			return r
+		}
+
+		// Try removing N lines from the bottom.
+		if r := search(strings.Join(allLines[:len(allLines)-removeLines], "\n")); r != nil {
+			offset := int32(len(*oldSel.LinesAfter) - 1 - removeLines)
+			r.startLine += offset
+			r.endLine += offset
+			return r
+		}
+		removeLines++
+	}
+}
+
+func (r *discussionThreadTargetRepoResolver) RelativeSelection(ctx context.Context, args *struct {
+	Rev string
+}) (*discussionSelectionRangeResolver, error) {
+	if !r.t.HasSelection() {
+		return nil, nil
+	}
+	path, err := r.RelativePath(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	if path == nil {
+		return nil, nil
+	}
+	repo, err := repositoryByIDInt32(ctx, r.t.RepoID)
+	if err != nil {
+		return nil, err
+	}
+	commit, err := repo.Commit(ctx, &repositoryCommitArgs{Rev: args.Rev})
+	if err != nil {
+		return nil, err
+	}
+	oldSel := &discussionSelectionRangeResolver{
+		startLine:      *r.t.StartLine,
+		startCharacter: *r.t.StartCharacter,
+		endLine:        *r.t.EndLine,
+		endCharacter:   *r.t.EndCharacter,
+	}
+	if r.t.Revision != nil && *r.t.Revision == string(commit.OID()) {
+		return oldSel, nil // nothing to do (requested relative revision is identical to the stored revision)
+	}
+	if r.t.Branch != nil {
+		branchCommit, err := repo.Commit(ctx, &repositoryCommitArgs{Rev: *r.t.Branch})
+		if err != nil {
+			return nil, err
+		}
+		if branchCommit.OID() == commit.OID() {
+			return oldSel, nil // nothing to do (requested relative revision is identical to the stored branch revision)
+		}
+	}
+	file, err := commit.File(ctx, &struct{ Path string }{Path: *path})
+	if err != nil {
+		return nil, err
+	}
+	newContent, err := file.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return discussionSelectionRelativeTo(r.t, newContent), nil
 }
 
 type discussionThreadTargetResolver struct {

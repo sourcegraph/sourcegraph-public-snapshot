@@ -2330,6 +2330,21 @@ type LangServer {
     healthy: Boolean!
 }
 
+# An object defining a selection range within e.g. a file.
+type DiscussionSelectionRange {
+    # The line that the selection started on (zero-based, inclusive).
+    startLine: Int!
+
+    # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
+    startCharacter: Int!
+
+    # The line that the selection ends on (zero-based, exclusive).
+    endLine: Int!
+
+    # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
+    endCharacter: Int!
+}
+
 # A selection within a file.
 type DiscussionThreadTargetRepoSelection {
     # The line that the selection started on (zero-based, inclusive).
@@ -2389,6 +2404,26 @@ type DiscussionThreadTargetRepo {
 
     # The selection that the thread was referencing, if any.
     selection: DiscussionThreadTargetRepoSelection
+
+    # Where the path would be relative to the given Git revision specifier
+    # (branch/commit/etc). i.e., accounting for file renames, deletions, etc.
+    #
+    # null is returned if there is no path relative to the specified revision,
+    # e.g. if the file was deleted or the path field was null.
+    relativePath(rev: String!): String
+
+    # Where the selection would be relative to the given Git revision specifier
+    # (branch/commit/etc).
+    #
+    # The implementation relies on a hueristic which is generally good enough,
+    # but under certain circumstances may not be as accurate as e.g. determining
+    # this placement by walking through the Git history.
+    #
+    # If determining the relative placement is not possible (file was renamed
+    # or removed, the selection no longer exists in the file, or the hueristic
+    # failed) null is returned and it should be assumed the selection does not
+    # exist in this revision.
+    relativeSelection(rev: String!): DiscussionSelectionRange
 }
 
 # The target of a discussion thread. Today, the only possible target is a
