@@ -74,7 +74,7 @@
     "signale": "^1.2.1",
     "socket.io": "^2.1.1",
     "stylelint": "^9.4.0",
-    "ts-loader": "^4.2.0",
+    "ts-loader": "^5.0.0",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.6",
