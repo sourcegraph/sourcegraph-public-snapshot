@@ -51,7 +51,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                     distinctUntilChanged(([a], [b]) => a.threadID === b.threadID),
                     switchMap(([props]) =>
                         fetchDiscussionThreadAndComments(props.threadID).pipe(
-                            map(thread => ({ thread, loading: false })),
+                            map(thread => ({ thread, error: undefined, loading: false })),
                             catchError(error => {
                                 console.error(error)
                                 return [{ error, loading: false }]
