@@ -85,6 +85,7 @@ func (m *Message) TextContent() ([]byte, error) {
 		if err != nil {
 			return nil, errors.Wrap(err, "partTextContent")
 		}
+		defer part.Close()
 		if text != nil {
 			slurp, err := ioutil.ReadAll(text)
 			if err != nil {
@@ -96,7 +97,6 @@ func (m *Message) TextContent() ([]byte, error) {
 }
 
 func messagePartTextContent(part io.ReadCloser, header textproto.MIMEHeader) (io.Reader, error) {
-	defer part.Close()
 	var (
 		mediaType string
 		params    map[string]string
