@@ -15,7 +15,7 @@ type LineRange struct {
 
 // LinesForSelection returns the lines from the given file's contents for the
 // given selection.
-func LinesForSelection(fileContent string, selection LineRange) (linesBefore, lines, linesAfter string) {
+func LinesForSelection(fileContent string, selection LineRange) (linesBefore, lines, linesAfter []string) {
 	allLines := strings.Split(fileContent, "\n")
 	clamp := func(v, min, max int) int {
 		if v < min {
@@ -25,15 +25,11 @@ func LinesForSelection(fileContent string, selection LineRange) (linesBefore, li
 		}
 		return v
 	}
-	linesForRange := func(startLine, endLine int) string {
+	linesForRange := func(startLine, endLine int) []string {
 		startLine = clamp(startLine, 0, len(allLines))
 		endLine = clamp(endLine, 0, len(allLines))
 		selectedLines := allLines[startLine:endLine]
-		l := strings.Join(selectedLines, "\n")
-		if len(selectedLines) != 0 && endLine != len(allLines) {
-			l += "\n"
-		}
-		return l
+		return selectedLines
 	}
 	linesBefore = linesForRange(selection.StartLine-3, selection.StartLine)
 	lines = linesForRange(selection.StartLine, selection.EndLine)

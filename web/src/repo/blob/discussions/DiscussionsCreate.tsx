@@ -78,7 +78,19 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                 path: this.props.filePath,
                 branch: this.props.rev,
                 revision: this.props.commitID,
-                selection: { startLine, startCharacter, endLine, endCharacter },
+                selection: {
+                    startLine,
+                    startCharacter,
+                    endLine,
+                    endCharacter,
+
+                    // TODO(slimsag:discussions): Even though these fields are declared as
+                    // nullable in the GraphQL schema ("lines: [String!]"), graphqlschema.ts
+                    // not generate the proper nullable type, so we must cast to any.
+                    linesBefore: null as any,
+                    lines: null as any,
+                    linesAfter: null as any,
+                },
             },
         }).pipe(
             tap(thread => {

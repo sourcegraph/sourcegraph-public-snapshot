@@ -38,9 +38,9 @@ type discussionThreadTargetRepoSelectionInput struct {
 	StartCharacter int32
 	EndLine        int32
 	EndCharacter   int32
-	LinesBefore    *string
-	Lines          *string
-	LinesAfter     *string
+	LinesBefore    *[]string
+	Lines          *[]string
+	LinesAfter     *[]string
 }
 
 type discussionThreadTargetRepoInput struct {
@@ -308,11 +308,11 @@ func (r *discussionThreadTargetRepoSelectionResolver) StartLine() int32 { return
 func (r *discussionThreadTargetRepoSelectionResolver) StartCharacter() int32 {
 	return *r.t.StartCharacter
 }
-func (r *discussionThreadTargetRepoSelectionResolver) EndLine() int32      { return *r.t.EndLine }
-func (r *discussionThreadTargetRepoSelectionResolver) EndCharacter() int32 { return *r.t.EndCharacter }
-func (r *discussionThreadTargetRepoSelectionResolver) LinesBefore() string { return *r.t.LinesBefore }
-func (r *discussionThreadTargetRepoSelectionResolver) Lines() string       { return *r.t.Lines }
-func (r *discussionThreadTargetRepoSelectionResolver) LinesAfter() string  { return *r.t.LinesAfter }
+func (r *discussionThreadTargetRepoSelectionResolver) EndLine() int32        { return *r.t.EndLine }
+func (r *discussionThreadTargetRepoSelectionResolver) EndCharacter() int32   { return *r.t.EndCharacter }
+func (r *discussionThreadTargetRepoSelectionResolver) LinesBefore() []string { return *r.t.LinesBefore }
+func (r *discussionThreadTargetRepoSelectionResolver) Lines() []string       { return *r.t.Lines }
+func (r *discussionThreadTargetRepoSelectionResolver) LinesAfter() []string  { return *r.t.LinesAfter }
 
 type discussionThreadTargetRepoResolver struct {
 	t *types.DiscussionThreadTargetRepo

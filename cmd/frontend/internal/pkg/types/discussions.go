@@ -33,9 +33,9 @@ type DiscussionThreadTargetRepo struct {
 	EndLine        *int32
 	StartCharacter *int32
 	EndCharacter   *int32
-	LinesBefore    *string
-	Lines          *string
-	LinesAfter     *string
+	LinesBefore    *[]string
+	Lines          *[]string
+	LinesAfter     *[]string
 }
 
 // HasSelection tells if the selection fields are present or not. If one field

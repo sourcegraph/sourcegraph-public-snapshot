@@ -19,12 +19,12 @@ func formatTargetRepoLinesText(tr *types.DiscussionThreadTargetRepo) string {
 	}
 
 	// Determine the starting line number.
-	lineNumber := 1 + int(*tr.StartLine) - len(strings.Split(*tr.LinesBefore, "\n"))
+	lineNumber := 1 + int(*tr.StartLine) - len(*tr.LinesBefore)
 
 	var b bytes.Buffer
 	padding := len(fmt.Sprint(*tr.EndLine))
-	addLines := func(lines, prefix string) {
-		for _, line := range strings.Split(strings.TrimSuffix(lines, "\n"), "\n") {
+	addLines := func(lines []string, prefix string) {
+		for _, line := range lines {
 			lineNumber++
 			fmt.Fprintf(&b, "%s%"+fmt.Sprint(padding)+"d %s\n", prefix, lineNumber, line)
 		}
@@ -67,10 +67,11 @@ func formatTargetRepoLinesHTML(ctx context.Context, tr *types.DiscussionThreadTa
 	afterStyle += `border-bottom-right-radius: 4px; `
 
 	var b bytes.Buffer
-	addLines := func(style, code string, baseLineNumber int) error {
-		if code == "" {
+	addLines := func(style string, codeLines []string, baseLineNumber int) error {
+		if len(codeLines) == 0 {
 			return nil
 		}
+		code := strings.Join(codeLines, "\n")
 
 		// TODO(slimsag): When the file exists (e.g. hasn't been deleted from
 		// Git), we can get better highlighting by passing the entire file
@@ -99,15 +100,15 @@ func formatTargetRepoLinesHTML(ctx context.Context, tr *types.DiscussionThreadTa
 		return err
 	}
 
-	baseLine := 1 + int(*tr.StartLine) - len(strings.Split(*tr.LinesBefore, "\n"))
+	baseLine := 1 + int(*tr.StartLine) - len(*tr.LinesBefore)
 	if err := addLines(beforeStyle, *tr.LinesBefore, baseLine); err != nil {
 		return "", err
 	}
-	baseLine += len(strings.Split(*tr.LinesBefore, "\n")) - 1
+	baseLine += len(*tr.LinesBefore) - 1
 	if err := addLines(mainStyle, *tr.Lines, baseLine); err != nil {
 		return "", err
 	}
-	baseLine += len(strings.Split(*tr.Lines, "\n")) - 1
+	baseLine += len(*tr.Lines) - 1
 	if err := addLines(afterStyle, *tr.LinesAfter, baseLine); err != nil {
 		return "", err
 	}

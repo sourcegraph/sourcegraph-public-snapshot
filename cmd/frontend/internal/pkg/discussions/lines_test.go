@@ -1,7 +1,7 @@
 package discussions
 
 import (
-	"strings"
+	"reflect"
 	"testing"
 )
 
@@ -10,7 +10,7 @@ func TestLinesForSelection(t *testing.T) {
 		name                                       string
 		fileContent                                string
 		selection                                  LineRange
-		wantLinesBefore, wantLines, wantLinesAfter string
+		wantLinesBefore, wantLines, wantLinesAfter []string
 		wantTotalCapturedLines                     int
 	}{
 		{
@@ -24,9 +24,9 @@ after1
 after2
 after3
 `,
-			wantLinesBefore:        "before1\nbefore2\nbefore3\n",
-			wantLines:              "1\n",
-			wantLinesAfter:         "after1\nafter2\nafter3\n",
+			wantLinesBefore:        []string{"before1", "before2", "before3"},
+			wantLines:              []string{"1"},
+			wantLinesAfter:         []string{"after1", "after2", "after3"},
 			wantTotalCapturedLines: 8,
 		},
 		{
@@ -41,9 +41,9 @@ after1
 after2
 after3
 `,
-			wantLinesBefore:        "before1\nbefore2\nbefore3\n",
-			wantLines:              "1\n2\n",
-			wantLinesAfter:         "after1\nafter2\nafter3\n",
+			wantLinesBefore:        []string{"before1", "before2", "before3"},
+			wantLines:              []string{"1", "2"},
+			wantLinesAfter:         []string{"after1", "after2", "after3"},
 			wantTotalCapturedLines: 9,
 		},
 		{
@@ -59,9 +59,9 @@ six
 seven
 eight
 `,
-			wantLinesBefore:        "",
-			wantLines:              "zero\none\n",
-			wantLinesAfter:         "two\nthree\nfour\n",
+			wantLinesBefore:        []string{},
+			wantLines:              []string{"zero", "one"},
+			wantLinesAfter:         []string{"two", "three", "four"},
 			wantTotalCapturedLines: 6,
 		},
 		{
@@ -77,43 +77,43 @@ six
 seven
 eight
 `,
-			wantLinesBefore:        "four\nfive\nsix\n",
-			wantLines:              "seven\neight\n",
-			wantLinesAfter:         "",
+			wantLinesBefore:        []string{"four", "five", "six"},
+			wantLines:              []string{"seven", "eight"},
+			wantLinesAfter:         []string{""},
 			wantTotalCapturedLines: 6,
 		},
 		{
 			name:                   "one_line",
 			selection:              LineRange{StartLine: 0, EndLine: 1},
 			fileContent:            `1`,
-			wantLinesBefore:        "",
-			wantLines:              "1",
-			wantLinesAfter:         "",
+			wantLinesBefore:        []string{},
+			wantLines:              []string{"1"},
+			wantLinesAfter:         []string{},
 			wantTotalCapturedLines: 1,
 		},
 		{
 			name:                   "two_lines_top",
 			selection:              LineRange{StartLine: 0, EndLine: 1},
 			fileContent:            "1\n2\n",
-			wantLinesBefore:        "",
-			wantLines:              "1\n",
-			wantLinesAfter:         "2\n",
+			wantLinesBefore:        []string{},
+			wantLines:              []string{"1"},
+			wantLinesAfter:         []string{"2", ""},
 			wantTotalCapturedLines: 3,
 		},
 		{
 			name:                   "two_lines_bottom",
 			selection:              LineRange{StartLine: 1, EndLine: 2},
 			fileContent:            "1\n2",
-			wantLinesBefore:        "1\n",
-			wantLines:              "2",
-			wantLinesAfter:         "",
+			wantLinesBefore:        []string{"1"},
+			wantLines:              []string{"2"},
+			wantLinesAfter:         []string{},
 			wantTotalCapturedLines: 2,
 		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
 			gotBefore, got, gotAfter := LinesForSelection(tst.fileContent, tst.selection)
-			if gotBefore != tst.wantLinesBefore || got != tst.wantLines || gotAfter != tst.wantLinesAfter {
+			if !reflect.DeepEqual(gotBefore, tst.wantLinesBefore) || !reflect.DeepEqual(got, tst.wantLines) || !reflect.DeepEqual(gotAfter, tst.wantLinesAfter) {
 				t.Logf("got  before: %q", gotBefore)
 				t.Logf("want before: %q", tst.wantLinesBefore)
 				t.Log("")
@@ -126,8 +126,10 @@ eight
 			}
 
 			// Ensure that reconstructing the lines together to form a snippet is easy and logical.
-			snippet := tst.wantLinesBefore + tst.wantLines + tst.wantLinesAfter
-			gotNumLines := len(strings.Split(snippet, "\n"))
+			snippet := tst.wantLinesBefore
+			snippet = append(snippet, tst.wantLines...)
+			snippet = append(snippet, tst.wantLinesAfter...)
+			gotNumLines := len(snippet)
 			if gotNumLines != tst.wantTotalCapturedLines {
 				t.Logf("%q", snippet)
 				t.Logf("got %d lines want %d", gotNumLines, tst.wantTotalCapturedLines)

@@ -344,9 +344,9 @@ func (t *discussionThreads) createTargetRepo(ctx context.Context, tr *types.Disc
 		field("end_line", *tr.EndLine)
 		field("start_character", *tr.StartCharacter)
 		field("end_character", *tr.EndCharacter)
-		field("lines_before", *tr.LinesBefore)
-		field("lines", *tr.Lines)
-		field("lines_after", *tr.LinesAfter)
+		field("lines_before", strings.Join(*tr.LinesBefore, "\n"))
+		field("lines", strings.Join(*tr.Lines, "\n"))
+		field("lines_after", strings.Join(*tr.LinesAfter, "\n"))
 	}
 	q := sqlf.Sprintf("INSERT INTO discussion_threads_target_repo(%v) VALUES (%v) RETURNING id", sqlf.Join(fields, ",\n"), sqlf.Join(values, ","))
 
@@ -412,6 +412,7 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 
 func (t *discussionThreads) getTargetRepo(ctx context.Context, targetRepoID int64) (*types.DiscussionThreadTargetRepo, error) {
 	tr := &types.DiscussionThreadTargetRepo{}
+	var linesBefore, lines, linesAfter *string
 	err := globalDB.QueryRowContext(ctx, `
 		SELECT
 			t.id,
@@ -439,12 +440,24 @@ func (t *discussionThreads) getTargetRepo(ctx context.Context, targetRepoID int6
 		&tr.EndLine,
 		&tr.StartCharacter,
 		&tr.EndCharacter,
-		&tr.LinesBefore,
-		&tr.Lines,
-		&tr.LinesAfter,
+		&linesBefore,
+		&lines,
+		&linesAfter,
 	)
 	if err != nil {
 		return nil, err
+	}
+	if linesBefore != nil {
+		linesBeforeSplit := strings.Split(*linesBefore, "\n")
+		tr.LinesBefore = &linesBeforeSplit
+	}
+	if lines != nil {
+		linesSplit := strings.Split(*lines, "\n")
+		tr.Lines = &linesSplit
+	}
+	if linesAfter != nil {
+		linesAfterSplit := strings.Split(*linesAfter, "\n")
+		tr.LinesAfter = &linesAfterSplit
 	}
 	return tr, nil
 }
