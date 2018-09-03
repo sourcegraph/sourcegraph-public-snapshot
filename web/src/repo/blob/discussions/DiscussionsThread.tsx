@@ -48,7 +48,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         this.subscriptions.add(
             combineLatest(this.componentUpdates.pipe(startWith(this.props)))
                 .pipe(
-                    distinctUntilChanged(([a], [b]) => a.threadID !== b.threadID),
+                    distinctUntilChanged(([a], [b]) => a.threadID === b.threadID),
                     switchMap(([props]) =>
                         fetchDiscussionThreadAndComments(props.threadID).pipe(
                             map(thread => ({ thread, loading: false })),
