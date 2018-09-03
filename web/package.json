@@ -136,7 +136,7 @@
     "stylelint": "^9.4.0",
     "stylelint-formatter-compact": "^1.1.0",
     "thread-loader": "^1.1.5",
-    "ts-loader": "^4.4.2",
+    "ts-loader": "^5.0.0",
     "ts-node": "^7.0.0",
     "ts-unused-exports": "^2.0.5",
     "tsify": "^4.0.0",
