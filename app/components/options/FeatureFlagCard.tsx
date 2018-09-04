@@ -91,7 +91,7 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
                                 <FormGroup check={true}>
                                     <Label check={true}>
                                         <Input onClick={this.onUseCXPToggled} defaultChecked={useCXP} type="checkbox" />{' '}
-                                        Enable CXP
+                                        Use Sourcegraph extensions (enable CXP)
                                     </Label>
                                 </FormGroup>
                                 <FormGroup check={true}>
