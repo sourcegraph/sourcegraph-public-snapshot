@@ -65,9 +65,6 @@ const mergeCascades = (
 
 const configurationCascadeFragment = gql`
     fragment ConfigurationCascadeFields on ConfigurationCascade {
-        defaults {
-            contents
-        }
         subjects {
             __typename
             ... on Org {
