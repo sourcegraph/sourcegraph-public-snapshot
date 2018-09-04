@@ -1,4 +1,4 @@
-import { Subscription } from 'rxjs'
+import { BehaviorSubject, Subscription } from 'rxjs'
 import { createMessageConnection, Logger, MessageConnection, MessageTransports } from '../jsonrpc2/connection'
 import {
     ConfigurationCascade,
@@ -28,6 +28,7 @@ class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
     constructor(public readonly rawConnection: MessageConnection, public readonly initializeParams: InitializeParams) {
         this.subscription.add(this.rawConnection)
 
+        this.roots = new BehaviorSubject<URI[]>(initializeParams.root ? [initializeParams.root] : [])
         this.configuration = createExtConfiguration<C>(
             this,
             initializeParams.configurationCascade as ConfigurationCascade<C>

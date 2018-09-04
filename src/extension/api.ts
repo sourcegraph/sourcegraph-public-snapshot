@@ -22,7 +22,7 @@ export interface SourcegraphExtensionAPI<C = Settings> {
      * TODO(sqs): Remove the strict association with the single initial root (support multi-root, changing roots,
      * etc.).
      */
-    root: URI | null
+    roots: Observable<URI[]>
 
     /**
      * The configuration settings from the client.
