@@ -26,7 +26,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
                 isErrorLike(cascade.merged)
                     ? [cascade.merged]
                     : this.withRegistryMetadata(cascade).pipe(
-                          catchError(error => [asError(error)]),
+                          catchError(error => [asError(error) as ErrorLike]),
                           startWith(Controller.LOADING)
                       )
         )
