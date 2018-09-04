@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "deepmerge": "^2.1.1",
-    "execa": "^0.10.0",
+    "execa": "^0.11.0",
     "git-url-parse": "^10.0.0",
     "graphql": "^0.13.2",
     "graphql-tag": "^2.9.2",
