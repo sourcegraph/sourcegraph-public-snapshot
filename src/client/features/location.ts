@@ -1,4 +1,4 @@
-import { Unsubscribable } from 'rxjs'
+import { from, Observable, Unsubscribable } from 'rxjs'
 import uuidv4 from 'uuid/v4'
 import { Location } from 'vscode-languageserver-types'
 import { ProvideTextDocumentLocationSignature } from '../../environment/providers/location'
@@ -23,7 +23,7 @@ import { ensure, Feature } from './common'
 export type ProvideTextDocumentLocationMiddleware<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
     L extends Location = Location
-> = NextSignature<P, Promise<L | L[] | null>>
+> = NextSignature<P, Observable<L | L[] | null>>
 
 /**
  * Support for requests that retrieve a list of locations (e.g., textDocument/definition,
@@ -65,11 +65,11 @@ export abstract class TextDocumentLocationFeature<
     protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
         const client = this.client
         const provideTextDocumentLocation: ProvideTextDocumentLocationSignature<P, L> = params =>
-            client.sendRequest(this.messages, params)
+            from(client.sendRequest(this.messages, params))
         const middleware = this.getMiddleware ? this.getMiddleware(client.options.middleware) : undefined
         return this.registry.registerProvider(
             options,
-            (params: P): Promise<L | L[] | null> =>
+            (params: P): Observable<L | L[] | null> =>
                 middleware ? middleware(params, provideTextDocumentLocation) : provideTextDocumentLocation(params)
         )
     }

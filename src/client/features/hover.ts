@@ -1,4 +1,4 @@
-import { Unsubscribable } from 'rxjs'
+import { from, Observable, Unsubscribable } from 'rxjs'
 import uuidv4 from 'uuid/v4'
 import { Hover, MarkupKind } from 'vscode-languageserver-types'
 import { ProvideTextDocumentHoverSignature } from '../../environment/providers/hover'
@@ -15,7 +15,7 @@ import { NextSignature } from '../../types/middleware'
 import { Client } from '../client'
 import { ensure, Feature } from './common'
 
-export type ProvideTextDocumentHoverMiddleware = NextSignature<TextDocumentPositionParams, Promise<Hover | null>>
+export type ProvideTextDocumentHoverMiddleware = NextSignature<TextDocumentPositionParams, Observable<Hover | null>>
 
 /**
  * Support for hover messages (textDocument/hover requests to the server).
@@ -49,11 +49,11 @@ export class TextDocumentHoverFeature extends Feature<TextDocumentRegistrationOp
     protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
         const client = this.client
         const provideTextDocumentHover: ProvideTextDocumentHoverSignature = params =>
-            client.sendRequest(HoverRequest.type, params)
+            from(client.sendRequest(HoverRequest.type, params))
         const middleware = client.options.middleware.provideTextDocumentHover
         return this.registry.registerProvider(
             options,
-            (params: TextDocumentPositionParams): Promise<Hover | null> =>
+            (params: TextDocumentPositionParams): Observable<Hover | null> =>
                 middleware ? middleware(params, provideTextDocumentHover) : provideTextDocumentHover(params)
         )
     }

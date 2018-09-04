@@ -12,7 +12,7 @@ import { flattenAndCompact } from './util'
 export type ProvideTextDocumentLocationSignature<
     P extends TextDocumentPositionParams = TextDocumentPositionParams,
     L extends Location = Location
-> = (params: P) => Promise<L | L[] | null>
+> = (params: P) => Observable<L | L[] | null>
 
 /** Provides location results from all extensions for definition, implementation, and type definition requests. */
 export class TextDocumentLocationProviderRegistry<

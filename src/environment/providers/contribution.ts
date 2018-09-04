@@ -1,4 +1,4 @@
-import { BehaviorSubject, combineLatest, isObservable, Observable, of, Unsubscribable } from 'rxjs'
+import { BehaviorSubject, combineLatest, isObservable, Observable, ObservableInput, of, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import {
     ActionContribution,
@@ -23,7 +23,7 @@ export interface ContributionsEntry {
      * subscription. The {@link ContributionRegistry#contributions} observable blocks until all observables have
      * emitted.
      */
-    contributions: Contributions | Observable<Contributions | Contributions[]>
+    contributions: Contributions | ObservableInput<Contributions | Contributions[]>
 }
 
 /**

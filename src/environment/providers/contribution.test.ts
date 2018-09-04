@@ -130,7 +130,7 @@ describe('ContributionRegistry', () => {
                         cold<ContributionsEntry[]>('-a-----|', {
                             a: [
                                 {
-                                    contributions: cold<Contributions>('--b-c-|', {
+                                    contributions: cold<Contributions | Contributions[]>('--b-c-|', {
                                         b: FIXTURE_CONTRIBUTIONS_1,
                                         c: [FIXTURE_CONTRIBUTIONS_2],
                                     }),
