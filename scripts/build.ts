@@ -21,7 +21,6 @@ compiler.run((err, stats) => {
     }
     signale.success('Webpack compilation done')
 
-    tasks.buildSafari('prod')
     buildChrome()
     buildFirefox()
     tasks.copyPhabricator()

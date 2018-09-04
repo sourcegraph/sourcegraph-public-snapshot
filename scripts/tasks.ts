@@ -124,12 +124,3 @@ function buildForBrowser(browser): (env: string) => () => void {
 
 export const buildFirefox = buildForBrowser('firefox')
 export const buildChrome = buildForBrowser('chrome')
-
-export function buildSafari(env: BuildEnv): void {
-    signale.await(`Building Safari ${env} bundle...`)
-
-    shelljs.exec('cp -r build/dist/* Sourcegraph.safariextension')
-    writeManifest(env, 'safari', 'Sourcegraph.safariextension')
-
-    signale.success(`Safari ${env} bundle built.`)
-}

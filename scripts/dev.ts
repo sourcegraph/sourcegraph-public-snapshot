@@ -33,7 +33,6 @@ compiler.watch(
         }
         signale.success('Webpack compilation done')
 
-        tasks.buildSafari('dev')
         buildChrome()
         buildFirefox()
         tasks.copyPhabricator()
