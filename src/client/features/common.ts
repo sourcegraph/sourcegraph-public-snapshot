@@ -32,8 +32,8 @@ export interface DynamicFeature<T> {
     unregister(id: string): void
 
     /**
-     * Unregisters all static and dynamic registrations and prepares the feature to be reused for a new CXP
-     * connection.
+     * Unregisters all static and dynamic registrations and prepares the feature to be reused for a
+     * new connection.
      */
     unregisterAll(): void
 }

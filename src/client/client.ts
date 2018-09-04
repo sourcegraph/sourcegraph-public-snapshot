@@ -57,10 +57,9 @@ export interface ClientOptions {
     tracer?: Tracer
 
     /**
-     * Experimental capabilities implemented by the client (that are not defined
-     * by the CXP specification). These capabilities are passed verbatim to
-     * extensions in the initialize request's capabilities.experimental
-     * property.
+     * Experimental capabilities implemented by the client (that are not defined by the
+     * specification). These capabilities are passed verbatim to extensions in the initialize
+     * request's capabilities.experimental property.
      */
     experimentalClientCapabilities?: any
 }
@@ -101,7 +100,7 @@ export enum ClientState {
 }
 
 /**
- * The client communicates with a CXP server.
+ * The client communicates with a Sourcegraph extension that acts as a server.
  */
 export class Client implements Unsubscribable {
     public readonly options: Readonly<ResolvedClientOptions>

@@ -9,15 +9,15 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../../protocol'
-import { Commands, CXP } from '../api'
+import { Commands, SourcegraphExtensionAPI } from '../api'
 
 /**
- * Creates the CXP extension API's {@link CXP#commands} value.
+ * Creates the Sourcegraph extension API's {@link SourcegraphExtensionAPI#commands} value.
  *
- * @param ext The CXP extension API handle.
- * @return The {@link CXP#commands} value.
+ * @param ext The Sourcegraph extension API handle.
+ * @return The {@link Creates the Sourcegraph extension API extension API's#commands} value.
  */
-export function createExtCommands(ext: Pick<CXP<any>, 'rawConnection'>): Commands {
+export function createExtCommands(ext: Pick<SourcegraphExtensionAPI<any>, 'rawConnection'>): Commands {
     // TODO: move CommandRegistry to somewhere general since it's now used by the controller AND extension
     const commandRegistry = new CommandRegistry()
     ext.rawConnection.onRequest(ExecuteCommandRequest.type, params => commandRegistry.executeCommand(params))

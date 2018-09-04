@@ -8,10 +8,10 @@ import { Context, EMPTY_CONTEXT } from './context/context'
 import { Extension } from './extension'
 
 /**
- * A description of the environment represented by the CXP client application.
+ * A description of the environment represented by the Sourcegraph extension client application.
  *
- * This models the state of editor-like tools that display documents, allow selections and scrolling in documents,
- * and support extension configuration.
+ * This models the state of editor-like tools that display documents, allow selections and scrolling
+ * in documents, and support extension configuration.
  *
  * @template X extension type, to support storing additional properties on extensions
  * @template C configuration cascade type
@@ -40,7 +40,7 @@ export interface Environment<X extends Extension = Extension, C extends Configur
     readonly context: Context
 }
 
-/** An empty CXP environment. */
+/** An empty Sourcegraph extension client environment. */
 export const EMPTY_ENVIRONMENT: Environment<any, any> = {
     root: null,
     component: null,

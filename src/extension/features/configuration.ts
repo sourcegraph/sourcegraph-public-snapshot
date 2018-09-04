@@ -8,10 +8,10 @@ import {
     KeyPath,
 } from '../../protocol'
 import { isEqual } from '../../util'
-import { Configuration, CXP, Observable } from '../api'
+import { Configuration, Observable, SourcegraphExtensionAPI } from '../api'
 
 class ExtConfiguration<C> extends BehaviorSubject<C> implements Configuration<C>, Observable<C> {
-    constructor(private ext: Pick<CXP<C>, 'rawConnection'>, initial: ConfigurationCascade<C>) {
+    constructor(private ext: Pick<SourcegraphExtensionAPI<C>, 'rawConnection'>, initial: ConfigurationCascade<C>) {
         super(initial.merged as C)
 
         ext.rawConnection.onNotification(DidChangeConfigurationNotification.type, params => {
@@ -105,13 +105,13 @@ export function setValueAtKeyPath(source: any, path: KeyPath, value: any): any {
 }
 
 /**
- * Creates the CXP extension API's {@link CXP#configuration} value.
+ * Creates the Sourcegraph extension API's {@link SourcegraphExtensionAPI#configuration} value.
  *
- * @param ext The CXP extension API handle.
- * @return The {@link CXP#configuration} value.
+ * @param ext The Sourcegraph extension API handle.
+ * @return The {@link SourcegraphExtensionAPI#configuration} value.
  */
 export function createExtConfiguration<C>(
-    ext: Pick<CXP<C>, 'rawConnection'>,
+    ext: Pick<SourcegraphExtensionAPI<C>, 'rawConnection'>,
     initial: ConfigurationCascade<C>
 ): Configuration<C> & Observable<C> {
     return new ExtConfiguration(ext, initial)

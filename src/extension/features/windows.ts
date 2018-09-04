@@ -8,10 +8,10 @@ import {
     TextDocumentPublishDecorationsNotification,
     TextDocumentPublishDecorationsParams,
 } from '../../protocol'
-import { CXP, Observable, Window, Windows } from '../api'
+import { Observable, SourcegraphExtensionAPI, Window, Windows } from '../api'
 
 class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observable<Window[]> {
-    constructor(private ext: Pick<CXP<any>, 'rawConnection'>) {
+    constructor(private ext: Pick<SourcegraphExtensionAPI<any>, 'rawConnection'>) {
         super([
             {
                 isActive: true,
@@ -58,11 +58,13 @@ class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observabl
 }
 
 /**
- * Creates the CXP extension API's {@link CXP#windows} value.
+ * Creates the Sourcegraph extension API's {@link SourcegraphExtensionAPI#windows} value.
  *
- * @param ext The CXP extension API handle.
- * @return The {@link CXP#windows} value.
+ * @param ext The Sourcegraph extension API handle.
+ * @return The {@link SourcegraphExtensionAPI#windows} value.
  */
-export function createExtWindows<C>(ext: Pick<CXP<C>, 'rawConnection'>): Windows & Observable<Window[]> {
+export function createExtWindows<C>(
+    ext: Pick<SourcegraphExtensionAPI<C>, 'rawConnection'>
+): Windows & Observable<Window[]> {
     return new ExtWindows(ext)
 }

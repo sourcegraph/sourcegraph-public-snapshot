@@ -1,3 +1,3 @@
 export { activateExtension } from './extension'
-export { CXP } from './api'
+export { SourcegraphExtensionAPI } from './api'
 export * from '../protocol'

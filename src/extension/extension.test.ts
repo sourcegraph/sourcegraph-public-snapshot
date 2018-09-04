@@ -24,8 +24,8 @@ describe('activateExtension', () => {
         }
 
         const [, result] = await Promise.all([
-            activateExtension<{}>(serverTransports, cxp => {
-                assert.deepStrictEqual(cxp.initializeParams, initParams)
+            activateExtension<{}>(serverTransports, sourcegraph => {
+                assert.deepStrictEqual(sourcegraph.initializeParams, initParams)
             }),
             clientConnection.sendRequest(InitializeRequest.type, initParams).then(result => {
                 clientConnection.sendNotification(InitializedNotification.type, initParams)

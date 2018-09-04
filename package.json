@@ -1,15 +1,15 @@
 {
-  "name": "cxp",
+  "name": "@sourcegraph/sourcegraph.proposed",
   "version": "0.0.0-development",
-  "description": "Code Extension Protocol (CXP) client, server, and protocol library for JavaScript/TypeScript",
+  "description": "Sourcegraph extension API: build extensions that enhance reading and reviewing code in your existing tools",
   "author": "Sourcegraph",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sourcegraph/cxp-js.git"
+    "url": "https://github.com/sourcegraph/sourcegraph-extension-api.git"
   },
   "bugs": {
-    "url": "https://github.com/sourcegraph/cxp-js/issues"
+    "url": "https://github.com/sourcegraph/sourcegraph-extension-api/issues"
   },
   "main": "lib/index.js",
   "module": "module/index.js",

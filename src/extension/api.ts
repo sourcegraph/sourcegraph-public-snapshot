@@ -6,11 +6,11 @@ import { InitializeParams, Settings, TextDocumentDecoration } from '../protocol'
 import { URI } from '../types/textDocument'
 
 /**
- * The CXP extension API, which extensions use to interact with the client.
+ * The Sourcegraph extension API, which extensions use to interact with the client.
  *
  * @template C the extension's settings
  */
-export interface CXP<C = Settings> {
+export interface SourcegraphExtensionAPI<C = Settings> {
     /**
      * The params passed by the client in the `initialize` request.
      */
@@ -45,7 +45,10 @@ export interface CXP<C = Settings> {
      */
     context: ExtensionContext
 
-    /** The underlying CXP connection to the client. */
+    /**
+     * The underlying connection to the Sourcegraph extension client.
+     * @internal
+     */
     readonly rawConnection: MessageConnection
 
     /**

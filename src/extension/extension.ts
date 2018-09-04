@@ -8,13 +8,13 @@ import {
     InitializeResult,
 } from '../protocol'
 import { URI } from '../types/textDocument'
-import { Commands, Configuration, CXP, ExtensionContext, Observable, Window, Windows } from './api'
+import { Commands, Configuration, ExtensionContext, Observable, SourcegraphExtensionAPI, Window, Windows } from './api'
 import { createExtCommands } from './features/commands'
 import { createExtConfiguration } from './features/configuration'
 import { createExtContext } from './features/context'
 import { createExtWindows } from './features/windows'
 
-class ExtensionHandle<C> implements CXP<C> {
+class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
     public readonly configuration: Configuration<C> & Observable<C>
     public readonly windows: Windows & Observable<Window[]>
     public readonly commands: Commands
@@ -59,8 +59,8 @@ const consoleLogger: Logger = {
 }
 
 /**
- * Activates a CXP extension by calling its `run` entrypoint function with the CXP API handle as the first
- * argument.
+ * Activates a Sourcegraph extension by calling its `run` entrypoint function with the Sourcegraph
+ * extension API handle as the first argument.
  *
  * @template C the extension's settings
  * @param transports The message reader and writer to use for communication with the client.
@@ -69,7 +69,7 @@ const consoleLogger: Logger = {
  */
 export function activateExtension<C>(
     transports: MessageTransports,
-    run: (cxp: CXP<C>) => void | Promise<void>
+    run: (sourcegraph: SourcegraphExtensionAPI<C>) => void | Promise<void>
 ): Promise<void> {
     const connection = createMessageConnection(transports, consoleLogger)
     return new Promise<void>(resolve => {
