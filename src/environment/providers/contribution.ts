@@ -12,7 +12,7 @@ import { flatten, isEqual } from '../../util'
 import { getComputedContextProperty } from '../context/context'
 import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'
-import { Environment } from '../environment'
+import { Component, Environment } from '../environment'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -71,11 +71,17 @@ export class ContributionRegistry {
     }
 
     /**
-     * All contributions (merged) that are enabled for the current context, emitted whenever the set changes.
+     * Returns an observable that emits all contributions (merged) evaluated in the current
+     * environment (with the optional scope). It emits whenever there is any change.
      */
-    public readonly contributions: Observable<Contributions> = this.getContributions(this._entries)
+    public getContributions(scope?: Component): Observable<Contributions> {
+        return this.getContributionsFromEntries(this._entries, scope)
+    }
 
-    protected getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
+    protected getContributionsFromEntries(
+        entries: Observable<ContributionsEntry[]>,
+        scope?: Component
+    ): Observable<Contributions> {
         return combineLatest(
             entries.pipe(
                 switchMap(entries =>
@@ -89,7 +95,7 @@ export class ContributionRegistry {
             this.environment
         ).pipe(
             map(([multiContributions, environment]) => {
-                const computedContext = { get: (key: string) => getComputedContextProperty(environment, key) }
+                const computedContext = { get: (key: string) => getComputedContextProperty(environment, key, scope) }
                 return flatten(multiContributions).map(contributions => {
                     try {
                         return evaluateContributions(
@@ -115,9 +121,9 @@ export class ContributionRegistry {
     /**
      * All contribution entries, emitted whenever the set of registered contributions changes.
      *
-     * Most callers should use ContributionsRegistry#contributions. Only use #entries if the caller needs
-     * information that is discarded when the contributions are merged (such as the extension that registered each
-     * set of contributions).
+     * Most callers should use ContributionsRegistry#getContributions. Only use #entries if the
+     * caller needs information that is discarded when the contributions are merged (such as the
+     * extension that registered each set of contributions).
      */
     public readonly entries: Observable<ContributionsEntry[]> & { value: ContributionsEntry[] } = this._entries
 }
@@ -125,7 +131,8 @@ export class ContributionRegistry {
 /**
  * Merges the contributions.
  *
- * Most callers should use ContributionRegistry's contributions field, which merges all registered contributions.
+ * Most callers should use ContributionRegistry#getContributions, which merges all registered
+ * contributions.
  */
 export function mergeContributions(contributions: Contributions[]): Contributions {
     if (contributions.length === 0) {

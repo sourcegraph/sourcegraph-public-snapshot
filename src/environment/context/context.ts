@@ -1,5 +1,5 @@
 import { basename, dirname, extname } from 'path'
-import { Environment } from '../environment'
+import { Component, Environment } from '../environment'
 
 /**
  * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
@@ -29,11 +29,12 @@ export const EMPTY_CONTEXT: Context = {}
 
 /**
  * Looks up a key in the computed context, which consists of special context properties (with higher precedence)
- * and the environment's context properties (with lower precedence). environment.
+ * and the environment's context properties (with lower precedence).
  *
  * @param key the context property key to look up
+ * @param scope the user interface component in whose scope this computation should occur
  */
-export function getComputedContextProperty(environment: Environment, key: string): any {
+export function getComputedContextProperty(environment: Environment, key: string, scope?: Component): any {
     if (key.startsWith('config.')) {
         const prop = key.slice('config.'.length)
         const value = environment.configuration.merged[prop]
@@ -42,11 +43,12 @@ export function getComputedContextProperty(environment: Environment, key: string
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
+    const component = scope || environment.component
     if (key === 'resource' || key === 'component') {
-        return !!environment.component
+        return !!component
     }
     if (key.startsWith('resource.')) {
-        if (!environment.component) {
+        if (!component) {
             return undefined
         }
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
@@ -55,23 +57,23 @@ export function getComputedContextProperty(environment: Environment, key: string
         const prop = key.slice('resource.'.length)
         switch (prop) {
             case 'uri':
-                return environment.component.document.uri
+                return component.document.uri
             case 'basename':
-                return basename(environment.component.document.uri)
+                return basename(component.document.uri)
             case 'dirname':
-                return dirname(environment.component.document.uri)
+                return dirname(component.document.uri)
             case 'extname':
-                return extname(environment.component.document.uri)
+                return extname(component.document.uri)
             case 'language':
-                return environment.component.document.languageId
+                return component.document.languageId
             case 'textContent':
-                return environment.component.document.text
+                return component.document.text
             case 'type':
                 return 'textDocument'
         }
     }
     if (key.startsWith('component.')) {
-        if (!environment.component) {
+        if (!component) {
             return undefined
         }
         const prop = key.slice('component.'.length)

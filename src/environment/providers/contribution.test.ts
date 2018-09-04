@@ -98,13 +98,15 @@ describe('ContributionRegistry', () => {
     describe('contributions observable', () => {
         it('emits stream of results of registrations', () => {
             const registry = new class extends ContributionRegistry {
-                public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
-                    return super.getContributions(entries)
+                public getContributionsFromEntries(
+                    entries: Observable<ContributionsEntry[]>
+                ): Observable<Contributions> {
+                    return super.getContributionsFromEntries(entries)
                 }
             }(EMPTY_OBSERVABLE_ENVIRONMENT.environment)
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    registry.getContributions(
+                    registry.getContributionsFromEntries(
                         cold<ContributionsEntry[]>('-a-b-c-|', {
                             a: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }],
                             b: [{ contributions: FIXTURE_CONTRIBUTIONS_1 }, { contributions: {} }],
@@ -120,13 +122,15 @@ describe('ContributionRegistry', () => {
 
         it('supports registration of an observable', () => {
             const registry = new class extends ContributionRegistry {
-                public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
-                    return super.getContributions(entries)
+                public getContributionsFromEntries(
+                    entries: Observable<ContributionsEntry[]>
+                ): Observable<Contributions> {
+                    return super.getContributionsFromEntries(entries)
                 }
             }(EMPTY_OBSERVABLE_ENVIRONMENT.environment)
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
-                    registry.getContributions(
+                    registry.getContributionsFromEntries(
                         cold<ContributionsEntry[]>('-a-----|', {
                             a: [
                                 {
@@ -157,12 +161,14 @@ describe('ContributionRegistry', () => {
                         )
                     }
 
-                    public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
-                        return super.getContributions(entries)
+                    public getContributionsFromEntries(
+                        entries: Observable<ContributionsEntry[]>
+                    ): Observable<Contributions> {
+                        return super.getContributionsFromEntries(entries)
                     }
                 }()
                 expectObservable(
-                    registry.getContributions(
+                    registry.getContributionsFromEntries(
                         of([
                             {
                                 contributions: { menus: { commandPalette: [{ action: 'a', when: 'x == y' }] } },
@@ -183,12 +189,14 @@ describe('ContributionRegistry', () => {
                         super(cold<Environment>('a', { a: EMPTY_ENVIRONMENT }))
                     }
 
-                    public getContributions(entries: Observable<ContributionsEntry[]>): Observable<Contributions> {
-                        return super.getContributions(entries)
+                    public getContributionsFromEntries(
+                        entries: Observable<ContributionsEntry[]>
+                    ): Observable<Contributions> {
+                        return super.getContributionsFromEntries(entries)
                     }
                 }()
                 expectObservable(
-                    registry.getContributions(
+                    registry.getContributionsFromEntries(
                         of([
                             {
                                 // Expression "!" will cause an error to be thrown.
