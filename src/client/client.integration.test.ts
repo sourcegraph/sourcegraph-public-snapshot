@@ -33,12 +33,9 @@ describe('Client', () => {
                     server.onRequest(InitializeRequest.type, params => {
                         try {
                             assert.deepStrictEqual(params, {
-                                root: null,
-                                rootUri: null,
                                 capabilities: { experimental: 'test' },
                                 configurationCascade: { merged: {} },
                                 trace: Trace.toString(Trace.Off),
-                                workspaceFolders: null,
                                 initializationOptions: 'test',
                             } as InitializeParams)
                             resolve()
@@ -93,7 +90,7 @@ describe('Client', () => {
         }
 
         // Create test client.
-        const client = new Client('', '', { root: null, createMessageTransports })
+        const client = new Client('', '', { createMessageTransports })
         client.registerFeature({
             fillInitializeParams: (params: InitializeParams) => (params.initializationOptions = 'test'),
             fillClientCapabilities: (capabilities: ClientCapabilities) => (capabilities.experimental = 'test'),

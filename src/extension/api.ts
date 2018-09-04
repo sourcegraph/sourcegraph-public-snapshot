@@ -17,14 +17,6 @@ export interface SourcegraphExtensionAPI<C = Settings> {
     initializeParams: InitializeParams
 
     /**
-     * The root URI of the workspace in which this extension is running.
-     *
-     * TODO(sqs): Remove the strict association with the single initial root (support multi-root, changing roots,
-     * etc.).
-     */
-    roots: Observable<URI[]>
-
-    /**
      * The configuration settings from the client.
      */
     configuration: Configuration<C>

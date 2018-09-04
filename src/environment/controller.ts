@@ -23,7 +23,6 @@ import { Trace } from '../jsonrpc2/trace'
 import {
     ConfigurationCascade,
     ConfigurationUpdateParams,
-    InitializeParams,
     LogMessageParams,
     MessageActionItem,
     ShowInputParams,
@@ -38,7 +37,8 @@ import { Extension } from './extension'
 import { Registries } from './registries'
 
 /** The minimal unique identifier for a client. */
-export interface ClientKey extends Pick<InitializeParams, 'root'> {
+export interface ClientKey {
+    /** The extension ID. */
     id: string
 }
 
@@ -208,7 +208,6 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
 
             // Construct client.
             const clientOptions: ClientOptions = {
-                root: key.root,
                 documentSelector: ['*'],
                 createMessageTransports: null as any, // will be overwritten by Object.assign call below
             }
@@ -298,15 +297,13 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
     }
 }
 
-function computeClients<X extends Extension>(
-    environment: Pick<Environment<X, any>, 'root' | 'extensions'>
-): ClientKey[] {
+function computeClients<X extends Extension>(environment: Pick<Environment<X, any>, 'extensions'>): ClientKey[] {
     const clients: ClientKey[] = []
     if (!environment.extensions) {
         return clients
     }
     for (const x of environment.extensions) {
-        clients.push({ id: x.id, root: environment.root })
+        clients.push({ id: x.id })
     }
     return clients
 }

@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 import { Observable } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { ClientEntry, Controller } from './controller'
+import { ClientEntry, ClientKey, Controller } from './controller'
 import { EMPTY_ENVIRONMENT, Environment } from './environment'
 
 class TestController extends Controller<any, any> {
@@ -30,7 +30,6 @@ const create = (environment?: Environment): TestController => {
 }
 
 const FIXTURE_ENVIRONMENT: Environment<any, any> = {
-    root: 'file:///',
     component: {
         document: { uri: 'file:///f', languageId: 'l', version: 1, text: '' },
         selections: [],
@@ -45,8 +44,8 @@ describe('Controller', () => {
     it('creates clients for the environment', () => {
         const controller = create(FIXTURE_ENVIRONMENT)
         assert.deepStrictEqual(
-            controller.clientEntries.value.map(({ client }) => ({ id: client.id, root: client.options.root })),
-            [{ id: 'x', root: 'file:///' }]
+            controller.clientEntries.value.map(({ client }) => ({ id: client.id })) as ClientKey[],
+            [{ id: 'x' }] as ClientKey[]
         )
     })
 

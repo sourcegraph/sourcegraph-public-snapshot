@@ -2,7 +2,7 @@ import { Observable, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { Range, TextDocument, TextDocumentItem } from 'vscode-languageserver-types'
 import { ConfigurationCascade } from '../protocol'
-import { Selection, URI } from '../types/textDocument'
+import { Selection } from '../types/textDocument'
 import { isEqual } from '../util'
 import { Context, EMPTY_CONTEXT } from './context/context'
 import { Extension } from './extension'
@@ -18,13 +18,7 @@ import { Extension } from './extension'
  */
 export interface Environment<X extends Extension = Extension, C extends ConfigurationCascade = ConfigurationCascade> {
     /**
-     * The root URI of the environment, or null if there is none (which means the extension is unable to access any
-     * documents in the environment).
-     */
-    readonly root: URI | null
-
-    /**
-     * The active component (i.e., file view or editor), or null if there is none.
+     * The active user interface component (i.e., file view or editor), or null if there is none.
      *
      * TODO(sqs): Support multiple components.
      */
@@ -42,7 +36,6 @@ export interface Environment<X extends Extension = Extension, C extends Configur
 
 /** An empty Sourcegraph extension client environment. */
 export const EMPTY_ENVIRONMENT: Environment<any, any> = {
-    root: null,
     component: null,
     extensions: null,
     configuration: { merged: {} },
@@ -76,9 +69,6 @@ export interface ObservableEnvironment<X extends Extension, C extends Configurat
     /** The environment (and changes to it). */
     readonly environment: Observable<Environment<X, C>>
 
-    /** The environment's root URI (and changes to it). */
-    readonly root: Observable<URI | null>
-
     /** The environment's active component (and changes to it). */
     readonly component: Observable<Component | null>
 
@@ -95,7 +85,6 @@ export interface ObservableEnvironment<X extends Extension, C extends Configurat
 /** An ObservableEnvironment that always represents the empty environment and never emits changes. */
 export const EMPTY_OBSERVABLE_ENVIRONMENT: ObservableEnvironment<any, any> = {
     environment: of(EMPTY_ENVIRONMENT),
-    root: of(null),
     component: of(null),
     textDocument: of(null),
     configuration: of({}),
@@ -111,10 +100,6 @@ export const EMPTY_OBSERVABLE_ENVIRONMENT: ObservableEnvironment<any, any> = {
 export function createObservableEnvironment<X extends Extension, C extends ConfigurationCascade>(
     environment: Observable<Environment<X, C>>
 ): ObservableEnvironment<X, C> {
-    const root = environment.pipe(
-        map(({ root }) => root),
-        distinctUntilChanged()
-    )
     const component = environment.pipe(
         map(({ component }) => component),
         distinctUntilChanged((a, b) => isEqual(a, b))
@@ -133,7 +118,6 @@ export function createObservableEnvironment<X extends Extension, C extends Confi
     )
     return {
         environment,
-        root,
         component,
         textDocument,
         configuration,

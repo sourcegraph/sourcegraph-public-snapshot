@@ -1,8 +1,6 @@
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
-import { URI } from '../types/textDocument'
 import { ClientCapabilities, ServerCapabilities } from './capabilities'
 import { ConfigurationCascade } from './configuration'
-import { WorkspaceFoldersInitializeParams } from './workspaceFolder'
 
 /**
  * The initialize request is sent from the client to the server. It is sent once as the request after starting up
@@ -18,13 +16,6 @@ export namespace InitializeRequest {
  */
 // tslint:disable-next-line:class-name
 export interface _InitializeParams {
-    /**
-     * The root URI of the workspace.
-     *
-     * TODO(sqs): Figure out our story around roots, multi-roots, workspace folders, etc.
-     */
-    root: URI | null
-
     /**
      * The capabilities provided by the client (editor or tool)
      */
@@ -48,7 +39,7 @@ export interface _InitializeParams {
     trace?: 'off' | 'messages' | 'verbose'
 }
 
-export type InitializeParams = _InitializeParams & WorkspaceFoldersInitializeParams
+export type InitializeParams = _InitializeParams
 
 /**
  * The result returned from an initialize request.

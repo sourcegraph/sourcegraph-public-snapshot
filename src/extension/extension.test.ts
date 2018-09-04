@@ -11,10 +11,8 @@ describe('activateExtension', () => {
         clientConnection.listen()
 
         const initParams: InitializeParams = {
-            root: null,
             capabilities: { decoration: true },
             configurationCascade: { merged: {} },
-            workspaceFolders: null,
         }
         const initResult: InitializeResult = {
             capabilities: {

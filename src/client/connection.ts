@@ -56,18 +56,11 @@ export function createConnection(
             connection.sendNotification(typeof type === 'string' ? type : type.method, params),
         onNotification: (type: string | RPCMessageType, handler: GenericNotificationHandler): void =>
             connection.onNotification(typeof type === 'string' ? type : type.method, handler),
-        initialize: (params: InitializeParams) =>
-            connection.sendRequest(InitializeRequest.type, backcompatAddRootUri(params)),
+        initialize: (params: InitializeParams) => connection.sendRequest(InitializeRequest.type, params),
         shutdown: () => connection.sendRequest(ShutdownRequest.type, undefined),
         exit: () => connection.sendNotification(ExitNotification.type),
         trace: (value: Trace, tracer: Tracer, sendNotification = false): void =>
             connection.trace(value, tracer, sendNotification),
         unsubscribe: () => connection.unsubscribe(),
     }
-}
-
-/** Adds a rootUri property with the same value as the root for backcompat with LSP. */
-function backcompatAddRootUri(params: InitializeParams): InitializeParams {
-    ;(params as any).rootUri = params.root
-    return params
 }

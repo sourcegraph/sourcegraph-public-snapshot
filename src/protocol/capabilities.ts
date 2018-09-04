@@ -11,7 +11,6 @@ import { SignatureHelpOptions } from './signatureHelp'
 import { TextDocumentClientCapabilities, TextDocumentSyncKind, TextDocumentSyncOptions } from './textDocument'
 import { TypeDefinitionClientCapabilities, TypeDefinitionServerCapabilities } from './typeDefinition'
 import { WorkspaceClientCapabilities } from './workspace'
-import { WorkspaceFoldersClientCapabilities, WorkspaceFoldersServerCapabilities } from './workspaceFolder'
 
 /**
  * Defines the capabilities provided by the client.
@@ -37,7 +36,6 @@ export interface _ClientCapabilities {
 export type ClientCapabilities = _ClientCapabilities &
     ImplementationClientCapabilities &
     TypeDefinitionClientCapabilities &
-    WorkspaceFoldersClientCapabilities &
     ConfigurationClientCapabilities &
     ColorClientCapabilities &
     ContributionClientCapabilities &
@@ -136,7 +134,6 @@ export interface _ServerCapabilities {
 export type ServerCapabilities = _ServerCapabilities &
     ImplementationServerCapabilities &
     TypeDefinitionServerCapabilities &
-    WorkspaceFoldersServerCapabilities &
     ColorServerCapabilities &
     ContributionServerCapabilities &
     DecorationServerCapabilities

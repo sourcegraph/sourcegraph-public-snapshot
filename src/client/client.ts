@@ -1,4 +1,3 @@
-import { basename } from 'path'
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { MessageTransports } from '../jsonrpc2/connection'
 import {
@@ -20,7 +19,6 @@ import {
     UnregistrationRequest,
 } from '../protocol'
 import { DocumentSelector } from '../types/document'
-import { URI } from '../types/textDocument'
 import { isFunction, tryCatchPromise } from '../util'
 import { Connection, createConnection } from './connection'
 import {
@@ -35,7 +33,6 @@ import { Middleware } from './middleware'
 
 /** Options for creating a new client. */
 export interface ClientOptions {
-    root: URI | null
     documentSelector?: DocumentSelector
     initializationOptions?: any | (() => any)
 
@@ -201,7 +198,6 @@ export class Client implements Unsubscribable {
         connection.trace(this._trace, this.options.tracer)
 
         const initParams: InitializeParams = {
-            root: this.options.root,
             capabilities: {
                 experimental: this.options.experimentalClientCapabilities,
             },
@@ -209,9 +205,6 @@ export class Client implements Unsubscribable {
             initializationOptions: isFunction(this.options.initializationOptions)
                 ? this.options.initializationOptions()
                 : this.options.initializationOptions,
-            workspaceFolders: this.options.root
-                ? [{ name: basename(this.options.root), uri: this.options.root }]
-                : null,
             trace: Trace.toString(this._trace),
         }
 
