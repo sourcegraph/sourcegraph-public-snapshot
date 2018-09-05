@@ -51,8 +51,8 @@ func init() {
 				// Add a GitLab.com entry by default, to support navigating to URL paths like
 				// /gitlab.com/foo/bar to auto-add that project.
 				gitlabConf = append(gitlabConf, &schema.GitLabConnection{
-					ProjectQuery: []string{"none"}, // don't try to list all repositories during syncs
-					Url:          "https://gitlab.com",
+					ProjectQuery:                []string{"none"}, // don't try to list all repositories during syncs
+					Url:                         "https://gitlab.com",
 					InitialRepositoryEnablement: true,
 				})
 			}

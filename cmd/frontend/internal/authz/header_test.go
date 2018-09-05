@@ -18,10 +18,10 @@ func TestParseAuthorizationHeader(t *testing.T) {
 		`token-sudo token="tok==", user="alice"`: {token: "tok==", sudoUser: "alice"},
 		`token-sudo token=tok, user="alice"`:     {token: "tok", sudoUser: "alice"},
 		`token-sudo token="tok==", user=alice`:   {token: "tok==", sudoUser: "alice"},
-		"xyz tok":                          {err: true},
-		`token-sudo user="alice"`:          {err: true},
-		`token-sudo token="",user="alice"`: {err: true},
-		`token k=v, k=v`:                   {err: true},
+		"xyz tok":                                {err: true},
+		`token-sudo user="alice"`:                {err: true},
+		`token-sudo token="",user="alice"`:       {err: true},
+		`token k=v, k=v`:                         {err: true},
 	}
 	for input, test := range tests {
 		t.Run(input, func(t *testing.T) {

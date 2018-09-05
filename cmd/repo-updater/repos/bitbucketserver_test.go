@@ -33,14 +33,14 @@ func TestBitbucketServerRepoInfo(t *testing.T) {
 			Token: "secret",
 		},
 		"ssh": {
-			Url:   "bitbucket.example.com",
-			Token: "secret",
+			Url:                         "bitbucket.example.com",
+			Token:                       "secret",
 			InitialRepositoryEnablement: true,
 			GitURLType:                  "ssh",
 		},
 		"path-pattern": {
-			Url:   "bitbucket.example.com",
-			Token: "secret",
+			Url:                   "bitbucket.example.com",
+			Token:                 "secret",
 			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
 		},
 	}

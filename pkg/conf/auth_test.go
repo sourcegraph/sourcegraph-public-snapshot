@@ -144,7 +144,7 @@ func TestAuthProvider(t *testing.T) {
 				},
 			},
 			want: []schema.AuthProviders{{Saml: &schema.SAMLAuthProvider{
-				Type: "saml",
+				Type:                        "saml",
 				IdentityProviderMetadataURL: "a",
 				ServiceProviderCertificate:  "b",
 				ServiceProviderPrivateKey:   "c",
@@ -154,7 +154,7 @@ func TestAuthProvider(t *testing.T) {
 			input: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{{
 					Saml: &schema.SAMLAuthProvider{
-						Type: "saml",
+						Type:                        "saml",
 						IdentityProviderMetadataURL: "a",
 						ServiceProviderCertificate:  "b",
 						ServiceProviderPrivateKey:   "c",
@@ -162,7 +162,7 @@ func TestAuthProvider(t *testing.T) {
 				}},
 			},
 			want: []schema.AuthProviders{{Saml: &schema.SAMLAuthProvider{
-				Type: "saml",
+				Type:                        "saml",
 				IdentityProviderMetadataURL: "a",
 				ServiceProviderCertificate:  "b",
 				ServiceProviderPrivateKey:   "c",
@@ -178,7 +178,7 @@ func TestAuthProvider(t *testing.T) {
 				},
 				AuthProviders: []schema.AuthProviders{{
 					Saml: &schema.SAMLAuthProvider{
-						Type: "saml",
+						Type:                        "saml",
 						IdentityProviderMetadataURL: "a",
 						ServiceProviderCertificate:  "b",
 						ServiceProviderPrivateKey:   "c",
@@ -186,7 +186,7 @@ func TestAuthProvider(t *testing.T) {
 				}},
 			},
 			want: []schema.AuthProviders{{Saml: &schema.SAMLAuthProvider{
-				Type: "saml",
+				Type:                        "saml",
 				IdentityProviderMetadataURL: "a",
 				ServiceProviderCertificate:  "b",
 				ServiceProviderPrivateKey:   "c",

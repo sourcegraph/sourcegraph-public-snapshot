@@ -51,10 +51,10 @@ var hopHeaders = map[string]struct{}{
 	"Keep-Alive":          struct{}{},
 	"Proxy-Authenticate":  struct{}{},
 	"Proxy-Authorization": struct{}{},
-	"Te":                struct{}{}, // canonicalized version of "TE"
-	"Trailer":           struct{}{}, // not Trailers per URL above; http://www.rfc-editor.org/errata_search.php?eid=4522
-	"Transfer-Encoding": struct{}{},
-	"Upgrade":           struct{}{},
+	"Te":                  struct{}{}, // canonicalized version of "TE"
+	"Trailer":             struct{}{}, // not Trailers per URL above; http://www.rfc-editor.org/errata_search.php?eid=4522
+	"Transfer-Encoding":   struct{}{},
+	"Upgrade":             struct{}{},
 }
 
 func main() {

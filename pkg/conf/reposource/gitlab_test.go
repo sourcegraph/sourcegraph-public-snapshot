@@ -26,7 +26,7 @@ func TestGitLab_cloneURLToRepoURI(t *testing.T) {
 		},
 	}, {
 		conn: schema.GitLabConnection{
-			Url: "https://gitlab.mycompany.com",
+			Url:                   "https://gitlab.mycompany.com",
 			RepositoryPathPattern: "{pathWithNamespace}",
 		},
 		urls: []urlURI{

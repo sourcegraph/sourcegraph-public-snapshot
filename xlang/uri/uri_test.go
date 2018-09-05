@@ -26,7 +26,7 @@ func TestParse_error(t *testing.T) {
 		"github.com/foo/bar":   "must be absolute",
 		"/github.com/foo/bar":  "must be absolute",
 		"//github.com/foo/bar": "must be absolute",
-		"%": "invalid",
+		"%":                    "invalid",
 	}
 	for uriStr, want := range tests {
 		t.Run(strings.Replace(uriStr, "/", "-", -1), func(t *testing.T) {

@@ -125,8 +125,8 @@ func createRepoWithDotGitDir(dir string) error {
 repositoryformatversion=0
 filemode=true
 `,
-		"HEAD":                                              `ref: refs/heads/master`,
-		"refs/heads/master":                                 `aa600fc517ea6546f31ae8198beb1932f13b0e4c`,
+		"HEAD":              `ref: refs/heads/master`,
+		"refs/heads/master": `aa600fc517ea6546f31ae8198beb1932f13b0e4c`,
 		"objects/e7/9c5e8f964493290a409888d5413a737e8e5dd5": b64("eAFLyslPUrBgyMzLLMlMzOECACgtBOw="),
 		"objects/ce/013625030ba8dba906f756967f9e9ca394464a": b64("eAFLyslPUjBjyEjNycnnAgAdxQQU"),
 		"objects/82/b919c9c565d162c564286d9d6a2497931be47e": b64("eAFLyslPUjBnyM3MKcnP4wIAIw8ElA=="),

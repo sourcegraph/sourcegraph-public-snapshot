@@ -54,9 +54,9 @@ func (n *notifier) emailNotify(ctx context.Context) {
 				Ownership              string
 				PluralResults          string
 			}{
-				URL:         searchURL(n.newQuery, utmSourceEmail),
-				Description: n.query.Description,
-				Query:       n.query.Query,
+				URL:                    searchURL(n.newQuery, utmSourceEmail),
+				Description:            n.query.Description,
+				Query:                  n.query.Query,
 				ApproximateResultCount: n.results.Data.Search.Results.ApproximateResultCount,
 				Ownership:              ownership,
 				PluralResults:          plural,

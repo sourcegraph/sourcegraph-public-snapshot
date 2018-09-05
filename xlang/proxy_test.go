@@ -341,7 +341,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			rootURI: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:    "go",
 			fs: map[string]string{
-				"a.go": `package a; import "github.com/v/vendored"; var _ = vendored.V`,
+				"a.go":                              `package a; import "github.com/v/vendored"; var _ = vendored.V`,
 				"vendor/github.com/v/vendored/v.go": "package vendored; func V() {}",
 			},
 			wantHover: map[string]string{
@@ -369,7 +369,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 			rootURI: "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
 			mode:    "go",
 			fs: map[string]string{
-				"z.go": `package pkg; func x() bool { return true }`,
+				"z.go":                          `package pkg; func x() bool { return true }`,
 				"vendor/github.com/a/pkg2/x.go": `package pkg2; func x() bool { return true }`,
 				"vendor/github.com/x/pkg3/x.go": `package pkg3; func x() bool { return true }`,
 			},
