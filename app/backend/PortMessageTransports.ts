@@ -1,12 +1,12 @@
-import { MessageTransports } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/connection'
-import { Message } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/messages'
+import { MessageTransports } from 'sourcegraph/module/jsonrpc2/connection'
+import { Message } from 'sourcegraph/module/jsonrpc2/messages'
 import {
     AbstractMessageReader,
     AbstractMessageWriter,
     DataCallback,
     MessageReader,
     MessageWriter,
-} from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/transport'
+} from 'sourcegraph/module/jsonrpc2/transport'
 import { ExtensionConnectionInfo } from '../../chrome/extension/background'
 
 class PortMessageReader extends AbstractMessageReader implements MessageReader {

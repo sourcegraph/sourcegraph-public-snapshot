@@ -1,7 +1,7 @@
-import { HoverMerged } from '@sourcegraph/sourcegraph.proposed/module/types/hover'
 import { highlightBlock, registerLanguage } from 'highlight.js/lib/highlight'
 import * as _ from 'lodash'
 import marked from 'marked'
+import { HoverMerged } from 'sourcegraph/module/types/hover'
 import { MarkedString, MarkupContent } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, AbsoluteRepoFilePosition, parseBrowserRepoURL } from '.'
 import { makeCloseIcon, makeSourcegraphIcon } from '../components/Icons'

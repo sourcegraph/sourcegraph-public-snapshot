@@ -2,7 +2,7 @@
 // prettier-ignore
 import '../../app/util/polyfill'
 
-import { URI } from '@sourcegraph/sourcegraph.proposed/module/types/textDocument'
+import { URI } from 'sourcegraph/module/types/textDocument'
 import { without } from 'lodash'
 import { ajax } from 'rxjs/ajax'
 import { resolveClientConfiguration } from '../../app/backend/server'

@@ -1,11 +1,11 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
-import { TextDocumentPositionParams } from '@sourcegraph/sourcegraph.proposed/module/protocol'
-import { HoverMerged } from '@sourcegraph/sourcegraph.proposed/module/types/hover'
 import { from, Observable, of, OperatorFunction, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
+import { TextDocumentPositionParams } from 'sourcegraph/module/protocol'
+import { HoverMerged } from 'sourcegraph/module/types/hover'
 import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {

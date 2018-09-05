@@ -20,7 +20,7 @@
     },
     {
       "packagePatterns": ["^@sourcegraph/"],
-      "packageNames": ["@sourcegraph/sourcegraph.proposed"],
+      "packageNames": ["sourcegraph"],
       "rangeStrategy": "bump",
       "schedule": [],
       "minor": {
@@ -36,7 +36,7 @@
       "automerge": true
     },
     {
-      "packageNames": ["@sourcegraph/sourcegraph.proposed", "@sourcegraph/extensions-client-common"],
+      "packageNames": ["sourcegraph", "@sourcegraph/extensions-client-common"],
       "assignees": ["chrismwendt"]
     },
     {

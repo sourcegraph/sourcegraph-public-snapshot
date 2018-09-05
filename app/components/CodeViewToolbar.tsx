@@ -7,9 +7,9 @@ import {
     ConfigurationSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { ContributableMenu } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
+import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { CodeIntelStatusIndicator } from './CodeIntelStatusIndicator'

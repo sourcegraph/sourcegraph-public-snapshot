@@ -84,9 +84,8 @@
   },
   "dependencies": {
     "@sourcegraph/codeintellify": "^3.8.1",
-    "@sourcegraph/extensions-client-common": "^7.0.1",
+    "@sourcegraph/extensions-client-common": "^7.1.1",
     "@sourcegraph/react-loading-spinner": "0.0.6",
-    "@sourcegraph/sourcegraph.proposed": "^12.0.1",
     "@sqs/jsonc-parser": "^1.0.3",
     "bootstrap": "^4.0.0",
     "cypress-browser-extension-plugin": "^0.1.0",
@@ -109,6 +108,7 @@
     "reactstrap": "^5.0.0-beta.2",
     "rxjs": "^6.3.2",
     "socket.io-client": "^2.1.1",
+    "sourcegraph": "^13.0.0",
     "string-score": "^1.0.1",
     "textarea-caret": "^3.1.0",
     "ts-key-enum": "^2.0.0",
