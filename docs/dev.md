@@ -63,7 +63,7 @@ git clone git@github.com:sourcegraph/sourcegraph.git $GOPATH/src/github.com/sour
 cd $GOPATH/src/github.com/sourcegraph/sourcegraph
 ```
 
-This is your "Sourcegraph directory".
+This is your "Sourcegraph repository directory".
 
 ## Create a BuildKite Account
 
@@ -161,18 +161,11 @@ This means the `frontend` server failed to start, for some reason. Look through 
 
 #### Database migration failures
 
-Typical error:
+While developing Sourcegraph, you may run into:
 
 `frontend | failed to migrate the DB. Please contact hi@sourcegraph.com for further assistance:Dirty database version 1514702776. Fix and force version.`
 
-You may have to run migrations manually. Grab
-`https://github.com/mattes/migrate`, and run something like:
-
-```
-go build -tags postgres -o ~/bin/migrate github.com/mattes/migrate/cli
-```
-
-Replace `~/bin` with a path which exists and is in `$PATH`.
+You may have to run migrations manually. First, install the Go [migrate](https://github.com/golang-migrate/migrate/tree/master/cli#installation) CLI, and run something like:
 
 Then try:
 
@@ -184,8 +177,6 @@ If you get something like `error: Dirty database version 1514702776. Fix and for
 dev/migrate.sh drop
 dev/migrate.sh up
 ```
-
-The `mattes/migrate` package has itself migrated to `golang-migrate/migrate`, but we still have the old version vendored in some of our stuff. The new one probably works, though.
 
 #### Internal Server Error
 
@@ -202,7 +193,7 @@ in the terminal.
 `./dev/start.sh` may ask you to run ulimit to increase the maximum number
 of available file descriptors for a process. You can make this setting
 permanent for every shell session by adding the following line to your
-`.*rc` file (usually bash or zsh):
+`.*rc` file (usually `.bashrc` or `.zshrc`):
 
 ```bash
 # increase max number of file descriptors for running a sourcegraph instance.
@@ -217,10 +208,8 @@ If you ever need to wipe your local database, run the following command.
 
 ## Test
 
-BuildKite runs all our unit tests, and its output can be viewed [here](https://buildkite.com/sourcegraph/sourcegraph).
-
-To run tests within a directory (and recursively within its
-subdirectories):
+CI runs all our unit tests. To run tests within a directory (and recursively within its
+subdirectories) on your machine:
 
 ```
 go test ./cmd/...
@@ -277,17 +266,17 @@ The Sourcegraph repository relies on code generation triggered by `go generate`.
 - generate wrappers for interfaces (e.g., `./server/internal/middleware/*` packages)
 - pack app templates and assets into binaries
 
-Then run:
+To generate everything, just run:
 
 ```
 ./dev/generate.sh
 ```
 
-Also, sometimes there are erroneous diffs. This occurs for a few
+Note: Sometimes, there are erroneous diffs. This occurs for a few
 reasons, none of which are legitimate (i.e., they are tech debt items
 we need to address):
 
-- The codegen tool might emit code that depends on system configuration,
+- The codegen tools might emit code that depends on system configuration,
   such as the system timezone or packages you have in your GOPATH. We
   need to submit PRs to the tools to eliminate these issues.
 - You might have existing but gitignored files that the codegen tools
@@ -298,13 +287,11 @@ If you think a diff is erroneous, don't commit it. Add a tech debt
 item to the issue tracker and assign the person who you think is
 responsible (or ask).
 
-## Code standards
+## Code style guide
 
-The Sourcegraph repository enforces some code standards via `make test`, which is also run in CI.
+See [docs/style.md](style.md).
 
-Read more about our style in [docs/style.md](style.md).
-
-## Windows notes
+## Notes about alpha Windows support
 
 Windows support for Sourcegraph is currently in alpha. A few extra
 steps are required to run Sourcegraph in a Windows environment:
@@ -324,6 +311,4 @@ steps are required to run Sourcegraph in a Windows environment:
   changed" (necessary to avoid issues related to running npm-based
   tasks).
 
-  P.S. #cuddy was here
-
-Note that multiple unit tests currently fail on Windows.
+Note that multiple unit tests currently fail on Windows. We would be happy to accept contributions here! :)
