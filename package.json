@@ -65,7 +65,7 @@
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
     "reactstrap": "^6.4.0",
-    "rxjs": "^6.3.1",
+    "rxjs": "^6.3.2",
     "string-score": "^1.0.1",
     "ts-key-enum": "^2.0.0"
   },
