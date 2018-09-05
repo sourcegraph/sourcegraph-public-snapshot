@@ -1,20 +1,12 @@
 //docker:user sourcegraph
 
+// Note: All frontend code should be added to shared.Main, not here. See that
+// function for details.
+
 package main
 
-import (
-	"fmt"
-	"os"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
-)
+import "github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 
 func main() {
-	env.Lock()
-	err := cli.Main()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "fatal:", err)
-		os.Exit(1)
-	}
+	shared.Main()
 }
