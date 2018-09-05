@@ -208,4 +208,4 @@ To the extent that certain fields require validation (e.g. username) we should p
 
 ## Trigger functions
 
-Trigger functions perform some action when data is inserted or updated. Don't use trigger functions.
+Trigger functions perform some action when data is inserted or updated. We don't use trigger functions.
