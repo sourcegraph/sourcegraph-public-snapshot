@@ -3,7 +3,7 @@ package db
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/pkg/types"
 
 	"context"
 )

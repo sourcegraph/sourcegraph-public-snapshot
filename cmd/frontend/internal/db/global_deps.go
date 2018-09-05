@@ -12,9 +12,9 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
+	"github.com/sourcegraph/sourcegraph/pkg/types"
 	"github.com/sourcegraph/sourcegraph/xlang"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -163,7 +163,7 @@ func repoURIToGoPathPrefixes(repoURI api.RepoURI) []string {
 		if len(split) >= 3 && strings.HasPrefix(split[1], "go-") {
 			// Four possibilities
 			return []string{
-				string(repoURI),                                       // github.com/go-foo/foo
+				string(repoURI), // github.com/go-foo/foo
 				"gopkg.in/" + strings.TrimPrefix(split[1], "go-"),     // gopkg.in/foo
 				"labix.org/v1/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v1/foo
 				"labix.org/v2/" + strings.TrimPrefix(split[1], "go-"), // labix.org/v2/foo

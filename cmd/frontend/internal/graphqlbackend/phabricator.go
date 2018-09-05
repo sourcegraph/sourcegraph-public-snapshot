@@ -1,7 +1,7 @@
 package graphqlbackend
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/pkg/types"
 )
 
 type phabricatorRepoResolver struct {
