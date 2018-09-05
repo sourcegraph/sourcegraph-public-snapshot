@@ -2,9 +2,9 @@
 // prettier-ignore
 import '../../config/polyfill'
 
-import { URI } from 'sourcegraph/module/types/textDocument'
 import { without } from 'lodash'
 import { ajax } from 'rxjs/ajax'
+import { URI } from 'sourcegraph/module/types/textDocument'
 import * as browserAction from '../../browser/browserAction'
 import * as contextMenus from '../../browser/contextMenu'
 import * as omnibox from '../../browser/omnibox'
