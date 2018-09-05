@@ -8,9 +8,7 @@
 
 **Status:** Alpha (docs update and rename in progress)
 
-Build extensions that enhance reading and reviewing code in your existing tools.
-
-Sourcegraph extensions show useful info from services such as Codecov (for test coverage), logging/monitoring/performance tools, and more on GitHub (more code hosts coming soon) and Sourcegraph. It's like being able to use editor extensions when viewing and reviewing code on GitHub and your other favorite tools.
+Sourcegraph extensions enhance reading and reviewing code in your existing tools. They show useful info from services such as Codecov (for test coverage), logging/monitoring/performance tools, and more on GitHub (more code hosts coming soon) and Sourcegraph. It's like being able to use editor extensions when viewing and reviewing code on GitHub and your other favorite tools.
 
 [**🎥 Demo video**](https://www.youtube.com/watch?v=j1eWBa3rWH8)
 
