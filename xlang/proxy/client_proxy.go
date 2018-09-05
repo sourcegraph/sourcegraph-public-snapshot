@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -228,12 +227,6 @@ type contextID struct {
 	// values are used.
 	session string
 
-	// initOpts is the (ideally canonical) JSON representation of the client InitializeRequest's
-	// initializationOptions field. This means that clients providing different
-	// initializationOptions will have their requests served by different servers, each of which is
-	// provided with those initializationOptions.
-	initOpts string
-
 	share bool // if true, allow sharing server connections among multiple clients (with equal contextID values)
 }
 
@@ -294,7 +287,7 @@ type clientProxyConn struct {
 
 	mu       sync.Mutex
 	context  contextID
-	init     *cxp.ClientProxyInitializeParams
+	init     *lspext.ClientProxyInitializeParams
 	last     time.Time // max(last request received, last response sent), used to evict idle clients
 	shutdown bool      // whether this connection has received an LSP "shutdown"
 }
@@ -385,7 +378,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
-		var params cxp.ClientProxyInitializeParams
+		var params lspext.ClientProxyInitializeParams
 		if err := json.Unmarshal(*req.Params, &params); err != nil {
 			return nil, err
 		}
@@ -404,17 +397,17 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// months.
 		params.RootPath = ""
 
+		rootURI, err := uri.Parse(string(params.RootURI))
+		if err != nil {
+			return nil, fmt.Errorf("invalid rootUri %q: %s", params.RootURI, err)
+		}
+
 		// 🚨 SECURITY: Make all current and deprecated root fields consistent, to avoid bugs or
 		// vulnerabilities where we (e.g.) authorize the user for one of the roots but serve content
 		// for another.
-		params.RootURI = params.RootOrRootURI()
-		params.Root = params.RootOrRootURI()
+		params.RootURI = lsp.DocumentURI(rootURI.String())
 		params.InitializationOptions.RootURI = nil
 
-		rootURI, err := uri.Parse(string(params.RootOrRootURI()))
-		if err != nil {
-			return nil, fmt.Errorf("invalid rootUri %q: %s", params.RootOrRootURI(), err)
-		}
 		if params.InitializationOptions.Mode == "" {
 			return nil, fmt.Errorf(`client must send a "mode" in the initialize request to specify the language`)
 		}
@@ -436,7 +429,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.context.rootURI = *rootURI
 		c.context.mode = c.init.InitializationOptions.Mode
 		c.context.session = c.init.InitializationOptions.Session
-		isolated := c.context.session == "cxp" // special value "cxp" yields a server-side generated unique session value
+		isolated := c.context.session == "isolated" // special value "isolated" yields a server-side generated unique session value
 		c.context.share = !isolated
 		if isolated {
 			// Randomize session for unshared (isolated) connections to avoid collisions.
@@ -445,9 +438,6 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 				return nil, err
 			}
 			c.context.session = base64.StdEncoding.EncodeToString(b[:])
-		}
-		if c.init.InitializationOptions.Settings.Merged != nil {
-			c.context.initOpts = string(*c.init.InitializationOptions.Settings.Merged)
 		}
 		c.mu.Unlock()
 
@@ -500,9 +490,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		return nil, nil
 
 	case "textDocument/definition", "textDocument/hover", "textDocument/references", "textDocument/documentHighlight", "textDocument/documentLink", "documentLink/resolve", "textDocument/implementation", "textDocument/typeDefinition", "textDocument/documentSymbol", "workspace/symbol",
-		"textDocument/decoration",
 		"workspace/didChangeConfiguration",
-		"workspace/executeCommand",
 		"textDocument/xdefinition", "workspace/xreferences", "workspace/xdependencies", "workspace/xpackages":
 		if err := ensureInitialized(); err != nil {
 			return nil, err
@@ -716,7 +704,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 	}
 
 	switch req.Method {
-	case "textDocument/publishDiagnostics", "textDocument/publishDecorations":
+	case "textDocument/publishDiagnostics":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
@@ -756,7 +744,7 @@ func (c *clientProxyConn) handleFromServer(ctx context.Context, conn *jsonrpc2.C
 		}
 		return nil, nil
 
-	case "window/showMessageRequest", "configuration/update", "client/registerCapability", "client/unregisterCapability", "window/showInput":
+	case "window/showMessageRequest", "client/registerCapability", "client/unregisterCapability":
 		// Pass these through verbatim.
 		var result interface{}
 		err := conn.Call(ctx, req.Method, req.Params, &result)

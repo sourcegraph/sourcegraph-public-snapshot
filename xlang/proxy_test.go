@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/xlang"
 	gobuildserver "github.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -771,45 +770,37 @@ func TestProxy_connections(t *testing.T) {
 
 	// We always send the same capabilities, put in variable to avoid
 	// repetition.
-	caps := cxp.ClientCapabilities{
-		ClientCapabilities: lsp.ClientCapabilities{
-			XFilesProvider:   true,
-			XContentProvider: true,
-			XCacheProvider:   true,
-		},
-		Decoration: &cxp.DecorationCapabilityOptions{Static: true, Dynamic: true},
-		Exec:       true,
+	caps := lsp.ClientCapabilities{
+		XFilesProvider:   true,
+		XContentProvider: true,
+		XCacheProvider:   true,
 	}
 
 	// Start the test client C1.
 	c1 := dialProxy(t, addr, nil)
 
 	// C1 connects to the proxy.
-	initParams := cxp.ClientProxyInitializeParams{
-		ClientProxyInitializeParams: lspext.ClientProxyInitializeParams{
-			InitializeParams: lsp.InitializeParams{RootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"},
+	initParams := lspext.ClientProxyInitializeParams{
+		InitializeParams: lsp.InitializeParams{
+			RootURI:      "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			Capabilities: caps,
 		},
-		InitializationOptions: cxp.ClientProxyInitializationOptions{
-			ClientProxyInitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
-		},
-		Capabilities: caps,
+		InitializationOptions: lspext.ClientProxyInitializationOptions{Mode: "test"},
 	}
 	if err := c1.Call(ctx, "initialize", initParams, nil); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(100 * time.Millisecond) // we're testing for a negative, so this is not as flaky as it seems; if a request is received later, it'll cause a test failure the next time we call wantReqs
 	want := []testRequest{
-		{"initialize", cxp.InitializeParams{
-			InitializeParams: lspext.InitializeParams{
-				InitializeParams: lsp.InitializeParams{
-					RootPath: "/",
-					RootURI:  "file:///",
-				},
-				OriginalRootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-				Mode:            "test",
+		{"initialize", lspext.InitializeParams{
+			InitializeParams: lsp.InitializeParams{
+				RootPath:              "/",
+				RootURI:               "file:///",
+				Capabilities:          caps,
+				InitializationOptions: json.RawMessage("null"),
 			},
-			InitializationOptions: &cxp.InitializationOptions{},
-			Capabilities:          caps,
+			OriginalRootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			Mode:            "test",
 		}},
 	}
 	if err := wantReqs(want); err != nil {
@@ -875,17 +866,15 @@ func TestProxy_connections(t *testing.T) {
 	want = []testRequest{
 		{"shutdown", nil},
 		{"exit", nil},
-		{"initialize", cxp.InitializeParams{
-			InitializeParams: lspext.InitializeParams{
-				InitializeParams: lsp.InitializeParams{
-					RootPath: "/",
-					RootURI:  "file:///",
-				},
-				OriginalRootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-				Mode:            "test",
+		{"initialize", lspext.InitializeParams{
+			InitializeParams: lsp.InitializeParams{
+				RootPath:              "/",
+				RootURI:               "file:///",
+				Capabilities:          caps,
+				InitializationOptions: json.RawMessage("null"),
 			},
-			InitializationOptions: &cxp.InitializationOptions{},
-			Capabilities:          caps,
+			OriginalRootURI: "test://test?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+			Mode:            "test",
 		}},
 		{"textDocument/definition", lsp.TextDocumentPositionParams{
 			TextDocument: lsp.TextDocumentIdentifier{URI: "file:///myfile3"},

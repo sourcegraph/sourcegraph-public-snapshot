@@ -174,19 +174,19 @@ func isWhitelistedGitCmd(args []string) bool {
 	return true
 }
 
-func gitserverCmdFunc(repo gitserver.Repo) CmdFunc {
-	return func(args []string) Cmd {
+func gitserverCmdFunc(repo gitserver.Repo) cmdFunc {
+	return func(args []string) cmd {
 		cmd := gitserver.DefaultClient.Command("git", args...)
 		cmd.Repo = gitserver.Repo(repo)
 		return cmd
 	}
 }
 
-// CmdFunc is a func that creates a new executable Git command.
-type CmdFunc func(args []string) Cmd
+// cmdFunc is a func that creates a new executable Git command.
+type cmdFunc func(args []string) cmd
 
-// Cmd is an executable Git command.
-type Cmd interface {
+// cmd is an executable Git command.
+type cmd interface {
 	Output(context.Context) ([]byte, error)
 	String() string
 }

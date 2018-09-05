@@ -41,10 +41,10 @@ func BlameFile(ctx context.Context, repo gitserver.Repo, path string, opt *Blame
 	span.SetTag("path", path)
 	span.SetTag("opt", opt)
 	defer span.Finish()
-	return BlameFileCmd(ctx, gitserverCmdFunc(repo), path, opt)
+	return blameFileCmd(ctx, gitserverCmdFunc(repo), path, opt)
 }
 
-func BlameFileCmd(ctx context.Context, command CmdFunc, path string, opt *BlameOptions) ([]*Hunk, error) {
+func blameFileCmd(ctx context.Context, command cmdFunc, path string, opt *BlameOptions) ([]*Hunk, error) {
 	if opt == nil {
 		opt = &BlameOptions{}
 	}
