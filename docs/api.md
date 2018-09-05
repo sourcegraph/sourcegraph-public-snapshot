@@ -1,3 +1,5 @@
+# Developing the Sourcegraph GraphQL API
+
 ## Internal comments vs external documentation
 
 Comments starting with `#!` in [schema.graphql](../cmd/frontend/internal/graphqlbackend/schema.graphql) will be stripped out before the GraphQL documentation is generated. `#!` is useful for implementation details and security notes that shouldn't be displayed to API users.

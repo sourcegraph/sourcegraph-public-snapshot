@@ -1,4 +1,4 @@
-# PostgreSQL
+# PostgreSQL storage tips
 
 Sourcegraph stores most data in a
 [PostgreSQL database](http://www.postgresql.org). Git repositories,

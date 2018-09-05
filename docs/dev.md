@@ -1,4 +1,4 @@
-# Development README
+# Getting started with developing Sourcegraph
 
 The best way to become familiar with the Sourcegraph repository is by
 reading the code at https://sourcegraph.com/github.com/sourcegraph/sourcegraph.

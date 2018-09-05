@@ -1,4 +1,4 @@
-# Sourcegraph Architecture
+# Sourcegraph architecture overview
 
 This is a high level overview of our architecture at Sourcegraph so you can understand how our services fit together.
 
