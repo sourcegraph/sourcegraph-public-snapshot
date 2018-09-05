@@ -93,7 +93,7 @@ export class RepositoryCompareCommitsPage extends React.PureComponent<Props> {
                         queryConnection={this.queryCommits}
                         nodeComponent={GitCommitNode}
                         nodeComponentProps={{
-                            repoName: this.props.repo.uri,
+                            repoName: this.props.repo.name,
                             className: 'list-group-item',
                             compact: true,
                         }}

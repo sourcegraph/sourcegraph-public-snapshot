@@ -16,15 +16,15 @@ func TestRepository(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					repository(uri: "github.com/gorilla/mux") {
-						uri
+					repository(name: "github.com/gorilla/mux") {
+						name
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
 					"repository": {
-						"uri": "github.com/gorilla/mux"
+						"name": "github.com/gorilla/mux"
 					}
 				}
 			`,

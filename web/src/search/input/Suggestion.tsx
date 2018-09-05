@@ -46,8 +46,8 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
         case 'Repository': {
             return {
                 type: 'repo',
-                title: item.uri,
-                url: `/${item.uri}`,
+                title: item.name,
+                url: `/${item.name}`,
                 urlLabel: 'go to repository',
             }
         }
@@ -57,7 +57,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
             if (dir !== undefined && dir !== '.') {
                 descriptionParts.push(`${dir}/`)
             }
-            descriptionParts.push(basename(item.repository.uri))
+            descriptionParts.push(basename(item.repository.name))
             if (item.isDirectory) {
                 return {
                     type: 'dir',
@@ -81,7 +81,7 @@ export function createSuggestion(item: GQL.SearchSuggestion): Suggestion {
                 kind: item.kind,
                 title: item.name,
                 description: `${item.containerName || item.location.resource.path} — ${basename(
-                    item.location.resource.repository.uri
+                    item.location.resource.repository.name
                 )}`,
                 url: item.url,
                 urlLabel: 'go to definition',

@@ -188,7 +188,7 @@ export class RepoContainer extends React.Component<Props, State> {
             }
         }
 
-        const repoMatchURL = `/${this.state.repoOrError.uri}`
+        const repoMatchURL = `/${this.state.repoOrError.name}`
 
         const transferProps = {
             repo: this.state.repoOrError,
@@ -225,7 +225,7 @@ export class RepoContainer extends React.Component<Props, State> {
                         element={
                             <RepositoryGraphAction
                                 key="repository-graph"
-                                repo={this.state.repoOrError.uri}
+                                repo={this.state.repoOrError.name}
                                 rev={this.state.rev}
                             />
                         }
@@ -350,7 +350,7 @@ export class RepoContainer extends React.Component<Props, State> {
                     </Switch>
                 ) : (
                     <RepositoryErrorPage
-                        repo={this.state.repoOrError.uri}
+                        repo={this.state.repoOrError.name}
                         repoID={this.state.repoOrError.id}
                         error="disabled"
                         viewerCanAdminister={viewerCanAdminister}

@@ -47,7 +47,7 @@ const fetchBlob = memoizeObservable(
                     $isLightTheme: Boolean!
                     $disableTimeout: Boolean!
                 ) {
-                    repository(uri: $repoPath) {
+                    repository(name: $repoPath) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 content

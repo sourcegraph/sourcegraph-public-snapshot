@@ -65,7 +65,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                     {props.results.missing.length > 0 && (
                         <div
                             className="search-results-info-bar__notice"
-                            data-tooltip={props.results.missing.map(repo => repo.uri).join('\n')}
+                            data-tooltip={props.results.missing.map(repo => repo.name).join('\n')}
                         >
                             <span>
                                 <DirectionalSign className="icon-inline" /> {props.results.missing.length}{' '}
@@ -77,7 +77,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                     {props.results.timedout.length > 0 && (
                         <div
                             className="search-results-info-bar__notice"
-                            data-tooltip={props.results.timedout.map(repo => repo.uri).join('\n')}
+                            data-tooltip={props.results.timedout.map(repo => repo.name).join('\n')}
                         >
                             <span>
                                 <HourglassIcon className="icon-inline" /> {props.results.timedout.length}{' '}
@@ -90,7 +90,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                     {props.results.cloning.length > 0 && (
                         <div
                             className="search-results-info-bar__notice"
-                            data-tooltip={props.results.cloning.map(repo => repo.uri).join('\n')}
+                            data-tooltip={props.results.cloning.map(repo => repo.name).join('\n')}
                         >
                             <span>
                                 <DownloadIcon className="icon-inline" /> {props.results.cloning.length}{' '}

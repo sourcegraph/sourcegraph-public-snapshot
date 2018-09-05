@@ -56,7 +56,7 @@ export class RepositoryBranchesArea extends React.Component<Props> {
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
                 <div className="area--vertical__navbar">
-                    <RepositoryBranchesNavbar className="area--vertical__navbar-inner" repo={this.props.repo.uri} />
+                    <RepositoryBranchesNavbar className="area--vertical__navbar-inner" repo={this.props.repo.name} />
                 </div>
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">

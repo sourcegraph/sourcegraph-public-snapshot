@@ -31,7 +31,7 @@ func TestRepository_Commit(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					repository(uri: "github.com/gorilla/mux") {
+					repository(name: "github.com/gorilla/mux") {
 						commit(rev: "abc") {
 							oid
 						}

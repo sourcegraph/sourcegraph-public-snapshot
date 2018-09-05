@@ -58,7 +58,7 @@ export class RepositoryStatsArea extends React.Component<Props> {
                 />
                 {showNavbar && (
                     <div className="area--vertical__navbar">
-                        <RepositoryStatsNavbar className="area--vertical__navbar-inner" repo={this.props.repo.uri} />
+                        <RepositoryStatsNavbar className="area--vertical__navbar-inner" repo={this.props.repo.name} />
                     </div>
                 )}
                 <div className="area--vertical__content">

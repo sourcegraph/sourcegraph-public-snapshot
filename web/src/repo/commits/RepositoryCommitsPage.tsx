@@ -124,7 +124,7 @@ export class RepositoryCommitsPage extends React.PureComponent<Props> {
                     pluralNoun="commits"
                     queryConnection={this.queryCommits}
                     nodeComponent={GitCommitNode}
-                    nodeComponentProps={{ repoName: this.props.repo.uri, className: 'list-group-item' }}
+                    nodeComponentProps={{ repoName: this.props.repo.name, className: 'list-group-item' }}
                     defaultFirst={20}
                     autoFocus={true}
                     history={this.props.history}

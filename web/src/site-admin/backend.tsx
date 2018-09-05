@@ -144,7 +144,7 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
                 ) {
                     nodes {
                         id
-                        uri
+                        name
                         enabled
                         createdAt
                         viewerCanAdminister

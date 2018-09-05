@@ -51,7 +51,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
 
         this.subscriptions.add(
             this.repoUpdates
-                .pipe(switchMap(() => fetchRepository(this.props.repo.uri)))
+                .pipe(switchMap(() => fetchRepository(this.props.repo.name)))
                 .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
         )
     }
@@ -76,7 +76,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
                             className="form-control"
                             readOnly={true}
                             disabled={true}
-                            value={this.state.repo.uri}
+                            value={this.state.repo.name}
                             required={true}
                             spellCheck={false}
                             autoCapitalize="off"

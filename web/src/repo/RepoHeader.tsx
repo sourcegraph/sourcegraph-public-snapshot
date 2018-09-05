@@ -117,7 +117,7 @@ interface Props extends ExtensionsProps, ExtensionsControllerProps {
                */
               id?: GQL.ID
 
-              uri: string
+              name: string
               url: string
               enabled: boolean
               viewerCanAdminister: boolean
@@ -158,7 +158,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         const leftActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'left')
         const rightActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'right')
 
-        const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.repo.uri))
+        const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.repo.name))
         return (
             <nav className="repo-header navbar navbar-expand">
                 <div className="navbar-nav">
@@ -177,7 +177,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                                 location={this.props.location}
                             />
                         }
-                        hideOnChange={this.props.repo.uri}
+                        hideOnChange={this.props.repo.name}
                     >
                         {repoDir ? `${repoDir}/` : ''}
                         <span className="repo-header__repo-basename">{repoBase}</span>
@@ -222,7 +222,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     ))}
                     {this.props.repo.viewerCanAdminister && (
                         <li className="nav-item">
-                            <ActionItem to={`/${this.props.repo.uri}/-/settings`} data-tooltip="Repository settings">
+                            <ActionItem to={`/${this.props.repo.name}/-/settings`} data-tooltip="Repository settings">
                                 <GearIcon className="icon-inline" />{' '}
                                 <span className="d-none d-lg-inline">Settings</span>
                             </ActionItem>

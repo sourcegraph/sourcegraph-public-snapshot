@@ -15,8 +15,8 @@ interface Props {
 
 export const GitRefTag: React.SFC<Props> = ({ gitRef, onMouseDown }: Props) => {
     // TODO(sqs): make not github specific
-    const githubRepoURL = gitRef.repository.uri.startsWith('github.com/')
-        ? `https://${gitRef.repository.uri}`
+    const githubRepoURL = gitRef.repository.name.startsWith('github.com/')
+        ? `https://${gitRef.repository.name}`
         : undefined
 
     const abbrevName = gitRef.name.slice(gitRef.prefix.length)

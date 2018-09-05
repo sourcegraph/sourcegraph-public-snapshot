@@ -64,7 +64,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
     const title: React.ReactChild = (
         <div className="commit-search-result__title">
             <RepoLink
-                repoPath={props.result.commit.repository.uri}
+                repoPath={props.result.commit.repository.name}
                 to={
                     props.result.commit.tree
                         ? props.result.commit.tree.canonicalURL
@@ -131,7 +131,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
 
     if (props.result.diffPreview) {
         const commonCtx: RepoSpec = {
-            repoPath: props.result.commit.repository.uri,
+            repoPath: props.result.commit.repository.name,
         }
         // lhsCtx and rhsCtx need the cast because their values at const init time lack
         // the filePath field, which is assigned as we iterate over the lines below.

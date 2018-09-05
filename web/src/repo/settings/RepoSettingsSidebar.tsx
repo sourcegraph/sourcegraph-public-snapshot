@@ -23,21 +23,21 @@ export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
                 <div className="card-header">Settings</div>
                 <div className="list-group list-group-flush">
                     <NavLink
-                        to={`/${props.repo.uri}/-/settings`}
+                        to={`/${props.repo.name}/-/settings`}
                         exact={true}
                         className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
                     >
                         Options
                     </NavLink>
                     <NavLink
-                        to={`/${props.repo.uri}/-/settings/index`}
+                        to={`/${props.repo.name}/-/settings/index`}
                         exact={true}
                         className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
                     >
                         Indexing
                     </NavLink>
                     <NavLink
-                        to={`/${props.repo.uri}/-/settings/mirror`}
+                        to={`/${props.repo.name}/-/settings/mirror`}
                         exact={true}
                         className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
                     >

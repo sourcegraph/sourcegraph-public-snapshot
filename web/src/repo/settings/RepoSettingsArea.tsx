@@ -48,7 +48,7 @@ export class RepoSettingsArea extends React.Component<Props> {
     public componentDidMount(): void {
         this.subscriptions.add(
             this.repoChanges
-                .pipe(switchMap(({ uri }) => fetchRepository(uri)))
+                .pipe(switchMap(({ name }) => fetchRepository(name)))
                 .subscribe(repo => this.setState({ repo }), err => this.setState({ error: err.message }))
         )
         this.repoChanges.next(this.props.repo)

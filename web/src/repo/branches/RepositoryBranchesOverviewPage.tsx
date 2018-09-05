@@ -137,7 +137,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                     {this.state.dataOrError.hasMoreActiveBranches && (
                                         <Link
                                             className="list-group-item list-group-item-action py-2 d-flex"
-                                            to={`/${this.props.repo.uri}/-/branches/all`}
+                                            to={`/${this.props.repo.name}/-/branches/all`}
                                         >
                                             View more branches<ChevronRight className="icon-inline" />
                                         </Link>

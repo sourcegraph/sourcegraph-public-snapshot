@@ -220,7 +220,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 <div className="card-body">
                                     <GitCommitNode
                                         node={this.state.commitOrError}
-                                        repoName={this.props.repo.uri}
+                                        repoName={this.props.repo.name}
                                         expandCommitMessageBody={true}
                                         showSHAAndParentsRow={true}
                                     />
@@ -235,13 +235,13 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 nodeComponent={FileDiffNode}
                                 nodeComponentProps={{
                                     base: {
-                                        repoPath: this.props.repo.uri,
+                                        repoPath: this.props.repo.name,
                                         repoID: this.props.repo.id,
                                         rev: commitParentOrEmpty(this.state.commitOrError),
                                         commitID: commitParentOrEmpty(this.state.commitOrError),
                                     },
                                     head: {
-                                        repoPath: this.props.repo.uri,
+                                        repoPath: this.props.repo.name,
                                         repoID: this.props.repo.id,
                                         rev: this.state.commitOrError.oid,
                                         commitID: this.state.commitOrError.oid,

@@ -23,7 +23,7 @@ export const fetchBlameFile2 = memoizeObservable(
                     $startLine: Int!
                     $endLine: Int!
                 ) {
-                    repository(uri: $repoPath) {
+                    repository(name: $repoPath) {
                         commit(rev: $commitID) {
                             blob(path: $filePath) {
                                 blame(startLine: $startLine, endLine: $endLine) {

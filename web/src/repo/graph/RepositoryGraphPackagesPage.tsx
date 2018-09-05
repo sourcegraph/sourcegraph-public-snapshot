@@ -195,7 +195,7 @@ class PackageNode extends React.PureComponent<PackageNodeProps, PackageNodeState
         if (partialQuery === null) {
             return ''
         }
-        const query = `${searchQueryForRepoRev(this.props.repo.uri, this.props.rev)}type:ref ${partialQuery}`
+        const query = `${searchQueryForRepoRev(this.props.repo.name, this.props.rev)}type:ref ${partialQuery}`
         return `/search?${buildSearchURLQuery({ query })}`
     }
 

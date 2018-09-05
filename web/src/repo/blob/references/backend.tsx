@@ -20,7 +20,7 @@ const fetchDependencyReferences = memoizeObservable(
                     $line: Int!
                     $character: Int!
                 ) {
-                    repository(uri: $repoPath) {
+                    repository(name: $repoPath) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 dependencyReferences(Language: $mode, Line: $line, Character: $character) {
@@ -38,7 +38,7 @@ const fetchDependencyReferences = memoizeObservable(
                                     repoData {
                                         repos {
                                             id
-                                            uri
+                                            name
                                             lastIndexedRevOrLatest {
                                                 oid
                                             }
@@ -103,7 +103,7 @@ export const fetchExternalReferences = (ctx: LSPTextDocumentPositionParams): Obs
                                 const commit = repo.lastIndexedRevOrLatest
                                 return {
                                     workspace: commit && {
-                                        repoPath: repo.uri,
+                                        repoPath: repo.name,
                                         rev: commit.oid, // TODO(sqs): use short ref when possible for nicer URLs
                                         commitID: commit.oid,
                                     },

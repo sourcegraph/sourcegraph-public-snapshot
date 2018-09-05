@@ -33,7 +33,7 @@ func TestRepositoryResolver_Dependencies(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					repository(uri: "r") {
+					repository(name: "r") {
 						dependencies {
 							nodes {
 								language
@@ -43,7 +43,7 @@ func TestRepositoryResolver_Dependencies(t *testing.T) {
 								}
 								dependingCommit {
 									repository {
-										uri
+										name
 									}
 								}
 							}
@@ -69,7 +69,7 @@ func TestRepositoryResolver_Dependencies(t *testing.T) {
 							],
 							"dependingCommit": {
 								"repository": {
-									"uri": "r"
+									"name": "r"
 								}
 							}
 						}],

@@ -47,9 +47,9 @@ export const fetchRepository = memoizeObservable(
         queryGraphQL(
             gql`
                 query Repository($repoPath: String!) {
-                    repository(uri: $repoPath) {
+                    repository(name: $repoPath) {
                         id
-                        uri
+                        name
                         url
                         externalURLs {
                             url
@@ -98,7 +98,7 @@ export const resolveRev = memoizeObservable(
         queryGraphQL(
             gql`
                 query ResolveRev($repoPath: String!, $rev: String!) {
-                    repository(uri: $repoPath) {
+                    repository(name: $repoPath) {
                         mirrorInfo {
                             cloneInProgress
                             cloneProgress
@@ -175,7 +175,7 @@ const fetchHighlightedFile = memoizeObservable(
                     $disableTimeout: Boolean!
                     $isLightTheme: Boolean!
                 ) {
-                    repository(uri: $repoPath) {
+                    repository(name: $repoPath) {
                         commit(rev: $commitID) {
                             file(path: $filePath) {
                                 isDirectory
@@ -238,7 +238,7 @@ export const fetchFileExternalLinks = memoizeObservable(
         queryGraphQL(
             gql`
                 query FileExternalLinks($repoPath: String!, $rev: String!, $filePath: String!) {
-                    repository(uri: $repoPath) {
+                    repository(name: $repoPath) {
                         commit(rev: $rev) {
                             file(path: $filePath) {
                                 externalURLs {
@@ -273,7 +273,7 @@ export const fetchTree = memoizeObservable(
         queryGraphQL(
             gql`
                 query Tree($repoPath: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
-                    repository(uri: $repoPath) {
+                    repository(name: $repoPath) {
                         commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
                                 isRoot
@@ -312,7 +312,7 @@ export const fetchTreeEntries = memoizeObservable(
         queryGraphQL(
             gql`
                 query Tree($repoPath: String!, $rev: String!, $commitID: String!, $filePath: String!, $first: Int) {
-                    repository(uri: $repoPath) {
+                    repository(name: $repoPath) {
                         commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
                                 entries(first: $first) {

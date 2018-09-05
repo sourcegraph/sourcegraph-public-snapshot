@@ -19,13 +19,13 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                         resultCount
                         approximateResultCount
                         missing {
-                            uri
+                            name
                         }
                         cloning {
-                            uri
+                            name
                         }
                         timedout {
-                            uri
+                            name
                         }
                         indexUnavailable
                         dynamicFilters {
@@ -39,7 +39,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                             ... on Repository {
                                 __typename
                                 id
-                                uri
+                                name
                                 url
                             }
                             ... on FileMatch {
@@ -75,7 +75,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                     displayName
                                     prefix
                                     repository {
-                                        uri
+                                        name
                                     }
                                 }
                                 sourceRefs {
@@ -83,7 +83,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                     displayName
                                     prefix
                                     repository {
-                                        uri
+                                        name
                                     }
                                 }
                                 messagePreview {
@@ -105,7 +105,7 @@ export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
                                 commit {
                                     id
                                     repository {
-                                        uri
+                                        name
                                         url
                                     }
                                     oid
@@ -180,7 +180,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                     suggestions {
                         __typename
                         ... on Repository {
-                            uri
+                            name
                         }
                         ... on File {
                             path
@@ -188,7 +188,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                             isDirectory
                             url
                             repository {
-                                uri
+                                name
                             }
                         }
                         ... on Symbol {
@@ -200,7 +200,7 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
                                 resource {
                                     path
                                     repository {
-                                        uri
+                                        name
                                     }
                                 }
                             }

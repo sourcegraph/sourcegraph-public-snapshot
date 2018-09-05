@@ -94,7 +94,7 @@ func SecondaryQueue(ctx context.Context) <-chan qitem {
 			}
 
 			for _, rp := range resp.Data.Repositories.Nodes {
-				c <- qitem{repo: api.RepoURI(rp.URI)}
+				c <- qitem{repo: api.RepoURI(rp.Name)}
 			}
 
 			time.Sleep(30 * time.Second)
@@ -106,7 +106,7 @@ func SecondaryQueue(ctx context.Context) <-chan qitem {
 const gqlSearchQuery = `query {
   repositories(orderBy:REPO_CREATED_AT, notCIIndexed:true, descending:true, first:1000) {
     nodes {
-      uri
+      name
     }
   }
 }
@@ -116,7 +116,7 @@ type gqlSearchResponse struct {
 	Data struct {
 		Repositories struct {
 			Nodes []struct {
-				URI string
+				Name string
 			}
 		}
 	}

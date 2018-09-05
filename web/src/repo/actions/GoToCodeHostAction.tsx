@@ -50,7 +50,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                         }
                         return merge(
                             of({ fileExternalLinksOrError: undefined }),
-                            fetchFileExternalLinks({ repoPath: repo.uri, rev, filePath }).pipe(
+                            fetchFileExternalLinks({ repoPath: repo.name, rev, filePath }).pipe(
                                 catchError(err => [asError(err)]),
                                 map(c => ({ fileExternalLinksOrError: c }))
                             )

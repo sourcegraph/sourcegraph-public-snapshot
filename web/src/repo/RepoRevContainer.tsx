@@ -83,7 +83,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             this.propsUpdates
                 .pipe(
                     // Pick repoPath and rev out of the props
-                    map(props => ({ repoPath: props.repo.uri, rev: props.rev })),
+                    map(props => ({ repoPath: props.repo.name, rev: props.rev })),
                     distinctUntilChanged((a, b) => isEqual(a, b)),
                     // Reset resolved rev / error state
                     tap(() => this.props.onResolvedRevOrError(undefined)),
@@ -147,7 +147,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 case ECLONEINPROGESS:
                     return (
                         <RepositoryCloningInProgressPage
-                            repoName={this.props.repo.uri}
+                            repoName={this.props.repo.name}
                             progress={(this.props.resolvedRevOrError as CloneInProgressError).progress}
                         />
                     )
@@ -199,7 +199,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                             popoverElement={
                                 <RevisionsPopover
                                     repo={this.props.repo.id}
-                                    repoPath={this.props.repo.uri}
+                                    repoPath={this.props.repo.name}
                                     defaultBranch={this.props.resolvedRevOrError.defaultBranch}
                                     currentRev={this.props.rev}
                                     currentCommitID={this.props.resolvedRevOrError.commitID}
@@ -269,7 +269,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                     element={
                                                         <FilePathBreadcrumb
                                                             key="path"
-                                                            repoPath={this.props.repo.uri}
+                                                            repoPath={this.props.repo.name}
                                                             rev={this.props.rev}
                                                             filePath={filePath}
                                                             isDir={objectType === 'tree'}
@@ -289,7 +289,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                                 userIsSiteAdmin={
                                                                     !!this.props.user && this.props.user.siteAdmin
                                                                 }
-                                                                repoPath={this.props.repo.uri}
+                                                                repoPath={this.props.repo.name}
                                                                 rev={this.props.rev}
                                                                 commitID={resolvedRev.commitID}
                                                                 filePath={filePath}
@@ -306,7 +306,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                         <RepoRevSidebar
                                             className="repo-rev-container__sidebar"
                                             repoID={this.props.repo.id}
-                                            repoPath={this.props.repo.uri}
+                                            repoPath={this.props.repo.name}
                                             rev={this.props.rev}
                                             commitID={(this.props.resolvedRevOrError as ResolvedRev).commitID}
                                             filePath={routeComponentProps.match.params.filePath || '' || ''}
@@ -322,7 +322,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                             <div className="repo-rev-container__content">
                                                 {objectType === 'blob' ? (
                                                     <BlobPage
-                                                        repoPath={this.props.repo.uri}
+                                                        repoPath={this.props.repo.name}
                                                         repoID={this.props.repo.id}
                                                         commitID={
                                                             (this.props.resolvedRevOrError as ResolvedRev).commitID
@@ -344,7 +344,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                     />
                                                 ) : (
                                                     <TreePage
-                                                        repoPath={this.props.repo.uri}
+                                                        repoPath={this.props.repo.name}
                                                         repoID={this.props.repo.id}
                                                         repoDescription={this.props.repo.description}
                                                         commitID={
@@ -430,7 +430,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     !isErrorLike(this.props.resolvedRevOrError) && (
                         <ExtensionsRoot
                             root={makeRepoURI({
-                                repoPath: this.props.repo.uri,
+                                repoPath: this.props.repo.name,
                                 commitID: this.props.resolvedRevOrError.commitID,
                             })}
                             extensionsOnRootChange={this.props.extensionsOnRootChange}

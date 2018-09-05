@@ -164,8 +164,8 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
 
         const commonProps: RepositoryCompareAreaPageProps = {
             repo: this.props.repo,
-            base: { repoID: this.props.repo.id, repoPath: this.props.repo.uri, rev: spec && spec.base },
-            head: { repoID: this.props.repo.id, repoPath: this.props.repo.uri, rev: spec && spec.head },
+            base: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.base },
+            head: { repoID: this.props.repo.id, repoPath: this.props.repo.name, rev: spec && spec.head },
             routePrefix: this.props.match.url,
             extensions: this.props.extensions,
         }
@@ -222,7 +222,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
 
     private onUpdateComparisonSpec = (newBaseSpec: string, newHeadSpec: string): void => {
         this.props.history.push(
-            `/${this.props.repo.uri}/-/compare${
+            `/${this.props.repo.name}/-/compare${
                 newBaseSpec || newHeadSpec
                     ? `/${escapeRevspecForURL(newBaseSpec || '')}...${escapeRevspecForURL(newHeadSpec || '')}`
                     : ''

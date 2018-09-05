@@ -33,7 +33,7 @@ func TestRepositoryResolver_Packages(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					repository(uri: "r") {
+					repository(name: "r") {
 						packages {
 							nodes {
 								language
@@ -43,7 +43,7 @@ func TestRepositoryResolver_Packages(t *testing.T) {
 								}
 								definingCommit {
 									repository {
-										uri
+										name
 									}
 								}
 							}
@@ -69,7 +69,7 @@ func TestRepositoryResolver_Packages(t *testing.T) {
 							],
 							"definingCommit": {
 								"repository": {
-									"uri": "r"
+									"name": "r"
 								}
 							}
 						}],

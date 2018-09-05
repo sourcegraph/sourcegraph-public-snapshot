@@ -347,7 +347,7 @@ export class RepositoryStatsContributorsPage extends React.PureComponent<Props, 
                     queryConnection={this.queryRepositoryContributors}
                     nodeComponent={RepositoryContributorNode}
                     nodeComponentProps={{
-                        repoPath: this.props.repo.uri,
+                        repoPath: this.props.repo.name,
                         revisionRange,
                         after,
                         path,

@@ -48,7 +48,7 @@ func TestGitTree(t *testing.T) {
 			Schema: GraphQLSchema,
 			Query: `
 				{
-					repository(uri: "github.com/gorilla/mux") {
+					repository(name: "github.com/gorilla/mux") {
 						commit(rev: "` + exampleCommitSHA1 + `") {
 							tree(path: "/foo") {
 								directories {

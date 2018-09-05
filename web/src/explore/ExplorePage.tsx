@@ -20,7 +20,7 @@ interface RepositoryNodeProps {
 
 const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
     <li key={repo.id} className="list-group-item py-2">
-        <RepoLink repoPath={repo.uri} to={repo.url} className="explore-page__item-path" />
+        <RepoLink repoPath={repo.name} to={repo.url} className="explore-page__item-path" />
         {repo.mirrorInfo.cloneInProgress && (
             <small className="ml-2 text-success">
                 <Loader className="icon-inline" /> Cloning

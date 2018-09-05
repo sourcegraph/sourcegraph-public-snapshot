@@ -80,7 +80,7 @@ for r in args.repos:
 query {
   site {
     repositories {
-      uri
+      name
     }
   }
 }
@@ -90,8 +90,8 @@ query {
             },
         }
         r = requests.post(domain + '/.api/graphql', json=graphql)
-        repos.extend(x['uri'] for x in r.json()['data']['repositories']
-                     if repo_filter in x['uri'])
+        repos.extend(x['name'] for x in r.json()['data']['repositories']
+                     if repo_filter in x['name'])
     elif r.startswith('github.com/') and r.count('/') == 1:
         org = r[len('github.com/'):]
         for d in requests.get('https://api.github.com/orgs/' + org +

@@ -18,7 +18,7 @@ function fetchRepositories(args: { first?: number; query?: string }): Observable
                 repositories(first: $first, query: $query) {
                     nodes {
                         id
-                        uri
+                        name
                     }
                     totalCount
                     pageInfo {
@@ -46,12 +46,12 @@ interface RepositoryNodeProps {
 const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node, currentRepo }) => (
     <li key={node.id} className="connection-popover__node">
         <Link
-            to={`/${node.uri}`}
+            to={`/${node.name}`}
             className={`connection-popover__node-link ${
                 node.id === currentRepo ? 'connection-popover__node-link--active' : ''
             }`}
         >
-            {displayRepoPath(node.uri)}
+            {displayRepoPath(node.name)}
             {node.id === currentRepo && (
                 <CircleChevronLeft className="icon-inline connection-popover__node-link-icon" />
             )}
