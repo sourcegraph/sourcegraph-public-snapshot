@@ -309,7 +309,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
 
         this.subscriptions.add(
             fromEvent<MouseEvent>(ref, 'mouseover', { passive: true })
-                .pipe<TooltipData>(
+                .pipe(
                     debounceTime(50),
                     map(e => e.target as HTMLElement),
                     filter(() => isCodeIntelligenceEnabled(this.props.filePath)),
@@ -335,7 +335,9 @@ export class BlobAnnotator extends React.Component<Props, State> {
                             convertNode(cell)
                         }
                         return target.classList.contains('wrapped-node') ? target : this.props.findTokenCell(td, target)
-                    }),
+                    })
+                )
+                .pipe(
                     map(target => ({ target, loc: this.props.getTargetLineAndOffset(target, this.diffSpec()) })),
                     filter(data => Boolean(data.loc)),
                     map(data => ({ target: data.target, ctx: { ...this.props, position: data.loc! } })),
