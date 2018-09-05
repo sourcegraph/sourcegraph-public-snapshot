@@ -18,7 +18,7 @@ Sourcegraph extensions show useful info from services such as Codecov (for test 
 
 Try the first extension! 🚀
 
-- [Codecov extension: See code coverage information from Codecov on GitHub (more code hosts coming soon) and Sourcegraph](https://github.com/sourcegraph/sourcegraph-codecov#readme)
+- [**Codecov extension**](https://github.com/sourcegraph/sourcegraph-codecov#readme): See code coverage information from Codecov on GitHub and Sourcegraph
 
 Coming soon: extensions that overlay information (from popular 3rd-party dev tools) on GitHub and Sourcegraph related to:
 
