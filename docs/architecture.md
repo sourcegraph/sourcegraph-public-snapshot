@@ -7,6 +7,8 @@ https://about.sourcegraph.com/
 
 ## Diagram
 
+To view this diagram in its rendered form, install the Sourcegraph extension and enable Mermaid.js rendering in the experimental options menu.
+
 ```mermaid
 graph LR
     Frontend-- HTTP -->gitserver
@@ -112,8 +114,6 @@ Indexes symbols in repositories using Ctags.
 
 Syntect is a Rust service that is responsible for syntax highlighting.
 
-## Other products
-
 ### Browser extensions ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/browser-extensions) | [docs](https://about.sourcegraph.com/docs/features/browser-extensions/))
 
 We publish browser extensions for Chrome, Firefox, and Safari, that provide code intelligence (hover tooltips, jump to definition, find references) when browsing code on code hosts. By default it works for open source code, but it also works for private code if your company has a Sourcegraph deployment.
@@ -122,8 +122,4 @@ It uses GraphQL APIs exposed by the frontend to fetch data.
 
 ### Editor extensions ([docs](https://about.sourcegraph.com/docs/integrations/editor-plugins))
 
-Our editor extensions provide lightweight hooks into Sourcegraph.
-
-### Sourcegraph editor ([code](https://github.com/sourcegraph/src))
-
-We forked Visual Studio Code to experiment with doing code review in the editor. We are not actively working on this anymore.
+Our editor extensions provide lightweight hooks into Sourcegraph, currently.
