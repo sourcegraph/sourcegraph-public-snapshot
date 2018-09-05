@@ -147,6 +147,7 @@ func TestRequest(t *testing.T) {
 			}
 
 			for k, v := range test.ExpectedHeaders {
+				//lint:ignore SA1019 HeaderMap is deprecated but ResponseRecorder has a bug with parsing Trailers
 				if got := w.HeaderMap.Get(k); got != v[0] {
 					t.Errorf("wrong header %q: expected %q, got %q", k, v[0], got)
 				}

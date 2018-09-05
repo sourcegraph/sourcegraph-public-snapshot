@@ -30,14 +30,7 @@ func (t handlerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		req.Body = ioutil.NopCloser(bytes.NewReader(nil))
 	}
 	t.Handler.ServeHTTP(rw, req)
-	return &http.Response{
-		StatusCode:    rw.Code,
-		Status:        http.StatusText(rw.Code),
-		Header:        rw.HeaderMap,
-		Body:          ioutil.NopCloser(rw.Body),
-		ContentLength: int64(rw.Body.Len()),
-		Request:       req,
-	}, nil
+	return rw.Result(), nil
 }
 
 type Client struct{ http.Client }
