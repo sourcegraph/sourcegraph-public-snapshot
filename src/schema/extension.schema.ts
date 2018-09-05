@@ -1,4 +1,4 @@
-import { Contributions } from '@sourcegraph/sourcegraph.proposed/module/protocol/contribution'
+import { Contributions } from 'sourcegraph/module/protocol/contribution'
 
 /**
  * See the extensions.schema.json JSON Schema for canonical documentation on these types.

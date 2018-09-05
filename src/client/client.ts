@@ -1,6 +1,6 @@
-import { ClientKey } from '@sourcegraph/sourcegraph.proposed/module/environment/controller'
-import { Trace } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/trace'
 import { isEqual } from 'lodash'
+import { ClientKey } from 'sourcegraph/module/environment/controller'
+import { Trace } from 'sourcegraph/module/jsonrpc2/trace'
 
 /** Client options persisted in localStorage so that they survive across page reloads. */
 interface SavedClientOptions {

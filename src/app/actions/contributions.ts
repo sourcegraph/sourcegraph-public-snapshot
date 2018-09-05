@@ -1,5 +1,5 @@
-import { ContributableMenu, Contributions } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { sortBy } from 'lodash-es'
+import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
 import { ActionItemProps } from './ActionItem'
 
 const MENU_ITEMS_PROP_SORT_ORDER = ['group', 'id']

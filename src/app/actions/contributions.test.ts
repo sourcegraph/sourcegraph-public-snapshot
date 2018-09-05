@@ -1,5 +1,5 @@
-import { ContributableMenu } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import assert from 'assert'
+import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { ActionItemProps } from './ActionItem'
 import { getContributedActionItems } from './contributions'
 

@@ -1,11 +1,11 @@
-import { Controller } from '@sourcegraph/sourcegraph.proposed/module/environment/controller'
-import {
-    ActionContributionClientCommandUpdateConfiguration,
-    ConfigurationUpdateParams,
-} from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { isArray } from 'lodash-es'
 import { Subscription, throwError, Unsubscribable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
+import { Controller } from 'sourcegraph/module/environment/controller'
+import {
+    ActionContributionClientCommandUpdateConfiguration,
+    ConfigurationUpdateParams,
+} from 'sourcegraph/module/protocol'
 import { Context } from '../context'
 import { isErrorLike } from '../errors'
 import { ConfiguredExtension } from '../extensions/extension'
@@ -13,7 +13,7 @@ import { ConfigurationCascade, ConfigurationSubject, Settings } from '../setting
 
 /**
  * Registers the builtin client commands that are required for Sourcegraph extensions. See
- * {@link module:@sourcegraph/sourcegraph.proposed.module/protocol/contribution.ActionContribution#command} for
+ * {@link module:sourcegraph.module/protocol/contribution.ActionContribution#command} for
  * documentation.
  */
 export function registerBuiltinClientCommands<S extends ConfigurationSubject, C extends Settings>(

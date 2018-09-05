@@ -1,4 +1,4 @@
-import { ActionContribution, ExecuteCommandParams } from '@sourcegraph/sourcegraph.proposed/module/protocol'
+import { ActionContribution, ExecuteCommandParams } from 'sourcegraph/module/protocol'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
@@ -10,14 +10,14 @@ import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
 export interface ActionItemProps {
     /**
-     * The action specified in the menu item's {@link module:@sourcegraph/sourcegraph.proposed.module/protocol.MenuItemContribution#action}
+     * The action specified in the menu item's {@link module:sourcegraph.module/protocol.MenuItemContribution#action}
      * property.
      */
     action: ActionContribution
 
     /**
      * The alternative action specified in the menu item's
-     * {@link module:@sourcegraph/sourcegraph.proposed.module/protocol.MenuItemContribution#alt} property.
+     * {@link module:sourcegraph.module/protocol.MenuItemContribution#alt} property.
      */
     altAction?: ActionContribution
 

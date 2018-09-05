@@ -1,4 +1,4 @@
-import { ContributableMenu, Contributions } from '@sourcegraph/sourcegraph.proposed/module/protocol'
+import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
 import { ConfigurationSubject, Settings } from '../../settings'

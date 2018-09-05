@@ -1,5 +1,5 @@
-import { ConfigurationUpdateParams } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import assert from 'assert'
+import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
 import { convertUpdateConfigurationCommandArgs } from './clientCommands'
 
 describe('convertUpdateConfigurationCommandArgs', () => {

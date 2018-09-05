@@ -1,4 +1,4 @@
-import { ContributableMenu, Contributions } from '@sourcegraph/sourcegraph.proposed/module/protocol'
+import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
 import { isArray, sortBy, uniq } from 'lodash-es'
 import * as React from 'react'
 import { Subscription } from 'rxjs'

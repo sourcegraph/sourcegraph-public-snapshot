@@ -1,5 +1,5 @@
-import { ConfigurationUpdateParams } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { Observable } from 'rxjs'
+import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
 import { Controller } from './controller'
 import { QueryResult } from './graphql'
 import * as GQL from './schema/graphqlschema'

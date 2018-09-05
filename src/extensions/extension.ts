@@ -1,4 +1,4 @@
-import { Extension } from '@sourcegraph/sourcegraph.proposed/module/environment/extension'
+import { Extension } from 'sourcegraph/module/environment/extension'
 import { ErrorLike, isErrorLike } from '../errors'
 import { ExtensionManifest } from '../schema/extension.schema'
 import * as GQL from '../schema/graphqlschema'

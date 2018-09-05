@@ -1,14 +1,11 @@
-import { ClientOptions } from '@sourcegraph/sourcegraph.proposed/module/client/client'
-import {
-    ClientKey,
-    Controller as BaseController,
-} from '@sourcegraph/sourcegraph.proposed/module/environment/controller'
-import { Environment } from '@sourcegraph/sourcegraph.proposed/module/environment/environment'
-import { MessageTransports } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/connection'
-import { BrowserConsoleTracer } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/trace'
-import { Contributions, ExecuteCommandParams, MessageType } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { Subject, Unsubscribable } from 'rxjs'
 import { filter, map, mergeMap } from 'rxjs/operators'
+import { ClientOptions } from 'sourcegraph/module/client/client'
+import { ClientKey, Controller as BaseController } from 'sourcegraph/module/environment/controller'
+import { Environment } from 'sourcegraph/module/environment/environment'
+import { MessageTransports } from 'sourcegraph/module/jsonrpc2/connection'
+import { BrowserConsoleTracer } from 'sourcegraph/module/jsonrpc2/trace'
+import { Contributions, ExecuteCommandParams, MessageType } from 'sourcegraph/module/protocol'
 import { Notification } from '../app/notifications/notification'
 import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
@@ -40,7 +37,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> exte
      * error is returned *and* emitted on the {@link Controller#notifications} observable.
      *
      * All callers should execute commands using this method instead of calling
-     * {@link @sourcegraph/sourcegraph.proposed:CommandRegistry#executeCommand} directly (to ensure errors are
+     * {@link sourcegraph:CommandRegistry#executeCommand} directly (to ensure errors are
      * emitted as notifications).
      */
     public executeCommand(params: ExecuteCommandParams): Promise<any> {
@@ -209,7 +206,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
 
 /**
  * Registers the builtin client commands that are required by Sourcegraph extensions. See
- * {@link module:@sourcegraph/sourcegraph.proposed.module/protocol/contribution.ActionContribution#command} for
+ * {@link module:sourcegraph.module/protocol/contribution.ActionContribution#command} for
  * documentation.
  */
 function registerExtensionContributions<S extends ConfigurationSubject, C extends Settings>(

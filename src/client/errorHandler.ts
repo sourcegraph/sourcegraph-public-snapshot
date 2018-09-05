@@ -3,9 +3,9 @@ import {
     ErrorAction,
     ErrorHandler as _ErrorHandler,
     InitializationFailedHandler as _InitializationFailedHandler,
-} from '@sourcegraph/sourcegraph.proposed/module/client/errorHandler'
-import { Message, ResponseError } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/messages'
-import { InitializeError } from '@sourcegraph/sourcegraph.proposed/module/protocol'
+} from 'sourcegraph/module/client/errorHandler'
+import { Message, ResponseError } from 'sourcegraph/module/jsonrpc2/messages'
+import { InitializeError } from 'sourcegraph/module/protocol'
 import { log } from './log'
 
 interface InitializationFailedHandler {
