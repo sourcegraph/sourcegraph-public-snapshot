@@ -361,8 +361,8 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 }
 
 type repoSearchArgs struct {
-	query *search.PatternInfo
-	repos []*repositoryRevisions
+	Pattern *search.PatternInfo
+	Repos   []*repositoryRevisions
 }
 
 func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*repositoryRevisions, searchTimeoutFieldSet bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
@@ -660,7 +660,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 		return mockSearchFilesInRepos(args)
 	}
 
-	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
+	tr, ctx := trace.New(ctx, "searchFilesInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -671,7 +671,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 
 	common = &searchResultsCommon{partial: make(map[api.RepoURI]struct{})}
 
-	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.repos)
+	zoektRepos, searcherRepos, err := zoektIndexedRepos(ctx, args.Repos)
 	if err != nil {
 		// Don't hard fail if index is not available yet.
 		tr.LogFields(otlog.String("indexErr", err.Error()))
@@ -679,12 +679,12 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 		err = nil
 	}
 
-	common.repos = make([]*types.Repo, len(args.repos))
-	for i, repo := range args.repos {
+	common.repos = make([]*types.Repo, len(args.Repos))
+	for i, repo := range args.Repos {
 		common.repos[i] = repo.repo
 	}
 
-	if args.query.IsEmpty() {
+	if args.Pattern.IsEmpty() {
 		// Empty query isn't an error, but it has no results.
 		return nil, common, nil
 	}
@@ -740,8 +740,8 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 			// Stop searching once we have found enough matches. This does
 			// lead to potentially unstable result ordering, but is worth
 			// it for the performance benefit.
-			if flattenedSize > int(args.query.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.query.FileMatchLimit)
+			if flattenedSize > int(args.Pattern.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
 				overLimitCanceled = true
 				common.limitHit = true
 				cancel()
@@ -777,7 +777,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.revspecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, args.query, fetchTimeout)
+			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, args.Pattern, fetchTimeout)
 			if searchErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
@@ -812,7 +812,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args.query, zoektRepos, searchTimeoutFieldSet)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args.Pattern, zoektRepos, searchTimeoutFieldSet)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {
@@ -844,7 +844,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 		return nil, common, err
 	}
 
-	flattened := flattenFileMatches(unflattened, int(args.query.FileMatchLimit))
+	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
 	return flattened, common, nil
 }
 

@@ -294,7 +294,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query q
 	}
 
 	var err error
-	tr, ctx := trace.New(ctx, "searchCommitDiffsInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
+	tr, ctx := trace.New(ctx, "searchCommitDiffsInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -309,11 +309,11 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query q
 		unflattened [][]*commitSearchResultResolver
 		common      = &searchResultsCommon{}
 	)
-	for _, repoRev := range args.repos {
+	for _, repoRev := range args.Repos {
 		wg.Add(1)
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.query, query)
+			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.Pattern, query)
 			if ctx.Err() == context.Canceled {
 				// Our request has been canceled (either because another one of args.repos had a
 				// fatal error, or otherwise), so we can just ignore these results.
@@ -355,7 +355,7 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query que
 	}
 
 	var err error
-	tr, ctx := trace.New(ctx, "searchCommitLogInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
+	tr, ctx := trace.New(ctx, "searchCommitLogInRepos", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -370,11 +370,11 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query que
 		unflattened [][]*commitSearchResultResolver
 		common      = &searchResultsCommon{}
 	)
-	for _, repoRev := range args.repos {
+	for _, repoRev := range args.Repos {
 		wg.Add(1)
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
-			results, repoLimitHit, repoTimedOut, searchErr := searchCommitLogInRepo(ctx, repoRev, args.query, query)
+			results, repoLimitHit, repoTimedOut, searchErr := searchCommitLogInRepo(ctx, repoRev, args.Pattern, query)
 			if ctx.Err() == context.Canceled {
 				// Our request has been canceled (either because another one of args.repos had a
 				// fatal error, or otherwise), so we can just ignore these results.

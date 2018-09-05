@@ -658,10 +658,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 	args := repoSearchArgs{
-		query: p,
-		repos: repos,
+		Pattern: p,
+		Repos:   repos,
 	}
-	if err := args.query.Validate(); err != nil {
+	if err := args.Pattern.Validate(); err != nil {
 		return nil, &badRequestError{err}
 	}
 
@@ -678,9 +678,9 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	seenResultTypes := make(map[string]struct{}, len(resultTypes))
 	for _, resultType := range resultTypes {
 		if resultType == "file" {
-			args.query.PatternMatchesContent = true
+			args.Pattern.PatternMatchesContent = true
 		} else if resultType == "path" {
-			args.query.PatternMatchesPath = true
+			args.Pattern.PatternMatchesPath = true
 		}
 	}
 	tr.LazyPrintf("resultTypes: %v", resultTypes)

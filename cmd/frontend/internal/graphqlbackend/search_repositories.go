@@ -38,14 +38,14 @@ func searchRepositories(ctx context.Context, args *repoSearchArgs, q query.Query
 		}
 	}
 
-	pattern, err := regexp.Compile(args.query.Pattern)
+	pattern, err := regexp.Compile(args.Pattern.Pattern)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	common = &searchResultsCommon{}
 	var results []*searchResultResolver
-	for _, repo := range args.repos {
+	for _, repo := range args.Repos {
 		if len(results) == int(limit) {
 			common.limitHit = true
 			break

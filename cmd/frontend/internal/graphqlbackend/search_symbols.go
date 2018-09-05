@@ -37,13 +37,13 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query,
 		return mockSearchSymbols(ctx, args, query, limit)
 	}
 
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.query, len(args.repos)))
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.Pattern, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	if args.query.Pattern == "" {
+	if args.Pattern.Pattern == "" {
 		return nil, nil, nil
 	}
 
@@ -55,7 +55,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query,
 		run = parallel.NewRun(20)
 		mu  sync.Mutex
 	)
-	for _, repoRevs := range args.repos {
+	for _, repoRevs := range args.Repos {
 		repoRevs := repoRevs
 		if ctx.Err() != nil {
 			break
@@ -66,7 +66,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query,
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()
-			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.query, query, limit)
+			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.Pattern, query, limit)
 			if repoErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRevs.repo.URI)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
 			}

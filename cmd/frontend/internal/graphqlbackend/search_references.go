@@ -57,7 +57,7 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 		language = langValues[0]
 	}
 
-	tr, ctx := trace.New(ctx, "searchReferencesInRepos", fmt.Sprintf("language: %s, symbol: %+v, numRepoRevs: %d", language, symbol, len(args.repos)))
+	tr, ctx := trace.New(ctx, "searchReferencesInRepos", fmt.Sprintf("language: %s, symbol: %+v, numRepoRevs: %d", language, symbol, len(args.Repos)))
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
@@ -96,13 +96,13 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 			// dependents.RepoID doesn't imply they aren't a dependent.)
 			tmp := *args
 			args = &tmp
-			keepRepos := args.repos[:0]
-			for _, repo := range args.repos {
+			keepRepos := args.Repos[:0]
+			for _, repo := range args.Repos {
 				if repo.repo.IndexedRevision == nil || repoIsDependent(repo.repo.ID) {
 					keepRepos = append(keepRepos, repo)
 				}
 			}
-			args.repos = keepRepos
+			args.Repos = keepRepos
 		}
 	}
 
@@ -130,8 +130,8 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 			// Stop searching once we have found enough matches. This does
 			// lead to potentially unstable result ordering, but is worth
 			// it for the performance benefit.
-			if flattenedSize > int(args.query.FileMatchLimit) {
-				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.query.FileMatchLimit)
+			if flattenedSize > int(args.Pattern.FileMatchLimit) {
+				tr.LazyPrintf("cancel due to result size: %d > %d", flattenedSize, args.Pattern.FileMatchLimit)
 				common.limitHit = true
 				cancel()
 			}
@@ -139,7 +139,7 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 	}
 
 	common = &searchResultsCommon{}
-	for _, repoRev := range args.repos {
+	for _, repoRev := range args.Repos {
 		if len(repoRev.revs) == 0 {
 			return nil, common, nil // no revs to search
 		}
@@ -151,7 +151,7 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 		go func(repoRev repositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.revspecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchReferencesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, language, symbol, hints, args.query)
+			matches, repoLimitHit, searchErr := searchReferencesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, language, symbol, hints, args.Pattern)
 			if searchErr != nil {
 				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
@@ -182,7 +182,7 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 		return nil, common, err
 	}
 
-	flattened := flattenFileMatches(unflattened, int(args.query.FileMatchLimit))
+	flattened := flattenFileMatches(unflattened, int(args.Pattern.FileMatchLimit))
 	return fileMatchesToSearchResults(flattened), common, nil
 }
 

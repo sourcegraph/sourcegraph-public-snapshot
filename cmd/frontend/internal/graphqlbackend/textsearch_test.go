@@ -160,11 +160,11 @@ func TestSearchFilesInRepos(t *testing.T) {
 	defer func() { mockSearchFilesInRepo = nil }()
 
 	args := &repoSearchArgs{
-		query: &search.PatternInfo{
+		Pattern: &search.PatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
+		Repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
 	}
 	q, err := query.ParseAndCheck("foo")
 	if err != nil {
@@ -191,11 +191,11 @@ func TestSearchFilesInRepos(t *testing.T) {
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
 	args = &repoSearchArgs{
-		query: &search.PatternInfo{
+		Pattern: &search.PatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		repos: makeRepositoryRevisions("foo/no-rev@dev"),
+		Repos: makeRepositoryRevisions("foo/no-rev@dev"),
 	}
 	_, _, err = searchFilesInRepos(context.Background(), args, *q, false)
 	if !git.IsRevisionNotFound(errors.Cause(err)) {

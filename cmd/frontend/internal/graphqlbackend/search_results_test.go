@@ -94,8 +94,8 @@ func TestSearchResults(t *testing.T) {
 		calledSearchSymbols := false
 		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query query.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 			calledSearchSymbols = true
-			if want := `(foo\d).*?(bar\*)`; args.query.Pattern != want {
-				t.Errorf("got %q, want %q", args.query.Pattern, want)
+			if want := `(foo\d).*?(bar\*)`; args.Pattern.Pattern != want {
+				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
 			}
 			// TODO return mock results here and assert that they are output as results
 			return nil, nil, nil
@@ -105,8 +105,8 @@ func TestSearchResults(t *testing.T) {
 		calledSearchFilesInRepos := false
 		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
-			if want := `(foo\d).*?(bar\*)`; args.query.Pattern != want {
-				t.Errorf("got %q, want %q", args.query.Pattern, want)
+			if want := `(foo\d).*?(bar\*)`; args.Pattern.Pattern != want {
+				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
 			}
 			return []*fileMatchResolver{
 				{uri: "git://repo?rev#dir/file", JPath: "dir/file", JLineMatches: []*lineMatch{{JLineNumber: 123}}},
