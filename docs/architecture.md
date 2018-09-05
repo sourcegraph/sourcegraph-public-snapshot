@@ -7,7 +7,7 @@ https://about.sourcegraph.com/
 
 ## Diagram
 
-To view this diagram in its rendered form, install the Sourcegraph extension and enable Mermaid.js rendering in the experimental options menu.
+To view this diagram in its rendered form on GitHub, install the Sourcegraph extension and enable Mermaid.js rendering in the experimental options menu.
 
 ```mermaid
 graph LR
