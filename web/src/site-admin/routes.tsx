@@ -2,11 +2,9 @@ import React from 'react'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
-import { SiteAdminAuthenticationProvidersPage } from './SiteAdminAuthenticationProvidersPage'
 import { SiteAdminCodeIntelligencePage } from './SiteAdminCodeIntelligencePage'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
 import { SiteAdminCreateUserPage } from './SiteAdminCreateUserPage'
-import { SiteAdminExternalAccountsPage } from './SiteAdminExternalAccountsPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { SiteAdminPingsPage } from './SiteAdminPingsPage'
@@ -37,16 +35,6 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     {
         path: '/repositories',
         render: props => <SiteAdminRepositoriesPage {...props} />,
-        exact: true,
-    },
-    {
-        path: '/auth/providers',
-        render: props => <SiteAdminAuthenticationProvidersPage {...props} />,
-        exact: true,
-    },
-    {
-        path: '/auth/external-accounts',
-        render: props => <SiteAdminExternalAccountsPage {...props} />,
         exact: true,
     },
     {

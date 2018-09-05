@@ -8,9 +8,9 @@ import {
     SIDEBAR_CARD_CLASS,
     SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
 } from '../../components/Sidebar'
+import { authExp } from '../../enterprise/site-admin/SiteAdminAuthenticationProvidersPage'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAreaPageProps } from '../area/UserArea'
 

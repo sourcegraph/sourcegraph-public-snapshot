@@ -5,7 +5,6 @@ import { Redirect } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
-import { siteAdminAreaRoutes } from './routes'
 import { SiteAdminSidebar } from './SiteAdminSidebar'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
@@ -74,11 +73,11 @@ export class SiteAdminArea extends React.Component<SiteAdminAreaProps> {
                 />
                 <div className="area__content">
                     <Switch>
-                        {siteAdminAreaRoutes.map(({ render, path, exact }) => (
+                        {this.props.routes.map(({ render, path, exact }) => (
                             <Route
                                 // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 key="hardcoded-key"
-                                path={this.props.match + path}
+                                path={this.props.match.url + path}
                                 exact={exact}
                                 // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
                                 render={routeComponentProps => render({ ...routeComponentProps, ...transferProps })}

@@ -3,17 +3,17 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../backend/graphql'
-import * as GQL from '../backend/graphqlschema'
-import { FilteredConnection } from '../components/FilteredConnection'
-import { PageTitle } from '../components/PageTitle'
-import { eventLogger } from '../tracking/eventLogger'
+import { gql, queryGraphQL } from '../../backend/graphql'
+import * as GQL from '../../backend/graphqlschema'
+import { FilteredConnection } from '../../components/FilteredConnection'
+import { PageTitle } from '../../components/PageTitle'
+import { eventLogger } from '../../tracking/eventLogger'
 import {
     externalAccountFragment,
     ExternalAccountNode,
     ExternalAccountNodeProps,
-} from '../user/account/ExternalAccountNode'
-import { createAggregateError } from '../util/errors'
+} from '../../user/account/ExternalAccountNode'
+import { createAggregateError } from '../../util/errors'
 
 interface Props extends RouteComponentProps<{}> {}
 
