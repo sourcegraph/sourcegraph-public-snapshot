@@ -46,7 +46,6 @@ import {
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
-import { render } from 'react-dom'
 import { Route, RouteComponentProps } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs'
@@ -109,7 +108,7 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAd
 /**
  * The root component
  */
-class App extends React.Component<{}, AppState> {
+export class SourcegraphWebApp extends React.Component<{}, AppState> {
     constructor(props: {}) {
         super(props)
         const extensions = createExtensionsContextController()
@@ -128,6 +127,8 @@ class App extends React.Component<{}, AppState> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
+        updateUserSessionStores()
+
         document.body.classList.add('theme')
         this.subscriptions.add(
             currentUser.subscribe(user => this.setState({ user }), () => this.setState({ user: null }))
@@ -341,9 +342,3 @@ class App extends React.Component<{}, AppState> {
         )
     }
 }
-
-window.addEventListener('DOMContentLoaded', () => {
-    render(<App />, document.querySelector('#root'))
-})
-
-updateUserSessionStores()
