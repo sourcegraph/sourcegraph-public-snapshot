@@ -149,7 +149,7 @@
   },
   "dependencies": {
     "@sourcegraph/codeintellify": "^3.8.1",
-    "@sourcegraph/extensions-client-common": "^7.0.1",
+    "@sourcegraph/extensions-client-common": "^7.1.0",
     "@sourcegraph/icons": "^1.15.0",
     "@sourcegraph/phabricator-extension": "^1.12.0",
     "@sourcegraph/sourcegraph.proposed": "^12.0.1",
