@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
-	"github.com/sourcegraph/sourcegraph/cxp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -64,7 +63,7 @@ type serverProxyConn struct {
 	// goroutines wait until the 1st goroutine completes those tasks.
 	initOnce sync.Once
 	// initResult and initErr are only safe to write inside initOnce.Do(...), only safe to read after calling initOnce.Do(...)
-	initResult *cxp.InitializeResult
+	initResult *lsp.InitializeResult
 	initErr    error
 
 	mu          sync.Mutex
@@ -220,7 +219,7 @@ func (p *Proxy) removeServerConn(c *serverProxyConn) {
 
 // getServerConn returns an existing connection to the specified
 // server or creates one if none exists.
-func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyConn, initResult *cxp.InitializeResult, err error) {
+func (p *Proxy) getServerConn(ctx context.Context, id serverID) (c *serverProxyConn, initResult *lsp.InitializeResult, err error) {
 	// Check for an already established connection.
 	p.mu.Lock()
 	for cc := range p.servers {
@@ -416,7 +415,7 @@ func (p *Proxy) shouldStripBGMode(mode string) bool {
 // initializeServer will ensure we either have an open connection or will open
 // one to ID. It returns the initializeResult as a json.RawMessage. If it
 // fails, it will return a non-nil error.
-func (p *Proxy) initializeServer(ctx context.Context, id serverID) (*cxp.InitializeResult, error) {
+func (p *Proxy) initializeServer(ctx context.Context, id serverID) (*lsp.InitializeResult, error) {
 	_, initResult, err := p.getServerConn(ctx, id)
 	return initResult, err
 }
@@ -465,7 +464,7 @@ func (p *Proxy) clientForwardFunc(id contextID) func(context.Context, *jsonrpc2.
 	}
 }
 
-func (c *serverProxyConn) lspInitialize(ctx context.Context) (*cxp.InitializeResult, error) {
+func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeResult, error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "LSP server proxy: initialize",
 		opentracing.Tags{"mode": c.id.mode, "rootURI": c.id.rootURI.String()},
 	)
@@ -476,48 +475,33 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*cxp.InitializeRes
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	initParams := cxp.InitializeParams{
-		InitializeParams: lspext.InitializeParams{
-			InitializeParams: lsp.InitializeParams{
-				RootPath: "/",
-				RootURI:  "file:///",
-			},
-			OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
-			Mode:            c.id.mode,
-		},
+	initParams := lspext.InitializeParams{
+		InitializeParams: lsp.InitializeParams{
+			RootPath: "/",
+			RootURI:  "file:///",
 
-		// NOTE: These may not accurately represent the end client's (e.g., the Sourcegraph
-		// web frontend's, or a VS Code extension client's) capabilities. This is because it
-		// was designed for the case where multiple true clients are sharing the same
-		// backend, and it doesn't make sense to arbitrarily choose (e.g.) the first client's
-		// capabilities.
-		//
-		// TODO(sqs): If the session is not shared, then we can pass through the end client's
-		// capabilities. That will require supporting a "direct" mode for lsp-proxy where there is a
-		// 1-to-1 correspondence between clientProxyConn <-> serverProxyConn.
-		Capabilities: cxp.ClientCapabilities{
-			ClientCapabilities: lsp.ClientCapabilities{
+			// NOTE: These may not accurately represent the end client's (e.g., the Sourcegraph
+			// web frontend's, or a VS Code extension client's) capabilities. This is because it
+			// was designed for the case where multiple true clients are sharing the same
+			// backend, and it doesn't make sense to arbitrarily choose (e.g.) the first client's
+			// capabilities.
+			//
+			// TODO(sqs): If the session is not shared, then we can pass through the end client's
+			// capabilities. That will require supporting a "direct" mode for lsp-proxy where there is a
+			// 1-to-1 correspondence between clientProxyConn <-> serverProxyConn.
+			Capabilities: lsp.ClientCapabilities{
 				XFilesProvider:   true,
 				XContentProvider: true,
 				XCacheProvider:   true,
 			},
-			Decoration: &cxp.DecorationCapabilityOptions{Static: true, Dynamic: true},
-			Exec:       true,
 		},
+		OriginalRootURI: lsp.DocumentURI(c.id.rootURI.String()),
+		Mode:            c.id.mode,
 	}
 
-	initOpts := getInitializationOptions(ctx, c.id.mode)
-	var mergedSettings *json.RawMessage
-	if c.id.initOpts != "" {
-		tmp := json.RawMessage(c.id.initOpts)
-		mergedSettings = &tmp
-	}
-	initParams.InitializationOptions = &cxp.InitializationOptions{
-		Other:    initOpts,
-		Settings: cxp.ExtensionSettings{Merged: mergedSettings},
-	}
+	initParams.InitializationOptions = getInitializationOptions(ctx, c.id.mode)
 
-	var res cxp.InitializeResult
+	var res lsp.InitializeResult
 	err := c.conn.Call(ctx, "initialize", initParams, &res, addTraceMeta(ctx))
 	if err != nil {
 		if errors.Cause(err) == context.DeadlineExceeded {
@@ -674,11 +658,11 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		c.clientBroadcast(ctx, req)
 		return nil, nil
 
-	case "configuration/update", "client/registerCapability", "client/unregisterCapability", "window/showMessageRequest", "window/showInput":
+	case "client/registerCapability", "client/unregisterCapability", "window/showMessageRequest":
 		// Pass these through verbatim.
 		return c.clientForward(ctx, req)
 
-	case "textDocument/publishDiagnostics", "textDocument/publishDecorations":
+	case "textDocument/publishDiagnostics":
 		if req.Params == nil {
 			return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeInvalidParams}
 		}
@@ -727,9 +711,6 @@ func (c *serverProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 	case "workspace/xfiles":
 		return c.handleWorkspaceFilesExt(ctx, req)
 
-	case "workspace/exec":
-		return c.handleWorkspaceExec(ctx, req)
-
 	case "$/partialResult":
 		// The partialResult is for a specific client, but we
 		// broadcast this to all clients. It is expected
@@ -750,7 +731,7 @@ func isFSMethod(method string) bool {
 // user. These are methods related to telemetry/logging/etc. Generally these
 // are not useful to log.
 func isInfraMethod(method string) bool {
-	return method == "telemetry/event" || method == "window/logMessage" || method == "textDocument/publishDiagnostics" || method == "textDocument/publishDecorations"
+	return method == "telemetry/event" || method == "window/logMessage" || method == "textDocument/publishDiagnostics"
 }
 
 // didRemove records statistics when shutting down server. It should only be

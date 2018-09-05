@@ -287,7 +287,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        // Update the CXP state to reflect the current file.
+        // Update the Sourcegraph extensions environment to reflect the current file.
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions)
                 .pipe(filter(() => USE_PLATFORM))
@@ -305,7 +305,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     })
                 })
         )
-        // Clear the CXP state's component when the blob is no longer shown.
+        // Clear the Sourcegraph extensions environment's component when the blob is no longer shown.
         this.subscriptions.add(() => this.props.extensionsOnComponentChange(null))
 
         /** Decorations */

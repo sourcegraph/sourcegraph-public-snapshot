@@ -15,7 +15,7 @@
   "packageRules": [
     {
       "packagePatterns": ["^@sourcegraph/"],
-      "packageNames": ["cxp"],
+      "packageNames": ["@sourcegraph/sourcegraph.proposed"],
       "rangeStrategy": "bump",
       "schedule": []
     },
@@ -26,8 +26,8 @@
       "automerge": true
     },
     {
-      "packageNames": ["cxp", "@sourcegraph/extensions-client-common"],
-      "assignees": ["sqs"]
+      "packageNames": ["@sourcegraph/sourcegraph.proposed", "@sourcegraph/extensions-client-common"],
+      "assignees": ["sqsq"]
     },
     {
       "packageNames": ["@sourcegraph/phabricator-extension"],
