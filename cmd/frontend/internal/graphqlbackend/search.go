@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory/filelang"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
@@ -80,7 +81,7 @@ type searchResolver struct {
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
-	repoRevs, missingRepoRevs []*RepositoryRevisions
+	repoRevs, missingRepoRevs []*search.RepositoryRevisions
 	repoResults               []*searchSuggestionResolver
 	repoOverLimit             bool
 	repoErr                   error
@@ -187,7 +188,7 @@ func getSampleRepos(ctx context.Context) ([]*types.Repo, error) {
 
 // resolveRepositories calls doResolveRepositories, caching the result for the common
 // case where effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*RepositoryRevisions, repoResults []*searchSuggestionResolver, overLimit bool, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoFieldValues []string) (repoRevs, missingRepoRevs []*search.RepositoryRevisions, repoResults []*searchSuggestionResolver, overLimit bool, err error) {
 	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("effectiveRepoFieldValues: %v", effectiveRepoFieldValues))
 	defer func() {
 		if err != nil {
@@ -244,13 +245,13 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 // an actual map, because we want regexp matches, not identity matches.
 type patternRevspec struct {
 	includePattern *regexp.Regexp
-	revs           []RevisionSpecifier
+	revs           []search.RevisionSpecifier
 }
 
 // given a URI, determine whether it matched any patterns for which we have
 // revspecs (or ref globs), and if so, return the matching/allowed ones.
-func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []RevisionSpecifier, clashing []RevisionSpecifier) {
-	revLists := make([][]RevisionSpecifier, 0, len(pats))
+func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []search.RevisionSpecifier, clashing []search.RevisionSpecifier) {
+	revLists := make([][]search.RevisionSpecifier, 0, len(pats))
 	for _, rev := range pats {
 		if rev.includePattern.MatchString(string(repo)) {
 			revLists = append(revLists, rev.revs)
@@ -263,13 +264,13 @@ func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []R
 	}
 	// no matches: we generate a dummy list containing only master
 	if len(revLists) == 0 {
-		matched = []RevisionSpecifier{{RevSpec: ""}}
+		matched = []search.RevisionSpecifier{{RevSpec: ""}}
 		return
 	}
 	// if two repo specs match, and both provided non-empty rev lists,
 	// we want their intersection
-	allowedRevs := make(map[RevisionSpecifier]struct{}, len(revLists[0]))
-	allRevs := make(map[RevisionSpecifier]struct{}, len(revLists[0]))
+	allowedRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
+	allRevs := make(map[search.RevisionSpecifier]struct{}, len(revLists[0]))
 	// starting point: everything is "true" if it is currently allowed
 	for _, rev := range revLists[0] {
 		allowedRevs[rev] = struct{}{}
@@ -278,7 +279,7 @@ func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []R
 	// in theory, "master-by-default" entries won't even be participating
 	// in this.
 	for _, revList := range revLists[1:] {
-		restrictedRevs := make(map[RevisionSpecifier]struct{}, len(revList))
+		restrictedRevs := make(map[search.RevisionSpecifier]struct{}, len(revList))
 		for _, rev := range revList {
 			allRevs[rev] = struct{}{}
 			if _, ok := allowedRevs[rev]; ok {
@@ -288,7 +289,7 @@ func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []R
 		allowedRevs = restrictedRevs
 	}
 	if len(allowedRevs) > 0 {
-		matched = make([]RevisionSpecifier, 0, len(allowedRevs))
+		matched = make([]search.RevisionSpecifier, 0, len(allowedRevs))
 		for rev := range allowedRevs {
 			matched = append(matched, rev)
 		}
@@ -297,7 +298,7 @@ func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []R
 	}
 	// build a list of the revspecs which broke this, return it
 	// as the "clashing" list.
-	clashing = make([]RevisionSpecifier, 0, len(allRevs))
+	clashing = make([]search.RevisionSpecifier, 0, len(allRevs))
 	for rev := range allRevs {
 		clashing = append(clashing, rev)
 	}
@@ -312,7 +313,7 @@ func getRevsForMatchedRepo(repo api.RepoURI, pats []patternRevspec) (matched []R
 func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevspec, err error) {
 	includePatternRevs = make([]patternRevspec, 0, len(includePatterns))
 	for i, includePattern := range includePatterns {
-		repoPattern, revs := ParseRepositoryRevisions(includePattern)
+		repoPattern, revs := search.ParseRepositoryRevisions(includePattern)
 		// Validate pattern now so the error message is more recognizable to the
 		// user
 		if _, err := regexp.Compile(string(repoPattern)); err != nil {
@@ -342,7 +343,7 @@ type resolveRepoOp struct {
 	onlyArchived     bool
 }
 
-func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*RepositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
+func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*search.RepositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
 	tr, ctx := trace.New(ctx, "resolveRepositories", fmt.Sprintf("%+v", op))
 	defer func() {
 		tr.SetError(err)
@@ -405,11 +406,11 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 	overLimit = len(repos) >= maxRepoListSize
 
-	repoRevisions = make([]*RepositoryRevisions, 0, len(repos))
+	repoRevisions = make([]*search.RepositoryRevisions, 0, len(repos))
 	repoResolvers = make([]*searchSuggestionResolver, 0, len(repos))
 	tr.LazyPrintf("Associate/validate revs - start")
 	for _, repo := range repos {
-		repoRev := &RepositoryRevisions{
+		repoRev := &search.RepositoryRevisions{
 			Repo:          repo,
 			GitserverRepo: gitserver.Repo{Name: repo.URI},
 		}
@@ -420,7 +421,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 
 		// if multiple specified revisions clash, report this usefully:
 		if len(revs) == 0 && clashingRevs != nil {
-			missingRepoRevisions = append(missingRepoRevisions, &RepositoryRevisions{
+			missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
 				Repo: repo,
 				Revs: clashingRevs,
 			})
@@ -448,9 +449,9 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 						// Report as HEAD not "" (empty string) to avoid user confusion.
 						rev.RevSpec = "HEAD"
 					}
-					missingRepoRevisions = append(missingRepoRevisions, &RepositoryRevisions{
+					missingRepoRevisions = append(missingRepoRevisions, &search.RepositoryRevisions{
 						Repo: repo,
-						Revs: []RevisionSpecifier{{RevSpec: rev.RevSpec}},
+						Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
 					})
 					continue
 				}
@@ -610,7 +611,7 @@ type matcher struct {
 }
 
 // searchTree searches the specified repositories for files and dirs whose name matches the matcher.
-func searchTree(ctx context.Context, matcher matcher, repos []*RepositoryRevisions, limit int) ([]*searchSuggestionResolver, error) {
+func searchTree(ctx context.Context, matcher matcher, repos []*search.RepositoryRevisions, limit int) ([]*searchSuggestionResolver, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -624,7 +625,7 @@ func searchTree(ctx context.Context, matcher matcher, repos []*RepositoryRevisio
 			return nil, errMultipleRevsNotSupported
 		}
 
-		go func(repoRev RepositoryRevisions) {
+		go func(repoRev search.RepositoryRevisions) {
 			fileResults, err := searchTreeForRepo(ctx, matcher, repoRev, limit, true)
 			if err != nil {
 				done <- err
@@ -647,11 +648,11 @@ func searchTree(ctx context.Context, matcher matcher, repos []*RepositoryRevisio
 	return res, nil
 }
 
-var mockSearchFilesForRepo func(matcher matcher, repoRevs RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error)
+var mockSearchFilesForRepo func(matcher matcher, repoRevs search.RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error)
 
 // searchTreeForRepo searches the specified repository for files whose name matches
 // the matcher
-func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs RepositoryRevisions, limit int, includeDirs bool) (res []*searchSuggestionResolver, err error) {
+func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs search.RepositoryRevisions, limit int, includeDirs bool) (res []*searchSuggestionResolver, err error) {
 	if mockSearchFilesForRepo != nil {
 		return mockSearchFilesForRepo(matcher, repoRevs, limit, includeDirs)
 	}
@@ -929,7 +930,7 @@ func langIncludeExcludePatterns(values, negatedValues []string) (includePatterns
 // updating common as to reflect that new information. If searchErr is a fatal error,
 // it returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error, it returns a
 // nil error.
-func handleRepoSearchResult(common *searchResultsCommon, repoRev RepositoryRevisions, limitHit, timedOut bool, searchErr error) (fatalErr error) {
+func handleRepoSearchResult(common *searchResultsCommon, repoRev search.RepositoryRevisions, limitHit, timedOut bool, searchErr error) (fatalErr error) {
 	common.limitHit = common.limitHit || limitHit
 	if vcs.IsRepoNotExist(searchErr) {
 		if vcs.IsCloneInProgress(searchErr) {
@@ -952,3 +953,5 @@ func handleRepoSearchResult(common *searchResultsCommon, repoRev RepositoryRevis
 	}
 	return nil
 }
+
+var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")

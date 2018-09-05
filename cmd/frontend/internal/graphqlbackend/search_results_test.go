@@ -341,8 +341,8 @@ func TestSearchRevspecs(t *testing.T) {
 		specs    []string
 		repo     string
 		err      error
-		matched  []RevisionSpecifier
-		clashing []RevisionSpecifier
+		matched  []search.RevisionSpecifier
+		clashing []search.RevisionSpecifier
 	}
 
 	tests := []testCase{
@@ -351,7 +351,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{"foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []RevisionSpecifier{{RevSpec: ""}},
+			matched:  []search.RevisionSpecifier{{RevSpec: ""}},
 			clashing: nil,
 		},
 		testCase{
@@ -359,7 +359,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		testCase{
@@ -367,7 +367,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456", "foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		testCase{
@@ -375,7 +375,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o", "foo@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []RevisionSpecifier{{RevSpec: "123456"}},
+			matched:  []search.RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		testCase{
@@ -384,14 +384,14 @@ func TestSearchRevspecs(t *testing.T) {
 			repo:     "foo",
 			err:      nil,
 			matched:  nil,
-			clashing: []RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
+			clashing: []search.RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
 		},
 		testCase{
 			descr:    "overlapping revspecs",
 			specs:    []string{".*o@a:b", "foo@b:c"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []RevisionSpecifier{{RevSpec: "b"}},
+			matched:  []search.RevisionSpecifier{{RevSpec: "b"}},
 			clashing: nil,
 		},
 		testCase{
@@ -399,7 +399,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
+			matched:  []search.RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
 			clashing: nil,
 		},
 		testCase{

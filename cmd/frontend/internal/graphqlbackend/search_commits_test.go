@@ -47,10 +47,10 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	repoRevs := RepositoryRevisions{
+	repoRevs := search.RepositoryRevisions{
 		Repo:          &types.Repo{ID: 1, URI: "repo"},
 		GitserverRepo: gitserver.Repo{Name: "repo", URL: "u"},
-		Revs:          []RevisionSpecifier{{RevSpec: "rev"}},
+		Revs:          []search.RevisionSpecifier{{RevSpec: "rev"}},
 	}
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:          repoRevs,

@@ -148,7 +148,7 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 		}
 
 		wg.Add(1)
-		go func(repoRev RepositoryRevisions) {
+		go func(repoRev search.RepositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
 			matches, repoLimitHit, searchErr := searchReferencesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo, rev, language, symbol, hints, args.Pattern)

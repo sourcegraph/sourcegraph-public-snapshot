@@ -99,7 +99,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query,
 	return res, common, err
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *RepositoryRevisions, patternInfo *search.PatternInfo, query query.Query, limit int) (res []*fileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.PatternInfo, query query.Query, limit int) (res []*fileMatchResolver, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {

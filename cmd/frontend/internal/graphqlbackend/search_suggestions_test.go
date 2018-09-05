@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/types"
 )
@@ -144,7 +145,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		var calledSearchFilesFoo, calledSearchFilesRepo3 bool
-		mockSearchFilesForRepo = func(matcher matcher, repoRevs RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
+		mockSearchFilesForRepo = func(matcher matcher, repoRevs search.RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			if want := ""; matcher.query != want {
@@ -217,7 +218,7 @@ func TestSearchSuggestions(t *testing.T) {
 			return []*types.Repo{{URI: "foo-repo"}}, nil
 		}
 		calledSearchFiles := false
-		mockSearchFilesForRepo = func(matcher matcher, repoRevs RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
+		mockSearchFilesForRepo = func(matcher matcher, repoRevs search.RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
 			calledSearchFiles = true
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
@@ -255,7 +256,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { db.Mocks = db.MockStores{} }()
 
 		calledSearchFiles := false
-		mockSearchFilesForRepo = func(matcher matcher, repoRevs RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
+		mockSearchFilesForRepo = func(matcher matcher, repoRevs search.RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
 			calledSearchFiles = true
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)

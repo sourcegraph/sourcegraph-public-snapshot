@@ -36,9 +36,9 @@ func (r *commitSearchResultResolver) SourceRefs() []*gitRefResolver      { retur
 func (r *commitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResultResolver) DiffPreview() *highlightedString    { return r.diffPreview }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
@@ -57,9 +57,9 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs RepositoryRevisions, 
 	})
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs search.RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitLogInRepo != nil {
 		return mockSearchCommitLogInRepo(ctx, repoRevs, info, query)
 	}
@@ -79,7 +79,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs RepositoryRevisions, in
 }
 
 type commitSearchOp struct {
-	repoRevs           RepositoryRevisions
+	repoRevs           search.RepositoryRevisions
 	info               *search.PatternInfo
 	query              query.Query
 	diff               bool
@@ -311,7 +311,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query q
 	)
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
-		go func(repoRev RepositoryRevisions) {
+		go func(repoRev search.RepositoryRevisions) {
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.Pattern, query)
 			if ctx.Err() == context.Canceled {
@@ -372,7 +372,7 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query que
 	)
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
-		go func(repoRev RepositoryRevisions) {
+		go func(repoRev search.RepositoryRevisions) {
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitLogInRepo(ctx, repoRev, args.Pattern, query)
 			if ctx.Err() == context.Canceled {

@@ -362,10 +362,10 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 
 type repoSearchArgs struct {
 	Pattern *search.PatternInfo
-	Repos   []*RepositoryRevisions
+	Repos   []*search.RepositoryRevisions
 }
 
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*RepositoryRevisions, searchTimeoutFieldSet bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, searchTimeoutFieldSet bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -605,7 +605,7 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
 }
 
-func zoektIndexedRepos(ctx context.Context, repos []*RepositoryRevisions) (indexed, unindexed []*RepositoryRevisions, err error) {
+func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
 	if zoektCache == nil {
 		return nil, repos, nil
 	}
@@ -774,7 +774,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 		}
 
 		wg.Add(1)
-		go func(repoRev RepositoryRevisions) {
+		go func(repoRev search.RepositoryRevisions) {
 			defer wg.Done()
 			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
 			matches, repoLimitHit, searchErr := searchFilesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo, rev, args.Pattern, fetchTimeout)

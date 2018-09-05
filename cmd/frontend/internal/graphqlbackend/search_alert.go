@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query/syntax"
 )
@@ -181,7 +182,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 		suggestEnablingRepos := false
 		if a.title == "" && !envvar.SourcegraphDotComMode() {
-			repoPattern, _ := ParseRepositoryRevisions(repoFilters[0])
+			repoPattern, _ := search.ParseRepositoryRevisions(repoFilters[0])
 			repos, err := db.Repos.List(ctx, db.ReposListOptions{
 				Enabled:         false,
 				Disabled:        true,
@@ -328,7 +329,7 @@ outer:
 	return alert, nil
 }
 
-func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*RepositoryRevisions) *searchAlert {
+func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *searchAlert {
 	var description string
 	if len(missingRepoRevs) == 1 {
 		if len(missingRepoRevs[0].RevSpecs()) == 1 {

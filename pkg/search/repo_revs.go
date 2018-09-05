@@ -1,7 +1,6 @@
-package graphqlbackend
+package search
 
 import (
-	"errors"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -131,5 +130,3 @@ func (r *RepositoryRevisions) RevSpecs() []string {
 	}
 	return revspecs
 }
-
-var errMultipleRevsNotSupported = errors.New("not yet supported: searching multiple revs in the same repo")
