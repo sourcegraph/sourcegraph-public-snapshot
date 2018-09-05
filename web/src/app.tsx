@@ -47,7 +47,7 @@ import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
+import { Route, RouteComponentProps } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import {
@@ -60,13 +60,7 @@ import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
-import { LinkExtension } from './extension/Link'
-import {
-    ExtensionsComponentProps,
-    ExtensionsEnvironmentProps,
-    USE_PLATFORM,
-} from './extensions/environment/ExtensionsEnvironment'
-import { ExtensionsRootProps } from './extensions/environment/ExtensionsRoot'
+import { ExtensionsEnvironmentProps, USE_PLATFORM } from './extensions/environment/ExtensionsEnvironment'
 import {
     ConfigurationCascadeProps,
     createMessageTransports,
@@ -74,96 +68,10 @@ import {
     ExtensionsProps,
 } from './extensions/ExtensionsClientCommonContext'
 import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
-import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalDebug } from './global/GlobalDebug'
-import { IntegrationsToast } from './marketing/IntegrationsToast'
+import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
-import { GlobalNavbar } from './nav/GlobalNavbar'
-import { routes } from './routes'
-import { parseSearchURLQuery } from './search'
 import { eventLogger } from './tracking/eventLogger'
 import { isErrorLike } from './util/errors'
-
-interface LayoutProps
-    extends RouteComponentProps<any>,
-        ConfigurationCascadeProps,
-        ExtensionsProps,
-        ExtensionsEnvironmentProps,
-        ExtensionsControllerProps,
-        ExtensionsComponentProps,
-        ExtensionsRootProps {
-    user: GQL.IUser | null
-
-    /**
-     * The subject GraphQL node ID of the viewer, which is used to look up the viewer's configuration settings.
-     * This is either the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
-     */
-    viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
-
-    isLightTheme: boolean
-    onThemeChange: () => void
-    navbarSearchQuery: string
-    onNavbarQueryChange: (query: string) => void
-    showHelpPopover: boolean
-    showHistoryPopover: boolean
-    onHelpPopoverToggle: (visible?: boolean) => void
-    onHistoryPopoverToggle: (visible?: boolean) => void
-}
-
-const Layout: React.SFC<LayoutProps> = props => {
-    const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
-
-    const needsSiteInit = window.context.showOnboarding
-    const isSiteInit = props.location.pathname === '/site-admin/init'
-
-    // Force light theme on site init page.
-    if (isSiteInit && !props.isLightTheme) {
-        props.onThemeChange()
-    }
-
-    // Remove trailing slash (which is never valid in any of our URLs).
-    if (props.location.pathname !== '/' && props.location.pathname.endsWith('/')) {
-        return <Redirect to={{ ...props.location, pathname: props.location.pathname.slice(0, -1) }} />
-    }
-
-    return (
-        <div className="layout">
-            <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
-            {!needsSiteInit && !isSiteInit && !!props.user && <IntegrationsToast history={props.history} />}
-            {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
-            {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
-            <Switch>
-                {routes.map((route, i) => {
-                    const isFullWidth = !route.forceNarrowWidth
-                    const Component = route.component
-                    return (
-                        <Route
-                            {...route}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            component={undefined}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <div
-                                    className={[
-                                        'layout__app-router-container',
-                                        `layout__app-router-container--${isFullWidth ? 'full-width' : 'restricted'}`,
-                                    ].join(' ')}
-                                >
-                                    {Component && (
-                                        <Component {...props} {...routeComponentProps} isFullWidth={isFullWidth} />
-                                    )}
-                                    {route.render && route.render({ ...props, ...routeComponentProps })}
-                                    {!!props.user && <LinkExtension user={props.user} />}
-                                </div>
-                            )}
-                        />
-                    )
-                })}
-            </Switch>
-            <GlobalDebug {...props} />
-        </div>
-    )
-}
 
 interface AppState
     extends ConfigurationCascadeProps,
@@ -222,7 +130,7 @@ class App extends React.Component<{}, AppState> {
     public componentDidMount(): void {
         document.body.classList.add('theme')
         this.subscriptions.add(
-            currentUser.subscribe(user => this.setState({ user }), error => this.setState({ user: null }))
+            currentUser.subscribe(user => this.setState({ user }), () => this.setState({ user: null }))
         )
 
         if (USE_PLATFORM) {
