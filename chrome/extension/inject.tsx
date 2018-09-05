@@ -12,7 +12,7 @@ import {
     setRenderMermaidGraphsEnabled,
     setRepositoryFileTreeEnabled,
     setSourcegraphUrl,
-    setUseCXP,
+    setUseExtensions,
 } from '../../app/util/context'
 import { getURL } from '../../extension/extension'
 import * as runtime from '../../extension/runtime'
@@ -94,7 +94,7 @@ function injectApplication(): void {
             setSourcegraphUrl(sourcegraphServerUrl)
             injectBitbucketServer()
         }
-        setUseCXP(items.useCXP === undefined ? false : items.useCXP)
+        setUseExtensions(items.useExtensions === undefined ? false : items.useExtensions)
     }
 
     storage.getSync(handleGetStorage)

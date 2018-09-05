@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Redirect, Route, Switch } from 'react-router'
 import { HashRouter } from 'react-router-dom'
 import { sourcegraphUrl } from '../../util/context'
-import { CXPExtensionRegistry } from './CXPExtensionRegistry'
+import { ExtensionRegistry } from './ExtensionRegistry'
 import { OptionsConfiguration } from './OptionsConfiguration'
 import { OptionsPageSidebar } from './OptionsPageSidebar'
 
@@ -27,7 +27,7 @@ export class OptionsDashboard extends React.Component<any, {}> {
                     <div className="area__content">
                         <Switch>
                             <Route path="/" component={OptionsConfiguration} exact={true} />
-                            <Route path="/extensions" component={CXPExtensionRegistry} exact={true} />
+                            <Route path="/extensions" component={ExtensionRegistry} exact={true} />
                             <Route path={EXTENSION_ROUTE} component={this.extensionRedirectComponent} />
                         </Switch>
                     </div>

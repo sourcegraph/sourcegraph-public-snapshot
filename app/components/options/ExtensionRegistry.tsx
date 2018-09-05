@@ -7,9 +7,9 @@ import {
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { createExtensionsContextController } from '../../../app/backend/extensions'
-import { BrowserSettingsEditor } from '../../../chrome/extension/cxp'
+import { BrowserSettingsEditor } from '../../../chrome/extension/extensions'
 import { GQL } from '../../../types/gqlschema'
+import { createExtensionsContextController } from '../../backend/extensions'
 import { sourcegraphUrl } from '../../util/context'
 
 interface OptionsPageProps extends RouteComponentProps<{}> {}
@@ -23,7 +23,7 @@ const CLIENT_SUBJECT: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdministe
     viewerCanAdminister: true,
 }
 
-export class CXPExtensionRegistry extends React.Component<OptionsPageProps, OptionsPageState> {
+export class ExtensionRegistry extends React.Component<OptionsPageProps, OptionsPageState> {
     public state: OptionsPageState = {
         configurationCascade: { subjects: [], merged: {} },
     }

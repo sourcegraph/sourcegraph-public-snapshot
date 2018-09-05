@@ -83,12 +83,12 @@
     "webpack": "^4.6.0"
   },
   "dependencies": {
-    "@sourcegraph/codeintellify": "^3.6.4",
-    "@sourcegraph/extensions-client-common": "^6.3.0",
+    "@sourcegraph/codeintellify": "^3.8.1",
+    "@sourcegraph/extensions-client-common": "^7.0.1",
     "@sourcegraph/react-loading-spinner": "0.0.6",
+    "@sourcegraph/sourcegraph.proposed": "^12.0.1",
     "@sqs/jsonc-parser": "^1.0.3",
     "bootstrap": "^4.0.0",
-    "cxp": "^11.4.0",
     "cypress-browser-extension-plugin": "^0.1.0",
     "downshift": "^2.0.14",
     "formdata-polyfill": "^3.0.9",

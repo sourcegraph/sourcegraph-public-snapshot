@@ -1,12 +1,12 @@
-import { MessageTransports } from 'cxp/module/jsonrpc2/connection'
-import { Message } from 'cxp/module/jsonrpc2/messages'
+import { MessageTransports } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/connection'
+import { Message } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/messages'
 import {
     AbstractMessageReader,
     AbstractMessageWriter,
     DataCallback,
     MessageReader,
     MessageWriter,
-} from 'cxp/module/jsonrpc2/transport'
+} from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/transport'
 import { ExtensionConnectionInfo } from '../../chrome/extension/background'
 
 class PortMessageReader extends AbstractMessageReader implements MessageReader {
@@ -19,7 +19,7 @@ class PortMessageReader extends AbstractMessageReader implements MessageReader {
         port.onMessage.addListener((message: Message) => {
             try {
                 if (this.callback) {
-                    if (localStorage.getItem('traceCXP') === 'true') {
+                    if (localStorage.getItem('traceExtensions') === 'true') {
                         console.log(this.connectionInfo.extensionID, '->', message)
                     }
                     this.callback(message)
@@ -61,7 +61,7 @@ class PortMessageWriter extends AbstractMessageWriter implements MessageWriter {
 
     public write(message: Message): void {
         try {
-            if (localStorage.getItem('traceCXP') === 'true') {
+            if (localStorage.getItem('traceExtensions') === 'true') {
                 console.log(this.connectionInfo.extensionID, '<-', message)
             }
             this.port.postMessage(message)

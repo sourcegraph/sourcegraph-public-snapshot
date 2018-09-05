@@ -2,7 +2,7 @@ import * as React from 'react'
 import { merge, of, Subscription } from 'rxjs'
 import { catchError, delay, takeUntil } from 'rxjs/operators'
 import { asError } from '../backend/errors'
-import { EMODENOTFOUND, fetchJumpURL, SimpleCXPFns } from '../backend/lsp'
+import { EMODENOTFOUND, fetchJumpURL, SimpleProviderFns } from '../backend/lsp'
 import { AbsoluteRepoFilePosition } from '../repo'
 import { parseBrowserRepoURL } from '../repo'
 import { hideTooltip, TooltipData, updateTooltip } from '../repo/tooltips'
@@ -18,7 +18,7 @@ interface Props {
         headRev: string
     }
     docked?: boolean
-    simpleCXPFns: SimpleCXPFns
+    simpleProviderFns: SimpleProviderFns
 }
 
 interface State {
@@ -158,7 +158,7 @@ export class TooltipPortal extends React.Component<Props, State> {
          * This is a higher-order Observable (Observable that emits Observables).
          */
         // Fetch the hover for that position
-        const hoverFetch = this.props.simpleCXPFns.fetchHover(args).pipe(
+        const hoverFetch = this.props.simpleProviderFns.fetchHover(args).pipe(
             catchError(error => {
                 this.updateTooltipStyle()
                 if (error && error.code === EMODENOTFOUND) {
@@ -287,7 +287,7 @@ export class TooltipPortal extends React.Component<Props, State> {
     private handleGoToDefinition = (defCtx: AbsoluteRepoFilePosition) => (e: MouseEvent) => {
         eventLogger.logCodeIntelligenceEvent()
         e.preventDefault()
-        fetchJumpURL(this.props.simpleCXPFns.fetchDefinition, defCtx).subscribe(defUrl => {
+        fetchJumpURL(this.props.simpleProviderFns.fetchDefinition, defCtx).subscribe(defUrl => {
             if (!defUrl) {
                 return
             }

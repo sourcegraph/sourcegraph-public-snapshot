@@ -25,8 +25,8 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
         storage.setSync({ inlineSymbolSearchEnabled: !this.props.storage.inlineSymbolSearchEnabled })
     }
 
-    private onUseCXPToggled = () => {
-        storage.setSync({ useCXP: !this.props.storage.useCXP })
+    private onUseExtensionsToggled = () => {
+        storage.setSync({ useExtensions: !this.props.storage.useExtensions })
     }
 
     public render(): JSX.Element | null {
@@ -35,7 +35,7 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
             renderMermaidGraphsEnabled,
             repositoryFileTreeEnabled,
             executeSearchEnabled,
-            useCXP,
+            useExtensions,
         } = this.props.storage
         return (
             <Row className="pb-3">
@@ -90,7 +90,11 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
                                 </FormGroup>
                                 <FormGroup check={true}>
                                     <Label check={true}>
-                                        <Input onClick={this.onUseCXPToggled} defaultChecked={useCXP} type="checkbox" />{' '}
+                                        <Input
+                                            onClick={this.onUseExtensionsToggled}
+                                            defaultChecked={useExtensions}
+                                            type="checkbox"
+                                        />{' '}
                                         Use Sourcegraph extensions
                                     </Label>
                                 </FormGroup>

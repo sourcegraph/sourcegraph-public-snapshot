@@ -1,9 +1,9 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
-import { Controller as CXPController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { Controller } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
-import { TextDocumentPositionParams } from 'cxp/module/protocol'
-import { HoverMerged } from 'cxp/module/types/hover'
-import { Observable, of, OperatorFunction, throwError as error } from 'rxjs'
+import { TextDocumentPositionParams } from '@sourcegraph/sourcegraph.proposed/module/protocol'
+import { HoverMerged } from '@sourcegraph/sourcegraph.proposed/module/types/hover'
+import { from, Observable, of, OperatorFunction, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
@@ -183,7 +183,7 @@ const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Obser
 }, makeRepoURI)
 
 export function fetchJumpURL(
-    fetchDefinition: SimpleCXPFns['fetchDefinition'],
+    fetchDefinition: SimpleProviderFns['fetchDefinition'],
     pos: AbsoluteRepoFilePosition
 ): Observable<string | null> {
     return fetchDefinition(pos).pipe(
@@ -203,7 +203,7 @@ export function fetchJumpURL(
 
 export type JumpURLLocation = RepoSpec & RevSpec & ResolvedRevSpec & FileSpec & PositionSpec & { part?: DiffPart }
 export function createJumpURLFetcher(
-    fetchDefinition: SimpleCXPFns['fetchDefinition'],
+    fetchDefinition: SimpleProviderFns['fetchDefinition'],
     buildURL: (pos: JumpURLLocation) => string
 ): JumpURLFetcher {
     return ({ line, character, part, commitID, repoPath, ...rest }) =>
@@ -292,13 +292,13 @@ const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<Serv
     )
 }
 
-export interface SimpleCXPFns {
+export interface SimpleProviderFns {
     fetchHover: (pos: AbsoluteRepoFilePosition) => Observable<HoverMerged | null>
     fetchDefinition: (pos: AbsoluteRepoFilePosition) => Observable<Definition>
     fetchServerCapabilities: (pos: AbsoluteRepoLanguageFile) => Observable<ServerCapabilities | undefined>
 }
 
-export const lspViaAPIXlang: SimpleCXPFns = {
+export const lspViaAPIXlang: SimpleProviderFns = {
     fetchHover,
     fetchDefinition,
     fetchServerCapabilities,
@@ -316,12 +316,14 @@ const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocume
     },
 })
 
-export const createLSPViaCXP = (cxpController: CXPController<ConfigurationSubject, Settings>) => ({
+export const createLSPFromExtensions = (extensionsController: Controller<ConfigurationSubject, Settings>) => ({
+    // Use from() to suppress rxjs type incompatibilities between different minor versions of rxjs in
+    // node_modules/.
     fetchHover: pos =>
-        cxpController.registries.textDocumentHover
-            .getHover(toTextDocumentPositionParams(pos))
-            .pipe(map(hover => (hover === null ? HoverMerged.from([]) : hover))),
+        from(extensionsController.registries.textDocumentHover.getHover(toTextDocumentPositionParams(pos))).pipe(
+            map(hover => (hover === null ? HoverMerged.from([]) : hover))
+        ),
     fetchDefinition: pos =>
-        cxpController.registries.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos)),
+        from(extensionsController.registries.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos))),
     fetchServerCapabilities,
 })

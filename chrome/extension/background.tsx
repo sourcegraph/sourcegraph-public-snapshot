@@ -2,7 +2,7 @@
 // prettier-ignore
 import '../../app/util/polyfill'
 
-import { URI } from 'cxp/module/types/textDocument'
+import { URI } from '@sourcegraph/sourcegraph.proposed/module/types/textDocument'
 import { without } from 'lodash'
 import { ajax } from 'rxjs/ajax'
 import { resolveClientConfiguration } from '../../app/backend/server'
@@ -418,7 +418,7 @@ const spawnAndConnect = ({
     })
 
 /**
- * The information necessary to connect to a CXP extension.
+ * The information necessary to connect to a Sourcegraph extension.
  */
 export interface ExtensionConnectionInfo {
     extensionID: string
@@ -437,29 +437,25 @@ export const onFirstMessage = (port: chrome.runtime.Port, callback: (message: an
     port.onMessage.addListener(cb)
 }
 
-// This is the bridge between content scripts (that want to connect to CXP
-// extensions) and the background script (that spawns JS bundles or connects to
-// WebSocket endpoints).:
+// This is the bridge between content scripts (that want to connect to Sourcegraph extensions) and the background
+// script (that spawns JS bundles or connects to WebSocket endpoints).:
 chrome.runtime.onConnect.addListener(port => {
-    // When a content script wants to create a connection to a CXP extension, it
-    // first connects to the background script on a random port and sends a
-    // message containing the platform information for that CXP extension (e.g.
-    // a JS bundle at localhost:1234/index.js).
+    // When a content script wants to create a connection to a Sourcegraph extension, it first connects to the
+    // background script on a random port and sends a message containing the platform information for that
+    // Sourcegraph extension (e.g. a JS bundle at localhost:1234/index.js).
     onFirstMessage(port, (connectionInfo: ExtensionConnectionInfo) => {
         // The background script receives the message and attempts to spawn the
         // extension:
         spawnAndConnect({ connectionInfo, port }).then(
-            // If spawning succeeds, the background script sends {} (so the
-            // content script knows it succeeded) and the port follows CXP
-            // after that.
+            // If spawning succeeds, the background script sends {} (so the content script knows it succeeded) and
+            // the port communicates using the internal Sourcegraph extension RPC API after that.
             () => {
                 // Success is represented by the absence of an error
                 port.postMessage({})
             },
-            // If spawning fails, the background script sends { error } (so the
-            // content script knows it failed) and the port is immediately
-            // disconnected. There is always a 1-1 correspondence between ports
-            // and content scripts, so this won't disrupt any other connections.
+            // If spawning fails, the background script sends { error } (so the content script knows it failed) and
+            // the port is immediately disconnected. There is always a 1-1 correspondence between ports and content
+            // scripts, so this won't disrupt any other connections.
             error => {
                 port.postMessage({ error })
                 port.disconnect()

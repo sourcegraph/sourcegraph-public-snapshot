@@ -1,16 +1,16 @@
 import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
+import { ControllerProps } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
-import { CXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { ISite, IUser } from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import {
     ConfigurationCascadeProps,
     ConfigurationSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { ContributableMenu } from 'cxp/module/protocol'
+import { ContributableMenu } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { SimpleCXPFns } from '../backend/lsp'
+import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { CodeIntelStatusIndicator } from './CodeIntelStatusIndicator'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
@@ -23,7 +23,7 @@ export interface ButtonProps {
 
 interface CodeViewToolbarProps
     extends Partial<ExtensionsProps<ConfigurationSubject, Settings>>,
-        Partial<CXPControllerProps<ConfigurationSubject, Settings>> {
+        Partial<ControllerProps<ConfigurationSubject, Settings>> {
     repoPath: string
     filePath: string
 
@@ -39,7 +39,7 @@ interface CodeViewToolbarProps
         listClass?: string
         actionItemClass?: string
     }
-    simpleCXPFns: SimpleCXPFns
+    simpleProviderFns: SimpleProviderFns
 }
 
 interface CodeViewToolbarState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {
@@ -76,12 +76,12 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
         return (
             <div style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}>
                 <ul className={`nav ${this.props.extensions ? 'pr-1' : ''}`}>
-                    {this.props.cxpController &&
+                    {this.props.extensionsController &&
                         this.props.extensions && (
                             <div className="BtnGroup">
                                 <ActionsNavItems
                                     menu={ContributableMenu.EditorTitle}
-                                    cxpController={this.props.cxpController}
+                                    extensionsController={this.props.extensionsController}
                                     extensions={this.props.extensions}
                                     listClass="BtnGroup"
                                     actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
@@ -96,7 +96,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                     commitID={this.props.baseCommitID}
                     filePath={this.props.filePath}
                     onChange={this.props.onEnabledChange}
-                    simpleCXPFns={this.props.simpleCXPFns}
+                    simpleProviderFns={this.props.simpleProviderFns}
                     site={site}
                 />
                 <OpenOnSourcegraph

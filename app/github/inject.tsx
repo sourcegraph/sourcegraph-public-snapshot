@@ -11,8 +11,11 @@ import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
 import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
+import {
+    Controller as ClientController,
+    createController,
+} from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
-import { Controller as CXPController, createController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { isErrorLike } from '@sourcegraph/extensions-client-common/lib/errors'
 import {
     ConfigurationCascadeOrError,
@@ -21,24 +24,24 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
-import { ContributableMenu } from 'cxp/module/protocol'
+import { ContributableMenu } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { identity } from 'lodash'
 import mermaid from 'mermaid'
 import * as React from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
-import { combineLatest, forkJoin, of, Subject } from 'rxjs'
+import { combineLatest, forkJoin, from, of, Subject } from 'rxjs'
 import { filter, map, take, withLatestFrom } from 'rxjs/operators'
 import { Disposable } from 'vscode-languageserver'
 import { findElementWithOffset, getTargetLineAndOffset, GitHubBlobUrl } from '.'
 import storage from '../../extension/storage'
-import { applyDecoration, createMessageTransports } from '../backend/cxp'
+import { applyDecoration, createMessageTransports } from '../backend/extensions'
 import { createExtensionsContextController } from '../backend/extensions'
 import {
     createJumpURLFetcher,
-    createLSPViaCXP,
+    createLSPFromExtensions,
     JumpURLLocation,
     lspViaAPIXlang,
-    SimpleCXPFns,
+    SimpleProviderFns,
     toTextDocumentIdentifier,
 } from '../backend/lsp'
 import { Alerts } from '../components/Alerts'
@@ -53,7 +56,7 @@ import { AbsoluteRepo, AbsoluteRepoFile, CodeCell, DiffResolvedRevSpec } from '.
 import { resolveRev, retryWhenCloneInProgressError } from '../repo/backend'
 import { getTableDataCell, hideTooltip } from '../repo/tooltips'
 import { RepoRevSidebar } from '../tree/RepoRevSidebar'
-import { eventLogger, getModeFromPath, useCXP } from '../util/context'
+import { eventLogger, getModeFromPath, useExtensions } from '../util/context'
 import {
     inlineSymbolSearchEnabled,
     renderMermaidGraphsEnabled,
@@ -117,24 +120,24 @@ function injectCodeIntelligence(): void {
 
     const files = Array.from(getFileContainers())
 
-    // Heuristic to detect if this page is a single code file (CXP currently
-    // only supports one file at a time).
+    // Heuristic to detect if this page is a single code file (the Sourcegraph extension API currently only
+    // supports one file at a time).
     const isSingleCodeFile = files.length === 1 && filePath && document.getElementsByClassName('diff-view').length === 0
 
     let extensionsContextController: Controller<ConfigurationSubject, Settings> | undefined
-    let cxpController: CXPController<ConfigurationSubject, Settings> | undefined
-    let simpleCXPFns = lspViaAPIXlang
+    let extensionsController: ClientController<ConfigurationSubject, Settings> | undefined
+    let simpleProviderFns = lspViaAPIXlang
 
-    if (isSingleCodeFile && useCXP && filePath) {
+    if (isSingleCodeFile && useExtensions && filePath) {
         extensionsContextController = createExtensionsContextController(sourcegraphUrl)
-        cxpController = createController(extensionsContextController.context, createMessageTransports)
-        simpleCXPFns = createLSPViaCXP(cxpController)
+        extensionsController = createController(extensionsContextController.context, createMessageTransports)
+        simpleProviderFns = createLSPFromExtensions(extensionsController)
 
         const constExtensionsContextController = extensionsContextController
-        const constCXPController = cxpController
+        const constController = extensionsController
 
-        injectCXPGlobalComponents({
-            cxpController: constCXPController,
+        injectExtensionsGlobalComponents({
+            extensionsController: constController,
             extensionsContextController: constExtensionsContextController,
         })
 
@@ -208,28 +211,30 @@ function injectCodeIntelligence(): void {
                             }
                         }
 
-                        constCXPController.environment.environment.pipe(take(1)).subscribe(previous => {
-                            constCXPController.setEnvironment({
-                                root: toURI({ repoPath, commitID }),
-                                component: {
-                                    document: {
-                                        uri: toURIWithPath({ repoPath, commitID, filePath }),
-                                        languageId: getModeFromPath(filePath) || 'could not determine mode',
-                                        version: 0,
-                                        text: gitHubCurrentFileContent,
+                        from(constController.environment.environment)
+                            .pipe(take(1))
+                            .subscribe(previous => {
+                                constController.setEnvironment({
+                                    root: toURI({ repoPath, commitID }),
+                                    component: {
+                                        document: {
+                                            uri: toURIWithPath({ repoPath, commitID, filePath }),
+                                            languageId: getModeFromPath(filePath) || 'could not determine mode',
+                                            version: 0,
+                                            text: gitHubCurrentFileContent,
+                                        },
+                                        selections: [],
+                                        visibleRanges: [],
                                     },
-                                    selections: [],
-                                    visibleRanges: [],
-                                },
-                                extensions: configuredExtensions,
-                                configuration: logThenDropConfigurationErrors(configurationCascade),
-                                context: previous.context,
+                                    extensions: configuredExtensions,
+                                    configuration: logThenDropConfigurationErrors(configurationCascade),
+                                    context: previous.context,
+                                })
                             })
-                        })
 
                         let oldDecorations: Disposable[] = []
 
-                        constCXPController.registries.textDocumentDecoration
+                        constController.registries.textDocumentDecoration
                             .getDecorations(
                                 toTextDocumentIdentifier({
                                     commitID,
@@ -263,9 +268,9 @@ function injectCodeIntelligence(): void {
             })
     }
 
-    const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleCXPFns })
+    const hoverifier = createCodeIntelligenceContainer({ repoPath, simpleProviderFns })
 
-    injectBlobAnnotators(hoverifier, files, lspViaAPIXlang, extensionsContextController, cxpController)
+    injectBlobAnnotators(hoverifier, files, lspViaAPIXlang, extensionsContextController, extensionsController)
 
     injectCodeSnippetAnnotator(hoverifier, getCodeCommentContainers(), '.border.rounded-1.my-2', blobDOMFunctions)
     injectCodeSnippetAnnotator(
@@ -310,19 +315,19 @@ function hideFileTree(): void {
     tree.parentNode.removeChild(tree)
 }
 
-function injectCXPGlobalComponents({
-    cxpController,
+function injectExtensionsGlobalComponents({
+    extensionsController,
     extensionsContextController,
 }: {
-    cxpController: CXPController<ConfigurationSubject, Settings>
+    extensionsController: ClientController<ConfigurationSubject, Settings>
     extensionsContextController: Controller<ConfigurationSubject, Settings>
 }): void {
     const statusElem = document.createElement('div')
-    statusElem.className = 'cxp-global'
+    statusElem.className = 'sourcegraph-extensions-global'
     document.body.appendChild(statusElem)
     render(
         <ExtensionStatusPopover
-            cxpController={cxpController}
+            extensionsController={extensionsController}
             caretIcon={extensionsContextController.context.icons.CaretDown}
             loaderIcon={extensionsContextController.context.icons.Loader}
         />,
@@ -335,7 +340,7 @@ function injectCXPGlobalComponents({
         headerElem.appendChild(commandListElem)
         render(
             <CommandListPopoverButton
-                cxpController={cxpController}
+                extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
                 extensions={extensionsContextController}
             />,
@@ -529,7 +534,7 @@ function injectCodeSnippetAnnotator(
                     baseCommitID={commitID}
                     baseRev={commitID}
                     buttonProps={buttonProps}
-                    simpleCXPFns={lspViaAPIXlang}
+                    simpleProviderFns={lspViaAPIXlang}
                     actionsNavItemClassProps={actionsNavItemClassProps}
                 />,
                 mount
@@ -585,7 +590,10 @@ function injectServerBanner(): void {
     render(<Alerts repoPath={repoPath} />, mount)
 }
 
-function createCodeIntelligenceContainer(options: { repoPath: string; simpleCXPFns: SimpleCXPFns }): Hoverifier {
+function createCodeIntelligenceContainer(options: {
+    repoPath: string
+    simpleProviderFns: SimpleProviderFns
+}): Hoverifier {
     const overlayMountID = 'sg-tooltip-mount'
 
     let overlayMount = document.getElementById(overlayMountID)
@@ -616,7 +624,7 @@ function createCodeIntelligenceContainer(options: { repoPath: string; simpleCXPF
 
     const relativeElement = document.body
 
-    const fetchJumpURL = createJumpURLFetcher(options.simpleCXPFns.fetchDefinition, (def: JumpURLLocation) => {
+    const fetchJumpURL = createJumpURLFetcher(options.simpleProviderFns.fetchDefinition, (def: JumpURLLocation) => {
         const rev = def.rev
         // If we're provided options, we can make the j2d URL more specific.
         if (options) {
@@ -659,7 +667,7 @@ function createCodeIntelligenceContainer(options: { repoPath: string; simpleCXPF
             location.href = path
         },
         fetchHover: ({ line, character, part, ...rest }) =>
-            options.simpleCXPFns
+            options.simpleProviderFns
                 .fetchHover({ ...rest, position: { line, character } })
                 .pipe(map(hover => (hover ? (hover as HoverMerged) : hover))),
         fetchJumpURL,
@@ -707,22 +715,22 @@ const LinkComponent: LinkComponent = ({ to, children, ...rest }) => (
 function injectBlobAnnotators(
     hoverifier: Hoverifier,
     files: HTMLElement[],
-    simpleCXPFns: SimpleCXPFns,
+    simpleProviderFns: SimpleProviderFns,
     extensions?: Controller<ConfigurationSubject, Settings>,
-    cxpController?: CXPController<ConfigurationSubject, Settings>
+    extensionsController?: ClientController<ConfigurationSubject, Settings>
 ): void {
     const { repoPath, isDelta, filePath, rev } = parseURL()
     if (!filePath && !isDelta) {
         return
     }
 
-    function addBlobAnnotator(file: HTMLElement, hoverifier: Hoverifier, simpleCXPFns: SimpleCXPFns): void {
+    function addBlobAnnotator(file: HTMLElement, hoverifier: Hoverifier, simpleProviderFns: SimpleProviderFns): void {
         const diffLoader = file.querySelector('.js-diff-load-container')
         if (diffLoader) {
             const observer = new MutationObserver(() => {
                 const element = diffLoader.querySelector('.diff-table')
                 if (element) {
-                    addBlobAnnotator(file, hoverifier, simpleCXPFns)
+                    addBlobAnnotator(file, hoverifier, simpleProviderFns)
                     observer.disconnect()
                 }
             })
@@ -743,8 +751,8 @@ function injectBlobAnnotators(
                         baseCommitID={commitID}
                         baseRev={commitID}
                         buttonProps={buttonProps}
-                        simpleCXPFns={simpleCXPFns}
-                        cxpController={cxpController}
+                        simpleProviderFns={simpleProviderFns}
+                        extensionsController={extensionsController}
                         extensions={extensions}
                         actionsNavItemClassProps={actionsNavItemClassProps}
                     />,
@@ -818,7 +826,7 @@ function injectBlobAnnotators(
                             baseCommitID={resolvedRevSpec.baseCommitID}
                             headCommitID={resolvedRevSpec.headCommitID}
                             buttonProps={buttonProps}
-                            simpleCXPFns={simpleCXPFns}
+                            simpleProviderFns={simpleProviderFns}
                             actionsNavItemClassProps={actionsNavItemClassProps}
                         />,
                         mount
@@ -840,7 +848,7 @@ function injectBlobAnnotators(
     }
 
     for (const file of files) {
-        addBlobAnnotator(file as HTMLElement, hoverifier, simpleCXPFns)
+        addBlobAnnotator(file as HTMLElement, hoverifier, simpleProviderFns)
     }
     const mutationObserver = new MutationObserver(mutations => {
         for (const mutation of mutations) {
@@ -854,7 +862,7 @@ function injectBlobAnnotators(
                                 // complains that it does not exist.
                                 if ((file as any).isIntersecting && !file.target.classList.contains('annotated')) {
                                     file.target.classList.add('annotated')
-                                    addBlobAnnotator(file.target as HTMLElement, hoverifier, simpleCXPFns)
+                                    addBlobAnnotator(file.target as HTMLElement, hoverifier, simpleProviderFns)
                                 }
                             }
                         },

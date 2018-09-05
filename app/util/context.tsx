@@ -19,7 +19,7 @@ export let repositoryFileTreeEnabled = false
 
 export let inlineSymbolSearchEnabled = false
 
-export let useCXP = false
+export let useExtensions = false
 
 interface UrlCache {
     [key: string]: string
@@ -38,7 +38,7 @@ if (window.SG_ENV === 'EXTENSION') {
         repositoryFileTreeEnabled = items.repositoryFileTreeEnabled
 
         inlineSymbolSearchEnabled = items.inlineSymbolSearchEnabled
-        useCXP = items.useCXP
+        useExtensions = items.useExtensions
     })
 }
 
@@ -78,8 +78,8 @@ export function setInlineSymbolSearchEnabled(enabled: boolean): void {
     inlineSymbolSearchEnabled = enabled
 }
 
-export function setUseCXP(value: boolean): void {
-    useCXP = value
+export function setUseExtensions(value: boolean): void {
+    useExtensions = value
 }
 
 /**

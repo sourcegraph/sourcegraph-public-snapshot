@@ -63,7 +63,10 @@ function injectBitbucketMount(state: BitbucketState, mount: HTMLElement): void {
             observer.observe(mainContainer, { childList: true, subtree: true, characterData: true, attributes: true })
         }
         // Render the View File buttons.
-        render(<BitbucketMount bitbucketState={state} container={container} simpleCXPFns={lspViaAPIXlang} />, mount)
+        render(
+            <BitbucketMount bitbucketState={state} container={container} simpleProviderFns={lspViaAPIXlang} />,
+            mount
+        )
     }
 }
 

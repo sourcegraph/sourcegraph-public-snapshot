@@ -13,7 +13,7 @@ interface Props {
 }
 
 interface State {
-    useCXP: boolean
+    useExtensions: boolean
 }
 
 /**
@@ -25,12 +25,14 @@ export class OptionsPageSidebar extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props)
         this.state = {
-            useCXP: false,
+            useExtensions: false,
         }
     }
 
     public componentDidMount(): void {
-        this.subscriptions.add(storage.observeSync('useCXP').subscribe(useCXP => this.setState(() => ({ useCXP }))))
+        this.subscriptions.add(
+            storage.observeSync('useExtensions').subscribe(useExtensions => this.setState(() => ({ useExtensions })))
+        )
     }
 
     public componentWillUnmount(): void {
@@ -49,7 +51,7 @@ export class OptionsPageSidebar extends React.Component<Props, State> {
                         <NavLink to="/" className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS} exact={true}>
                             Configuration
                         </NavLink>
-                        {this.state.useCXP && (
+                        {this.state.useExtensions && (
                             <NavLink to="/extensions" className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS} exact={true}>
                                 Extensions
                             </NavLink>

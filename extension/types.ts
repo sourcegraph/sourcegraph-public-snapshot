@@ -41,10 +41,9 @@ export interface StorageItems {
     sourcegraphAnonymousUid: string
     disableExtension: boolean
     /**
-     * Feature flag to use new LSP funcs (standardized with sourcegraph/sourcegraph). Soon this feature flag will
-     * enable more CXP features.
+     * Enable the use of Sourcegraph extensions.
      */
-    useCXP: boolean
+    useExtensions: boolean
     /**
      * Storage for feature flags
      */
@@ -84,7 +83,7 @@ export const defaultStorageItems: StorageItems = {
     openFileOnSourcegraph: true,
     sourcegraphAnonymousUid: '',
     disableExtension: false,
-    useCXP: false,
+    useExtensions: false,
     featureFlags: featureFlagDefaults,
     clientConfiguration: {
         contentScriptUrls: [],

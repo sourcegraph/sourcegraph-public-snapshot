@@ -2,7 +2,7 @@ import * as React from 'react'
 import { createPortal } from 'react-dom'
 import { fromEvent, merge, Subscription } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
-import { SimpleCXPFns } from '../backend/lsp'
+import { SimpleProviderFns } from '../backend/lsp'
 import { resolveParentRev } from '../repo/backend'
 import { convertNode, createTooltips, hideTooltip, isTooltipDocked } from '../repo/tooltips'
 import { TooltipPortal } from './TooltipPortal'
@@ -11,7 +11,7 @@ import { BitbucketState, getRevisionState } from './utils/util'
 interface Props {
     container: HTMLElement
     bitbucketState: BitbucketState
-    simpleCXPFns: SimpleCXPFns
+    simpleProviderFns: SimpleProviderFns
 }
 
 interface State {
@@ -143,7 +143,7 @@ export class BitbucketMount extends React.Component<Props, State> {
                         event={this.state.event}
                         element={this.state.element}
                         docked={this.state.docked}
-                        simpleCXPFns={this.props.simpleCXPFns}
+                        simpleProviderFns={this.props.simpleProviderFns}
                     />,
                     this.state.element
                 )}

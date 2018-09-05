@@ -2,7 +2,7 @@ import { isEmpty } from 'lodash'
 import * as React from 'react'
 import { fromEvent, interval, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, debounceTime, filter, map, switchMap, take, takeUntil, tap, zip } from 'rxjs/operators'
-import { fetchJumpURL, isEmptyHover, lspViaAPIXlang, SimpleCXPFns } from '../backend/lsp'
+import { fetchJumpURL, isEmptyHover, lspViaAPIXlang, SimpleProviderFns } from '../backend/lsp'
 import * as github from '../github/util'
 import {
     AbsoluteRepoFile,
@@ -57,7 +57,7 @@ interface Props extends AbsoluteRepoFile, Partial<PositionSpec> {
     isSplitDiff: boolean
     isBase: boolean
     buttonProps: ButtonProps
-    simpleCXPFns?: SimpleCXPFns
+    simpleProviderFns?: SimpleProviderFns
 }
 
 interface State {
@@ -71,7 +71,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
     private fixedTooltip = new Subject<Props>()
     private subscriptions = new Subscription()
     private cells = new Map<number, CodeCell>()
-    private simpleCXPFns = lspViaAPIXlang
+    private simpleProviderFns = lspViaAPIXlang
 
     constructor(props: Props) {
         super(props)
@@ -81,7 +81,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
         this.fileExtension = getPathExtension(this.props.filePath)
         this.isDelta = this.props.isDelta || (this.props.isCommit || this.props.isPullRequest)
         this.updateCodeCells()
-        this.simpleCXPFns = props.simpleCXPFns || lspViaAPIXlang
+        this.simpleProviderFns = props.simpleProviderFns || lspViaAPIXlang
     }
 
     // BlobAnnotator will only ever recieve new props when it is being rendered
@@ -185,7 +185,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
                         commitID={this.props.commitID}
                         filePath={this.props.filePath}
                         onChange={this.onCodeIntelligenceEnabledChange}
-                        simpleCXPFns={this.simpleCXPFns}
+                        simpleProviderFns={this.simpleProviderFns}
                     />
                 )}
                 {this.state.showOpenFileCTA && (
@@ -502,7 +502,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
      * tooltip is defined, it will update the target styling.
      */
     private getTooltip(target: HTMLElement, ctx: AbsoluteRepoFilePosition): Observable<TooltipData> {
-        return this.simpleCXPFns.fetchHover(ctx).pipe(
+        return this.simpleProviderFns.fetchHover(ctx).pipe(
             tap(data => {
                 if (isEmptyHover(data)) {
                     // short-cirtuit, no tooltip data
@@ -519,7 +519,7 @@ export class BlobAnnotator extends React.Component<Props, State> {
      * This Observable will emit exactly one value before it completes.
      */
     private getDefinition(ctx: AbsoluteRepoFilePosition): Observable<string | null> {
-        return fetchJumpURL(this.simpleCXPFns.fetchDefinition, ctx)
+        return fetchJumpURL(this.simpleProviderFns.fetchDefinition, ctx)
     }
 
     /**
