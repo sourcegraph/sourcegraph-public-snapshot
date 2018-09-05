@@ -15,7 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -35,9 +35,9 @@ func (r *commitSearchResultResolver) SourceRefs() []*gitRefResolver      { retur
 func (r *commitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResultResolver) DiffPreview() *highlightedString    { return r.diffPreview }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
@@ -56,9 +56,9 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, 
 	})
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query searchquery.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitLogInRepo != nil {
 		return mockSearchCommitLogInRepo(ctx, repoRevs, info, query)
 	}
@@ -80,7 +80,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 type commitSearchOp struct {
 	repoRevs           repositoryRevisions
 	info               *patternInfo
-	query              searchquery.Query
+	query              query.Query
 	diff               bool
 	textSearchOptions  git.TextSearchOptions
 	extraMessageValues []string
@@ -134,11 +134,11 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		}
 	}
 
-	beforeValues, _ := op.query.StringValues(searchquery.FieldBefore)
+	beforeValues, _ := op.query.StringValues(query.FieldBefore)
 	for _, s := range beforeValues {
 		args = append(args, "--until="+s)
 	}
-	afterValues, _ := op.query.StringValues(searchquery.FieldAfter)
+	afterValues, _ := op.query.StringValues(query.FieldAfter)
 	for _, s := range afterValues {
 		args = append(args, "--since="+s)
 	}
@@ -188,13 +188,13 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		}
 		return nil
 	}
-	if err := addGrepLikeFlags(&args, "--grep", searchquery.FieldMessage, op.extraMessageValues, false); err != nil {
+	if err := addGrepLikeFlags(&args, "--grep", query.FieldMessage, op.extraMessageValues, false); err != nil {
 		return nil, false, false, err
 	}
-	if err := addGrepLikeFlags(&args, "--author", searchquery.FieldAuthor, nil, true); err != nil {
+	if err := addGrepLikeFlags(&args, "--author", query.FieldAuthor, nil, true); err != nil {
 		return nil, false, false, err
 	}
-	if err := addGrepLikeFlags(&args, "--committer", searchquery.FieldCommitter, nil, true); err != nil {
+	if err := addGrepLikeFlags(&args, "--committer", query.FieldCommitter, nil, true); err != nil {
 		return nil, false, false, err
 	}
 
@@ -284,10 +284,10 @@ func highlightMatches(pattern *regexp.Regexp, data []byte) *highlightedString {
 	}
 }
 
-var mockSearchCommitDiffsInRepos func(args *repoSearchArgs, query searchquery.Query) ([]*searchResultResolver, *searchResultsCommon, error)
+var mockSearchCommitDiffsInRepos func(args *repoSearchArgs, query query.Query) ([]*searchResultResolver, *searchResultsCommon, error)
 
 // searchCommitDiffsInRepos searches a set of repos for matching commit diffs.
-func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) ([]*searchResultResolver, *searchResultsCommon, error) {
+func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query query.Query) ([]*searchResultResolver, *searchResultsCommon, error) {
 	if mockSearchCommitDiffsInRepos != nil {
 		return mockSearchCommitDiffsInRepos(args, query)
 	}
@@ -345,10 +345,10 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query s
 	return commitSearchResultsToSearchResults(flattened), common, nil
 }
 
-var mockSearchCommitLogInRepos func(args *repoSearchArgs, query searchquery.Query) ([]*searchResultResolver, *searchResultsCommon, error)
+var mockSearchCommitLogInRepos func(args *repoSearchArgs, query query.Query) ([]*searchResultResolver, *searchResultsCommon, error)
 
 // searchCommitLogInRepos searches a set of repos for matching commits.
-func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) ([]*searchResultResolver, *searchResultsCommon, error) {
+func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query query.Query) ([]*searchResultResolver, *searchResultsCommon, error) {
 	if mockSearchCommitLogInRepos != nil {
 		return mockSearchCommitLogInRepos(args, query)
 	}

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query/syntax"
 )
 
 func TestAddQueryRegexpField(t *testing.T) {
@@ -84,7 +84,7 @@ func TestAddQueryRegexpField(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s, add %s:%s", test.query, test.addField, test.addPattern), func(t *testing.T) {
-			query, err := searchquery.ParseAndCheck(test.query)
+			query, err := query.ParseAndCheck(test.query)
 			if err != nil {
 				t.Fatal(err)
 			}

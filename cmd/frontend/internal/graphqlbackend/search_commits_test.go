@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -42,7 +42,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	query, err := searchquery.ParseAndCheck("p")
+	query, err := query.ParseAndCheck("p")
 	if err != nil {
 		t.Fatal(err)
 	}

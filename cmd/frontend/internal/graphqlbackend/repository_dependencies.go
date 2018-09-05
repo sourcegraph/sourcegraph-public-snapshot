@@ -16,7 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/xlang"
 )
 
@@ -191,13 +191,13 @@ func (r *dependencyReferencesConnectionResolver) count(ctx context.Context, limi
 }
 
 func (r *dependencyReferencesConnectionResolver) QueryString() (string, error) {
-	query, _ := xlang.DependencySymbolQuery(r.dr.dep.DepData, r.dr.dep.Language)
-	b, err := json.Marshal(query)
+	q, _ := xlang.DependencySymbolQuery(r.dr.dep.DepData, r.dr.dep.Language)
+	b, err := json.Marshal(q)
 	if err != nil {
 		return "", err
 	}
 
-	q := fmt.Sprintf("%s:%s %s:%s", searchquery.FieldLang, r.dr.dep.Language, searchquery.FieldRef, quoteIfNeeded(b))
+	qs := fmt.Sprintf("%s:%s %s:%s", query.FieldLang, r.dr.dep.Language, query.FieldRef, quoteIfNeeded(b))
 
 	// Add hints.
 	if len(r.dr.dep.Hints) > 0 {
@@ -205,10 +205,10 @@ func (r *dependencyReferencesConnectionResolver) QueryString() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		q += fmt.Sprintf(" %s:%s", searchquery.FieldHints, quoteIfNeeded(b))
+		qs += fmt.Sprintf(" %s:%s", query.FieldHints, quoteIfNeeded(b))
 	}
 
-	return q, nil
+	return qs, nil
 }
 
 func (r *dependencyReferencesConnectionResolver) SymbolDescriptor() []keyValue {

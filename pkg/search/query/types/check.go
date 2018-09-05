@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query/syntax"
 )
 
 // TypeError describes an error in query typechecking.

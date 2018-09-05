@@ -4,7 +4,7 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 var mockSearchRepositories func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error)
@@ -13,25 +13,25 @@ var mockSearchRepositories func(args *repoSearchArgs) ([]*searchResultResolver, 
 //
 // For a repository to match a query, the repository's name ("URI") must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error) {
+func searchRepositories(ctx context.Context, args *repoSearchArgs, q query.Query, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 	if mockSearchRepositories != nil {
 		return mockSearchRepositories(args)
 	}
 
 	fieldWhitelist := map[string]struct{}{
-		searchquery.FieldRepo:      struct{}{},
-		searchquery.FieldRepoGroup: struct{}{},
-		searchquery.FieldType:      struct{}{},
-		searchquery.FieldDefault:   struct{}{},
-		searchquery.FieldIndex:     struct{}{},
-		searchquery.FieldCount:     struct{}{},
-		searchquery.FieldMax:       struct{}{},
-		searchquery.FieldTimeout:   struct{}{},
-		searchquery.FieldFork:      struct{}{},
+		query.FieldRepo:      struct{}{},
+		query.FieldRepoGroup: struct{}{},
+		query.FieldType:      struct{}{},
+		query.FieldDefault:   struct{}{},
+		query.FieldIndex:     struct{}{},
+		query.FieldCount:     struct{}{},
+		query.FieldMax:       struct{}{},
+		query.FieldTimeout:   struct{}{},
+		query.FieldFork:      struct{}{},
 	}
 	// Don't return repo results if the search contains fields that aren't on the whitelist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
-	for field := range query.Fields {
+	for field := range q.Fields {
 		if _, ok := fieldWhitelist[field]; !ok {
 			return nil, nil, nil
 		}

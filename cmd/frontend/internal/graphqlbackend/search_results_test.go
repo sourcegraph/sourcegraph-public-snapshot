@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 func TestSearchResults(t *testing.T) {
@@ -91,7 +91,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query query.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.query.Pattern != want {
 				t.Errorf("got %q, want %q", args.query.Pattern, want)
@@ -226,7 +226,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 	}
 	for queryStr, want := range tests {
 		t.Run(queryStr, func(t *testing.T) {
-			query, err := searchquery.ParseAndCheck(queryStr)
+			query, err := query.ParseAndCheck(queryStr)
 			if err != nil {
 				t.Fatal(err)
 			}

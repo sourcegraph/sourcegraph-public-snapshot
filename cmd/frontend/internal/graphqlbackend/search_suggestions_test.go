@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
 func TestSearchSuggestions(t *testing.T) {
@@ -177,7 +177,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer func() { mockResolveRepoGroups = nil }()
 
-		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query query.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 			// TODO test symbol suggestions
 			return nil, nil, nil
 		}

@@ -18,20 +18,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-var mockSearchSymbols func(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
+var mockSearchSymbols func(ctx context.Context, args *repoSearchArgs, query query.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
 
 // searchSymbols searches the given repos in parallel for symbols matching the given search query
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchSymbols != nil {
 		return mockSearchSymbols(ctx, args, query, limit)
 	}
@@ -98,7 +98,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query searchquery.
 	return res, common, err
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, patternInfo *patternInfo, query searchquery.Query, limit int) (res []*fileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, patternInfo *patternInfo, query query.Query, limit int) (res []*fileMatchResolver, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {

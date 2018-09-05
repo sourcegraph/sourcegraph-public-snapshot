@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query/syntax"
 )
 
 type searchAlert struct {
@@ -40,9 +40,9 @@ func (a searchAlert) ProposedQueries() *[]*searchQueryDescription {
 }
 
 func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAlert, error) {
-	repoFilters, minusRepoFilters := r.query.RegexpPatterns(searchquery.FieldRepo)
-	repoGroupFilters, _ := r.query.StringValues(searchquery.FieldRepoGroup)
-	fork, _ := r.query.StringValue(searchquery.FieldFork)
+	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
+	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
+	fork, _ := r.query.StringValue(query.FieldFork)
 	onlyForks, noForks := fork == "only", fork == "no"
 
 	// Handle repogroup-only scenarios.
@@ -67,7 +67,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 	// TODO(sqs): handle -repo:foo fields.
 
-	withoutRepoFields := omitQueryFields(r, searchquery.FieldRepo)
+	withoutRepoFields := omitQueryFields(r, query.FieldRepo)
 
 	var a searchAlert
 	switch {
@@ -87,7 +87,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		if len(repos1) > 0 {
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryFields(r, searchquery.FieldRepoGroup),
+				query:       omitQueryFields(r, query.FieldRepoGroup),
 			})
 		}
 
@@ -122,7 +122,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 		if len(repos1) > 0 {
 			a.proposedQueries = append(a.proposedQueries, &searchQueryDescription{
 				description: fmt.Sprintf("include repositories outside of repogroup:%s", repoGroupFilters[0]),
-				query:       omitQueryFields(r, searchquery.FieldRepoGroup),
+				query:       omitQueryFields(r, query.FieldRepoGroup),
 			})
 		}
 
@@ -272,7 +272,7 @@ outer:
 			break
 		}
 		repoParentPattern := "^" + regexp.QuoteMeta(repoParent) + "/"
-		repoFieldValues, _ := r.query.RegexpPatterns(searchquery.FieldRepo)
+		repoFieldValues, _ := r.query.RegexpPatterns(query.FieldRepo)
 
 		for _, v := range repoFieldValues {
 			if strings.HasPrefix(v, strings.TrimSuffix(repoParentPattern, "/")) {
@@ -299,7 +299,7 @@ outer:
 		// add it to the user's query, but be smart. For example, if the user's
 		// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 		// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-		newExpr := addQueryRegexpField(&r.query, searchquery.FieldRepo, repoParentPattern)
+		newExpr := addQueryRegexpField(&r.query, query.FieldRepo, repoParentPattern)
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
 			query:       syntax.ExprString(newExpr),
@@ -317,7 +317,7 @@ outer:
 			if i >= maxReposToPropose {
 				break
 			}
-			newExpr := addQueryRegexpField(&r.query, searchquery.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+			newExpr := addQueryRegexpField(&r.query, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
 				query:       syntax.ExprString(newExpr),
@@ -353,7 +353,7 @@ func omitQueryFields(r *searchResolver, field string) string {
 	return syntax.ExprString(omitQueryExprWithField(&r.query, field))
 }
 
-func omitQueryExprWithField(query *searchquery.Query, field string) []*syntax.Expr {
+func omitQueryExprWithField(query *query.Query, field string) []*syntax.Expr {
 	expr2 := make([]*syntax.Expr, 0, len(query.Syntax.Expr))
 	for _, e := range query.Syntax.Expr {
 		if e.Field == field {
@@ -393,7 +393,7 @@ func pathParentsByFrequency(paths []string) []string {
 // a query like "x:foo", if given a field "x" with pattern "foobar" to add,
 // it will return a query "x:foobar" instead of "x:foo x:foobar". It is not
 // guaranteed to always return the simplest query.
-func addQueryRegexpField(query *searchquery.Query, field, pattern string) []*syntax.Expr {
+func addQueryRegexpField(query *query.Query, field, pattern string) []*syntax.Expr {
 	// Copy query expressions.
 	expr := make([]*syntax.Expr, len(query.Syntax.Expr))
 	for i, e := range query.Syntax.Expr {
@@ -420,10 +420,10 @@ func addQueryRegexpField(query *searchquery.Query, field, pattern string) []*syn
 	return expr
 }
 
-func hasRepoOrRepoGroupFilter(query string) bool {
-	q, err := searchquery.ParseAndCheck(query)
+func hasRepoOrRepoGroupFilter(qs string) bool {
+	q, err := query.ParseAndCheck(qs)
 	if err != nil {
 		return false
 	}
-	return len(q.Values(searchquery.FieldRepo)) > 0 || len(q.Values(searchquery.FieldRepoGroup)) > 0
+	return len(q.Values(query.FieldRepo)) > 0 || len(q.Values(query.FieldRepoGroup)) > 0
 }

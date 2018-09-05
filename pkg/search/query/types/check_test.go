@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query/syntax"
 )
 
 type value struct {

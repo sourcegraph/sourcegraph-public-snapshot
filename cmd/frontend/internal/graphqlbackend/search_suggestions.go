@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -41,7 +41,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 
 	// Only suggest for type:file.
-	typeValues, _ := r.query.StringValues(searchquery.FieldType)
+	typeValues, _ := r.query.StringValues(query.FieldType)
 	for _, resultType := range typeValues {
 		if resultType != "file" {
 			return nil, nil
@@ -55,10 +55,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// * If only repo fields (except 1 term in query), show repo suggestions.
 
 		var effectiveRepoFieldValues []string
-		if len(r.query.Values(searchquery.FieldDefault)) == 1 && (len(r.query.Fields) == 1 || (len(r.query.Fields) == 2 && len(r.query.Values(searchquery.FieldRepoGroup)) == 1)) {
-			effectiveRepoFieldValues = append(effectiveRepoFieldValues, asString(r.query.Values(searchquery.FieldDefault)[0]))
-		} else if len(r.query.Values(searchquery.FieldRepo)) > 0 && ((len(r.query.Values(searchquery.FieldRepoGroup)) > 0 && len(r.query.Fields) == 2) || (len(r.query.Values(searchquery.FieldRepoGroup)) == 0 && len(r.query.Fields) == 1)) {
-			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(searchquery.FieldRepo)
+		if len(r.query.Values(query.FieldDefault)) == 1 && (len(r.query.Fields) == 1 || (len(r.query.Fields) == 2 && len(r.query.Values(query.FieldRepoGroup)) == 1)) {
+			effectiveRepoFieldValues = append(effectiveRepoFieldValues, asString(r.query.Values(query.FieldDefault)[0]))
+		} else if len(r.query.Values(query.FieldRepo)) > 0 && ((len(r.query.Values(query.FieldRepoGroup)) > 0 && len(r.query.Fields) == 2) || (len(r.query.Values(query.FieldRepoGroup)) == 0 && len(r.query.Fields) == 1)) {
+			effectiveRepoFieldValues, _ = r.query.RegexpPatterns(query.FieldRepo)
 		}
 
 		// If we have a query which is not valid, just ignore it since this is for a suggestion.
@@ -83,9 +83,9 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// If only repos/repogroups and files are specified (and at most 1 term), then show file
 		// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
 		// make it easy to jump to files by just typing in their name, not `file:<their name>`).
-		hasOnlyEmptyRepoField := len(r.query.Values(searchquery.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(searchquery.FieldRepo)) && len(r.query.Fields) == 1
-		hasRepoOrFileFields := len(r.query.Values(searchquery.FieldRepoGroup)) > 0 || len(r.query.Values(searchquery.FieldRepo)) > 0 || len(r.query.Values(searchquery.FieldFile)) > 0
-		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(searchquery.FieldDefault)) <= 1 {
+		hasOnlyEmptyRepoField := len(r.query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.query.RegexpPatterns(query.FieldRepo)) && len(r.query.Fields) == 1
+		hasRepoOrFileFields := len(r.query.Values(query.FieldRepoGroup)) > 0 || len(r.query.Values(query.FieldRepo)) > 0 || len(r.query.Values(query.FieldFile)) > 0
+		if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.query.Values(query.FieldDefault)) <= 1 {
 			return r.suggestFilePaths(ctx, maxSearchSuggestions)
 		}
 		return nil, nil
@@ -156,7 +156,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		// to avoid delaying repo and file suggestions for too long.
 		ctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
 		defer cancel()
-		if len(r.query.Values(searchquery.FieldDefault)) > 0 {
+		if len(r.query.Values(query.FieldDefault)) > 0 {
 			results, err := r.doResults(ctx, "file") // only "file" result type
 			if err == context.DeadlineExceeded {
 				err = nil // don't log as error below

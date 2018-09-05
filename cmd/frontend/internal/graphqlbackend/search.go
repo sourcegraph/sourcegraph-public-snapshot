@@ -26,8 +26,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/pathmatch"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
-	searchquerytypes "github.com/sourcegraph/sourcegraph/pkg/searchquery/types"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+	searchquerytypes "github.com/sourcegraph/sourcegraph/pkg/search/query/types"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -51,7 +51,7 @@ func init() {
 func (r *schemaResolver) Search(args *struct {
 	Query string
 }) (*searchResolver, error) {
-	query, err := searchquery.ParseAndCheck(args.Query)
+	query, err := query.ParseAndCheck(args.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func asString(v *searchquerytypes.Value) string {
 type searchResolver struct {
 	root *schemaResolver
 
-	query searchquery.Query // the parsed search query
+	query query.Query // the parsed search query
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex
@@ -92,22 +92,22 @@ func (r *searchResolver) rawQuery() string {
 }
 
 func (r *searchResolver) countIsSet() bool {
-	count, _ := r.query.StringValues(searchquery.FieldCount)
-	max, _ := r.query.StringValues(searchquery.FieldMax)
+	count, _ := r.query.StringValues(query.FieldCount)
+	max, _ := r.query.StringValues(query.FieldMax)
 	return len(count) > 0 || len(max) > 0
 }
 
 const defaultMaxSearchResults = 30
 
 func (r *searchResolver) maxResults() int32 {
-	count, _ := r.query.StringValues(searchquery.FieldCount)
+	count, _ := r.query.StringValues(query.FieldCount)
 	if len(count) > 0 {
 		n, _ := strconv.Atoi(count[0])
 		if n > 0 {
 			return int32(n)
 		}
 	}
-	max, _ := r.query.StringValues(searchquery.FieldMax)
+	max, _ := r.query.StringValues(query.FieldMax)
 	if len(max) > 0 {
 		n, _ := strconv.Atoi(max[0])
 		if n > 0 {
@@ -206,13 +206,13 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		}
 	}
 
-	repoFilters, minusRepoFilters := r.query.RegexpPatterns(searchquery.FieldRepo)
+	repoFilters, minusRepoFilters := r.query.RegexpPatterns(query.FieldRepo)
 	if effectiveRepoFieldValues != nil {
 		repoFilters = effectiveRepoFieldValues
 	}
-	repoGroupFilters, _ := r.query.StringValues(searchquery.FieldRepoGroup)
+	repoGroupFilters, _ := r.query.StringValues(query.FieldRepoGroup)
 
-	forkStr, _ := r.query.StringValue(searchquery.FieldFork)
+	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
 
 	tr.LazyPrintf("resolveRepositories - start")
@@ -484,7 +484,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 		return nil, nil
 	}
 
-	includePatterns, excludePatterns := r.query.RegexpPatterns(searchquery.FieldFile)
+	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
 	excludePattern := unionRegExps(excludePatterns)
 	pathOptions := pathmatch.CompileOptions{
 		RegExp:        true,
@@ -493,7 +493,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]*se
 
 	// Treat all default terms as though they had `file:` before them (to make it easy for users to
 	// jump to files by just typing their name).
-	for _, v := range r.query.Values(searchquery.FieldDefault) {
+	for _, v := range r.query.Values(query.FieldDefault) {
 		includePatterns = append(includePatterns, asString(v))
 	}
 

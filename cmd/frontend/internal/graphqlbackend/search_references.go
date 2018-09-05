@@ -18,22 +18,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query) (res []*searchResultResolver, common *searchResultsCommon, err error) {
-	refValues, negatedRefValues := query.StringValues(searchquery.FieldRef)
+func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query) (res []*searchResultResolver, common *searchResultsCommon, err error) {
+	refValues, negatedRefValues := q.StringValues(query.FieldRef)
 	if len(negatedRefValues) != 0 {
 		return nil, nil, errors.New("not supported: negated references queries (-ref:)")
 	}
 	if len(refValues) != 1 {
 		return nil, nil, errors.New("search query must have at most 1 ref: value")
 	}
-	if len(query.Values(searchquery.FieldDefault)) > 0 {
+	if len(q.Values(query.FieldDefault)) > 0 {
 		return nil, nil, errors.New("not yet supported: combining references search query (ref:) and text search patterns")
 	}
 
@@ -42,13 +42,13 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, query se
 		return nil, nil, errors.Wrap(err, "parsing ref: value")
 	}
 	var hints map[string]interface{} // hints for speeding up workspace/xreferences
-	if hintValues, _ := query.StringValues(searchquery.FieldHints); len(hintValues) > 0 {
+	if hintValues, _ := q.StringValues(query.FieldHints); len(hintValues) > 0 {
 		if err := json.Unmarshal([]byte(hintValues[0]), &hints); err != nil {
 			return nil, nil, errors.Wrap(err, "parsing hints: value")
 		}
 	}
 	var language string
-	if langValues, _ := query.StringValues(searchquery.FieldLang); len(langValues) == 0 {
+	if langValues, _ := q.StringValues(query.FieldLang); len(langValues) == 0 {
 		return nil, nil, errors.New("references search query must have a lang: value (such as lang:go)")
 	} else if len(langValues) >= 2 {
 		return nil, nil, errors.New("not supported: multiple lang: values in references search")
@@ -65,7 +65,7 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, query se
 	// Speed up references search by consulting the global_dep index to see who else
 	// references this symbol (avoiding the need to search packages in repositories that
 	// don't reference it). Only do this if no repository filters are specified in the query.
-	if len(query.Values(searchquery.FieldRepo)) == 0 && len(query.Values(searchquery.FieldRepoGroup)) == 0 {
+	if len(q.Values(query.FieldRepo)) == 0 && len(q.Values(query.FieldRepoGroup)) == 0 {
 		pkgDescriptor, ok := xlang.SymbolPackageDescriptor(symbol, language)
 		if ok {
 			// NOTE: This clobbers the package's version, which may not be desirable in

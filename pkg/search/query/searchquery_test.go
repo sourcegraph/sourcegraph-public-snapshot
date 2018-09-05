@@ -1,10 +1,10 @@
-package searchquery
+package query
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery/types"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query/types"
 )
 
 func TestQuery_IsCaseSensitive(t *testing.T) {

@@ -7,13 +7,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/zoekt/query"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -92,7 +92,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 	}
 	for _, tt := range cases {
 		t.Run(tt.Name, func(t *testing.T) {
-			q, err := query.Parse(tt.Query)
+			q, err := zoektquery.Parse(tt.Query)
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
@@ -107,21 +107,21 @@ func TestQueryToZoektQuery(t *testing.T) {
 	}
 }
 
-func queryEqual(a query.Q, b query.Q) bool {
-	sortChildren := func(q query.Q) query.Q {
+func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
+	sortChildren := func(q zoektquery.Q) zoektquery.Q {
 		switch s := q.(type) {
-		case *query.And:
+		case *zoektquery.And:
 			sort.Slice(s.Children, func(i, j int) bool {
 				return s.Children[i].String() < s.Children[j].String()
 			})
-		case *query.Or:
+		case *zoektquery.Or:
 			sort.Slice(s.Children, func(i, j int) bool {
 				return s.Children[i].String() < s.Children[j].String()
 			})
 		}
 		return q
 	}
-	return query.Map(a, sortChildren).String() == query.Map(b, sortChildren).String()
+	return zoektquery.Map(a, sortChildren).String() == zoektquery.Map(b, sortChildren).String()
 }
 
 func TestSearchFilesInRepos(t *testing.T) {
@@ -165,11 +165,11 @@ func TestSearchFilesInRepos(t *testing.T) {
 		},
 		repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
 	}
-	query, err := searchquery.ParseAndCheck("foo")
+	q, err := query.ParseAndCheck("foo")
 	if err != nil {
 		t.Fatal(err)
 	}
-	results, common, err := searchFilesInRepos(context.Background(), args, *query, false)
+	results, common, err := searchFilesInRepos(context.Background(), args, *q, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		},
 		repos: makeRepositoryRevisions("foo/no-rev@dev"),
 	}
-	_, _, err = searchFilesInRepos(context.Background(), args, *query, false)
+	_, _, err = searchFilesInRepos(context.Background(), args, *q, false)
 	if !git.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}

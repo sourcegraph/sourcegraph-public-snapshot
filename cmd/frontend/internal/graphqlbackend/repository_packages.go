@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/xlang"
 )
 
@@ -231,12 +231,12 @@ func (r *packageReferencesConnectionResolver) count(ctx context.Context, limit i
 }
 
 func (r *packageReferencesConnectionResolver) QueryString() (string, error) {
-	query, _ := xlang.SymbolsInPackage(r.pr.pkg.Pkg, r.pr.pkg.Lang)
-	b, err := json.Marshal(query)
+	q, _ := xlang.SymbolsInPackage(r.pr.pkg.Pkg, r.pr.pkg.Lang)
+	b, err := json.Marshal(q)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s:%s %s:%s", searchquery.FieldLang, r.pr.pkg.Lang, searchquery.FieldRef, quoteIfNeeded(b)), nil
+	return fmt.Sprintf("%s:%s %s:%s", query.FieldLang, r.pr.pkg.Lang, query.FieldRef, quoteIfNeeded(b)), nil
 }
 
 func (r *packageReferencesConnectionResolver) SymbolDescriptor() []keyValue {

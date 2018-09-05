@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -543,7 +543,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
 	var patternsToCombine []string
-	for _, v := range r.query.Values(searchquery.FieldDefault) {
+	for _, v := range r.query.Values(query.FieldDefault) {
 		// Treat quoted strings as literal strings to match, not regexps.
 		var pattern string
 		switch {
@@ -559,10 +559,10 @@ func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
 	}
 
 	// Handle file: and -file: filters.
-	includePatterns, excludePatterns := r.query.RegexpPatterns(searchquery.FieldFile)
+	includePatterns, excludePatterns := r.query.RegexpPatterns(query.FieldFile)
 
 	// Handle lang: and -lang: filters.
-	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(searchquery.FieldLang))
+	langIncludePatterns, langExcludePatterns, err := langIncludeExcludePatterns(r.query.StringValues(query.FieldLang))
 	if err != nil {
 		return nil, err
 	}
@@ -592,13 +592,13 @@ var (
 )
 
 func (r *searchResolver) searchTimeoutFieldSet() bool {
-	timeout, _ := r.query.StringValue(searchquery.FieldTimeout)
+	timeout, _ := r.query.StringValue(query.FieldTimeout)
 	return timeout != "" || r.countIsSet()
 }
 
 func (r *searchResolver) withTimeout(ctx context.Context) (context.Context, context.CancelFunc, error) {
 	d := defaultTimeout
-	timeout, _ := r.query.StringValue(searchquery.FieldTimeout)
+	timeout, _ := r.query.StringValue(query.FieldTimeout)
 	if timeout != "" {
 		var err error
 		d, err = time.ParseDuration(timeout)
@@ -669,7 +669,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if forceOnlyResultType != "" {
 		resultTypes = []string{forceOnlyResultType}
 	} else {
-		resultTypes, _ = r.query.StringValues(searchquery.FieldType)
+		resultTypes, _ = r.query.StringValues(query.FieldType)
 		if len(resultTypes) == 0 {
 			resultTypes = []string{"file", "path", "repo", "ref"}
 		}
@@ -816,7 +816,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 				}
 			})
 		case "ref":
-			refValues, _ := r.query.StringValues(searchquery.FieldRef)
+			refValues, _ := r.query.StringValues(query.FieldRef)
 			if len(refValues) == 0 {
 				continue
 			}

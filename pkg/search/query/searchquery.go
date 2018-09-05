@@ -1,10 +1,10 @@
-// Package searchquery provides facilities for parsing and extracting
+// Package query provides facilities for parsing and extracting
 // information from search queries.
-package searchquery
+package query
 
 import (
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery/syntax"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery/types"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query/types"
 )
 
 // All field names.

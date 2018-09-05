@@ -30,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/searchquery"
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	zoektpkg "github.com/sourcegraph/sourcegraph/pkg/zoekt"
@@ -708,7 +708,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*repositoryRevisions) (index
 var mockSearchFilesInRepos func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchquery.Query, searchTimeoutFieldSet bool) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query, searchTimeoutFieldSet bool) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -743,7 +743,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, query searchq
 	}
 
 	// Support index:yes (default), index:only, and index:no in search query.
-	index, _ := query.StringValues(searchquery.FieldIndex)
+	index, _ := q.StringValues(query.FieldIndex)
 	if len(index) > 0 {
 		index := index[len(index)-1]
 		switch parseYesNoOnly(index) {
