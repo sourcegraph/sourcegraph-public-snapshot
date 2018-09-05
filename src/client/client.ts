@@ -1,5 +1,5 @@
-import { ClientKey } from 'cxp/module/environment/controller'
-import { Trace } from 'cxp/module/jsonrpc2/trace'
+import { ClientKey } from '@sourcegraph/sourcegraph.proposed/module/environment/controller'
+import { Trace } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/trace'
 import { isEqual } from 'lodash'
 
 /** Client options persisted in localStorage so that they survive across page reloads. */

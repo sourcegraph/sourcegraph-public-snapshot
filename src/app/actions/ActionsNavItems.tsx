@@ -19,7 +19,7 @@ export class ActionsNavItems<S extends ConfigurationSubject, C extends Settings>
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.cxpController.registries.contribution.contributions.subscribe(contributions =>
+            this.props.extensionsController.registries.contribution.contributions.subscribe(contributions =>
                 this.setState({ contributions })
             )
         )
@@ -42,7 +42,7 @@ export class ActionsNavItems<S extends ConfigurationSubject, C extends Settings>
                             key={i}
                             {...item}
                             variant="actionItem"
-                            cxpController={this.props.cxpController}
+                            extensionsController={this.props.extensionsController}
                             extensions={this.props.extensions}
                             className={this.props.actionItemClass}
                         />

@@ -13,7 +13,7 @@ export function log(level: 'info' | 'error', subject: string, message: any, othe
         backgroundColor = 'red'
     }
     f(
-        '%c CXP %s %c',
+        '%c EXT %s %c',
         `font-weight:bold;background-color:${backgroundColor};color:${color}`,
         subject,
         'font-weight:normal;background-color:unset',

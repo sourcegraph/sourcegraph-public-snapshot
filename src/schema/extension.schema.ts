@@ -1,4 +1,4 @@
-import { Contributions } from 'cxp/module/protocol/contribution'
+import { Contributions } from '@sourcegraph/sourcegraph.proposed/module/protocol/contribution'
 
 /**
  * See the extensions.schema.json JSON Schema for canonical documentation on these types.
@@ -10,7 +10,7 @@ import { Contributions } from 'cxp/module/protocol/contribution'
  * manually duplicate it for now.
  */
 
-export interface CXPExtensionManifest {
+export interface ExtensionManifest {
     title?: string
     description?: string
     readme?: string

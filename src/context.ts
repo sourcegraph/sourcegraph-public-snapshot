@@ -1,4 +1,4 @@
-import { ConfigurationUpdateParams } from 'cxp/module/protocol'
+import { ConfigurationUpdateParams } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { Observable } from 'rxjs'
 import { Controller } from './controller'
 import { QueryResult } from './graphql'
@@ -60,10 +60,9 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
     forceUpdateTooltip(): void
 
     /**
-     * Experimental capabilities implemented by the client (that are not defined
-     * by the CXP specification). These capabilities are passed verbatim to
-     * extensions in the initialize request's capabilities.experimental
-     * property.
+     * Experimental capabilities implemented by the client (that are not defined by the Sourcegraph extension API
+     * specification). These capabilities are passed verbatim to extensions in the initialize request's
+     * capabilities.experimental property.
      */
     experimentalClientCapabilities?: any
 }

@@ -1,4 +1,4 @@
-import { ContributableMenu, Contributions } from 'cxp/module/protocol'
+import { ContributableMenu, Contributions } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { sortBy } from 'lodash-es'
 import { ActionItemProps } from './ActionItem'
 

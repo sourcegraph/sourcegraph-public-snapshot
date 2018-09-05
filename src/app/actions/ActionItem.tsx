@@ -1,23 +1,23 @@
-import { ActionContribution, ExecuteCommandParams } from 'cxp/module/protocol'
+import { ActionContribution, ExecuteCommandParams } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
+import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
-import { CXPControllerProps } from '../../cxp/controller'
 import { asError, ErrorLike } from '../../errors'
 import { ConfigurationSubject, Settings } from '../../settings'
 import { LinkOrButton } from '../../ui/generic/LinkOrButton'
 
 export interface ActionItemProps {
     /**
-     * The action specified in the menu item's {@link module:cxp/module/protocol.MenuItemContribution#action}
+     * The action specified in the menu item's {@link module:@sourcegraph/sourcegraph.proposed.module/protocol.MenuItemContribution#action}
      * property.
      */
     action: ActionContribution
 
     /**
      * The alternative action specified in the menu item's
-     * {@link module:cxp/module/protocol.MenuItemContribution#alt} property.
+     * {@link module:@sourcegraph/sourcegraph.proposed.module/protocol.MenuItemContribution#alt} property.
      */
     altAction?: ActionContribution
 
@@ -38,7 +38,7 @@ export interface ActionItemProps {
 
 interface Props<S extends ConfigurationSubject, C extends Settings>
     extends ActionItemProps,
-        CXPControllerProps<S, C>,
+        ControllerProps<S, C>,
         ExtensionsProps<S, C> {}
 
 const LOADING: 'loading' = 'loading'
@@ -62,7 +62,7 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
             this.commandExecutions
                 .pipe(
                     mergeMap(params =>
-                        from(this.props.cxpController.executeCommand(params)).pipe(
+                        from(this.props.extensionsController.executeCommand(params)).pipe(
                             mapTo(null),
                             catchError(error => [asError(error)]),
                             map(c => ({ actionOrError: c })),

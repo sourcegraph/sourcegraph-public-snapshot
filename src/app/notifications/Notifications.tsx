@@ -1,11 +1,11 @@
 import * as React from 'react'
 import { Subscription } from 'rxjs'
-import { CXPControllerProps } from '../../cxp/controller'
+import { ControllerProps } from '../../client/controller'
 import { ConfigurationSubject, Settings } from '../../settings'
 import { Notification } from './notification'
 import { NotificationItem } from './NotificationItem'
 
-interface Props<S extends ConfigurationSubject, C extends Settings> extends CXPControllerProps<S, C> {}
+interface Props<S extends ConfigurationSubject, C extends Settings> extends ControllerProps<S, C> {}
 
 interface State {
     notifications: Notification[]
@@ -32,7 +32,7 @@ export class Notifications<S extends ConfigurationSubject, C extends Settings> e
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.cxpController.notifications.subscribe(notification => {
+            this.props.extensionsController.notifications.subscribe(notification => {
                 this.setState(prevState => ({
                     notifications: [notification, ...prevState.notifications.slice(0, Notifications.MAX_RETAIN - 1)],
                 }))

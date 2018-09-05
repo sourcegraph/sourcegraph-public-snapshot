@@ -1,10 +1,10 @@
-import { ContributableMenu, Contributions } from 'cxp/module/protocol'
+import { ContributableMenu, Contributions } from '@sourcegraph/sourcegraph.proposed/module/protocol'
+import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
-import { CXPControllerProps } from '../../cxp/controller'
 import { ConfigurationSubject, Settings } from '../../settings'
 
 export interface ActionsProps<S extends ConfigurationSubject, C extends Settings>
-    extends CXPControllerProps<S, C>,
+    extends ControllerProps<S, C>,
         ExtensionsProps<S, C> {
     menu: ContributableMenu
     actionItemClass?: string

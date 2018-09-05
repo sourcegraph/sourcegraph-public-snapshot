@@ -1,15 +1,15 @@
-import { Client as CXPClient, ClientState as CXPClientState } from 'cxp/module/client/client'
-import { ClientKey as CXPClientKey } from 'cxp/module/environment/controller'
-import { Trace } from 'cxp/module/jsonrpc2/trace'
+import { Client, ClientState } from '@sourcegraph/sourcegraph.proposed/module/client/client'
+import { ClientKey } from '@sourcegraph/sourcegraph.proposed/module/environment/controller'
+import { Trace } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/trace'
 import * as React from 'react'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
-import { updateSavedClientTrace } from '../cxp/client'
-import { CXPControllerProps } from '../cxp/controller'
+import { updateSavedClientTrace } from '../client/client'
+import { ControllerProps } from '../client/controller'
 import { ConfigurationSubject, Settings } from '../settings'
 import { PopoverButton } from '../ui/generic/PopoverButton'
 
-interface Props<S extends ConfigurationSubject, C extends Settings> extends CXPControllerProps<S, C> {
+interface Props<S extends ConfigurationSubject, C extends Settings> extends ControllerProps<S, C> {
     caretIcon: React.ComponentType<{
         className: 'icon-inline' | string
         onClick?: () => void
@@ -22,8 +22,8 @@ interface Props<S extends ConfigurationSubject, C extends Settings> extends CXPC
 }
 
 interface State {
-    /** The CXP clients, or undefined while loading. */
-    clients?: { client: CXPClient; key: CXPClientKey; state: CXPClientState }[]
+    /** The extension clients, or undefined while loading. */
+    clients?: { client: Client; key: ClientKey; state: ClientState }[]
 }
 
 export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
@@ -36,16 +36,16 @@ export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings>
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        const cxpController = this.componentUpdates.pipe(
-            map(({ cxpController }) => cxpController),
+        const extensionsController = this.componentUpdates.pipe(
+            map(({ extensionsController }) => extensionsController),
             distinctUntilChanged()
         )
 
         this.subscriptions.add(
-            cxpController
+            extensionsController
                 .pipe(
-                    switchMap(cxpController =>
-                        cxpController.clientEntries.pipe(
+                    switchMap(extensionsController =>
+                        extensionsController.clientEntries.pipe(
                             switchMap(
                                 clientEntries =>
                                     clientEntries.length === 0
@@ -92,7 +92,7 @@ export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings>
                                     <span className="d-flex align-items-center">
                                         <span data-tooltip={key.root || 'no root'}>{client.id}</span>
                                         <span className={`badge badge-${clientStateBadgeClass(state)} ml-1`}>
-                                            {CXPClientState[state]}
+                                            {ClientState[state]}
                                         </span>
                                     </span>
                                     <div className="extension-status__client-actions d-flex align-items-center ml-3">
@@ -151,17 +151,17 @@ export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings>
         )
     }
 
-    private onClientTraceClick = (client: CXPClient, key: CXPClientKey) => {
+    private onClientTraceClick = (client: Client, key: ClientKey) => {
         client.trace = client.trace === Trace.Verbose ? Trace.Off : Trace.Verbose
         updateSavedClientTrace(key, client.trace)
         this.forceUpdate()
     }
 
-    private onClientStopClick = (client: CXPClient) => client.stop()
+    private onClientStopClick = (client: Client) => client.stop()
 
-    private onClientActivateClick = (client: CXPClient) => client.activate()
+    private onClientActivateClick = (client: Client) => client.activate()
 
-    private onClientResetClick = (client: CXPClient) => {
+    private onClientResetClick = (client: Client) => {
         let p = Promise.resolve<void>(void 0)
         if (client.needsStop()) {
             p = client.stop()
@@ -170,21 +170,21 @@ export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings>
     }
 }
 
-function clientStateBadgeClass(state: CXPClientState): string {
+function clientStateBadgeClass(state: ClientState): string {
     switch (state) {
-        case CXPClientState.Initial:
+        case ClientState.Initial:
             return 'secondary'
-        case CXPClientState.Connecting:
+        case ClientState.Connecting:
             return 'info'
-        case CXPClientState.Initializing:
+        case ClientState.Initializing:
             return 'info'
-        case CXPClientState.ActivateFailed:
+        case ClientState.ActivateFailed:
             return 'danger'
-        case CXPClientState.Active:
+        case ClientState.Active:
             return 'success'
-        case CXPClientState.ShuttingDown:
+        case ClientState.ShuttingDown:
             return 'warning'
-        case CXPClientState.Stopped:
+        case ClientState.Stopped:
             return 'danger'
     }
 }
@@ -201,7 +201,7 @@ export class ExtensionStatusPopover<S extends ConfigurationSubject, C extends Se
                 globalKeyBinding="X"
                 popoverElement={<ExtensionStatus {...this.props} />}
             >
-                <span className="text-muted">CXP</span>
+                <span className="text-muted">Ext</span>
             </PopoverButton>
         )
     }

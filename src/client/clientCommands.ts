@@ -1,5 +1,8 @@
-import { Controller } from 'cxp/module/environment/controller'
-import { ActionContributionClientCommandUpdateConfiguration, ConfigurationUpdateParams } from 'cxp/module/protocol'
+import { Controller } from '@sourcegraph/sourcegraph.proposed/module/environment/controller'
+import {
+    ActionContributionClientCommandUpdateConfiguration,
+    ConfigurationUpdateParams,
+} from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { isArray } from 'lodash-es'
 import { Subscription, throwError, Unsubscribable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
@@ -9,8 +12,9 @@ import { ConfiguredExtension } from '../extensions/extension'
 import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
 
 /**
- * Registers the builtin client commands that are required by CXP. See
- * {@link module:cxp/module/protocol/contribution.ActionContribution#command} for documentation.
+ * Registers the builtin client commands that are required for Sourcegraph extensions. See
+ * {@link module:@sourcegraph/sourcegraph.proposed.module/protocol/contribution.ActionContribution#command} for
+ * documentation.
  */
 export function registerBuiltinClientCommands<S extends ConfigurationSubject, C extends Settings>(
     context: Pick<Context<S, C>, 'configurationCascade' | 'updateExtensionSettings'>,

@@ -1,16 +1,19 @@
-import { ClientOptions } from 'cxp/module/client/client'
-import { ClientKey, Controller as BaseController } from 'cxp/module/environment/controller'
-import { Environment } from 'cxp/module/environment/environment'
-import { MessageTransports } from 'cxp/module/jsonrpc2/connection'
-import { BrowserConsoleTracer } from 'cxp/module/jsonrpc2/trace'
-import { Contributions, ExecuteCommandParams, MessageType } from 'cxp/module/protocol'
+import { ClientOptions } from '@sourcegraph/sourcegraph.proposed/module/client/client'
+import {
+    ClientKey,
+    Controller as BaseController,
+} from '@sourcegraph/sourcegraph.proposed/module/environment/controller'
+import { Environment } from '@sourcegraph/sourcegraph.proposed/module/environment/environment'
+import { MessageTransports } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/connection'
+import { BrowserConsoleTracer } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/trace'
+import { Contributions, ExecuteCommandParams, MessageType } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { Subject, Unsubscribable } from 'rxjs'
 import { filter, map, mergeMap } from 'rxjs/operators'
 import { Notification } from '../app/notifications/notification'
 import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
-import { CXPExtensionManifest } from '../schema/extension.schema'
+import { ExtensionManifest } from '../schema/extension.schema'
 import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
 import { getSavedClientTrace } from './client'
 import { registerBuiltinClientCommands, updateConfiguration } from './clientCommands'
@@ -18,8 +21,7 @@ import { ErrorHandler } from './errorHandler'
 import { log } from './log'
 
 /**
- * Extends the base CXP {@link BaseController} class to add functionality that is useful to this package's
- * consumers.
+ * Extends the {@link BaseController} class to add functionality that is useful to this package's consumers.
  */
 export class Controller<S extends ConfigurationSubject, C extends Settings> extends BaseController<
     ConfiguredExtension,
@@ -28,17 +30,18 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> exte
     /**
      * Global notification messages that should be displayed to the user, from the following sources:
      *
-     * - CXP window/showMessage notifications from extensions
+     * - window/showMessage notifications from extensions
      * - Errors thrown or returned in command invocation
      */
     public readonly notifications = new Subject<Notification>()
 
     /**
-     * Executes the command (registered in the CommandRegistry) specified in params. If an error is thrown, the error
-     * is returned *and* emitted on the {@link Controller#notifications} observable.
+     * Executes the command (registered in the CommandRegistry) specified in params. If an error is thrown, the
+     * error is returned *and* emitted on the {@link Controller#notifications} observable.
      *
      * All callers should execute commands using this method instead of calling
-     * {@link cxp:CommandRegistry#executeCommand} directly (to ensure errors are emitted as notifications).
+     * {@link @sourcegraph/sourcegraph.proposed:CommandRegistry#executeCommand} directly (to ensure errors are
+     * emitted as notifications).
      */
     public executeCommand(params: ExecuteCommandParams): Promise<any> {
         return this.registries.commands.executeCommand(params).catch(err => {
@@ -49,15 +52,15 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> exte
 }
 
 /**
- * React props or state containing the CXP controller. There should be only a single CXP controller for the whole
+ * React props or state containing the controller. There should be only a single controller for the whole
  * application.
  */
-export interface CXPControllerProps<S extends ConfigurationSubject, C extends Settings> {
+export interface ControllerProps<S extends ConfigurationSubject, C extends Settings> {
     /**
-     * The CXP controller, which is used to communicate with the extensions and manages extensions based on the CXP
+     * The controller, which is used to communicate with the extensions and manages extensions based on the
      * environment.
      */
-    cxpController: Controller<S, C>
+    extensionsController: Controller<S, C>
 }
 
 /**
@@ -102,7 +105,7 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
 }
 
 /**
- * Creates the CXP controller, which handles all CXP communication between the React app and CXP extension.
+ * Creates the controller, which handles all communication between the React app and Sourcegraph extensions.
  *
  * There should only be a single controller for the entire application. The controller's environment represents all
  * of the application state that the controller needs to know.
@@ -176,18 +179,18 @@ export function createController<S extends ConfigurationSubject, C extends Setti
             controller.environment.environment.subscribe(environment => log('info', 'env', environment))
         }
 
-        // Debug helpers: e.g., just run `cxp` in devtools to get a reference to this controller. (If multiple
+        // Debug helpers: e.g., just run `sx` in devtools to get a reference to this controller. (If multiple
         // controllers are created, this points to the last one created.)
-        if ('cxp' in window) {
-            delete (window as any).cxp
+        if ('sx' in window) {
+            delete (window as any).sx
         }
-        Object.defineProperty(window, 'cxp', {
+        Object.defineProperty(window, 'sx', {
             get: () => controller,
         })
-        if ('cxpenv' in window) {
-            delete (window as any).cxpenv
+        if ('sxenv' in window) {
+            delete (window as any).sxenv
         }
-        Object.defineProperty(window, 'cxpenv', {
+        Object.defineProperty(window, 'sxenv', {
             get: () => {
                 // This value is synchronously available because observable has an underlying
                 // BehaviorSubject source.
@@ -205,8 +208,9 @@ export function createController<S extends ConfigurationSubject, C extends Setti
 }
 
 /**
- * Registers the builtin client commands that are required by CXP. See
- * {@link module:cxp/module/protocol/contribution.ActionContribution#command} for documentation.
+ * Registers the builtin client commands that are required by Sourcegraph extensions. See
+ * {@link module:@sourcegraph/sourcegraph.proposed.module/protocol/contribution.ActionContribution#command} for
+ * documentation.
  */
 function registerExtensionContributions<S extends ConfigurationSubject, C extends Settings>(
     controller: Controller<S, C>
@@ -217,7 +221,7 @@ function registerExtensionContributions<S extends ConfigurationSubject, C extend
         map(extensions =>
             extensions
                 .map(({ manifest }) => manifest)
-                .filter((manifest): manifest is CXPExtensionManifest => manifest !== null && !isErrorLike(manifest))
+                .filter((manifest): manifest is ExtensionManifest => manifest !== null && !isErrorLike(manifest))
                 .map(({ contributes }) => contributes)
                 .filter((contributions): contributions is Contributions => !!contributions)
         )

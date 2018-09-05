@@ -1,19 +1,19 @@
 import {
     CloseAction,
     ErrorAction,
-    ErrorHandler as CXPErrorHandler,
-    InitializationFailedHandler,
-} from 'cxp/module/client/errorHandler'
-import { Message, ResponseError } from 'cxp/module/jsonrpc2/messages'
-import { InitializeError } from 'cxp/module/protocol'
+    ErrorHandler as _ErrorHandler,
+    InitializationFailedHandler as _InitializationFailedHandler,
+} from '@sourcegraph/sourcegraph.proposed/module/client/errorHandler'
+import { Message, ResponseError } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/messages'
+import { InitializeError } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { log } from './log'
 
-interface CXPInitializationFailedHandler {
-    initializationFailed: InitializationFailedHandler
+interface InitializationFailedHandler {
+    initializationFailed: _InitializationFailedHandler
 }
 
-/** The CXP client initializion-failed and error handler. */
-export class ErrorHandler implements CXPInitializationFailedHandler, CXPErrorHandler {
+/** The extension client initialization-failed and error handler. */
+export class ErrorHandler implements InitializationFailedHandler, _ErrorHandler {
     /** The number of connection times to record. */
     private static MAX_CONNECTION_TIMESTAMPS = 4
 

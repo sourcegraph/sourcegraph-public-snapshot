@@ -1,4 +1,4 @@
-import { MessageType } from 'cxp/module/protocol'
+import { MessageType } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { ErrorLike } from '../../errors'
 
 /**

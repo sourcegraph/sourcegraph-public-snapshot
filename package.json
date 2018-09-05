@@ -1,7 +1,7 @@
 {
   "name": "@sourcegraph/extensions-client-common",
   "version": "0.0.0-development",
-  "description": "Common TypeScript/React client application code for CXP extension configuration and management, used in Sourcegraph and \"Sourcegraph for X\" products",
+  "description": "Common TypeScript/React client application code for Sourcegraph extension configuration and management, used in Sourcegraph and \"Sourcegraph for X\" products",
   "author": "Sourcegraph",
   "license": "Apache-2.0",
   "repository": {
@@ -58,8 +58,8 @@
   },
   "sideEffects": false,
   "dependencies": {
+    "@sourcegraph/sourcegraph.proposed": "^12.0.0",
     "bootstrap": "^4.1.3",
-    "cxp": "^11.5.1",
     "lodash-es": "^4.17.10",
     "react": "^16.4.2",
     "react-router": "^4.3.1",

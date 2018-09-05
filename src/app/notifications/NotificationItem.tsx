@@ -1,4 +1,4 @@
-import { MessageType } from 'cxp/module/protocol'
+import { MessageType } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { upperFirst } from 'lodash-es'
 import * as React from 'react'
 import { isErrorLike } from '../../errors'

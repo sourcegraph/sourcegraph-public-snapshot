@@ -1,11 +1,11 @@
-import { ContributableMenu, Contributions } from 'cxp/module/protocol'
+import { ContributableMenu, Contributions } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { isArray, sortBy, uniq } from 'lodash-es'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
+import { ControllerProps } from '../client/controller'
 import { ExtensionsProps } from '../context'
-import { CXPControllerProps } from '../cxp/controller'
 import { ConfigurationSubject, Settings } from '../settings'
 import { HighlightedMatches } from '../ui/generic/HighlightedMatches'
 import { PopoverButton } from '../ui/generic/PopoverButton'
@@ -13,7 +13,7 @@ import { ActionItem, ActionItemProps } from './actions/ActionItem'
 import { getContributedActionItems } from './actions/contributions'
 
 interface Props<S extends ConfigurationSubject, C extends Settings>
-    extends CXPControllerProps<S, C>,
+    extends ControllerProps<S, C>,
         ExtensionsProps<S, C> {
     /** The menu whose commands to display. */
     menu: ContributableMenu
@@ -33,7 +33,7 @@ interface State {
     recentActions: string[] | null
 }
 
-/** Displays a list of commands contributed by CXP extensions for a specific menu. */
+/** Displays a list of commands contributed by extensions for a specific menu. */
 export class CommandList<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
     Props<S, C>,
     State
@@ -79,7 +79,7 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.cxpController.registries.contribution.contributions.subscribe(contributions =>
+            this.props.extensionsController.registries.contribution.contributions.subscribe(contributions =>
                 this.setState({ contributions })
             )
         )
@@ -149,7 +149,7 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
                                 />
                             }
                             onRun={this.onActionRun}
-                            cxpController={this.props.cxpController}
+                            extensionsController={this.props.extensionsController}
                             extensions={this.props.extensions}
                         />
                     ))
