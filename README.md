@@ -12,27 +12,18 @@ Build extensions that enhance reading and reviewing code in your existing tools.
 
 Sourcegraph extensions show useful info from services such as Codecov (for test coverage), logging/monitoring/performance tools, and more on GitHub (more code hosts coming soon) and Sourcegraph. It's like being able to use editor extensions when viewing and reviewing code on GitHub and your other favorite tools.
 
-[**🎥 Demo video**](https://www.youtube.com/watch?v=j1eWBa3rWH8).
+[**🎥 Demo video**](https://www.youtube.com/watch?v=j1eWBa3rWH8)
 
 ## Usage
 
+Try the first extension!
+
+- [Codecov: See code coverage information from Codecov on GitHub (more code hosts coming soon) and Sourcegraph](https://github.com/sourcegraph/sourcegraph-codecov#readme)
+- Coming soon: extensions that overlay information on GitHub and Sourcegraph related to logging, monitoring, performance, linting, profiling, security, discussions, and similar (from other popular 3rd-party dev tools)
+
 Sourcegraph extensions are in alpha. Please [file issues](https://github.com/sourcegraph/sourcegraph-extension-api/issues) for problems and feedback.
 
-### On Sourcegraph.com
-
-Try the [sourcegraph-codecov](https://github.com/sourcegraph/sourcegraph-codecov) extension by visiting any file that has Codecov code coverage, such as [tuf_store.go](https://sourcegraph.com/github.com/theupdateframework/notary@fb795b0bc868746ed2efa2cd7109346bc7ddf0a4/-/blob/server/storage/tuf_store.go).
-
-### On GitHub using the Chrome extension
-
-See [demo video](https://www.youtube.com/watch?v=j1eWBa3rWH8).
-
-1. Install [Sourcegraph for Chrome](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack)
-2. Open the Sourcegraph Chrome extension options page (by clicking the Sourcegraph icon in the Chrome toolbar)
-3. Check the box labeled **Use Sourcegraph extensions** to enable this alpha feature
-4. Visit [tuf_store.go on GitHub](https://github.com/theupdateframework/notary/blob/fb795b0bc868746ed2efa2cd7109346bc7ddf0a4/server/storage/tuf_store.go)
-5. Click the `Coverage: N%` button to show Codecov test coverage background colors on the file [sourcegraph-codecov](https://github.com/sourcegraph/sourcegraph-codecov), and scroll down to see them
-
-Support for more tools will be added soon.
+## Authoring extensions
 
 ## Background
 
@@ -73,10 +64,6 @@ Adapters make it so that Sourcegraph extensions can modify the UI of existing to
 - The open-source [Sourcegraph for Chrome](https://github.com/sourcegraph/browser-extensions) supports using Sourcegraph extensions on GitHub (support for other code hosts and browsers coming soon). It runs extensions by executing their JavaScript code on the client in a Web Worker.
 - Support for GitHub PRs and diffs, other code hosts, other code review tools, and more browsers is coming soon.
 - Sourcegraph for `$EDITOR` is coming soon (for VS Code, Vim, Emacs, Atom, Sublime, JetBrains, etc.).
-
-### Examples
-
-TODO
 
 ## Development
 
