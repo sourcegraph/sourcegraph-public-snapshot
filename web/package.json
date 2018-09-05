@@ -182,6 +182,6 @@
     "ts-key-enum": "^2.0.0",
     "uuid": "^3.2.1",
     "vscode-languageserver-types": "^3.12.0",
-    "whatwg-url": "^6.4.0"
+    "whatwg-url": "^7.0.0"
   }
 }
