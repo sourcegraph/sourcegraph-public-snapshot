@@ -16,10 +16,19 @@ Sourcegraph extensions show useful info from services such as Codecov (for test 
 
 ## Usage
 
-Try the first extension!
+Try the first extension! 🚀
 
-- [Codecov: See code coverage information from Codecov on GitHub (more code hosts coming soon) and Sourcegraph](https://github.com/sourcegraph/sourcegraph-codecov#readme)
-- Coming soon: extensions that overlay information on GitHub and Sourcegraph related to logging, monitoring, performance, linting, profiling, security, discussions, and similar (from other popular 3rd-party dev tools)
+- [Codecov extension: See code coverage information from Codecov on GitHub (more code hosts coming soon) and Sourcegraph](https://github.com/sourcegraph/sourcegraph-codecov#readme)
+
+Coming soon: extensions that overlay information (from popular 3rd-party dev tools) on GitHub and Sourcegraph related to:
+
+- logging
+- monitoring
+- performance
+- linting
+- profiling
+- security
+- PR and commit comments
 
 Sourcegraph extensions are in alpha. Please [file issues](https://github.com/sourcegraph/sourcegraph-extension-api/issues) for problems and feedback.
 
