@@ -1,6 +1,6 @@
+import { ControllerProps as GenericExtensionsControllerProps } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ExtensionsProps as GenericExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
-import { CXPControllerProps as GenericCXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { QueryResult } from '@sourcegraph/extensions-client-common/lib/graphql'
 import * as ECCGQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
@@ -14,10 +14,10 @@ import CaretDown from '@sourcegraph/icons/lib/CaretDown'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import Menu from '@sourcegraph/icons/lib/Menu'
 import Warning from '@sourcegraph/icons/lib/Warning'
-import { ClientOptions } from 'cxp/module/client/client'
-import { MessageTransports } from 'cxp/module/jsonrpc2/connection'
-import { createWebWorkerMessageTransports } from 'cxp/module/jsonrpc2/transports/webWorker'
-import { ConfigurationUpdateParams } from 'cxp/module/protocol'
+import { ClientOptions } from '@sourcegraph/sourcegraph.proposed/module/client/client'
+import { MessageTransports } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/connection'
+import { createWebWorkerMessageTransports } from '@sourcegraph/sourcegraph.proposed/module/jsonrpc2/transports/webWorker'
+import { ConfigurationUpdateParams } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import { isEqual } from 'lodash'
 import { concat, Observable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, take } from 'rxjs/operators'
@@ -29,7 +29,7 @@ import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
 import { isErrorLike } from '../util/errors'
 
-export interface CXPControllerProps extends GenericCXPControllerProps<ConfigurationSubject, Settings> {}
+export interface ExtensionsControllerProps extends GenericExtensionsControllerProps<ConfigurationSubject, Settings> {}
 
 export interface ConfigurationCascadeProps extends GenericConfigurationCascadeProps<ConfigurationSubject, Settings> {}
 

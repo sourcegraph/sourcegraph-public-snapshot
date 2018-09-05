@@ -1,14 +1,14 @@
 import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
 import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
-import { ContributableMenu } from 'cxp/module/protocol'
+import { ContributableMenu } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import * as H from 'history'
 import * as React from 'react'
 import * as GQL from '../backend/graphqlschema'
 import { ActionItem } from '../components/ActionItem'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
-import { CXPControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
@@ -106,7 +106,7 @@ export interface RepoHeaderContributionsLifecycleProps {
     }
 }
 
-interface Props extends ExtensionsProps, CXPControllerProps {
+interface Props extends ExtensionsProps, ExtensionsControllerProps {
     /**
      * The repository that this header is for.
      */
@@ -212,7 +212,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                 <ul className="navbar-nav">
                     <ActionsNavItems
                         menu={ContributableMenu.EditorTitle}
-                        cxpController={this.props.cxpController}
+                        extensionsController={this.props.extensionsController}
                         extensions={this.props.extensions}
                     />
                     {rightActions.map((a, i) => (

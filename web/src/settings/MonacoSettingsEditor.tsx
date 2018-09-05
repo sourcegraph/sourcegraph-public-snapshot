@@ -1,5 +1,5 @@
+import contributionSchema from '@sourcegraph/sourcegraph.proposed/lib/protocol/contribution.schema.json'
 import * as jsonc from '@sqs/jsonc-parser'
-import contributionSchema from 'cxp/lib/protocol/contribution.schema.json'
 import * as monaco from 'monaco-editor'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'

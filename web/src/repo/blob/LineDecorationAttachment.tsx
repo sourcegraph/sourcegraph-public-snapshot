@@ -1,4 +1,4 @@
-import { DecorationAttachmentRenderOptions } from 'cxp/module/protocol'
+import { DecorationAttachmentRenderOptions } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { AbsoluteRepoFile } from '..'

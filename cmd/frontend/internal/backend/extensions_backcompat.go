@@ -108,7 +108,7 @@ func init() {
 				readme += "\n\n## Status: unavailable\nThis language server is unavailable because no TCP address is specified for it in site configuration."
 			}
 
-			x := schema.CXPExtensionManifest{
+			x := schema.SourcegraphExtensionManifest{
 				Title:       title,
 				Description: description,
 				Readme:      readme,

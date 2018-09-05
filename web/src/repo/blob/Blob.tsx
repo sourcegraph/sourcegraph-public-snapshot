@@ -7,7 +7,7 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
-import { TextDocumentDecoration } from 'cxp/module/protocol'
+import { TextDocumentDecoration } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
@@ -18,8 +18,8 @@ import { Range } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { CXPComponentProps, USE_PLATFORM } from '../../cxp/CXPEnvironment'
-import { CXPControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { ExtensionsComponentProps, USE_PLATFORM } from '../../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
@@ -33,7 +33,12 @@ import { LineDecorationAttachment } from './LineDecorationAttachment'
  */
 const toPortalID = (line: number) => `blame-portal-${line}`
 
-interface BlobProps extends AbsoluteRepoFile, ModeSpec, ExtensionsProps, CXPComponentProps, CXPControllerProps {
+interface BlobProps
+    extends AbsoluteRepoFile,
+        ModeSpec,
+        ExtensionsProps,
+        ExtensionsComponentProps,
+        ExtensionsControllerProps {
     /** The raw content of the blob. */
     content: string
 
@@ -287,7 +292,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             combineLatest(modelChanges, locationPositions)
                 .pipe(filter(() => USE_PLATFORM))
                 .subscribe(([model, pos]) => {
-                    this.props.cxpOnComponentChange({
+                    this.props.extensionsOnComponentChange({
                         document: {
                             uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
                             languageId: model.mode,
@@ -301,7 +306,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                 })
         )
         // Clear the CXP state's component when the blob is no longer shown.
-        this.subscriptions.add(() => this.props.cxpOnComponentChange(null))
+        this.subscriptions.add(() => this.props.extensionsOnComponentChange(null))
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined

@@ -85,17 +85,6 @@ type BuiltinAuthProvider struct {
 	Type        string `json:"type"`
 }
 
-// CXPExtensionManifest description: The CXP extension manifest describes the extension and the features it provides.
-type CXPExtensionManifest struct {
-	ActivationEvents []string                `json:"activationEvents"`
-	Args             *map[string]interface{} `json:"args,omitempty"`
-	Contributes      *Contributions          `json:"contributes,omitempty"`
-	Description      string                  `json:"description,omitempty"`
-	Readme           string                  `json:"readme,omitempty"`
-	Title            string                  `json:"title,omitempty"`
-	Url              string                  `json:"url"`
-}
-
 // Contributions description: Features contributed by this extension. Extensions may also register certain types of contributions dynamically.
 type Contributions struct {
 	Configuration *jsonschema.Schema `json:"configuration,omitempty"`
@@ -353,4 +342,15 @@ type SiteConfiguration struct {
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.
 type SlackNotificationsConfig struct {
 	WebhookURL string `json:"webhookURL"`
+}
+
+// SourcegraphExtensionManifest description: The Sourcegraph extension manifest describes the extension and the features it provides.
+type SourcegraphExtensionManifest struct {
+	ActivationEvents []string                `json:"activationEvents"`
+	Args             *map[string]interface{} `json:"args,omitempty"`
+	Contributes      *Contributions          `json:"contributes,omitempty"`
+	Description      string                  `json:"description,omitempty"`
+	Readme           string                  `json:"readme,omitempty"`
+	Title            string                  `json:"title,omitempty"`
+	Url              string                  `json:"url"`
 }

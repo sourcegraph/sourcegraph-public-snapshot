@@ -35,7 +35,7 @@ registerLanguage('rust', require('highlight.js/lib/languages/rust'))
 registerLanguage('swift', require('highlight.js/lib/languages/swift'))
 
 import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
-import { createController as createCXPController } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
+import { createController as createExtensionsController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import {
     ConfigurationCascadeOrError,
@@ -46,10 +46,10 @@ import {
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import {
-    Component as CXPComponent,
-    EMPTY_ENVIRONMENT as CXP_EMPTY_ENVIRONMENT,
-} from 'cxp/module/environment/environment'
-import { URI } from 'cxp/module/types/textDocument'
+    Component as ExtensionsComponent,
+    EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT,
+} from '@sourcegraph/sourcegraph.proposed/module/environment/environment'
+import { URI } from '@sourcegraph/sourcegraph.proposed/module/types/textDocument'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
@@ -60,13 +60,17 @@ import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
-import { CXPComponentProps, CXPEnvironmentProps, USE_PLATFORM } from './cxp/CXPEnvironment'
-import { CXPRootProps } from './cxp/CXPRoot'
 import { LinkExtension } from './extension/Link'
+import {
+    ExtensionsComponentProps,
+    ExtensionsEnvironmentProps,
+    USE_PLATFORM,
+} from './extensions/environment/ExtensionsEnvironment'
+import { ExtensionsRootProps } from './extensions/environment/ExtensionsRoot'
 import {
     ConfigurationCascadeProps,
     createMessageTransports,
-    CXPControllerProps,
+    ExtensionsControllerProps,
     ExtensionsProps,
 } from './extensions/ExtensionsClientCommonContext'
 import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
@@ -84,10 +88,10 @@ interface LayoutProps
     extends RouteComponentProps<any>,
         ConfigurationCascadeProps,
         ExtensionsProps,
-        CXPEnvironmentProps,
-        CXPControllerProps,
-        CXPComponentProps,
-        CXPRootProps {
+        ExtensionsEnvironmentProps,
+        ExtensionsControllerProps,
+        ExtensionsComponentProps,
+        ExtensionsRootProps {
     user: GQL.IUser | null
 
     /**
@@ -161,7 +165,11 @@ const Layout: React.SFC<LayoutProps> = props => {
     )
 }
 
-interface AppState extends ConfigurationCascadeProps, ExtensionsProps, CXPEnvironmentProps, CXPControllerProps {
+interface AppState
+    extends ConfigurationCascadeProps,
+        ExtensionsProps,
+        ExtensionsEnvironmentProps,
+        ExtensionsControllerProps {
     error?: Error
     user?: GQL.IUser | null
 
@@ -204,8 +212,8 @@ class App extends React.Component<{}, AppState> {
             showHistoryPopover: false,
             configurationCascade: { subjects: null, merged: null },
             extensions,
-            cxpEnvironment: CXP_EMPTY_ENVIRONMENT,
-            cxpController: createCXPController(extensions.context, createMessageTransports),
+            extensionsEnvironment: EXTENSIONS_EMPTY_ENVIRONMENT,
+            extensionsController: createExtensionsController(extensions.context, createMessageTransports),
         }
     }
 
@@ -218,7 +226,7 @@ class App extends React.Component<{}, AppState> {
         )
 
         if (USE_PLATFORM) {
-            this.subscriptions.add(this.state.cxpController)
+            this.subscriptions.add(this.state.extensionsController)
 
             this.subscriptions.add(
                 this.state.extensions.context.configurationCascade.subscribe(
@@ -227,7 +235,7 @@ class App extends React.Component<{}, AppState> {
                 )
             )
 
-            // Keep CXP controller's extensions up-to-date.
+            // Keep the Sourcegraph extensions controller's extensions up-to-date.
             //
             // TODO(sqs): handle loading and errors
             this.subscriptions.add(
@@ -290,7 +298,7 @@ class App extends React.Component<{}, AppState> {
                 <Route path="/" render={this.renderLayout} />
             </BrowserRouter>,
             <Tooltip key={1} />,
-            USE_PLATFORM ? <Notifications key={2} cxpController={this.state.cxpController} /> : null,
+            USE_PLATFORM ? <Notifications key={2} extensionsController={this.state.extensionsController} /> : null,
         ]
     }
 
@@ -326,10 +334,10 @@ class App extends React.Component<{}, AppState> {
                 onHistoryPopoverToggle={this.onHistoryPopoverToggle}
                 configurationCascade={this.state.configurationCascade}
                 extensions={this.state.extensions}
-                cxpEnvironment={this.state.cxpEnvironment}
-                cxpOnComponentChange={this.cxpOnComponentChange}
-                cxpOnRootChange={this.cxpOnRootChange}
-                cxpController={this.state.cxpController}
+                extensionsEnvironment={this.state.extensionsEnvironment}
+                extensionsOnComponentChange={this.extensionsOnComponentChange}
+                extensionsOnRootChange={this.extensionsOnRootChange}
+                extensionsController={this.state.extensionsController}
             />
         )
     }
@@ -368,9 +376,9 @@ class App extends React.Component<{}, AppState> {
     ): void {
         this.setState(
             prevState => {
-                const update: Pick<AppState, 'configurationCascade' | 'cxpEnvironment'> = {
+                const update: Pick<AppState, 'configurationCascade' | 'extensionsEnvironment'> = {
                     configurationCascade,
-                    cxpEnvironment: prevState.cxpEnvironment,
+                    extensionsEnvironment: prevState.extensionsEnvironment,
                 }
                 if (
                     configurationCascade.subjects !== null &&
@@ -378,11 +386,12 @@ class App extends React.Component<{}, AppState> {
                     configurationCascade.merged !== null &&
                     !isErrorLike(configurationCascade.merged)
                 ) {
-                    // Only update CXP environment configuration if the configuration was successfully parsed.
+                    // Only update Sourcegraph extensions environment configuration if the configuration was
+                    // successfully parsed.
                     //
                     // TODO(sqs): Think through how this error should be handled.
-                    update.cxpEnvironment = {
-                        ...prevState.cxpEnvironment,
+                    update.extensionsEnvironment = {
+                        ...prevState.extensionsEnvironment,
                         configuration: {
                             subjects: configurationCascade.subjects.filter(
                                 (subject): subject is ConfiguredSubject<ConfigurationSubject, Settings> =>
@@ -394,33 +403,33 @@ class App extends React.Component<{}, AppState> {
                 }
                 return update
             },
-            () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
+            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
         )
     }
 
     private onViewerConfiguredExtensionsChange(viewerConfiguredExtensions: ConfiguredExtension[]): void {
         this.setState(
             prevState => ({
-                cxpEnvironment: {
-                    ...prevState.cxpEnvironment,
+                extensionsEnvironment: {
+                    ...prevState.extensionsEnvironment,
                     extensions: viewerConfiguredExtensions,
                 },
             }),
-            () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
+            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
         )
     }
 
-    private cxpOnComponentChange = (component: CXPComponent | null): void => {
+    private extensionsOnComponentChange = (component: ExtensionsComponent | null): void => {
         this.setState(
-            prevState => ({ cxpEnvironment: { ...prevState.cxpEnvironment, component } }),
-            () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
+            prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, component } }),
+            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
         )
     }
 
-    private cxpOnRootChange = (root: URI | null): void => {
+    private extensionsOnRootChange = (root: URI | null): void => {
         this.setState(
-            prevState => ({ cxpEnvironment: { ...prevState.cxpEnvironment, root } }),
-            () => this.state.cxpController.setEnvironment(this.state.cxpEnvironment)
+            prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, root } }),
+            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
         )
     }
 }

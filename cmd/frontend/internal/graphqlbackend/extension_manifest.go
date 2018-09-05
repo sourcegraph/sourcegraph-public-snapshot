@@ -12,7 +12,7 @@ type extensionManifestResolver struct {
 
 	// cache result because it is used by multiple fields
 	once   sync.Once
-	result *schema.CXPExtensionManifest
+	result *schema.SourcegraphExtensionManifest
 	err    error
 }
 
@@ -23,7 +23,7 @@ func newExtensionManifestResolver(raw *string) *extensionManifestResolver {
 	return &extensionManifestResolver{raw: *raw}
 }
 
-func (r *extensionManifestResolver) parse() (*schema.CXPExtensionManifest, error) {
+func (r *extensionManifestResolver) parse() (*schema.SourcegraphExtensionManifest, error) {
 	r.once.Do(func() {
 		r.err = jsonc.Unmarshal(r.raw, &r.result)
 	})

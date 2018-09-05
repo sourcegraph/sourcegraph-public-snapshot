@@ -8,7 +8,7 @@ import { NavLink } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { SIDEBAR_BUTTON_CLASS, SIDEBAR_CARD_CLASS, SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS } from '../components/Sidebar'
-import { USE_PLATFORM } from '../cxp/CXPEnvironment'
+import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 
 interface Props {
     history: H.History

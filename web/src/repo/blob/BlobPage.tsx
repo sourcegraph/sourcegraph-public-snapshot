@@ -10,8 +10,8 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { CXPComponentProps } from '../../cxp/CXPEnvironment'
-import { CXPControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { ExtensionsComponentProps } from '../../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
@@ -84,8 +84,8 @@ interface Props
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
         ExtensionsProps,
-        CXPComponentProps,
-        CXPControllerProps {
+        ExtensionsComponentProps,
+        ExtensionsControllerProps {
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -265,8 +265,8 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             rev={this.props.rev}
                             mode={this.props.mode}
                             extensions={this.props.extensions}
-                            cxpController={this.props.cxpController}
-                            cxpOnComponentChange={this.props.cxpOnComponentChange}
+                            extensionsController={this.props.extensionsController}
+                            extensionsOnComponentChange={this.props.extensionsOnComponentChange}
                             wrapCode={this.state.wrapCode}
                             renderMode={renderMode}
                             location={this.props.location}
@@ -293,7 +293,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     repoPath={this.props.repoPath}
                     commitID={this.props.commitID}
                     extensions={this.props.extensions}
-                    cxpController={this.props.cxpController}
+                    extensionsController={this.props.extensionsController}
                     position={
                         lprToRange(parseHash(this.props.location.hash))
                             ? lprToRange(parseHash(this.props.location.hash))!.start

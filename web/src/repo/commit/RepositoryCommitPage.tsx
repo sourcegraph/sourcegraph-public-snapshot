@@ -13,13 +13,13 @@ import { RouteComponentProps } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { FORCE_NO_CXP, getHover, getJumpURL } from '../../backend/features'
+import { FORCE_NO_EXTENSIONS, getHover, getJumpURL } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { CXPControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -62,7 +62,7 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props extends RouteComponentProps<{ revspec: string }>, ExtensionsProps, CXPControllerProps {
+interface Props extends RouteComponentProps<{ revspec: string }>, ExtensionsProps, ExtensionsControllerProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
@@ -126,8 +126,10 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             ),
             pushHistory: path => this.props.history.push(path),
             logTelemetryEvent,
-            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_CXP),
-            fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_CXP),
+            fetchHover: hoveredToken =>
+                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_EXTENSIONS),
+            fetchJumpURL: hoveredToken =>
+                getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_EXTENSIONS),
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
