@@ -5,7 +5,7 @@ import { Redirect } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
-import { SiteAdminSidebar } from './SiteAdminSidebar'
+import { SiteAdminSidebar, SiteAdminSideBarItems } from './SiteAdminSidebar'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
     <HeroPage
@@ -33,6 +33,7 @@ export interface SiteAdminAreaRoute {
 
 interface SiteAdminAreaProps extends RouteComponentProps<{}>, ExtensionsProps {
     routes: ReadonlyArray<SiteAdminAreaRoute>
+    sideBarItems: SiteAdminSideBarItems
     user: GQL.IUser | null
     isLightTheme: boolean
 }
@@ -65,12 +66,7 @@ export class SiteAdminArea extends React.Component<SiteAdminAreaProps> {
 
         return (
             <div className="site-admin-area area">
-                <SiteAdminSidebar
-                    className="area__sidebar"
-                    history={this.props.history}
-                    location={this.props.location}
-                    user={this.props.user}
-                />
+                <SiteAdminSidebar className="area__sidebar" items={this.props.sideBarItems} />
                 <div className="area__content">
                     <Switch>
                         {this.props.routes.map(({ render, path, exact }) => (

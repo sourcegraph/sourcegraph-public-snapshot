@@ -16,6 +16,7 @@ import { GlobalNavbar } from './nav/GlobalNavbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
+import { SiteAdminSideBarItems } from './site-admin/SiteAdminSidebar'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
@@ -26,6 +27,7 @@ export interface LayoutProps
         ExtensionsComponentProps,
         ExtensionsRootProps {
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
+    siteAdminSideBarItems: SiteAdminSideBarItems
 
     user: GQL.IUser | null
 

@@ -103,7 +103,9 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/site-admin',
-        render: props => <SiteAdminArea {...props} routes={props.siteAdminAreaRoutes} />,
+        render: props => (
+            <SiteAdminArea {...props} routes={props.siteAdminAreaRoutes} sideBarItems={props.siteAdminSideBarItems} />
+        ),
     },
     {
         path: '/password-reset',

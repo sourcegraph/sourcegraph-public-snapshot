@@ -70,11 +70,13 @@ import { createExtensionsContextController } from './extensions/ExtensionsClient
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
+import { SiteAdminSideBarItems } from './site-admin/SiteAdminSidebar'
 import { eventLogger } from './tracking/eventLogger'
 import { isErrorLike } from './util/errors'
 
 export interface SourcegraphWebAppProps {
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
+    siteAdminSideBarItems: SiteAdminSideBarItems
 }
 
 interface SourcegraphWebAppState
@@ -235,6 +237,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     {...routeComponentProps}
                                     user={user}
                                     siteAdminAreaRoutes={this.props.siteAdminAreaRoutes}
+                                    siteAdminSideBarItems={this.props.siteAdminSideBarItems}
                                     viewerSubject={viewerSubject}
                                     isLightTheme={this.state.isLightTheme}
                                     onThemeChange={this.onThemeChange}

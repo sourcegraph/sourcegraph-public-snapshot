@@ -2,100 +2,73 @@ import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import LockIcon from '@sourcegraph/icons/lib/Lock'
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
-import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../backend/graphqlschema'
 import { SIDEBAR_BUTTON_CLASS, SideBarGroup, SideBarGroupHeader, SideBarNavItem } from '../components/Sidebar'
 import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 
-export interface SiteAdminNavbarItem {
+export interface SiteAdminSideBarItem {
+    /** The text of the item */
     label: string
-    link: {
-        to: string
-        exact: boolean
-    }
+    /** The link destination */
+    to: string
 }
 
-export interface SiteAdminNavbarGroup {
-    title: {
-        label: string
-        icon: Icon
-    }
-    items: ReadonlyArray<SiteAdminNavbarItem>
-}
+export type SiteAdminSideBarItems = Record<
+    'primary' | 'secondary' | 'registry' | 'auth' | 'other',
+    ReadonlyArray<SiteAdminSideBarItem>
+>
 
 export interface SiteAdminSidebarProps {
-    history: H.History
-    location: H.Location
+    /** The items for the side bar, by group */
+    items: SiteAdminSideBarItems
     className: string
-    user: GQL.IUser
 }
 
 /**
  * Sidebar for the site admin area.
  */
-export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className }) => (
+export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, items }) => (
     <div className={`site-admin-sidebar ${className}`}>
         <SideBarGroup>
             <SideBarGroupHeader icon={ServerIcon} label="Site admin" />
-            <SideBarNavItem to="/site-admin" exact={true}>
-                Overview
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/configuration" exact={true}>
-                Configuration
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/repositories" exact={true}>
-                Repositories
-            </SideBarNavItem>
+            {items.primary.map(({ label, to }) => (
+                <SideBarNavItem to={to} exact={true}>
+                    {label}
+                </SideBarNavItem>
+            ))}
         </SideBarGroup>
         <SideBarGroup>
-            <SideBarNavItem to="/site-admin/users" exact={true}>
-                Users
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/organizations" exact={true}>
-                Organizations
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/global-settings" exact={true}>
-                Global settings
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/code-intelligence" exact={true}>
-                Code intelligence
-            </SideBarNavItem>
+            {items.secondary.map(({ label, to }) => (
+                <SideBarNavItem to={to} exact={true}>
+                    {label}
+                </SideBarNavItem>
+            ))}
         </SideBarGroup>
         <SideBarGroup>
             <SideBarGroupHeader icon={LockIcon} label="Auth" />
-            <SideBarNavItem to="/site-admin/auth/providers" exact={true}>
-                Providers
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/auth/external-accounts" exact={true}>
-                External accounts
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/tokens" exact={true}>
-                Access tokens
-            </SideBarNavItem>
+            {items.auth.map(({ label, to }) => (
+                <SideBarNavItem to={to} exact={true}>
+                    {label}
+                </SideBarNavItem>
+            ))}
         </SideBarGroup>
         {USE_PLATFORM && (
             <SideBarGroup>
                 <SideBarGroupHeader icon={PuzzleIcon} label="Registry" />
-                <SideBarNavItem to="/site-admin/registry/extensions" exact={true}>
-                    Extensions
-                </SideBarNavItem>
+                {items.registry.map(({ label, to }) => (
+                    <SideBarNavItem to={to} exact={true}>
+                        {label}
+                    </SideBarNavItem>
+                ))}
             </SideBarGroup>
         )}
         <SideBarGroup>
-            <SideBarNavItem to="/site-admin/updates" exact={true}>
-                Updates
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/analytics" exact={true}>
-                Analytics
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/surveys" exact={true}>
-                User surveys
-            </SideBarNavItem>
-            <SideBarNavItem to="/site-admin/pings" exact={true}>
-                Pings
-            </SideBarNavItem>
+            {items.other.map(({ label, to }) => (
+                <SideBarNavItem to={to} exact={true}>
+                    {label}
+                </SideBarNavItem>
+            ))}
         </SideBarGroup>
 
         <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
