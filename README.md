@@ -64,7 +64,7 @@ After writing and publishing an extension (using `src extensions publish` in the
 
 The Sourcegraph extension API (this repository) is the open-source extension API that Sourcegraph extensions are written against. It exposes concepts present in all clients, such as notifications of opened/closed documents, adding buttons to toolbars, changing the background or gutter color of lines, showing hover tooltips, etc.
 
-The (temporarily named) [@sourcegraph/sourcegraph.proposed](https://npmjs.com/package/@sourcegraph/sourcegraph.proposed) npm package (published from this repository) exposes this as a TypeScript/JavaScript API that is familiar to anyone who has written a [VS Code](https://code.visualstudio.com/) extension.
+The [sourcegraph](https://npmjs.com/package/sourcegraph) npm package (published from this repository) exposes this as a TypeScript/JavaScript API that is familiar to anyone who has written a [VS Code](https://code.visualstudio.com/) extension.
 
 #### Adapters to "polyfill" existing tools to run Sourcegraph extensions
 

@@ -1,5 +1,5 @@
 {
-  "name": "@sourcegraph/sourcegraph.proposed",
+  "name": "sourcegraph",
   "version": "0.0.0-development",
   "description": "Sourcegraph extension API: build extensions that enhance reading and reviewing code in your existing tools",
   "author": "Sourcegraph",
