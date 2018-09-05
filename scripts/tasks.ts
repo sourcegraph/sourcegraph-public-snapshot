@@ -4,8 +4,8 @@ import path from 'path'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import { Stats } from 'webpack'
-import extensionInfo from '../chrome/extension.info.json'
-import schema from '../chrome/schema.json'
+import extensionInfo from '../src/extension/manifest.spec.json'
+import schema from '../src/extension/schema.json'
 
 export type BuildEnv = 'dev' | 'prod'
 
@@ -31,8 +31,8 @@ export function copyAssets(env: BuildEnv): void {
     const dir = 'build/dist'
     shelljs.rm('-rf', dir)
     shelljs.mkdir('-p', dir)
-    shelljs.cp('-R', 'chrome/assets/*', dir)
-    shelljs.cp('-R', 'chrome/views/*', dir)
+    shelljs.cp('-R', 'src/extension/assets/*', dir)
+    shelljs.cp('-R', 'src/extension/views/*', dir)
     signale.success('Assets copied')
 }
 

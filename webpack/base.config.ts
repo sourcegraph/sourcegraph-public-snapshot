@@ -5,22 +5,22 @@ import * as webpack from 'webpack'
 
 const buildEntry = (...files) => files.map(file => path.join(__dirname, file))
 
-const contentEntry = '../pre/content.entry.js'
-const backgroundEntry = '../pre/background.entry.js'
-const pageEntry = '../pre/page.entry.js'
-const extEntry = '../pre/extension.entry.js'
+const contentEntry = '../src/config/content.entry.js'
+const backgroundEntry = '../src/config/background.entry.js'
+const pageEntry = '../src/config/page.entry.js'
+const extEntry = '../src/config/extension.entry.js'
 
 export default {
     entry: {
-        background: buildEntry(extEntry, backgroundEntry, '../chrome/extension/background.tsx'),
-        link: buildEntry(extEntry, contentEntry, '../chrome/extension/link.tsx'),
-        options: buildEntry(extEntry, backgroundEntry, '../chrome/extension/options.tsx'),
-        extensions: buildEntry(extEntry, backgroundEntry, '../chrome/extension/extensions.tsx'),
-        inject: buildEntry(extEntry, contentEntry, '../chrome/extension/inject.tsx'),
-        phabricator: buildEntry(pageEntry, '../app/phabricator/extension.tsx'),
+        background: buildEntry(extEntry, backgroundEntry, '../src/extension/scripts/background.tsx'),
+        link: buildEntry(extEntry, contentEntry, '../src/extension/scripts/link.tsx'),
+        options: buildEntry(extEntry, backgroundEntry, '../src/extension/scripts/options.tsx'),
+        extensions: buildEntry(extEntry, backgroundEntry, '../src/extension/scripts/extensions.tsx'),
+        inject: buildEntry(extEntry, contentEntry, '../src/extension/scripts/inject.tsx'),
+        phabricator: buildEntry(pageEntry, '../src/libs/phabricator/extension.tsx'),
 
         bootstrap: path.join(__dirname, '../node_modules/bootstrap/dist/css/bootstrap.css'),
-        style: path.join(__dirname, '../app/app.scss'),
+        style: path.join(__dirname, '../src/shared/app.scss'),
     },
     output: {
         path: path.join(__dirname, '../build/dist/js'),
@@ -67,7 +67,7 @@ export default {
                     {
                         loader: 'sass-loader',
                         options: {
-                            includePaths: [__dirname + '/node_modules'],
+                            includePaths: [path.resolve(__dirname, '..', '/node_modules')],
                             importer: sassImportOnce,
                             importOnce: {
                                 css: true,

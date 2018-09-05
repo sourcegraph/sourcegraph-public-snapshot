@@ -40,18 +40,26 @@ It works as follows:
 
 ## Project Layout
 
-- `app/`
-  - application code, e.g. injected onto GitHub (as a content script)
-- `chrome/`
-  - entrypoint for Chrome extension. Includes bundled assets, background scripts, options)
-- `phabricator/`
-  - entrypoint for Phabricator extension. The Phabricator extension is injected by Phabricator (not Chrome)
+- `src/extension/`
+  - Entrypoint for browser extension builds. (Includes bundled assets, background scripts, options)
+- `src/browser`
+  - [A wrapper around the browser APIs.](./browser/README.md)
+- `src/libs/`
+  - Isolated pieces of the browser extension. This contains code that is specific to code hosts and separate "mini applications" included in the browser extension such as the `src` omnibar cli.
+- `src/libs/phabricator/`
+  - Entrypoint for Phabricator extension. This is used by the browser extension and [sourcegraph/phabricator-extension](https://github.com/sourcegraph/phabricator-extension).
+- `src/shared/`
+  - Code shared by the extension and the libraries. Ideally, nothing in here should reach into any other directory.
+- `src/config/`
+  - Polyfills and configuration/plumbing code that is bundled via webpack. The configuration code adds properties to `window` that make it easier to tell what environment the script is running in. This is useful because the code can be run in the content script, background, options page, or in the actual page when injected by Phabricator and each environment will have different ways to do different things.
+- `cypress`
+  - E2e test suite.
 - `scripts/`
-  - development scripts
-- `test/`
-  - test code
+  - Development scripts.
 - `webpack`
-  - build configs
+  - Build configs.
+- `build`
+  - Generated directory containing the output from webpack and the generated bundles for each browser.
 
 ## Requirements
 
