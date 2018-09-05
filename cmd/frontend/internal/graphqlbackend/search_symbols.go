@@ -60,7 +60,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query,
 		if ctx.Err() != nil {
 			break
 		}
-		if len(repoRevs.revspecs()) == 0 {
+		if len(repoRevs.RevSpecs()) == 0 {
 			continue
 		}
 		run.Acquire()
@@ -68,7 +68,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query,
 			defer run.Release()
 			repoSymbols, repoErr := searchSymbolsInRepo(ctx, repoRevs, args.Pattern, query, limit)
 			if repoErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRevs.repo.URI)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
+				tr.LogFields(otlog.String("repo", string(repoRevs.Repo.URI)), otlog.String("repoErr", repoErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(repoErr)), otlog.Bool("temporary", errcode.IsTemporary(repoErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()
@@ -80,7 +80,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query,
 					run.Error(repoErr)
 				}
 			} else {
-				common.searched = append(common.searched, repoRevs.repo)
+				common.searched = append(common.searched, repoRevs.Repo)
 			}
 			if repoSymbols != nil {
 				res = append(res, repoSymbols...)
@@ -99,7 +99,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query,
 	return res, common, err
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, patternInfo *search.PatternInfo, query query.Query, limit int) (res []*fileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *RepositoryRevisions, patternInfo *search.PatternInfo, query query.Query, limit int) (res []*fileMatchResolver, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {
@@ -108,26 +108,26 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 		}
 		span.Finish()
 	}()
-	span.SetTag("repo", string(repoRevs.repo.URI))
+	span.SetTag("repo", string(repoRevs.Repo.URI))
 
-	inputRev := repoRevs.revspecs()[0]
+	inputRev := repoRevs.RevSpecs()[0]
 	span.SetTag("rev", inputRev)
 	// Do not trigger a repo-updater lookup (e.g.,
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := git.ResolveRevision(ctx, repoRevs.gitserverRepo, nil, inputRev, nil)
+	commitID, err := git.ResolveRevision(ctx, repoRevs.GitserverRepo, nil, inputRev, nil)
 	if err != nil {
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := uri.Parse("git://" + string(repoRevs.repo.URI) + "?" + url.QueryEscape(inputRev))
+	baseURI, err := uri.Parse("git://" + string(repoRevs.Repo.URI) + "?" + url.QueryEscape(inputRev))
 	if err != nil {
 		return nil, err
 	}
 
 	symbols, err := backend.Symbols.ListTags(ctx, protocol.SearchArgs{
-		Repo:            repoRevs.repo.URI,
+		Repo:            repoRevs.Repo.URI,
 		CommitID:        commitID,
 		Query:           patternInfo.Pattern,
 		IsCaseSensitive: patternInfo.IsCaseSensitive,
@@ -140,7 +140,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, pat
 	fileMatches := make([]*fileMatchResolver, 0)
 	for _, symbol := range symbols {
 		commit := &gitCommitResolver{
-			repo:     &repositoryResolver{repo: repoRevs.repo},
+			repo:     &repositoryResolver{repo: repoRevs.Repo},
 			oid:      gitObjectID(commitID),
 			inputRev: &inputRev,
 			// NOTE: Not all fields are set, for performance.

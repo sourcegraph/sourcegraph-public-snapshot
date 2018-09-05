@@ -50,8 +50,8 @@ func searchRepositories(ctx context.Context, args *repoSearchArgs, q query.Query
 			common.limitHit = true
 			break
 		}
-		if pattern.MatchString(string(repo.repo.URI)) {
-			results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.repo}})
+		if pattern.MatchString(string(repo.Repo.URI)) {
+			results = append(results, &searchResultResolver{repo: &repositoryResolver{repo: repo.Repo}})
 		}
 	}
 	return results, common, nil

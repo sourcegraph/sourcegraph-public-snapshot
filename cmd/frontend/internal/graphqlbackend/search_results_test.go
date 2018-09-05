@@ -341,8 +341,8 @@ func TestSearchRevspecs(t *testing.T) {
 		specs    []string
 		repo     string
 		err      error
-		matched  []revspecOrRefGlob
-		clashing []revspecOrRefGlob
+		matched  []RevisionSpecifier
+		clashing []RevisionSpecifier
 	}
 
 	tests := []testCase{
@@ -351,7 +351,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{"foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []revspecOrRefGlob{{revspec: ""}},
+			matched:  []RevisionSpecifier{{RevSpec: ""}},
 			clashing: nil,
 		},
 		testCase{
@@ -359,7 +359,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []revspecOrRefGlob{{revspec: "123456"}},
+			matched:  []RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		testCase{
@@ -367,7 +367,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@123456", "foo"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []revspecOrRefGlob{{revspec: "123456"}},
+			matched:  []RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		testCase{
@@ -375,7 +375,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o", "foo@123456"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []revspecOrRefGlob{{revspec: "123456"}},
+			matched:  []RevisionSpecifier{{RevSpec: "123456"}},
 			clashing: nil,
 		},
 		testCase{
@@ -384,14 +384,14 @@ func TestSearchRevspecs(t *testing.T) {
 			repo:     "foo",
 			err:      nil,
 			matched:  nil,
-			clashing: []revspecOrRefGlob{{revspec: "123456"}, {revspec: "234567"}},
+			clashing: []RevisionSpecifier{{RevSpec: "123456"}, {RevSpec: "234567"}},
 		},
 		testCase{
 			descr:    "overlapping revspecs",
 			specs:    []string{".*o@a:b", "foo@b:c"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []revspecOrRefGlob{{revspec: "b"}},
+			matched:  []RevisionSpecifier{{RevSpec: "b"}},
 			clashing: nil,
 		},
 		testCase{
@@ -399,7 +399,7 @@ func TestSearchRevspecs(t *testing.T) {
 			specs:    []string{".*o@a:b:c", "foo@b:c:d"},
 			repo:     "foo",
 			err:      nil,
-			matched:  []revspecOrRefGlob{{revspec: "b"}, {revspec: "c"}},
+			matched:  []RevisionSpecifier{{RevSpec: "b"}, {RevSpec: "c"}},
 			clashing: nil,
 		},
 		testCase{

@@ -9,22 +9,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/types"
 )
 
-// revpecOrRefGlob represents either a revspec or a ref glob. At most one field is set. The default
-// branch is represented by all fields being empty.
-type revspecOrRefGlob struct {
-	revspec        string
-	refGlob        string
-	excludeRefGlob string
+// RevisionSpecifier represents either a revspec or a ref glob. At most one
+// field is set. The default branch is represented by all fields being empty.
+type RevisionSpecifier struct {
+	// RevSpec is a revision range specifier suitable for passing to git. See
+	// the manpage gitrevisions(7).
+	RevSpec string
+
+	// RefGlob is a reference glob to pass to git. See the documentation for
+	// "--glob" in git-log.
+	RefGlob string
+
+	// ExcludeRefGlob is a glob for references to exclude. See the
+	// documentation for "--exclude" in git-log.
+	ExcludeRefGlob string
 }
 
-func (r revspecOrRefGlob) String() string {
-	if r.excludeRefGlob != "" {
-		return "*!" + r.excludeRefGlob
+func (r RevisionSpecifier) String() string {
+	if r.ExcludeRefGlob != "" {
+		return "*!" + r.ExcludeRefGlob
 	}
-	if r.refGlob != "" {
-		return "*" + r.refGlob
+	if r.RefGlob != "" {
+		return "*" + r.RefGlob
 	}
-	return r.revspec
+	return r.RevSpec
 }
 
 // Less compares two revspecOrRefGlob entities, suitable for use
@@ -32,26 +40,27 @@ func (r revspecOrRefGlob) String() string {
 //
 // possibly-undesired: this results in treating an entity with
 // no revspec, but a refGlob, as "earlier" than any revspec.
-func (r1 revspecOrRefGlob) Less(r2 revspecOrRefGlob) bool {
-	if r1.revspec != r2.revspec {
-		return r1.revspec < r2.revspec
+func (r1 RevisionSpecifier) Less(r2 RevisionSpecifier) bool {
+	if r1.RevSpec != r2.RevSpec {
+		return r1.RevSpec < r2.RevSpec
 	}
-	if r1.refGlob != r2.refGlob {
-		return r1.refGlob < r2.refGlob
+	if r1.RefGlob != r2.RefGlob {
+		return r1.RefGlob < r2.RefGlob
 	}
-	return r1.excludeRefGlob < r2.excludeRefGlob
+	return r1.ExcludeRefGlob < r2.ExcludeRefGlob
 }
 
-// repositoryRevisions specifies a repository and 0 or more revspecs and ref globs.
-// If no revspecs and no ref globs are specified, then the repository's default branch
-// is used.
-type repositoryRevisions struct {
-	repo          *types.Repo
-	gitserverRepo gitserver.Repo // URL field is optional (see (gitserver.ExecRequest).URL field for behavior)
-	revs          []revspecOrRefGlob
+// RepositoryRevisions specifies a repository and 0 or more revspecs and ref
+// globs.  If no revspecs and no ref globs are specified, then the
+// repository's default branch is used.
+type RepositoryRevisions struct {
+	Repo *types.Repo
+	Revs []RevisionSpecifier
+
+	GitserverRepo gitserver.Repo // URL field is optional (see (gitserver.ExecRequest).URL field for behavior)
 }
 
-// parseRepositoryRevisions parses strings that refer to a repository and 0
+// ParseRepositoryRevisions parses strings that refer to a repository and 0
 // or more revspecs. The format is:
 //
 //   repo@revs
@@ -70,7 +79,7 @@ type repositoryRevisions struct {
 // - 'foo@*bar' refers to the 'foo' repo and all refs matching the glob 'bar/*',
 //   because git interprets the ref glob 'bar' as being 'bar/*' (see `man git-log`
 //   section on the --glob flag)
-func parseRepositoryRevisions(repoAndOptionalRev string) (api.RepoURI, []revspecOrRefGlob) {
+func ParseRepositoryRevisions(repoAndOptionalRev string) (api.RepoURI, []RevisionSpecifier) {
 	i := strings.Index(repoAndOptionalRev, "@")
 	if i == -1 {
 		// return an empty slice to indicate that there's no revisions; callers
@@ -78,47 +87,47 @@ func parseRepositoryRevisions(repoAndOptionalRev string) (api.RepoURI, []revspec
 		// cases where two repo specs both match the same repository, and only one
 		// specifies a revspec, which normally implies "master" but in that case
 		// really means "didn't specify"
-		return api.RepoURI(repoAndOptionalRev), []revspecOrRefGlob{}
+		return api.RepoURI(repoAndOptionalRev), []RevisionSpecifier{}
 	}
 
 	repo := api.RepoURI(repoAndOptionalRev[:i])
-	var revs []revspecOrRefGlob
+	var revs []RevisionSpecifier
 	for _, part := range strings.Split(repoAndOptionalRev[i+1:], ":") {
 		if part == "" {
 			continue
 		}
-		var rev revspecOrRefGlob
+		var rev RevisionSpecifier
 		if strings.HasPrefix(part, "*!") {
-			rev.excludeRefGlob = part[2:]
+			rev.ExcludeRefGlob = part[2:]
 		} else if strings.HasPrefix(part, "*") {
-			rev.refGlob = part[1:]
+			rev.RefGlob = part[1:]
 		} else {
-			rev.revspec = part
+			rev.RevSpec = part
 		}
 		revs = append(revs, rev)
 	}
 	if len(revs) == 0 {
-		revs = []revspecOrRefGlob{{revspec: ""}} // default branch
+		revs = []RevisionSpecifier{{RevSpec: ""}} // default branch
 	}
 	return repo, revs
 }
 
-func (r repositoryRevisions) String() string {
-	if len(r.revs) == 0 {
-		return string(r.repo.URI)
+func (r RepositoryRevisions) String() string {
+	if len(r.Revs) == 0 {
+		return string(r.Repo.URI)
 	}
 
-	parts := make([]string, len(r.revs))
-	for i, rev := range r.revs {
+	parts := make([]string, len(r.Revs))
+	for i, rev := range r.Revs {
 		parts[i] = rev.String()
 	}
-	return string(r.repo.URI) + "@" + strings.Join(parts, ":")
+	return string(r.Repo.URI) + "@" + strings.Join(parts, ":")
 }
 
-func (r *repositoryRevisions) revspecs() []string {
+func (r *RepositoryRevisions) RevSpecs() []string {
 	var revspecs []string
-	for _, rev := range r.revs {
-		revspecs = append(revspecs, rev.revspec)
+	for _, rev := range r.Revs {
+		revspecs = append(revspecs, rev.RevSpec)
 	}
 	return revspecs
 }

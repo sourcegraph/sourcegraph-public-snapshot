@@ -144,24 +144,24 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { mockSearchFilesInRepos = nil }()
 
 		var calledSearchFilesFoo, calledSearchFilesRepo3 bool
-		mockSearchFilesForRepo = func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
+		mockSearchFilesForRepo = func(matcher matcher, repoRevs RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
 			}
-			if repoRevs.repo.URI == "foo-repo1" {
+			if repoRevs.Repo.URI == "foo-repo1" {
 				calledSearchFilesFoo = true
 				return []*searchSuggestionResolver{
 					{result: &gitTreeEntryResolver{path: "dir/foo-repo1-file-name-match", commit: &gitCommitResolver{repo: &repositoryResolver{repo: &types.Repo{URI: "r"}}}}, score: 1},
 				}, nil
-			} else if repoRevs.repo.URI == "repo3" {
+			} else if repoRevs.Repo.URI == "repo3" {
 				calledSearchFilesRepo3 = true
 				return []*searchSuggestionResolver{
 					{result: &gitTreeEntryResolver{path: "dir/foo-repo3-file-name-match", commit: &gitCommitResolver{repo: &repositoryResolver{repo: &types.Repo{URI: "r"}}}}, score: 2},
 				}, nil
 			}
-			t.Errorf("got %q, want %q or %q", repoRevs.repo.URI, "foo-repo1", "repo3")
+			t.Errorf("got %q, want %q or %q", repoRevs.Repo.URI, "foo-repo1", "repo3")
 			return nil, nil
 		}
 		defer func() { mockSearchFilesForRepo = nil }()
@@ -217,13 +217,13 @@ func TestSearchSuggestions(t *testing.T) {
 			return []*types.Repo{{URI: "foo-repo"}}, nil
 		}
 		calledSearchFiles := false
-		mockSearchFilesForRepo = func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
+		mockSearchFilesForRepo = func(matcher matcher, repoRevs RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
 			calledSearchFiles = true
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
 			}
-			if want := api.RepoURI("foo-repo"); repoRevs.repo.URI != want {
-				t.Errorf("got %q, want %q", repoRevs.repo.URI, want)
+			if want := api.RepoURI("foo-repo"); repoRevs.Repo.URI != want {
+				t.Errorf("got %q, want %q", repoRevs.Repo.URI, want)
 			}
 			return []*searchSuggestionResolver{
 				{result: &gitTreeEntryResolver{path: "dir/file", commit: &gitCommitResolver{repo: &repositoryResolver{repo: &types.Repo{URI: "r"}}}}, score: 1},
@@ -255,13 +255,13 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { db.Mocks = db.MockStores{} }()
 
 		calledSearchFiles := false
-		mockSearchFilesForRepo = func(matcher matcher, repoRevs repositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
+		mockSearchFilesForRepo = func(matcher matcher, repoRevs RepositoryRevisions, limit int, includeDirs bool) ([]*searchSuggestionResolver, error) {
 			calledSearchFiles = true
 			if want := ""; matcher.query != want {
 				t.Errorf("got %q, want %q", matcher.query, want)
 			}
-			if want := api.RepoURI("foo-repo"); repoRevs.repo.URI != want {
-				t.Errorf("got %q, want %q", repoRevs.repo.URI, want)
+			if want := api.RepoURI("foo-repo"); repoRevs.Repo.URI != want {
+				t.Errorf("got %q, want %q", repoRevs.Repo.URI, want)
 			}
 			return []*searchSuggestionResolver{
 				{result: &gitTreeEntryResolver{path: "dir/bar-file", commit: &gitCommitResolver{repo: &repositoryResolver{repo: &types.Repo{URI: "r"}}}}, score: 1},

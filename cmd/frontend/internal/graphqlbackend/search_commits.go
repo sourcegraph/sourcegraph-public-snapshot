@@ -36,9 +36,9 @@ func (r *commitSearchResultResolver) SourceRefs() []*gitRefResolver      { retur
 func (r *commitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResultResolver) DiffPreview() *highlightedString    { return r.diffPreview }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoRevs RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
@@ -57,9 +57,9 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, 
 	})
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs RepositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitLogInRepo != nil {
 		return mockSearchCommitLogInRepo(ctx, repoRevs, info, query)
 	}
@@ -79,7 +79,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 }
 
 type commitSearchOp struct {
-	repoRevs           repositoryRevisions
+	repoRevs           RepositoryRevisions
 	info               *search.PatternInfo
 	query              query.Query
 	diff               bool
@@ -95,7 +95,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		tr.Finish()
 	}()
 
-	repo := op.repoRevs.repo
+	repo := op.repoRevs.Repo
 	maxResults := int(op.info.FileMatchLimit)
 
 	args := []string{
@@ -114,24 +114,24 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		args = append(args, "--regexp-ignore-case")
 	}
 
-	for _, rev := range op.repoRevs.revs {
+	for _, rev := range op.repoRevs.Revs {
 		switch {
-		case rev.revspec != "":
-			if strings.HasPrefix(rev.revspec, "-") {
+		case rev.RevSpec != "":
+			if strings.HasPrefix(rev.RevSpec, "-") {
 				// A revspec starting with "-" would be interpreted as a `git log` flag.
 				// It would not be a security vulnerability because the flags are checked
 				// against a whitelist, but it could cause unexpected errors by (e.g.)
 				// changing the format of `git log` to a format that our parser doesn't
 				// expect.
-				return nil, false, false, fmt.Errorf("invalid revspec: %q", rev.revspec)
+				return nil, false, false, fmt.Errorf("invalid revspec: %q", rev.RevSpec)
 			}
-			args = append(args, rev.revspec)
+			args = append(args, rev.RevSpec)
 
-		case rev.refGlob != "":
-			args = append(args, "--glob="+rev.refGlob)
+		case rev.RefGlob != "":
+			args = append(args, "--glob="+rev.RefGlob)
 
-		case rev.excludeRefGlob != "":
-			args = append(args, "--exclude="+rev.excludeRefGlob)
+		case rev.ExcludeRefGlob != "":
+			args = append(args, "--exclude="+rev.ExcludeRefGlob)
 		}
 	}
 
@@ -199,7 +199,7 @@ func searchCommitsInRepo(ctx context.Context, op commitSearchOp) (results []*com
 		return nil, false, false, err
 	}
 
-	rawResults, complete, err := git.RawLogDiffSearch(ctx, op.repoRevs.gitserverRepo, git.RawLogDiffSearchOptions{
+	rawResults, complete, err := git.RawLogDiffSearch(ctx, op.repoRevs.GitserverRepo, git.RawLogDiffSearchOptions{
 		Query: op.textSearchOptions,
 		Paths: git.PathOptions{
 			IncludePatterns: op.info.IncludePatterns,
@@ -311,7 +311,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query q
 	)
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
-		go func(repoRev repositoryRevisions) {
+		go func(repoRev RepositoryRevisions) {
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitDiffsInRepo(ctx, repoRev, args.Pattern, query)
 			if ctx.Err() == context.Canceled {
@@ -321,7 +321,7 @@ func searchCommitDiffsInRepos(ctx context.Context, args *repoSearchArgs, query q
 			}
 			repoTimedOut = repoTimedOut || ctx.Err() == context.DeadlineExceeded
 			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+				tr.LogFields(otlog.String("repo", string(repoRev.Repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()
@@ -372,7 +372,7 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query que
 	)
 	for _, repoRev := range args.Repos {
 		wg.Add(1)
-		go func(repoRev repositoryRevisions) {
+		go func(repoRev RepositoryRevisions) {
 			defer wg.Done()
 			results, repoLimitHit, repoTimedOut, searchErr := searchCommitLogInRepo(ctx, repoRev, args.Pattern, query)
 			if ctx.Err() == context.Canceled {
@@ -382,7 +382,7 @@ func searchCommitLogInRepos(ctx context.Context, args *repoSearchArgs, query que
 			}
 			repoTimedOut = repoTimedOut || ctx.Err() == context.DeadlineExceeded
 			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+				tr.LogFields(otlog.String("repo", string(repoRev.Repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()

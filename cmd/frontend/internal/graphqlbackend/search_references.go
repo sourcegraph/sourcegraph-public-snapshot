@@ -98,7 +98,7 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 			args = &tmp
 			keepRepos := args.Repos[:0]
 			for _, repo := range args.Repos {
-				if repo.repo.IndexedRevision == nil || repoIsDependent(repo.repo.ID) {
+				if repo.Repo.IndexedRevision == nil || repoIsDependent(repo.Repo.ID) {
 					keepRepos = append(keepRepos, repo)
 				}
 			}
@@ -140,25 +140,25 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 
 	common = &searchResultsCommon{}
 	for _, repoRev := range args.Repos {
-		if len(repoRev.revs) == 0 {
+		if len(repoRev.Revs) == 0 {
 			return nil, common, nil // no revs to search
 		}
-		if len(repoRev.revs) >= 2 {
+		if len(repoRev.Revs) >= 2 {
 			return nil, common, errMultipleRevsNotSupported
 		}
 
 		wg.Add(1)
-		go func(repoRev repositoryRevisions) {
+		go func(repoRev RepositoryRevisions) {
 			defer wg.Done()
-			rev := repoRev.revspecs()[0] // TODO(sqs): search multiple revs
-			matches, repoLimitHit, searchErr := searchReferencesInRepo(ctx, repoRev.repo, repoRev.gitserverRepo, rev, language, symbol, hints, args.Pattern)
+			rev := repoRev.RevSpecs()[0] // TODO(sqs): search multiple revs
+			matches, repoLimitHit, searchErr := searchReferencesInRepo(ctx, repoRev.Repo, repoRev.GitserverRepo, rev, language, symbol, hints, args.Pattern)
 			if searchErr != nil {
-				tr.LogFields(otlog.String("repo", string(repoRev.repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
+				tr.LogFields(otlog.String("repo", string(repoRev.Repo.URI)), otlog.String("searchErr", searchErr.Error()), otlog.Bool("timeout", errcode.IsTimeout(searchErr)), otlog.Bool("temporary", errcode.IsTemporary(searchErr)))
 			}
 			mu.Lock()
 			defer mu.Unlock()
 			if ctx.Err() == nil {
-				common.searched = append(common.searched, repoRev.repo)
+				common.searched = append(common.searched, repoRev.Repo)
 			}
 			// non-diff search reports timeout through searchErr, so pass false for timedOut
 			if fatalErr := handleRepoSearchResult(common, repoRev, repoLimitHit, false, searchErr); fatalErr != nil {
