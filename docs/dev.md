@@ -265,10 +265,9 @@ Known issues:
 - There doesn't seem to be a clean way to stop debugging (https://github.com/derekparker/delve/issues/1057).
   - The workaround is to manually kill the process when you are done.
 
-## govendor
+## dep
 
-The Sourcegraph repository uses
-[govendor](https://github.com/kardianos/govendor) to manage Go dependencies.
+We use [dep](https://github.com/golang/dep) to manage Go dependencies in this repository.
 
 ## Codegen
 
