@@ -1,5 +1,5 @@
-import { URI } from '@sourcegraph/sourcegraph.proposed/module/types/textDocument'
 import * as React from 'react'
+import { URI } from 'sourcegraph/module/types/textDocument'
 
 /**
  * React props for components that participate in the creation or lifecycle of a Sourcegraph extensions environment

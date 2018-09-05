@@ -45,16 +45,16 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
-import {
-    Component as ExtensionsComponent,
-    EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT,
-} from '@sourcegraph/sourcegraph.proposed/module/environment/environment'
-import { URI } from '@sourcegraph/sourcegraph.proposed/module/types/textDocument'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs'
+import {
+    Component as ExtensionsComponent,
+    EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT,
+} from 'sourcegraph/module/environment/environment'
+import { URI } from 'sourcegraph/module/types/textDocument'
 import { currentUser } from './auth'
 import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'

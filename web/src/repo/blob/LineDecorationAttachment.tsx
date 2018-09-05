@@ -1,6 +1,6 @@
-import { DecorationAttachmentRenderOptions } from '@sourcegraph/sourcegraph.proposed/module/protocol'
 import * as React from 'react'
 import ReactDOM from 'react-dom'
+import { DecorationAttachmentRenderOptions } from 'sourcegraph/module/protocol'
 import { AbsoluteRepoFile } from '..'
 import { LinkOrSpan } from '../../components/LinkOrSpan'
 

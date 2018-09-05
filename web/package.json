@@ -149,10 +149,9 @@
   },
   "dependencies": {
     "@sourcegraph/codeintellify": "^3.8.1",
-    "@sourcegraph/extensions-client-common": "^7.1.0",
+    "@sourcegraph/extensions-client-common": "^7.1.1",
     "@sourcegraph/icons": "^1.15.0",
     "@sourcegraph/phabricator-extension": "^1.12.0",
-    "@sourcegraph/sourcegraph.proposed": "^12.0.1",
     "@sqs/jsonc-parser": "^1.0.3",
     "bootstrap": "^4.1.3",
     "copy-to-clipboard": "^3.0.7",
@@ -177,11 +176,12 @@
     "react-visibility-sensor": "^3.11.0",
     "reactstrap": "^6.2.0",
     "rxjs": "^6.3.2",
+    "sourcegraph": "^13.0.0",
     "string-score": "^1.0.1",
     "textarea-caret": "3.1.0",
     "ts-key-enum": "^2.0.0",
     "uuid": "^3.2.1",
-    "vscode-languageserver-types": "^3.8.2",
+    "vscode-languageserver-types": "^3.12.0",
     "whatwg-url": "^6.4.0"
   }
 }
