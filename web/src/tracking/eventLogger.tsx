@@ -137,7 +137,10 @@ class EventLogger {
             path_name: window.location && window.location.pathname ? window.location.pathname.slice(1) : '',
         }
 
-        const match = matchPath<{ repoRev?: string; filePath?: string }>(window.location.pathname, repoRevRoute)
+        const match = matchPath<{ repoRev?: string; filePath?: string }>(window.location.pathname, {
+            path: repoRevRoute.path,
+            exact: repoRevRoute.exact,
+        })
         if (match) {
             const u = parseBrowserRepoURL(window.location.href)
             props.repo = u.repoPath

@@ -22,7 +22,7 @@ interface Props {
     user: GQL.IUser | null
     location: H.Location
     isLightTheme: boolean
-    hideExampleSearches: boolean
+    hideExampleSearches?: boolean
 }
 
 interface State {

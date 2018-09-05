@@ -15,6 +15,7 @@ import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
+import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
@@ -24,6 +25,8 @@ export interface LayoutProps
         ExtensionsControllerProps,
         ExtensionsComponentProps,
         ExtensionsRootProps {
+    siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
+
     user: GQL.IUser | null
 
     /**
@@ -40,6 +43,8 @@ export interface LayoutProps
     showHistoryPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
     onHistoryPopoverToggle: (visible?: boolean) => void
+
+    children?: never
 }
 
 export const Layout: React.SFC<LayoutProps> = props => {
@@ -67,7 +72,6 @@ export const Layout: React.SFC<LayoutProps> = props => {
             <Switch>
                 {routes.map((route, i) => {
                     const isFullWidth = !route.forceNarrowWidth
-                    const Component = route.component
                     return (
                         <Route
                             {...route}
@@ -81,10 +85,7 @@ export const Layout: React.SFC<LayoutProps> = props => {
                                         `layout__app-router-container--${isFullWidth ? 'full-width' : 'restricted'}`,
                                     ].join(' ')}
                                 >
-                                    {Component && (
-                                        <Component {...props} {...routeComponentProps} isFullWidth={isFullWidth} />
-                                    )}
-                                    {route.render && route.render({ ...props, ...routeComponentProps })}
+                                    {route.render({ ...props, ...routeComponentProps })}
                                     {!!props.user && <LinkExtension user={props.user} />}
                                 </div>
                             )}

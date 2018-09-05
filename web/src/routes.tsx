@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { RouteProps } from 'react-router'
+import { RouteComponentProps } from 'react-router'
 import { APIConsole } from './api/APIConsole'
 import { ResetPasswordPage } from './auth/ResetPasswordPage'
 import { SignInPage } from './auth/SignInPage'
@@ -8,6 +8,7 @@ import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { DiscussionsPage } from './discussions/DiscussionsPage'
 import { ExplorePage } from './explore/ExplorePage'
 import { ExtensionsArea } from './extensions/ExtensionsArea'
+import { LayoutProps } from './Layout'
 import { SurveyPage } from './marketing/SurveyPage'
 import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
@@ -23,9 +24,12 @@ import { RedirectToUserAccount } from './user/account/RedirectToUserAccount'
 import { UserArea } from './user/area/UserArea'
 import { canListAllRepositories } from './util/features'
 
-interface LayoutRouteProps extends RouteProps {
-    component?: React.ComponentType<any>
-    render?: (props: any) => React.ReactNode
+export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
+
+export interface LayoutRouteProps {
+    path: string
+    exact?: boolean
+    render: (props: LayoutRouteComponentProps) => React.ReactNode
 
     /**
      * Whether or not to force the width of the page to be narrow.
@@ -38,7 +42,7 @@ interface LayoutRouteProps extends RouteProps {
  */
 export const repoRevRoute: LayoutRouteProps = {
     path: '/:repoRevAndRest+',
-    component: RepoContainer,
+    render: props => <RepoContainer {...props} />,
 }
 
 /**
@@ -56,92 +60,94 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/search/searches',
-        component: SavedQueriesPage,
+        render: props => <SavedQueriesPage {...props} />,
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/open',
-        component: OpenPage,
+        render: props => <OpenPage {...props} />,
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/sign-in',
-        component: SignInPage,
+        render: props => <SignInPage {...props} />,
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/sign-up',
-        component: SignUpPage,
+        render: props => <SignUpPage {...props} />,
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/settings',
-        component: RedirectToUserAccount,
+        render: props => <RedirectToUserAccount {...props} />,
     },
     {
         path: '/organizations',
-        component: OrgsArea,
+        render: props => <OrgsArea {...props} />,
     },
     {
         path: '/search',
-        component: SearchResults,
+        render: props => <SearchResults {...props} />,
         exact: true,
     },
     {
         path: '/site-admin/init',
         exact: true,
-        component: SiteInitPage,
+        render: props => <SiteInitPage {...props} />,
         forceNarrowWidth: false,
     },
     {
         path: '/site-admin',
-        component: SiteAdminArea,
+        render: props => <SiteAdminArea {...props} routes={props.siteAdminAreaRoutes} />,
     },
     {
         path: '/password-reset',
-        component: ResetPasswordPage,
+        render: props => <ResetPasswordPage {...props} />,
         exact: true,
         forceNarrowWidth: true,
     },
     {
         path: '/explore',
-        component: canListAllRepositories ? ExplorePage : ErrorNotSupportedPage,
+        render: props => (canListAllRepositories ? <ExplorePage {...props} /> : <ErrorNotSupportedPage />),
         exact: true,
     },
     {
         path: '/discussions',
-        component: window.context.discussionsEnabled ? DiscussionsPage : ErrorNotSupportedPage,
+        render: props =>
+            window.context.discussionsEnabled ? <DiscussionsPage {...props} /> : <ErrorNotSupportedPage />,
         exact: true,
     },
     {
         path: '/search/scope/:id',
-        component: ScopePage,
+        render: props => <ScopePage {...props} />,
         exact: true,
     },
     {
         path: '/api/console',
-        component: APIConsole,
+        render: props => <APIConsole {...props} />,
         exact: true,
     },
     {
         path: '/users/:username',
-        component: UserArea,
+        render: props => <UserArea {...props} />,
     },
     {
         path: '/survey/:score?',
-        component: SurveyPage,
+        render: props => <SurveyPage {...props} />,
     },
-    ...(window.context.platformEnabled
-        ? [
-              {
-                  path: '/extensions',
-                  component: ExtensionsArea,
-              },
-          ]
-        : []),
+    ...((): LayoutRouteProps[] =>
+        window.context.platformEnabled
+            ? [
+                  {
+                      path: '/extensions',
+                      render: props => <ExtensionsArea {...props} />,
+                  },
+              ]
+            : [])(),
     repoRevRoute,
 ]

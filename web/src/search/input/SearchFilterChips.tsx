@@ -156,7 +156,10 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
         // see https://reacttraining.com/react-router/web/api/matchPath
         // and https://reacttraining.com/react-router/web/example/sidebar
         for (const route of routes) {
-            const match = matchPath<{ repoRev?: string; filePath?: string }>(this.props.location.pathname, route)
+            const match = matchPath<{ repoRev?: string; filePath?: string }>(this.props.location.pathname, {
+                path: route.path,
+                exact: route.exact,
+            })
             if (match) {
                 switch (match.path) {
                     case '/:repoRev+': {

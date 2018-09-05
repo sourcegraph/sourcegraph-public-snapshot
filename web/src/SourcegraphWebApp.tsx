@@ -46,7 +46,7 @@ import {
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
-import { Route, RouteComponentProps } from 'react-router'
+import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import {
@@ -69,10 +69,15 @@ import {
 import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
+import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { eventLogger } from './tracking/eventLogger'
 import { isErrorLike } from './util/errors'
 
-interface AppState
+export interface SourcegraphWebAppProps {
+    siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
+}
+
+interface SourcegraphWebAppState
     extends ConfigurationCascadeProps,
         ExtensionsProps,
         ExtensionsEnvironmentProps,
@@ -108,8 +113,8 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAd
 /**
  * The root component
  */
-export class SourcegraphWebApp extends React.Component<{}, AppState> {
-    constructor(props: {}) {
+export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+    constructor(props: SourcegraphWebAppProps) {
         super(props)
         const extensions = createExtensionsContextController()
         this.state = {
@@ -198,56 +203,63 @@ export class SourcegraphWebApp extends React.Component<{}, AppState> {
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        if (this.state.user === undefined) {
+        const { user } = this.state
+        if (user === undefined) {
             return null
         }
 
-        return [
-            <BrowserRouter key={0}>
-                <Route path="/" render={this.renderLayout} />
-            </BrowserRouter>,
-            <Tooltip key={1} />,
-            USE_PLATFORM ? <Notifications key={2} extensionsController={this.state.extensionsController} /> : null,
-        ]
-    }
-
-    private renderLayout = (props: RouteComponentProps<any>) => {
-        let viewerSubject: LayoutProps['viewerSubject']
-        if (this.state.user) {
-            viewerSubject = this.state.user
-        } else if (
-            this.state.configurationCascade &&
-            !isErrorLike(this.state.configurationCascade) &&
-            this.state.configurationCascade.subjects &&
-            !isErrorLike(this.state.configurationCascade.subjects) &&
-            this.state.configurationCascade.subjects.length > 0
-        ) {
-            viewerSubject = this.state.configurationCascade.subjects[0].subject
-        } else {
-            viewerSubject = SITE_SUBJECT_NO_ADMIN
-        }
-
         return (
-            <Layout
-                {...props}
-                /* Checked for undefined in render() above */
-                user={this.state.user as GQL.IUser | null}
-                viewerSubject={viewerSubject}
-                isLightTheme={this.state.isLightTheme}
-                onThemeChange={this.onThemeChange}
-                navbarSearchQuery={this.state.navbarSearchQuery}
-                onNavbarQueryChange={this.onNavbarQueryChange}
-                showHelpPopover={this.state.showHelpPopover}
-                showHistoryPopover={this.state.showHistoryPopover}
-                onHelpPopoverToggle={this.onHelpPopoverToggle}
-                onHistoryPopoverToggle={this.onHistoryPopoverToggle}
-                configurationCascade={this.state.configurationCascade}
-                extensions={this.state.extensions}
-                extensionsEnvironment={this.state.extensionsEnvironment}
-                extensionsOnComponentChange={this.extensionsOnComponentChange}
-                extensionsOnRootChange={this.extensionsOnRootChange}
-                extensionsController={this.state.extensionsController}
-            />
+            <>
+                <BrowserRouter key={0}>
+                    <Route
+                        path="/"
+                        // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
+                        render={routeComponentProps => {
+                            let viewerSubject: LayoutProps['viewerSubject']
+                            if (this.state.user) {
+                                viewerSubject = this.state.user
+                            } else if (
+                                this.state.configurationCascade &&
+                                !isErrorLike(this.state.configurationCascade) &&
+                                this.state.configurationCascade.subjects &&
+                                !isErrorLike(this.state.configurationCascade.subjects) &&
+                                this.state.configurationCascade.subjects.length > 0
+                            ) {
+                                viewerSubject = this.state.configurationCascade.subjects[0].subject
+                            } else {
+                                viewerSubject = SITE_SUBJECT_NO_ADMIN
+                            }
+
+                            return (
+                                <Layout
+                                    {...routeComponentProps}
+                                    user={user}
+                                    siteAdminAreaRoutes={this.props.siteAdminAreaRoutes}
+                                    viewerSubject={viewerSubject}
+                                    isLightTheme={this.state.isLightTheme}
+                                    onThemeChange={this.onThemeChange}
+                                    navbarSearchQuery={this.state.navbarSearchQuery}
+                                    onNavbarQueryChange={this.onNavbarQueryChange}
+                                    showHelpPopover={this.state.showHelpPopover}
+                                    showHistoryPopover={this.state.showHistoryPopover}
+                                    onHelpPopoverToggle={this.onHelpPopoverToggle}
+                                    onHistoryPopoverToggle={this.onHistoryPopoverToggle}
+                                    configurationCascade={this.state.configurationCascade}
+                                    extensions={this.state.extensions}
+                                    extensionsEnvironment={this.state.extensionsEnvironment}
+                                    extensionsOnComponentChange={this.extensionsOnComponentChange}
+                                    extensionsOnRootChange={this.extensionsOnRootChange}
+                                    extensionsController={this.state.extensionsController}
+                                />
+                            )
+                        }}
+                    />
+                </BrowserRouter>
+                <Tooltip key={1} />
+                {USE_PLATFORM ? (
+                    <Notifications key={2} extensionsController={this.state.extensionsController} />
+                ) : null},
+            </>
         )
     }
 
@@ -285,7 +297,7 @@ export class SourcegraphWebApp extends React.Component<{}, AppState> {
     ): void {
         this.setState(
             prevState => {
-                const update: Pick<AppState, 'configurationCascade' | 'extensionsEnvironment'> = {
+                const update: Pick<SourcegraphWebAppState, 'configurationCascade' | 'extensionsEnvironment'> = {
                     configurationCascade,
                     extensionsEnvironment: prevState.extensionsEnvironment,
                 }
