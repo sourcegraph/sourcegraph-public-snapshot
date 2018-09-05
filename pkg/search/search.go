@@ -56,9 +56,3 @@ func (p *PatternInfo) Validate() error {
 
 	return nil
 }
-
-// Args
-type Args struct {
-	query *PatternInfo
-	//repos []*repositoryRevisions
-}
