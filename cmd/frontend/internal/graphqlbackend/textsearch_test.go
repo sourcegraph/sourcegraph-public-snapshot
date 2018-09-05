@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -21,12 +22,12 @@ import (
 func TestQueryToZoektQuery(t *testing.T) {
 	cases := []struct {
 		Name    string
-		Pattern *patternInfo
+		Pattern *search.PatternInfo
 		Query   string
 	}{
 		{
 			Name: "substr",
-			Pattern: &patternInfo{
+			Pattern: &search.PatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -39,7 +40,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "regex",
-			Pattern: &patternInfo{
+			Pattern: &search.PatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "(foo).*?(bar)",
@@ -52,7 +53,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "path",
-			Pattern: &patternInfo{
+			Pattern: &search.PatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              false,
 				Pattern:                      "foo",
@@ -65,7 +66,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "case",
-			Pattern: &patternInfo{
+			Pattern: &search.PatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
@@ -78,7 +79,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 		},
 		{
 			Name: "casepath",
-			Pattern: &patternInfo{
+			Pattern: &search.PatternInfo{
 				IsRegExp:                     true,
 				IsCaseSensitive:              true,
 				Pattern:                      "foo",
@@ -125,7 +126,7 @@ func queryEqual(a zoektquery.Q, b zoektquery.Q) bool {
 }
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 		repoName := repo.URI
 		switch repoName {
 		case "foo/one":
@@ -159,7 +160,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	defer func() { mockSearchFilesInRepo = nil }()
 
 	args := &repoSearchArgs{
-		query: &patternInfo{
+		query: &search.PatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
@@ -190,7 +191,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
 	args = &repoSearchArgs{
-		query: &patternInfo{
+		query: &search.PatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},

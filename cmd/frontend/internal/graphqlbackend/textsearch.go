@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -53,60 +54,6 @@ var (
 
 // A light wrapper around the search service. We implement the service here so
 // that we can unmarshal the result directly into graphql resolvers.
-
-// patternInfo is the struct used by vscode pass on search queries. Keep it in sync with
-// pkg/searcher/protocol.PatternInfo.
-type patternInfo struct {
-	Pattern         string
-	IsRegExp        bool
-	IsWordMatch     bool
-	IsCaseSensitive bool
-	FileMatchLimit  int32
-
-	// We do not support IsMultiline
-	//IsMultiline     bool
-	IncludePattern  string
-	IncludePatterns []string
-	ExcludePattern  string
-
-	PathPatternsAreRegExps       bool
-	PathPatternsAreCaseSensitive bool
-
-	PatternMatchesContent bool
-	PatternMatchesPath    bool
-}
-
-func (p *patternInfo) isEmpty() bool {
-	return p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 && p.IncludePattern == ""
-}
-
-func (p *patternInfo) validate() error {
-	if p.IsRegExp {
-		if _, err := syntax.Parse(p.Pattern, syntax.Perl); err != nil {
-			return err
-		}
-	}
-
-	if p.PathPatternsAreRegExps {
-		if p.IncludePattern != "" {
-			if _, err := syntax.Parse(p.IncludePattern, syntax.Perl); err != nil {
-				return err
-			}
-		}
-		if p.ExcludePattern != "" {
-			if _, err := syntax.Parse(p.ExcludePattern, syntax.Perl); err != nil {
-				return err
-			}
-		}
-		for _, expr := range p.IncludePatterns {
-			if _, err := syntax.Parse(expr, syntax.Perl); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
 
 // fileMatchResolver is a resolver for the GraphQL type `FileMatch`
 type fileMatchResolver struct {
@@ -194,7 +141,7 @@ func (lm *lineMatch) LimitHit() bool {
 
 // textSearch searches repo@commit with p.
 // Note: the returned matches do not set fileMatch.uri
-func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *patternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+func textSearch(ctx context.Context, repo gitserver.Repo, commit api.CommitID, p *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if searcherURLs == nil {
 		return nil, false, errors.New("a searcher service has not been configured")
 	}
@@ -379,9 +326,9 @@ func (e *searcherError) Error() string {
 	return e.Message
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *patternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
+func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev string, info *search.PatternInfo, fetchTimeout time.Duration) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockSearchFilesInRepo != nil {
 		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
 	}
@@ -414,11 +361,11 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 }
 
 type repoSearchArgs struct {
-	query *patternInfo
+	query *search.PatternInfo
 	repos []*repositoryRevisions
 }
 
-func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositoryRevisions, searchTimeoutFieldSet bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*repositoryRevisions, searchTimeoutFieldSet bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -588,7 +535,7 @@ func zoektSearchHEAD(ctx context.Context, query *patternInfo, repos []*repositor
 	return matches, limitHit, reposLimitHit, nil
 }
 
-func queryToZoektQuery(query *patternInfo) (zoektquery.Q, error) {
+func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
 	parseRe := func(pattern string, filenameOnly bool) (zoektquery.Q, error) {
@@ -737,7 +684,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 		common.repos[i] = repo.repo
 	}
 
-	if args.query.isEmpty() {
+	if args.query.IsEmpty() {
 		// Empty query isn't an error, but it has no results.
 		return nil, common, nil
 	}

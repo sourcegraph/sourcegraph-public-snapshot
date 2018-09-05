@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -185,9 +186,9 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 	return fileMatchesToSearchResults(flattened), common, nil
 }
 
-var mockSearchReferencesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev, language string, symbol lspext.SymbolDescriptor, hints map[string]interface{}, query *patternInfo) (matches []*fileMatchResolver, limitHit bool, err error)
+var mockSearchReferencesInRepo func(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev, language string, symbol lspext.SymbolDescriptor, hints map[string]interface{}, query *search.PatternInfo) (matches []*fileMatchResolver, limitHit bool, err error)
 
-func searchReferencesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev, language string, symbol lspext.SymbolDescriptor, hints map[string]interface{}, query *patternInfo) (matches []*fileMatchResolver, limitHit bool, err error) {
+func searchReferencesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gitserver.Repo, rev, language string, symbol lspext.SymbolDescriptor, hints map[string]interface{}, query *search.PatternInfo) (matches []*fileMatchResolver, limitHit bool, err error) {
 	if mockSearchReferencesInRepo != nil {
 		return mockSearchReferencesInRepo(ctx, repo, gitserverRepo, rev, language, symbol, hints, query)
 	}

@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -541,7 +542,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 
 }
 
-func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
+func (r *searchResolver) getPatternInfo() (*search.PatternInfo, error) {
 	var patternsToCombine []string
 	for _, v := range r.query.Values(query.FieldDefault) {
 		// Treat quoted strings as literal strings to match, not regexps.
@@ -569,7 +570,7 @@ func (r *searchResolver) getPatternInfo() (*patternInfo, error) {
 	includePatterns = append(includePatterns, langIncludePatterns...)
 	excludePatterns = append(excludePatterns, langExcludePatterns...)
 
-	patternInfo := &patternInfo{
+	patternInfo := &search.PatternInfo{
 		IsRegExp:                     true,
 		IsCaseSensitive:              r.query.IsCaseSensitive(),
 		FileMatchLimit:               r.maxResults(),
@@ -660,7 +661,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		query: p,
 		repos: repos,
 	}
-	if err := args.query.validate(); err != nil {
+	if err := args.query.Validate(); err != nil {
 		return nil, &badRequestError{err}
 	}
 

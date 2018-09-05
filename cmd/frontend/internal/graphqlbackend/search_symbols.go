@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -98,7 +99,7 @@ func searchSymbols(ctx context.Context, args *repoSearchArgs, query query.Query,
 	return res, common, err
 }
 
-func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, patternInfo *patternInfo, query query.Query, limit int) (res []*fileMatchResolver, err error) {
+func searchSymbolsInRepo(ctx context.Context, repoRevs *repositoryRevisions, patternInfo *search.PatternInfo, query query.Query, limit int) (res []*fileMatchResolver, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Search symbols in repo")
 	defer func() {
 		if err != nil {

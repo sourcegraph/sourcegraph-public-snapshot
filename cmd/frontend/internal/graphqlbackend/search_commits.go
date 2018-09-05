@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -35,9 +36,9 @@ func (r *commitSearchResultResolver) SourceRefs() []*gitRefResolver      { retur
 func (r *commitSearchResultResolver) MessagePreview() *highlightedString { return r.messagePreview }
 func (r *commitSearchResultResolver) DiffPreview() *highlightedString    { return r.diffPreview }
 
-var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitDiffsInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitDiffsInRepo != nil {
 		return mockSearchCommitDiffsInRepo(ctx, repoRevs, info, query)
 	}
@@ -56,9 +57,9 @@ func searchCommitDiffsInRepo(ctx context.Context, repoRevs repositoryRevisions, 
 	})
 }
 
-var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
+var mockSearchCommitLogInRepo func(ctx context.Context, repoRevs repositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error)
 
-func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *patternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
+func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, info *search.PatternInfo, query query.Query) (results []*commitSearchResultResolver, limitHit, timedOut bool, err error) {
 	if mockSearchCommitLogInRepo != nil {
 		return mockSearchCommitLogInRepo(ctx, repoRevs, info, query)
 	}
@@ -79,7 +80,7 @@ func searchCommitLogInRepo(ctx context.Context, repoRevs repositoryRevisions, in
 
 type commitSearchOp struct {
 	repoRevs           repositoryRevisions
-	info               *patternInfo
+	info               *search.PatternInfo
 	query              query.Query
 	diff               bool
 	textSearchOptions  git.TextSearchOptions

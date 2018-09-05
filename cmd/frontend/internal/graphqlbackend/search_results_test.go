@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
@@ -147,7 +148,7 @@ func TestRegexpPatternMatchingExprsInOrder(t *testing.T) {
 }
 
 func TestSearchResolver_getPatternInfo(t *testing.T) {
-	normalize := func(p *patternInfo) {
+	normalize := func(p *search.PatternInfo) {
 		if len(p.IncludePatterns) == 0 {
 			p.IncludePatterns = nil
 		}
@@ -156,7 +157,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 		}
 	}
 
-	tests := map[string]patternInfo{
+	tests := map[string]search.PatternInfo{
 		"p": {
 			Pattern:                "p",
 			IsRegExp:               true,
