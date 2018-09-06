@@ -12,7 +12,7 @@ import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { UserAccountArea } from '../account/UserAccountArea'
+import { UserAccountArea, UserAccountAreaRoute } from '../account/UserAccountArea'
 import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
 import { UserHeader } from './UserHeader'
 import { UserOverviewPage } from './UserOverviewPage'
@@ -67,6 +67,7 @@ const NotFoundPage = () => (
 
 interface UserAreaProps extends RouteComponentProps<{ username: string }>, ExtensionsProps {
     sideBarItems: UserAccountSidebarItems
+    routes: ReadonlyArray<UserAccountAreaRoute>
 
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
@@ -217,6 +218,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
                                     <UserAccountArea
                                         {...routeComponentProps}
                                         {...transferProps}
+                                        routes={this.props.routes}
                                         sideBarItems={this.props.sideBarItems}
                                         isLightTheme={this.props.isLightTheme}
                                     />

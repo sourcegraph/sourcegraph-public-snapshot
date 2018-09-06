@@ -8,12 +8,12 @@ import * as GQL from '../../backend/graphqlschema'
 import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
+import { createAggregateError } from '../../util/errors'
 import {
     externalAccountFragment,
     ExternalAccountNode,
     ExternalAccountNodeProps,
-} from '../../user/account/ExternalAccountNode'
-import { createAggregateError } from '../../util/errors'
+} from '../user/account/ExternalAccountNode'
 
 interface Props extends RouteComponentProps<{}> {}
 

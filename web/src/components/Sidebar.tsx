@@ -51,7 +51,7 @@ export const SidebarGroupItems: React.SFC<{}> = ({ children }) => (
  *
  * @template C Context information that is made available to determine whether the item should be shown (different for each sidebar)
  */
-export interface SidebarItem<C = {}> {
+export interface SidebarItem<C extends object = {}> {
     /** The text of the item */
     label: string
 

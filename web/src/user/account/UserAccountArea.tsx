@@ -7,23 +7,28 @@ import { map } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { siteFlags } from '../../site/backend'
+import { RouteConfiguration } from '../../util/routes'
 import { UserAreaPageProps } from '../area/UserArea'
-import { UserAccountAccountPage } from './UserAccountAccountPage'
-import { UserAccountCreateAccessTokenPage } from './UserAccountCreateAccessTokenPage'
-import { UserAccountEmailsPage } from './UserAccountEmailsPage'
-import { UserAccountExternalAccountsPage } from './UserAccountExternalAccountsPage'
-import { UserAccountProfilePage } from './UserAccountProfilePage'
 import { UserAccountSidebar, UserAccountSidebarItems } from './UserAccountSidebar'
-import { UserAccountTokensPage } from './UserAccountTokensPage'
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
-interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
+export interface UserAccountAreaRoute extends RouteConfiguration<UserAccountAreaRouteContext> {}
+
+export interface UserAccountAreaProps extends UserAreaPageProps, RouteComponentProps<{}> {
     isLightTheme: boolean
     sideBarItems: UserAccountSidebarItems
+    routes: ReadonlyArray<UserAccountAreaRoute>
 }
 
-interface State {
+export interface UserAccountAreaRouteContext extends UserAccountAreaProps {
+    user: GQL.IUser
+    externalAuthEnabled: boolean
+    onDidCreateAccessToken: (value?: GQL.ICreateAccessTokenResult) => void
+    onDidPresentNewToken: (value?: GQL.ICreateAccessTokenResult) => void
+}
+
+interface UserAccountAreaState {
     externalAuthEnabled: boolean
 
     /**
@@ -36,8 +41,8 @@ interface State {
 /**
  * Renders a layout of a sidebar and a content area to display user settings.
  */
-export class UserAccountArea extends React.Component<Props, State> {
-    public state: State = { externalAuthEnabled: false }
+export class UserAccountArea extends React.Component<UserAccountAreaProps, UserAccountAreaState> {
+    public state: UserAccountAreaState = { externalAuthEnabled: false }
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -80,6 +85,15 @@ export class UserAccountArea extends React.Component<Props, State> {
             return <Redirect to={`${this.props.match.path}/profile`} />
         }
 
+        const { children, ...props } = this.props
+        const context: UserAccountAreaRouteContext = {
+            ...props,
+            user: this.props.user,
+            onDidCreateAccessToken: this.setNewToken,
+            onDidPresentNewToken: this.setNewToken,
+            externalAuthEnabled: this.state.externalAuthEnabled,
+        }
+
         return (
             <div className="user-settings-area area">
                 <UserAccountSidebar
@@ -90,75 +104,17 @@ export class UserAccountArea extends React.Component<Props, State> {
                 />
                 <div className="area__content">
                     <Switch>
-                        {/* Render empty page if no settings page selected */}
-                        <Route
-                            path={`${this.props.match.url}/profile`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <UserAccountProfilePage {...routeComponentProps} {...this.props} />
-                            )}
-                        />
-                        {!this.state.externalAuthEnabled && (
-                            <Route
-                                path={`${this.props.match.url}/account`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <UserAccountAccountPage {...routeComponentProps} {...this.props} />
-                                )}
-                            />
-                        )}
-                        <Route
-                            path={`${this.props.match.url}/emails`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <UserAccountEmailsPage {...routeComponentProps} {...this.props} />
-                            )}
-                        />
-                        <Route
-                            path={`${this.props.match.url}/external-accounts`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <UserAccountExternalAccountsPage {...routeComponentProps} {...this.props} />
-                            )}
-                        />
-                        {window.context.accessTokensAllow !== 'none' && (
-                            <Route
-                                path={`${this.props.match.url}/tokens`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <UserAccountTokensPage
-                                        {...routeComponentProps}
-                                        {...this.props}
-                                        newToken={this.state.newlyCreatedAccessToken}
-                                        onDidPresentNewToken={this.setNewToken}
+                        {this.props.routes.map(
+                            ({ path, exact, render, condition = () => true }) =>
+                                condition(context) && (
+                                    <Route
+                                        path={this.props.match.url + path}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={exact}
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
                                     />
-                                )}
-                            />
-                        )}
-                        {window.context.accessTokensAllow !== 'none' && (
-                            <Route
-                                path={`${this.props.match.url}/tokens/new`}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                exact={true}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <UserAccountCreateAccessTokenPage
-                                        {...routeComponentProps}
-                                        {...this.props}
-                                        onDidCreateAccessToken={this.setNewToken}
-                                    />
-                                )}
-                            />
+                                )
                         )}
                         <Route component={NotFoundPage} key="hardcoded-key" />
                     </Switch>

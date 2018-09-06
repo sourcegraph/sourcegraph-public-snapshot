@@ -5,6 +5,7 @@ import { Redirect } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { RouteConfiguration } from '../util/routes'
 import { SiteAdminSidebar, SiteAdminSideBarItems } from './SiteAdminSidebar'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
@@ -19,17 +20,13 @@ const NotSiteAdminPage: React.ComponentType<{}> = () => (
     <HeroPage icon={DirectionalSignIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
 )
 
-export interface SiteAdminAreaRouteComponentProps extends RouteComponentProps<any>, ExtensionsProps {
+export interface SiteAdminAreaRouteContext extends ExtensionsProps {
     site: Pick<GQL.ISite, '__typename' | 'id'>
     user: GQL.IUser
     isLightTheme: boolean
 }
 
-export interface SiteAdminAreaRoute {
-    path: string
-    exact?: boolean
-    render: ((props: SiteAdminAreaRouteComponentProps) => React.ReactNode)
-}
+export interface SiteAdminAreaRoute extends RouteConfiguration<SiteAdminAreaRouteContext> {}
 
 interface SiteAdminAreaProps extends RouteComponentProps<{}>, ExtensionsProps {
     routes: ReadonlyArray<SiteAdminAreaRoute>
@@ -57,7 +54,7 @@ export class SiteAdminArea extends React.Component<SiteAdminAreaProps> {
             return <NotSiteAdminPage />
         }
 
-        const transferProps = {
+        const context: SiteAdminAreaRouteContext = {
             user: this.props.user,
             extensions: this.props.extensions,
             isLightTheme: this.props.isLightTheme,
@@ -69,16 +66,19 @@ export class SiteAdminArea extends React.Component<SiteAdminAreaProps> {
                 <SiteAdminSidebar className="area__sidebar" items={this.props.sideBarItems} />
                 <div className="area__content">
                     <Switch>
-                        {this.props.routes.map(({ render, path, exact }) => (
-                            <Route
-                                // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                key="hardcoded-key"
-                                path={this.props.match.url + path}
-                                exact={exact}
-                                // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                                render={routeComponentProps => render({ ...routeComponentProps, ...transferProps })}
-                            />
-                        ))}
+                        {this.props.routes.map(
+                            ({ render, path, exact, condition = () => true }) =>
+                                condition(context) && (
+                                    <Route
+                                        // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        key="hardcoded-key"
+                                        path={this.props.match.url + path}
+                                        exact={exact}
+                                        // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
+                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                    />
+                                )
+                        )}
                         <Route component={NotFoundPage} />
                     </Switch>
                 </div>

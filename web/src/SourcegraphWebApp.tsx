@@ -72,6 +72,7 @@ import { updateUserSessionStores } from './marketing/util'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarItems } from './site-admin/SiteAdminSidebar'
 import { eventLogger } from './tracking/eventLogger'
+import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { isErrorLike } from './util/errors'
 
@@ -79,6 +80,7 @@ export interface SourcegraphWebAppProps {
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
     siteAdminSideBarItems: SiteAdminSideBarItems
     userAccountSideBarItems: UserAccountSidebarItems
+    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
 }
 
 interface SourcegraphWebAppState
@@ -241,6 +243,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     siteAdminAreaRoutes={this.props.siteAdminAreaRoutes}
                                     siteAdminSideBarItems={this.props.siteAdminSideBarItems}
                                     userAccountSideBarItems={this.props.userAccountSideBarItems}
+                                    userAccountAreaRoutes={this.props.userAccountAreaRoutes}
                                     viewerSubject={viewerSubject}
                                     isLightTheme={this.state.isLightTheme}
                                     onThemeChange={this.onThemeChange}

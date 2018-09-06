@@ -17,6 +17,7 @@ import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarItems } from './site-admin/SiteAdminSidebar'
+import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 
 export interface LayoutProps
@@ -30,6 +31,7 @@ export interface LayoutProps
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
     siteAdminSideBarItems: SiteAdminSideBarItems
     userAccountSideBarItems: UserAccountSidebarItems
+    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
 
     user: GQL.IUser | null
 
