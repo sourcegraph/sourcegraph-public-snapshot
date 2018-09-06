@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
@@ -106,6 +107,31 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 	t.Run("actor present, valid non-sudo token", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set("Authorization", "token abcdef")
+		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 456}))
+		var calledAccessTokensLookup bool
+		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+			calledAccessTokensLookup = true
+			if want := "abcdef"; tokenHexEncoded != want {
+				t.Errorf("got %q, want %q", tokenHexEncoded, want)
+			}
+			if want := authz.ScopeUserAll; requiredScope != want {
+				t.Errorf("got %q, want %q", requiredScope, want)
+			}
+			return 123, nil
+		}
+		defer func() { db.Mocks = db.MockStores{} }()
+		checkHTTPResponse(t, req, http.StatusOK, "user 123")
+		if !calledAccessTokensLookup {
+			t.Error("!calledAccessTokensLookup")
+		}
+	})
+
+	// Test that an access token overwrites the actor set by a prior auth middleware.
+	t.Run("actor present, valid non-sudo token in query params", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/", nil)
+		q := url.Values{}
+		q.Add("token", "abcdef")
+		req.URL.RawQuery = q.Encode()
 		req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 456}))
 		var calledAccessTokensLookup bool
 		db.Mocks.AccessTokens.Lookup = func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
