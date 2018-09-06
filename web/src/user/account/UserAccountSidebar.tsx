@@ -5,10 +5,11 @@ import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import {
     SIDEBAR_BUTTON_CLASS,
-    SIDEBAR_CARD_CLASS,
-    SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
+    SideBarGroup,
+    SideBarGroupHeader,
+    SideBarGroupItems,
+    SideBarNavItem,
 } from '../../components/Sidebar'
-import { authExp } from '../../enterprise/site-admin/SiteAdminAuthenticationProvidersPage'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -37,64 +38,46 @@ export const UserAccountSidebar: React.SFC<Props> = props => {
                 </SiteAdminAlert>
             )}
 
-            <div className={SIDEBAR_CARD_CLASS}>
-                <div className="card-header">User account</div>
-                <div className="list-group list-group-flush">
-                    <NavLink
-                        to={`${props.match.path}/profile`}
-                        exact={true}
-                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
-                    >
+            <SideBarGroup>
+                <SideBarGroupHeader label="User account" />
+                <SideBarGroupItems>
+                    <SideBarNavItem to={`${props.match.path}/profile`} exact={true}>
                         Profile
-                    </NavLink>
+                    </SideBarNavItem>
                     {!siteAdminViewingOtherUser &&
                         !props.externalAuthEnabled && (
-                            <NavLink
-                                to={`${props.match.path}/account`}
-                                exact={true}
-                                className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
-                            >
+                            <SideBarNavItem to={`${props.match.path}/account`} exact={true}>
                                 Password
-                            </NavLink>
+                            </SideBarNavItem>
                         )}
-                    <NavLink
-                        to={`${props.match.path}/emails`}
-                        exact={true}
-                        className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
-                    >
+                    <SideBarNavItem to={`${props.match.path}/emails`} exact={true}>
                         Emails
-                    </NavLink>
-                    {authExp && (
-                        <NavLink
-                            to={`${props.match.path}/external-accounts`}
-                            exact={true}
-                            className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}
-                        >
+                    </SideBarNavItem>
+                    {true && (
+                        <SideBarNavItem to={`${props.match.path}/external-accounts`} exact={true}>
                             External accounts
-                        </NavLink>
+                        </SideBarNavItem>
                     )}
                     {window.context.accessTokensAllow !== 'none' && (
-                        <NavLink to={`${props.match.path}/tokens`} className={SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS}>
-                            Access tokens
-                        </NavLink>
+                        <SideBarNavItem to={`${props.match.path}/tokens`}>Access tokens</SideBarNavItem>
                     )}
-                </div>
-            </div>
+                </SideBarGroupItems>
+            </SideBarGroup>
 
             {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
-                <div className={SIDEBAR_CARD_CLASS}>
-                    <div className="card-header">Organizations</div>
-                    <div className="list-group list-group-flush">
+                <SideBarGroup>
+                    <SideBarGroupHeader label="Organizations" />
+                    <SideBarGroupItems>
                         {props.user.organizations.nodes.map(org => (
-                            <NavLink
+                            <SideBarNavItem
                                 key={org.id}
                                 to={`/organizations/${org.name}/settings`}
-                                className={`${SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS} text-truncate text-nowrap`}
+                                className="text-truncate text-nowrap"
                             >
                                 <OrgAvatar org={org.name} className="d-inline-flex" /> {org.name}
-                            </NavLink>
+                            </SideBarNavItem>
                         ))}
-                    </div>
+                    </SideBarGroupItems>
                     {!siteAdminViewingOtherUser && (
                         <div className="card-body">
                             <Link to="/organizations/new" className="btn btn-secondary btn-sm w-100">
@@ -102,7 +85,7 @@ export const UserAccountSidebar: React.SFC<Props> = props => {
                             </Link>
                         </div>
                     )}
-                </div>
+                </SideBarGroup>
             )}
             {!siteAdminViewingOtherUser && (
                 <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>

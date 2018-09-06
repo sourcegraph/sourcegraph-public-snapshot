@@ -4,7 +4,13 @@ import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { SIDEBAR_BUTTON_CLASS, SideBarGroup, SideBarGroupHeader, SideBarNavItem } from '../components/Sidebar'
+import {
+    SIDEBAR_BUTTON_CLASS,
+    SideBarGroup,
+    SideBarGroupHeader,
+    SideBarGroupItems,
+    SideBarNavItem,
+} from '../components/Sidebar'
 import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 
 export interface SiteAdminSideBarItem {
@@ -32,11 +38,13 @@ export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, 
     <div className={`site-admin-sidebar ${className}`}>
         <SideBarGroup>
             <SideBarGroupHeader icon={ServerIcon} label="Site admin" />
-            {items.primary.map(({ label, to }) => (
-                <SideBarNavItem to={to} exact={true}>
-                    {label}
-                </SideBarNavItem>
-            ))}
+            <SideBarGroupItems>
+                {items.primary.map(({ label, to }) => (
+                    <SideBarNavItem to={to} exact={true} key={label}>
+                        {label}
+                    </SideBarNavItem>
+                ))}
+            </SideBarGroupItems>
         </SideBarGroup>
         <SideBarGroup>
             {items.secondary.map(({ label, to }) => (
@@ -47,28 +55,34 @@ export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, 
         </SideBarGroup>
         <SideBarGroup>
             <SideBarGroupHeader icon={LockIcon} label="Auth" />
-            {items.auth.map(({ label, to }) => (
-                <SideBarNavItem to={to} exact={true}>
-                    {label}
-                </SideBarNavItem>
-            ))}
-        </SideBarGroup>
-        {USE_PLATFORM && (
-            <SideBarGroup>
-                <SideBarGroupHeader icon={PuzzleIcon} label="Registry" />
-                {items.registry.map(({ label, to }) => (
+            <SideBarGroupItems>
+                {items.auth.map(({ label, to }) => (
                     <SideBarNavItem to={to} exact={true}>
                         {label}
                     </SideBarNavItem>
                 ))}
+            </SideBarGroupItems>
+        </SideBarGroup>
+        {USE_PLATFORM && (
+            <SideBarGroup>
+                <SideBarGroupHeader icon={PuzzleIcon} label="Registry" />
+                <SideBarGroupItems>
+                    {items.registry.map(({ label, to }) => (
+                        <SideBarNavItem to={to} exact={true}>
+                            {label}
+                        </SideBarNavItem>
+                    ))}
+                </SideBarGroupItems>
             </SideBarGroup>
         )}
         <SideBarGroup>
-            {items.other.map(({ label, to }) => (
-                <SideBarNavItem to={to} exact={true}>
-                    {label}
-                </SideBarNavItem>
-            ))}
+            <SideBarGroupItems>
+                {items.other.map(({ label, to }) => (
+                    <SideBarNavItem to={to} exact={true}>
+                        {label}
+                    </SideBarNavItem>
+                ))}
+            </SideBarGroupItems>
         </SideBarGroup>
 
         <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
