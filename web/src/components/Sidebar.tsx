@@ -10,7 +10,7 @@ export const SIDEBAR_BUTTON_CLASS = 'btn btn-secondary d-block w-100 my-2'
 /**
  * Item of `SideBarGroupItems`.
  */
-export const SideBarNavItem: React.SFC<{ to: string; exact?: boolean; className?: string }> = ({
+export const SidebarNavItem: React.SFC<{ to: string; exact?: boolean; className?: string }> = ({
     children,
     to,
     exact,
@@ -24,7 +24,7 @@ export const SideBarNavItem: React.SFC<{ to: string; exact?: boolean; className?
 /**
  * Header of a `SideBarGroup`
  */
-export const SideBarGroupHeader: React.SFC<{
+export const SidebarGroupHeader: React.SFC<{
     icon?: React.ComponentType<{ className?: string }>
     label: string
     children?: undefined
@@ -37,11 +37,30 @@ export const SideBarGroupHeader: React.SFC<{
 /**
  * A box of items in the side bar. Use `SideBarGroupHeader` and `SideBarGroupItems` as children.
  */
-export const SideBarGroup: React.SFC<{}> = ({ children }) => <div className={SIDEBAR_CARD_CLASS}>{children}</div>
+export const SidebarGroup: React.SFC<{}> = ({ children }) => <div className={SIDEBAR_CARD_CLASS}>{children}</div>
 
 /**
  * Container for all `SideBarNavItem` in a `SideBarGroup`.
  */
-export const SideBarGroupItems: React.SFC<{}> = ({ children }) => (
+export const SidebarGroupItems: React.SFC<{}> = ({ children }) => (
     <div className="list-group list-group-flush">{children}</div>
 )
+
+/**
+ * Used to customize sidebar items
+ *
+ * @template C Context information that is made available to determine whether the item should be shown (different for each sidebar)
+ */
+export interface SidebarItem<C = {}> {
+    /** The text of the item */
+    label: string
+
+    /** The link destination (appended to the current match) */
+    to: string
+
+    /** Whether highlighting the item should only be done if `to` matches exactly */
+    exact?: boolean
+
+    /** Optional condition under which this item should be shown */
+    condition?: (context: C) => boolean
+}

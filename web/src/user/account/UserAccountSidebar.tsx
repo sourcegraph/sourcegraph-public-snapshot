@@ -5,23 +5,36 @@ import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import {
     SIDEBAR_BUTTON_CLASS,
-    SideBarGroup,
-    SideBarGroupHeader,
-    SideBarGroupItems,
-    SideBarNavItem,
+    SidebarGroup,
+    SidebarGroupHeader,
+    SidebarGroupItems,
+    SidebarItem,
+    SidebarNavItem,
 } from '../../components/Sidebar'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserAreaPageProps } from '../area/UserArea'
 
-interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
+export interface UserAccountSidebarItemConditionContext {
+    /** True if the site admin is viewing another user's account */
+    siteAdminViewingOtherUser: boolean
+    externalAuthEnabled: boolean
+}
+
+export type UserAccountSidebarItems = Record<
+    'account',
+    ReadonlyArray<SidebarItem<UserAccountSidebarItemConditionContext>>
+>
+
+export interface UserAccountSidebarProps extends UserAreaPageProps, RouteComponentProps<{}> {
+    items: UserAccountSidebarItems
     className?: string
     externalAuthEnabled: boolean
 }
 
 /** Sidebar for user account pages. */
-export const UserAccountSidebar: React.SFC<Props> = props => {
+export const UserAccountSidebar: React.SFC<UserAccountSidebarProps> = props => {
     if (!props.authenticatedUser) {
         return null
     }
@@ -38,46 +51,37 @@ export const UserAccountSidebar: React.SFC<Props> = props => {
                 </SiteAdminAlert>
             )}
 
-            <SideBarGroup>
-                <SideBarGroupHeader label="User account" />
-                <SideBarGroupItems>
-                    <SideBarNavItem to={`${props.match.path}/profile`} exact={true}>
-                        Profile
-                    </SideBarNavItem>
-                    {!siteAdminViewingOtherUser &&
-                        !props.externalAuthEnabled && (
-                            <SideBarNavItem to={`${props.match.path}/account`} exact={true}>
-                                Password
-                            </SideBarNavItem>
-                        )}
-                    <SideBarNavItem to={`${props.match.path}/emails`} exact={true}>
-                        Emails
-                    </SideBarNavItem>
-                    {true && (
-                        <SideBarNavItem to={`${props.match.path}/external-accounts`} exact={true}>
-                            External accounts
-                        </SideBarNavItem>
+            <SidebarGroup>
+                <SidebarGroupHeader label="User account" />
+                <SidebarGroupItems>
+                    {props.items.account.map(
+                        ({ label, to, exact, condition = () => true }) =>
+                            condition({
+                                siteAdminViewingOtherUser,
+                                externalAuthEnabled: props.externalAuthEnabled,
+                            }) && (
+                                <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
+                                    {label}
+                                </SidebarNavItem>
+                            )
                     )}
-                    {window.context.accessTokensAllow !== 'none' && (
-                        <SideBarNavItem to={`${props.match.path}/tokens`}>Access tokens</SideBarNavItem>
-                    )}
-                </SideBarGroupItems>
-            </SideBarGroup>
+                </SidebarGroupItems>
+            </SidebarGroup>
 
             {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
-                <SideBarGroup>
-                    <SideBarGroupHeader label="Organizations" />
-                    <SideBarGroupItems>
+                <SidebarGroup>
+                    <SidebarGroupHeader label="Organizations" />
+                    <SidebarGroupItems>
                         {props.user.organizations.nodes.map(org => (
-                            <SideBarNavItem
+                            <SidebarNavItem
                                 key={org.id}
                                 to={`/organizations/${org.name}/settings`}
                                 className="text-truncate text-nowrap"
                             >
                                 <OrgAvatar org={org.name} className="d-inline-flex" /> {org.name}
-                            </SideBarNavItem>
+                            </SidebarNavItem>
                         ))}
-                    </SideBarGroupItems>
+                    </SidebarGroupItems>
                     {!siteAdminViewingOtherUser && (
                         <div className="card-body">
                             <Link to="/organizations/new" className="btn btn-secondary btn-sm w-100">
@@ -85,7 +89,7 @@ export const UserAccountSidebar: React.SFC<Props> = props => {
                             </Link>
                         </div>
                     )}
-                </SideBarGroup>
+                </SidebarGroup>
             )}
             {!siteAdminViewingOtherUser && (
                 <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>

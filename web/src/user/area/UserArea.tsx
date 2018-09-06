@@ -13,6 +13,7 @@ import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { UserAccountArea } from '../account/UserAccountArea'
+import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
 import { UserHeader } from './UserHeader'
 import { UserOverviewPage } from './UserOverviewPage'
 
@@ -64,7 +65,9 @@ const NotFoundPage = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="Sorry, the requested user was not found." />
 )
 
-interface Props extends RouteComponentProps<{ username: string }>, ExtensionsProps {
+interface UserAreaProps extends RouteComponentProps<{ username: string }>, ExtensionsProps {
+    sideBarItems: UserAccountSidebarItems
+
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
      * parameter.
@@ -74,7 +77,7 @@ interface Props extends RouteComponentProps<{ username: string }>, ExtensionsPro
     isLightTheme: boolean
 }
 
-interface State {
+interface UserAreaState {
     /**
      * The fetched user or an error if an error occurred; undefined while loading.
      */
@@ -105,8 +108,8 @@ export interface UserAreaPageProps extends ExtensionsProps {
 /**
  * A user's public profile area.
  */
-export class UserArea extends React.Component<Props, State> {
-    public state: State = {}
+export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
+    public state: UserAreaState = {}
 
     private routeMatchChanges = new Subject<{ username: string }>()
     private refreshRequests = new Subject<void>()
@@ -124,7 +127,7 @@ export class UserArea extends React.Component<Props, State> {
             combineLatest(usernameChanges, merge(this.refreshRequests.pipe(mapTo(false)), of(true)))
                 .pipe(
                     switchMap(([username, forceRefresh]) => {
-                        type PartialStateUpdate = Pick<State, 'userOrError'>
+                        type PartialStateUpdate = Pick<UserAreaState, 'userOrError'>
                         return fetchUser({ username }).pipe(
                             catchError(error => [error]),
                             map(c => ({ userOrError: c } as PartialStateUpdate)),
@@ -141,7 +144,7 @@ export class UserArea extends React.Component<Props, State> {
         this.routeMatchChanges.next(this.props.match.params)
     }
 
-    public componentWillReceiveProps(props: Props): void {
+    public componentWillReceiveProps(props: UserAreaProps): void {
         if (props.match.params !== this.props.match.params) {
             this.routeMatchChanges.next(props.match.params)
         }
@@ -214,6 +217,7 @@ export class UserArea extends React.Component<Props, State> {
                                     <UserAccountArea
                                         {...routeComponentProps}
                                         {...transferProps}
+                                        sideBarItems={this.props.sideBarItems}
                                         isLightTheme={this.props.isLightTheme}
                                     />
                                 )}

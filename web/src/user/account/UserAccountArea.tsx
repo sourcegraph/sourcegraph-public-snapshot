@@ -13,13 +13,14 @@ import { UserAccountCreateAccessTokenPage } from './UserAccountCreateAccessToken
 import { UserAccountEmailsPage } from './UserAccountEmailsPage'
 import { UserAccountExternalAccountsPage } from './UserAccountExternalAccountsPage'
 import { UserAccountProfilePage } from './UserAccountProfilePage'
-import { UserAccountSidebar } from './UserAccountSidebar'
+import { UserAccountSidebar, UserAccountSidebarItems } from './UserAccountSidebar'
 import { UserAccountTokensPage } from './UserAccountTokensPage'
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
 interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
     isLightTheme: boolean
+    sideBarItems: UserAccountSidebarItems
 }
 
 interface State {
@@ -83,6 +84,7 @@ export class UserAccountArea extends React.Component<Props, State> {
             <div className="user-settings-area area">
                 <UserAccountSidebar
                     externalAuthEnabled={this.state.externalAuthEnabled}
+                    items={this.props.sideBarItems}
                     {...this.props}
                     className="area__sidebar"
                 />

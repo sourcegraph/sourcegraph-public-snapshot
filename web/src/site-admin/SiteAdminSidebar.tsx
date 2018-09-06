@@ -6,23 +6,17 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import {
     SIDEBAR_BUTTON_CLASS,
-    SideBarGroup,
-    SideBarGroupHeader,
-    SideBarGroupItems,
-    SideBarNavItem,
+    SidebarGroup,
+    SidebarGroupHeader,
+    SidebarGroupItems,
+    SidebarItem,
+    SidebarNavItem,
 } from '../components/Sidebar'
 import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 
-export interface SiteAdminSideBarItem {
-    /** The text of the item */
-    label: string
-    /** The link destination */
-    to: string
-}
-
 export type SiteAdminSideBarItems = Record<
     'primary' | 'secondary' | 'registry' | 'auth' | 'other',
-    ReadonlyArray<SiteAdminSideBarItem>
+    ReadonlyArray<SidebarItem>
 >
 
 export interface SiteAdminSidebarProps {
@@ -36,54 +30,69 @@ export interface SiteAdminSidebarProps {
  */
 export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, items }) => (
     <div className={`site-admin-sidebar ${className}`}>
-        <SideBarGroup>
-            <SideBarGroupHeader icon={ServerIcon} label="Site admin" />
-            <SideBarGroupItems>
-                {items.primary.map(({ label, to }) => (
-                    <SideBarNavItem to={to} exact={true} key={label}>
-                        {label}
-                    </SideBarNavItem>
-                ))}
-            </SideBarGroupItems>
-        </SideBarGroup>
-        <SideBarGroup>
-            {items.secondary.map(({ label, to }) => (
-                <SideBarNavItem to={to} exact={true}>
-                    {label}
-                </SideBarNavItem>
-            ))}
-        </SideBarGroup>
-        <SideBarGroup>
-            <SideBarGroupHeader icon={LockIcon} label="Auth" />
-            <SideBarGroupItems>
-                {items.auth.map(({ label, to }) => (
-                    <SideBarNavItem to={to} exact={true}>
-                        {label}
-                    </SideBarNavItem>
-                ))}
-            </SideBarGroupItems>
-        </SideBarGroup>
-        {USE_PLATFORM && (
-            <SideBarGroup>
-                <SideBarGroupHeader icon={PuzzleIcon} label="Registry" />
-                <SideBarGroupItems>
-                    {items.registry.map(({ label, to }) => (
-                        <SideBarNavItem to={to} exact={true}>
+        <SidebarGroup>
+            <SidebarGroupHeader icon={ServerIcon} label="Site admin" />
+            <SidebarGroupItems>
+                {items.primary.map(
+                    ({ label, to, exact, condition = () => true }) =>
+                        condition({}) && (
+                            <SidebarNavItem to={to} exact={exact} key={label}>
+                                {label}
+                            </SidebarNavItem>
+                        )
+                )}
+            </SidebarGroupItems>
+        </SidebarGroup>
+        <SidebarGroup>
+            {items.secondary.map(
+                ({ label, to, exact, condition = () => true }) =>
+                    condition({}) && (
+                        <SidebarNavItem to={to} exact={exact}>
                             {label}
-                        </SideBarNavItem>
-                    ))}
-                </SideBarGroupItems>
-            </SideBarGroup>
+                        </SidebarNavItem>
+                    )
+            )}
+        </SidebarGroup>
+        <SidebarGroup>
+            <SidebarGroupHeader icon={LockIcon} label="Auth" />
+            <SidebarGroupItems>
+                {items.auth.map(
+                    ({ label, to, exact, condition = () => true }) =>
+                        condition({}) && (
+                            <SidebarNavItem to={to} exact={exact}>
+                                {label}
+                            </SidebarNavItem>
+                        )
+                )}
+            </SidebarGroupItems>
+        </SidebarGroup>
+        {USE_PLATFORM && (
+            <SidebarGroup>
+                <SidebarGroupHeader icon={PuzzleIcon} label="Registry" />
+                <SidebarGroupItems>
+                    {items.registry.map(
+                        ({ label, to, exact, condition = () => true }) =>
+                            condition({}) && (
+                                <SidebarNavItem to={to} exact={exact}>
+                                    {label}
+                                </SidebarNavItem>
+                            )
+                    )}
+                </SidebarGroupItems>
+            </SidebarGroup>
         )}
-        <SideBarGroup>
-            <SideBarGroupItems>
-                {items.other.map(({ label, to }) => (
-                    <SideBarNavItem to={to} exact={true}>
-                        {label}
-                    </SideBarNavItem>
-                ))}
-            </SideBarGroupItems>
-        </SideBarGroup>
+        <SidebarGroup>
+            <SidebarGroupItems>
+                {items.other.map(
+                    ({ label, to, exact, condition = () => true }) =>
+                        condition({}) && (
+                            <SidebarNavItem to={to} exact={exact}>
+                                {label}
+                            </SidebarNavItem>
+                        )
+                )}
+            </SidebarGroupItems>
+        </SidebarGroup>
 
         <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
             <FeedIcon className="icon-inline" />
