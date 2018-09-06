@@ -129,7 +129,7 @@
     "p-retry": "^2.0.0",
     "plugin-error": "^1.0.1",
     "postcss-loader": "^3.0.0",
-    "puppeteer": "~1.7.0",
+    "puppeteer": "~1.8.0",
     "sass-loader": "^7.0.3",
     "source-map-support": "^0.5.6",
     "style-loader": "^0.23.0",
