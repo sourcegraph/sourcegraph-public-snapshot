@@ -26,8 +26,7 @@
 
 # Dev tools not directly imported
 required = [
-  "honnef.co/go/tools/cmd/staticcheck",
-  "honnef.co/go/tools/cmd/unused",
+  "honnef.co/go/tools/cmd/megacheck",
   "github.com/google/zoekt/cmd/zoekt-archive-index",
   "github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver",
   "github.com/google/zoekt/cmd/zoekt-webserver",

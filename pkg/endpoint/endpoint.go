@@ -192,10 +192,6 @@ func (u *k8sURL) endpointURL(endpoint string) string {
 	return uCopy.String()
 }
 
-func (u *k8sURL) serviceURL() string {
-	return u.URL.String()
-}
-
 func parseURL(rawurl string) (*k8sURL, error) {
 	u, err := url.Parse(strings.TrimPrefix(rawurl, "k8s+"))
 	if err != nil {

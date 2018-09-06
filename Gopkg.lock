@@ -1591,19 +1591,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:883771c94491278a353cb02e764506d4f30ffe134f02ed07ec34f1cb6062e4f8"
+  digest = "1:52f68582513b06debcbaebb0974209fd66d393d3f5a62962eed0a3eb6c0954a2"
   name = "honnef.co/go/tools"
   packages = [
     "callgraph",
     "callgraph/static",
-    "cmd/staticcheck",
-    "cmd/unused",
+    "cmd/megacheck",
     "deprecated",
     "functions",
     "internal/sharedcheck",
     "lint",
     "lint/lintdsl",
     "lint/lintutil",
+    "simple",
     "ssa",
     "ssa/ssautil",
     "staticcheck",
@@ -1909,8 +1909,7 @@
     "gopkg.in/redsync.v1",
     "gopkg.in/src-d/go-git.v4/plumbing/format/config",
     "gopkg.in/yaml.v2",
-    "honnef.co/go/tools/cmd/staticcheck",
-    "honnef.co/go/tools/cmd/unused",
+    "honnef.co/go/tools/cmd/megacheck",
     "k8s.io/api/core/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/fields",

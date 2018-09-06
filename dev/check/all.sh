@@ -8,7 +8,6 @@ go env
 ./template-inlines.sh
 ./go-generate.sh
 ./go-lint.sh
-./go-unused.sh
 ./todo-security.sh
 ./no-localhost-guard.sh
 ./bash-syntax.sh

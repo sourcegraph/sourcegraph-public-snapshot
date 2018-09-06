@@ -48,23 +48,18 @@ func logWithLevel(lvl int, msg string, id contextID, extraMeta ...interface{}) {
 	case err:
 		msg = color.New(color.BgRed).Sprint("ERROR") + " " + msg
 		w = env.ErrorOut
-		break
 	case warn:
 		msg = color.New(color.BgYellow).Sprint("WARN") + "  " + msg
 		w = env.WarnOut
-		break
 	case info:
 		msg = color.New(color.BgCyan).Sprint("INFO") + "  " + msg
 		w = env.InfoOut
-		break
 	case debug:
 		msg = "DEBUG " + msg
 		w = env.DebugOut
-		break
 	default:
 		msg = color.New(color.Faint).Sprint("VERB" + string(lvl) + " " + msg)
 		w = env.DebugOut
-		break
 	}
 	msg += " " + color.New(color.Faint).Sprint(metaToStr(id, extraMeta...))
 	fmt.Fprintln(w, msg)
@@ -73,16 +68,6 @@ func logWithLevel(lvl int, msg string, id contextID, extraMeta ...interface{}) {
 // logError logs a message with LSP metadata with loglevel ERROR
 func logError(msg string, id contextID, extraMeta ...interface{}) {
 	logWithLevel(err, msg, id, extraMeta...)
-}
-
-// logInfo logs a message with LSP metadata with loglevel INFO
-func logInfo(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel(info, msg, id, extraMeta...)
-}
-
-// logWarn logs a message with LSP metadata with loglevel WARN
-func logWarn(msg string, id contextID, extraMeta ...interface{}) {
-	logWithLevel(warn, msg, id, extraMeta...)
 }
 
 // logDebug logs a message with LSP metadata with loglevel DEBUG

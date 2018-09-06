@@ -106,8 +106,11 @@ func (r *gitRefResolver) Prefix() string      { return gitRefPrefix(r.name) }
 func (r *gitRefResolver) Type() string        { return gitRefType(r.name) }
 func (r *gitRefResolver) Target() interface {
 	OID(context.Context) (gitObjectID, error)
+	//lint:ignore U1000 is used by graphql via reflection
 	AbbreviatedOID(context.Context) (string, error)
+	//lint:ignore U1000 is used by graphql via reflection
 	Commit(context.Context) (*gitCommitResolver, error)
+	//lint:ignore U1000 is used by graphql via reflection
 	Type(context.Context) (gitObjectType, error)
 } {
 	if r.target != "" {

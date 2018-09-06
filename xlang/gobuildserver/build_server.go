@@ -62,33 +62,18 @@ func NewHandler() jsonrpc2.Handler {
 type BuildHandler struct {
 	lang *langserver.LangHandler
 
-	mu                    sync.Mutex
-	fetchAndSendDepsOnces map[lsp.DocumentURI]*sync.Once // key is file URI
-	depURLMutex           *keyMutex
-	gopathDeps            []*directory
-	pinnedDepsOnce        sync.Once
-	pinnedDeps            pinnedPkgs
-	findPkgMu             sync.Mutex // guards findPkg
-	findPkg               map[findPkgKey]*findPkgValue
+	mu             sync.Mutex
+	depURLMutex    *keyMutex
+	gopathDeps     []*directory
+	pinnedDepsOnce sync.Once
+	pinnedDeps     pinnedPkgs
+	findPkgMu      sync.Mutex // guards findPkg
+	findPkg        map[findPkgKey]*findPkgValue
 	langserver.HandlerCommon
 	*langserver.HandlerShared
 	init           *lspext.InitializeParams // set by "initialize" request
 	rootImportPath string                   // root import path of the workspace (e.g., "github.com/foo/bar")
 	cachingClient  *http.Client             // http.Client with a cache backed by the LSP Proxy, set by BuildHandler.reset()
-}
-
-func (h *BuildHandler) fetchAndSendDepsOnce(fileURI lsp.DocumentURI) *sync.Once {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.fetchAndSendDepsOnces == nil {
-		h.fetchAndSendDepsOnces = map[lsp.DocumentURI]*sync.Once{}
-	}
-	once, ok := h.fetchAndSendDepsOnces[fileURI]
-	if !ok {
-		once = new(sync.Once)
-		h.fetchAndSendDepsOnces[fileURI] = once
-	}
-	return once
 }
 
 // RuntimeVersion is the version of go stdlib to use. We allow it to be
@@ -109,7 +94,6 @@ func (h *BuildHandler) reset(init *lspext.InitializeParams, conn *jsonrpc2.Conn,
 	}
 	h.init = init
 	h.cachingClient = &http.Client{Transport: httpcache.NewTransport(&lspCache{context.Background(), conn})}
-	h.fetchAndSendDepsOnces = nil
 	h.depURLMutex = newKeyMutex()
 	h.gopathDeps = nil
 	h.pinnedDepsOnce = sync.Once{}
