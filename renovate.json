@@ -1,37 +1,5 @@
 {
   "$schema": "http://json.schemastore.org/renovate",
-  "extends": ["config:base"],
-  "timezone": "America/Los_Angeles",
-  "schedule": ["on the 1st through 7th day of the month"],
-  "lockFileMaintenance": {
-    "enabled": true,
-    "schedule": ["on the 1st through 7th day of the month"]
-  },
-  "updateNotScheduled": true,
-  "prCreation": "not-pending",
-  "semanticCommits": false,
-  "rangeStrategy": "replace",
-  "assignees": ["felixfbecker"],
-  "packageRules": [
-    {
-      "packagePatterns": ["^@sourcegraph/"],
-      "packageNames": ["sourcegraph"],
-      "rangeStrategy": "bump",
-      "schedule": []
-    },
-    {
-      "packagePatterns": ["^@types/"],
-      "rangeStrategy": "pin",
-      "assignees": [],
-      "automerge": true
-    },
-    {
-      "packageNames": ["sourcegraph", "@sourcegraph/extensions-client-common"],
-      "assignees": ["chrismwendt"]
-    },
-    {
-      "packageNames": ["@sourcegraph/phabricator-extension"],
-      "assignees": ["KattMingMing"]
-    }
-  ]
+  "extends": ["github>sourcegraph/renovate-config"],
+  "semanticCommits": false
 }
