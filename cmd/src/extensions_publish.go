@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 func init() {
@@ -28,6 +29,11 @@ Examples:
           "scripts":   {"sourcegraph:prepublish": "parcel build --out-file dist/myext.js src/myext.ts"}
         }
     	$ src extensions publish
+
+Notes:
+
+  Source maps are supported (for easier debugging of extensions). If the main JavaScript bundle is "dist/myext.js",
+  it looks for a source map in "dist/myext.map".
 
 `
 
@@ -68,7 +74,7 @@ Examples:
 			return err
 		}
 
-		var bundle *string
+		var bundle, sourceMap *string
 		if *urlFlag != "" {
 			manifest, err = updatePropertyInManifest(manifest, "url", *urlFlag)
 			if err != nil {
@@ -81,7 +87,7 @@ Examples:
 			}
 
 			var err error
-			bundle, err = readBundleFileInManifest(manifest, filepath.Dir(*manifestFlag))
+			bundle, sourceMap, err = readExtensionArtifacts(manifest, filepath.Dir(*manifestFlag))
 			if err != nil {
 				return err
 			}
@@ -90,7 +96,8 @@ Examples:
 		query := `mutation PublishExtension(
   $extensionID: String!,
   $manifest: String!,
-  $bundle: String
+  $bundle: String,
+  $sourceMap: String,
   $force: Boolean!,
 ) {
   extensionRegistry {
@@ -98,6 +105,7 @@ Examples:
       extensionID: $extensionID,
       manifest: $manifest,
       bundle: $bundle,
+      sourceMap: $sourceMap,
       force: $force,
     ) {
       extension {
@@ -124,6 +132,7 @@ Examples:
 				"extensionID": extensionID,
 				"manifest":    string(manifest),
 				"bundle":      bundle,
+				"sourceMap":   sourceMap,
 				"force":       *forceFlag,
 			},
 			result: &result,
@@ -239,21 +248,37 @@ func addReadmeToManifest(manifest []byte, dir string) ([]byte, error) {
 	return json.MarshalIndent(o, "", "  ")
 }
 
-func readBundleFileInManifest(manifest []byte, dir string) (*string, error) {
+func readExtensionArtifacts(manifest []byte, dir string) (bundle, sourceMap *string, err error) {
 	var o struct {
 		Main string `json:"main"`
 	}
 	if err := json.Unmarshal(manifest, &o); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if o.Main == "" {
-		return nil, nil
+		return nil, nil, nil
 	}
+
 	mainPath := filepath.Join(dir, o.Main)
+
 	data, err := ioutil.ReadFile(mainPath)
 	if err != nil {
-		return nil, fmt.Errorf(`extension manifest "main" bundle file: %s`, err)
+		return nil, nil, fmt.Errorf(`extension manifest "main" bundle file: %s`, err)
 	}
-	tmp := string(data)
-	return &tmp, nil
+	{
+		tmp := string(data)
+		bundle = &tmp
+	}
+
+	// Guess that source map is the main file with a ".map" extension.
+	sourceMapPath := strings.TrimSuffix(mainPath, filepath.Ext(mainPath)) + ".map"
+	data, err = ioutil.ReadFile(sourceMapPath)
+	if err == nil {
+		tmp := string(data)
+		sourceMap = &tmp
+	} else if !os.IsNotExist(err) {
+		return nil, nil, err
+	}
+
+	return bundle, sourceMap, nil
 }
