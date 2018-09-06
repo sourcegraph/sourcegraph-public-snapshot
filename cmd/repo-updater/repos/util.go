@@ -81,6 +81,13 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 			return
 		}
 
+		err = api.InternalClient.ReposUpdateMetadata(ctx, op.RepoURI, op.Description, op.Fork, op.Archived)
+		if err != nil {
+			log15.Warn("Error updating repository metadata", "repo", op.RepoURI, "error", err)
+			errors++
+			return
+		}
+
 		// if newScheduler is set (controlled by feature flag), do this instead of running
 		// the old code.
 		if NewScheduler() {

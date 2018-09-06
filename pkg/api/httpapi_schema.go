@@ -41,6 +41,9 @@ type RepoCreateOrUpdateRequest struct {
 
 	// Fork is whether this repository is a fork (according to its external origin).
 	Fork bool `json:"fork"`
+
+	// Archived is whether this repository is archived (according to its external origin).
+	Archived bool `json:"archived"`
 }
 
 type RepoUpdateIndexRequest struct {
@@ -57,6 +60,13 @@ type RepoUnindexedDependenciesRequest struct {
 type ReposGetInventoryUncachedRequest struct {
 	Repo RepoID
 	CommitID
+}
+
+type ReposUpdateMetadataRequest struct {
+	RepoURI     `json:"uri"`
+	Description string `json:"description"`
+	Fork        bool   `json:"fork"`
+	Archived    bool   `json:"Archived"`
 }
 
 type ReposGetInventoryRequest struct {

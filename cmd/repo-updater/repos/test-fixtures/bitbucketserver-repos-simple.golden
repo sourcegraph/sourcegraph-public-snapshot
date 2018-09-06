@@ -3,6 +3,7 @@
     "URI": "/SG/go-langserver",
     "Description": "go-langserver",
     "Fork": false,
+    "Archived": false,
     "VCS": {
       "URL": "https://keegan:secret@bitbucket.example.com/scm/sg/go-langserver.git"
     },
@@ -22,6 +23,7 @@
     "URI": "/SG/python-langserver",
     "Description": "python-langserver",
     "Fork": false,
+    "Archived": false,
     "VCS": {
       "URL": "https://keegan:secret@bitbucket.example.com/scm/sg/python-langserver.git"
     },
@@ -41,6 +43,7 @@
     "URI": "/SG/python-langserver-fork",
     "Description": "python-langserver-fork",
     "Fork": true,
+    "Archived": false,
     "VCS": {
       "URL": "https://keegan:secret@bitbucket.example.com/scm/sg/python-langserver-fork.git"
     },
@@ -60,6 +63,7 @@
     "URI": "/~KEEGAN/rgp",
     "Description": "rgp",
     "Fork": false,
+    "Archived": false,
     "VCS": {
       "URL": "https://keegan:secret@bitbucket.example.com/scm/~keegan/rgp.git"
     },

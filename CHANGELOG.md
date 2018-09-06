@@ -11,6 +11,18 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
+- Search syntax for filtering archived repositories. `archived:no` will exclude archived repositories from search results, `archived:only` will search over archived repositories only. This applies for GitHub and GitLab repositories.
+
+### Fixed
+
+### Removed
+
+## 2.11.0
+
+### Changed
+
+### Added
+
 - Support for ACME "tls-alpn-01" challenges to obtain LetsEncrypt certificates. Previously Sourcegraph only supported ACME "http-01" challenges which required port 80 to be accessible.
 - gitserver periodically removes stale lock files that git can leave behind.
 - Commits with empty trees no longer return 404.

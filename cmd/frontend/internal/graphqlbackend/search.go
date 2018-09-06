@@ -215,6 +215,9 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 	forkStr, _ := r.query.StringValue(query.FieldFork)
 	fork := parseYesNoOnly(forkStr)
 
+	archivedStr, _ := r.query.StringValue(query.FieldArchived)
+	archived := parseYesNoOnly(archivedStr)
+
 	tr.LazyPrintf("resolveRepositories - start")
 	repoRevs, missingRepoRevs, repoResults, overLimit, err = resolveRepositories(ctx, resolveRepoOp{
 		repoFilters:      repoFilters,
@@ -222,6 +225,8 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, effectiveRepoF
 		repoGroupFilters: repoGroupFilters,
 		onlyForks:        fork == Only || fork == True,
 		noForks:          fork == No || fork == False,
+		onlyArchived:     archived == Only || archived == True,
+		noArchived:       archived == No || archived == False,
 	})
 	tr.LazyPrintf("resolveRepositories - done")
 	if effectiveRepoFieldValues == nil {
@@ -333,6 +338,8 @@ type resolveRepoOp struct {
 	repoGroupFilters []string
 	noForks          bool
 	onlyForks        bool
+	noArchived       bool
+	onlyArchived     bool
 }
 
 func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, missingRepoRevisions []*repositoryRevisions, repoResolvers []*searchSuggestionResolver, overLimit bool, err error) {
@@ -386,9 +393,11 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 		ExcludePattern:  unionRegExps(excludePatterns),
 		Enabled:         true,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-		LimitOffset: &db.LimitOffset{Limit: maxRepoListSize + 1},
-		NoForks:     op.noForks,
-		OnlyForks:   op.onlyForks,
+		LimitOffset:  &db.LimitOffset{Limit: maxRepoListSize + 1},
+		NoForks:      op.noForks,
+		OnlyForks:    op.onlyForks,
+		NoArchived:   op.noArchived,
+		OnlyArchived: op.onlyArchived,
 	})
 	tr.LazyPrintf("Repos.List - done")
 	if err != nil {

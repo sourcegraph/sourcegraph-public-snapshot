@@ -56,6 +56,7 @@ type InsertRepoOp struct {
 	URI          RepoURI
 	Description  string
 	Fork         bool
+	Archived     bool
 	Enabled      bool
 	ExternalRepo *ExternalRepoSpec
 }

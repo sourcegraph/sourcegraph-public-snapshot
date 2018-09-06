@@ -285,6 +285,15 @@ func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo Re
 	return unfetchedDeps, nil
 }
 
+func (c *internalClient) ReposUpdateMetadata(ctx context.Context, uri RepoURI, description string, fork bool, archived bool) error {
+	return c.postInternal(ctx, "repos/update-metadata", ReposUpdateMetadataRequest{
+		RepoURI:     uri,
+		Description: description,
+		Fork:        fork,
+		Archived:    archived,
+	}, nil)
+}
+
 func (c *internalClient) ReposUpdateIndex(ctx context.Context, repo RepoID, commitID CommitID, lang string) error {
 	return c.postInternal(ctx, "repos/update-index", RepoUpdateIndexRequest{
 		RepoID:   repo,

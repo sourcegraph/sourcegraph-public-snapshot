@@ -139,6 +139,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 			ExternalRepo: GitHubExternalRepoSpec(ghrepo, *conn.baseURL),
 			Description:  ghrepo.Description,
 			Fork:         ghrepo.IsFork,
+			Archived:     ghrepo.IsArchived,
 			Links: &protocol.RepoLinks{
 				Root:   ghrepo.URL,
 				Tree:   ghrepo.URL + "/tree/{rev}/{path}",
@@ -202,6 +203,7 @@ func GetGitHubRepository(ctx context.Context, args protocol.RepoLookupArgs) (rep
 				ExternalRepo: nil,
 				Description:  "",
 				Fork:         false,
+				Archived:     false,
 				Links: &protocol.RepoLinks{
 					Root:   remoteURL,
 					Tree:   remoteURL + "/tree/{rev}/{path}",
@@ -298,6 +300,7 @@ func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 				ExternalRepo: GitHubExternalRepoSpec(repo, *conn.baseURL),
 				Description:  repo.Description,
 				Fork:         repo.IsFork,
+				Archived:     repo.IsArchived,
 				Enabled:      conn.config.InitialRepositoryEnablement,
 			},
 			URL: conn.authenticatedRemoteURL(repo),

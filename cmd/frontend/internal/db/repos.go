@@ -169,6 +169,12 @@ type ReposListOptions struct {
 	// OnlyForks excludes non-forks from the lhist.
 	OnlyForks bool
 
+	// NoArchived excludes archived repositories from the list.
+	NoArchived bool
+
+	// OnlyArchived excludes non-archived repositories from the list.
+	OnlyArchived bool
+
 	// Filters repositories based on whether they have an IndexedRevision set.
 	HasIndexedRevision *bool
 
@@ -331,6 +337,12 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	}
 	if opt.OnlyForks {
 		conds = append(conds, sqlf.Sprintf("fork"))
+	}
+	if opt.NoArchived {
+		conds = append(conds, sqlf.Sprintf("NOT archived"))
+	}
+	if opt.OnlyArchived {
+		conds = append(conds, sqlf.Sprintf("archived"))
 	}
 
 	return conds, nil
@@ -533,12 +545,17 @@ func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, comm
 	return err
 }
 
+func (s *repos) UpdateRepositoryMetadata(ctx context.Context, uri api.RepoURI, description string, fork bool, archived bool) error {
+	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE uri=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, uri)
+	return err
+}
+
 const upsertSQL = `WITH UPSERT AS (
-	UPDATE repo SET uri=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7 WHERE uri=$1 RETURNING uri
+	UPDATE repo SET uri=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7, archived=$9 WHERE uri=$1 RETURNING uri
 )
-INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id) (
+INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id, archived) (
 	SELECT $1 AS uri, $2 AS description, $3 AS fork, $8 as language, $4 AS enabled,
-	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id
+	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id, $9 AS archived
 	WHERE $1 NOT IN (SELECT uri FROM upsert)
 )`
 
@@ -580,7 +597,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
-	_, err = globalDB.ExecContext(ctx, upsertSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language)
+	_, err = globalDB.ExecContext(ctx, upsertSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived)
 	return err
 }
 

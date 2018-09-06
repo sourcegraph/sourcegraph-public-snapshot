@@ -120,6 +120,7 @@ func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
 			URI:          result.Repo.URI,
 			Description:  result.Repo.Description,
 			Fork:         result.Repo.Fork,
+			Archived:     result.Repo.Archived,
 			Enabled:      enableAutoAddedRepos,
 			ExternalRepo: result.Repo.ExternalRepo,
 		}); err != nil {

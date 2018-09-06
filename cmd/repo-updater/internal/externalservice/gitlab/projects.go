@@ -19,6 +19,7 @@ type Project struct {
 	ProjectCommon
 	Visibility        string         `json:"visibility"`                    // "private", "internal", or "public"
 	ForkedFromProject *ProjectCommon `json:"forked_from_project,omitempty"` // If non-nil, the project from which this project was forked
+	Archived          bool           `json:"archived"`
 }
 
 type ProjectCommon struct {

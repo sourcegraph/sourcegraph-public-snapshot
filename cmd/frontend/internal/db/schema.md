@@ -356,6 +356,7 @@ Referenced by:
  external_service_type   | text                     | 
  external_service_id     | text                     | 
  enabled                 | boolean                  | not null default true
+ archived                | boolean                  | not null default false
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_uri_unique" UNIQUE, btree (uri)

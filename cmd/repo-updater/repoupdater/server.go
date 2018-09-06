@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/gitlab"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
@@ -145,6 +146,17 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 		} else if isTemporarilyUnavailable(err) {
 			result.ErrorTemporarilyUnavailable = true
 			err = nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		if repo != nil {
+			go func() {
+				err := api.InternalClient.ReposUpdateMetadata(ctx, repo.URI, repo.Description, repo.Fork, repo.Archived)
+				if err != nil {
+					log15.Warn("Error updating repo metadata", "repo", repo.URI, "err", err)
+				}
+			}()
 		}
 		if err != nil {
 			return nil, err

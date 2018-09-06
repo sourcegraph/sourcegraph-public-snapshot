@@ -30,6 +30,7 @@ type Repository struct {
 	URL              string // the web URL of this repository ("https://github.com/foo/bar")
 	IsPrivate        bool   // whether the repository is private
 	IsFork           bool   // whether the repository is a fork of another repository
+	IsArchived       bool   // whether the repository is archived on the code host
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this.
 }
 
@@ -45,6 +46,7 @@ fragment RepositoryFields on Repository {
 	url
 	isPrivate
 	isFork
+	isArchived
 	viewerPermission
 }
 	`
@@ -60,6 +62,7 @@ fragment RepositoryFields on Repository {
 	url
 	isPrivate
 	isFork
+	isArchived
 }
 	`
 }
@@ -209,6 +212,7 @@ type restRepository struct {
 	HTMLURL     string `json:"html_url"` // web URL
 	Private     bool
 	Fork        bool
+	Archived    bool
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -217,9 +221,6 @@ func (c *Client) getRepositoryFromAPI(ctx context.Context, owner, name string) (
 	// https://platform.github.community/t/anonymous-access/2093/2. This situation occurs on (for
 	// example) a server with autoAddRepos and no GitHub connection configured when someone visits
 	// http://[sourcegraph-hostname]/github.com/foo/bar.
-	//
-	// To avoid having 2 code paths when getting a repo (REST API and GraphQL API), we just always
-	// use the REST API.
 	var result restRepository
 	if err := c.requestGet(ctx, fmt.Sprintf("/repos/%s/%s", owner, name), &result); err != nil {
 		return nil, err
@@ -238,6 +239,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		URL:           restRepo.HTMLURL,
 		IsPrivate:     restRepo.Private,
 		IsFork:        restRepo.Fork,
+		IsArchived:    restRepo.Archived,
 	}
 }
 

@@ -115,6 +115,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 		URI:          repo.RepoURI,
 		Description:  repo.Description,
 		Fork:         repo.Fork,
+		Archived:     repo.Archived,
 		Enabled:      repo.Enabled,
 		ExternalRepo: repo.ExternalRepo,
 	})
@@ -131,6 +132,18 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+	return nil
+}
+
+func serveReposUpdateMetadata(w http.ResponseWriter, r *http.Request) error {
+	var repo api.ReposUpdateMetadataRequest
+	err := json.NewDecoder(r.Body).Decode(&repo)
+	if err != nil {
+		return err
+	}
+	if err := db.Repos.UpdateRepositoryMetadata(r.Context(), repo.RepoURI, repo.Description, repo.Fork, repo.Archived); err != nil {
+		return errors.Wrap(err, "Repos.UpdateRepositoryMetadata failed")
+	}
 	return nil
 }
 
