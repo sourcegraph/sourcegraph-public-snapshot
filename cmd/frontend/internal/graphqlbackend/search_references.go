@@ -26,15 +26,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query) (res []*searchResultResolver, common *searchResultsCommon, err error) {
-	refValues, negatedRefValues := q.StringValues(query.FieldRef)
+func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs) (res []*searchResultResolver, common *searchResultsCommon, err error) {
+	refValues, negatedRefValues := args.Query.StringValues(query.FieldRef)
 	if len(negatedRefValues) != 0 {
 		return nil, nil, errors.New("not supported: negated references queries (-ref:)")
 	}
 	if len(refValues) != 1 {
 		return nil, nil, errors.New("search query must have at most 1 ref: value")
 	}
-	if len(q.Values(query.FieldDefault)) > 0 {
+	if len(args.Query.Values(query.FieldDefault)) > 0 {
 		return nil, nil, errors.New("not yet supported: combining references search query (ref:) and text search patterns")
 	}
 
@@ -43,13 +43,13 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 		return nil, nil, errors.Wrap(err, "parsing ref: value")
 	}
 	var hints map[string]interface{} // hints for speeding up workspace/xreferences
-	if hintValues, _ := q.StringValues(query.FieldHints); len(hintValues) > 0 {
+	if hintValues, _ := args.Query.StringValues(query.FieldHints); len(hintValues) > 0 {
 		if err := json.Unmarshal([]byte(hintValues[0]), &hints); err != nil {
 			return nil, nil, errors.Wrap(err, "parsing hints: value")
 		}
 	}
 	var language string
-	if langValues, _ := q.StringValues(query.FieldLang); len(langValues) == 0 {
+	if langValues, _ := args.Query.StringValues(query.FieldLang); len(langValues) == 0 {
 		return nil, nil, errors.New("references search query must have a lang: value (such as lang:go)")
 	} else if len(langValues) >= 2 {
 		return nil, nil, errors.New("not supported: multiple lang: values in references search")
@@ -66,7 +66,7 @@ func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs, q query.
 	// Speed up references search by consulting the global_dep index to see who else
 	// references this symbol (avoiding the need to search packages in repositories that
 	// don't reference it). Only do this if no repository filters are specified in the query.
-	if len(q.Values(query.FieldRepo)) == 0 && len(q.Values(query.FieldRepoGroup)) == 0 {
+	if len(args.Query.Values(query.FieldRepo)) == 0 && len(args.Query.Values(query.FieldRepoGroup)) == 0 {
 		pkgDescriptor, ok := xlang.SymbolPackageDescriptor(symbol, language)
 		if ok {
 			// NOTE: This clobbers the package's version, which may not be desirable in

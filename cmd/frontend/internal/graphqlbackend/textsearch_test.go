@@ -159,18 +159,19 @@ func TestSearchFilesInRepos(t *testing.T) {
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
+	q, err := query.ParseAndCheck("foo")
+	if err != nil {
+		t.Fatal(err)
+	}
 	args := &repoSearchArgs{
 		Pattern: &search.PatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
 		},
 		Repos: makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-db", "foo/timedout", "foo/no-rev"),
+		Query: q,
 	}
-	q, err := query.ParseAndCheck("foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-	results, common, err := searchFilesInRepos(context.Background(), args, *q, false)
+	results, common, err := searchFilesInRepos(context.Background(), args, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,8 +197,9 @@ func TestSearchFilesInRepos(t *testing.T) {
 			Pattern:        "foo",
 		},
 		Repos: makeRepositoryRevisions("foo/no-rev@dev"),
+		Query: q,
 	}
-	_, _, err = searchFilesInRepos(context.Background(), args, *q, false)
+	_, _, err = searchFilesInRepos(context.Background(), args, false)
 	if !git.IsRevisionNotFound(errors.Cause(err)) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}

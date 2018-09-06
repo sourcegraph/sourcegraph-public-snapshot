@@ -363,6 +363,11 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 type repoSearchArgs struct {
 	Pattern *search.PatternInfo
 	Repos   []*search.RepositoryRevisions
+
+	// Query is the parsed query from the user. You should be using Pattern
+	// instead, but Query is useful for checking extra fields that are set and
+	// ignored by Pattern, such as index:no
+	Query *query.Query
 }
 
 func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, searchTimeoutFieldSet bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
@@ -655,7 +660,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 var mockSearchFilesInRepos func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query, searchTimeoutFieldSet bool) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, searchTimeoutFieldSet bool) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -690,7 +695,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 	}
 
 	// Support index:yes (default), index:only, and index:no in search query.
-	index, _ := q.StringValues(query.FieldIndex)
+	index, _ := args.Query.StringValues(query.FieldIndex)
 	if len(index) > 0 {
 		index := index[len(index)-1]
 		switch parseYesNoOnly(index) {

@@ -58,7 +58,7 @@ func (r *schemaResolver) Search(args *struct {
 	}
 	return &searchResolver{
 		root:  r,
-		query: *query,
+		query: query,
 	}, nil
 }
 
@@ -77,7 +77,7 @@ func asString(v *searchquerytypes.Value) string {
 type searchResolver struct {
 	root *schemaResolver
 
-	query query.Query // the parsed search query
+	query *query.Query // the parsed search query
 
 	// Cached resolveRepositories results.
 	reposMu                   sync.Mutex

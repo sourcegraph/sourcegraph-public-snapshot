@@ -660,6 +660,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	args := repoSearchArgs{
 		Pattern: p,
 		Repos:   repos,
+		Query:   r.query,
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, &badRequestError{err}
@@ -726,7 +727,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.query, r.maxResults())
+				repoResults, repoCommon, err := searchRepositories(ctx, &args, r.maxResults())
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -750,7 +751,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, r.query, int(r.maxResults()))
+				symbolFileMatches, symbolsCommon, err := searchSymbols(ctx, &args, int(r.maxResults()))
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -787,7 +788,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args, r.query, r.searchTimeoutFieldSet())
+				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args, r.searchTimeoutFieldSet())
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -825,7 +826,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				refResults, refCommon, err := searchReferencesInRepos(ctx, &args, r.query)
+				refResults, refCommon, err := searchReferencesInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -848,7 +849,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args, r.query)
+				diffResults, diffCommon, err := searchCommitDiffsInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
@@ -872,7 +873,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args, r.query)
+				commitResults, commitCommon, err := searchCommitLogInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()

@@ -13,7 +13,7 @@ var mockSearchRepositories func(args *repoSearchArgs) ([]*searchResultResolver, 
 //
 // For a repository to match a query, the repository's name ("URI") must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, args *repoSearchArgs, q query.Query, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error) {
+func searchRepositories(ctx context.Context, args *repoSearchArgs, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 	if mockSearchRepositories != nil {
 		return mockSearchRepositories(args)
 	}
@@ -32,7 +32,7 @@ func searchRepositories(ctx context.Context, args *repoSearchArgs, q query.Query
 	}
 	// Don't return repo results if the search contains fields that aren't on the whitelist.
 	// Matching repositories based whether they contain files at a certain path (etc.) is not yet implemented.
-	for field := range q.Fields {
+	for field := range args.Query.Fields {
 		if _, ok := fieldWhitelist[field]; !ok {
 			return nil, nil, nil
 		}

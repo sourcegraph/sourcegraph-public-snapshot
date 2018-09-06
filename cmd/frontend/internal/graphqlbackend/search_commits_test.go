@@ -55,7 +55,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	results, limitHit, timedOut, err := searchCommitsInRepo(ctx, commitSearchOp{
 		repoRevs:          repoRevs,
 		info:              &search.PatternInfo{Pattern: "p", FileMatchLimit: int32(defaultMaxSearchResults)},
-		query:             *query,
+		query:             query,
 		diff:              true,
 		textSearchOptions: git.TextSearchOptions{Pattern: "p"},
 	})

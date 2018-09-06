@@ -300,7 +300,7 @@ outer:
 		// add it to the user's query, but be smart. For example, if the user's
 		// query was "repo:foo" and the parent is "foobar/", then propose "repo:foobar/"
 		// not "repo:foo repo:foobar/" (which are equivalent, but shorter is better).
-		newExpr := addQueryRegexpField(&r.query, query.FieldRepo, repoParentPattern)
+		newExpr := addQueryRegexpField(r.query, query.FieldRepo, repoParentPattern)
 		alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 			description: "in repositories under " + repoParent + more,
 			query:       syntax.ExprString(newExpr),
@@ -318,7 +318,7 @@ outer:
 			if i >= maxReposToPropose {
 				break
 			}
-			newExpr := addQueryRegexpField(&r.query, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
+			newExpr := addQueryRegexpField(r.query, query.FieldRepo, "^"+regexp.QuoteMeta(pathToPropose)+"$")
 			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
 				description: "in the repository " + strings.TrimPrefix(pathToPropose, "github.com/"),
 				query:       syntax.ExprString(newExpr),
@@ -351,7 +351,7 @@ func (r *searchResolver) alertForMissingRepoRevs(missingRepoRevs []*search.Repos
 }
 
 func omitQueryFields(r *searchResolver, field string) string {
-	return syntax.ExprString(omitQueryExprWithField(&r.query, field))
+	return syntax.ExprString(omitQueryExprWithField(r.query, field))
 }
 
 func omitQueryExprWithField(query *query.Query, field string) []*syntax.Expr {

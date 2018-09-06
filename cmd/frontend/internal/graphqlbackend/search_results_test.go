@@ -92,7 +92,7 @@ func TestSearchResults(t *testing.T) {
 		defer func() { mockSearchRepositories = nil }()
 
 		calledSearchSymbols := false
-		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, query query.Query, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 			calledSearchSymbols = true
 			if want := `(foo\d).*?(bar\*)`; args.Pattern.Pattern != want {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
@@ -231,7 +231,7 @@ func TestSearchResolver_getPatternInfo(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			sr := searchResolver{query: *query}
+			sr := searchResolver{query: query}
 			p, err := sr.getPatternInfo()
 			if err != nil {
 				t.Fatal(err)
