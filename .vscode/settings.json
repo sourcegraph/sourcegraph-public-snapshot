@@ -1,11 +1,4 @@
 {
   "editor.formatOnSave": true,
-  "files.exclude": {
-    "**/.cache": true,
-    "**/dist": true,
-    "lib/": true,
-    "module/": true
-  },
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "coverage-gutters.lcovname": "coverage/lcov.info"
+  "typescript.tsdk": "node_modules/typescript/lib"
 }
