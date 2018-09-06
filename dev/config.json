@@ -10,7 +10,7 @@
     "discussions": "enabled"
   },
   "htmlHeadTop":
-    "<script>if (localStorage.getItem('disableDefaultFeatureFlags') !== 'true') { localStorage.setItem('treeVersion', '3'); localStorage.setItem('codeIntelStatusIndicator', 'true'); localStorage.setItem('blobVersion', '2'); localStorage.setItem('enable-file-history', 'true'); }</script>",
+    "<script>if (localStorage.getItem('disableDefaultFeatureFlags') !== 'true') { localStorage.setItem('treeVersion', '3'); localStorage.setItem('codeIntelStatusIndicator', 'true'); localStorage.setItem('blobVersion', '2'); localStorage.setItem('enable-file-history', 'true'); localStorage.setItem('platform', true); }</script>",
   "disablePublicRepoRedirects": true,
   "phabricator": [
     {
