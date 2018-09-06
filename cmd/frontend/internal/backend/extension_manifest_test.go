@@ -19,7 +19,7 @@ func TestGetExtensionManifestWithBundleURL(t *testing.T) {
 	}
 
 	t.Run(`manifest with "url"`, func(t *testing.T) {
-		db.Mocks.RegistryExtensionReleases.GetLatest = func(registryExtensionID int32, releaseTag string, includeBundle bool) (*db.RegistryExtensionRelease, error) {
+		db.Mocks.RegistryExtensionReleases.GetLatest = func(registryExtensionID int32, releaseTag string, includeArtifacts bool) (*db.RegistryExtensionRelease, error) {
 			return &db.RegistryExtensionRelease{
 				Manifest: `{"name":"x","url":"u"}`,
 			}, nil
@@ -35,7 +35,7 @@ func TestGetExtensionManifestWithBundleURL(t *testing.T) {
 	})
 
 	t.Run(`manifest without "url"`, func(t *testing.T) {
-		db.Mocks.RegistryExtensionReleases.GetLatest = func(registryExtensionID int32, releaseTag string, includeBundle bool) (*db.RegistryExtensionRelease, error) {
+		db.Mocks.RegistryExtensionReleases.GetLatest = func(registryExtensionID int32, releaseTag string, includeArtifacts bool) (*db.RegistryExtensionRelease, error) {
 			return &db.RegistryExtensionRelease{
 				Manifest: `{"name":"x"}`,
 			}, nil

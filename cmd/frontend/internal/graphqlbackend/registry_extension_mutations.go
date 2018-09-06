@@ -95,6 +95,7 @@ func (*extensionRegistryResolver) PublishExtension(ctx context.Context, args *st
 	ExtensionID string
 	Manifest    string
 	Bundle      *string
+	SourceMap   *string
 	Force       bool
 }) (*extensionRegistryMutationResult, error) {
 	// Add the prefix if needed, for ease of use.
@@ -171,6 +172,7 @@ func (*extensionRegistryResolver) PublishExtension(ctx context.Context, args *st
 		ReleaseTag:          "release",
 		Manifest:            args.Manifest,
 		Bundle:              args.Bundle,
+		SourceMap:           args.SourceMap,
 	}
 	if _, err := db.RegistryExtensionReleases.Create(ctx, &release); err != nil {
 		return nil, err

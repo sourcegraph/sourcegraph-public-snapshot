@@ -298,6 +298,7 @@ Foreign-key constraints:
  bundle                | text                     | 
  created_at            | timestamp with time zone | not null default now()
  deleted_at            | timestamp with time zone | 
+ source_map            | text                     | 
 Indexes:
     "registry_extension_releases_pkey" PRIMARY KEY, btree (id)
     "registry_extension_releases_version" UNIQUE, btree (registry_extension_id, release_version) WHERE release_version IS NOT NULL

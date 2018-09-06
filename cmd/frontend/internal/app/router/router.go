@@ -70,7 +70,7 @@ func newRouter() *mux.Router {
 	base.Path("/-/reset-password-init").Methods("POST").Name(ResetPasswordInit)
 	base.Path("/-/reset-password-code").Methods("POST").Name(ResetPasswordCode)
 
-	base.Path("/-/static/extension/{RegistryExtensionReleaseID}").Methods("GET").Name(RegistryExtensionBundle)
+	base.Path("/-/static/extension/{RegistryExtensionReleaseFilename}").Methods("GET").Name(RegistryExtensionBundle)
 
 	base.Path("/-/godoc/refs").Methods("GET").Name(GDDORefs)
 	base.Path("/-/editor").Methods("GET").Name(Editor)

@@ -3100,6 +3100,11 @@ type ExtensionRegistryMutation {
         manifest: String!
         # The bundled JavaScript source of the extension.
         bundle: String
+        # The source map of the extension's JavaScript bundle, if any.
+        #
+        # The JavaScript bundle's "//# sourceMappingURL=" directive, if any, is ignored. When the bundle is served,
+        # the source map provided here is referenced instead.
+        sourceMap: String
         # Force publish even if there are warnings (such as invalid JSON warnings).
         force: Boolean = false
     ): ExtensionRegistryCreateExtensionResult!

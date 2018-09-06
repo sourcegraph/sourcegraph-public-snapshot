@@ -1,31 +1,39 @@
 package app
 
 import (
+	"fmt"
 	"net/http"
+	"net/url"
+	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
-// serveRegistryExtensionBundle serves the bundled JavaScript source file for an extension in the
-// registry as a raw JavaScript file.
+// serveRegistryExtensionBundle serves the bundled JavaScript source file or the source map for an
+// extension in the registry as a raw JavaScript or JSON file.
 func serveRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	if conf.Platform() == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	releaseIDStr := strings.TrimSuffix(mux.Vars(r)["RegistryExtensionReleaseID"], ".js")
+	filename := mux.Vars(r)["RegistryExtensionReleaseFilename"]
+	ext := filepath.Ext(filename)
+	wantSourceMap := ext == ".map"
+	releaseIDStr := strings.TrimSuffix(filename, ext)
 	releaseID, err := strconv.ParseInt(releaseIDStr, 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	bundle, err := db.RegistryExtensionReleases.GetBundle(r.Context(), releaseID)
+	bundle, sourceMap, err := db.RegistryExtensionReleases.GetArtifacts(r.Context(), releaseID)
 	if errcode.IsNotFound(err) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
@@ -52,5 +60,30 @@ func serveRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	if r.URL.RawQuery != "" {
 		w.Header().Set("Cache-Control", "max-age=604800, private, immutable")
 	}
-	w.Write(bundle)
+	var data []byte
+	if wantSourceMap {
+		if sourceMap == nil {
+			http.Error(w, "extension has no source map", http.StatusNotFound)
+			return
+		}
+		data = sourceMap
+	} else {
+		data = bundle
+	}
+	w.Write(data)
+
+	if !wantSourceMap && sourceMap != nil {
+		// Append `//# sourceMappingURL=` directive to JS bundle if we have a source map. It is
+		// necessary to provide the absolute URL because the JS bundle is not loaded directly (e.g., via
+		// importScripts); it is saved to a blob URL and then executed, which means any relative source
+		// map URL would be interpreted relative to the blob URL (so a relative URL wouldn't
+		// work). Also, we can't rely on the original sourceMappingURL directive (if provided at publish
+		// time) because it has no way of knowing the absolute URL to the source map.
+		//
+		// This implementation is not ideal because it means the JS bundle's contents depend on the
+		// app URL, which makes it technically not immutable. But given the blob URL constraint
+		// mentioned above, it's the best known solution.
+		sourceMapURL := globals.AppURL.ResolveReference(&url.URL{Path: path.Join(path.Dir(r.URL.Path), releaseIDStr+".map")}).String()
+		fmt.Fprintf(w, "\n//# sourceMappingURL=%s", sourceMapURL)
+	}
 }

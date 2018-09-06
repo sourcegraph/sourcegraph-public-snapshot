@@ -41,8 +41,8 @@ func TestRegistryExtensionReleases(t *testing.T) {
 		}
 	})
 
-	t.Run("GetBundle with no release", func(t *testing.T) {
-		_, err := RegistryExtensionReleases.GetBundle(ctx, 9999 /* doesn't exist */)
+	t.Run("GetArtifacts with no release", func(t *testing.T) {
+		_, _, err := RegistryExtensionReleases.GetArtifacts(ctx, 9999 /* doesn't exist */)
 		if !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
@@ -55,6 +55,7 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			ReleaseTag:          "release",
 			Manifest:            "m",
 			Bundle:              strptr("b"),
+			SourceMap:           strptr("sm"),
 		}
 		id, err := RegistryExtensionReleases.Create(ctx, &input)
 		if err != nil {
@@ -62,13 +63,16 @@ func TestRegistryExtensionReleases(t *testing.T) {
 		}
 		input.ID = id
 
-		t.Run("GetBundle", func(t *testing.T) {
-			bundle, err := RegistryExtensionReleases.GetBundle(ctx, id)
+		t.Run("GetArtifacts", func(t *testing.T) {
+			bundle, sourcemap, err := RegistryExtensionReleases.GetArtifacts(ctx, id)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if want := "b"; string(bundle) != want {
 				t.Errorf("got %q, want %q", bundle, want)
+			}
+			if want := "sm"; string(sourcemap) != want {
+				t.Errorf("got %q, want %q", sourcemap, want)
 			}
 		})
 
@@ -98,6 +102,7 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			ReleaseTag:          "release",
 			Manifest:            "m2",
 			Bundle:              strptr("b2"),
+			SourceMap:           strptr("sm2"),
 		}
 		id2, err := RegistryExtensionReleases.Create(ctx, &input2)
 		if err != nil {
@@ -122,18 +127,22 @@ func TestRegistryExtensionReleases(t *testing.T) {
 			ReleaseTag:          "release",
 			Manifest:            "m3",
 			Bundle:              nil,
+			SourceMap:           nil,
 		}
 		id, err := RegistryExtensionReleases.Create(ctx, &input)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		bundle, err := RegistryExtensionReleases.GetBundle(ctx, id)
+		bundle, sourcemap, err := RegistryExtensionReleases.GetArtifacts(ctx, id)
 		if !errcode.IsNotFound(err) {
 			t.Errorf("got err %v, want errcode.IsNotFound", err)
 		}
 		if bundle != nil {
 			t.Error("bundle != nil")
+		}
+		if sourcemap != nil {
+			t.Error("sourcemap != nil")
 		}
 	})
 }

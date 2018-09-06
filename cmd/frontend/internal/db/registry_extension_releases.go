@@ -18,6 +18,7 @@ type RegistryExtensionRelease struct {
 	ReleaseTag          string
 	Manifest            string
 	Bundle              *string
+	SourceMap           *string
 	CreatedAt           time.Time
 }
 
@@ -45,11 +46,11 @@ func (s *registryExtensionReleases) Create(ctx context.Context, release *Registr
 
 	if err := globalDB.QueryRowContext(ctx,
 		`
-INSERT INTO registry_extension_releases(registry_extension_id, creator_user_id, release_version, release_tag, manifest, bundle)
-VALUES($1, $2, $3, $4, $5, $6)
+INSERT INTO registry_extension_releases(registry_extension_id, creator_user_id, release_version, release_tag, manifest, bundle, source_map)
+VALUES($1, $2, $3, $4, $5, $6, $7)
 RETURNING id
 `,
-		release.RegistryExtensionID, release.CreatorUserID, release.ReleaseVersion, release.ReleaseTag, release.Manifest, release.Bundle,
+		release.RegistryExtensionID, release.CreatorUserID, release.ReleaseVersion, release.ReleaseTag, release.Manifest, release.Bundle, release.SourceMap,
 	).Scan(&id); err != nil {
 		return 0, err
 	}
@@ -57,21 +58,21 @@ RETURNING id
 }
 
 // GetLatest gets the latest release for the extension with the given release tag (e.g.,
-// "release"). If includeBundle is true, it populates the (*RegistryExtensionRelease).Bundle field,
-// which may be large.
-func (s *registryExtensionReleases) GetLatest(ctx context.Context, registryExtensionID int32, releaseTag string, includeBundle bool) (*RegistryExtensionRelease, error) {
+// "release"). If includeArtifacts is true, it populates the
+// (*RegistryExtensionRelease).{Bundle,SourceMap} fields, which may be large.
+func (s *registryExtensionReleases) GetLatest(ctx context.Context, registryExtensionID int32, releaseTag string, includeArtifacts bool) (*RegistryExtensionRelease, error) {
 	if Mocks.RegistryExtensionReleases.GetLatest != nil {
-		return Mocks.RegistryExtensionReleases.GetLatest(registryExtensionID, releaseTag, includeBundle)
+		return Mocks.RegistryExtensionReleases.GetLatest(registryExtensionID, releaseTag, includeArtifacts)
 	}
 
 	q := sqlf.Sprintf(`
-SELECT id, registry_extension_id, creator_user_id, release_version, release_tag, manifest, CASE WHEN %v::boolean THEN bundle ELSE null END AS bundle, created_at
+SELECT id, registry_extension_id, creator_user_id, release_version, release_tag, manifest, CASE WHEN %v::boolean THEN bundle ELSE null END AS bundle, CASE WHEN %v::boolean THEN source_map ELSE null END AS source_map, created_at
 FROM registry_extension_releases
 WHERE registry_extension_id=%d AND release_tag=%s AND deleted_at IS NULL
 ORDER BY created_at DESC
-LIMIT 1`, includeBundle, registryExtensionID, releaseTag)
+LIMIT 1`, includeArtifacts, includeArtifacts, registryExtensionID, releaseTag)
 	var r RegistryExtensionRelease
-	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&r.ID, &r.RegistryExtensionID, &r.CreatorUserID, &r.ReleaseVersion, &r.ReleaseTag, &r.Manifest, &r.Bundle, &r.CreatedAt)
+	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&r.ID, &r.RegistryExtensionID, &r.CreatorUserID, &r.ReleaseVersion, &r.ReleaseTag, &r.Manifest, &r.Bundle, &r.SourceMap, &r.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, RegistryExtensionReleaseNotFoundError{[]interface{}{fmt.Sprintf("latest for registry extension ID %d tag %q", registryExtensionID, releaseTag)}}
@@ -81,28 +82,27 @@ LIMIT 1`, includeBundle, registryExtensionID, releaseTag)
 	return &r, nil
 }
 
-// GetBundle gets the bundled JavaScript source file contents for a release (by ID).
-func (s *registryExtensionReleases) GetBundle(ctx context.Context, id int64) ([]byte, error) {
+// GetArtifacts gets the bundled JavaScript source file contents and the source map for a release
+// (by ID).
+func (s *registryExtensionReleases) GetArtifacts(ctx context.Context, id int64) (bundle, sourcemap []byte, err error) {
 	q := sqlf.Sprintf(`
-SELECT bundle
+SELECT bundle, source_map
 FROM registry_extension_releases
 WHERE id=%d AND deleted_at IS NULL`, id)
-	var bundle []byte
-	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&bundle)
-	if err != nil {
+	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&bundle, &sourcemap); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, RegistryExtensionReleaseNotFoundError{[]interface{}{fmt.Sprintf("registry extension release %d", id)}}
+			return nil, nil, RegistryExtensionReleaseNotFoundError{[]interface{}{fmt.Sprintf("registry extension release %d", id)}}
 		}
-		return nil, err
+		return nil, nil, err
 	}
 	if bundle == nil {
-		return nil, RegistryExtensionReleaseNotFoundError{[]interface{}{fmt.Sprintf("no bundle for registry extension release %d", id)}}
+		return nil, nil, RegistryExtensionReleaseNotFoundError{[]interface{}{fmt.Sprintf("no bundle for registry extension release %d", id)}}
 	}
-	return bundle, nil
+	return bundle, sourcemap, nil
 }
 
 // MockRegistryExtensionReleases mocks the registry extension releases store.
 type MockRegistryExtensionReleases struct {
 	Create    func(release *RegistryExtensionRelease) (int64, error)
-	GetLatest func(registryExtensionID int32, releaseTag string, includeBundle bool) (*RegistryExtensionRelease, error)
+	GetLatest func(registryExtensionID int32, releaseTag string, includeArtifacts bool) (*RegistryExtensionRelease, error)
 }
