@@ -21,6 +21,7 @@ The commands are:
 	publish    publish the extension in the current directory
 	list       lists extensions
 	get        gets an extension
+	delete     deletes an extension
 
 Use "src extensions [command] -h" for more information about a command.
 
