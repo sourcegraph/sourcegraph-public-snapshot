@@ -278,7 +278,6 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 			dirs := existing.Hints["dirs"].([]string)
 			dirs = append(dirs, string(newURI))
 			existing.Hints["dirs"] = dirs
-			return
 		}
 
 		// We need every transitive dependency, for every Go package in the

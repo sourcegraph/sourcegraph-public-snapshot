@@ -281,7 +281,6 @@ func initRouter() {
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		serveError(w, r, errors.New("route not found"), http.StatusNotFound)
-		return
 	})
 }
 

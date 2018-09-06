@@ -85,7 +85,7 @@ func (packages) listForLanguageInRepo(ctx context.Context, language string, repo
 	pks := make([]lspext.PackageInformation, 0, len(allPks))
 	for _, pk := range allPks {
 		if baseDir, hasBaseDir := pk.Package["baseDir"]; hasBaseDir {
-			if baseDir, isStr := baseDir.(string); isStr && strings.Index(baseDir, "/vendor") != -1 {
+			if baseDir, isStr := baseDir.(string); isStr && strings.Contains(baseDir, "/vendor") {
 				continue
 			}
 		}

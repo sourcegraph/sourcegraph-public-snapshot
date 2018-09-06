@@ -320,7 +320,6 @@ func (s *Server) cleanTmpFiles(dir string) {
 	if err != nil {
 		log15.Error("error removing tmp_pack_* files", "error", err)
 	}
-	return
 }
 
 // SetupAndClearTmp sets up the the tempdir for ReposDir as well as clearing it

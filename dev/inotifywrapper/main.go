@@ -20,7 +20,7 @@ type lineWatcher struct {
 // do the actual notification dance.
 func (l *lineWatcher) notify(events map[string]struct{}) {
 	args := make([]string, 0, len(events))
-	for k, _ := range events {
+	for k := range events {
 		for _, r := range matchRegexes {
 			if r.re.MatchString(k) {
 				args = append(args, k)

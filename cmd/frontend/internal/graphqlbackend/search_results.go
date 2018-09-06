@@ -899,7 +899,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	// Give optional searches some minimum budget in case required searches return quickly.
 	// Cancel all remaining searches after this minimum budget.
 	budget := 100 * time.Millisecond
-	elapsed := time.Now().Sub(start)
+	elapsed := time.Since(start)
 	timer := time.AfterFunc(budget-elapsed, cancel)
 
 	// Wait for remaining optional searches to finish or get cancelled.

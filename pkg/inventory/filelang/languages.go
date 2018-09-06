@@ -166,9 +166,7 @@ func (ls Languages) CompileByFilename() func(string) []*Language {
 	}
 	return func(name string) []*Language {
 		var matches []*Language
-		for _, l := range byFilename[name] {
-			matches = append(matches, l)
-		}
+		matches = append(matches, byFilename[name]...)
 		for _, l := range byExt[strings.ToLower(path.Ext(name))] {
 			contains := false
 			for _, l2 := range matches {

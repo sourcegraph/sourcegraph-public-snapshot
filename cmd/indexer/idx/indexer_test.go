@@ -19,8 +19,7 @@ func Test_queueWithoutDuplicates(t *testing.T) {
 	enqueue <- qitem{repo: "foo"}
 	enqueue <- qitem{repo: "baz"}
 
-	var q qitem
-	q = qitem{repo: "foo"}
+	q := qitem{repo: "foo"}
 	if doDequeue() != q {
 		t.Fail()
 	}

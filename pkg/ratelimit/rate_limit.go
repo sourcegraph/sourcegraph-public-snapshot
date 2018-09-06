@@ -28,7 +28,7 @@ func (c *Monitor) Get() (remaining int, reset time.Duration, known bool) {
 	if !c.known {
 		return 0, 0, false
 	}
-	return c.remaining, c.reset.Sub(time.Now()), true
+	return c.remaining, time.Until(c.reset), true
 }
 
 // RecommendedWaitForBackgroundOp returns the recommended wait time before performing a periodic
@@ -67,7 +67,7 @@ func (c *Monitor) RecommendedWaitForBackgroundOp(cost int) time.Duration {
 
 	// Be conservative.
 	limitRemaining = float64(limitRemaining)*0.8 - 150
-	timeRemaining := resetAt.Sub(time.Now()) + 3*time.Minute
+	timeRemaining := time.Until(resetAt) + 3*time.Minute
 
 	n := limitRemaining / float64(cost) // number of times this op can run before exhausting rate limit
 	if n < 1 {

@@ -115,9 +115,7 @@ func (p *Proxy) newClientProxyConn(ctx context.Context, rwc io.ReadWriteCloser) 
 	clientConnsCounter.Inc()
 	p.mu.Unlock()
 	go func() {
-		select {
-		case <-c.conn.DisconnectNotify():
-		}
+		<-c.conn.DisconnectNotify()
 		p.removeClientConn(c)
 	}()
 	return nil

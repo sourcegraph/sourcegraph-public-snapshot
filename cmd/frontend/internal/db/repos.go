@@ -295,7 +295,7 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 				conds = append(conds, sqlf.Sprintf("uri IN (%s)", sqlf.Join(items, ",")))
 			}
 		}
-		if like != nil && len(like) > 0 {
+		if len(like) > 0 {
 			var likeConds []*sqlf.Query
 			for _, v := range like {
 				likeConds = append(likeConds, sqlf.Sprintf(`lower(uri) LIKE %s`, strings.ToLower(v)))

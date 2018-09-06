@@ -307,7 +307,7 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		}
 
 		// Renew session
-		if time.Now().Sub(info.LastActive) > 5*time.Minute {
+		if time.Since(info.LastActive) > 5*time.Minute {
 			info.LastActive = time.Now()
 			if err := SetData(w, r, "actor", info); err != nil {
 				log15.Error("error renewing session", "error", err)

@@ -27,10 +27,7 @@ func TestCacheControlTransport(t *testing.T) {
 
 	recorder := &recorderTransport{}
 	ccTransport := NewCacheControlTransport("max-age=0", recorder, func(r *http.Request) bool {
-		if r.URL.String() == url3 {
-			return false
-		}
-		return true
+		return !(r.URL.String() == url3)
 	})
 
 	// Cache-control round-tripper

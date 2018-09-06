@@ -37,7 +37,6 @@ func (c *lspCache) Set(key string, responseBytes []byte) {
 		}
 		log15.Warn("failed to execute lspCache set", "cmd", "SET", "error", err, "valueExcerpt", string(excerpt))
 	}
-	return
 }
 
 // Delete implements httpcache.Cache.Delete

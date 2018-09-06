@@ -1032,7 +1032,7 @@ func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
 	return updateRepo
 }
 
-var headBranchPattern = regexp.MustCompile("HEAD branch: (.+?)\\n")
+var headBranchPattern = regexp.MustCompile(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoURI, url string) error {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "Server.doRepoUpdate")

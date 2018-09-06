@@ -69,7 +69,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	ev := honey.Event("xlang")
 	emptyResponse := true
 	defer func() {
-		duration := time.Now().Sub(start)
+		duration := time.Since(start)
 
 		// We shouldn't make the distinction of user error, since our
 		// frontend code shouldn't send "invalid" requests. An example

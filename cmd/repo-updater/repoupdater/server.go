@@ -32,7 +32,7 @@ func (s *Server) RecordStats() {
 		return
 	}
 	tick := time.NewTicker(10 * time.Minute)
-	for _ = range tick.C {
+	for range tick.C {
 		ev := honey.Event("repo-updater")
 		ev.AddField("source", "server")
 		s.mu.Lock()

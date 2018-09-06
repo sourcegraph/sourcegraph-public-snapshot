@@ -44,7 +44,7 @@ func trace(ctx context.Context, server, method string, arg interface{}, err *err
 	start := time.Now()
 
 	done := func() {
-		elapsed := time.Now().Sub(start)
+		elapsed := time.Since(start)
 
 		if err != nil && *err != nil {
 			span.SetTag("Error", (*err).Error())

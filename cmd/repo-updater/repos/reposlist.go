@@ -662,7 +662,7 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 		// in which case this loop waking up fairly often won't be a problem.
 		waitTime := 10 * time.Second
 		if nextUp != nil {
-			waitTime = nextUp.due.Sub(time.Now()) + 50*time.Millisecond
+			waitTime = time.Until(nextUp.due) + 50*time.Millisecond
 			if waitTime < 0 {
 				waitTime = 1 * time.Second
 			}
@@ -795,7 +795,7 @@ func RunRepositorySyncWorker(ctx context.Context) {
 // to repositories found by looking up keys from various services.
 func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repository) {
 	log15.Debug("repolist updateConfig")
-	newList := make(sourceRepoList, 0)
+	newList := make(sourceRepoList)
 	for _, cfg := range configs {
 		if cfg.Type == "" {
 			cfg.Type = "git"

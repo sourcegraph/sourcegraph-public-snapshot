@@ -26,7 +26,7 @@ func Platform() *PlatformConfiguration {
 	const defaultRemoteRegistry = "https://sourcegraph.com/.api/registry"
 	if s, ok := p.RemoteRegistry.(string); ok {
 		pc.RemoteRegistryURL = s
-	} else if b, ok := p.RemoteRegistry.(bool); ok && b == false {
+	} else if b, ok := p.RemoteRegistry.(bool); ok && !b {
 		// Nothing to do.
 	} else {
 		pc.RemoteRegistryURL = defaultRemoteRegistry

@@ -211,7 +211,7 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatc
 	// searching for results. We use the same approach when we search
 	// per-line. Additionally if we have a non-empty literalSubstring, we use
 	// that to prune out files since doing bytes.Index is very fast.
-	if bytes.Index(fileMatchBuf, rg.literalSubstring) < 0 {
+	if !bytes.Contains(fileMatchBuf, rg.literalSubstring) {
 		return nil, false, nil
 	}
 	first := rg.re.FindIndex(fileMatchBuf)
@@ -316,7 +316,7 @@ func concurrentFind(ctx context.Context, rg *readerGrep, zf *zipFile, fileMatchL
 	var cancel context.CancelFunc
 	if deadline, ok := ctx.Deadline(); ok {
 		// If a deadline is set, try to finish before the deadline expires.
-		timeout := time.Duration(0.9 * float64(deadline.Sub(time.Now())))
+		timeout := time.Duration(0.9 * float64(time.Until(deadline)))
 		span.LogFields(otlog.Int64("concurrentFindTimeout", int64(timeout)))
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 	} else {

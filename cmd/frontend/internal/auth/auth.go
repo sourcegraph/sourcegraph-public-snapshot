@@ -55,7 +55,7 @@ func NormalizeUsername(name string) (string, error) {
 		name = name[:i]
 	}
 	name = disallowedCharacter.ReplaceAllString(name, "-")
-	if strings.HasPrefix(name, "-") || strings.HasSuffix(name, "-") || strings.Index(name, "--") != -1 {
+	if strings.HasPrefix(name, "-") || strings.HasSuffix(name, "-") || strings.Contains(name, "--") {
 		return "", fmt.Errorf("username %q could not be normalized to acceptable format", origName)
 	}
 	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(name); err != nil {

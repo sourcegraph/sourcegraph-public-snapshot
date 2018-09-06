@@ -107,7 +107,7 @@ func (p *ctagsProcess) read(rep *reply) error {
 	}
 
 	// See https://github.com/universal-ctags/ctags/issues/1493
-	if bytes.Compare([]byte("(null)"), p.out.Bytes()) == 0 {
+	if bytes.Equal([]byte("(null)"), p.out.Bytes()) {
 		return nil
 	}
 

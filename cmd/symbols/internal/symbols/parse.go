@@ -83,7 +83,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID 
 		if ctx.Err() != nil {
 			// Drain parseRequests
 			go func() {
-				for _ = range parseRequests {
+				for range parseRequests {
 				}
 			}()
 			return nil, ctx.Err()

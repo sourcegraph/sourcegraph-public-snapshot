@@ -27,7 +27,7 @@ func (s *Server) RegisterMetrics() {
 				log15.Warn("exec measurement failed", "error", err)
 				continue
 			}
-			echoDuration.Set(time.Now().Sub(s).Seconds())
+			echoDuration.Set(time.Since(s).Seconds())
 		}
 	}()
 

@@ -78,12 +78,10 @@ func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI
 		})
 	}
 
-	if wantXReferences != nil {
-		for params, want := range wantXReferences {
-			tbRun(t, fmt.Sprintf("xreferences"), func(t testing.TB) {
-				workspaceReferencesTest(t, ctx, c, root, *params, want)
-			})
-		}
+	for params, want := range wantXReferences {
+		tbRun(t, fmt.Sprintf("xreferences"), func(t testing.TB) {
+			workspaceReferencesTest(t, ctx, c, root, *params, want)
+		})
 	}
 
 	if wantXPackages != nil {

@@ -79,6 +79,5 @@ func SourcegraphComGoGetHandler(next http.Handler) http.Handler {
 
 		// If we get here, there isn't a Go package for this request.
 		http.Error(w, "no such repository", http.StatusNotFound)
-		return
 	})
 }

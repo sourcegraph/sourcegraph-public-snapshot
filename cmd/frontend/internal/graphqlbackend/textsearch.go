@@ -754,7 +754,7 @@ func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, q query.Query
 		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
 		deadline, ok := ctx.Deadline()
 		if ok {
-			fetchTimeout = deadline.Sub(time.Now())
+			fetchTimeout = time.Until(deadline)
 		} else {
 			// In practice, this case should not happen because a deadline should always be set
 			// but if it does happen just set a long but finite timeout.
