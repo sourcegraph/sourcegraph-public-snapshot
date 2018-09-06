@@ -34,7 +34,9 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 			}
 
 			userID, safeErrMsg, err := CreateOrUpdateUser(r.Context(), db.NewUser{
-				Username: username,
+				Username:        username,
+				Email:           username + "+override@example.com",
+				EmailIsVerified: true,
 			}, db.ExternalAccountSpec{ServiceType: "override", AccountID: username}, db.ExternalAccountData{})
 			if err != nil {
 				log15.Error("Error getting/creating auth-override user.", "error", err, "userErr", safeErrMsg)
