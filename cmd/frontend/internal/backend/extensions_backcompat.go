@@ -113,8 +113,8 @@ func init() {
 				Description: description,
 				Readme:      readme,
 				// The same extension is used for each language server (for now). It is built from
-				// https://github.com/sourcegraph/cx-langserver-http.
-				Url:              "https://storage.googleapis.com/sourcegraph-cx-dev/cx-langserver-http.js",
+				// https://github.com/sourcegraph/sourcegraph-langserver-http.
+				Url:              "https://storage.googleapis.com/sourcegraph-cx-dev/sourcegraph-langserver-http.js",
 				ActivationEvents: []string{"onLanguage:" + ls.Language},
 			}
 			if ls.InitializationOptions != nil {
