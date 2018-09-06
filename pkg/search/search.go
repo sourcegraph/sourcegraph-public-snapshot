@@ -72,4 +72,13 @@ type Args struct {
 	// instead, but Query is useful for checking extra fields that are set and
 	// ignored by Pattern, such as index:no
 	Query *query.Query
+
+	// UseFullDeadline indicates that the search should try do as much work as
+	// it can within context.Deadline. If false the search should try and be
+	// as fast as possible, even if a "slow" deadline is set.
+	//
+	// For example searcher will wait to full its archive cache for a
+	// repository if this field is true. Another example is we set this field
+	// to true if the user requests a specific timeout or maximum result size.
+	UseFullDeadline bool
 }

@@ -360,7 +360,7 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	return matches, limitHit, err
 }
 
-func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, searchTimeoutFieldSet bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
+func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, useFullDeadline bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
 	}
@@ -421,7 +421,7 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		searchOpts.MaxWallTime *= time.Duration(3 * float64(query.FileMatchLimit) / float64(defaultMaxSearchResults))
 	}
 
-	if searchTimeoutFieldSet {
+	if useFullDeadline {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
 		deadline, _ := ctx.Deadline()
 		searchOpts.MaxWallTime = time.Until(deadline)
@@ -650,7 +650,7 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *search.Args, searchTimeoutFieldSet bool) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}
@@ -745,7 +745,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args, searchTimeoutFie
 	}
 
 	var fetchTimeout time.Duration
-	if len(searcherRepos) == 1 || searchTimeoutFieldSet {
+	if len(searcherRepos) == 1 || args.UseFullDeadline {
 		// When searching a single repo or when an explicit timeout was specified, give it the remaining deadline to fetch the archive.
 		deadline, ok := ctx.Deadline()
 		if ok {
@@ -807,7 +807,7 @@ func searchFilesInRepos(ctx context.Context, args *search.Args, searchTimeoutFie
 	go func() {
 		// TODO limitHit, handleRepoSearchResult
 		defer wg.Done()
-		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args.Pattern, zoektRepos, searchTimeoutFieldSet)
+		matches, limitHit, reposLimitHit, searchErr := zoektSearchHEAD(ctx, args.Pattern, zoektRepos, args.UseFullDeadline)
 		mu.Lock()
 		defer mu.Unlock()
 		if ctx.Err() == nil {

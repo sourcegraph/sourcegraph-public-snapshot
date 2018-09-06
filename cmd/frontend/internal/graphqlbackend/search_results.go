@@ -658,9 +658,10 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		return nil, err
 	}
 	args := search.Args{
-		Pattern: p,
-		Repos:   repos,
-		Query:   r.query,
+		Pattern:         p,
+		Repos:           repos,
+		Query:           r.query,
+		UseFullDeadline: r.searchTimeoutFieldSet(),
 	}
 	if err := args.Pattern.Validate(); err != nil {
 		return nil, &badRequestError{err}
@@ -702,7 +703,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	)
 
 	waitGroup := func(required bool) *sync.WaitGroup {
-		if r.searchTimeoutFieldSet() {
+		if args.UseFullDeadline {
 			// When a custom timeout is specified, all searches are required and get the full timeout.
 			return &requiredWg
 		}
@@ -788,7 +789,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args, r.searchTimeoutFieldSet())
+				fileResults, fileCommon, err := searchFilesInRepos(ctx, &args)
 				// Timeouts are reported through searchResultsCommon so don't report an error for them
 				if err != nil && !isContextError(ctx, err) {
 					multiErrMu.Lock()
