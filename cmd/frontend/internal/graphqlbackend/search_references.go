@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
-func searchReferencesInRepos(ctx context.Context, args *repoSearchArgs) (res []*searchResultResolver, common *searchResultsCommon, err error) {
+func searchReferencesInRepos(ctx context.Context, args *search.Args) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 	refValues, negatedRefValues := args.Query.StringValues(query.FieldRef)
 	if len(negatedRefValues) != 0 {
 		return nil, nil, errors.New("not supported: negated references queries (-ref:)")

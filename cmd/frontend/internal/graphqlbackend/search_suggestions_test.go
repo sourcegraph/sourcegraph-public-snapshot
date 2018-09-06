@@ -75,7 +75,7 @@ func TestSearchSuggestions(t *testing.T) {
 		defer func() { db.Mocks = db.MockStores{} }()
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			calledSearchFilesInRepos = true
 			if want := "foo"; args.Pattern.Pattern != want {
 				t.Errorf("got %q, want %q", args.Pattern.Pattern, want)
@@ -130,7 +130,7 @@ func TestSearchSuggestions(t *testing.T) {
 		backend.Mocks.Repos.MockResolveRev_NoCheck(t, api.CommitID("deadbeef"))
 
 		calledSearchFilesInRepos := false
-		mockSearchFilesInRepos = func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error) {
+		mockSearchFilesInRepos = func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error) {
 			mu.Lock()
 			defer mu.Unlock()
 			calledSearchFilesInRepos = true
@@ -177,7 +177,7 @@ func TestSearchSuggestions(t *testing.T) {
 		}
 		defer func() { mockResolveRepoGroups = nil }()
 
-		mockSearchSymbols = func(ctx context.Context, args *repoSearchArgs, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+		mockSearchSymbols = func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 			// TODO test symbol suggestions
 			return nil, nil, nil
 		}

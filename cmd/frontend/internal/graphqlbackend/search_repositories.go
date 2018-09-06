@@ -4,16 +4,17 @@ import (
 	"context"
 	"regexp"
 
+	"github.com/sourcegraph/sourcegraph/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/search/query"
 )
 
-var mockSearchRepositories func(args *repoSearchArgs) ([]*searchResultResolver, *searchResultsCommon, error)
+var mockSearchRepositories func(args *search.Args) ([]*searchResultResolver, *searchResultsCommon, error)
 
 // searchRepositories searches for repositories by name.
 //
 // For a repository to match a query, the repository's name ("URI") must match all of the repo: patterns AND the
 // default patterns (i.e., the patterns that are not prefixed with any search field).
-func searchRepositories(ctx context.Context, args *repoSearchArgs, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error) {
+func searchRepositories(ctx context.Context, args *search.Args, limit int32) (res []*searchResultResolver, common *searchResultsCommon, err error) {
 	if mockSearchRepositories != nil {
 		return mockSearchRepositories(args)
 	}

@@ -163,7 +163,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	args := &repoSearchArgs{
+	args := &search.Args{
 		Pattern: &search.PatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",
@@ -191,7 +191,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 
 	// If we specify a rev and it isn't found, we fail the whole search since
 	// that should be checked earlier.
-	args = &repoSearchArgs{
+	args = &search.Args{
 		Pattern: &search.PatternInfo{
 			FileMatchLimit: defaultMaxSearchResults,
 			Pattern:        "foo",

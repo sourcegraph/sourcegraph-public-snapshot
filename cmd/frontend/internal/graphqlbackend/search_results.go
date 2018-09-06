@@ -657,7 +657,7 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 	if err != nil {
 		return nil, err
 	}
-	args := repoSearchArgs{
+	args := search.Args{
 		Pattern: p,
 		Repos:   repos,
 		Query:   r.query,

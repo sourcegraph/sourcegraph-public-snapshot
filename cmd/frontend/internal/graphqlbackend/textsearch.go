@@ -360,16 +360,6 @@ func searchFilesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo gits
 	return matches, limitHit, err
 }
 
-type repoSearchArgs struct {
-	Pattern *search.PatternInfo
-	Repos   []*search.RepositoryRevisions
-
-	// Query is the parsed query from the user. You should be using Pattern
-	// instead, but Query is useful for checking extra fields that are set and
-	// ignored by Pattern, such as index:no
-	Query *query.Query
-}
-
 func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*search.RepositoryRevisions, searchTimeoutFieldSet bool) (fm []*fileMatchResolver, limitHit bool, reposLimitHit map[string]struct{}, err error) {
 	if len(repos) == 0 {
 		return nil, false, nil, nil
@@ -657,10 +647,10 @@ func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions)
 	return indexed, unindexed, nil
 }
 
-var mockSearchFilesInRepos func(args *repoSearchArgs) ([]*fileMatchResolver, *searchResultsCommon, error)
+var mockSearchFilesInRepos func(args *search.Args) ([]*fileMatchResolver, *searchResultsCommon, error)
 
 // searchFilesInRepos searches a set of repos for a pattern.
-func searchFilesInRepos(ctx context.Context, args *repoSearchArgs, searchTimeoutFieldSet bool) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
+func searchFilesInRepos(ctx context.Context, args *search.Args, searchTimeoutFieldSet bool) (res []*fileMatchResolver, common *searchResultsCommon, err error) {
 	if mockSearchFilesInRepos != nil {
 		return mockSearchFilesInRepos(args)
 	}

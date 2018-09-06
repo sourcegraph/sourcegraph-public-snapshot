@@ -1,6 +1,10 @@
 package search
 
-import "regexp/syntax"
+import (
+	"regexp/syntax"
+
+	"github.com/sourcegraph/sourcegraph/pkg/search/query"
+)
 
 // PatternInfo is the struct used by vscode pass on search queries. Keep it in
 // sync with pkg/searcher/protocol.PatternInfo.
@@ -55,4 +59,17 @@ func (p *PatternInfo) Validate() error {
 	}
 
 	return nil
+}
+
+// Args are the arguments passed to a search backend. It contains the Pattern
+// to search for, as well as the hydrated list of repository revisions to
+// search.
+type Args struct {
+	Pattern *PatternInfo
+	Repos   []*RepositoryRevisions
+
+	// Query is the parsed query from the user. You should be using Pattern
+	// instead, but Query is useful for checking extra fields that are set and
+	// ignored by Pattern, such as index:no
+	Query *query.Query
 }
