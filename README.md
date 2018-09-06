@@ -34,7 +34,7 @@ Sourcegraph extensions are in alpha. Please [file issues](https://github.com/sou
 
 ## Authoring extensions
 
-Writing a Sourcegraph extension is very similar to writing an editor extension for [VS Code](https://code.visualstudio.com/docs/extensions/overview). See the [Codecov extension's main `extension.ts` file](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph-codecov/-/blob/src/extension.ts) for an example.
+Writing a Sourcegraph extension is very similar to writing an editor extension for [VS Code](https://code.visualstudio.com/docs/extensions/overview). See the [Codecov extension's main `extension.ts` file](https://sourcegraph.com/github.com/sourcegraph/sourcegraph-codecov/-/blob/src/extension.ts) for an example.
 
 We will publish docs on how to create extensions very soon. [Subscribe to issue #42 "Document how to create extensions"](https://github.com/sourcegraph/sourcegraph-extension-api/issues/42) to get notified when the docs are ready.
 
