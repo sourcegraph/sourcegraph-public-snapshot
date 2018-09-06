@@ -1,8 +1,13 @@
 import { Observable, Subject } from 'rxjs'
 import { map, mergeMap, startWith, tap } from 'rxjs/operators'
-import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import {
+    createInvalidGraphQLMutationResponseError,
+    dataOrThrowErrors,
+    gql,
+    mutateGraphQL,
+    queryGraphQL,
+} from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { createAggregateError } from '../util/errors'
 import { resetAllMemoizationCaches } from '../util/memoize'
 
 /**
@@ -43,12 +48,8 @@ export function fetchAllUsers(args: { first?: number; query?: string }): Observa
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return data.users
-        })
+        map(dataOrThrowErrors),
+        map(data => data.users)
     )
 }
 
@@ -81,12 +82,8 @@ export function fetchAllOrganizations(args: { first?: number; query?: string }):
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.organizations) {
-                throw createAggregateError(errors)
-            }
-            return data.organizations
-        })
+        map(dataOrThrowErrors),
+        map(data => data.organizations)
     )
 }
 
@@ -164,12 +161,8 @@ function fetchAllRepositories(args: RepositoryArgs): Observable<GQL.IRepositoryC
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.repositories || !data.repositories.nodes) {
-                throw createAggregateError(errors)
-            }
-            return data.repositories
-        })
+        map(dataOrThrowErrors),
+        map(data => data.repositories)
     )
 }
 
@@ -208,13 +201,9 @@ export function addRepository(
         `,
         { name }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.addRepository || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            resetAllMemoizationCaches() // in case we memoized that this repository doesn't exist
-            return data.addRepository
-        })
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()), // in case we memoized that this repository doesn't exist
+        map(data => data.addRepository)
     )
 }
 
@@ -229,12 +218,9 @@ export function setRepositoryEnabled(repository: GQL.ID, enabled: boolean): Obse
         `,
         { repository, enabled }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            resetAllMemoizationCaches()
-        })
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        map(() => undefined)
     )
 }
 
@@ -249,12 +235,9 @@ export function setAllRepositoriesEnabled(enabled: boolean): Observable<void> {
         `,
         { enabled }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            resetAllMemoizationCaches()
-        })
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        map(() => undefined)
     )
 }
 
@@ -269,12 +252,9 @@ export function updateMirrorRepository(args: { repository: GQL.ID }): Observable
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.updateMirrorRepository || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            resetAllMemoizationCaches()
-        })
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        map(() => undefined)
     )
 }
 
@@ -288,12 +268,9 @@ export function updateAllMirrorRepositories(): Observable<void> {
             }
         `
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            resetAllMemoizationCaches()
-        })
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        map(() => undefined)
     )
 }
 
@@ -316,12 +293,9 @@ export function checkMirrorRepositoryConnection(
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.checkMirrorRepositoryConnection || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return data.checkMirrorRepositoryConnection
-        })
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        map(data => data.checkMirrorRepositoryConnection)
     )
 }
 
@@ -336,12 +310,9 @@ export function deleteRepository(repository: GQL.ID): Observable<void> {
         `,
         { repository }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            resetAllMemoizationCaches()
-        })
+        map(dataOrThrowErrors),
+        tap(() => resetAllMemoizationCaches()),
+        map(() => undefined)
     )
 }
 
@@ -376,12 +347,8 @@ export function fetchUserAnalytics(args: {
         `,
         args
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return data.users
-        })
+        map(dataOrThrowErrors),
+        map(data => data.users)
     )
 }
 
@@ -417,12 +384,8 @@ export function fetchSiteAnalytics(): Observable<GQL.ISiteActivity> {
             }
         }
     `).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return data.site.activity
-        })
+        map(dataOrThrowErrors),
+        map(data => data.site.activity)
     )
 }
 
@@ -446,12 +409,8 @@ export function fetchSite(): Observable<GQL.ISite> {
             }
         }
     `).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.site) {
-                throw createAggregateError(errors)
-            }
-            return data.site
-        })
+        map(dataOrThrowErrors),
+        map(data => data.site)
     )
 }
 
@@ -470,12 +429,8 @@ export function updateSiteConfiguration(input: string): Observable<boolean> {
         `,
         { input }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || errors) {
-                throw createAggregateError(errors)
-            }
-            return data.updateSiteConfiguration as boolean
-        })
+        map(dataOrThrowErrors),
+        map(data => data.updateSiteConfiguration as boolean)
     )
 }
 
@@ -492,11 +447,11 @@ export function reloadSite(): Observable<void> {
             }
         `
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.reloadSite) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.reloadSite) {
+                throw createInvalidGraphQLMutationResponseError('ReloadSite')
             }
-            return data.reloadSite as any
         })
     )
 }
@@ -512,11 +467,8 @@ export function setUserIsSiteAdmin(userID: GQL.ID, siteAdmin: boolean): Observab
         `,
         { userID, siteAdmin }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
@@ -531,12 +483,8 @@ export function randomizeUserPassword(user: GQL.ID): Observable<GQL.IRandomizeUs
         `,
         { user }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0) || !data.randomizeUserPassword) {
-                throw createAggregateError(errors)
-            }
-            return data.randomizeUserPassword
-        })
+        map(dataOrThrowErrors),
+        map(data => data.randomizeUserPassword)
     )
 }
 
@@ -551,9 +499,10 @@ export function deleteUser(user: GQL.ID): Observable<void> {
         `,
         { user }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0) || !data.deleteUser) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteUser) {
+                throw createInvalidGraphQLMutationResponseError('DeleteUser')
             }
         })
     )
@@ -570,12 +519,8 @@ export function createUser(username: string, email: string | undefined): Observa
         `,
         { username, email }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0) || !data.createUser) {
-                throw createAggregateError(errors)
-            }
-            return data.createUser
-        })
+        map(dataOrThrowErrors),
+        map(data => data.createUser)
     )
 }
 
@@ -590,9 +535,10 @@ export function deleteOrganization(organization: GQL.ID): Observable<void> {
         `,
         { organization }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0) || !data.deleteOrganization) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.deleteOrganization) {
+                throw createInvalidGraphQLMutationResponseError('DeleteOrganization')
             }
         })
     )
@@ -621,17 +567,8 @@ export function fetchSiteUpdateCheck(): Observable<{
             }
         `
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.updateCheck) {
-                throw createAggregateError(errors)
-            }
-            return {
-                productName: data.site.productName,
-                buildVersion: data.site.buildVersion,
-                productVersion: data.site.productVersion,
-                updateCheck: data.site.updateCheck,
-            }
-        })
+        map(dataOrThrowErrors),
+        map(data => data.site)
     )
 }
 
@@ -665,12 +602,8 @@ export function fetchLangServers(): Observable<GQL.ILangServer[]> {
             }
         }
     `).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.site || !data.site.langServers) {
-                throw createAggregateError(errors)
-            }
-            return data.site.langServers
-        })
+        map(dataOrThrowErrors),
+        map(data => data.site.langServers)
     )
 }
 
@@ -690,12 +623,8 @@ export function enableLangServer(language: string): Observable<void> {
         `,
         { language }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
@@ -715,12 +644,8 @@ export function disableLangServer(language: string): Observable<void> {
         `,
         { language }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
@@ -740,12 +665,8 @@ export function restartLangServer(language: string): Observable<void> {
         `,
         { language }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
@@ -765,11 +686,7 @@ export function updateLangServer(language: string): Observable<void> {
         `,
         { language }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }

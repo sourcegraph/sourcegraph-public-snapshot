@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map } from 'rxjs/operators'
-import { normalizeAjaxError } from '../util/errors'
+import { createAggregateError, normalizeAjaxError } from '../util/errors'
 import * as GQL from './graphqlschema'
 
 export const graphQLContent = Symbol('graphQLContent')
@@ -10,27 +10,50 @@ export interface GraphQLDocument {
 }
 
 /**
+ * Guarantees that the GraphQL query resulted in an error.
+ */
+export function isGraphQLError<T extends GQL.IQuery | GQL.IMutation>(
+    result: GraphQLResult<T>
+): result is ErrorGraphQLResult {
+    return !!(result as ErrorGraphQLResult).errors && (result as ErrorGraphQLResult).errors.length > 0
+}
+
+export function dataOrThrowErrors<T extends GQL.IQuery | GQL.IMutation>(result: GraphQLResult<T>): T {
+    if (isGraphQLError(result)) {
+        throw createAggregateError(result.errors)
+    }
+    return result.data
+}
+
+export interface GraphQLError extends Error {
+    queryName: string
+}
+export const createInvalidGraphQLQueryResponseError = (queryName: string): GraphQLError =>
+    Object.assign(new Error(`Invalid GraphQL response: query ${queryName}`), {
+        queryName,
+    })
+export const createInvalidGraphQLMutationResponseError = (queryName: string): GraphQLError =>
+    Object.assign(new Error(`Invalid GraphQL response: mutation ${queryName}`), {
+        queryName,
+    })
+
+/**
  * Use this template string tag for all GraphQL queries
  */
 export const gql = (template: TemplateStringsArray, ...substitutions: any[]): GraphQLDocument => ({
     [graphQLContent]: String.raw(template, ...substitutions.map(s => s[graphQLContent] || s)),
 })
 
-/**
- * Interface for the response result of a GraphQL query
- */
-interface QueryResult {
-    data?: GQL.IQuery
-    errors?: GQL.IGraphQLResponseError[]
+export interface SuccessGraphQLResult<T extends GQL.IQuery | GQL.IMutation> {
+    data: T
+    errors: undefined
+}
+export interface ErrorGraphQLResult {
+    data: undefined
+    errors: GQL.IGraphQLResponseError[]
 }
 
-/**
- * Interface for the response result of a GraphQL mutation
- */
-export interface MutationResult {
-    data?: GQL.IMutation
-    errors?: GQL.IGraphQLResponseError[]
-}
+export type GraphQLResult<T extends GQL.IQuery | GQL.IMutation> = SuccessGraphQLResult<T> | ErrorGraphQLResult
 
 /**
  * Does a GraphQL request to the Sourcegraph GraphQL API running under `/.api/graphql`
@@ -66,8 +89,8 @@ function requestGraphQL(request: GraphQLDocument, variables: any = {}): Observab
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export function queryGraphQL(query: GraphQLDocument, variables: any = {}): Observable<QueryResult> {
-    return requestGraphQL(query, variables) as Observable<QueryResult>
+export function queryGraphQL(query: GraphQLDocument, variables: any = {}): Observable<GraphQLResult<GQL.IQuery>> {
+    return requestGraphQL(query, variables) as Observable<GraphQLResult<GQL.IQuery>>
 }
 
 /**
@@ -77,6 +100,9 @@ export function queryGraphQL(query: GraphQLDocument, variables: any = {}): Obser
  * @param variables A key/value object with variable values
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-export function mutateGraphQL(mutation: GraphQLDocument, variables: any = {}): Observable<MutationResult> {
-    return requestGraphQL(mutation, variables) as Observable<MutationResult>
+export function mutateGraphQL(
+    mutation: GraphQLDocument,
+    variables: any = {}
+): Observable<GraphQLResult<GQL.IMutation>> {
+    return requestGraphQL(mutation, variables) as Observable<GraphQLResult<GQL.IMutation>>
 }

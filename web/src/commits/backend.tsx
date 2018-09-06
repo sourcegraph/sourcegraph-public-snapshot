@@ -1,8 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { createInvalidGraphQLQueryResponseError, dataOrThrowErrors, gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { createAggregateError } from '../util/errors'
 
 /**
  * Fetches commits.
@@ -39,15 +38,10 @@ export function fetchCommits(
         `,
         { ...args, repo, rev }
     ).pipe(
-        map(({ data, errors }) => {
-            if (
-                !data ||
-                !data.node ||
-                !(data.node as GQL.IRepository).commit ||
-                !(data.node as GQL.IRepository).commit!.ancestors ||
-                !(data.node as GQL.IRepository).commit!.ancestors.nodes
-            ) {
-                throw createAggregateError(errors)
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.node || !(data.node as GQL.IRepository).commit) {
+                throw createInvalidGraphQLQueryResponseError('FetchCommits')
             }
             return (data.node as GQL.IRepository).commit!.ancestors
         })

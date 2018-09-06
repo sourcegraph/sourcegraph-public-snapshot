@@ -1,8 +1,7 @@
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
+import { dataOrThrowErrors, gql, mutateGraphQL, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { createAggregateError } from '../util/errors'
 import { SurveyResponse } from './SurveyPage'
 
 /**
@@ -19,12 +18,8 @@ export function submitSurvey(input: SurveyResponse): Observable<void> {
         `,
         { input }
     ).pipe(
-        map(({ data, errors }) => {
-            if (errors) {
-                throw createAggregateError(errors)
-            }
-            return
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
@@ -56,12 +51,8 @@ export function fetchAllSurveyResponses(args: { first?: number }): Observable<GQ
         `,
         { ...args }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.surveyResponses || !data.surveyResponses.nodes) {
-                throw createAggregateError(errors)
-            }
-            return data.surveyResponses
-        })
+        map(dataOrThrowErrors),
+        map(data => data.surveyResponses)
     )
 }
 
@@ -99,12 +90,8 @@ export function fetchAllUsersWithSurveyResponses(args: {
         `,
         { ...args }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.users || !data.users.nodes) {
-                throw createAggregateError(errors)
-            }
-            return data.users
-        })
+        map(dataOrThrowErrors),
+        map(data => data.users)
     )
 }
 
@@ -126,11 +113,7 @@ export function fetchSurveyResponseAggregates(): Observable<SurveyResponseConnec
             }
         `
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return data.surveyResponses
-        })
+        map(dataOrThrowErrors),
+        map(data => data.surveyResponses)
     )
 }

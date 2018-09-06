@@ -4,14 +4,13 @@ import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { gql, queryGraphQL } from '../backend/graphql'
+import { dataOrThrowErrors, gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
 import { RepoLink } from '../repo/RepoLink'
 import { fetchAllRepositoriesAndPollIfAnyCloning } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
-import { createAggregateError } from '../util/errors'
 import { numberWithCommas, pluralize } from '../util/strings'
 
 interface RepositoryNodeProps {
@@ -113,11 +112,7 @@ function fetchDisabledRepositoriesCount(): Observable<number | null> {
             }
         }
     `).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.repositories) {
-                throw createAggregateError(errors)
-            }
-            return data.repositories.totalCount
-        })
+        map(dataOrThrowErrors),
+        map(data => data.repositories.totalCount)
     )
 }

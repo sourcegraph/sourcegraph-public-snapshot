@@ -1,8 +1,7 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
-import { gql, queryGraphQL } from './backend/graphql'
+import { dataOrThrowErrors, gql, queryGraphQL } from './backend/graphql'
 import * as GQL from './backend/graphqlschema'
-import { createAggregateError } from './util/errors'
 
 /**
  * Always represents the latest
@@ -46,12 +45,8 @@ export function refreshCurrentUser(): Observable<never> {
             }
         }
     `).pipe(
-        tap(({ data, errors }) => {
-            if (!data) {
-                throw createAggregateError(errors)
-            }
-            currentUser.next(data.currentUser)
-        }),
+        map(dataOrThrowErrors),
+        tap(data => currentUser.next(data.currentUser)),
         catchError(error => {
             currentUser.next(null)
             return []

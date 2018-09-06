@@ -1,10 +1,9 @@
 import { Observable } from 'rxjs'
 import { map, mergeMap, take } from 'rxjs/operators'
-import { gql, GraphQLDocument, mutateGraphQL, MutationResult } from '../backend/graphql'
+import { dataOrThrowErrors, gql, GraphQLDocument, GraphQLResult, mutateGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { configurationCascade } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
-import { createAggregateError } from '../util/errors'
 
 /**
  * Overwrites the settings for the subject.
@@ -24,11 +23,8 @@ export function overwriteSettings(subject: GQL.ID, lastID: number | null, conten
         `,
         { subject, lastID, contents }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
@@ -51,11 +47,8 @@ export function editConfiguration(
         `,
         { subject, lastID, edit }
     ).pipe(
-        map(({ data, errors }) => {
-            if (!data || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-        })
+        map(dataOrThrowErrors),
+        map(() => undefined)
     )
 }
 
@@ -71,7 +64,7 @@ export function mutateConfigurationGraphQL(
     subject: GQL.ConfigurationSubject | GQL.IConfigurationSubject | { id: GQL.ID },
     mutation: GraphQLDocument,
     variables: any = {}
-): Observable<MutationResult> {
+): Observable<GraphQLResult<GQL.IMutation>> {
     const subjectID = subject.id
     if (!subjectID) {
         throw new Error('subject has no id')

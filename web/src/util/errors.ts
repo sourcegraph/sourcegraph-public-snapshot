@@ -28,6 +28,7 @@ interface AggregateError extends Error {
 }
 
 /**
+ * DEPRECATED: use dataOrThrowErrors instead
  * Creates an aggregate error out of multiple provided error likes
  *
  * @param errors The errors or ErrorLikes to aggregate
