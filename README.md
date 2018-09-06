@@ -6,7 +6,7 @@
 [![sourcegraph: search](https://img.shields.io/badge/sourcegraph-search-brightgreen.svg)](https://sourcegraph.com/github.com/sourcegraph/sourcegraph-extension-api)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
-**Status:** Alpha (docs update and rename in progress)
+**Status:** Alpha
 
 Sourcegraph extensions enhance reading and reviewing code in your existing tools. They show useful info from services such as Codecov (for test coverage), logging/monitoring/performance tools, and more on GitHub (more code hosts coming soon) and Sourcegraph. It's like being able to use editor extensions when viewing and reviewing code on GitHub and your other favorite tools.
 
