@@ -9,7 +9,7 @@ export interface RouteConfiguration<C extends object = {}> {
     /** Path of this route (appended to the current match) */
     path: string
     exact?: boolean
-    render: ((context: C & RouteComponentProps<any>) => React.ReactNode)
+    render: ((props: C & RouteComponentProps<any>) => React.ReactNode)
     /** Whether this route should be handled */
     condition?: (context: C) => boolean
 }
