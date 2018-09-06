@@ -1590,7 +1590,8 @@
   version = "v2.2.1"
 
 [[projects]]
-  digest = "1:4b9315d3d2bc2d3fc2aaa9d9cb51aac0430bf3f1d6f77f9129fb78a020529515"
+  branch = "master"
+  digest = "1:883771c94491278a353cb02e764506d4f30ffe134f02ed07ec34f1cb6062e4f8"
   name = "honnef.co/go/tools"
   packages = [
     "callgraph",
@@ -1601,6 +1602,7 @@
     "functions",
     "internal/sharedcheck",
     "lint",
+    "lint/lintdsl",
     "lint/lintutil",
     "ssa",
     "ssa/ssautil",
@@ -1610,8 +1612,7 @@
     "version",
   ]
   pruneopts = "NUT"
-  revision = "d73ab98e7c39fdcf9ba65062e43d34310f198353"
-  version = "2017.2.2"
+  revision = "88497007e8588ea5b6baee991f74a1607e809487"
 
 [[projects]]
   digest = "1:fa3db04bacfabee0b918aa7c6b70c33cf45c1078e835171b9fdcf0f8995c043b"

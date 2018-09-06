@@ -22,9 +22,9 @@ type ObjectType string
 // Standard Git object types.
 const (
 	ObjectTypeCommit ObjectType = "commit"
-	ObjectTypeTag               = "tag"
-	ObjectTypeTree              = "tree"
-	ObjectTypeBlob              = "blob"
+	ObjectTypeTag    ObjectType = "tag"
+	ObjectTypeTree   ObjectType = "tree"
+	ObjectTypeBlob   ObjectType = "blob"
 )
 
 // GetObject looks up a Git object and returns information about it.

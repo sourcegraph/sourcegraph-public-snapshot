@@ -210,7 +210,7 @@ type RepoListColumn string
 
 const (
 	RepoListCreatedAt RepoListColumn = "created_at"
-	RepoListURI                      = "uri"
+	RepoListURI       RepoListColumn = "uri"
 )
 
 // List lists repositories in the Sourcegraph repository

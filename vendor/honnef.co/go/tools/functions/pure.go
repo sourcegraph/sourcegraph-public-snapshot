@@ -5,7 +5,7 @@ import (
 	"go/types"
 
 	"honnef.co/go/tools/callgraph"
-	"honnef.co/go/tools/lint"
+	"honnef.co/go/tools/lint/lintdsl"
 	"honnef.co/go/tools/ssa"
 )
 
@@ -20,7 +20,7 @@ func (d *Descriptions) IsStub(fn *ssa.Function) bool {
 	if len(fn.Blocks) > 1 {
 		return false
 	}
-	instrs := lint.FilterDebug(fn.Blocks[0].Instrs)
+	instrs := lintdsl.FilterDebug(fn.Blocks[0].Instrs)
 	if len(instrs) != 1 {
 		return false
 	}

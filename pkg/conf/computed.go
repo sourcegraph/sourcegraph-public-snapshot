@@ -48,8 +48,8 @@ type AccessTokAllow string
 
 const (
 	AccessTokensNone  AccessTokAllow = "none"
-	AccessTokensAll                  = "all-users-create"
-	AccessTokensAdmin                = "site-admin-create"
+	AccessTokensAll   AccessTokAllow = "all-users-create"
+	AccessTokensAdmin AccessTokAllow = "site-admin-create"
 )
 
 // AccessTokensAllow returns whether access tokens are enabled, disabled, or restricted to creation by admin users.

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"honnef.co/go/tools/lint"
+	. "honnef.co/go/tools/lint/lintdsl"
 
 	"golang.org/x/tools/go/loader"
 	"golang.org/x/tools/go/types/typeutil"
@@ -763,7 +764,7 @@ func (c *Checker) processKnownReflectMethodCallers(pkg *loader.PackageInfo, node
 	if !ok {
 		return
 	}
-	if types.TypeString(pkg.TypeOf(sel.X), nil) != "*net/rpc.Server" {
+	if !IsType(pkg.TypeOf(sel.X), "*net/rpc.Server") {
 		x, ok := sel.X.(*ast.Ident)
 		if !ok {
 			return

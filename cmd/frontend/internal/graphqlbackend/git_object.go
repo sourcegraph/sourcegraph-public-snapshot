@@ -15,10 +15,10 @@ func (gitObjectType) ImplementsGraphQLType(name string) bool { return name == "G
 
 const (
 	gitObjectTypeCommit  gitObjectType = "GIT_COMMIT"
-	gitObjectTypeTag                   = "GIT_TAG"
-	gitObjectTypeTree                  = "GIT_TREE"
-	gitObjectTypeBlob                  = "GIT_BLOB"
-	gitObjectTypeUnknown               = "GIT_UNKNOWN"
+	gitObjectTypeTag     gitObjectType = "GIT_TAG"
+	gitObjectTypeTree    gitObjectType = "GIT_TREE"
+	gitObjectTypeBlob    gitObjectType = "GIT_BLOB"
+	gitObjectTypeUnknown gitObjectType = "GIT_UNKNOWN"
 )
 
 func toGitObjectType(t git.ObjectType) gitObjectType {

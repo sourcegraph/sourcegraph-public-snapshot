@@ -270,6 +270,7 @@ func Lint(cs []lint.Checker, pkgs []string, opt *Options) ([][]lint.Problem, err
 		ParserMode: parser.ParseComments,
 		ImportPkgs: map[string]bool{},
 		TypeChecker: types.Config{
+			Sizes: types.SizesFor(ctx.Compiler, ctx.GOARCH),
 			Error: func(err error) {
 				// Only print the first error found
 				if hadError {

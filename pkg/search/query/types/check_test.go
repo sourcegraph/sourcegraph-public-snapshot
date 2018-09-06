@@ -1,5 +1,7 @@
 package types
 
+//lint:file-ignore SA6004 We rather have a collection of regular expressions.
+
 import (
 	"errors"
 	"reflect"
