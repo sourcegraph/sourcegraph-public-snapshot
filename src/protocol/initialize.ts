@@ -29,11 +29,6 @@ export interface _InitializeParams {
     configurationCascade: ConfigurationCascade
 
     /**
-     * Custom initialization options.
-     */
-    initializationOptions?: any
-
-    /**
      * The initial trace setting. If omitted trace is disabled ('off').
      */
     trace?: 'off' | 'messages' | 'verbose'

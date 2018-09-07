@@ -34,7 +34,6 @@ import { Middleware } from './middleware'
 /** Options for creating a new client. */
 export interface ClientOptions {
     documentSelector?: DocumentSelector
-    initializationOptions?: any | (() => any)
 
     /** Called when initialization fails to determine how to proceed. */
     initializationFailedHandler?: InitializationFailedHandler
@@ -202,9 +201,6 @@ export class Client implements Unsubscribable {
                 experimental: this.options.experimentalClientCapabilities,
             },
             configurationCascade: { merged: {} },
-            initializationOptions: isFunction(this.options.initializationOptions)
-                ? this.options.initializationOptions()
-                : this.options.initializationOptions,
             trace: Trace.toString(this._trace),
         }
 

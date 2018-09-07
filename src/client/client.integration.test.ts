@@ -36,7 +36,6 @@ describe('Client', () => {
                                 capabilities: { experimental: 'test' },
                                 configurationCascade: { merged: {} },
                                 trace: Trace.toString(Trace.Off),
-                                initializationOptions: 'test',
                             } as InitializeParams)
                             resolve()
                         } catch (err) {
@@ -92,7 +91,6 @@ describe('Client', () => {
         // Create test client.
         const client = new Client('', { createMessageTransports })
         client.registerFeature({
-            fillInitializeParams: (params: InitializeParams) => (params.initializationOptions = 'test'),
             fillClientCapabilities: (capabilities: ClientCapabilities) => (capabilities.experimental = 'test'),
             initialize: () => void 0,
         })

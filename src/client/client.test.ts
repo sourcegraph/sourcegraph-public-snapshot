@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 import { createMessageConnection, MessageConnection, MessageTransports } from '../jsonrpc2/connection'
 import { MessageType as RPCMessageType } from '../jsonrpc2/messages'
-import { ClientCapabilities, InitializeParams, RegistrationParams, UnregistrationParams } from '../protocol'
+import { ClientCapabilities, RegistrationParams, UnregistrationParams } from '../protocol'
 import { clientStateIs, getClientState } from '../test/helpers'
 import { createMessageTransports } from '../test/integration/helpers'
 import { Client, ClientOptions, ClientState } from './client'
@@ -31,14 +31,12 @@ describe('Client', () => {
         }
 
         const FIXTURE_STATIC_FEATURE: StaticFeature = {
-            fillInitializeParams: (params: InitializeParams) => (params.initializationOptions = 'test'),
             fillClientCapabilities: (capabilities: ClientCapabilities) => (capabilities.experimental = 'test'),
             initialize: () => void 0,
         }
 
         const FIXTURE_DYNAMIC_FEATURE: DynamicFeature<any> = {
             messages: { method: 'm' },
-            fillInitializeParams: (params: InitializeParams) => (params.initializationOptions = 'test'),
             fillClientCapabilities: (capabilities: ClientCapabilities) => (capabilities.experimental = 'test'),
             initialize: () => void 0,
             register: () => void 0,
