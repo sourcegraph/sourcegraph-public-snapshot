@@ -1,5 +1,27 @@
 # Sourcegraph WebApp
 
+Guide to contribute to the Sourcegraph webapp.
+
+## Naming files
+
+If the file only contains one main export (e.g. a component class + some interfaces), name the file like the main export.
+This name is PascalCase if the main export is a class.
+This makes it easy to find it with file search.
+If the file has no main export (e.g. a file with utility functions), give the file a name that groups the exports semantically.
+This name is usually short and lowercase or kebab-case, e.g. `util/errors.ts` contains error utilities.
+Avoid adding utilities into a `util.ts` file, it is doomed to become a mess over time.
+
+### `.ts` vs `.tsx`
+
+You must use the `tsx` file extension if the file contains TSX (React) syntax.
+You should use the normal `ts` extension if it does not.
+The `tsx` extension makes certain generic syntax impossible and also enables emmet suggestions in editors, which are annoying in normal TypeScript code.
+
+### `index.*` files
+
+Index files should not never contain declarations on their own.
+Their purpose is to reexport symbols from a number of other files to make imports easier and define the the public API.
+
 ## Components
 
 - Try to do one component per file. This makes it easy to encapsulate corresponding styles.
@@ -34,7 +56,7 @@ and runtime color manipulation is not yet implemented in CSS (coming in CSS Colo
 ## Formatting
 
 We use [Prettier](https://github.com/prettier/prettier) so you never have to worry about how to format your code.
-`npm run prettier` will check & autoformat all code. It is also run as part of `npm run lint`.
+`npm run prettier` will check & autoformat all code.
 
 ## Tests
 
