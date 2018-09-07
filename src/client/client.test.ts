@@ -260,27 +260,6 @@ describe('Client', () => {
             })
         })
 
-        describe('initializationFailedHandler', () => {
-            it('calls the initializationFailedHandler when initialization fails', async () => {
-                let initializationFailedHandlerCalled: () => void
-                const done = new Promise<void>(resolve => (initializationFailedHandlerCalled = resolve))
-                const client = new ConnectionTestClient({
-                    createMessageTransports: () =>
-                        createClientTransportsForTestServer(server => {
-                            server.onRequest('initialize', () => {
-                                throw new Error('test')
-                            })
-                        }),
-                    initializationFailedHandler: () => {
-                        initializationFailedHandlerCalled()
-                        return false
-                    },
-                })
-                client.activate()
-                await done
-            })
-        })
-
         describe('errorHandler', () => {
             const create = async (errorHandler: ErrorHandler) => {
                 const clientTransports = createClientTransportsForTestServer(server => {

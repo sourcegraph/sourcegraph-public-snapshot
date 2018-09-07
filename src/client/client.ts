@@ -21,21 +21,12 @@ import {
 import { DocumentSelector } from '../types/document'
 import { isFunction, tryCatchPromise } from '../util'
 import { Connection, createConnection } from './connection'
-import {
-    CloseAction,
-    DefaultErrorHandler,
-    ErrorAction,
-    ErrorHandler,
-    InitializationFailedHandler,
-} from './errorHandler'
+import { CloseAction, DefaultErrorHandler, ErrorAction, ErrorHandler } from './errorHandler'
 import { DynamicFeature, RegistrationData, StaticFeature } from './features/common'
 
 /** Options for creating a new client. */
 export interface ClientOptions {
     documentSelector?: DocumentSelector
-
-    /** Called when initialization fails to determine how to proceed. */
-    initializationFailedHandler?: InitializationFailedHandler
 
     /** Called when an error or close occurs to determine how to proceed. */
     errorHandler?: ErrorHandler
@@ -59,7 +50,6 @@ export interface ClientOptions {
 
 /** The client options, after defaults have been set that make certain fields required. */
 interface ResolvedClientOptions extends Pick<ClientOptions, Exclude<keyof ClientOptions, 'trace'>> {
-    initializationFailedHandler: InitializationFailedHandler
     errorHandler: ErrorHandler
     tracer: Tracer
     experimentalClientCapabilities: any
@@ -117,7 +107,6 @@ export class Client implements Unsubscribable {
     public constructor(public readonly id: string, { trace, ...options }: ClientOptions) {
         this.options = {
             ...options,
-            initializationFailedHandler: options.initializationFailedHandler || (() => Promise.resolve(false)),
             errorHandler: options.errorHandler || new DefaultErrorHandler(),
             tracer: options.tracer || noopTracer,
             experimentalClientCapabilities: options.experimentalClientCapabilities || {},
@@ -142,10 +131,9 @@ export class Client implements Unsubscribable {
 
     /**
      * Activates the client, which causes it to start connecting (and to reestablish the connection when it drops,
-     * as directed by the initializationFailedHandler).
+     * as directed by the error handler).
      *
-     * To watch client state, use Client#state. To log client errors, provide an initializationFailedHandler and
-     * errorHandler in ClientOptions.
+     * To watch client state, use Client#state. To log client errors, provide errorHandler in ClientOptions.
      */
     public activate(): void {
         // Callers should subscribe to Client#state instead of awaiting the activation.
@@ -238,17 +226,13 @@ export class Client implements Unsubscribable {
 
                 this._state.next(ClientState.Active)
             })
-            .then(null, err =>
-                Promise.resolve(this.options.initializationFailedHandler(err)).then(reinitialize => {
-                    if (reinitialize) {
-                        return this.initialize(connection)
-                    }
-                    if (connection) {
-                        connection.unsubscribe()
-                    }
-                    return this.stopAtState(ClientState.ActivateFailed)
-                })
-            )
+            .then(null, err => {
+                this.options.errorHandler.error(err, undefined, undefined)
+                if (connection) {
+                    connection.unsubscribe()
+                }
+                return this.stopAtState(ClientState.ActivateFailed)
+            })
     }
 
     protected handleConnectionClosed(): void {

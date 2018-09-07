@@ -1,13 +1,6 @@
 import { Message } from '../jsonrpc2/messages'
 
 /**
- * Called by the client when initialization fails to determine how to proceed.
- *
- * @returns true to attempt reinitialization, false otherwise
- */
-export type InitializationFailedHandler = (error: Error) => boolean | Promise<boolean>
-
-/**
  * A pluggable error handler that is invoked when the connection encounters an error or is closed.
  */
 export interface ErrorHandler {
