@@ -351,18 +351,18 @@
   revision = "c0656edd0d9eab7c66d1eb0c568f9039345796f7"
 
 [[projects]]
-  digest = "1:d49485d62a6b0f0c0c5a59ddfb86ae9f9be581fb47a97eb9cf8bee9d945e2d35"
+  digest = "1:ea1439179707f7a12b1ff0039b1c7421fff80513cb2177082920460407a10c93"
   name = "github.com/golang-migrate/migrate"
   packages = [
     ".",
     "database",
     "database/postgres",
     "source",
-    "source/go-bindata",
+    "source/go_bindata",
   ]
   pruneopts = "NUT"
-  revision = "22f249514de9aa3f8a720a7cabbdd45d294f83a1"
-  version = "v3.2.0"
+  revision = "93d53a5ae84d81945eedadfe8f6865530d61d51c"
+  version = "v3.5.1"
 
 [[projects]]
   branch = "master"
@@ -1810,7 +1810,7 @@
     "github.com/gobwas/glob",
     "github.com/golang-migrate/migrate",
     "github.com/golang-migrate/migrate/database/postgres",
-    "github.com/golang-migrate/migrate/source/go-bindata",
+    "github.com/golang-migrate/migrate/source/go_bindata",
     "github.com/golang/groupcache/lru",
     "github.com/google/go-querystring/query",
     "github.com/google/uuid",

@@ -81,7 +81,8 @@ type Driver interface {
 func Open(url string) (Driver, error) {
 	u, err := nurl.Parse(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Unable to parse URL. Did you escape all reserved URL characters? "+
+			"See: https://github.com/golang-migrate/migrate#database-urls Error: %v", err)
 	}
 
 	if u.Scheme == "" {
@@ -109,4 +110,15 @@ func Register(name string, driver Driver) {
 		panic("Register called twice for driver " + name)
 	}
 	drivers[name] = driver
+}
+
+// List lists the registered drivers
+func List() []string {
+	driversMu.RLock()
+	defer driversMu.RUnlock()
+	names := make([]string, 0, len(drivers))
+	for n := range drivers {
+		names = append(names, n)
+	}
+	return names
 }
