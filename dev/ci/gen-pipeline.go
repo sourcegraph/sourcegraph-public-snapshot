@@ -184,10 +184,19 @@ func main() {
 			Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
 		)
 		if insiders {
-			cmds = append(cmds,
-				Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", image, version, image)),
-				Cmd(fmt.Sprintf("docker push %s:insiders", image)),
-			)
+			tags := []string{"insiders"}
+
+			if strings.HasPrefix(app, "xlang") {
+				// The "latest" tag is needed for the automatic docker management logic.
+				tags = append(tags, "latest")
+			}
+
+			for _, tag := range tags {
+				cmds = append(cmds,
+					Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", image, version, image, tag)),
+					Cmd(fmt.Sprintf("docker push %s:%s", image, tag)),
+				)
+			}
 		}
 		if taggedRelease {
 			cmds = append(cmds,
