@@ -9,7 +9,6 @@ import {
 } from '../../protocol'
 import { Client } from '../client'
 import {
-    ProvideTextDocumentLocationMiddleware,
     TextDocumentDefinitionFeature,
     TextDocumentImplementationFeature,
     TextDocumentLocationFeature,
@@ -25,7 +24,7 @@ const create = <P extends TextDocumentPositionParams, F extends TextDocumentLoca
     registry: TextDocumentLocationProviderRegistry<P>
     feature: F
 } => {
-    const client = { options: { middleware: {} } } as Client
+    const client = { options: {} } as Client
     const registry = new RegistryClass()
     const feature = new FeatureClass(client, registry)
     return { client, registry, feature }
@@ -43,9 +42,6 @@ describe('TextDocumentLocationFeature', () => {
                     public isSupported(): boolean {
                         return true
                     }
-                    public getMiddleware(): ProvideTextDocumentLocationMiddleware | undefined {
-                        return undefined
-                    }
                 },
                 TextDocumentLocationProviderRegistry
             )
@@ -62,9 +58,6 @@ describe('TextDocumentLocationFeature', () => {
                     }
                     public isSupported(): boolean {
                         return false
-                    }
-                    public getMiddleware(): ProvideTextDocumentLocationMiddleware | undefined {
-                        return undefined
                     }
                 },
                 TextDocumentLocationProviderRegistry

@@ -5,14 +5,8 @@ import { ProvideTextDocumentDecorationSignature } from '../../environment/provid
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import { ClientCapabilities, ServerCapabilities } from '../../protocol'
 import { TextDocumentDecoration, TextDocumentPublishDecorationsNotification } from '../../protocol/decoration'
-import { NextSignature } from '../../types/middleware'
 import { Client } from '../client'
 import { ensure, Feature } from './common'
-
-export type ProvideTextDocumentDecorationMiddleware = NextSignature<
-    TextDocumentIdentifier,
-    Observable<TextDocumentDecoration[] | null>
->
 
 /**
  * Support for text document decorations published by the server (textDocument/publishDecorations notifications
@@ -47,16 +41,10 @@ export class TextDocumentDecorationFeature extends Feature<undefined> {
     }
 
     protected registerProvider(): Unsubscribable {
-        const client = this.client
-        const provideTextDocumentDecoration: ProvideTextDocumentDecorationSignature = textDocument =>
-            this.getDecorationsSubject(textDocument)
-        const middleware = client.options.middleware.provideTextDocumentDecoration
         return this.registry.registerProvider(
             undefined,
             (textDocument: TextDocumentIdentifier): Observable<TextDocumentDecoration[] | null> =>
-                middleware
-                    ? middleware(textDocument, provideTextDocumentDecoration)
-                    : provideTextDocumentDecoration(textDocument)
+                this.getDecorationsSubject(textDocument)
         )
     }
 

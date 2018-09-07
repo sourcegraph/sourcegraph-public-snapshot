@@ -33,7 +33,7 @@ describe('TextDocumentNotificationFeature', () => {
 
     class TextDocumentNotificationFeature extends AbstractTextDocumentNotificationFeature<any, any> {
         constructor(client: Client) {
-            super(client, new Subject<any>(), DidOpenTextDocumentNotification.type, undefined, () => void 0)
+            super(client, new Subject<any>(), DidOpenTextDocumentNotification.type, () => void 0)
         }
         public readonly messages = { method: 'm' }
         public fillClientCapabilities(): void {
@@ -83,7 +83,7 @@ describe('TextDocumentDidOpenFeature', () => {
         feature: TextDocumentDidOpenFeature & { readonly selectors: Map<string, DocumentSelector> }
     } => {
         const environment = new BehaviorSubject<Environment>(EMPTY_ENVIRONMENT)
-        const client = { options: { middleware: {} } } as Client
+        const client = { options: {} } as Client
         const feature = new class extends TextDocumentDidOpenFeature {
             public readonly selectors!: Map<string, DocumentSelector>
         }(client, createObservableEnvironment(environment).textDocument)
@@ -163,7 +163,7 @@ describe('TextDocumentDidCloseFeature', () => {
         feature: TextDocumentDidCloseFeature & { readonly selectors: Map<string, DocumentSelector> }
     } => {
         const environment = new BehaviorSubject<Environment>(EMPTY_ENVIRONMENT)
-        const client = { options: { middleware: {} } } as Client
+        const client = { options: {} } as Client
         const feature = new class extends TextDocumentDidCloseFeature {
             public readonly selectors!: Map<string, DocumentSelector>
         }(client, createObservableEnvironment(environment).textDocument)

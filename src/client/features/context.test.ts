@@ -12,7 +12,7 @@ describe('ContextFeature', () => {
         client: Client
         feature: ContextFeature
     } => {
-        const client = { options: { middleware: {} } } as Client
+        const client = { options: {} } as Client
         const feature = new ContextFeature(
             client,
             setContext ||

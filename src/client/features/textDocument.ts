@@ -13,7 +13,6 @@ import {
     TextDocumentRegistrationOptions,
 } from '../../protocol'
 import { DocumentSelector } from '../../types/document'
-import { NextSignature } from '../../types/middleware'
 import { match } from '../../types/textDocument'
 import { Client } from '../client'
 import { DynamicFeature, ensure, RegistrationData } from './common'
@@ -29,7 +28,6 @@ export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFe
         protected client: Client,
         protected observable: Observable<E>,
         protected type: NotificationType<P, TextDocumentRegistrationOptions>,
-        protected middleware: NextSignature<E, void> | undefined,
         protected createParams: CreateParamsSignature<E, P>,
         protected selectorFilter?: (selectors: IterableIterator<DocumentSelector>, data: E) => boolean
     ) {}
@@ -55,11 +53,7 @@ export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFe
 
     private callback(data: E): void {
         if (!this.selectorFilter || this.selectorFilter(this.selectors.values(), data)) {
-            if (this.middleware) {
-                this.middleware(data, data => this.client.sendNotification(this.type, this.createParams(data)))
-            } else {
-                this.client.sendNotification(this.type, this.createParams(data))
-            }
+            this.client.sendNotification(this.type, this.createParams(data))
             this.notificationSent(data)
         }
     }
@@ -101,7 +95,6 @@ export class TextDocumentDidOpenFeature extends TextDocumentNotificationFeature<
             client,
             environmentTextDocument.pipe(filter((v): v is TextDocumentItem => v !== null)),
             DidOpenTextDocumentNotification.type,
-            client.options.middleware.didOpen,
             textDocument =>
                 ({
                     textDocument,
@@ -147,7 +140,6 @@ export class TextDocumentDidCloseFeature extends TextDocumentNotificationFeature
                 map(([closedDocument]) => closedDocument)
             ),
             DidCloseTextDocumentNotification.type,
-            client.options.middleware.didClose,
             textDocument =>
                 ({
                     textDocument: { uri: textDocument.uri },

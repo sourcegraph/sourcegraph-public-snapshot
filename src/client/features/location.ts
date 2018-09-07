@@ -15,15 +15,8 @@ import {
     TypeDefinitionRequest,
 } from '../../protocol'
 import { DocumentSelector } from '../../types/document'
-import { NextSignature } from '../../types/middleware'
 import { Client } from '../client'
-import { Middleware } from '../middleware'
 import { ensure, Feature } from './common'
-
-export type ProvideTextDocumentLocationMiddleware<
-    P extends TextDocumentPositionParams = TextDocumentPositionParams,
-    L extends Location = Location
-> = NextSignature<P, Observable<L | L[] | null>>
 
 /**
  * Support for requests that retrieve a list of locations (e.g., textDocument/definition,
@@ -49,9 +42,6 @@ export abstract class TextDocumentLocationFeature<
     /** Override to compute whether the server capabilities report support for this feature. */
     protected abstract isSupported(capabilities: ServerCapabilities): boolean
 
-    /** Override to return the middleware for this feature. */
-    protected abstract getMiddleware?(midleware: Middleware): ProvideTextDocumentLocationMiddleware<P, L> | undefined
-
     public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
         if (!this.isSupported(capabilities) || !documentSelector) {
             return
@@ -63,14 +53,9 @@ export abstract class TextDocumentLocationFeature<
     }
 
     protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
-        const client = this.client
-        const provideTextDocumentLocation: ProvideTextDocumentLocationSignature<P, L> = params =>
-            from(client.sendRequest(this.messages, params))
-        const middleware = this.getMiddleware ? this.getMiddleware(client.options.middleware) : undefined
         return this.registry.registerProvider(
             options,
-            (params: P): Observable<L | L[] | null> =>
-                middleware ? middleware(params, provideTextDocumentLocation) : provideTextDocumentLocation(params)
+            (params: P): Observable<L | L[] | null> => from(this.client.sendRequest(this.messages, params))
         )
     }
 }
@@ -89,12 +74,6 @@ export class TextDocumentDefinitionFeature extends TextDocumentLocationFeature {
     protected isSupported(capabilities: ServerCapabilities): boolean {
         return !!capabilities.definitionProvider
     }
-
-    protected getMiddleware(
-        middleware: Middleware
-    ): ProvideTextDocumentLocationMiddleware<TextDocumentPositionParams, Location> | undefined {
-        return middleware.provideTextDocumentDefinition
-    }
 }
 
 /**
@@ -110,12 +89,6 @@ export class TextDocumentImplementationFeature extends TextDocumentLocationFeatu
 
     protected isSupported(capabilities: ServerCapabilities): boolean {
         return !!capabilities.implementationProvider
-    }
-
-    protected getMiddleware(
-        middleware: Middleware
-    ): ProvideTextDocumentLocationMiddleware<TextDocumentPositionParams, Location> | undefined {
-        return middleware.provideTextDocumentImplementation
     }
 }
 
@@ -133,12 +106,6 @@ export class TextDocumentTypeDefinitionFeature extends TextDocumentLocationFeatu
     protected isSupported(capabilities: ServerCapabilities): boolean {
         return !!capabilities.typeDefinitionProvider
     }
-
-    protected getMiddleware(
-        middleware: Middleware
-    ): ProvideTextDocumentLocationMiddleware<TextDocumentPositionParams, Location> | undefined {
-        return middleware.provideTextDocumentTypeDefinition
-    }
 }
 
 /**
@@ -154,11 +121,5 @@ export class TextDocumentReferencesFeature extends TextDocumentLocationFeature<R
 
     protected isSupported(capabilities: ServerCapabilities): boolean {
         return !!capabilities.referencesProvider
-    }
-
-    protected getMiddleware(
-        middleware: Middleware
-    ): ProvideTextDocumentLocationMiddleware<ReferenceParams> | undefined {
-        return middleware.provideTextDocumentReferences
     }
 }

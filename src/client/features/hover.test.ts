@@ -10,7 +10,7 @@ const create = (): {
     registry: TextDocumentHoverProviderRegistry
     feature: TextDocumentHoverFeature
 } => {
-    const client = { options: { middleware: {} } } as Client
+    const client = { options: {} } as Client
     const registry = new TextDocumentHoverProviderRegistry()
     const feature = new TextDocumentHoverFeature(client, registry)
     return { client, registry, feature }

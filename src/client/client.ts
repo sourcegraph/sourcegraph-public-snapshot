@@ -29,7 +29,6 @@ import {
     InitializationFailedHandler,
 } from './errorHandler'
 import { DynamicFeature, RegistrationData, StaticFeature } from './features/common'
-import { Middleware } from './middleware'
 
 /** Options for creating a new client. */
 export interface ClientOptions {
@@ -40,8 +39,6 @@ export interface ClientOptions {
 
     /** Called when an error or close occurs to determine how to proceed. */
     errorHandler?: ErrorHandler
-
-    middleware?: Readonly<Middleware>
 
     /** Called to create the connection to the server. */
     createMessageTransports: () => MessageTransports | Promise<MessageTransports>
@@ -64,7 +61,6 @@ export interface ClientOptions {
 interface ResolvedClientOptions extends Pick<ClientOptions, Exclude<keyof ClientOptions, 'trace'>> {
     initializationFailedHandler: InitializationFailedHandler
     errorHandler: ErrorHandler
-    middleware: Readonly<Middleware>
     tracer: Tracer
     experimentalClientCapabilities: any
 }
@@ -123,7 +119,6 @@ export class Client implements Unsubscribable {
             ...options,
             initializationFailedHandler: options.initializationFailedHandler || (() => Promise.resolve(false)),
             errorHandler: options.errorHandler || new DefaultErrorHandler(),
-            middleware: options.middleware || {},
             tracer: options.tracer || noopTracer,
             experimentalClientCapabilities: options.experimentalClientCapabilities || {},
         }

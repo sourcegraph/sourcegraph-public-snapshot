@@ -16,7 +16,7 @@ describe('TextDocumentDecorationFeature', () => {
         registry: TextDocumentDecorationProviderRegistry
         feature: TextDocumentDecorationFeature
     } => {
-        const client = { options: { middleware: {} } } as Client
+        const client = { options: {} } as Client
         const registry = new TextDocumentDecorationProviderRegistry()
         const feature = new TextDocumentDecorationFeature(client, registry)
         return { client, registry, feature }

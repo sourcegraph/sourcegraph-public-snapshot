@@ -9,7 +9,7 @@ const create = (): {
     configurationCascade: Subject<ConfigurationCascade>
     feature: ConfigurationChangeNotificationFeature<ConfigurationCascade>
 } => {
-    const client = { options: { middleware: {} } } as Client
+    const client = { options: {} } as Client
     const configurationCascade = new Subject<ConfigurationCascade>()
     const feature = new ConfigurationChangeNotificationFeature(client, configurationCascade)
     return { client, configurationCascade, feature }

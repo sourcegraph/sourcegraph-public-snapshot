@@ -11,11 +11,8 @@ import {
     TextDocumentRegistrationOptions,
 } from '../../protocol'
 import { DocumentSelector } from '../../types/document'
-import { NextSignature } from '../../types/middleware'
 import { Client } from '../client'
 import { ensure, Feature } from './common'
-
-export type ProvideTextDocumentHoverMiddleware = NextSignature<TextDocumentPositionParams, Observable<Hover | null>>
 
 /**
  * Support for hover messages (textDocument/hover requests to the server).
@@ -47,14 +44,10 @@ export class TextDocumentHoverFeature extends Feature<TextDocumentRegistrationOp
     }
 
     protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
-        const client = this.client
-        const provideTextDocumentHover: ProvideTextDocumentHoverSignature = params =>
-            from(client.sendRequest(HoverRequest.type, params))
-        const middleware = client.options.middleware.provideTextDocumentHover
         return this.registry.registerProvider(
             options,
             (params: TextDocumentPositionParams): Observable<Hover | null> =>
-                middleware ? middleware(params, provideTextDocumentHover) : provideTextDocumentHover(params)
+                from(this.client.sendRequest(HoverRequest.type, params))
         )
     }
 }
