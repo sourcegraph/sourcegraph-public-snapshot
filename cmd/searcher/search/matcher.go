@@ -253,12 +253,12 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile) (matches []protocol.LineMatc
 		locs := rg.re.FindAllIndex(matchBuf, maxOffsets)
 		if len(locs) > 0 {
 			lineLimitHit := len(locs) == maxOffsets
-			offsetAndLengths := make([][]int, len(locs))
+			offsetAndLengths := make([][2]int, len(locs))
 			for i, match := range locs {
 				start, end := match[0], match[1]
 				offset := utf8.RuneCount(lineBuf[:start])
 				length := utf8.RuneCount(lineBuf[start:end])
-				offsetAndLengths[i] = []int{offset, length}
+				offsetAndLengths[i] = [2]int{offset, length}
 			}
 			matches = append(matches, protocol.LineMatch{
 				// making a copy of lineBuf is intentional.

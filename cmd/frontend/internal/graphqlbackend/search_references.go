@@ -237,7 +237,7 @@ func searchReferencesInRepo(ctx context.Context, repo *types.Repo, gitserverRepo
 		for _, fr := range fileRefs {
 			lineMatches = append(lineMatches, &lineMatch{
 				JLineNumber:       int32(fr.Range.Start.Line),
-				JOffsetAndLengths: [][]int32{{int32(fr.Range.Start.Character), int32(fr.Range.End.Character - fr.Range.Start.Character)}},
+				JOffsetAndLengths: [][2]int32{{int32(fr.Range.Start.Character), int32(fr.Range.End.Character - fr.Range.Start.Character)}},
 			})
 		}
 		uri, err := uri.Parse(string(file))

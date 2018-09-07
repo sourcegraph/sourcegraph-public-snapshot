@@ -117,10 +117,10 @@ func fileMatchesToSearchResults(fms []*fileMatchResolver) []*searchResultResolve
 
 // LineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
-	JPreview          string    `json:"Preview"`
-	JLineNumber       int32     `json:"LineNumber"`
-	JOffsetAndLengths [][]int32 `json:"OffsetAndLengths"`
-	JLimitHit         bool      `json:"LimitHit"`
+	JPreview          string     `json:"Preview"`
+	JOffsetAndLengths [][2]int32 `json:"OffsetAndLengths"`
+	JLineNumber       int32      `json:"LineNumber"`
+	JLimitHit         bool       `json:"LimitHit"`
 }
 
 func (lm *lineMatch) Preview() string {
@@ -132,7 +132,11 @@ func (lm *lineMatch) LineNumber() int32 {
 }
 
 func (lm *lineMatch) OffsetAndLengths() [][]int32 {
-	return lm.JOffsetAndLengths
+	r := make([][]int32, len(lm.JOffsetAndLengths), len(lm.JOffsetAndLengths))
+	for i := range lm.JOffsetAndLengths {
+		r[i] = lm.JOffsetAndLengths[i][:]
+	}
+	return r
 }
 
 func (lm *lineMatch) LimitHit() bool {
@@ -504,11 +508,11 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 				if len(l.LineFragments) > maxLineFragmentMatches {
 					l.LineFragments = l.LineFragments[:maxLineFragmentMatches]
 				}
-				offsets := make([][]int32, len(l.LineFragments))
+				offsets := make([][2]int32, len(l.LineFragments))
 				for k, m := range l.LineFragments {
 					offset := utf8.RuneCount(l.Line[:m.LineOffset])
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
-					offsets[k] = []int32{int32(offset), int32(length)}
+					offsets[k] = [2]int32{int32(offset), int32(length)}
 				}
 				lines = append(lines, &lineMatch{
 					JPreview:          string(l.Line),
