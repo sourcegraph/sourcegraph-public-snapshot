@@ -1,10 +1,10 @@
 import { ActionItem } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsContainer'
 import BookClosedIcon from '@sourcegraph/icons/lib/BookClosed'
-import CloseIcon from '@sourcegraph/icons/lib/Close'
 import DraftsIcon from '@sourcegraph/icons/lib/Drafts'
 import LinkIcon from '@sourcegraph/icons/lib/Link'
 import StarIcon from '@sourcegraph/icons/lib/Star'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { fromEvent, merge, Subscription } from 'rxjs'
@@ -55,7 +55,7 @@ export class HelpPopover extends React.Component<Props> {
                         onClick={this.props.onDismiss}
                         title="Close"
                     >
-                        <CloseIcon />
+                        <CloseIcon className="icon-inline" />
                     </button>
                 </h4>
                 <div className="list-group list-group-flush">

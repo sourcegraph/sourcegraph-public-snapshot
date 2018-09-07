@@ -1,10 +1,10 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
 import { Checkmark } from '@sourcegraph/icons/lib/Checkmark'
-import { Close } from '@sourcegraph/icons/lib/Close'
 import { Cloud } from '@sourcegraph/icons/lib/Cloud'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -63,7 +63,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                                 data-tooltip="Access to this repository is disabled. Enable access to it to allow users to view and search it."
                                 className="ml-2 text-danger"
                             >
-                                <Close className="icon-inline" />Disabled
+                                <CloseIcon className="icon-inline" />Disabled
                             </small>
                         )}
                         {this.props.node.mirrorInfo.cloneInProgress && (
@@ -346,7 +346,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                     >
                         {this.state.addPublicRepositoryFormVisible ? (
                             <>
-                                <Close className="icon-inline" /> Close
+                                <CloseIcon className="icon-inline" /> Close
                             </>
                         ) : (
                             <>

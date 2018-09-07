@@ -1,6 +1,6 @@
-import CloseIcon from '@sourcegraph/icons/lib/Close'
 import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
@@ -91,7 +91,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                                     className={`btn btn-icon tab_bar__close-button ${TabBorderClassName}`}
                                     title="Close sidebar (Alt+S/Opt+S)"
                                 >
-                                    <CloseIcon />
+                                    <CloseIcon className="icon-inline" />
                                 </button>
                             </>
                         }

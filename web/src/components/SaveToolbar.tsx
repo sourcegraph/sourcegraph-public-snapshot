@@ -1,7 +1,7 @@
 import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
-import CloseIcon from '@sourcegraph/icons/lib/Close'
 import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
 interface Props {

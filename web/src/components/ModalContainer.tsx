@@ -1,4 +1,4 @@
-import CloseIcon from '@sourcegraph/icons/lib/Close'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
 interface Props {
@@ -12,7 +12,9 @@ export class ModalContainer extends React.PureComponent<Props, {}> {
             <div className="modal-container">
                 <div className="modal-container__dialog">
                     <div className="modal-container__close">
-                        <CloseIcon onClick={this.props.onClose} className="icon-inline btn-icon" />
+                        <span onClick={this.props.onClose}>
+                            <CloseIcon className="icon-inline btn-icon" />
+                        </span>
                     </div>
                     {this.props.component}
                 </div>

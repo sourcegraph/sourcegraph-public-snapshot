@@ -1,4 +1,4 @@
-import CloseIcon from '@sourcegraph/icons/lib/Close'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import stringScore from 'string-score'
@@ -110,7 +110,7 @@ export class ExampleSearches extends React.Component<Props, State> {
                     <div className="example-searches__flex-row">
                         <h2 className="example-searches__title">Built-in saved searches</h2>
                         <button className="btn btn-icon" onClick={this.props.onClose}>
-                            <CloseIcon />
+                            <CloseIcon className="icon-inline" />
                         </button>
                     </div>
                     <p>To edit or subscribe to a built-in saved search, save it first.</p>

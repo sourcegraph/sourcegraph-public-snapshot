@@ -1,8 +1,8 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
-import CloseIcon from '@sourcegraph/icons/lib/Close'
 import InvitationIcon from '@sourcegraph/icons/lib/Invitation'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -96,8 +96,8 @@ const InvitedNotification: React.SFC<{
             )}
             <CopyableText text={invitationURL} size={40} className="mt-2" />
         </div>
-        <button className="btn btn-icon">
-            <CloseIcon title="Dismiss" onClick={onDismiss} />
+        <button className="btn btn-icon" title="Dismiss" onClick={onDismiss}>
+            <CloseIcon className="icon-inline" />
         </button>
     </div>
 )

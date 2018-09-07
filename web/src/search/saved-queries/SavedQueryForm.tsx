@@ -1,4 +1,4 @@
-import CloseIcon from '@sourcegraph/icons/lib/Close'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { fromEvent, Observable, Subscription } from 'rxjs'
@@ -126,7 +126,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
         return (
             <Form className="saved-query-form" onSubmit={this.handleSubmit}>
                 <button type="reset" className="btn btn-icon saved-query-form__close" onClick={onDidCancel}>
-                    <CloseIcon />
+                    <CloseIcon className="icon-inline" />
                 </button>
                 <h2 className="saved-query-form__title">{title}</h2>
                 <div className="form-group">

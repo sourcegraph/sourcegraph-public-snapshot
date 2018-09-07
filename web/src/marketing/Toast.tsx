@@ -1,4 +1,4 @@
-import CloseIcon from '@sourcegraph/icons/lib/Close'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
 interface Props {

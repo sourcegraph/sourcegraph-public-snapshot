@@ -1,4 +1,4 @@
-import CloseIcon from '@sourcegraph/icons/lib/Close'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
 interface Props {
@@ -37,7 +37,7 @@ export class DismissibleAlert extends React.PureComponent<Props, State> {
             <div className={`alert dismissible-alert ${this.props.className}`}>
                 <div className="dismissible-alert__content">{this.props.children}</div>
                 <button className="btn btn-icon" onClick={this.onDismiss}>
-                    <CloseIcon />
+                    <CloseIcon className="icon-inline" />
                 </button>
             </div>
         )

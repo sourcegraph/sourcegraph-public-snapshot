@@ -1,6 +1,6 @@
-import CloseIcon from '@sourcegraph/icons/lib/Close'
 import NoIcon from '@sourcegraph/icons/lib/No'
 import * as H from 'history'
+import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { ReplaySubject, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
@@ -139,7 +139,7 @@ export class Panel extends React.PureComponent<Props, State> {
                 className="btn btn-icon panel__header-icon tab_bar__close-button tab-bar__end-fragment-other-element"
                 data-tooltip="Close"
             >
-                <CloseIcon />
+                <CloseIcon className="icon-inline" />
             </button>
         )
 
