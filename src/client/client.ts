@@ -119,7 +119,7 @@ export class Client implements Unsubscribable {
 
     private _trace: Trace
 
-    public constructor(public readonly id: string, public readonly name: string, { trace, ...options }: ClientOptions) {
+    public constructor(public readonly id: string, { trace, ...options }: ClientOptions) {
         this.options = {
             ...options,
             initializationFailedHandler: options.initializationFailedHandler || (() => Promise.resolve(false)),

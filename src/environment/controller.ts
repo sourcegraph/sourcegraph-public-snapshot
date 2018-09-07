@@ -212,7 +212,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
                 createMessageTransports: null as any, // will be overwritten by Object.assign call below
             }
             Object.assign(clientOptions, this.options.clientOptions(key, clientOptions, extension))
-            const client = new Client(key.id, key.id, clientOptions)
+            const client = new Client(key.id, clientOptions)
 
             // Register client features.
             this.registerClientFeatures(client, this.environment.configuration)

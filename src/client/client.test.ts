@@ -14,7 +14,7 @@ class TestClient extends Client {
             throw new Error('connection is not used in unit test')
         }
     ) {
-        super('', '', { createMessageTransports })
+        super('', { createMessageTransports })
     }
 }
 
@@ -189,7 +189,7 @@ describe('Client', () => {
     describe('connection', () => {
         class ConnectionTestClient extends Client {
             constructor(options: ClientOptions) {
-                super('', '', options)
+                super('', options)
             }
 
             public activateAndWait(): Promise<void> {

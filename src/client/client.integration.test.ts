@@ -90,7 +90,7 @@ describe('Client', () => {
         }
 
         // Create test client.
-        const client = new Client('', '', { createMessageTransports })
+        const client = new Client('', { createMessageTransports })
         client.registerFeature({
             fillInitializeParams: (params: InitializeParams) => (params.initializationOptions = 'test'),
             fillClientCapabilities: (capabilities: ClientCapabilities) => (capabilities.experimental = 'test'),
