@@ -1,5 +1,6 @@
 import { Subscription } from 'rxjs'
 import { createMessageConnection, Logger, MessageConnection, MessageTransports } from '../jsonrpc2/connection'
+import { createWebWorkerMessageTransports } from '../jsonrpc2/transports/webWorker'
 import {
     ConfigurationCascade,
     InitializedNotification,
@@ -63,17 +64,19 @@ const consoleLogger: Logger = {
 }
 
 /**
- * Activates a Sourcegraph extension by calling its `run` entrypoint function with the Sourcegraph
- * extension API handle as the first argument.
+ * Activates a Sourcegraph extension by calling its `run` entrypoint function with the Sourcegraph extension API
+ * handle as the first argument.
  *
  * @template C the extension's settings
- * @param transports The message reader and writer to use for communication with the client.
  * @param run The extension's `run` entrypoint function.
+ * @param transports The message reader and writer to use for communication with the client. Defaults to
+ *                   communicating using self.postMessage and MessageEvents with the parent (assuming that it is
+ *                   called in a Web Worker).
  * @return A promise that resolves when the extension's `run` function has been called.
  */
 export function activateExtension<C>(
-    transports: MessageTransports,
-    run: (sourcegraph: SourcegraphExtensionAPI<C>) => void | Promise<void>
+    run: (sourcegraph: SourcegraphExtensionAPI<C>) => void | Promise<void>,
+    transports: MessageTransports = createWebWorkerMessageTransports()
 ): Promise<void> {
     const connection = createMessageConnection(transports, consoleLogger)
     return new Promise<void>(resolve => {

@@ -1,3 +1,4 @@
+import { isFunction } from '../../util'
 import { MessageTransports } from '../connection'
 import { Message } from '../messages'
 import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transport'
@@ -99,10 +100,23 @@ function terminateWorker(worker: Worker): void {
     }
 }
 
-/** Creates JSON-RPC2 message transports for the Web Worker message communication interface. */
-export function createWebWorkerMessageTransports(worker: Worker): MessageTransports {
+/**
+ * Creates JSON-RPC2 message transports for the Web Worker message communication interface.
+ *
+ * @param worker The Worker to communicate with (e.g., created with `new Worker(...)`), or the global scope (i.e.,
+ *               `self`) if the current execution context is in a Worker. Defaults to the global scope.
+ */
+export function createWebWorkerMessageTransports(worker: Worker = globalWorkerScope()): MessageTransports {
     return {
         reader: new WebWorkerMessageReader(worker),
         writer: new WebWorkerMessageWriter(worker),
     }
+}
+
+function globalWorkerScope(): Worker {
+    const worker: Worker = global as any
+    if (!isFunction(worker.postMessage) || !isFunction(worker.terminate)) {
+        throw new Error('global scope is not a Worker')
+    }
+    return worker
 }

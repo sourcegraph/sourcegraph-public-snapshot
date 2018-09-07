@@ -8,7 +8,7 @@ import {
     RegistrationRequest,
 } from '../protocol'
 import { createMessageTransports } from '../test/integration/helpers'
-import { activateExtension } from './extension'
+import { activateExtension } from './extensionHost'
 
 describe('activateExtension', () => {
     it('initialize request parameters and result', async () => {
@@ -25,9 +25,9 @@ describe('activateExtension', () => {
         clientConnection.onRequest(RegistrationRequest.type, () => void 0)
 
         const [, result] = await Promise.all([
-            activateExtension<{}>(serverTransports, sourcegraph => {
+            activateExtension<{}>(sourcegraph => {
                 assert.deepStrictEqual(sourcegraph.initializeParams, initParams)
-            }),
+            }, serverTransports),
             clientConnection.sendRequest(InitializeRequest.type, initParams).then(result => {
                 clientConnection.sendNotification(InitializedNotification.type, initParams)
                 return result
