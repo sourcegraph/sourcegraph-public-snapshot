@@ -419,6 +419,17 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 		TotalMaxMatchCount:     100 * k,
 		ShardMaxImportantMatch: 15 * k,
 		TotalMaxImportantMatch: 25 * k,
+		MaxDocDisplayCount:     2 * defaultMaxSearchResults,
+	}
+
+	// We want zoekt to return more than FileMatchLimit results since we use
+	// the extra results to populate reposLimitHit. Additionally the defaults
+	// are very low, so we always want to return at least 2000.
+	if query.FileMatchLimit > defaultMaxSearchResults {
+		searchOpts.MaxDocDisplayCount = 2 * int(query.FileMatchLimit)
+	}
+	if searchOpts.MaxDocDisplayCount < 2000 {
+		searchOpts.MaxDocDisplayCount = 2000
 	}
 
 	if userProbablyWantsToWaitLonger := query.FileMatchLimit > defaultMaxSearchResults; userProbablyWantsToWaitLonger {
