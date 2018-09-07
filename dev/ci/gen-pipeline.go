@@ -151,7 +151,7 @@ func main() {
 		version = strings.TrimPrefix(version, "v")
 	}
 
-	addDockerImageStep := func(app string, latest bool) {
+	addDockerImageStep := func(app string, insiders bool) {
 		cmdDir := "./cmd/" + app
 		if _, err := os.Stat(cmdDir); err != nil {
 			fmt.Fprintln(os.Stderr, "app does not exist: "+app)
@@ -183,17 +183,11 @@ func main() {
 		cmds = append(cmds,
 			Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
 		)
-		if latest {
+		if insiders {
 			cmds = append(cmds,
-				Cmd(fmt.Sprintf("docker tag %s:%s %s:latest", image, version, image)),
-				Cmd(fmt.Sprintf("docker push %s:latest", image)),
+				Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", image, version, image)),
+				Cmd(fmt.Sprintf("docker push %s:insiders", image)),
 			)
-			if app == "server" {
-				cmds = append(cmds,
-					Cmd(fmt.Sprintf("docker tag %s:%s sourcegraph/server:insiders", image, version)),
-					Cmd("docker push sourcegraph/server:insiders"),
-				)
-			}
 		}
 		if taggedRelease {
 			cmds = append(cmds,
