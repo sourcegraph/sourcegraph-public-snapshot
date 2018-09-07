@@ -1,18 +1,10 @@
 {
   "$schema": "http://json.schemastore.org/renovate",
-  "extends": ["config:base"],
-  "timezone": "America/Los_Angeles",
-  "schedule": ["on the 1st through 7th day of the month"],
+  "extends": ["github>sourcegraph/renovate-config"],
   "prBanner": "[![search for \"{{{depName}}}\"](https://sourcegraph.com/search/badge?q=repo:%5Egithub%5C.com/{{{repository}}}%24+case:yes+-file:package%28-lock%29%3F%5C.json+{{{depName}}}&label=search+for+%22{{{depName}}}%22&suffix=matches)](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/{{{repository}}}%24+case:yes+-file:package%28-lock%29%3F%5C.json+{{{depName}}})",
-  "lockFileMaintenance": {
-    "schedule": ["on the 1st through 7th day of the month"]
-  },
-  "updateNotScheduled": true,
-  "prCreation": "not-pending",
   "semanticCommits": true,
   "semanticCommitType": "chore",
   "rangeStrategy": "replace",
-  "prHourlyLimit": 5,
   "packageRules": [
     {
       "packagePatterns": [".*"],
@@ -29,19 +21,6 @@
       "patch": {
         "semanticCommitType": "fix"
       }
-    },
-    {
-      "packagePatterns": ["^@types/"],
-      "rangeStrategy": "pin",
-      "automerge": true
-    },
-    {
-      "packageNames": ["sourcegraph", "@sourcegraph/extensions-client-common"],
-      "assignees": ["chrismwendt"]
-    },
-    {
-      "packageNames": ["@sourcegraph/codeintellify"],
-      "assignees": ["felixfbecker", "ijsnow"]
     }
   ]
 }
