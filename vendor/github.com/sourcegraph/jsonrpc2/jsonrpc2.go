@@ -298,8 +298,8 @@ type Conn struct {
 	disconnect chan struct{}
 
 	// Set by ConnOpt funcs.
-	onRecv func(*Request, *Response)
-	onSend func(*Request, *Response)
+	onRecv []func(*Request, *Response)
+	onSend []func(*Request, *Response)
 }
 
 var _ JSONRPC2 = (*Conn)(nil)
@@ -370,12 +370,19 @@ func (c *Conn) send(ctx context.Context, m *anyMessage, wait bool) (cc *call, er
 	}
 	c.mu.Unlock()
 
-	if c.onSend != nil {
+	if len(c.onSend) > 0 {
+		var (
+			req  *Request
+			resp *Response
+		)
 		switch {
 		case m.request != nil:
-			c.onSend(m.request, nil)
+			req = m.request
 		case m.response != nil:
-			c.onSend(nil, m.response)
+			resp = m.response
+		}
+		for _, onSend := range c.onSend {
+			onSend(req, resp)
 		}
 	}
 
@@ -498,8 +505,8 @@ func (c *Conn) readMessages(ctx context.Context) {
 
 		switch {
 		case m.request != nil:
-			if c.onRecv != nil {
-				c.onRecv(m.request, nil)
+			for _, onRecv := range c.onRecv {
+				onRecv(m.request, nil)
 			}
 			c.h.Handle(ctx, c, m.request)
 
@@ -516,13 +523,14 @@ func (c *Conn) readMessages(ctx context.Context) {
 					call.response = resp
 				}
 
-				if c.onRecv != nil {
+				if len(c.onRecv) > 0 {
 					var req *Request
-
 					if call != nil {
 						req = call.request
 					}
-					c.onRecv(req, resp)
+					for _, onRecv := range c.onRecv {
+						onRecv(req, resp)
+					}
 				}
 
 				switch {

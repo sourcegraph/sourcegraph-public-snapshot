@@ -90,8 +90,12 @@ func (h *HandlerShared) handleFileSystemRequest(ctx context.Context, req *jsonrp
 		})
 
 	case "textDocument/didSave":
+		var params lsp.DidSaveTextDocumentParams
+		if err := json.Unmarshal(*req.Params, &params); err != nil {
+			return "", false, err
+		}
 		// no-op
-		return "", false, nil
+		return params.TextDocument.URI, false, nil
 
 	default:
 		panic("unexpected file system request method: " + req.Method)
@@ -124,14 +128,25 @@ func (h *overlay) didChange(params *lsp.DidChangeTextDocumentParams) error {
 		return fmt.Errorf("received textDocument/didChange for unknown file %q", params.TextDocument.URI)
 	}
 
-	for _, change := range params.ContentChanges {
+	contents, err := applyContentChanges(params.TextDocument.URI, contents, params.ContentChanges)
+	if err != nil {
+		return err
+	}
+
+	h.set(params.TextDocument.URI, contents)
+	return nil
+}
+
+// applyContentChanges updates `contents` based on `changes`
+func applyContentChanges(uri lsp.DocumentURI, contents []byte, changes []lsp.TextDocumentContentChangeEvent) ([]byte, error) {
+	for _, change := range changes {
 		if change.Range == nil && change.RangeLength == 0 {
 			contents = []byte(change.Text) // new full content
 			continue
 		}
 		start, ok, why := offsetForPosition(contents, change.Range.Start)
 		if !ok {
-			return fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, params.TextDocument.URI, why)
+			return nil, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
 		}
 		var end int
 		if change.RangeLength != 0 {
@@ -140,11 +155,11 @@ func (h *overlay) didChange(params *lsp.DidChangeTextDocumentParams) error {
 			// RangeLength not specified, work it out from Range.End
 			end, ok, why = offsetForPosition(contents, change.Range.End)
 			if !ok {
-				return fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, params.TextDocument.URI, why)
+				return nil, fmt.Errorf("received textDocument/didChange for invalid position %q on %q: %s", change.Range.Start, uri, why)
 			}
 		}
-		if start < 0 || end >= len(contents) || end < start {
-			return fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, params.TextDocument.URI)
+		if start < 0 || end > len(contents) || end < start {
+			return nil, fmt.Errorf("received textDocument/didChange for out of range position %q on %q", change.Range, uri)
 		}
 		// Try avoid doing too many allocations, so use bytes.Buffer
 		b := &bytes.Buffer{}
@@ -154,8 +169,7 @@ func (h *overlay) didChange(params *lsp.DidChangeTextDocumentParams) error {
 		b.Write(contents[end:])
 		contents = b.Bytes()
 	}
-	h.set(params.TextDocument.URI, contents)
-	return nil
+	return contents, nil
 }
 
 func (h *overlay) didClose(params *lsp.DidCloseTextDocumentParams) {

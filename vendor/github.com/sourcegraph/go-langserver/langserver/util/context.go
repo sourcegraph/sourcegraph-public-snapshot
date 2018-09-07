@@ -18,10 +18,12 @@ func PrepareContext(bctx *build.Context, ctx context.Context, fs ctxvfs.FileSyst
 	// See golang.org/x/tools/go/buildutil/allpackages.go which uses `filepath` for example
 
 	bctx.OpenFile = func(path string) (io.ReadCloser, error) {
-		return fs.Open(ctx, virtualPath(path))
+		path = filepath.ToSlash(path)
+		return fs.Open(ctx, path)
 	}
 	bctx.IsDir = func(path string) bool {
-		fi, err := fs.Stat(ctx, virtualPath(path))
+		path = filepath.ToSlash(path)
+		fi, err := fs.Stat(ctx, path)
 		return err == nil && fi.Mode().IsDir()
 	}
 	bctx.HasSubdir = func(root, dir string) (rel string, ok bool) {
@@ -34,9 +36,11 @@ func PrepareContext(bctx *build.Context, ctx context.Context, fs ctxvfs.FileSyst
 		return PathTrimPrefix(dir, root), true
 	}
 	bctx.ReadDir = func(path string) ([]os.FileInfo, error) {
-		return fs.ReadDir(ctx, virtualPath(path))
+		path = filepath.ToSlash(path)
+		return fs.ReadDir(ctx, path)
 	}
 	bctx.IsAbsPath = func(path string) bool {
+		path = filepath.ToSlash(path)
 		return IsAbs(path)
 	}
 	bctx.JoinPath = func(elem ...string) string {

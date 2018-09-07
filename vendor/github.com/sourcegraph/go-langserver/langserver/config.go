@@ -29,6 +29,21 @@ type Config struct {
 	// Defaults to false if not specified.
 	GocodeCompletionEnabled bool
 
+	// FormatTool decides which tool is used to format documents. Supported: goimports and gofmt
+	//
+	// Defaults to goimports if not specified.
+	FormatTool string
+
+	// GoimportsLocalPrefix sets the local prefix (comma-separated string) that goimports will use
+	//
+	// Defaults to empty string if not specified.
+	GoimportsLocalPrefix string
+
+	// DiagnosticsEnabled enables handling of diagnostics
+	//
+	// Defaults to false if not specified.
+	DiagnosticsEnabled bool
+
 	// MaxParallelism controls the maximum number of goroutines that should be used
 	// to fulfill requests. This is useful in editor environments where users do
 	// not want results ASAP, but rather just semi quickly without eating all of
@@ -55,6 +70,12 @@ func (c Config) Apply(o *InitializationOptions) Config {
 	if o.GocodeCompletionEnabled != nil {
 		c.GocodeCompletionEnabled = *o.GocodeCompletionEnabled
 	}
+	if o.FormatTool != nil {
+		c.FormatTool = *o.FormatTool
+	}
+	if o.GoimportsLocalPrefix != nil {
+		c.GoimportsLocalPrefix = *o.GoimportsLocalPrefix
+	}
 	if o.MaxParallelism != nil {
 		c.MaxParallelism = *o.MaxParallelism
 	}
@@ -76,6 +97,7 @@ func NewDefaultConfig() Config {
 	return Config{
 		FuncSnippetEnabled:      true,
 		GocodeCompletionEnabled: false,
+		FormatTool:              formatToolGoimports,
 		MaxParallelism:          maxparallelism,
 		UseBinaryPkgCache:       true,
 	}

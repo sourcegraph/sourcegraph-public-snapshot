@@ -2,9 +2,14 @@ package jsonrpc2
 
 import (
 	"encoding/json"
-	"log"
 	"sync"
 )
+
+// Logger interface implements one method - Printf.
+// You can use the stdlib logger *log.Logger
+type Logger interface {
+	Printf(format string, v ...interface{})
+}
 
 // ConnOpt is the type of function that can be passed to NewConn to
 // customize the Conn before it is created.
@@ -13,18 +18,18 @@ type ConnOpt func(*Conn)
 // OnRecv causes all requests received on conn to invoke f(req, nil)
 // and all responses to invoke f(req, resp),
 func OnRecv(f func(*Request, *Response)) ConnOpt {
-	return func(c *Conn) { c.onRecv = f }
+	return func(c *Conn) { c.onRecv = append(c.onRecv, f) }
 }
 
 // OnSend causes all requests sent on conn to invoke f(req, nil) and
 // all responses to invoke f(nil, resp),
 func OnSend(f func(*Request, *Response)) ConnOpt {
-	return func(c *Conn) { c.onSend = f }
+	return func(c *Conn) { c.onSend = append(c.onSend, f) }
 }
 
 // LogMessages causes all messages sent and received on conn to be
 // logged using the provided logger.
-func LogMessages(log *log.Logger) ConnOpt {
+func LogMessages(log Logger) ConnOpt {
 	return func(c *Conn) {
 		// Remember reqs we have received so we can helpfully show the
 		// request method in OnSend for responses.

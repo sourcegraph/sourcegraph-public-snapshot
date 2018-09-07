@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -11,10 +12,16 @@ type Time struct {
 	time.Time
 }
 
+// ImplementsGraphQLType maps this custom Go type
+// to the graphql scalar type in the schema.
 func (Time) ImplementsGraphQLType(name string) bool {
 	return name == "Time"
 }
 
+// UnmarshalGraphQL is a custom unmarshaler for Time
+//
+// This function will be called whenever you use the
+// time scalar as an input
 func (t *Time) UnmarshalGraphQL(input interface{}) error {
 	switch input := input.(type) {
 	case time.Time:
@@ -33,4 +40,12 @@ func (t *Time) UnmarshalGraphQL(input interface{}) error {
 	default:
 		return fmt.Errorf("wrong type")
 	}
+}
+
+// MarshalJSON is a custom marshaler for Time
+//
+// This function will be called whenever you
+// query for fields that use the Time type
+func (t Time) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.Time)
 }

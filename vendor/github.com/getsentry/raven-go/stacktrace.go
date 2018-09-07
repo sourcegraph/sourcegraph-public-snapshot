@@ -166,23 +166,29 @@ func NewStacktraceFrame(pc uintptr, file string, line, context int, appPackagePr
 }
 
 // Retrieve the name of the package and function containing the PC.
-func functionName(pc uintptr) (pack string, name string) {
+func functionName(pc uintptr) (string, string) {
 	fn := runtime.FuncForPC(pc)
 	if fn == nil {
-		return
+		return "", ""
 	}
-	name = fn.Name()
-	// We get this:
-	//	runtime/debug.*T·ptrmethod
-	// and want this:
-	//  pack = runtime/debug
-	//	name = *T.ptrmethod
-	if idx := strings.LastIndex(name, "."); idx != -1 {
-		pack = name[:idx]
-		name = name[idx+1:]
+
+	return splitFunctionName(fn.Name())
+}
+
+func splitFunctionName(name string) (string, string) {
+	var pack string
+
+	if pos := strings.LastIndex(name, "/"); pos != -1 {
+		pack = name[:pos+1]
+		name = name[pos+1:]
 	}
-	name = strings.Replace(name, "·", ".", -1)
-	return
+
+	if pos := strings.Index(name, "."); pos != -1 {
+		pack += name[:pos]
+		name = name[pos+1:]
+	}
+
+	return pack, name
 }
 
 var fileCacheLock sync.Mutex

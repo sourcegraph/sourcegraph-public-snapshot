@@ -9,6 +9,7 @@ var bctx go_build_context
 func InitDaemon(bc *build.Context) {
 	bctx = pack_build_context(bc)
 	g_config.ProposeBuiltins = true
+	g_config.Autobuild = true
 	g_daemon = new(daemon)
 	g_daemon.drop_cache()
 }

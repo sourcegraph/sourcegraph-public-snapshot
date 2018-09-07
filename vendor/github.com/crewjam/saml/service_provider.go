@@ -87,7 +87,7 @@ type ServiceProvider struct {
 // issued by the IDP and the time it is received by ParseResponse. This is used
 // to prevent old responses from being replayed (while allowing for some clock
 // drift between the SP and IDP).
-const MaxIssueDelay = time.Second * 90
+var MaxIssueDelay = time.Second * 90
 
 // MaxClockSkew allows for leeway for clock skew between the IDP and SP when
 // validating assertions. It defaults to 180 seconds (matches shibboleth).
@@ -463,8 +463,18 @@ func (sp *ServiceProvider) ParseResponse(req *http.Request, possibleRequestIDs [
 			retErr.PrivateErr = err
 			return nil, retErr
 		}
+		var key interface{} = sp.Key
+		keyEl := doc.FindElement("//EncryptedAssertion/EncryptedKey")
+		if keyEl != nil {
+			key, err = xmlenc.Decrypt(sp.Key, keyEl)
+			if err != nil {
+				retErr.PrivateErr = fmt.Errorf("failed to decrypt key from response: %s", err)
+				return nil, retErr
+			}
+		}
+
 		el := doc.FindElement("//EncryptedAssertion/EncryptedData")
-		plaintextAssertion, err := xmlenc.Decrypt(sp.Key, el)
+		plaintextAssertion, err := xmlenc.Decrypt(key, el)
 		if err != nil {
 			retErr.PrivateErr = fmt.Errorf("failed to decrypt response: %s", err)
 			return nil, retErr

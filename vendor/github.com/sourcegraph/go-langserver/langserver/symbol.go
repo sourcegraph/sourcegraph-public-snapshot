@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/build"
-	"go/doc"
 	"go/parser"
 	"go/token"
 	"log"
@@ -254,13 +253,13 @@ func score(q Query, s symbolPair) (scor int) {
 }
 
 // toSym returns a SymbolInformation value derived from values we get
-// from the Go parser and doc packages.
-func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) symbolPair {
+// from visiting the Go ast.
+func toSym(name string, bpkg *build.Package, container string, recv string, kind lsp.SymbolKind, fs *token.FileSet, pos token.Pos) symbolPair {
 	var id string
-	if recv == "" {
+	if container == "" {
 		id = fmt.Sprintf("%s/-/%s", path.Clean(bpkg.ImportPath), name)
 	} else {
-		id = fmt.Sprintf("%s/-/%s/%s", path.Clean(bpkg.ImportPath), recv, name)
+		id = fmt.Sprintf("%s/-/%s/%s", path.Clean(bpkg.ImportPath), container, name)
 	}
 
 	return symbolPair{
@@ -268,7 +267,7 @@ func toSym(name string, bpkg *build.Package, recv string, kind lsp.SymbolKind, f
 			Name:          name,
 			Kind:          kind,
 			Location:      goRangeToLSPLocation(fs, pos, pos+token.Pos(len(name))),
-			ContainerName: recv,
+			ContainerName: container,
 		},
 		// NOTE: fields must be kept in sync with workspace_refs.go:defSymbolDescriptor
 		desc: symbolDescriptor{
@@ -436,64 +435,112 @@ func (h *LangHandler) collectFromPkg(ctx context.Context, bctx *build.Context, p
 	}
 }
 
-// astToSymbols returns a slice of LSP symbols from an AST.
-func astPkgToSymbols(fs *token.FileSet, astPkg *ast.Package, buildPkg *build.Package) []symbolPair {
-	// TODO(keegancsmith) Remove vendored doc/go once https://github.com/golang/go/issues/17788 is shipped
-	docPkg := doc.New(astPkg, buildPkg.ImportPath, doc.AllDecls)
-
-	// Emit decls
-	var pkgSyms []symbolPair
-	for _, t := range docPkg.Types {
-		pkgSyms = append(pkgSyms, toSym(t.Name, buildPkg, "", typeSpecSym(t), fs, declNamePos(t.Decl, t.Name)))
-		for _, v := range t.Funcs {
-			pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg, "", lsp.SKFunction, fs, v.Decl.Name.NamePos))
-		}
-		for _, v := range t.Methods {
-			pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg, t.Name, lsp.SKMethod, fs, v.Decl.Name.NamePos))
-		}
-		for _, v := range t.Consts {
-			for _, name := range v.Names {
-				pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKConstant, fs, declNamePos(v.Decl, name)))
-			}
-		}
-		for _, v := range t.Vars {
-			for _, name := range v.Names {
-				pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKField, fs, declNamePos(v.Decl, name)))
-			}
-		}
-	}
-	for _, v := range docPkg.Consts {
-		for _, name := range v.Names {
-			pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKConstant, fs, declNamePos(v.Decl, name)))
-		}
-	}
-	for _, v := range docPkg.Vars {
-		for _, name := range v.Names {
-			pkgSyms = append(pkgSyms, toSym(name, buildPkg, "", lsp.SKVariable, fs, declNamePos(v.Decl, name)))
-		}
-	}
-	for _, v := range docPkg.Funcs {
-		pkgSyms = append(pkgSyms, toSym(v.Name, buildPkg, "", lsp.SKFunction, fs, v.Decl.Name.NamePos))
-	}
-
-	return pkgSyms
+// SymbolCollector stores symbol information for an AST
+type SymbolCollector struct {
+	pkgSyms  []symbolPair
+	buildPkg *build.Package
+	fs       *token.FileSet
 }
 
-func typeSpecSym(t *doc.Type) lsp.SymbolKind {
-	// This usually has one, but we're running through a for loop in case it has
-	// none. In either case, the default is an SKClass.
+func recvString(recv ast.Expr) string {
+	switch t := recv.(type) {
+	case *ast.Ident:
+		return t.Name
+	case *ast.StarExpr:
+		return "*" + recvString(t.X)
+	}
+	return "BADRECV"
+}
 
-	// NOTE: coincidentally, doing this gives access to the methods for an
-	// interface and fields for a struct. Possible solution to Github issue #36?
-	for _, s := range t.Decl.Specs {
-		if v, ok := s.(*ast.TypeSpec); ok {
-			if _, ok := v.Type.(*ast.InterfaceType); ok {
-				return lsp.SKInterface
+func specNames(specs []ast.Spec) []string {
+	names := make([]string, 0, len(specs))
+	for _, s := range specs {
+		// s guaranteed to be an *ast.ValueSpec by readValue
+		for _, ident := range s.(*ast.ValueSpec).Names {
+			names = append(names, ident.Name)
+		}
+	}
+	return names
+}
+
+func (c *SymbolCollector) addSymbol(name string, recv string, container string, kind lsp.SymbolKind, pos token.Pos) {
+	c.pkgSyms = append(c.pkgSyms, toSym(name, c.buildPkg, recv, container, kind, c.fs, pos))
+}
+
+func (c *SymbolCollector) addFuncDecl(fun *ast.FuncDecl) {
+	if fun.Recv != nil {
+		// methods
+		recvTypeName := ""
+		var typ ast.Expr
+		if list := fun.Recv.List; len(list) == 1 {
+			typ = list[0].Type
+		}
+		recvTypeName = recvString(typ)
+		c.addSymbol(fun.Name.Name, recvTypeName, recvTypeName, lsp.SKMethod, fun.Name.NamePos)
+		return
+	}
+	// ordinary function
+	c.addSymbol(fun.Name.Name, "", "", lsp.SKFunction, fun.Name.NamePos)
+	return
+}
+
+func (c *SymbolCollector) addContainer(containerName string, fields *ast.FieldList, containerKind lsp.SymbolKind, containerPos token.Pos) {
+	if fields.List != nil {
+		for _, field := range fields.List {
+			if field.Names != nil {
+				for _, fieldName := range field.Names {
+					c.addSymbol(fieldName.Name, containerName, "", lsp.SKField, fieldName.NamePos)
+				}
 			}
 		}
 	}
+	c.addSymbol(containerName, "", "", containerKind, containerPos)
+}
 
-	return lsp.SKClass
+// Visit visits AST nodes and collects symbol information
+func (c *SymbolCollector) Visit(n ast.Node) (w ast.Visitor) {
+	switch t := n.(type) {
+	case *ast.TypeSpec:
+		if t.Name.Name != "_" {
+			switch term := t.Type.(type) {
+			case *ast.StructType:
+				c.addContainer(t.Name.Name, term.Fields, lsp.SKClass, t.Name.NamePos)
+			case *ast.InterfaceType:
+				c.addContainer(t.Name.Name, term.Methods, lsp.SKInterface, t.Name.NamePos)
+			default:
+				c.addSymbol(t.Name.Name, "", "", lsp.SKClass, t.Name.NamePos)
+			}
+		}
+	case *ast.GenDecl:
+		switch t.Tok {
+		case token.CONST:
+			names := specNames(t.Specs)
+			for _, name := range names {
+				c.addSymbol(name, "", "", lsp.SKConstant, declNamePos(t, name))
+			}
+		case token.VAR:
+			names := specNames(t.Specs)
+			for _, name := range names {
+				if name != "_" {
+					c.addSymbol(name, "", "", lsp.SKVariable, declNamePos(t, name))
+				}
+			}
+		}
+	case *ast.FuncDecl:
+		c.addFuncDecl(t)
+	}
+	return c
+}
+
+func astPkgToSymbols(fs *token.FileSet, astPkg *ast.Package, buildPkg *build.Package) []symbolPair {
+	var pkgSyms []symbolPair
+	symbolCollector := &SymbolCollector{pkgSyms, buildPkg, fs}
+
+	for _, src := range astPkg.Files {
+		ast.Walk(symbolCollector, src)
+	}
+
+	return symbolCollector.pkgSyms
 }
 
 func declNamePos(decl *ast.GenDecl, name string) token.Pos {

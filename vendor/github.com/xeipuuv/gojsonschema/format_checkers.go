@@ -72,15 +72,15 @@ var (
 	// so library users can add custom formatters
 	FormatCheckers = FormatCheckerChain{
 		formatters: map[string]FormatChecker{
-			"date-time": 	 DateTimeFormatChecker{},
-			"hostname":  	 HostnameFormatChecker{},
-			"email":     	 EmailFormatChecker{},
-			"ipv4":      	 IPV4FormatChecker{},
-			"ipv6":      	 IPV6FormatChecker{},
-			"uri":       	 URIFormatChecker{},
+			"date-time":     DateTimeFormatChecker{},
+			"hostname":      HostnameFormatChecker{},
+			"email":         EmailFormatChecker{},
+			"ipv4":          IPV4FormatChecker{},
+			"ipv6":          IPV6FormatChecker{},
+			"uri":           URIFormatChecker{},
 			"uri-reference": URIReferenceFormatChecker{},
-			"uuid":      	 UUIDFormatChecker{},
-			"regex":     	 RegexFormatChecker{},
+			"uuid":          UUIDFormatChecker{},
+			"regex":         RegexFormatChecker{},
 		},
 	}
 

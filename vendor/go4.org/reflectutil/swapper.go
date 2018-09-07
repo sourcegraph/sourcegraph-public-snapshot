@@ -12,6 +12,9 @@ import "reflect"
 // Its goal is to work safely and efficiently for all versions and
 // variants of Go: pre-Go1.5, Go1.5+, safe, unsafe, App Engine,
 // GopherJS, etc.
+//
+// Deprecated: this moved to the Go standard library. Use
+// reflect.Swapper in Go 1.8+ instead.
 func Swapper(slice interface{}) func(i, j int) {
 	v := reflect.ValueOf(slice)
 	if v.Kind() != reflect.Slice {

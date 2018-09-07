@@ -139,7 +139,7 @@ func (tracer *tracerImpl) Inject(sc ot.SpanContext, format interface{}, carrier 
 	switch format {
 	case ot.TextMap, ot.HTTPHeaders:
 		return theTextMapPropagator.Inject(sc, carrier)
-	case BinaryCarrier:
+	case ot.Binary:
 		return theBinaryPropagator.Inject(sc, carrier)
 	}
 	return ot.ErrUnsupportedFormat
@@ -149,7 +149,7 @@ func (tracer *tracerImpl) Extract(format interface{}, carrier interface{}) (ot.S
 	switch format {
 	case ot.TextMap, ot.HTTPHeaders:
 		return theTextMapPropagator.Extract(carrier)
-	case BinaryCarrier:
+	case ot.Binary:
 		return theBinaryPropagator.Extract(carrier)
 	}
 	return nil, ot.ErrUnsupportedFormat

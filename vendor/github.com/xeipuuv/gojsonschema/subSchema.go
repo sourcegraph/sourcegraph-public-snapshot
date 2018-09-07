@@ -97,8 +97,6 @@ type subSchema struct {
 
 	// hierarchy
 	parent                      *subSchema
-	definitions                 map[string]*subSchema
-	definitionsChildren         []*subSchema
 	itemsChildren               []*subSchema
 	itemsChildrenIsSingleSchema bool
 	propertiesChildren          []*subSchema
@@ -227,10 +225,6 @@ func (s *subSchema) AddRequired(value string) error {
 	s.required = append(s.required, value)
 
 	return nil
-}
-
-func (s *subSchema) AddDefinitionChild(child *subSchema) {
-	s.definitionsChildren = append(s.definitionsChildren, child)
 }
 
 func (s *subSchema) AddItemsChild(child *subSchema) {

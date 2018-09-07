@@ -267,13 +267,13 @@ func (h *LangHandler) workspaceRefsTypecheck(ctx context.Context, bctx *build.Co
 	if err != nil {
 		return nil, err
 	}
-	if len(diags) > 0 {
-		go func() {
-			if err := h.publishDiagnostics(ctx, conn, diags); err != nil {
-				log.Printf("warning: failed to send diagnostics: %s.", err)
-			}
-		}()
+
+	// collect all loaded files, required to remove existing diagnostics from our cache
+	files := fsetToFiles(prog.Fset)
+	if err := h.publishDiagnostics(ctx, conn, diags, files); err != nil {
+		log.Printf("warning: failed to send diagnostics: %s.", err)
 	}
+
 	return prog, nil
 }
 

@@ -165,6 +165,7 @@ func (v *Result) Valid() bool {
 func (v *Result) Errors() []ResultError {
 	return v.errors
 }
+
 // Add a fully filled error to the error set
 // SetDescription() will be called with the result of the parsed err.DescriptionFormat()
 func (v *Result) AddError(err ResultError, details ErrorDetails) {

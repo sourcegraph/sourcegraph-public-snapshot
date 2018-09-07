@@ -270,7 +270,7 @@ func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selectio
 		v := resolver.Interface()
 		data, err := json.Marshal(v)
 		if err != nil {
-			panic(errors.Errorf("could not marshal %v", v))
+			panic(errors.Errorf("could not marshal %v: %s", v, err))
 		}
 		out.Write(data)
 

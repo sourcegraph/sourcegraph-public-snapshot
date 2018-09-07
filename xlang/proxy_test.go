@@ -118,10 +118,10 @@ func TestProxy(t *testing.T) {
 			// "a.go:1:28": "(T).F string", // TODO(sqs): see golang/hover.go; this is the output we want
 			wantHover: map[string]string{},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16"},
-				"T":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16"},
-				"F":           []string{}, // we don't return fields for now
-				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:field:T.F:0:27"},
+				"T":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:field:T.F:0:27"},
+				"F":           []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:field:T.F:0:27"},
+				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:class:T:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:field:T.F:0:27"},
 			},
 		},
 		"exported defs unexported type": {
@@ -294,10 +294,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				},
 			},
 			wantSymbols: map[string][]string{
-				"": []string{
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:_:0:29",
-					"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:x:0:50",
-				},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:x:0:50"},
 				"is:exported": []string{},
 			},
 		},
@@ -333,7 +330,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				},
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:A:0:16", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#b/b.go:variable:_:0:36"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:A:0:16"},
 				"is:exported": []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a/a.go:function:A:0:16"},
 			},
 		},
@@ -360,7 +357,7 @@ package main; import "test/pkg"; func B() { p.A(); B() }`,
 				},
 			},
 			wantSymbols: map[string][]string{
-				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#a.go:variable:_:0:47", "git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/v/vendored/v.go:function:V:0:23"},
+				"":            []string{"git://test/pkg?deadbeefdeadbeefdeadbeefdeadbeefdeadbeef#vendor/github.com/v/vendored/v.go:function:V:0:23"},
 				"is:exported": []string{},
 			},
 			wantXPackages: []string{"test/pkg", "test/pkg/vendor/github.com/v/vendored"},

@@ -75,6 +75,15 @@ func MWSpanObserver(f func(span opentracing.Span, r *http.Request)) MWOption {
 //		}),
 //   )
 func Middleware(tr opentracing.Tracer, h http.Handler, options ...MWOption) http.Handler {
+	return MiddlewareFunc(tr, h.ServeHTTP, options...)
+}
+
+// MiddlewareFunc wraps an http.HandlerFunc and traces incoming requests.
+// It behaves identically to the Middleware function above.
+//
+// Example:
+//   http.ListenAndServe("localhost:80", nethttp.MiddlewareFunc(tracer, MyHandler))
+func MiddlewareFunc(tr opentracing.Tracer, h http.HandlerFunc, options ...MWOption) http.HandlerFunc {
 	opts := mwOptions{
 		opNameFunc: func(r *http.Request) string {
 			return "HTTP " + r.Method
@@ -101,7 +110,7 @@ func Middleware(tr opentracing.Tracer, h http.Handler, options ...MWOption) http
 		w = &statusCodeTracker{w, 200}
 		r = r.WithContext(opentracing.ContextWithSpan(r.Context(), sp))
 
-		h.ServeHTTP(w, r)
+		h(w, r)
 
 		ext.HTTPStatusCode.Set(sp, uint16(w.(*statusCodeTracker).status))
 		sp.Finish()

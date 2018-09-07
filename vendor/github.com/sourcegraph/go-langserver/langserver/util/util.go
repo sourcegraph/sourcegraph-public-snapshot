@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -15,10 +16,21 @@ func trimFilePrefix(s string) string {
 	return strings.TrimPrefix(s, "file://")
 }
 
+func normalizePath(s string) string {
+	if isURI(s) {
+		return UriToPath(lsp.DocumentURI(s))
+	}
+	s = filepath.ToSlash(s)
+	if !strings.HasPrefix(s, "/") {
+		s = "/" + s
+	}
+	return s
+}
+
 // PathHasPrefix returns true if s is starts with the given prefix
 func PathHasPrefix(s, prefix string) bool {
-	s = virtualPath(trimFilePrefix(s))
-	prefix = virtualPath(trimFilePrefix(prefix))
+	s = normalizePath(s)
+	prefix = normalizePath(prefix)
 	if s == prefix {
 		return true
 	}
@@ -30,8 +42,8 @@ func PathHasPrefix(s, prefix string) bool {
 
 // PathTrimPrefix removes the prefix from s
 func PathTrimPrefix(s, prefix string) string {
-	s = virtualPath(trimFilePrefix(s))
-	prefix = virtualPath(trimFilePrefix(prefix))
+	s = normalizePath(s)
+	prefix = normalizePath(prefix)
 	if s == prefix {
 		return ""
 	}
@@ -53,18 +65,30 @@ func IsVendorDir(dir string) bool {
 
 // IsURI tells if s denotes an URI
 func IsURI(s lsp.DocumentURI) bool {
-	return strings.HasPrefix(string(s), "file:///")
+	return isURI(string(s))
+}
+
+func isURI(s string) bool {
+	return strings.HasPrefix(s, "file://")
 }
 
 // PathToURI converts given absolute path to file URI
 func PathToURI(path string) lsp.DocumentURI {
-	if path != "" {
-		path = virtualPath(path)
-		if !strings.HasPrefix(path, "/") {
-			path = "/" + path
-		}
+	path = filepath.ToSlash(path)
+	parts := strings.SplitN(path, "/", 2)
+
+	// If the first segment is a Windows drive letter, prefix with a slash and skip encoding
+	head := parts[0]
+	if head != "" {
+		head = "/" + head
 	}
-	return lsp.DocumentURI("file://" + path)
+
+	rest := ""
+	if len(parts) > 1 {
+		rest = "/" + parts[1]
+	}
+
+	return lsp.DocumentURI("file://" + head + rest)
 }
 
 // UriToPath converts given file URI to path
@@ -76,10 +100,19 @@ func UriToPath(uri lsp.DocumentURI) string {
 	return u.Path
 }
 
+var regDriveLetter = regexp.MustCompile("^/[a-zA-Z]:")
+
 // UriToRealPath converts the given file URI to the platform specific path
 func UriToRealPath(uri lsp.DocumentURI) string {
 	path := UriToPath(uri)
-	return realPath(path)
+
+	if regDriveLetter.MatchString(path) {
+		// remove the leading slash if it starts with a drive letter
+		// and convert to back slashes
+		path = filepath.FromSlash(path[1:])
+	}
+
+	return path
 }
 
 // IsAbs returns true if the given path is absolute

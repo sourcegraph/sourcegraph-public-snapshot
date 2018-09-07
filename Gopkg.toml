@@ -208,3 +208,12 @@ required = [
   name = "honnef.co/go/tools"
   branch = "master"
 
+# Our old version of protobuf doesn't work on latest master of client_model and
+# go-genproto
+[[override]]
+  name = "github.com/prometheus/client_model"
+  revision = "99fa1f4be8e564e8a6b613da7fa6f46c9edafc6c"
+[[override]]
+  name = "google.golang.org/genproto"
+  revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
+

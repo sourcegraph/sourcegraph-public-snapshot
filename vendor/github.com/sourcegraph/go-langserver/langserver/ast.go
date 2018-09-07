@@ -33,6 +33,9 @@ func offsetForPosition(contents []byte, p lsp.Position) (offset int, valid bool,
 			col++
 		}
 	}
+	if line == p.Line && col == p.Character {
+		return offset, true, ""
+	}
 	if line == 0 {
 		return 0, false, fmt.Sprintf("character %d is beyond first line boundary", p.Character)
 	}

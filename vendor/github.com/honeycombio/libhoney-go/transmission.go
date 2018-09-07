@@ -364,6 +364,13 @@ func (w *WriterOutput) Add(ev *Event) {
 	w.W.Write(m)
 }
 
+// DiscardOutput implements the Output interface and drops all events.
+type DiscardOutput struct {
+	*WriterOutput
+}
+
+func (d *DiscardOutput) Add(ev *Event) {}
+
 // MockOutput implements the Output interface by retaining a slice of added
 // events, for use in unit tests.
 type MockOutput struct {

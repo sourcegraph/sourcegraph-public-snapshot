@@ -2,6 +2,8 @@ package lightstep
 
 import (
 	"encoding/base64"
+	"io"
+	"io/ioutil"
 
 	"github.com/golang/protobuf/proto"
 	lightstep "github.com/lightstep/lightstep-tracer-go/lightsteppb"
@@ -9,7 +11,7 @@ import (
 )
 
 // BinaryCarrier is used as the format parameter in inject/extract for lighstep binary propagation.
-const BinaryCarrier = "lightstep_binary_carrier"
+const BinaryCarrier = opentracing.Binary
 
 var theBinaryPropagator binaryPropagator
 
@@ -34,7 +36,13 @@ func (binaryPropagator) Inject(
 	if err != nil {
 		return err
 	}
+
 	switch carrier := opaqueCarrier.(type) {
+	case io.Writer:
+		buf := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
+		base64.StdEncoding.Encode(buf, data)
+		_, err = carrier.Write(buf)
+		return err
 	case *string:
 		*carrier = base64.StdEncoding.EncodeToString(data)
 	case *[]byte:
@@ -54,6 +62,12 @@ func (binaryPropagator) Extract(
 
 	// Decode from string, *string, *[]byte, or []byte
 	switch carrier := opaqueCarrier.(type) {
+	case io.Reader:
+		buf, err := ioutil.ReadAll(carrier)
+		if err != nil {
+			return nil, err
+		}
+		data, err = decodeBase64Bytes(buf)
 	case *string:
 		if carrier != nil {
 			data, err = base64.StdEncoding.DecodeString(*carrier)

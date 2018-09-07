@@ -1,4 +1,4 @@
-// Copyright (c) 2017 Uber Technologies, Inc.
+// Copyright (c) 2017-2018 Uber Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 
 	"github.com/uber/jaeger-client-go"
 	"github.com/uber/jaeger-client-go/internal/baggage/remote"
+	throttler "github.com/uber/jaeger-client-go/internal/throttler/remote"
 	"github.com/uber/jaeger-client-go/rpcmetrics"
 )
 
@@ -49,6 +50,7 @@ type Configuration struct {
 	Reporter            *ReporterConfig            `yaml:"reporter"`
 	Headers             *jaeger.HeadersConfig      `yaml:"headers"`
 	BaggageRestrictions *BaggageRestrictionsConfig `yaml:"baggage_restrictions"`
+	Throttler           *ThrottlerConfig           `yaml:"throttler"`
 }
 
 // SamplerConfig allows initializing a non-default sampler.  All fields are optional.
@@ -123,6 +125,24 @@ type BaggageRestrictionsConfig struct {
 	// RefreshInterval controls how often the baggage restriction manager will poll
 	// jaeger-agent for the most recent baggage restrictions.
 	RefreshInterval time.Duration `yaml:"refreshInterval"`
+}
+
+// ThrottlerConfig configures the throttler which can be used to throttle the
+// rate at which the client may send debug requests.
+type ThrottlerConfig struct {
+	// HostPort of jaeger-agent's credit server.
+	HostPort string `yaml:"hostPort"`
+
+	// RefreshInterval controls how often the throttler will poll jaeger-agent
+	// for more throttling credits.
+	RefreshInterval time.Duration `yaml:"refreshInterval"`
+
+	// SynchronousInitialization determines whether or not the throttler should
+	// synchronously fetch credits from the agent when an operation is seen for
+	// the first time. This should be set to true if the client will be used by
+	// a short lived service that needs to ensure that credits are fetched
+	// upfront such that sampling or throttling occurs.
+	SynchronousInitialization bool `yaml:"synchronousInitialization"`
 }
 
 type nullCloser struct{}
@@ -236,6 +256,21 @@ func (c Configuration) NewTracer(options ...Option) (opentracing.Tracer, io.Clos
 			),
 		)
 		tracerOptions = append(tracerOptions, jaeger.TracerOptions.BaggageRestrictionManager(mgr))
+	}
+
+	if c.Throttler != nil {
+		debugThrottler := throttler.NewThrottler(
+			c.ServiceName,
+			throttler.Options.Metrics(tracerMetrics),
+			throttler.Options.Logger(opts.logger),
+			throttler.Options.HostPort(c.Throttler.HostPort),
+			throttler.Options.RefreshInterval(c.Throttler.RefreshInterval),
+			throttler.Options.SynchronousInitialization(
+				c.Throttler.SynchronousInitialization,
+			),
+		)
+
+		tracerOptions = append(tracerOptions, jaeger.TracerOptions.DebugThrottler(debugThrottler))
 	}
 
 	tracer, closer := jaeger.NewTracer(

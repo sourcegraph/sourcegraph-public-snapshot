@@ -30,7 +30,7 @@ func init() {
 const (
 	defaultSampleRate = 1
 	defaultAPIHost    = "https://api.honeycomb.io/"
-	version           = "1.5.0"
+	version           = "1.7.0"
 
 	// DefaultMaxBatchSize how many events to collect in a batch
 	DefaultMaxBatchSize = 50
@@ -375,8 +375,24 @@ func Init(config Config) error {
 // Close waits for all in-flight messages to be sent. You should
 // call Close() before app termination.
 func Close() {
-	tx.Stop()
+	if tx != nil {
+		tx.Stop()
+	}
 	close(responses)
+}
+
+// Flush closes and reopens the Output interface, ensuring events
+// are sent without waiting on the batch to be sent asyncronously.
+// Generally, it is more efficient to rely on asyncronous batches than to
+// call Flush, but certain scenarios may require Flush if asynchronous sends
+// are not guaranteed to run (i.e. running in AWS Lambda)
+// Flush is not thread safe - use it only when you are sure that no other
+// parts of your program are calling Send
+func Flush() {
+	if tx != nil {
+		tx.Stop()
+		tx.Start()
+	}
 }
 
 // SendNow is a shortcut to create an event, add data, and send the event.

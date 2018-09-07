@@ -1,5 +1,7 @@
 package lsp
 
+import "fmt"
+
 type Position struct {
 	/**
 	 * Line position in a document (zero-based).
@@ -12,6 +14,10 @@ type Position struct {
 	Character int `json:"character"`
 }
 
+func (p Position) String() string {
+	return fmt.Sprintf("%d:%d", p.Line, p.Character)
+}
+
 type Range struct {
 	/**
 	 * The range's start position.
@@ -22,6 +28,10 @@ type Range struct {
 	 * The range's end position.
 	 */
 	End Position `json:"end"`
+}
+
+func (r Range) String() string {
+	return fmt.Sprintf("%s-%s", r.Start, r.End)
 }
 
 type Location struct {

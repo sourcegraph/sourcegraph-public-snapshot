@@ -91,18 +91,21 @@ type IdentityProvider struct {
 	Key                     crypto.PrivateKey
 	Logger                  logger.Interface
 	Certificate             *x509.Certificate
+	Intermediates           []*x509.Certificate
 	MetadataURL             url.URL
 	SSOURL                  url.URL
+	LogoutURL               url.URL
 	ServiceProviderProvider ServiceProviderProvider
 	SessionProvider         SessionProvider
 	AssertionMaker          AssertionMaker
+	SignatureMethod         string
 }
 
 // Metadata returns the metadata structure for this identity provider.
 func (idp *IdentityProvider) Metadata() *EntityDescriptor {
 	certStr := base64.StdEncoding.EncodeToString(idp.Certificate.Raw)
 
-	return &EntityDescriptor{
+	ed := &EntityDescriptor{
 		EntityID:      idp.MetadataURL.String(),
 		ValidUntil:    TimeNow().Add(DefaultValidDuration),
 		CacheDuration: DefaultValidDuration,
@@ -147,6 +150,17 @@ func (idp *IdentityProvider) Metadata() *EntityDescriptor {
 			},
 		},
 	}
+
+	if idp.LogoutURL.String() != "" {
+		ed.IDPSSODescriptors[0].SSODescriptor.SingleLogoutServices = []Endpoint{
+			{
+				Binding:  HTTPRedirectBinding,
+				Location: idp.LogoutURL.String(),
+			},
+		}
+	}
+
+	return ed
 }
 
 // Handler returns an http.Handler that serves the metadata and SSO
@@ -228,6 +242,7 @@ func (idp *IdentityProvider) ServeIDPInitiated(w http.ResponseWriter, r *http.Re
 		IDP:         idp,
 		HTTPRequest: r,
 		RelayState:  relayState,
+		Now:         TimeNow(),
 	}
 
 	session := idp.SessionProvider.GetSession(w, r, req)
@@ -701,11 +716,19 @@ func (req *IdpAuthnRequest) MakeAssertionEl() error {
 		PrivateKey:  req.IDP.Key,
 		Leaf:        req.IDP.Certificate,
 	}
+	for _, cert := range req.IDP.Intermediates {
+		keyPair.Certificate = append(keyPair.Certificate, cert.Raw)
+	}
 	keyStore := dsig.TLSCertKeyStore(keyPair)
+
+	signatureMethod := req.IDP.SignatureMethod
+	if signatureMethod == "" {
+		signatureMethod = dsig.RSASHA1SignatureMethod
+	}
 
 	signingContext := dsig.NewDefaultSigningContext(keyStore)
 	signingContext.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList(canonicalizerPrefixList)
-	if err := signingContext.SetSignatureMethod(dsig.RSASHA1SignatureMethod); err != nil {
+	if err := signingContext.SetSignatureMethod(signatureMethod); err != nil {
 		return err
 	}
 
@@ -897,11 +920,19 @@ func (req *IdpAuthnRequest) MakeResponse() error {
 			PrivateKey:  req.IDP.Key,
 			Leaf:        req.IDP.Certificate,
 		}
+		for _, cert := range req.IDP.Intermediates {
+			keyPair.Certificate = append(keyPair.Certificate, cert.Raw)
+		}
 		keyStore := dsig.TLSCertKeyStore(keyPair)
+
+		signatureMethod := req.IDP.SignatureMethod
+		if signatureMethod == "" {
+			signatureMethod = dsig.RSASHA1SignatureMethod
+		}
 
 		signingContext := dsig.NewDefaultSigningContext(keyStore)
 		signingContext.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList(canonicalizerPrefixList)
-		if err := signingContext.SetSignatureMethod(dsig.RSASHA1SignatureMethod); err != nil {
+		if err := signingContext.SetSignatureMethod(signatureMethod); err != nil {
 			return err
 		}
 

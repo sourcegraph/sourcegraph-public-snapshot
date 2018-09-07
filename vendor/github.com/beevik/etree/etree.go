@@ -13,6 +13,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -133,27 +134,6 @@ func NewDocument() *Document {
 		newReadSettings(),
 		newWriteSettings(),
 	}
-}
-
-// GetPath returns the absolute path of the element
-func (e *Element) GetPath() string {
-	path := e.GetRelativePath(nil)
-
-	return path[1:]
-}
-
-// GetPath returns the path of the element corresponding to the source element or document root
-func (e *Element) GetRelativePath(source *Element) string {
-	parts := []string{}
-
-	for element := e; element != nil && element.Tag != "" && element != source; element = element.Parent() {
-		parts = append(parts, "")
-		copy(parts[1:], parts)
-		parts[0] = element.Tag
-	}
-
-	path := strings.Join(parts, "/")
-	return "./" + path
 }
 
 // Copy returns a recursive, deep copy of the document.
@@ -445,7 +425,8 @@ func (e *Element) readFrom(ri io.Reader, settings ReadSettings) (n int64, err er
 }
 
 // SelectAttr finds an element attribute matching the requested key and
-// returns it if found. The key may be prefixed by a namespace and a colon.
+// returns it if found. Returns nil if no matching attribute is found. The key
+// may be prefixed by a namespace and a colon.
 func (e *Element) SelectAttr(key string) *Attr {
 	space, skey := spaceDecompose(key)
 	for i, a := range e.Attr {
@@ -481,7 +462,8 @@ func (e *Element) ChildElements() []*Element {
 }
 
 // SelectElement returns the first child element with the given tag. The tag
-// may be prefixed by a namespace and a colon.
+// may be prefixed by a namespace and a colon. Returns nil if no element with
+// a matching tag was found.
 func (e *Element) SelectElement(tag string) *Element {
 	space, stag := spaceDecompose(tag)
 	for _, t := range e.Child {
@@ -506,13 +488,14 @@ func (e *Element) SelectElements(tag string) []*Element {
 }
 
 // FindElement returns the first element matched by the XPath-like path
-// string. Panics if an invalid path string is supplied.
+// string. Returns nil if no element is found using the path. Panics if an
+// invalid path string is supplied.
 func (e *Element) FindElement(path string) *Element {
 	return e.FindElementPath(MustCompilePath(path))
 }
 
 // FindElementPath returns the first element matched by the XPath-like path
-// string.
+// string. Returns nil if no element is found using the path.
 func (e *Element) FindElementPath(path Path) *Element {
 	p := newPather()
 	elements := p.traverse(e, path)
@@ -534,6 +517,94 @@ func (e *Element) FindElements(path string) []*Element {
 func (e *Element) FindElementsPath(path Path) []*Element {
 	p := newPather()
 	return p.traverse(e, path)
+}
+
+// GetPath returns the absolute path of the element.
+func (e *Element) GetPath() string {
+	path := []string{}
+	for seg := e; seg != nil; seg = seg.Parent() {
+		if seg.Tag != "" {
+			path = append(path, seg.Tag)
+		}
+	}
+
+	// Reverse the path.
+	for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+		path[i], path[j] = path[j], path[i]
+	}
+
+	return "/" + strings.Join(path, "/")
+}
+
+// GetRelativePath returns the path of the element relative to the source
+// element. If the two elements are not part of the same element tree, then
+// GetRelativePath returns the empty string.
+func (e *Element) GetRelativePath(source *Element) string {
+	var path []*Element
+
+	if source == nil {
+		return ""
+	}
+
+	// Build a reverse path from the element toward the root. Stop if the
+	// source element is encountered.
+	var seg *Element
+	for seg = e; seg != nil && seg != source; seg = seg.Parent() {
+		path = append(path, seg)
+	}
+
+	// If we found the source element, reverse the path and compose the
+	// string.
+	if seg == source {
+		if len(path) == 0 {
+			return "."
+		}
+		parts := []string{}
+		for i := len(path) - 1; i >= 0; i-- {
+			parts = append(parts, path[i].Tag)
+		}
+		return "./" + strings.Join(parts, "/")
+	}
+
+	// The source wasn't encountered, so climb from the source element toward
+	// the root of the tree until an element in the reversed path is
+	// encountered.
+
+	findPathIndex := func(e *Element, path []*Element) int {
+		for i, ee := range path {
+			if e == ee {
+				return i
+			}
+		}
+		return -1
+	}
+
+	climb := 0
+	for seg = source; seg != nil; seg = seg.Parent() {
+		i := findPathIndex(seg, path)
+		if i >= 0 {
+			path = path[:i] // truncate at found segment
+			break
+		}
+		climb++
+	}
+
+	// No element in the reversed path was encountered, so the two elements
+	// must not be part of the same tree.
+	if seg == nil {
+		return ""
+	}
+
+	// Reverse the (possibly truncated) path and prepend ".." segments to
+	// climb.
+	parts := []string{}
+	for i := 0; i < climb; i++ {
+		parts = append(parts, "..")
+	}
+	for i := len(path) - 1; i >= 0; i-- {
+		parts = append(parts, path[i].Tag)
+	}
+	return strings.Join(parts, "/")
 }
 
 // indent recursively inserts proper indentation between an
@@ -709,6 +780,29 @@ func (e *Element) RemoveAttr(key string) *Attr {
 		}
 	}
 	return nil
+}
+
+// SortAttrs sorts the element's attributes lexicographically by key.
+func (e *Element) SortAttrs() {
+	sort.Sort(byAttr(e.Attr))
+}
+
+type byAttr []Attr
+
+func (a byAttr) Len() int {
+	return len(a)
+}
+
+func (a byAttr) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a byAttr) Less(i, j int) bool {
+	sp := strings.Compare(a[i].Space, a[j].Space)
+	if sp == 0 {
+		return strings.Compare(a[i].Key, a[j].Key) < 0
+	}
+	return sp < 0
 }
 
 var xmlReplacerNormal = strings.NewReplacer(

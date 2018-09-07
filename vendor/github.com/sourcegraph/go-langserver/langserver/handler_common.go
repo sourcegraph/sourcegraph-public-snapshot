@@ -30,7 +30,7 @@ func (h *HandlerCommon) Reset(rootURI lsp.DocumentURI) error {
 		return errors.New("unable to reset a server that is shutting down")
 	}
 	if !util.IsURI(rootURI) {
-		return fmt.Errorf("invalid root path %q: must be file:/// URI", rootURI)
+		return fmt.Errorf("invalid root path %q: must be file:// URI", rootURI)
 	}
 	h.RootFSPath = util.UriToPath(rootURI) // retain leading slash
 	return nil

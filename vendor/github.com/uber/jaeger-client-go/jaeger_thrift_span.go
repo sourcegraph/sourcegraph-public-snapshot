@@ -57,6 +57,9 @@ func buildJaegerProcessThrift(tracer *Tracer) *j.Process {
 		ServiceName: tracer.serviceName,
 		Tags:        buildTags(tracer.tags),
 	}
+	if tracer.process.UUID != "" {
+		process.Tags = append(process.Tags, &j.Tag{Key: TracerUUIDTagKey, VStr: &tracer.process.UUID, VType: j.TagType_STRING})
+	}
 	return process
 }
 
