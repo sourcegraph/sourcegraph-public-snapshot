@@ -1,7 +1,7 @@
-import { ActionContribution, ExecuteCommandParams } from 'sourcegraph/module/protocol'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
+import { ActionContribution, ExecuteCommandParams } from 'sourcegraph/module/protocol'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
 import { asError, ErrorLike } from '../../errors'

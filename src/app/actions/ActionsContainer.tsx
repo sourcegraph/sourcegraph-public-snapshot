@@ -1,5 +1,7 @@
 import * as React from 'react'
-import { Subscription } from 'rxjs'
+import { Subject, Subscription } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
+import { Component } from 'sourcegraph/module/environment/environment'
 import { ConfigurationSubject, Settings } from '../../settings'
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
@@ -28,14 +30,24 @@ export class ActionsContainer<S extends ConfigurationSubject, C extends Settings
 > {
     public state: ActionsState = {}
 
+    private scopeChanges = new Subject<Component | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.extensionsController.registries.contribution.contributions.subscribe(contributions =>
-                this.setState({ contributions })
-            )
+            this.scopeChanges
+                .pipe(
+                    switchMap(scope => this.props.extensionsController.registries.contribution.getContributions(scope))
+                )
+                .subscribe(contributions => this.setState({ contributions }))
         )
+        this.scopeChanges.next(this.props.scope)
+    }
+
+    public componentDidUpdate(prevProps: ActionsContainerProps<S, C>): void {
+        if (prevProps.scope !== this.props.scope) {
+            this.scopeChanges.next(this.props.scope)
+        }
     }
 
     public componentWillUnmount(): void {

@@ -1,3 +1,4 @@
+import { Component } from 'sourcegraph/module/environment/environment'
 import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
@@ -7,6 +8,7 @@ export interface ActionsProps<S extends ConfigurationSubject, C extends Settings
     extends ControllerProps<S, C>,
         ExtensionsProps<S, C> {
     menu: ContributableMenu
+    scope?: Component
     actionItemClass?: string
     listClass?: string
 }

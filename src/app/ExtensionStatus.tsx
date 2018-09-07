@@ -1,9 +1,9 @@
-import { Client, ClientState } from 'sourcegraph/module/client/client'
-import { ClientKey } from 'sourcegraph/module/environment/controller'
-import { Trace } from 'sourcegraph/module/jsonrpc2/trace'
 import * as React from 'react'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
+import { Client, ClientState } from 'sourcegraph/module/client/client'
+import { ClientKey } from 'sourcegraph/module/environment/controller'
+import { Trace } from 'sourcegraph/module/jsonrpc2/trace'
 import { updateSavedClientTrace } from '../client/client'
 import { ControllerProps } from '../client/controller'
 import { ConfigurationSubject, Settings } from '../settings'
@@ -90,7 +90,7 @@ export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings>
                                     className="extension-status__client list-group-item d-flex align-items-center justify-content-between py-2"
                                 >
                                     <span className="d-flex align-items-center">
-                                        <span data-tooltip={key.root || 'no root'}>{client.id}</span>
+                                        {client.id}
                                         <span className={`badge badge-${clientStateBadgeClass(state)} ml-1`}>
                                             {ClientState[state]}
                                         </span>

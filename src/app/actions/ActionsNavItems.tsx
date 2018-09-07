@@ -1,13 +1,15 @@
 import * as React from 'react'
-import { Subscription } from 'rxjs'
+import { Subject, Subscription } from 'rxjs'
+import { switchMap } from 'rxjs/operators'
+import { Component } from 'sourcegraph/module/environment/environment'
 import { ConfigurationSubject, Settings } from '../../settings'
 import { ActionItem } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
 import { getContributedActionItems } from './contributions'
 
 /**
- * Renders the actions a fragment of <li class="nav-item"> elements, for use in a Bootstrap <ul class="nav"> or <ul
- * class="navbar-nav">.
+ * Renders the actions as a fragment of <li class="nav-item"> elements, for use in a Bootstrap <ul
+ * class="nav"> or <ul class="navbar-nav">.
  */
 export class ActionsNavItems<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
     ActionsProps<S, C>,
@@ -15,14 +17,24 @@ export class ActionsNavItems<S extends ConfigurationSubject, C extends Settings>
 > {
     public state: ActionsState = {}
 
+    private scopeChanges = new Subject<Component | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.extensionsController.registries.contribution.contributions.subscribe(contributions =>
-                this.setState({ contributions })
-            )
+            this.scopeChanges
+                .pipe(
+                    switchMap(scope => this.props.extensionsController.registries.contribution.getContributions(scope))
+                )
+                .subscribe(contributions => this.setState({ contributions }))
         )
+        this.scopeChanges.next(this.props.scope)
+    }
+
+    public componentDidUpdate(prevProps: ActionsProps<S, C>): void {
+        if (prevProps.scope !== this.props.scope) {
+            this.scopeChanges.next(this.props.scope)
+        }
     }
 
     public componentWillUnmount(): void {

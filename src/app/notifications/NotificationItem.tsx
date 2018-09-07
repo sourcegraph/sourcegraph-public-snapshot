@@ -1,6 +1,6 @@
-import { MessageType } from 'sourcegraph/module/protocol'
 import { upperFirst } from 'lodash-es'
 import * as React from 'react'
+import { MessageType } from 'sourcegraph/module/protocol'
 import { isErrorLike } from '../../errors'
 import { Notification } from './notification'
 

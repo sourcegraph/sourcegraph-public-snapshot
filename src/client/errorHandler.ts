@@ -1,19 +1,9 @@
-import {
-    CloseAction,
-    ErrorAction,
-    ErrorHandler as _ErrorHandler,
-    InitializationFailedHandler as _InitializationFailedHandler,
-} from 'sourcegraph/module/client/errorHandler'
-import { Message, ResponseError } from 'sourcegraph/module/jsonrpc2/messages'
-import { InitializeError } from 'sourcegraph/module/protocol'
+import { CloseAction, ErrorAction, ErrorHandler as _ErrorHandler } from 'sourcegraph/module/client/errorHandler'
+import { Message } from 'sourcegraph/module/jsonrpc2/messages'
 import { log } from './log'
 
-interface InitializationFailedHandler {
-    initializationFailed: _InitializationFailedHandler
-}
-
 /** The extension client initialization-failed and error handler. */
-export class ErrorHandler implements InitializationFailedHandler, _ErrorHandler {
+export class ErrorHandler implements _ErrorHandler {
     /** The number of connection times to record. */
     private static MAX_CONNECTION_TIMESTAMPS = 4
 
@@ -62,23 +52,6 @@ export class ErrorHandler implements InitializationFailedHandler, _ErrorHandler 
         return 500
     }
 
-    public initializationFailed(err: ResponseError<InitializeError> | Error | any): boolean | Promise<boolean> {
-        log('error', this.extensionID, err)
-
-        const EINVALIDREQUEST = -32600 // JSON-RPC 2.0 error code
-
-        if (
-            isResponseError(err) &&
-            ((err.message.includes('dial tcp') && err.message.includes('connect: connection refused')) ||
-                (err.code === EINVALIDREQUEST && err.message.includes('client proxy handler is already initialized')))
-        ) {
-            return false
-        }
-
-        const retry = isResponseError(err) && !!err.data && err.data.retry && this.connectionTimestamps.length === 0
-        return delayed(retry, this.computeDelayBeforeRetry())
-    }
-
     public closed(): CloseAction | Promise<CloseAction> {
         if (this.connectionTimestamps.length === ErrorHandler.MAX_CONNECTION_TIMESTAMPS) {
             const diff = this.connectionTimestamps[this.connectionTimestamps.length - 1] - this.connectionTimestamps[0]
@@ -90,10 +63,6 @@ export class ErrorHandler implements InitializationFailedHandler, _ErrorHandler 
 
         return delayed(CloseAction.Reconnect, this.computeDelayBeforeRetry())
     }
-}
-
-function isResponseError(err: any): err is ResponseError<InitializeError> {
-    return 'code' in err && 'message' in err
 }
 
 function delayed<T>(value: T, msec: number): Promise<T> {

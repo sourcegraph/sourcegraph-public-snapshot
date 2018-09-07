@@ -119,7 +119,6 @@ export function createController<S extends ConfigurationSubject, C extends Setti
             const errorHandler = new ErrorHandler(extension.id)
             return {
                 createMessageTransports: () => createMessageTransports(extension, options),
-                initializationFailedHandler: err => errorHandler.initializationFailed(err),
                 errorHandler,
                 trace: getSavedClientTrace(key),
                 tracer: new BrowserConsoleTracer(extension.id),

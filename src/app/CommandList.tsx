@@ -1,7 +1,7 @@
-import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
 import { isArray, sortBy, uniq } from 'lodash-es'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
+import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
 import stringScore from 'string-score'
 import { Key } from 'ts-key-enum'
 import { ControllerProps } from '../client/controller'
@@ -79,9 +79,9 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            this.props.extensionsController.registries.contribution.contributions.subscribe(contributions =>
-                this.setState({ contributions })
-            )
+            this.props.extensionsController.registries.contribution
+                .getContributions()
+                .subscribe(contributions => this.setState({ contributions }))
         )
     }
 
