@@ -1,6 +1,5 @@
 import { Observable, Subscription } from 'rxjs'
 import { bufferCount, filter, map } from 'rxjs/operators'
-import uuidv4 from 'uuid/v4'
 import { TextDocument, TextDocumentItem } from 'vscode-languageserver-types'
 import { MessageType as RPCMessageType, NotificationType } from '../../jsonrpc2/messages'
 import {
@@ -9,7 +8,6 @@ import {
     DidCloseTextDocumentParams,
     DidOpenTextDocumentNotification,
     DidOpenTextDocumentParams,
-    ServerCapabilities,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
 import { DocumentSelector } from '../../types/document'
@@ -35,8 +33,6 @@ export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFe
     public abstract messages: RPCMessageType | RPCMessageType[]
 
     public abstract fillClientCapabilities(capabilities: ClientCapabilities): void
-
-    public abstract initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector | undefined): void
 
     public register(_message: RPCMessageType, data: RegistrationData<TextDocumentRegistrationOptions>): void {
         if (!data.registerOptions.documentSelector) {
@@ -110,15 +106,6 @@ export class TextDocumentDidOpenFeature extends TextDocumentNotificationFeature<
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         ensure(ensure(capabilities, 'textDocument')!, 'synchronization')!.dynamicRegistration = true
     }
-
-    public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-        if (documentSelector && capabilities.textDocumentSync && capabilities.textDocumentSync.openClose) {
-            this.register(this.messages, {
-                id: uuidv4(),
-                registerOptions: { documentSelector },
-            })
-        }
-    }
 }
 
 /**
@@ -154,14 +141,5 @@ export class TextDocumentDidCloseFeature extends TextDocumentNotificationFeature
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         ensure(ensure(capabilities, 'textDocument')!, 'synchronization')!.dynamicRegistration = true
-    }
-
-    public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-        if (documentSelector && capabilities.textDocumentSync && capabilities.textDocumentSync.openClose) {
-            this.register(this.messages, {
-                id: uuidv4(),
-                registerOptions: { documentSelector },
-            })
-        }
     }
 }

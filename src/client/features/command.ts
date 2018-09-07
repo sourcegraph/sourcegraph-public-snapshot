@@ -1,5 +1,4 @@
 import { Subscription } from 'rxjs'
-import uuidv4 from 'uuid/v4'
 import { CommandRegistry } from '../../environment/providers/command'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
@@ -7,7 +6,6 @@ import {
     ExecuteCommandParams,
     ExecuteCommandRegistrationOptions,
     ExecuteCommandRequest,
-    ServerCapabilities,
 } from '../../protocol'
 import { Client } from '../client'
 import { DynamicFeature, ensure, RegistrationData } from './common'
@@ -27,17 +25,6 @@ export class ExecuteCommandFeature implements DynamicFeature<ExecuteCommandRegis
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         ensure(ensure(capabilities, 'workspace')!, 'executeCommand')!.dynamicRegistration = true
     }
-
-    public initialize(capabilities: ServerCapabilities): void {
-        if (!capabilities.executeCommandProvider) {
-            return
-        }
-        this.register(this.messages, {
-            id: uuidv4(),
-            registerOptions: { ...capabilities.executeCommandProvider },
-        })
-    }
-
     public register(_message: RPCMessageType, data: RegistrationData<ExecuteCommandRegistrationOptions>): void {
         const existing = this.commands.has(data.id)
         if (existing) {

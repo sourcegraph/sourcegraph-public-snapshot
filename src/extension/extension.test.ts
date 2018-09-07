@@ -14,12 +14,7 @@ describe('activateExtension', () => {
             capabilities: { decoration: true },
             configurationCascade: { merged: {} },
         }
-        const initResult: InitializeResult = {
-            capabilities: {
-                decorationProvider: true,
-                textDocumentSync: { openClose: true },
-            },
-        }
+        const initResult: InitializeResult = {}
 
         const [, result] = await Promise.all([
             activateExtension<{}>(serverTransports, sourcegraph => {

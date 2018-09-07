@@ -25,20 +25,6 @@ describe('ContributionFeature', () => {
         } as ClientCapabilities)
     })
 
-    describe('upon initialization', () => {
-        it('registers contributions if the server reports any', () => {
-            const { registry, feature } = create()
-            feature.initialize({ contributions: {} })
-            assert.strictEqual(registry.entries.value.length, 1)
-        })
-
-        it('does not register contributions if the server lacks any', () => {
-            const { registry, feature } = create()
-            feature.initialize({ contributions: undefined })
-            assert.strictEqual(registry.entries.value.length, 0)
-        })
-    })
-
     describe('registration', () => {
         it('supports dynamic registration and unregistration', () => {
             const { registry, feature } = create()

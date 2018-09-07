@@ -24,20 +24,6 @@ describe('ExecuteCommandFeature', () => {
         } as ClientCapabilities)
     })
 
-    describe('upon initialization', () => {
-        it('registers the provider if the server has executeCommandProvider', () => {
-            const { registry, feature } = create()
-            feature.initialize({ executeCommandProvider: { commands: ['c1', 'c2'] } })
-            assert.strictEqual(registry.commandsSnapshot.length, 2)
-        })
-
-        it('does not register the provider if the server lacks executeCommandProvider', () => {
-            const { registry, feature } = create()
-            feature.initialize({ executeCommandProvider: undefined })
-            assert.strictEqual(registry.commandsSnapshot.length, 0)
-        })
-    })
-
     describe('registration', () => {
         it('supports dynamic registration and unregistration', () => {
             const { registry, feature } = create()

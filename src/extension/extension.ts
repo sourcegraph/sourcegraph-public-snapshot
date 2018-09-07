@@ -78,12 +78,7 @@ export function activateExtension<C>(
         let initializationParams!: InitializeParams
         connection.onRequest(InitializeRequest.type, params => {
             initializationParams = params
-            return {
-                capabilities: {
-                    textDocumentSync: { openClose: true },
-                    decorationProvider: true,
-                },
-            } as InitializeResult
+            return {} as InitializeResult
         })
         connection.onNotification(InitializedNotification.type, () => {
             run(new ExtensionHandle<C>(connection, initializationParams))

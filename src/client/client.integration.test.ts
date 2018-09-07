@@ -18,7 +18,7 @@ const createClientTransportsForTestServer = (
 
 describe('Client', () => {
     it('registers features, activates, initializes, stops, and reactivates', async () => {
-        const initResult: InitializeResult = { capabilities: { hoverProvider: true } }
+        const initResult: InitializeResult = {}
         const testNotificationParams = { a: 1 }
         const testRequestParams = { b: 2 }
         const testRequestResult = { c: 3 }
@@ -92,7 +92,6 @@ describe('Client', () => {
         const client = new Client('', { createMessageTransports })
         client.registerFeature({
             fillClientCapabilities: (capabilities: ClientCapabilities) => (capabilities.experimental = 'test'),
-            initialize: () => void 0,
         })
         assert.strictEqual(getClientState(client), ClientState.Initial)
 

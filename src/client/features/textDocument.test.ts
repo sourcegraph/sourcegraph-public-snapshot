@@ -98,30 +98,10 @@ describe('TextDocumentDidOpenFeature', () => {
         } as ClientCapabilities)
     })
 
-    describe('upon initialization', () => {
-        it('registers the provider if the server supports text document sync', () => {
-            const { feature } = create()
-            feature.initialize({ textDocumentSync: { openClose: true } }, ['*'])
-            assert.strictEqual(feature.selectors.size, 1)
-        })
-
-        it('does not register the provider if the server lacks support for text document sync', () => {
-            const { feature } = create()
-            feature.initialize({ textDocumentSync: { openClose: false } }, ['*'])
-            assert.strictEqual(feature.selectors.size, 0)
-        })
-
-        it('does not register the provider if the server omits mention of support for text document sync', () => {
-            const { feature } = create()
-            feature.initialize({}, ['*'])
-            assert.strictEqual(feature.selectors.size, 0)
-        })
-    })
-
     describe('when a text document is opened', () => {
         it('sends a textDocument/didOpen notification to the server', done => {
             const { client, environment, feature } = create()
-            feature.initialize({ textDocumentSync: { openClose: true } }, ['l'])
+            feature.register(feature.messages, { id: 'a', registerOptions: { documentSelector: ['l'] } })
 
             const textDocument: TextDocumentItem = {
                 uri: 'file:///f',
@@ -178,30 +158,10 @@ describe('TextDocumentDidCloseFeature', () => {
         } as ClientCapabilities)
     })
 
-    describe('upon initialization', () => {
-        it('registers the provider if the server supports text document sync', () => {
-            const { feature } = create()
-            feature.initialize({ textDocumentSync: { openClose: true } }, ['*'])
-            assert.strictEqual(feature.selectors.size, 1)
-        })
-
-        it('does not register the provider if the server lacks support for text document sync', () => {
-            const { feature } = create()
-            feature.initialize({ textDocumentSync: { openClose: false } }, ['*'])
-            assert.strictEqual(feature.selectors.size, 0)
-        })
-
-        it('does not register the provider if the server omits mention of support for text document sync', () => {
-            const { feature } = create()
-            feature.initialize({}, ['*'])
-            assert.strictEqual(feature.selectors.size, 0)
-        })
-    })
-
     describe('when a text document is opened and then closed', () => {
         it('sends a textDocument/didClose notification to the server', done => {
             const { client, environment, feature } = create()
-            feature.initialize({ textDocumentSync: { openClose: true } }, ['l'])
+            feature.register(feature.messages, { id: 'a', registerOptions: { documentSelector: ['l'] } })
 
             const textDocument: TextDocumentItem = {
                 uri: 'file:///f',

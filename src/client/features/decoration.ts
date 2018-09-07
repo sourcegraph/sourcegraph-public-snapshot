@@ -3,7 +3,7 @@ import uuidv4 from 'uuid/v4'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { ProvideTextDocumentDecorationSignature } from '../../environment/providers/decoration'
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
-import { ClientCapabilities, ServerCapabilities } from '../../protocol'
+import { ClientCapabilities } from '../../protocol'
 import { TextDocumentDecoration, TextDocumentPublishDecorationsNotification } from '../../protocol/decoration'
 import { Client } from '../client'
 import { ensure, Feature } from './common'
@@ -21,6 +21,7 @@ export class TextDocumentDecorationFeature extends Feature<undefined> {
         private registry: FeatureProviderRegistry<undefined, ProvideTextDocumentDecorationSignature>
     ) {
         super(client)
+        this.register(this.messages, { id: uuidv4(), registerOptions: undefined })
     }
 
     public readonly messages = TextDocumentPublishDecorationsNotification.type
@@ -29,12 +30,7 @@ export class TextDocumentDecorationFeature extends Feature<undefined> {
         ensure(capabilities, 'decoration')
     }
 
-    public initialize(capabilities: ServerCapabilities): void {
-        if (!capabilities.decorationProvider) {
-            return
-        }
-        this.register(this.messages, { id: uuidv4(), registerOptions: undefined })
-        // TODO(sqs): no way to unregister this
+    public initialize(): void {
         this.client.onNotification(TextDocumentPublishDecorationsNotification.type, params => {
             this.getDecorationsSubject(params.textDocument, params.decorations)
         })

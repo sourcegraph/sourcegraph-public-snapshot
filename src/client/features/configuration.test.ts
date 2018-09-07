@@ -24,23 +24,9 @@ describe('ConfigurationChangeNotificationFeature', () => {
         } as ClientCapabilities)
     })
 
-    describe('upon initialization', () => {
-        it('registers the provider', () => {
-            const { feature } = create()
-            feature.initialize({})
-        })
-    })
-
     describe('registration', () => {
         it('supports dynamic registration and unregistration', () => {
             const { feature } = create()
-            feature.register(feature.messages, { id: 'a', registerOptions: undefined })
-            feature.unregister('a')
-        })
-
-        it('supports dynamic registration and unregistration after static registration also occurred', () => {
-            const { feature } = create()
-            feature.initialize({})
             feature.register(feature.messages, { id: 'a', registerOptions: undefined })
             feature.unregister('a')
         })

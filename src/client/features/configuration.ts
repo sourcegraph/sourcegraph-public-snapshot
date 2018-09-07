@@ -1,6 +1,5 @@
 import { Observable, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
-import uuidv4 from 'uuid/v4'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
@@ -9,7 +8,6 @@ import {
     ConfigurationUpdateRequest,
     DidChangeConfigurationNotification,
     InitializeParams,
-    ServerCapabilities,
 } from '../../protocol'
 import { Client } from '../client'
 import { DynamicFeature, ensure, RegistrationData, StaticFeature } from './common'
@@ -48,11 +46,7 @@ export class ConfigurationChangeNotificationFeature<C extends ConfigurationCasca
         ensure(ensure(capabilities, 'configuration')!, 'didChangeConfiguration')!.dynamicRegistration = true
     }
 
-    public initialize(capabilities: ServerCapabilities): void {
-        this.register(this.messages, { id: uuidv4(), registerOptions: undefined })
-    }
-
-    public register(message: RPCMessageType, data: RegistrationData<undefined>): void {
+    public register(_message: RPCMessageType, data: RegistrationData<undefined>): void {
         if (this.subscriptionsByID.has(data.id)) {
             throw new Error(`registration already exists with ID ${data.id}`)
         }

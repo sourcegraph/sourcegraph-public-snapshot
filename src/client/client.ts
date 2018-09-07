@@ -227,11 +227,6 @@ export class Client implements Unsubscribable {
 
                 connection.sendNotification(InitializedNotification.type, {})
 
-                // Initialize features.
-                for (const feature of this.features) {
-                    feature.initialize(result.capabilities, this.options.documentSelector)
-                }
-
                 this._state.next(ClientState.Active)
             })
             .then(null, err =>

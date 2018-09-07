@@ -32,13 +32,11 @@ describe('Client', () => {
 
         const FIXTURE_STATIC_FEATURE: StaticFeature = {
             fillClientCapabilities: (capabilities: ClientCapabilities) => (capabilities.experimental = 'test'),
-            initialize: () => void 0,
         }
 
         const FIXTURE_DYNAMIC_FEATURE: DynamicFeature<any> = {
             messages: { method: 'm' },
             fillClientCapabilities: (capabilities: ClientCapabilities) => (capabilities.experimental = 'test'),
-            initialize: () => void 0,
             register: () => void 0,
             unregister: () => void 0,
             unregisterAll: () => void 0,

@@ -1,11 +1,10 @@
-import uuidv4 from 'uuid/v4'
 import {
     ContributionRegistry,
     ContributionsEntry,
     ContributionUnsubscribable,
 } from '../../environment/providers/contribution'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
-import { ClientCapabilities, Contributions, ServerCapabilities } from '../../protocol'
+import { ClientCapabilities, Contributions } from '../../protocol'
 import { DynamicFeature, ensure, RegistrationData } from './common'
 
 /**
@@ -24,16 +23,6 @@ export class ContributionFeature implements DynamicFeature<Contributions> {
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         ensure(ensure(capabilities, 'window')!, 'contribution')!.dynamicRegistration = true
-    }
-
-    public initialize(capabilities: ServerCapabilities): void {
-        if (!capabilities.contributions) {
-            return
-        }
-        this.register(this.messages, {
-            id: uuidv4(),
-            registerOptions: capabilities.contributions,
-        })
     }
 
     public register(_message: RPCMessageType, data: RegistrationData<Contributions>): void {

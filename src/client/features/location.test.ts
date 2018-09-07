@@ -1,12 +1,6 @@
 import * as assert from 'assert'
 import { TextDocumentLocationProviderRegistry } from '../../environment/providers/location'
-import {
-    ClientCapabilities,
-    DefinitionRequest,
-    ReferenceParams,
-    ServerCapabilities,
-    TextDocumentPositionParams,
-} from '../../protocol'
+import { ClientCapabilities, DefinitionRequest, ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { Client } from '../client'
 import {
     TextDocumentDefinitionFeature,
@@ -31,8 +25,8 @@ const create = <P extends TextDocumentPositionParams, F extends TextDocumentLoca
 }
 
 describe('TextDocumentLocationFeature', () => {
-    describe('upon initialization', () => {
-        it('registers the provider if the server has support', () => {
+    describe('registration', () => {
+        it('supports dynamic registration and unregistration', () => {
             const { registry, feature } = create(
                 class extends TextDocumentLocationFeature {
                     public readonly messages = DefinitionRequest.type
@@ -45,24 +39,9 @@ describe('TextDocumentLocationFeature', () => {
                 },
                 TextDocumentLocationProviderRegistry
             )
-            feature.initialize({ definitionProvider: true }, ['*'])
+            feature.register(feature.messages, { id: 'a', registerOptions: { documentSelector: ['*'] } })
             assert.strictEqual(registry.providersSnapshot.length, 1)
-        })
-
-        it('does not register the provider if the server lacks support', () => {
-            const { registry, feature } = create(
-                class extends TextDocumentLocationFeature {
-                    public readonly messages = DefinitionRequest.type
-                    public fillClientCapabilities(): void {
-                        /* noop */
-                    }
-                    public isSupported(): boolean {
-                        return false
-                    }
-                },
-                TextDocumentLocationProviderRegistry
-            )
-            feature.initialize({ definitionProvider: false }, ['*'])
+            feature.unregister('a')
             assert.strictEqual(registry.providersSnapshot.length, 0)
         })
     })
@@ -78,20 +57,6 @@ describe('TextDocumentDefinitionFeature', () => {
             textDocument: { definition: { dynamicRegistration: true } },
         } as ClientCapabilities)
     })
-
-    it('reports server support', () => {
-        const { feature } = create(
-            // Create anonymous subclass to make isSupported public.
-            class extends TextDocumentDefinitionFeature {
-                public isSupported(capabilities: ServerCapabilities): boolean {
-                    return super.isSupported(capabilities)
-                }
-            },
-            TextDocumentLocationProviderRegistry
-        )
-        assert.strictEqual(feature.isSupported({}), false)
-        assert.strictEqual(feature.isSupported({ definitionProvider: true }), true)
-    })
 })
 
 describe('TextDocumentImplementationFeature', () => {
@@ -103,20 +68,6 @@ describe('TextDocumentImplementationFeature', () => {
         assert.deepStrictEqual(capabilities, {
             textDocument: { implementation: { dynamicRegistration: true } },
         } as ClientCapabilities)
-    })
-
-    it('reports server support', () => {
-        const { feature } = create(
-            // Create anonymous subclass to make isSupported public.
-            class extends TextDocumentImplementationFeature {
-                public isSupported(capabilities: ServerCapabilities): boolean {
-                    return super.isSupported(capabilities)
-                }
-            },
-            TextDocumentLocationProviderRegistry
-        )
-        assert.strictEqual(feature.isSupported({}), false)
-        assert.strictEqual(feature.isSupported({ implementationProvider: true }), true)
     })
 })
 
@@ -130,20 +81,6 @@ describe('TextDocumentTypeDefinitionFeature', () => {
             textDocument: { typeDefinition: { dynamicRegistration: true } },
         } as ClientCapabilities)
     })
-
-    it('reports server support', () => {
-        const { feature } = create(
-            // Create anonymous subclass to make isSupported public.
-            class extends TextDocumentTypeDefinitionFeature {
-                public isSupported(capabilities: ServerCapabilities): boolean {
-                    return super.isSupported(capabilities)
-                }
-            },
-            TextDocumentLocationProviderRegistry
-        )
-        assert.strictEqual(feature.isSupported({}), false)
-        assert.strictEqual(feature.isSupported({ typeDefinitionProvider: true }), true)
-    })
 })
 
 describe('TextDocumentReferencesFeature', () => {
@@ -156,19 +93,5 @@ describe('TextDocumentReferencesFeature', () => {
         assert.deepStrictEqual(capabilities, {
             textDocument: { references: { dynamicRegistration: true } },
         } as ClientCapabilities)
-    })
-
-    it('reports server support', () => {
-        const { feature } = create(
-            // Create anonymous subclass to make isSupported public.
-            class extends TextDocumentReferencesFeature {
-                public isSupported(capabilities: ServerCapabilities): boolean {
-                    return super.isSupported(capabilities)
-                }
-            },
-            TextDocumentLocationProviderRegistry as new () => TextDocumentLocationProviderRegistry<ReferenceParams>
-        )
-        assert.strictEqual(feature.isSupported({}), false)
-        assert.strictEqual(feature.isSupported({ referencesProvider: true }), true)
     })
 })

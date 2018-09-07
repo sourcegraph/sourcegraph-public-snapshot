@@ -1,5 +1,5 @@
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
-import { ClientCapabilities, ServerCapabilities } from './capabilities'
+import { ClientCapabilities } from './capabilities'
 import { ConfigurationCascade } from './configuration'
 
 /**
@@ -8,7 +8,7 @@ import { ConfigurationCascade } from './configuration'
  * [InitializeResult](#InitializeResult) of a Thenable that resolves to such.
  */
 export namespace InitializeRequest {
-    export const type = new RequestType<InitializeParams, InitializeResult, InitializeError, void>('initialize')
+    export const type = new RequestType<InitializeParams, InitializeResult, void, void>('initialize')
 }
 
 /**
@@ -39,42 +39,7 @@ export type InitializeParams = _InitializeParams
 /**
  * The result returned from an initialize request.
  */
-export interface InitializeResult {
-    /**
-     * The capabilities the language server provides.
-     */
-    capabilities: ServerCapabilities
-    /**
-     * Custom initialization results.
-     */
-    [custom: string]: any
-}
-
-/**
- * Known error codes for an `InitializeError`;
- */
-export namespace InitializeError {
-    /**
-     * If the protocol version provided by the client can't be handled by the server.
-     * @deprecated This initialize error got replaced by client capabilities. There is
-     * no version handshake in version 3.0x
-     */
-    export const unknownProtocolVersion = 1
-}
-
-/**
- * The data type of the ResponseError if the
- * initialize request fails.
- */
-export interface InitializeError {
-    /**
-     * Indicates whether the client execute the following retry logic:
-     * (1) show the message provided by the ResponseError to the user
-     * (2) user selects retry or cancel
-     * (3) if user selected retry the initialize method is sent again.
-     */
-    retry: boolean
-}
+export interface InitializeResult {}
 
 export interface InitializedParams {}
 

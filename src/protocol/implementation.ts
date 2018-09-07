@@ -1,7 +1,6 @@
 import { Definition } from 'vscode-languageserver-types'
 import { RequestHandler } from '../jsonrpc2/handlers'
 import { RequestType } from '../jsonrpc2/messages'
-import { StaticRegistrationOptions } from './registration'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from './textDocument'
 
 export interface ImplementationClientCapabilities {
@@ -14,9 +13,7 @@ export interface ImplementationClientCapabilities {
          */
         implementation?: {
             /**
-             * Whether implementation supports dynamic registration. If this is set to `true`
-             * the client supports the new `(TextDocumentRegistrationOptions & StaticRegistrationOptions)`
-             * return value for the corresponding server capability as well.
+             * Whether implementation supports dynamic registration.
              */
             dynamicRegistration?: boolean
         }
@@ -27,7 +24,7 @@ export interface ImplementationServerCapabilities {
     /**
      * The server provides Goto Implementation support.
      */
-    implementationProvider?: boolean | (TextDocumentRegistrationOptions & StaticRegistrationOptions)
+    implementationProvider?: boolean | TextDocumentRegistrationOptions
 }
 
 /**

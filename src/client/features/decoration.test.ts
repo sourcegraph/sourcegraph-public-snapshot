@@ -29,7 +29,7 @@ describe('TextDocumentDecorationFeature', () => {
     })
 
     describe('upon initialization', () => {
-        it('registers the provider and listens for notifications if the server has a decorationProvider', done => {
+        it('registers the provider and listens for notifications', done => {
             const { client, registry, feature } = create()
 
             function mockOnNotification(method: string, handler: NotificationHandler<any>): void
@@ -39,7 +39,7 @@ describe('TextDocumentDecorationFeature', () => {
             ): void
             function mockOnNotification(
                 type: string | NotificationType<TextDocumentPublishDecorationsParams, void>,
-                params: NotificationHandler<any>
+                _params: NotificationHandler<any>
             ): void {
                 assert.strictEqual(
                     typeof type === 'string' ? type : type.method,
@@ -49,14 +49,8 @@ describe('TextDocumentDecorationFeature', () => {
             }
             client.onNotification = mockOnNotification
 
-            feature.initialize({ decorationProvider: {} })
+            feature.initialize()
             assert.strictEqual(registry.providersSnapshot.length, 1)
-        })
-
-        it('does not register the provider if the server lacks a decorationProvider', () => {
-            const { registry, feature } = create()
-            feature.initialize({ decorationProvider: undefined })
-            assert.strictEqual(registry.providersSnapshot.length, 0)
         })
     })
 })

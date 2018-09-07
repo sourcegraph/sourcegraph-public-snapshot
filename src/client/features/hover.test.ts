@@ -27,16 +27,12 @@ describe('TextDocumentHoverFeature', () => {
         } as ClientCapabilities)
     })
 
-    describe('upon initialization', () => {
-        it('registers the provider if the server has hoverProvider', () => {
+    describe('registration', () => {
+        it('supports dynamic registration and unregistration', () => {
             const { registry, feature } = create()
-            feature.initialize({ hoverProvider: true }, ['*'])
+            feature.register(feature.messages, { id: 'a', registerOptions: { documentSelector: ['*'] } })
             assert.strictEqual(registry.providersSnapshot.length, 1)
-        })
-
-        it('does not register the provider if the server lacks hoverProvider', () => {
-            const { registry, feature } = create()
-            feature.initialize({ hoverProvider: false }, ['*'])
+            feature.unregister('a')
             assert.strictEqual(registry.providersSnapshot.length, 0)
         })
     })

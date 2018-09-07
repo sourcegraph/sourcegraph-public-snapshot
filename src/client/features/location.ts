@@ -1,5 +1,4 @@
 import { from, Observable, Unsubscribable } from 'rxjs'
-import uuidv4 from 'uuid/v4'
 import { Location } from 'vscode-languageserver-types'
 import { ProvideTextDocumentLocationSignature } from '../../environment/providers/location'
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
@@ -9,12 +8,10 @@ import {
     ImplementationRequest,
     ReferenceParams,
     ReferencesRequest,
-    ServerCapabilities,
     TextDocumentPositionParams,
     TextDocumentRegistrationOptions,
     TypeDefinitionRequest,
 } from '../../protocol'
-import { DocumentSelector } from '../../types/document'
 import { Client } from '../client'
 import { ensure, Feature } from './common'
 
@@ -39,19 +36,6 @@ export abstract class TextDocumentLocationFeature<
     /** Override to modify the client capabilities object before sending to report support for this feature. */
     public abstract fillClientCapabilities(capabilities: ClientCapabilities): void
 
-    /** Override to compute whether the server capabilities report support for this feature. */
-    protected abstract isSupported(capabilities: ServerCapabilities): boolean
-
-    public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-        if (!this.isSupported(capabilities) || !documentSelector) {
-            return
-        }
-        this.register(this.messages, {
-            id: uuidv4(),
-            registerOptions: { documentSelector },
-        })
-    }
-
     protected registerProvider(options: TextDocumentRegistrationOptions): Unsubscribable {
         return this.registry.registerProvider(
             options,
@@ -70,10 +54,6 @@ export class TextDocumentDefinitionFeature extends TextDocumentLocationFeature {
         const capability = ensure(ensure(capabilities, 'textDocument')!, 'definition')!
         capability.dynamicRegistration = true
     }
-
-    protected isSupported(capabilities: ServerCapabilities): boolean {
-        return !!capabilities.definitionProvider
-    }
 }
 
 /**
@@ -85,10 +65,6 @@ export class TextDocumentImplementationFeature extends TextDocumentLocationFeatu
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         const capability = ensure(ensure(capabilities, 'textDocument')!, 'implementation')!
         capability.dynamicRegistration = true
-    }
-
-    protected isSupported(capabilities: ServerCapabilities): boolean {
-        return !!capabilities.implementationProvider
     }
 }
 
@@ -102,10 +78,6 @@ export class TextDocumentTypeDefinitionFeature extends TextDocumentLocationFeatu
         const capability = ensure(ensure(capabilities, 'textDocument')!, 'typeDefinition')!
         capability.dynamicRegistration = true
     }
-
-    protected isSupported(capabilities: ServerCapabilities): boolean {
-        return !!capabilities.typeDefinitionProvider
-    }
 }
 
 /**
@@ -117,9 +89,5 @@ export class TextDocumentReferencesFeature extends TextDocumentLocationFeature<R
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         const capability = ensure(ensure(capabilities, 'textDocument')!, 'references')!
         capability.dynamicRegistration = true
-    }
-
-    protected isSupported(capabilities: ServerCapabilities): boolean {
-        return !!capabilities.referencesProvider
     }
 }

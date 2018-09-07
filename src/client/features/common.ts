@@ -1,7 +1,6 @@
 import { Unsubscribable } from 'rxjs'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
-import { ClientCapabilities, InitializeParams, ServerCapabilities } from '../../protocol'
-import { DocumentSelector } from '../../types/document'
+import { ClientCapabilities, InitializeParams } from '../../protocol'
 import { isFunction } from '../../util'
 import { Client } from '../client'
 
@@ -9,7 +8,12 @@ import { Client } from '../client'
 export interface StaticFeature {
     fillInitializeParams?: (params: InitializeParams) => void
     fillClientCapabilities?: (capabilities: ClientCapabilities) => void
-    initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector | undefined): void
+
+    /**
+     * Called when the client connection is initializing. The feature can add client request and notification
+     * listeners in this method.
+     */
+    initialize?: () => void
 
     /** Free resources acquired in initialize. */
     deinitialize?: () => void
@@ -27,13 +31,11 @@ export interface DynamicFeature<T> {
     messages: RPCMessageType | RPCMessageType[]
     fillInitializeParams?: (params: InitializeParams) => void
     fillClientCapabilities(capabilities: ClientCapabilities): void
-    initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector | undefined): void
     register(message: RPCMessageType, data: RegistrationData<T>): void
     unregister(id: string): void
 
     /**
-     * Unregisters all static and dynamic registrations and prepares the feature to be reused for a
-     * new connection.
+     * Unregisters all registrations and prepares the feature to be reused for a new connection.
      */
     unregisterAll(): void
 }
@@ -81,13 +83,12 @@ export abstract class Feature<O> implements DynamicFeature<O> {
 
     public abstract fillClientCapabilities(capabilities: ClientCapabilities): void
 
-    public abstract initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void
-
     public unregister(id: string): void {
         const sub = this.subscriptionsByID.get(id)
         if (!sub) {
             throw new Error(`no registration with ID ${id}`)
         }
+        sub.unsubscribe()
         this.subscriptionsByID.delete(id)
     }
 
