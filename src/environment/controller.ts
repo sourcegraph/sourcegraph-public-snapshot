@@ -1,11 +1,7 @@
 import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
 import { Client, ClientOptions } from '../client/client'
 import { ExecuteCommandFeature } from '../client/features/command'
-import {
-    ConfigurationChangeNotificationFeature,
-    ConfigurationFeature,
-    ConfigurationUpdateFeature,
-} from '../client/features/configuration'
+import { ConfigurationChangeNotificationFeature, ConfigurationUpdateFeature } from '../client/features/configuration'
 import { ContextFeature } from '../client/features/context'
 import { ContributionFeature } from '../client/features/contribution'
 import { TextDocumentDecorationFeature } from '../client/features/decoration'
@@ -229,7 +225,6 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
 
     private registerClientFeatures(client: Client, configuration: Observable<C>): void {
         client.registerFeature(new ConfigurationChangeNotificationFeature<C>(client, configuration))
-        client.registerFeature(new ConfigurationFeature<C>(client, configuration))
         client.registerFeature(
             new ConfigurationUpdateFeature(
                 client,

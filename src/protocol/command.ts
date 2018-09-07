@@ -1,5 +1,13 @@
 import { RequestType } from '../jsonrpc2/messages'
 
+export interface CommandClientCapabilities {
+    workspace?: {
+        executeCommand?: {
+            dynamicRegistration?: boolean
+        }
+    }
+}
+
 /**
  * Execute command options.
  */

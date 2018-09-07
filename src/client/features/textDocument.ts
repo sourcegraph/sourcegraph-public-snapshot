@@ -11,7 +11,6 @@ import {
     DidOpenTextDocumentParams,
     ServerCapabilities,
     TextDocumentRegistrationOptions,
-    TextDocumentSyncOptions,
 } from '../../protocol'
 import { DocumentSelector } from '../../types/document'
 import { NextSignature } from '../../types/middleware'
@@ -120,8 +119,7 @@ export class TextDocumentDidOpenFeature extends TextDocumentNotificationFeature<
     }
 
     public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-        const textDocumentSyncOptions = resolveTextDocumentSync(capabilities.textDocumentSync)
-        if (documentSelector && textDocumentSyncOptions && textDocumentSyncOptions.openClose) {
+        if (documentSelector && capabilities.textDocumentSync && capabilities.textDocumentSync.openClose) {
             this.register(this.messages, {
                 id: uuidv4(),
                 registerOptions: { documentSelector },
@@ -167,27 +165,11 @@ export class TextDocumentDidCloseFeature extends TextDocumentNotificationFeature
     }
 
     public initialize(capabilities: ServerCapabilities, documentSelector: DocumentSelector): void {
-        const textDocumentSyncOptions = resolveTextDocumentSync(capabilities.textDocumentSync)
-        if (documentSelector && textDocumentSyncOptions && textDocumentSyncOptions.openClose) {
+        if (documentSelector && capabilities.textDocumentSync && capabilities.textDocumentSync.openClose) {
             this.register(this.messages, {
                 id: uuidv4(),
                 registerOptions: { documentSelector },
             })
         }
     }
-}
-
-export function resolveTextDocumentSync(
-    value: ServerCapabilities['textDocumentSync']
-): TextDocumentSyncOptions | undefined {
-    if (!value) {
-        return undefined
-    } else if (typeof value === 'number') {
-        return {
-            openClose: true,
-            change: value,
-            save: { includeText: false },
-        }
-    }
-    return value
 }

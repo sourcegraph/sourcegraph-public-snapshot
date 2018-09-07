@@ -20,7 +20,7 @@ describe('ConfigurationChangeNotificationFeature', () => {
         const capabilities: ClientCapabilities = {}
         create().feature.fillClientCapabilities(capabilities)
         assert.deepStrictEqual(capabilities, {
-            workspace: { didChangeConfiguration: { dynamicRegistration: true } },
+            configuration: { didChangeConfiguration: { dynamicRegistration: true } },
         } as ClientCapabilities)
     })
 

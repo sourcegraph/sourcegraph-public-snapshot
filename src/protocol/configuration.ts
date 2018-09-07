@@ -1,6 +1,4 @@
-import { RequestHandler } from '../jsonrpc2/handlers'
 import { NotificationType, RequestType } from '../jsonrpc2/messages'
-import { NextSignature } from '../types/middleware'
 
 /**
  * Settings is a JSON document of key-value pairs containing configuration settings for extensions.
@@ -34,46 +32,10 @@ export namespace ConfigurationUpdateRequest {
 }
 
 export interface ConfigurationClientCapabilities {
-    configuration?: { update?: boolean }
-
-    /**
-     * The workspace client capabilities
-     */
-    workspace?: {
-        /**
-         * The client supports `workspace/configuration` requests.
-         */
-        configuration?: boolean
+    configuration?: {
+        didChangeConfiguration?: { dynamicRegistration: boolean }
+        update?: boolean
     }
-}
-
-/**
- * The 'workspace/configuration' request is sent from the server to the client to fetch a certain
- * configuration setting.
- */
-export namespace ConfigurationRequest {
-    export const type = new RequestType<ConfigurationParams, any[], void, void>('workspace/configuration')
-    export type HandlerSignature = RequestHandler<ConfigurationParams, any[], void>
-    export type MiddlewareSignature = NextSignature<ConfigurationParams, any[]>
-}
-
-export interface ConfigurationItem {
-    /**
-     * The scope to get the configuration section for.
-     */
-    scopeUri?: string
-
-    /**
-     * The configuration section asked for.
-     */
-    section?: string
-}
-
-/**
- * The parameters of a configuration request.
- */
-export interface ConfigurationParams {
-    items: ConfigurationItem[]
 }
 
 /**
