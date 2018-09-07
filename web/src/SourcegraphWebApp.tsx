@@ -265,9 +265,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     />
                 </BrowserRouter>
                 <Tooltip key={1} />
-                {USE_PLATFORM ? (
-                    <Notifications key={2} extensionsController={this.state.extensionsController} />
-                ) : null},
+                {USE_PLATFORM ? <Notifications key={2} extensionsController={this.state.extensionsController} /> : null}
             </>
         )
     }
