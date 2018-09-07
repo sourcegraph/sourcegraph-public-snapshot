@@ -69,10 +69,6 @@ export class UserAccountCreateAccessTokenPage extends React.PureComponent<Props,
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('NewAccessToken')
-        let tokensURL = this.props.match.url
-        if (tokensURL.endsWith('/new')) {
-            tokensURL = tokensURL.substring(0, tokensURL.length - '/new'.length)
-        }
         this.subscriptions.add(
             this.submits
                 .pipe(
@@ -83,7 +79,7 @@ export class UserAccountCreateAccessTokenPage extends React.PureComponent<Props,
                             createAccessToken(this.props.user.id, this.state.scopes, this.state.note).pipe(
                                 tap(result => {
                                     // Go back to access tokens list page and display the token secret value.
-                                    this.props.history.push(`${tokensURL}`)
+                                    this.props.history.push(`${this.props.match.url.replace(/\/new$/, '')}`)
                                     this.props.onDidCreateAccessToken(result)
                                 }),
                                 map(result => ({ creationOrError: result })),
@@ -109,11 +105,6 @@ export class UserAccountCreateAccessTokenPage extends React.PureComponent<Props,
     public render(): JSX.Element | null {
         const siteAdminViewingOtherUser =
             this.props.authenticatedUser && this.props.authenticatedUser.id !== this.props.user.id
-        let tokensURL = this.props.match.url
-        if (tokensURL.endsWith('/new')) {
-            tokensURL = tokensURL.substring(0, tokensURL.length - '/new'.length)
-        }
-
         return (
             <div className="user-settings-create-access-token-page">
                 <PageTitle title="Create access token" />
@@ -196,7 +187,7 @@ export class UserAccountCreateAccessTokenPage extends React.PureComponent<Props,
                         )}{' '}
                         Generate token
                     </button>
-                    <Link className="btn btn-secondary ml-1" to={`${tokensURL}`}>
+                    <Link className="btn btn-secondary ml-1" to={`${this.props.match.url.replace(/\/new$/, '')}}`}>
                         Cancel
                     </Link>
                 </Form>
