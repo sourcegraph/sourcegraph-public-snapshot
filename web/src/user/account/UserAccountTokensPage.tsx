@@ -68,7 +68,7 @@ export class UserAccountTokensPage extends React.PureComponent<Props, State> {
                 <PageTitle title="Access tokens" />
                 <div className="d-flex justify-content-between align-items-center">
                     <h2>Access tokens</h2>
-                    <Link className="btn btn-primary ml-2" to={`${this.props.match.url}/tokens/new`}>
+                    <Link className="btn btn-primary ml-2" to={`${this.props.match.url}/new`}>
                         <AddIcon className="icon-inline" /> Generate new token
                     </Link>
                 </div>

@@ -24,6 +24,7 @@ export interface UserAccountAreaProps extends UserAreaPageProps, RouteComponentP
 export interface UserAccountAreaRouteContext extends UserAccountAreaProps {
     user: GQL.IUser
     externalAuthEnabled: boolean
+    newToken?: GQL.ICreateAccessTokenResult
     onDidCreateAccessToken: (value?: GQL.ICreateAccessTokenResult) => void
     onDidPresentNewToken: (value?: GQL.ICreateAccessTokenResult) => void
 }
@@ -88,6 +89,7 @@ export class UserAccountArea extends React.Component<UserAccountAreaProps, UserA
         const { children, ...props } = this.props
         const context: UserAccountAreaRouteContext = {
             ...props,
+            newToken: this.state.newlyCreatedAccessToken,
             user: this.props.user,
             onDidCreateAccessToken: this.setNewToken,
             onDidPresentNewToken: this.setNewToken,
