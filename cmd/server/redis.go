@@ -29,8 +29,8 @@ func maybeRedisProcFile() (string, error) {
 	if os.Getenv("REDIS_ENDPOINT") != "" {
 		return "", nil
 	}
-	store := os.Getenv("REDIS_STORE_ENDPOINT") != "" || os.Getenv("SRC_SESSION_STORE_REDIS") != ""
-	cache := os.Getenv("REDIS_CACHE_ENDPOINT") != "" || os.Getenv("REDIS_MASTER_ENDPOINT") != ""
+	store := os.Getenv("REDIS_STORE_ENDPOINT") != ""
+	cache := os.Getenv("REDIS_CACHE_ENDPOINT") != ""
 	if store && cache {
 		return "", nil
 	}

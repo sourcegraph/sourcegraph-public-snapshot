@@ -18,7 +18,6 @@ var (
 func init() {
 	// Set addresses. Prefer in this order:
 	// * Specific envvar REDIS_${NAME}_ENDPOINT
-	// * Deprecated envvar
 	// * Fallback envvar REDIS_ENDPOINT
 	// * Default
 	//
@@ -28,7 +27,6 @@ func init() {
 	// addrCache
 	for _, addr := range []string{
 		env.Get("REDIS_CACHE_ENDPOINT", "", "redis used for cache data. Default redis-cache:6379"),
-		env.Get("REDIS_MASTER_ENDPOINT", "", "Deprecated. See REDIS_CACHE_ENDPOINT"),
 		fallback,
 		"redis-cache:6379",
 	} {
@@ -41,7 +39,6 @@ func init() {
 	// addrStore
 	for _, addr := range []string{
 		env.Get("REDIS_STORE_ENDPOINT", "", "redis used for persistent stores (eg HTTP sessions). Default redis-store:6379"),
-		env.Get("SRC_SESSION_STORE_REDIS", "", "Deprecated. See REDIS_STORE_ENDPOINT"),
 		fallback,
 		"redis-store:6379",
 	} {

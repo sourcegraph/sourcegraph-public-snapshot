@@ -17,6 +17,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Removed
 
+- The deprecated environment variables `SRC_SESSION_STORE_REDIS` and `REDIS_MASTER_ENDPOINT` are no longer used to configure alternative redis endpoints. For more information view the [External Database](https://about.sourcegraph.com/docs/config/external-database) documentation.
+
 ## 2.11.0
 
 ### Changed
