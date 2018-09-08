@@ -9,6 +9,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
+- Reduced the size of in-memory data structured used for storing search results. This should reduce the backend memory usage of large result sets.
+
 ### Added
 
 - Search syntax for filtering archived repositories. `archived:no` will exclude archived repositories from search results, `archived:only` will search over archived repositories only. This applies for GitHub and GitLab repositories.
