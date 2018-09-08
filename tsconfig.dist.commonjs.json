@@ -1,7 +1,0 @@
-{
-  "extends": "./tsconfig.dist.json",
-  "compilerOptions": {
-    "module": "commonjs",
-    "outDir": "lib"
-  }
-}

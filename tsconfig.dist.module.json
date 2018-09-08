@@ -1,7 +1,0 @@
-{
-  "extends": "./tsconfig.dist.json",
-  "compilerOptions": {
-    "module": "es6",
-    "outDir": "module"
-  }
-}
