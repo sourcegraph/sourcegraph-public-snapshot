@@ -17,6 +17,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
+- Files with the gitattribute `export-ignore` are no longer excluded for language analysis and search.
+
 ### Removed
 
 - The deprecated environment variables `SRC_SESSION_STORE_REDIS` and `REDIS_MASTER_ENDPOINT` are no longer used to configure alternative redis endpoints. For more information view the [External Database](https://about.sourcegraph.com/docs/config/external-database) documentation.

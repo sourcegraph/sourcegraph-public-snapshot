@@ -95,6 +95,10 @@ func (s *Server) cleanupRepos() {
 		return true, nil
 	}
 
+	ensureGitAttributes := func(gitDir string) (done bool, err error) {
+		return false, setGitAttributes(gitDir)
+	}
+
 	maybeReclone := func(gitDir string) (done bool, err error) {
 		recloneTime, err := getRecloneTime(gitDir)
 		if err != nil {
@@ -176,6 +180,9 @@ func (s *Server) cleanupRepos() {
 		// If git is interrupted it can leave lock files lying around. It does
 		// not clean these up, and instead fails commands.
 		{"remove stale locks", removeStaleLocks},
+		// We always want to have the same git attributes file at
+		// info/attributes.
+		{"ensure git attributes", ensureGitAttributes},
 	}
 	if s.DeleteStaleRepositories {
 		// Sourcegraph.com can potentially clone all of github.com, so we

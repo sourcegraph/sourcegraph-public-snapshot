@@ -694,6 +694,23 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Exec-Stderr", string(stderr))
 }
 
+// setGitAttributes writes our global gitattributes to
+// gitDir/info/attributes. This will override .gitattributes inside of
+// repositories. It is used to unset attributes such as export-ignore.
+func setGitAttributes(gitDir string) error {
+	_, err := updateFileIfDifferent(
+		filepath.Join(gitDir, "info/attributes"),
+		[]byte(`# Managed by Sourcegraph gitserver.
+
+# We want every file to be present in git archive.
+* -export-ignore
+`))
+	if err != nil {
+		return errors.Wrap(err, "failed to set git attributes")
+	}
+	return nil
+}
+
 // cloneOptions specify optional behaviour for the cloneRepo function.
 type cloneOptions struct {
 	// Block will wait for the clone to finish before returning. If the clone
@@ -803,6 +820,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string, op
 		// Update the last-changed stamp.
 		if err := setLastChanged(tmpPath); err != nil {
 			return errors.Wrapf(err, "failed to update last changed time")
+		}
+
+		// Set gitattributes
+		if err := setGitAttributes(tmpPath); err != nil {
+			return err
 		}
 
 		if overwrite {
