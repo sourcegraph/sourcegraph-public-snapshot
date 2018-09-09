@@ -20,6 +20,9 @@ class TextDocumentFeature extends AbstractTextDocumentFeature<TextDocumentRegist
     protected registerProvider(): Unsubscribable {
         return { unsubscribe: () => void 0 }
     }
+    protected validateRegistrationOptions(data: any): TextDocumentRegistrationOptions {
+        return data
+    }
     public fillClientCapabilities(): void {
         /* noop */
     }
@@ -28,7 +31,7 @@ class TextDocumentFeature extends AbstractTextDocumentFeature<TextDocumentRegist
     }
 }
 
-const FIXTURE_REGISTER_OPTIONS: TextDocumentRegistrationOptions = { documentSelector: ['*'] }
+const FIXTURE_REGISTER_OPTIONS: TextDocumentRegistrationOptions = { documentSelector: ['*'], extensionID: 'test' }
 
 describe('TextDocumentFeature', () => {
     describe('dynamic registration', () => {

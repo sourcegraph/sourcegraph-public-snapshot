@@ -44,6 +44,13 @@ export class TextDocumentDecorationFeature extends Feature<undefined> {
         )
     }
 
+    protected validateRegistrationOptions(data: any): undefined {
+        if (data) {
+            throw new Error('TextDocumentDecorationFeature registration options should be undefined')
+        }
+        return data
+    }
+
     private getDecorationsSubject(
         textDocument: TextDocumentIdentifier,
         value?: TextDocumentDecoration[] | null

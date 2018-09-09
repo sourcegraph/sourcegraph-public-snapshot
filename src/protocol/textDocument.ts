@@ -77,6 +77,11 @@ export interface TextDocumentRegistrationOptions {
      * the document selector provided on the client side will be used.
      */
     documentSelector: DocumentSelector | null
+
+    /**
+     * ID of the extension that registers the provider.
+     */
+    extensionID: string
 }
 
 export interface TextDocumentSyncOptions {

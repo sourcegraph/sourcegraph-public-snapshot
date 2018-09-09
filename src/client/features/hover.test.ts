@@ -10,7 +10,7 @@ const create = (): {
     registry: TextDocumentHoverProviderRegistry
     feature: TextDocumentHoverFeature
 } => {
-    const client = { options: {} } as Client
+    const client = { options: {}, id: 'test' } as Client
     const registry = new TextDocumentHoverProviderRegistry()
     const feature = new TextDocumentHoverFeature(client, registry)
     return { client, registry, feature }
@@ -30,7 +30,10 @@ describe('TextDocumentHoverFeature', () => {
     describe('registration', () => {
         it('supports dynamic registration and unregistration', () => {
             const { registry, feature } = create()
-            feature.register(feature.messages, { id: 'a', registerOptions: { documentSelector: ['*'] } })
+            feature.register(feature.messages, {
+                id: 'a',
+                registerOptions: { documentSelector: ['*'], extensionID: 'test' },
+            })
             assert.strictEqual(registry.providersSnapshot.length, 1)
             feature.unregister('a')
             assert.strictEqual(registry.providersSnapshot.length, 0)

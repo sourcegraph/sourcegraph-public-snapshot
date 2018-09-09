@@ -44,7 +44,7 @@ describe('TextDocumentNotificationFeature', () => {
         }
     }
 
-    const FIXTURE_REGISTER_OPTIONS: TextDocumentRegistrationOptions = { documentSelector: ['*'] }
+    const FIXTURE_REGISTER_OPTIONS: TextDocumentRegistrationOptions = { documentSelector: ['*'], extensionID: 'test' }
 
     describe('registration', () => {
         it('supports dynamic registration and unregistration', () => {
@@ -101,7 +101,10 @@ describe('TextDocumentDidOpenFeature', () => {
     describe('when a text document is opened', () => {
         it('sends a textDocument/didOpen notification to the server', done => {
             const { client, environment, feature } = create()
-            feature.register(feature.messages, { id: 'a', registerOptions: { documentSelector: ['l'] } })
+            feature.register(feature.messages, {
+                id: 'a',
+                registerOptions: { documentSelector: ['l'], extensionID: 'id' },
+            })
 
             const textDocument: TextDocumentItem = {
                 uri: 'file:///f',
@@ -161,7 +164,10 @@ describe('TextDocumentDidCloseFeature', () => {
     describe('when a text document is opened and then closed', () => {
         it('sends a textDocument/didClose notification to the server', done => {
             const { client, environment, feature } = create()
-            feature.register(feature.messages, { id: 'a', registerOptions: { documentSelector: ['l'] } })
+            feature.register(feature.messages, {
+                id: 'a',
+                registerOptions: { documentSelector: ['l'], extensionID: 'test' },
+            })
 
             const textDocument: TextDocumentItem = {
                 uri: 'file:///f',

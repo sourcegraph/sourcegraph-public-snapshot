@@ -18,7 +18,7 @@ const create = <P extends TextDocumentPositionParams, F extends TextDocumentLoca
     registry: TextDocumentLocationProviderRegistry<P>
     feature: F
 } => {
-    const client = { options: {} } as Client
+    const client = { options: {}, id: 'test' } as Client
     const registry = new RegistryClass()
     const feature = new FeatureClass(client, registry)
     return { client, registry, feature }
@@ -39,7 +39,10 @@ describe('TextDocumentLocationFeature', () => {
                 },
                 TextDocumentLocationProviderRegistry
             )
-            feature.register(feature.messages, { id: 'a', registerOptions: { documentSelector: ['*'] } })
+            feature.register(feature.messages, {
+                id: 'a',
+                registerOptions: { documentSelector: ['*'], extensionID: 'test' },
+            })
             assert.strictEqual(registry.providersSnapshot.length, 1)
             feature.unregister('a')
             assert.strictEqual(registry.providersSnapshot.length, 0)

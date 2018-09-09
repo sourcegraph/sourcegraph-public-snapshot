@@ -9,7 +9,7 @@ interface Entry<O, P> {
 
 /** Base class for provider registries for features. */
 export abstract class FeatureProviderRegistry<O, P> {
-    private entries = new BehaviorSubject<Entry<O, P>[]>([])
+    protected entries = new BehaviorSubject<Entry<O, P>[]>([])
 
     public constructor(initialEntries?: Entry<O, P>[]) {
         if (initialEntries) {
