@@ -17,7 +17,6 @@ import Warning from '@sourcegraph/icons/lib/Warning'
 import { isEqual } from 'lodash'
 import { concat, Observable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, take } from 'rxjs/operators'
-import { ClientOptions } from 'sourcegraph/module/client/client'
 import { MessageTransports } from 'sourcegraph/module/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from 'sourcegraph/module/jsonrpc2/transports/webWorker'
 import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
@@ -28,6 +27,7 @@ import { editConfiguration } from '../configuration/backend'
 import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
 import { isErrorLike } from '../util/errors'
+import ExtensionHostWorker from './extensionHost.worker.ts'
 
 export interface ExtensionsControllerProps extends GenericExtensionsControllerProps<ConfigurationSubject, Settings> {}
 
@@ -105,8 +105,7 @@ export function updateUserExtensionSettings(args: { extensionID: string; enabled
 }
 
 export function createMessageTransports(
-    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
-    options: ClientOptions
+    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>
 ): Promise<MessageTransports> {
     if (!extension.manifest) {
         throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no manifest found`)
@@ -116,9 +115,16 @@ export function createMessageTransports(
             `unable to run extension ${JSON.stringify(extension.id)}: invalid manifest: ${extension.manifest.message}`
         )
     }
+
+    // Whether the extension is the new kind that merely exports an `activate` function and expects
+    // the extension host to run it
+    // (https://github.com/sourcegraph/sourcegraph-extension-api/pull/51). Old extensions will
+    // continue to work as before.
+    const isExportActivateExtension = !!(extension.manifest as any).__exportsActivate
+
     if (extension.manifest.url) {
         const url = extension.manifest.url
-        return fetch(url)
+        return fetch(url, { credentials: 'same-origin' })
             .then(resp => {
                 if (resp.status !== 200) {
                     return resp
@@ -133,8 +139,18 @@ export function createMessageTransports(
                         type: 'application/javascript',
                     })
                 )
-                const worker = new Worker(blobURL)
-                return createWebWorkerMessageTransports(worker)
+                if (isExportActivateExtension) {
+                    try {
+                        const worker = new ExtensionHostWorker()
+                        worker.postMessage(blobURL)
+                        return createWebWorkerMessageTransports(worker)
+                    } catch (err) {
+                        console.error(err)
+                    }
+                    throw new Error('failed to initialize extension host')
+                } else {
+                    return createWebWorkerMessageTransports(new Worker(blobURL))
+                }
             })
     }
     throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)

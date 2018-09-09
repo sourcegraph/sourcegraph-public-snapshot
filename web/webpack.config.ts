@@ -32,6 +32,19 @@ const babelLoader: webpack.RuleSetUseItem = {
     },
 }
 
+const typescriptLoader: webpack.RuleSetUseItem = {
+    loader: 'ts-loader',
+    options: {
+        compilerOptions: {
+            target: 'es6',
+            module: 'esnext',
+            noEmit: false,
+        },
+        experimentalWatchApi: true,
+        happyPackMode: true, // typecheck in fork-ts-checker-webpack-plugin for build perf
+    },
+}
+
 const config: webpack.Configuration = {
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     optimization: {
@@ -89,28 +102,19 @@ const config: webpack.Configuration = {
         rules: [
             ((): webpack.RuleSetRule => ({
                 test: /\.tsx?$/,
+                exclude: /\.worker\.ts$/,
                 include: path.resolve(__dirname, 'src'),
-                use: [
-                    { loader: 'thread-loader', options: workerPool },
-                    babelLoader,
-                    ((): webpack.NewLoader => ({
-                        loader: 'ts-loader',
-                        options: {
-                            compilerOptions: {
-                                target: 'es6',
-                                module: 'esnext',
-                                noEmit: false,
-                            },
-                            experimentalWatchApi: true,
-                            happyPackMode: true, // typecheck in fork-ts-checker-webpack-plugin for build perf
-                        },
-                    }))(),
-                ],
+                use: [{ loader: 'thread-loader', options: workerPool }, babelLoader, typescriptLoader],
             }))(),
             ((): webpack.RuleSetRule => ({
                 test: /\.m?js$/,
-                use: [{ loader: 'thread-loader', options: workerPool }, babelLoader],
+                use: [{ loader: 'thread-loader', options: workerPool }, babelLoader, typescriptLoader],
             }))(),
+            {
+                test: /\.worker\.ts$/,
+                include: path.resolve(__dirname, 'src'),
+                use: [{ loader: 'worker-loader' }, babelLoader, typescriptLoader],
+            },
             {
                 test: /\.mjs$/,
                 include: path.resolve(__dirname, 'node_modules'),

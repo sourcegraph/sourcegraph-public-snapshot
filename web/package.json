@@ -133,11 +133,11 @@
     "puppeteer": "~1.8.0",
     "sass-loader": "^7.0.3",
     "source-map-support": "^0.5.6",
-    "sourcegraph": "^14.1.1",
+    "sourcegraph": "^15.0.0",
     "style-loader": "^0.23.0",
     "stylelint": "^9.4.0",
     "stylelint-formatter-compact": "^1.1.0",
-    "thread-loader": "^1.1.5",
+    "thread-loader": "^1.2.0",
     "ts-loader": "^5.0.0",
     "ts-node": "^7.0.0",
     "ts-unused-exports": "^2.0.5",
@@ -146,8 +146,9 @@
     "tslint-language-service": "^0.9.9",
     "typescript": "~3.0.0",
     "uglifyjs-webpack-plugin": "^1.2.4",
-    "webpack": "^4.17.1",
-    "webpack-serve": "^2.0.2"
+    "webpack": "^4.17.2",
+    "webpack-serve": "^2.0.2",
+    "worker-loader": "^2.0.0"
   },
   "dependencies": {
     "@sourcegraph/codeintellify": "^3.8.2",
