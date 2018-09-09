@@ -1,9 +1,9 @@
 import { Subscription } from 'rxjs'
-import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { Context } from '../environment/context/context'
 import { MessageConnection } from '../jsonrpc2/connection'
 import { InitializeParams, Settings, TextDocumentDecoration } from '../protocol'
-import { URI } from '../types/textDocument'
+import { TextDocumentIdentifier } from '../types/textDocument'
+import { URI } from '../types/uri'
 
 /**
  * The Sourcegraph extension API, which extensions use to interact with the client.

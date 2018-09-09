@@ -1,5 +1,4 @@
 import * as assert from 'assert'
-import { Position, Range } from 'vscode-languageserver-types'
 import { TextDocumentDecoration } from '../protocol/decoration'
 import { createValidator } from './validator'
 
@@ -7,7 +6,7 @@ const validator = createValidator()
 
 const FIXTURE = {
     TextDocumentDecoration: {
-        range: Range.create(Position.create(1, 2), Position.create(3, 4)),
+        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
         isWholeLine: true,
         backgroundColor: 'blue',
     } as TextDocumentDecoration,

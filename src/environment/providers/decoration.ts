@@ -1,7 +1,7 @@
 import { combineLatest, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { TextDocumentDecoration } from '../../protocol/decoration'
+import { TextDocumentIdentifier } from '../../types/textDocument'
 import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 

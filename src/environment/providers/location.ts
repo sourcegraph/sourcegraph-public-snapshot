@@ -1,8 +1,8 @@
 import { combineLatest, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { Location } from 'vscode-languageserver-types'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { compact, flatten } from '../../util'
+import { Location } from '../../types/location'
 import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 

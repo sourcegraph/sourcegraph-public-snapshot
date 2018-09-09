@@ -1,5 +1,4 @@
 import { from, Observable, Unsubscribable } from 'rxjs'
-import { Hover, MarkupKind } from 'vscode-languageserver-types'
 import { ProvideTextDocumentHoverSignature } from '../../environment/providers/hover'
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import {
@@ -8,6 +7,8 @@ import {
     TextDocumentPositionParams,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
+import { Hover } from '../../types/hover'
+import { MarkupKind } from '../../types/markup'
 import { Client } from '../client'
 import { ensure, Feature } from './common'
 

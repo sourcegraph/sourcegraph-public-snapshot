@@ -1,9 +1,9 @@
 import { BehaviorSubject, Observable } from 'rxjs'
-import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { ProvideTextDocumentDecorationSignature } from '../../environment/providers/decoration'
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import { ClientCapabilities } from '../../protocol'
 import { TextDocumentDecoration, TextDocumentPublishDecorationsNotification } from '../../protocol/decoration'
+import { TextDocumentIdentifier } from '../../types/textDocument'
 import { Client } from '../client'
 import { ensure, StaticFeature } from './common'
 

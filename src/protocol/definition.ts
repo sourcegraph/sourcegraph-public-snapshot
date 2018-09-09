@@ -1,5 +1,5 @@
-import { Definition } from 'vscode-languageserver-types'
 import { RequestType } from '../jsonrpc2/messages'
+import { Definition } from '../types/location'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from './textDocument'
 
 /**

@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { Location, Position, Range } from 'vscode-languageserver-types'
+import { Location } from '../../types/location'
 import {
     getLocation,
     getLocations,
@@ -14,7 +14,7 @@ const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b)
 
 const FIXTURE_LOCATION: Location = {
     uri: 'file:///f',
-    range: Range.create(Position.create(1, 2), Position.create(3, 4)),
+    range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
 }
 const FIXTURE_LOCATIONS: Location | Location[] | null = [FIXTURE_LOCATION, FIXTURE_LOCATION]
 
@@ -113,12 +113,12 @@ describe('getLocation', () => {
                                 () =>
                                     of({
                                         uri: 'file:///f1',
-                                        range: { start: Position.create(1, 2), end: Position.create(3, 4) },
+                                        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
                                     }),
                                 () =>
                                     of({
                                         uri: 'file:///f2',
-                                        range: { start: Position.create(5, 6), end: Position.create(7, 8) },
+                                        range: { start: { line: 5, character: 6 }, end: { line: 7, character: 8 } },
                                     }),
                             ],
                         }),
@@ -128,11 +128,11 @@ describe('getLocation', () => {
                     a: [
                         {
                             uri: 'file:///f1',
-                            range: { start: Position.create(1, 2), end: Position.create(3, 4) },
+                            range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
                         },
                         {
                             uri: 'file:///f2',
-                            range: { start: Position.create(5, 6), end: Position.create(7, 8) },
+                            range: { start: { line: 5, character: 6 }, end: { line: 7, character: 8 } },
                         },
                     ],
                 })

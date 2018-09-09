@@ -1,5 +1,4 @@
 import { BehaviorSubject } from 'rxjs'
-import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import {
     DidCloseTextDocumentNotification,
     DidOpenTextDocumentNotification,
@@ -8,6 +7,7 @@ import {
     TextDocumentPublishDecorationsNotification,
     TextDocumentPublishDecorationsParams,
 } from '../../protocol'
+import { TextDocumentIdentifier } from '../../types/textDocument'
 import { Observable, SourcegraphExtensionAPI, Window, Windows } from '../api'
 
 /**

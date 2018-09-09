@@ -1,5 +1,5 @@
-import { Hover } from 'vscode-languageserver-types'
 import { RequestType } from '../jsonrpc2/messages'
+import { Hover } from '../types/hover'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from './textDocument'
 
 /**

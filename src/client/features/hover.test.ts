@@ -1,7 +1,7 @@
 import * as assert from 'assert'
-import { MarkupKind } from 'vscode-languageserver-types'
 import { TextDocumentHoverProviderRegistry } from '../../environment/providers/hover'
 import { ClientCapabilities } from '../../protocol'
+import { MarkupKind } from '../../types/markup'
 import { Client } from '../client'
 import { TextDocumentHoverFeature } from './hover'
 

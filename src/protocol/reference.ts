@@ -1,6 +1,13 @@
-import { Location, ReferenceContext } from 'vscode-languageserver-types'
 import { RequestType } from '../jsonrpc2/messages'
+import { Location } from '../types/location'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from './textDocument'
+
+export interface ReferenceContext {
+    /**
+     * Include the declaration of the current symbol.
+     */
+    includeDeclaration: boolean
+}
 
 /**
  * Parameters for a [ReferencesRequest](#ReferencesRequest).

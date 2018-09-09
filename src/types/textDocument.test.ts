@@ -1,7 +1,6 @@
 import * as assert from 'assert'
-import { TextDocumentItem } from 'vscode-languageserver-types'
 import { DocumentSelector } from './document'
-import { match, score } from './textDocument'
+import { match, score, TextDocumentItem } from './textDocument'
 
 const FIXTURE_TEXT_DOCUMENT: TextDocumentItem = { uri: 'file:///f', languageId: 'l', version: 1, text: '' }
 

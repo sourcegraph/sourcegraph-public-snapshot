@@ -1,18 +1,30 @@
 import minimatch from 'minimatch'
-import { Range, TextDocumentItem } from 'vscode-languageserver-types'
 import { DocumentFilter, DocumentSelector } from './document'
 
-export type URI = string
+/**
+ * A literal to identify a text document in the client.
+ */
+export interface TextDocumentIdentifier {
+    /**
+     * The text document's uri.
+     */
+    uri: string
+}
 
 /**
- * A selection in a document. A selection is a range with direction.
+ * An item to transfer a text document from the client to the server.
  */
-export interface Selection extends Readonly<Range> {
-    /**
-     * Whether the selection is reversed. In a reversed selection, the cursor is at the start of the range (instead
-     * of the end of the range).
-     */
-    readonly isReversed: boolean
+export interface TextDocumentItem {
+    uri: string
+    languageId: string
+    version: number
+    text: string
+}
+
+export interface TextDocument {
+    uri: string
+    languageId: string
+    version: number
 }
 
 export function match(

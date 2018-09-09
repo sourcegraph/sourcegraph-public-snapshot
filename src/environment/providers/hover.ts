@@ -1,8 +1,7 @@
 import { combineLatest, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
-import { Hover } from 'vscode-languageserver-types'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
-import { HoverMerged } from '../../types/hover'
+import { Hover, HoverMerged } from '../../types/hover'
 import { FeatureProviderRegistry } from './registry'
 
 export type ProvideTextDocumentHoverSignature = (params: TextDocumentPositionParams) => Observable<Hover | null>

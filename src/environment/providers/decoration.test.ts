@@ -1,8 +1,8 @@
 import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { Position, TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { TextDocumentDecoration } from '../../protocol'
+import { TextDocumentIdentifier } from '../../types/textDocument'
 import { getDecorations, ProvideTextDocumentDecorationSignature } from './decoration'
 import { FIXTURE as COMMON_FIXTURE } from './registry.test'
 
@@ -13,7 +13,7 @@ const FIXTURE = {
 
 const FIXTURE_RESULT: TextDocumentDecoration[] | null = [
     {
-        range: { start: Position.create(1, 2), end: Position.create(3, 4) },
+        range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
         backgroundColor: 'red',
     },
 ]

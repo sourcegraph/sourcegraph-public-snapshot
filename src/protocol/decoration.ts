@@ -1,6 +1,7 @@
-import { Range, TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { NotificationHandler } from '../jsonrpc2/handlers'
 import { NotificationType } from '../jsonrpc2/messages'
+import { Range } from '../types/range'
+import { TextDocumentIdentifier } from '../types/textDocument'
 import { TextDocumentRegistrationOptions } from './textDocument'
 
 export interface DecorationClientCapabilities {

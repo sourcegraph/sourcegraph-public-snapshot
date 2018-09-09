@@ -1,5 +1,4 @@
 import { from, Observable, Unsubscribable } from 'rxjs'
-import { Location } from 'vscode-languageserver-types'
 import { ProvideTextDocumentLocationSignature } from '../../environment/providers/location'
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import {
@@ -12,6 +11,7 @@ import {
     TextDocumentRegistrationOptions,
     TypeDefinitionRequest,
 } from '../../protocol'
+import { Location } from '../../types/location'
 import { Client } from '../client'
 import { ensure, Feature } from './common'
 

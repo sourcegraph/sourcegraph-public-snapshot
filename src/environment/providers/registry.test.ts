@@ -1,13 +1,12 @@
 import * as assert from 'assert'
 import { Subscription } from 'rxjs'
-import { Position } from 'vscode-languageserver-types'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { FeatureProviderRegistry as AbstractFeatureProviderRegistry } from './registry'
 
 /** Useful test fixtures. */
 export const FIXTURE = {
     TextDocumentPositionParams: {
-        position: Position.create(1, 2),
+        position: { line: 1, character: 2 },
         textDocument: { uri: 'file:///f' },
     } as TextDocumentPositionParams,
 
