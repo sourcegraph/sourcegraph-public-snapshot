@@ -6,6 +6,8 @@ import {
     InitializeParams,
     InitializeRequest,
     InitializeResult,
+    RegistrationParams,
+    RegistrationRequest,
 } from '../protocol'
 import { Commands, Configuration, ExtensionContext, Observable, SourcegraphExtensionAPI, Window, Windows } from './api'
 import { createExtCommands } from './features/commands'
@@ -81,8 +83,33 @@ export function activateExtension<C>(
             return {} as InitializeResult
         })
         connection.onNotification(InitializedNotification.type, () => {
-            run(new ExtensionHandle<C>(connection, initializationParams))
-            resolve()
+            const handle = new ExtensionHandle<C>(connection, initializationParams)
+
+            // Register some capabilities that used to be implicit, for backcompat.
+            connection
+                .sendRequest(RegistrationRequest.type, {
+                    registrations: [
+                        {
+                            id: '__backcompat_1',
+                            method: 'textDocument/didOpen',
+                            registerOptions: { documentSelector: ['*'] },
+                        },
+                        {
+                            id: '__backcompat_2',
+                            method: 'textDocument/didClose',
+                            registerOptions: { documentSelector: ['*'] },
+                        },
+                        {
+                            id: '__backcompat_3',
+                            method: 'workspace/didChangeConfiguration',
+                        },
+                    ],
+                } as RegistrationParams)
+                .then(() => {
+                    run(handle)
+                    resolve()
+                })
+                .catch(err => console.error(err))
         })
 
         connection.listen()

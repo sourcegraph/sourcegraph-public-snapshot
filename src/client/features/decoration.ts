@@ -1,27 +1,29 @@
-import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
-import uuidv4 from 'uuid/v4'
+import { BehaviorSubject, Observable } from 'rxjs'
 import { TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { ProvideTextDocumentDecorationSignature } from '../../environment/providers/decoration'
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import { ClientCapabilities } from '../../protocol'
 import { TextDocumentDecoration, TextDocumentPublishDecorationsNotification } from '../../protocol/decoration'
 import { Client } from '../client'
-import { ensure, Feature } from './common'
+import { ensure, StaticFeature } from './common'
 
 /**
  * Support for text document decorations published by the server (textDocument/publishDecorations notifications
  * from the server).
  */
-export class TextDocumentDecorationFeature extends Feature<undefined> {
+export class TextDocumentDecorationFeature implements StaticFeature {
     /** Map of document URI to its decorations (last published by the server). */
     private decorations = new Map<string, BehaviorSubject<TextDocumentDecoration[] | null>>()
 
     constructor(
-        client: Client,
+        private client: Client,
         private registry: FeatureProviderRegistry<undefined, ProvideTextDocumentDecorationSignature>
     ) {
-        super(client)
-        this.register(this.messages, { id: uuidv4(), registerOptions: undefined })
+        this.registry.registerProvider(
+            undefined,
+            (textDocument: TextDocumentIdentifier): Observable<TextDocumentDecoration[] | null> =>
+                this.getDecorationsSubject(textDocument)
+        )
     }
 
     public readonly messages = TextDocumentPublishDecorationsNotification.type
@@ -31,24 +33,21 @@ export class TextDocumentDecorationFeature extends Feature<undefined> {
     }
 
     public initialize(): void {
+        // TODO(sqs): no way to unregister this
         this.client.onNotification(TextDocumentPublishDecorationsNotification.type, params => {
             this.getDecorationsSubject(params.textDocument, params.decorations)
         })
     }
 
-    protected registerProvider(): Unsubscribable {
-        return this.registry.registerProvider(
-            undefined,
-            (textDocument: TextDocumentIdentifier): Observable<TextDocumentDecoration[] | null> =>
-                this.getDecorationsSubject(textDocument)
-        )
+    public deinitialize(): void {
+        // Clear decorations;
+        for (const subject of Object.values(this.decorations)) {
+            subject.next(null)
+        }
     }
 
-    protected validateRegistrationOptions(data: any): undefined {
-        if (data) {
-            throw new Error('TextDocumentDecorationFeature registration options should be undefined')
-        }
-        return data
+    protected validateRegistrationOptions(_data: any): undefined {
+        return
     }
 
     private getDecorationsSubject(

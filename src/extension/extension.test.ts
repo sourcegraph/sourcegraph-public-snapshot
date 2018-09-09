@@ -1,6 +1,12 @@
 import * as assert from 'assert'
 import { createConnection as createClientConnection } from '../client/connection'
-import { InitializedNotification, InitializeParams, InitializeRequest, InitializeResult } from '../protocol'
+import {
+    InitializedNotification,
+    InitializeParams,
+    InitializeRequest,
+    InitializeResult,
+    RegistrationRequest,
+} from '../protocol'
 import { createMessageTransports } from '../test/integration/helpers'
 import { activateExtension } from './extension'
 
@@ -15,6 +21,8 @@ describe('activateExtension', () => {
             configurationCascade: { merged: {} },
         }
         const initResult: InitializeResult = {}
+
+        clientConnection.onRequest(RegistrationRequest.type, () => void 0)
 
         const [, result] = await Promise.all([
             activateExtension<{}>(serverTransports, sourcegraph => {

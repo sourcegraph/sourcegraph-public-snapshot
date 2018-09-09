@@ -225,6 +225,15 @@ export class Client implements Unsubscribable {
                 connection.onRequest(RegistrationRequest.type, params => this.handleRegistrationRequest(params))
                 connection.onRequest(UnregistrationRequest.type, params => this.handleUnregistrationRequest(params))
 
+                // Initialize static features.
+                for (const feature of this.features) {
+                    if (!DynamicFeature.is(feature)) {
+                        if (feature.initialize) {
+                            feature.initialize()
+                        }
+                    }
+                }
+
                 connection.sendNotification(InitializedNotification.type, {})
 
                 this._state.next(ClientState.Active)

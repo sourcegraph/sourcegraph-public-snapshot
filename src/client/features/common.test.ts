@@ -26,9 +26,6 @@ class TextDocumentFeature extends AbstractTextDocumentFeature<TextDocumentRegist
     public fillClientCapabilities(): void {
         /* noop */
     }
-    public initialize(): void {
-        /* noop */
-    }
 }
 
 const FIXTURE_REGISTER_OPTIONS: TextDocumentRegistrationOptions = { documentSelector: ['*'], extensionID: 'test' }
