@@ -326,15 +326,6 @@ func (s *Server) ignorePath(path string) bool {
 	return strings.HasPrefix(filepath.Base(path), tempDirName)
 }
 
-func cloneCmd(ctx context.Context, origin, dir string, progress bool) *exec.Cmd {
-	args := []string{"clone", "--mirror"}
-	if progress {
-		args = append(args, "--progress")
-	}
-	args = append(args, origin, dir)
-	return exec.CommandContext(ctx, "git", args...)
-}
-
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 	var req protocol.IsRepoCloneableRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -798,7 +789,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string, op
 		defer os.RemoveAll(tmpPath)
 		tmpPath = filepath.Join(tmpPath, ".git")
 
-		cmd := cloneCmd(ctx, url, tmpPath, true)
+		cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
 		log15.Info("cloning repo", "repo", repo, "url", url, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()
