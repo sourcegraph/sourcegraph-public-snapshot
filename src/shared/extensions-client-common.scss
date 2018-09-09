@@ -24,6 +24,10 @@ $body-color-dark: #f2f4f8;
     --extension-card-bg: #{$color-bg-2};
 }
 
+.command-palette-button {
+    align-self: center;
+}
+
 .command-list {
     @import 'node_modules/bootstrap/scss/list-group';
     @import 'node_modules/bootstrap/scss/forms';

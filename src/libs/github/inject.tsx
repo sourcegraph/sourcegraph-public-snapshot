@@ -335,7 +335,7 @@ function injectExtensionsGlobalComponents({
         />,
         statusElem
     )
-    const headerElem = document.querySelector('div.HeaderMenu')
+    const headerElem = document.querySelector('div.HeaderMenu>div:last-child')
     if (headerElem) {
         const commandListElem = document.createElement('div')
         commandListElem.className = 'command-palette-button'
