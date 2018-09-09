@@ -3,9 +3,9 @@ package search
 import (
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/types"
 )
 
 // RevisionSpecifier represents either a revspec or a ref glob. At most one

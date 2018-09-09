@@ -7,9 +7,9 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
-	"github.com/sourcegraph/sourcegraph/pkg/types"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 

@@ -8,7 +8,7 @@ import (
 
 	"github.com/garyburd/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/pkg/types"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 func init() {

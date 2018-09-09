@@ -7,7 +7,7 @@ import (
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
-	"github.com/sourcegraph/sourcegraph/pkg/types"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"

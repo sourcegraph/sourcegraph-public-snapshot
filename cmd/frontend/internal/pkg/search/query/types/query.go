@@ -3,7 +3,7 @@ package types
 import (
 	"regexp"
 
-	"github.com/sourcegraph/sourcegraph/pkg/search/query/syntax"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
 )
 
 // A Query is the typechecked representation of a search query.

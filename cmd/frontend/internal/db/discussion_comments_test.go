@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/types"
 )
 
 // TODO(slimsag:discussions): future: test that DiscussionCommentsListOptions.AuthorUserID works
