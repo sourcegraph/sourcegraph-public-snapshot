@@ -48,9 +48,9 @@ var reposRecloned = prometheus.NewCounter(prometheus.CounterOpts{
 // cleanupRepos walks the repos directory and performs maintenance tasks:
 //
 // 1. Remove corrupt repos.
-// 2. Remove inactive repos on sourcegraph.com
-// 3. Reclone repos after a while. (simulate git gc)
-// 4. Remove stale lock files.
+// 2. Remove stale lock files.
+// 3. Remove inactive repos on sourcegraph.com
+// 4. Reclone repos after a while. (simulate git gc)
 func (s *Server) cleanupRepos() {
 	bCtx, bCancel := s.serverContext()
 	defer bCancel()
@@ -166,6 +166,30 @@ func (s *Server) cleanupRepos() {
 		return false, multi
 	}
 
+	type cleanupFn struct {
+		Name string
+		Do   func(string) (bool, error)
+	}
+	cleanups := []cleanupFn{
+		// Do some sanity checks on the repository.
+		{"maybe remove corrupt", maybeRemoveCorrupt},
+		// If git is interrupted it can leave lock files lying around. It does
+		// not clean these up, and instead fails commands.
+		{"remove stale locks", removeStaleLocks},
+	}
+	if s.DeleteStaleRepositories {
+		// Sourcegraph.com can potentially clone all of github.com, so we
+		// delete repos which have not been used for a period of
+		// time. s.DeleteStaleRepositories should only be true for
+		// sourcegraph.com.
+		cleanups = append(cleanups, cleanupFn{"maybe remove inactive", maybeRemoveInactive})
+	}
+	// Old git clones accumulate loose git objects that waste space and
+	// slow down git operations. Periodically do a fresh clone to avoid
+	// these problems. git gc is slow and resource intensive. It is
+	// cheaper and faster to just reclone the repository.
+	cleanups = append(cleanups, cleanupFn{"maybe reclone", maybeReclone})
+
 	filepath.Walk(s.ReposDir, func(gitDir string, fi os.FileInfo, fileErr error) error {
 		if fileErr != nil {
 			return nil
@@ -183,45 +207,15 @@ func (s *Server) cleanupRepos() {
 			return nil
 		}
 
-		// Do some sanity checks on the repository.
-		done, err := maybeRemoveCorrupt(gitDir)
-		if err != nil {
-			log15.Error("error removing corrupt repo", "repo", gitDir, "error", err)
-		}
-		if done {
-			return filepath.SkipDir
-		}
-
-		// Sourcegraph.com can potentially clone all of github.com, so we
-		// delete repos which have not been used for a period of
-		// time. s.DeleteStaleRepositories should only be true for
-		// sourcegraph.com.
-		if s.DeleteStaleRepositories {
-			done, err = maybeRemoveInactive(gitDir)
+		for _, cfn := range cleanups {
+			done, err := cfn.Do(gitDir)
 			if err != nil {
-				log15.Error("error removing inactive repo", "repo", gitDir, "error", err)
+				log15.Error("error running cleanup command", "name", cfn.Name, "repo", gitDir, "error", err)
 			}
 			if done {
-				return filepath.SkipDir
+				break
 			}
 		}
-
-		// Old git clones accumulate loose git objects that waste space and
-		// slow down git operations. Periodically do a fresh clone to avoid
-		// these problems. git gc is slow and resource intensive. It is
-		// cheaper and faster to just reclone the repository.
-		_, err = maybeReclone(gitDir)
-		if err != nil {
-			log15.Error("error recloning repo", "repo", gitDir, "error", err)
-		}
-
-		// If git is interrupted it can leave lock files lying around. It
-		// does not clean these up, and instead fails commands.
-		_, err = removeStaleLocks(gitDir)
-		if err != nil {
-			log15.Error("error removing stale git locks", "repo", gitDir, "error", err)
-		}
-
 		return filepath.SkipDir
 	})
 }
