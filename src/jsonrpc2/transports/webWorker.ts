@@ -115,7 +115,7 @@ export function createWebWorkerMessageTransports(worker: Worker = globalWorkerSc
 
 function globalWorkerScope(): Worker {
     const worker: Worker = global as any
-    if (!isFunction(worker.postMessage) || !isFunction(worker.terminate)) {
+    if (!isFunction(worker.postMessage) || 'document' in worker) {
         throw new Error('global scope is not a Worker')
     }
     return worker
