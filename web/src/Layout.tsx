@@ -3,7 +3,6 @@ import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from './backend/graphqlschema'
 import { LinkExtension } from './extension/Link'
 import { ExtensionsComponentProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
-import { ExtensionsRootProps } from './extensions/environment/ExtensionsRoot'
 import {
     ConfigurationCascadeProps,
     ExtensionsControllerProps,
@@ -26,8 +25,7 @@ export interface LayoutProps
         ExtensionsProps,
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps,
-        ExtensionsComponentProps,
-        ExtensionsRootProps {
+        ExtensionsComponentProps {
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
     siteAdminSideBarItems: SiteAdminSideBarItems
     userAccountSideBarItems: UserAccountSidebarItems

@@ -9,7 +9,6 @@ import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsComponentProps } from '../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsRootProps } from '../extensions/environment/ExtensionsRoot'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
@@ -37,7 +36,6 @@ interface Props
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         ExtensionsProps,
         ExtensionsComponentProps,
-        ExtensionsRootProps,
         ExtensionsControllerProps {
     user: GQL.IUser | null
     onHelpPopoverToggle: () => void
@@ -198,7 +196,6 @@ export class RepoContainer extends React.Component<Props, State> {
             onHelpPopoverToggle: this.props.onHelpPopoverToggle,
             extensions: this.props.extensions,
             extensionsOnComponentChange: this.props.extensionsOnComponentChange,
-            extensionsOnRootChange: this.props.extensionsOnRootChange,
             extensionsController: this.props.extensionsController,
             ...this.state.repoHeaderContributionsLifecycleProps,
         }

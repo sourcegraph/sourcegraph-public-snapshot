@@ -17,7 +17,6 @@ import {
     Component as ExtensionsComponent,
     EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT,
 } from 'sourcegraph/module/environment/environment'
-import { URI } from 'sourcegraph/module/types/textDocument'
 import { currentUser } from './auth'
 import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
@@ -221,7 +220,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     extensions={this.state.extensions}
                                     extensionsEnvironment={this.state.extensionsEnvironment}
                                     extensionsOnComponentChange={this.extensionsOnComponentChange}
-                                    extensionsOnRootChange={this.extensionsOnRootChange}
                                     extensionsController={this.state.extensionsController}
                                 />
                             )
@@ -314,13 +312,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     private extensionsOnComponentChange = (component: ExtensionsComponent | null): void => {
         this.setState(
             prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, component } }),
-            () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
-        )
-    }
-
-    private extensionsOnRootChange = (root: URI | null): void => {
-        this.setState(
-            prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, root } }),
             () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
         )
     }

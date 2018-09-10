@@ -5,12 +5,10 @@ import * as React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import { makeRepoURI } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
-import { ExtensionsComponentProps, USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsRoot, ExtensionsRootProps } from '../extensions/environment/ExtensionsRoot'
+import { ExtensionsComponentProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
@@ -39,7 +37,6 @@ interface RepoRevContainerProps
         RepoHeaderContributionsLifecycleProps,
         ExtensionsProps,
         ExtensionsComponentProps,
-        ExtensionsRootProps,
         ExtensionsControllerProps {
     repo: GQL.IRepository
     rev: string
@@ -425,17 +422,6 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                {USE_PLATFORM &&
-                    this.props.resolvedRevOrError &&
-                    !isErrorLike(this.props.resolvedRevOrError) && (
-                        <ExtensionsRoot
-                            root={makeRepoURI({
-                                repoPath: this.props.repo.name,
-                                commitID: this.props.resolvedRevOrError.commitID,
-                            })}
-                            extensionsOnRootChange={this.props.extensionsOnRootChange}
-                        />
-                    )}
             </div>
         )
     }
