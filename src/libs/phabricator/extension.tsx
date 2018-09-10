@@ -1,8 +1,11 @@
 import '../../config/polyfill'
 
 import { setSourcegraphUrl } from '../../shared/util/context'
+import { featureFlags } from '../../shared/util/featureFlags'
+import { injectCodeIntelligence } from '../code_intelligence/inject'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
-import { injectPhabricatorBlobAnnotators } from './inject'
+import { phabCodeViews } from './code_views'
+import { injectPhabricatorBlobAnnotators } from './inject_old'
 import { expanderListen, metaClickOverride, setupPageLoadListener } from './util'
 
 // NOTE: injectModules is idempotent, so safe to call multiple times on the same page.
@@ -12,7 +15,17 @@ function injectModules(): void {
     extensionMarker.style.display = 'none'
     document.body.appendChild(extensionMarker)
 
-    injectPhabricatorBlobAnnotators().catch(e => console.error(e))
+    featureFlags
+        .isEnabled('newTooltips')
+        .then(enabled => {
+            if (enabled) {
+                injectCodeIntelligence({ name: 'phabricator', codeViews: phabCodeViews })
+                return
+            }
+
+            injectPhabricatorBlobAnnotators().catch(e => console.error(e))
+        })
+        .catch(err => console.error('could not get feature flag', err))
 }
 
 export function init(): void {

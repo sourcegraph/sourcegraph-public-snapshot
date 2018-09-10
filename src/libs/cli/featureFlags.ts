@@ -2,7 +2,7 @@ import * as OmniCLI from 'omnicli'
 
 import storage from '../../browser/storage'
 import { featureFlagDefaults, FeatureFlags } from '../../browser/types'
-import * as featureFlags from '../../shared/util/featureFlags'
+import { featureFlags } from '../../shared/util/featureFlags'
 
 const keyIsFeatureFlag = (key: string): key is keyof FeatureFlags => featureFlagDefaults[key] !== undefined
 

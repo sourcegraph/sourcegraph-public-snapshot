@@ -1,3 +1,12 @@
+/**
+ * This component is deprecated and will be removed once the GitHub inject method is no longer in use and
+ * code intelligence on GitHub is provided by the `code_intelligence` library.
+ *
+ * This file contains the code for the CodeViewToolbar before https://github.com/sourcegraph/browser-extensions/pull/32.
+ * That PR contains changes that made it easier for abstract support that fits each code host (mainly just making Phabricator possible).
+ * It wasn't worth making the changes backward compatible or changing the existing inject method to work with the new one.
+ */
+
 import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
 import { ControllerProps } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
@@ -10,7 +19,6 @@ import {
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
-import { FileInfo } from '../../libs/code_intelligence/inject'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { CodeIntelStatusIndicator } from './CodeIntelStatusIndicator'
@@ -24,8 +32,15 @@ export interface ButtonProps {
 
 interface CodeViewToolbarProps
     extends Partial<ExtensionsProps<ConfigurationSubject, Settings>>,
-        Partial<ControllerProps<ConfigurationSubject, Settings>>,
-        FileInfo {
+        Partial<ControllerProps<ConfigurationSubject, Settings>> {
+    repoPath: string
+    filePath: string
+
+    baseCommitID: string
+    baseRev?: string
+    headCommitID?: string
+    headRev?: string
+
     onEnabledChange?: (enabled: boolean) => void
 
     buttonProps: ButtonProps
@@ -87,58 +102,50 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                     key="code-intel-status"
                     userIsSiteAdmin={currentUser ? currentUser.siteAdmin : false}
                     repoPath={this.props.repoPath}
-                    commitID={this.props.commitID}
+                    commitID={this.props.baseCommitID}
                     filePath={this.props.filePath}
                     onChange={this.props.onEnabledChange}
                     simpleProviderFns={this.props.simpleProviderFns}
                     site={site}
                 />
-                {this.props.baseCommitID &&
-                    this.props.baseHasFileContents && (
-                        <OpenOnSourcegraph
-                            label={'View File (base)'}
-                            ariaLabel="View file on Sourcegraph"
-                            openProps={{
-                                repoPath: this.props.baseRepoPath || this.props.repoPath,
-                                filePath: this.props.baseFilePath || this.props.filePath,
-                                rev: this.props.baseRev || this.props.baseCommitID,
-                                query: {
-                                    diff: {
-                                        rev: this.props.baseCommitID,
-                                    },
-                                },
-                            }}
-                            className={this.props.buttonProps.className}
-                            style={this.props.buttonProps.style}
-                            iconStyle={this.props.buttonProps.iconStyle}
-                        />
-                    )}
-
-                {/*
-                  Use a ternary here because prettier insists on changing parens resulting in this button only being rendered
-                  if the condition after the || is satisfied.
-                 */}
-                {!this.props.baseCommitID || (this.props.baseCommitID && this.props.headHasFileContents) ? (
+                <OpenOnSourcegraph
+                    label={`View File${this.props.headCommitID ? ' (base)' : ''}`}
+                    ariaLabel="View file on Sourcegraph"
+                    openProps={{
+                        repoPath: this.props.repoPath,
+                        filePath: this.props.filePath,
+                        rev: this.props.baseRev || this.props.baseCommitID,
+                        query: this.props.headCommitID
+                            ? {
+                                  diff: {
+                                      rev: this.props.baseCommitID,
+                                  },
+                              }
+                            : undefined,
+                    }}
+                    className={this.props.buttonProps.className}
+                    style={this.props.buttonProps.style}
+                    iconStyle={this.props.buttonProps.iconStyle}
+                />
+                {this.props.headCommitID && (
                     <OpenOnSourcegraph
-                        label={`View File${this.props.baseCommitID ? ' (head)' : ''}`}
+                        label={'View File (head)'}
                         ariaLabel="View file on Sourcegraph"
                         openProps={{
                             repoPath: this.props.repoPath,
                             filePath: this.props.filePath,
-                            rev: this.props.rev || this.props.commitID,
-                            query: this.props.commitID
-                                ? {
-                                      diff: {
-                                          rev: this.props.commitID,
-                                      },
-                                  }
-                                : undefined,
+                            rev: this.props.headRev || this.props.headCommitID,
+                            query: {
+                                diff: {
+                                    rev: this.props.baseCommitID,
+                                },
+                            },
                         }}
                         className={this.props.buttonProps.className}
                         style={this.props.buttonProps.style}
                         iconStyle={this.props.buttonProps.iconStyle}
                     />
-                ) : null}
+                )}
             </div>
         )
     }

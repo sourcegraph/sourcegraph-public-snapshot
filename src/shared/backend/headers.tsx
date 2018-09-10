@@ -1,3 +1,4 @@
+import { isInPage, isPhabricator } from '../context'
 import { getExtensionVersionSync, getPlatformName } from '../util/context'
 
 /**
@@ -5,7 +6,7 @@ import { getExtensionVersionSync, getPlatformName } from '../util/context'
  * Requests can be blocked for various reasons and therefore the HTTP request MUST use the headers returned here.
  */
 export function getHeaders(): { [name: string]: string } | undefined {
-    if (window.SOURCEGRAPH_PHABRICATOR_EXTENSION) {
+    if (isPhabricator && isInPage) {
         return undefined
     }
 
@@ -31,7 +32,7 @@ export function getHeaders(): { [name: string]: string } | undefined {
     // - Safari includes "Origin: <window.location.origin>" (where "<window.location.origin>" is the
     //   `window.location.origin` of the current page).
     // - Firefox does NOT include any Origin header, so we need to send an "X-Requested-With" header.
-    const needsCORSHeader = getPlatformName() === 'firefox-extension'
+    const needsCORSHeader = getPlatformName() === 'firefox-extension' || isPhabricator
     if (needsCORSHeader) {
         return { 'X-Requested-With': `Sourcegraph - ${getPlatformName()} v${getExtensionVersionSync()}` }
     }

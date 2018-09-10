@@ -114,13 +114,16 @@ storage.onChanged((changes, areaName) => {
     }
 })
 
-permissions.getAll().then(permissions => {
-    if (!permissions.origins) {
-        customServerOrigins = []
-        return
-    }
-    customServerOrigins = without(permissions.origins, ...jsContentScriptOrigins)
-})
+permissions
+    .getAll()
+    .then(permissions => {
+        if (!permissions.origins) {
+            customServerOrigins = []
+            return
+        }
+        customServerOrigins = without(permissions.origins, ...jsContentScriptOrigins)
+    })
+    .catch(err => console.error('could not get permissions:', err))
 
 permissions.onAdded(permissions => {
     if (!permissions.origins) {
@@ -278,7 +281,7 @@ function createEnableDomainContextMenu(callback?: () => void): void {
                 }
                 try {
                     const url = new URL(tab.url)
-                    permissions.request([url.origin])
+                    permissions.request([url.origin]).catch(err => console.error('Permissions request denied', err))
                 } catch {
                     console.error('Could not get tab url to request permissions')
                 }
@@ -301,15 +304,18 @@ function requestPermissionsForEnterpriseUrls(urls: string[], cb: (res?: any) => 
 }
 
 function requestPermissionsForSourcegraphUrl(url: string): void {
-    permissions.request([url]).then(granted => {
-        if (granted) {
-            storage.setSync({ sourcegraphURL: url })
-        }
-    })
+    permissions
+        .request([url])
+        .then(granted => {
+            if (granted) {
+                storage.setSync({ sourcegraphURL: url })
+            }
+        })
+        .catch(err => console.error('Permissions request denied', err))
 }
 
 function removeEnterpriseUrl(url: string, cb: (res?: any) => void): void {
-    permissions.remove(url)
+    permissions.remove(url).catch(err => console.error('could not remove permission', err))
 
     storage.getSyncItem('enterpriseUrls', ({ enterpriseUrls }) => {
         storage.setSync({ enterpriseUrls: without(enterpriseUrls, url) }, cb)
@@ -354,16 +360,19 @@ function handleManagedPermissionRequest(managedUrls: string[]): void {
     if (managedUrls.length === 0) {
         return
     }
-    permissions.getAll().then(perms => {
-        const origins = perms.origins || []
-        if (managedUrls.every(val => origins.indexOf(`${val}/*`) >= 0)) {
-            setDefaultBrowserAction()
-            return
-        }
-        browserAction.onClicked(() => {
-            runtime.openOptionsPage()
+    permissions
+        .getAll()
+        .then(perms => {
+            const origins = perms.origins || []
+            if (managedUrls.every(val => origins.indexOf(`${val}/*`) >= 0)) {
+                setDefaultBrowserAction()
+                return
+            }
+            browserAction.onClicked(() => {
+                runtime.openOptionsPage()
+            })
         })
-    })
+        .catch(err => console.error('could not get all permissions', err))
 }
 
 function setDefaultBrowserAction(): void {

@@ -1,9 +1,11 @@
-import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { from, Observable } from 'rxjs'
+import { ajax } from 'rxjs/ajax'
+import { map, switchMap } from 'rxjs/operators'
 import storage from '../../browser/storage'
 import { getContext } from '../../shared/backend/context'
 import { mutateGraphQL } from '../../shared/backend/graphql'
 import { isExtension } from '../../shared/context'
+import { resolveRepo } from '../../shared/repo/backend'
 import { DEFAULT_SOURCEGRAPH_URL, sourcegraphUrl } from '../../shared/util/context'
 import { memoizeObservable } from '../../shared/util/memoize'
 import { normalizeRepoPath } from './util'
@@ -322,6 +324,43 @@ export function getRepoDetailsFromCallsign(callsign: string): Promise<Phabricato
     })
 }
 
+export function getRepoDetailsFromCallsignObservable(callsign: string): Observable<PhabricatorRepoDetails> {
+    const form = createConduitRequestForm()
+    form.set('params[constraints]', JSON.stringify({ callsigns: [callsign] }))
+    form.set('params[attachments]', '{ "uris": true }')
+
+    return ajax({
+        url: window.location.origin + '/api/diffusion.repository.search',
+        withCredentials: true,
+        headers: new Headers({ Accept: 'application/json' }),
+        body: form,
+    }).pipe(
+        map(({ response }) => response as ConduitReposResponse),
+        map(res => {
+            if (res.error_code) {
+                throw new Error(`error ${res.error_code}: ${res.error_info}`)
+            }
+
+            return res.result.data[0]
+        }),
+        switchMap(repo => convertConduitRepoToRepoDetailsObservable(repo)),
+        map(details => {
+            if (!details) {
+                throw new Error('could not parse repo details')
+            }
+
+            return details
+        }),
+        switchMap(details =>
+            createPhabricatorRepo({
+                callsign,
+                repoPath: details.repoPath,
+                phabricatorURL: window.location.origin,
+            }).pipe(map(() => details))
+        )
+    )
+}
+
 /**
  *  getSourcegraphURLFromConduit returns the current Sourcegraph URL on the window object or will query the
  *  sourcegraph.configuration conduit API endpoint. The Phabricator extension updates the window object automatically, but in the case it fails
@@ -446,6 +485,50 @@ function convertConduitRepoToRepoDetails(repo: ConduitRepo): Promise<Phabricator
     })
 }
 
+function convertConduitRepoToRepoDetailsObservable(repo: ConduitRepo): Observable<PhabricatorRepoDetails | null> {
+    return new Observable(observer => {
+        if (isExtension) {
+            return storage.getSync(items => {
+                if (items.phabricatorMappings) {
+                    for (const mapping of items.phabricatorMappings) {
+                        if (mapping.callsign === repo.fields.callsign) {
+                            return observer.next({
+                                callsign: repo.fields.callsign,
+                                repoPath: mapping.path,
+                            })
+                        }
+                    }
+                }
+                return observer.next(convertToDetails(repo))
+            })
+        } else {
+            // The path to a phabricator repository on a Sourcegraph instance may differ than it's URI / name from the
+            // phabricator conduit API. Since we do not currently send the PHID with the Phabricator repository this a
+            // backwards work around configuration setting to ensure mappings are correct. This logic currently exists
+            // in the browser extension options menu.
+            const callsignMappings =
+                window.localStorage.getItem('PHABRICATOR_CALLSIGN_MAPPINGS') || window.PHABRICATOR_CALLSIGN_MAPPINGS
+            const details = convertToDetails(repo)
+            if (callsignMappings) {
+                const mappings =
+                    typeof callsignMappings === 'string'
+                        ? (JSON.parse(callsignMappings) as { path: string; callsign: string }[])
+                        : callsignMappings
+
+                for (const mapping of mappings) {
+                    if (mapping.callsign === repo.fields.callsign) {
+                        return observer.next({
+                            callsign: repo.fields.callsign,
+                            repoPath: mapping.path,
+                        })
+                    }
+                }
+            }
+            return observer.next(details)
+        }
+    })
+}
+
 function convertToDetails(repo: ConduitRepo): PhabricatorRepoDetails | null {
     let uri: ConduitURI | undefined
     for (const u of repo.attachments.uris.uris) {
@@ -514,3 +597,186 @@ export const resolveStagingRev = memoizeObservable(
         ),
     ({ diffID }: ResolveStagingOptions) => diffID.toString()
 )
+
+function hasThisFileChanged(filePath: string, changes: ConduitDiffChange[]): boolean {
+    for (const change of changes) {
+        if (change.currentPath === filePath) {
+            return true
+        }
+    }
+    return false
+}
+
+interface ResolveDiffOpt {
+    repoPath: string
+    filePath: string
+    differentialID: number
+    diffID: number
+    leftDiffID?: number
+    isBase: boolean
+    useDiffForBase: boolean // indicates whether the base should use the diff commit
+    useBaseForDiff: boolean // indicates whether the diff should use the base commit
+}
+
+interface PropsWithInfo {
+    info: ConduitDiffDetails
+    repoPath: string
+    filePath: string
+    differentialID: number
+    diffID: number
+    leftDiffID?: number | undefined
+    isBase: boolean
+    useDiffForBase: boolean
+    useBaseForDiff: boolean
+}
+
+function getPropsWithInfo(props: ResolveDiffOpt): Promise<PropsWithInfo> {
+    return new Promise((resolve, reject) => {
+        getDiffDetailsFromConduit(props.diffID, props.differentialID)
+            .then(info => ({
+                ...props,
+                info,
+            }))
+            .then(propsWithInfo => {
+                if (propsWithInfo.isBase || !propsWithInfo.leftDiffID) {
+                    // no need to update propsWithInfo
+                } else if (
+                    hasThisFileChanged(propsWithInfo.filePath, propsWithInfo.info.changes) ||
+                    propsWithInfo.isBase ||
+                    !propsWithInfo.leftDiffID
+                ) {
+                    // no need to update propsWithInfo
+                } else {
+                    getDiffDetailsFromConduit(propsWithInfo.leftDiffID, propsWithInfo.differentialID)
+                        .then(info =>
+                            resolve({
+                                ...propsWithInfo,
+                                info,
+                                diffID: propsWithInfo.leftDiffID!,
+                                useBaseForDiff: true,
+                            })
+                        )
+                        .catch(reject)
+                }
+
+                resolve(propsWithInfo)
+            })
+            .catch(() => {
+                // TODO: handle error
+            })
+    })
+}
+
+function getStagingDetails(
+    propsWithInfo: PropsWithInfo
+): { repoPath: string; ref: ConduitRef; unconfigured: boolean } | undefined {
+    const stagingInfo = propsWithInfo.info.properties['arc.staging']
+    if (!stagingInfo) {
+        return undefined
+    }
+    let key: string
+    if (propsWithInfo.isBase) {
+        const type = propsWithInfo.useDiffForBase ? 'diff' : 'base'
+        key = `refs/tags/phabricator/${type}/${propsWithInfo.diffID}`
+    } else {
+        const type = propsWithInfo.useBaseForDiff ? 'base' : 'diff'
+        key = `refs/tags/phabricator/${type}/${propsWithInfo.diffID}`
+    }
+    for (const ref of propsWithInfo.info.properties['arc.staging'].refs) {
+        if (ref.ref === key) {
+            const remote = ref.remote.uri
+            if (remote) {
+                return {
+                    repoPath: normalizeRepoPath(remote),
+                    ref,
+                    unconfigured: stagingInfo.status === 'repository.unconfigured',
+                }
+            }
+        }
+    }
+    return undefined
+}
+
+export interface ResolvedDiff {
+    commitID: string
+    stagingRepoPath?: string
+}
+
+export function resolveDiffRev(props: ResolveDiffOpt): Observable<ResolvedDiff> {
+    // TODO: Do a proper refactor and convert all of this function call and it's deps from Promises to Observables.
+    return from<ResolvedDiff>(
+        new Promise<ResolvedDiff>((resolve, reject) => {
+            getPropsWithInfo(props)
+                .then(propsWithInfo => {
+                    const stagingDetails = getStagingDetails(propsWithInfo)
+                    const conduitProps = {
+                        repoName: propsWithInfo.repoPath,
+                        diffID: propsWithInfo.diffID,
+                        baseRev: propsWithInfo.info.sourceControlBaseRevision,
+                        date: propsWithInfo.info.dateCreated,
+                        authorName: propsWithInfo.info.authorName,
+                        authorEmail: propsWithInfo.info.authorEmail,
+                        description: propsWithInfo.info.description,
+                    }
+                    if (!stagingDetails || stagingDetails.unconfigured) {
+                        // The last diff (final commit) is not found in the staging area, but rather on the description.
+                        if (propsWithInfo.isBase && !propsWithInfo.useDiffForBase) {
+                            resolve({ commitID: propsWithInfo.info.sourceControlBaseRevision })
+                            return
+                        }
+                        getRawDiffFromConduit(propsWithInfo.diffID)
+                            .then(patch =>
+                                resolveStagingRev({ ...conduitProps, patch }).subscribe(commitID => {
+                                    if (commitID) {
+                                        resolve({ commitID })
+                                    }
+                                })
+                            )
+                            .catch(() => reject(new Error('unable to fetch raw diff')))
+                        return
+                    }
+
+                    if (!stagingDetails.unconfigured) {
+                        // Ensure the staging repo exists before resolving. Otherwise create the patch.
+                        resolveRepo({ repoPath: stagingDetails.repoPath }).subscribe(
+                            () =>
+                                resolve({
+                                    commitID: stagingDetails.ref.commit,
+                                    stagingRepoPath: stagingDetails.repoPath,
+                                }),
+                            error => {
+                                getRawDiffFromConduit(propsWithInfo.diffID)
+                                    .then(patch =>
+                                        resolveStagingRev({ ...conduitProps, patch }).subscribe(commitID => {
+                                            if (commitID) {
+                                                resolve({ commitID })
+                                                return
+                                            }
+                                            reject(new Error('unable to resolve staging object'))
+                                        })
+                                    )
+                                    .catch(() => reject(new Error('unable to fetch raw diff')))
+                            }
+                        )
+                        return
+                    }
+
+                    if (!propsWithInfo.isBase) {
+                        for (const cmit of Object.keys(propsWithInfo.info.properties['local:commits'])) {
+                            return resolve({ commitID: cmit })
+                        }
+                    }
+                    // last ditch effort to search conduit API for commit ID
+                    try {
+                        searchForCommitID(propsWithInfo)
+                            .then(commitID => resolve({ commitID }))
+                            .catch(reject)
+                    } catch (e) {
+                        // ignore
+                    }
+                    reject(new Error('did not find commitID'))
+                })
+                .catch(reject)
+        })
+    )
+}

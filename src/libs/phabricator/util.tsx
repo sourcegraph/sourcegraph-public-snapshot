@@ -11,7 +11,7 @@ function matchPageTag(): RegExpExecArray | null {
     return TAG_PATTERN.exec(el.children[0].getAttribute('href') as string)
 }
 
-function getCallsignFromPageTag(): string | null {
+export function getCallsignFromPageTag(): string | null {
     const match = matchPageTag()
     if (!match) {
         return null
@@ -291,9 +291,15 @@ export function getPhabricatorState(
                                 mode: PhabricatorMode.Differential,
                             })
                         })
-                        .catch(reject)
+                        .catch(err => {
+                            console.log('uhoh', err)
+                            reject(err)
+                        })
                 })
-                .catch(reject)
+                .catch(err => {
+                    console.log('uhoh', err)
+                    reject(err)
+                })
             return
         }
 

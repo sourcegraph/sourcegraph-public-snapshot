@@ -14,6 +14,7 @@ import {
     setSourcegraphUrl,
     setUseExtensions,
 } from '../../shared/util/context'
+import { featureFlags } from '../../shared/util/featureFlags'
 
 import { injectBitbucketServer } from '../../libs/bitbucket/inject'
 import { injectGitHubApplication } from '../../libs/github/inject'
@@ -103,6 +104,8 @@ function injectApplication(): void {
     document.addEventListener('sourcegraph:storage-init', () => {
         storage.getSync(handleGetStorage)
     })
+    // Allow users to set this via the console.
+    ;(window as any).sourcegraphFeatureFlags = featureFlags
 }
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {

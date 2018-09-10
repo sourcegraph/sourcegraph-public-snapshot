@@ -62,7 +62,7 @@ class ContentStorageArea implements ISafariStorageArea {
             // We should always have a sourcegraphURL
             if (items.sourcegraphURL) {
                 this.items = items
-                document.dispatchEvent(new CustomEvent('sourcegraph:storage-init'))
+                document.dispatchEvent(new CustomEvent<{}>('sourcegraph:storage-init'))
 
                 for (const cb of this.pendingGetCallbacks) {
                     cb(this.items)

@@ -1,4 +1,7 @@
-import { injectPhabricatorBlobAnnotators } from './inject'
+import { featureFlags } from '../../shared/util/featureFlags'
+import { injectCodeIntelligence } from '../code_intelligence/inject'
+import { phabCodeViews } from './code_views'
+import { injectPhabricatorBlobAnnotators } from './inject_old'
 import { expanderListen, javelinPierce, metaClickOverride, setupPageLoadListener } from './util'
 
 // This is injection for the chrome extension.
@@ -20,5 +23,15 @@ export function injectPhabricatorApplication(): void {
 }
 
 function injectModules(): void {
-    injectPhabricatorBlobAnnotators().catch(e => console.error(e))
+    featureFlags
+        .isEnabled('newTooltips')
+        .then(enabled => {
+            if (enabled) {
+                injectCodeIntelligence({ codeViews: phabCodeViews, name: 'phabricator' })
+                return
+            }
+
+            injectPhabricatorBlobAnnotators().catch(e => console.error(e))
+        })
+        .catch(err => console.error('could not get feature flag', err))
 }

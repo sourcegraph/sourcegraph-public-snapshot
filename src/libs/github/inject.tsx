@@ -46,9 +46,9 @@ import {
 } from '../../shared/backend/lsp'
 import { Alerts } from '../../shared/components/Alerts'
 import { BlobAnnotator } from '../../shared/components/BlobAnnotator'
-import { CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { ConfigureSourcegraphButton } from '../../shared/components/ConfigureSourcegraphButton'
 import { ContextualSourcegraphButton } from '../../shared/components/ContextualSourcegraphButton'
+import { CodeViewToolbar } from '../../shared/components/LegacyCodeViewToolbar'
 import { ServerAuthButton } from '../../shared/components/ServerAuthButton'
 import { SymbolsDropdownContainer } from '../../shared/components/SymbolsDropdownContainer'
 import { WithResolvedRev } from '../../shared/components/WithResolvedRev'
@@ -65,7 +65,7 @@ import {
     sourcegraphUrl,
     useExtensions,
 } from '../../shared/util/context'
-import * as featureFlags from '../../shared/util/featureFlags'
+import { featureFlags } from '../../shared/util/featureFlags'
 import { blobDOMFunctions, diffDomFunctions, searchCodeSnippetDOMFunctions } from './dom_functions'
 import { initSearch } from './search'
 import {
