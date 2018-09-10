@@ -4,7 +4,6 @@ import '../../config/polyfill'
 
 import { without } from 'lodash'
 import { ajax } from 'rxjs/ajax'
-import { URI } from 'sourcegraph/module/types/textDocument'
 import * as browserAction from '../../browser/browserAction'
 import * as contextMenus from '../../browser/contextMenu'
 import * as omnibox from '../../browser/omnibox'
@@ -423,7 +422,6 @@ const spawnAndConnect = ({
 export interface ExtensionConnectionInfo {
     extensionID: string
     jsBundleURL: string
-    rootURI: URI
 }
 
 /**

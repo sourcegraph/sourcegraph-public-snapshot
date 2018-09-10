@@ -52,18 +52,18 @@ import { ContextualSourcegraphButton } from '../../shared/components/ContextualS
 import { ServerAuthButton } from '../../shared/components/ServerAuthButton'
 import { SymbolsDropdownContainer } from '../../shared/components/SymbolsDropdownContainer'
 import { WithResolvedRev } from '../../shared/components/WithResolvedRev'
-import { AbsoluteRepo, AbsoluteRepoFile, CodeCell, DiffResolvedRevSpec } from '../../shared/repo'
+import { AbsoluteRepoFile, CodeCell, DiffResolvedRevSpec } from '../../shared/repo'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { getTableDataCell, hideTooltip } from '../../shared/repo/tooltips'
 import { RepoRevSidebar } from '../../shared/tree/RepoRevSidebar'
 import {
     eventLogger,
     getModeFromPath,
-    useExtensions,
     inlineSymbolSearchEnabled,
     renderMermaidGraphsEnabled,
     repositoryFileTreeEnabled,
     sourcegraphUrl,
+    useExtensions,
 } from '../../shared/util/context'
 import * as featureFlags from '../../shared/util/featureFlags'
 import { blobDOMFunctions, diffDomFunctions, searchCodeSnippetDOMFunctions } from './dom_functions'
@@ -151,7 +151,6 @@ function injectCodeIntelligence(): void {
                     constExtensionsContextController.context.configurationCascade
                 ).subscribe(
                     ([configuredExtensions, configurationCascade]) => {
-                        const toURI = (ctx: AbsoluteRepo) => `git://${ctx.repoPath}?${ctx.commitID}`
                         const toURIWithPath = (ctx: AbsoluteRepoFile) =>
                             `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
 
@@ -217,7 +216,6 @@ function injectCodeIntelligence(): void {
                             .pipe(take(1))
                             .subscribe(previous => {
                                 constController.setEnvironment({
-                                    root: toURI({ repoPath, commitID }),
                                     component: {
                                         document: {
                                             uri: toURIWithPath({ repoPath, commitID, filePath }),

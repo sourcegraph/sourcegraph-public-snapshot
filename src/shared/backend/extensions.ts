@@ -54,9 +54,6 @@ export function createMessageTransports(
     if (!extension.manifest) {
         throw new Error(`unable to connect to extension ${JSON.stringify(extension.id)}: no manifest found`)
     }
-    if (!options.root) {
-        throw new Error(`unable to connect to extension ${JSON.stringify(extension.id)}: no root`)
-    }
     if (isErrorLike(extension.manifest)) {
         throw new Error(
             `unable to connect to extension ${JSON.stringify(extension.id)}: invalid manifest: ${
@@ -67,7 +64,6 @@ export function createMessageTransports(
     return createPlatformMessageTransports({
         extensionID: extension.id,
         jsBundleURL: extension.manifest.url,
-        rootURI: options.root,
     }).catch(err => {
         console.error('Error connecting to', extension.id + ':', err)
         throw err
