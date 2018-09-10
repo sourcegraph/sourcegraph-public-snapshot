@@ -1,5 +1,6 @@
 import * as assert from 'assert'
 import { BehaviorSubject, Subject } from 'rxjs'
+import { DocumentSelector } from 'sourcegraph'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment } from '../../environment/environment'
 import { NotificationType } from '../../jsonrpc2/messages'
 import {
@@ -10,7 +11,6 @@ import {
     DidOpenTextDocumentParams,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { DocumentSelector } from '../../types/document'
 import { TextDocumentItem } from '../../types/textDocument'
 import { Client } from '../client'
 import {

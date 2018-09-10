@@ -8,10 +8,11 @@
     "noEmit": true,
     "lib": ["es2018"],
     "sourceRoot": "src",
+    "baseUrl": ".",
+    "paths": { "sourcegraph": ["./src/sourcegraph"] },
     "inlineSources": true,
     "inlineSourceMap": true,
     "noErrorTruncation": true,
-    "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "plugins": [

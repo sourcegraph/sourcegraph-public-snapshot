@@ -1,8 +1,8 @@
+import { DocumentSelector, MarkupKind } from 'sourcegraph'
 import { NotificationType } from '../jsonrpc2/messages'
-import { DocumentSelector } from '../types/document'
-import { MarkupKind } from '../types/markup'
-import { Position } from '../types/position'
 import { TextDocumentIdentifier, TextDocumentItem } from '../types/textDocument'
+import { Position } from './plainTypes'
+
 /**
  * A parameter literal used in requests to pass a text document and a position inside that
  * document.

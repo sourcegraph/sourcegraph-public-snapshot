@@ -11,9 +11,9 @@
   "bugs": {
     "url": "https://github.com/sourcegraph/sourcegraph-extension-api/issues"
   },
-  "main": "module/index.js",
-  "module": "module/index.js",
-  "types": "module/index.d.ts",
+  "main": "lib/extension/index.js",
+  "module": "lib/extension/index.js",
+  "types": "lib/sourcegraph.d.ts",
   "files": [
     "lib",
     "module"
@@ -33,6 +33,7 @@
     "watch:typecheck": "tsc -p tsconfig.json -w",
     "watch:build:assets": "npm run build:assets && nodemon --watch src/protocol/contribution.ts --exec 'npm run build:assets || exit 1'",
     "watch:build:module": "tsc -p tsconfig.dist.json -w",
+    "watch:build:api": "nodemon --watch src/sourcegraph.d.ts --watch src/extension/index.js --ext ts,js --exec 'npm run build:api'",
     "watch:build": "concurrently --kill-others 'npm:watch:build:*'",
     "watch:test": "npm run test -- -w",
     "watch:cover": "nodemon --watch src/ --ext ts,js,json --watch package.json --exec 'npm run cover || exit 1'"

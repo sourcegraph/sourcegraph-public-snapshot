@@ -1,4 +1,5 @@
 import { from, Observable, Unsubscribable } from 'rxjs'
+import { MarkupKind } from 'sourcegraph'
 import { ProvideTextDocumentHoverSignature } from '../../environment/providers/hover'
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import {
@@ -7,8 +8,7 @@ import {
     TextDocumentPositionParams,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { Hover } from '../../types/hover'
-import { MarkupKind } from '../../types/markup'
+import { Hover } from '../../protocol/plainTypes'
 import { Client } from '../client'
 import { ensure, Feature } from './common'
 

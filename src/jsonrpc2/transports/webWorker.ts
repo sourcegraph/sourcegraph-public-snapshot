@@ -115,6 +115,7 @@ export function createWebWorkerMessageTransports(worker: Worker = globalWorkerSc
 
 function globalWorkerScope(): Worker {
     const worker: Worker = global as any
+    // tslint:disable-next-line no-unbound-method
     if (!isFunction(worker.postMessage) || 'document' in worker) {
         throw new Error('global scope is not a Worker')
     }

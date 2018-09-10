@@ -1,15 +1,5 @@
-import { MarkupKind } from './markup'
-import { Range } from './range'
-
-export interface MarkupContent {
-    value: string
-    kind: MarkupKind
-}
-
-export interface Hover {
-    contents: MarkupContent
-    range?: Range
-}
+import { Hover, MarkupContent } from 'sourcegraph'
+import { Hover as PlainHover, Range } from '../protocol/plainTypes'
 
 /** A hover that is merged from multiple Hover results and normalized. */
 export interface HoverMerged {
@@ -19,7 +9,7 @@ export interface HoverMerged {
 
 export namespace HoverMerged {
     /** Create a merged hover from the given individual hovers. */
-    export function from(values: (Hover | null)[]): HoverMerged | null {
+    export function from(values: (Hover | PlainHover | null)[]): HoverMerged | null {
         const contents: HoverMerged['contents'] = []
         let range: HoverMerged['range']
         for (const result of values) {

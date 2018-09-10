@@ -1,4 +1,5 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
+import { DocumentSelector } from 'sourcegraph'
 import { MessageTransports } from '../jsonrpc2/connection'
 import {
     GenericNotificationHandler,
@@ -18,7 +19,6 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../protocol'
-import { DocumentSelector } from '../types/document'
 import { isFunction, tryCatchPromise } from '../util'
 import { Connection, createConnection } from './connection'
 import { CloseAction, DefaultErrorHandler, ErrorAction, ErrorHandler } from './errorHandler'
@@ -212,6 +212,8 @@ export class Client implements Unsubscribable {
 
                 connection.onRequest(RegistrationRequest.type, params => this.handleRegistrationRequest(params))
                 connection.onRequest(UnregistrationRequest.type, params => this.handleUnregistrationRequest(params))
+
+                connection.onRequest('ping', () => 'pong')
 
                 // Initialize static features.
                 for (const feature of this.features) {

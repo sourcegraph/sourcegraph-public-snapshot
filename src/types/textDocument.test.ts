@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { DocumentSelector } from './document'
+import { DocumentSelector } from 'sourcegraph'
 import { match, score, TextDocumentItem } from './textDocument'
 
 const FIXTURE_TEXT_DOCUMENT: TextDocumentItem = { uri: 'file:///f', languageId: 'l', version: 1, text: '' }

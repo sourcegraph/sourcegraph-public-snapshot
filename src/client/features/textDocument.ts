@@ -1,5 +1,6 @@
 import { Observable, Subscription } from 'rxjs'
 import { bufferCount, filter, map } from 'rxjs/operators'
+import { DocumentSelector, TextDocument } from 'sourcegraph'
 import { MessageType as RPCMessageType, NotificationType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
@@ -9,8 +10,7 @@ import {
     DidOpenTextDocumentParams,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { DocumentSelector } from '../../types/document'
-import { match, TextDocument, TextDocumentItem } from '../../types/textDocument'
+import { match, TextDocumentItem } from '../../types/textDocument'
 import { Client } from '../client'
 import { DynamicFeature, ensure, RegistrationData } from './common'
 

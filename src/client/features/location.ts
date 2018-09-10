@@ -11,7 +11,7 @@ import {
     TextDocumentRegistrationOptions,
     TypeDefinitionRequest,
 } from '../../protocol'
-import { Location } from '../../types/location'
+import { Location } from '../../protocol/plainTypes'
 import { Client } from '../client'
 import { ensure, Feature } from './common'
 

@@ -1,5 +1,5 @@
 import minimatch from 'minimatch'
-import { DocumentFilter, DocumentSelector } from './document'
+import { DocumentFilter, DocumentSelector } from 'sourcegraph'
 
 /**
  * A literal to identify a text document in the client.
@@ -21,12 +21,6 @@ export interface TextDocumentItem {
     text: string
 }
 
-export interface TextDocument {
-    uri: string
-    languageId: string
-    version: number
-}
-
 export function match(
     selectors: DocumentSelector | IterableIterator<DocumentSelector>,
     document: TextDocumentItem
@@ -46,7 +40,16 @@ function isSingleDocumentSelector(
 }
 
 function isDocumentSelectorElement(value: any): value is DocumentSelector[0] {
-    return typeof value === 'string' || DocumentFilter.is(value)
+    return typeof value === 'string' || isDocumentFilter(value)
+}
+
+function isDocumentFilter(value: any): value is DocumentFilter {
+    const candidate: DocumentFilter = value
+    return (
+        typeof candidate.language === 'string' ||
+        typeof candidate.scheme === 'string' ||
+        typeof candidate.pattern === 'string'
+    )
 }
 
 function match1(selector: DocumentSelector, document: TextDocumentItem): boolean {

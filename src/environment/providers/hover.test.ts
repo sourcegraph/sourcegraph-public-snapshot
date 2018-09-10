@@ -1,8 +1,8 @@
 import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { Hover, HoverMerged } from '../../types/hover'
-import { MarkupKind } from '../../types/markup'
+import { Hover, MarkupKind } from 'sourcegraph'
+import { HoverMerged } from '../../types/hover'
 import { getHover, ProvideTextDocumentHoverSignature } from './hover'
 import { FIXTURE } from './registry.test'
 

@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { Location } from '../../types/location'
+import { Location } from '../../protocol/plainTypes'
 import {
     getLocation,
     getLocations,
