@@ -1,5 +1,5 @@
 import AddIcon from '@sourcegraph/icons/lib/Add'
-import ArrowLeftIcon from '@sourcegraph/icons/lib/ArrowLeft'
+import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { ExtensionsAreaPageProps } from './ExtensionsArea'
