@@ -1,12 +1,12 @@
 import assert from 'assert'
-import { MockMessageConnection } from '../../jsonrpc2/test/mockMessageConnection'
+import { MockMessageConnection } from '../../../jsonrpc2/test/mockMessageConnection'
 import {
     ConfigurationCascade,
     ConfigurationUpdateParams,
     ConfigurationUpdateRequest,
     DidChangeConfigurationNotification,
     DidChangeConfigurationParams,
-} from '../../protocol'
+} from '../../../protocol'
 import { Configuration, Observable } from '../api'
 import { observableValue } from '../util'
 import { createExtConfiguration, setValueAtKeyPath } from './configuration'
@@ -23,7 +23,7 @@ describe('ExtConfiguration', () => {
         mockConnection: MockMessageConnection
     } {
         const mockConnection = new MockMessageConnection()
-        const extConfiguration = createExtConfiguration({ rawConnection: mockConnection }, initial)
+        const extConfiguration = createExtConfiguration(mockConnection, initial)
         return { extConfiguration, mockConnection }
     }
 

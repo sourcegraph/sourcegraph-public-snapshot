@@ -1,6 +1,7 @@
 import { Subscription } from 'rxjs'
 import uuidv4 from 'uuid/v4'
-import { CommandRegistry } from '../../environment/providers/command'
+import { CommandRegistry } from '../../../environment/providers/command'
+import { MessageConnection } from '../../../jsonrpc2/connection'
 import {
     ExecuteCommandRegistrationOptions,
     ExecuteCommandRequest,
@@ -8,26 +9,26 @@ import {
     RegistrationRequest,
     UnregistrationParams,
     UnregistrationRequest,
-} from '../../protocol'
-import { Commands, SourcegraphExtensionAPI } from '../api'
+} from '../../../protocol'
+import { Commands } from '../api'
 
 /**
  * Creates the Sourcegraph extension API's {@link SourcegraphExtensionAPI#commands} value.
  *
- * @param ext The Sourcegraph extension API handle.
+ * @param rawConnection The connection to the Sourcegraph API client.
  * @return The {@link Creates the Sourcegraph extension API extension API's#commands} value.
  */
-export function createExtCommands(ext: Pick<SourcegraphExtensionAPI<any>, 'rawConnection'>): Commands {
+export function createExtCommands(rawConnection: MessageConnection): Commands {
     // TODO: move CommandRegistry to somewhere general since it's now used by the controller AND extension
     const commandRegistry = new CommandRegistry()
-    ext.rawConnection.onRequest(ExecuteCommandRequest.type, params => commandRegistry.executeCommand(params))
+    rawConnection.onRequest(ExecuteCommandRequest.type, params => commandRegistry.executeCommand(params))
     return {
         register: (command: string, run: (...args: any[]) => Promise<any>): Subscription => {
             const subscription = new Subscription()
 
             const id = uuidv4()
             subscription.add(commandRegistry.registerCommand({ command, run }))
-            ext.rawConnection
+            rawConnection
                 .sendRequest(RegistrationRequest.type, {
                     registrations: [
                         {
@@ -40,7 +41,7 @@ export function createExtCommands(ext: Pick<SourcegraphExtensionAPI<any>, 'rawCo
                 .catch(err => console.error(err))
 
             subscription.add(() => {
-                ext.rawConnection
+                rawConnection
                     .sendRequest(UnregistrationRequest.type, {
                         unregisterations: [{ id, method: ExecuteCommandRequest.type.method }],
                     } as UnregistrationParams)

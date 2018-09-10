@@ -1,4 +1,5 @@
 import { BehaviorSubject } from 'rxjs'
+import { MessageConnection } from '../../../jsonrpc2/connection'
 import {
     DidCloseTextDocumentNotification,
     DidOpenTextDocumentNotification,
@@ -6,9 +7,10 @@ import {
     TextDocumentDecoration,
     TextDocumentPublishDecorationsNotification,
     TextDocumentPublishDecorationsParams,
-} from '../../protocol'
-import { TextDocumentIdentifier } from '../../types/textDocument'
-import { Observable, SourcegraphExtensionAPI, Window, Windows } from '../api'
+} from '../../../protocol'
+import { TextDocumentIdentifier } from '../../../types/textDocument'
+import { URI } from '../../../types/uri'
+import { Observable, Window, Windows } from '../api'
 
 /**
  * Implements the Sourcegraph extension API's {@link SourcegraphExtensionAPI#windows} value.
@@ -17,7 +19,7 @@ import { Observable, SourcegraphExtensionAPI, Window, Windows } from '../api'
  * @return The {@link SourcegraphExtensionAPI#windows} value.
  */
 export class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observable<Window[]> {
-    constructor(private ext: Pick<SourcegraphExtensionAPI<any>, 'rawConnection'>) {
+    constructor(private rawConnection: MessageConnection) {
         super([
             {
                 isActive: true,
@@ -26,15 +28,17 @@ export class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Ob
         ])
 
         // Track last-opened text document.
-        ext.rawConnection.onNotification(DidOpenTextDocumentNotification.type, params => {
-            this.next([{ ...this.value[0], activeComponent: { isActive: true, resource: params.textDocument.uri } }])
+        rawConnection.onNotification(DidOpenTextDocumentNotification.type, params => {
+            this.next([
+                { ...this.value[0], activeComponent: { isActive: true, resource: URI.parse(params.textDocument.uri) } },
+            ])
         })
-        ext.rawConnection.onNotification(DidCloseTextDocumentNotification.type, params => {
+        rawConnection.onNotification(DidCloseTextDocumentNotification.type, params => {
             if (
                 this.activeWindow &&
                 this.activeWindow.activeComponent &&
                 this.activeWindow.activeComponent.resource &&
-                this.activeWindow.activeComponent.resource === params.textDocument.uri
+                this.activeWindow.activeComponent.resource.toString() === params.textDocument.uri
             ) {
                 this.next([{ ...this.value[0], activeComponent: null }])
             }
@@ -46,11 +50,11 @@ export class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Ob
     }
 
     public showInputBox(message: string, defaultValue?: string): Promise<string | null> {
-        return this.ext.rawConnection.sendRequest(ShowInputRequest.type, { message, defaultValue })
+        return this.rawConnection.sendRequest(ShowInputRequest.type, { message, defaultValue })
     }
 
     public setDecorations(resource: TextDocumentIdentifier, decorations: TextDocumentDecoration[]): void {
-        return this.ext.rawConnection.sendNotification(TextDocumentPublishDecorationsNotification.type, {
+        return this.rawConnection.sendNotification(TextDocumentPublishDecorationsNotification.type, {
             textDocument: resource,
             decorations,
         } as TextDocumentPublishDecorationsParams)

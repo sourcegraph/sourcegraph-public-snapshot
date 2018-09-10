@@ -1,6 +1,6 @@
 import { Subscription } from 'rxjs'
-import { createMessageConnection, Logger, MessageConnection, MessageTransports } from '../jsonrpc2/connection'
-import { createWebWorkerMessageTransports } from '../jsonrpc2/transports/webWorker'
+import { createMessageConnection, Logger, MessageConnection, MessageTransports } from '../../jsonrpc2/connection'
+import { createWebWorkerMessageTransports } from '../../jsonrpc2/transports/webWorker'
 import {
     ConfigurationCascade,
     InitializedNotification,
@@ -9,7 +9,7 @@ import {
     InitializeResult,
     RegistrationParams,
     RegistrationRequest,
-} from '../protocol'
+} from '../../protocol'
 import { Commands, Configuration, ExtensionContext, Observable, SourcegraphExtensionAPI, Window, Windows } from './api'
 import { createExtCommands } from './features/commands'
 import { createExtConfiguration } from './features/configuration'
@@ -31,12 +31,12 @@ class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
         this.subscription.add(this.rawConnection)
 
         this.configuration = createExtConfiguration<C>(
-            this,
+            this.rawConnection,
             initializeParams.configurationCascade as ConfigurationCascade<C>
         )
-        this._windows = new ExtWindows(this)
-        this.commands = createExtCommands(this)
-        this.context = createExtContext(this)
+        this._windows = new ExtWindows(this.rawConnection)
+        this.commands = createExtCommands(this.rawConnection)
+        this.context = createExtContext(this.rawConnection)
     }
 
     public get activeWindow(): Window | null {

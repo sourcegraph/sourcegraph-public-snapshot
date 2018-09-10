@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { MockMessageConnection } from '../../jsonrpc2/test/mockMessageConnection'
+import { MockMessageConnection } from '../../../jsonrpc2/test/mockMessageConnection'
 import {
     ExecuteCommandParams,
     ExecuteCommandRegistrationOptions,
@@ -8,7 +8,7 @@ import {
     RegistrationRequest,
     UnregistrationParams,
     UnregistrationRequest,
-} from '../../protocol'
+} from '../../../protocol'
 import { Commands } from '../api'
 import { createExtCommands } from './commands'
 
@@ -18,7 +18,7 @@ describe('ExtCommands', () => {
         mockConnection: MockMessageConnection
     } {
         const mockConnection = new MockMessageConnection()
-        const extCommands = createExtCommands({ rawConnection: mockConnection })
+        const extCommands = createExtCommands(mockConnection)
         return { extCommands, mockConnection }
     }
 

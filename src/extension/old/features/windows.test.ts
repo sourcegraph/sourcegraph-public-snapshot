@@ -1,5 +1,5 @@
 import assert from 'assert'
-import { MockMessageConnection } from '../../jsonrpc2/test/mockMessageConnection'
+import { MockMessageConnection } from '../../../jsonrpc2/test/mockMessageConnection'
 import {
     DidCloseTextDocumentNotification,
     DidCloseTextDocumentParams,
@@ -7,7 +7,8 @@ import {
     DidOpenTextDocumentParams,
     ShowInputParams,
     ShowInputRequest,
-} from '../../protocol'
+} from '../../../protocol'
+import { URI } from '../../../types/uri'
 import { Window } from '../api'
 import { observableValue } from '../util'
 import { ExtWindows } from './windows'
@@ -15,7 +16,7 @@ import { ExtWindows } from './windows'
 describe('ExtWindows', () => {
     function create(): { extWindows: ExtWindows; mockConnection: MockMessageConnection } {
         const mockConnection = new MockMessageConnection()
-        const extWindows = new ExtWindows({ rawConnection: mockConnection })
+        const extWindows = new ExtWindows(mockConnection)
         return { extWindows, mockConnection }
     }
 
@@ -32,7 +33,7 @@ describe('ExtWindows', () => {
                 textDocument: { uri: 'file:///a', languageId: 'l', text: 't', version: 1 },
             } as DidOpenTextDocumentParams)
             const expectedWindows: Window[] = [
-                { isActive: true, activeComponent: { isActive: true, resource: 'file:///a' } },
+                { isActive: true, activeComponent: { isActive: true, resource: URI.parse('file:///a') } },
             ]
             assert.deepStrictEqual(observableValue(extWindows), expectedWindows)
             assert.deepStrictEqual(extWindows.activeWindow, expectedWindows[0])
@@ -58,7 +59,7 @@ describe('ExtWindows', () => {
                 textDocument: { uri: 'file:///b' },
             } as DidCloseTextDocumentParams)
             assert.deepStrictEqual(observableValue(extWindows), [
-                { isActive: true, activeComponent: { isActive: true, resource: 'file:///a' } },
+                { isActive: true, activeComponent: { isActive: true, resource: URI.parse('file:///a') } },
             ] as Window[])
         })
     })

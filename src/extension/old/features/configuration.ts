@@ -1,20 +1,21 @@
 import { BehaviorSubject } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
+import { MessageConnection } from '../../../jsonrpc2/connection'
 import {
     ConfigurationCascade,
     ConfigurationUpdateParams,
     ConfigurationUpdateRequest,
     DidChangeConfigurationNotification,
     KeyPath,
-} from '../../protocol'
-import { isEqual } from '../../util'
-import { Configuration, Observable, SourcegraphExtensionAPI } from '../api'
+} from '../../../protocol'
+import { isEqual } from '../../../util'
+import { Configuration, Observable } from '../api'
 
 class ExtConfiguration<C> extends BehaviorSubject<C> implements Configuration<C>, Observable<C> {
-    constructor(private ext: Pick<SourcegraphExtensionAPI<C>, 'rawConnection'>, initial: ConfigurationCascade<C>) {
+    constructor(private rawConnection: MessageConnection, initial: ConfigurationCascade<C>) {
         super(initial.merged as C)
 
-        ext.rawConnection.onNotification(DidChangeConfigurationNotification.type, params => {
+        rawConnection.onNotification(DidChangeConfigurationNotification.type, params => {
             this.next(params.configurationCascade.merged as C)
         })
     }
@@ -35,7 +36,7 @@ class ExtConfiguration<C> extends BehaviorSubject<C> implements Configuration<C>
         const cur = this.value
         this.next(setValueAtKeyPath(cur, path, value))
 
-        return this.ext.rawConnection.sendRequest(ConfigurationUpdateRequest.type, {
+        return this.rawConnection.sendRequest(ConfigurationUpdateRequest.type, {
             path,
             value,
         } as ConfigurationUpdateParams)
@@ -107,12 +108,12 @@ export function setValueAtKeyPath(source: any, path: KeyPath, value: any): any {
 /**
  * Creates the Sourcegraph extension API's {@link SourcegraphExtensionAPI#configuration} value.
  *
- * @param ext The Sourcegraph extension API handle.
+ * @param rawConnection The connection to the Sourcegraph API client.
  * @return The {@link SourcegraphExtensionAPI#configuration} value.
  */
 export function createExtConfiguration<C>(
-    ext: Pick<SourcegraphExtensionAPI<C>, 'rawConnection'>,
+    rawConnection: MessageConnection,
     initial: ConfigurationCascade<C>
 ): Configuration<C> & Observable<C> {
-    return new ExtConfiguration(ext, initial)
+    return new ExtConfiguration(rawConnection, initial)
 }

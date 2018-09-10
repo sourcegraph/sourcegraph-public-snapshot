@@ -1,9 +1,9 @@
 import { Subscription } from 'rxjs'
-import { Context } from '../environment/context/context'
-import { MessageConnection } from '../jsonrpc2/connection'
-import { InitializeParams, Settings, TextDocumentDecoration } from '../protocol'
-import { TextDocumentIdentifier } from '../types/textDocument'
-import { URI } from '../types/uri'
+import * as sourcegraph from 'sourcegraph'
+import { Context } from '../../environment/context/context'
+import { MessageConnection } from '../../jsonrpc2/connection'
+import { InitializeParams, Settings, TextDocumentDecoration } from '../../protocol'
+import { TextDocumentIdentifier } from '../../types/textDocument'
 
 /**
  * The Sourcegraph extension API, which extensions use to interact with the client.
@@ -188,7 +188,7 @@ export interface Component {
     /**
      * The URI of the resource (such as a file) that this component is displaying, or null if there is none.
      */
-    resource: URI | null
+    resource: sourcegraph.URI | null
 }
 
 /**

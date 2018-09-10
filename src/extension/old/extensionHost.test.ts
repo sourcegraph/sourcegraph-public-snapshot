@@ -1,16 +1,16 @@
 import * as assert from 'assert'
-import { createConnection as createClientConnection } from '../client/connection'
+import { createConnection as createClientConnection } from '../../client/connection'
 import {
     InitializedNotification,
     InitializeParams,
     InitializeRequest,
     InitializeResult,
     RegistrationRequest,
-} from '../protocol'
-import { createMessageTransports } from '../test/integration/helpers'
+} from '../../protocol'
+import { createMessageTransports } from '../../test/integration/helpers'
 import { activateExtension } from './extensionHost'
 
-describe('activateExtension', () => {
+describe('activateExtension (old)', () => {
     it('initialize request parameters and result', async () => {
         const [clientTransports, serverTransports] = createMessageTransports()
         const clientConnection = createClientConnection(clientTransports)
