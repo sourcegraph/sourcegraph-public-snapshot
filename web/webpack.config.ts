@@ -29,8 +29,6 @@ const babelLoader: webpack.RuleSetUseItem = {
     loader: 'babel-loader',
     options: {
         cacheDirectory: true,
-        // Workaround for https://github.com/babel/babel-loader/issues/624
-        extends: path.join(__dirname, '.babelrc'),
     },
 }
 
