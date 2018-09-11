@@ -24,7 +24,7 @@ describe('Range', () => {
 
     it('toJSON', () => {
         const range = new Range(1, 2, 3, 4)
-        assertToJSON(range, [{ line: 1, character: 2 }, { line: 3, character: 4 }])
+        assertToJSON(range, { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } })
     })
 
     it('sorting', () => {

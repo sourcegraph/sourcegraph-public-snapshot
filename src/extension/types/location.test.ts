@@ -8,11 +8,11 @@ describe('Location', () => {
     it('toJSON', () => {
         assertToJSON(new Location(URI.file('u.ts'), new Position(3, 4)), {
             uri: URI.parse('file://u.ts').toJSON(),
-            range: [{ line: 3, character: 4 }, { line: 3, character: 4 }],
+            range: { start: { line: 3, character: 4 }, end: { line: 3, character: 4 } },
         })
         assertToJSON(new Location(URI.file('u.ts'), new Range(1, 2, 3, 4)), {
             uri: URI.parse('file://u.ts').toJSON(),
-            range: [{ line: 1, character: 2 }, { line: 3, character: 4 }],
+            range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
         })
     })
 })

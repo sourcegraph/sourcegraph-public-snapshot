@@ -139,6 +139,6 @@ export class Range implements sourcegraph.Range {
     }
 
     public toJSON(): any {
-        return [this.start, this.end]
+        return { start: this._start.toJSON(), end: this._end.toJSON() }
     }
 }
