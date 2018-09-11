@@ -95,7 +95,7 @@
     "react-dom": "^16.4.2",
     "semantic-release": "^15.9.12",
     "source-map-support": "^0.5.9",
-    "sourcegraph": "^14.1.1",
+    "sourcegraph": "^15.0.0",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",
