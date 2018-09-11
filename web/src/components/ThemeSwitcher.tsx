@@ -1,5 +1,4 @@
-import MoonIcon from '@sourcegraph/icons/lib/Moon'
-import SunIcon from '@sourcegraph/icons/lib/Sun'
+import ThemeLightDarkIcon from 'mdi-react/ThemeLightDarkIcon'
 import * as React from 'react'
 
 interface Props {
@@ -14,6 +13,8 @@ export const ThemeSwitcher: React.SFC<Props> = props => (
         onClick={props.onThemeChange}
         title={props.isLightTheme ? 'Switch to dark color theme' : 'Switch to light color theme'}
     >
-        <button className="theme-switcher__button btn-icon">{props.isLightTheme ? <MoonIcon /> : <SunIcon />}</button>
+        <button className="theme-switcher__button btn-icon">
+            <ThemeLightDarkIcon />
+        </button>
     </div>
 )
