@@ -17,7 +17,7 @@ describe('activateExtension (old)', () => {
         clientConnection.listen()
 
         const initParams: InitializeParams = {
-            capabilities: { decoration: true },
+            capabilities: {},
             configurationCascade: { merged: {} },
         }
         const initResult: InitializeResult = {}

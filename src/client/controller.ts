@@ -17,7 +17,6 @@ import { Extension } from './extension'
 import { ExecuteCommandFeature } from './features/command'
 import { ConfigurationChangeNotificationFeature, ConfigurationUpdateFeature } from './features/configuration'
 import { ContributionFeature } from './features/contribution'
-import { TextDocumentDecorationFeature } from './features/decoration'
 import {
     TextDocumentDefinitionFeature,
     TextDocumentImplementationFeature,
@@ -233,7 +232,6 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
         client.registerFeature(
             new TextDocumentTypeDefinitionFeature(client, this.registries.textDocumentTypeDefinition)
         )
-        client.registerFeature(new TextDocumentDecorationFeature(client, this.registries.textDocumentDecoration))
         client.registerFeature(
             new WindowShowMessageFeature(
                 client,

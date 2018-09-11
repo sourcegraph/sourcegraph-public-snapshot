@@ -1,7 +1,5 @@
 import { Subscription } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
-import { TextDocumentIdentifier } from '../../client/types/textDocument'
-import { InitializeParams, Settings, TextDocumentDecoration } from '../../protocol'
+import { InitializeParams, Settings } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
 
 /**
@@ -19,17 +17,6 @@ export interface SourcegraphExtensionAPI<C = Settings> {
      * The configuration settings from the client.
      */
     configuration: Configuration<C>
-
-    /**
-     * The application windows on the client.
-     */
-    windows: Windows
-
-    /**
-     * The active window, or `null` if there is no active window. The active window is the window that was
-     * focused most recently.
-     */
-    activeWindow: Window | null
 
     /**
      * Command registration and execution.
@@ -127,61 +114,6 @@ export interface Configuration<C> extends Observable<C> {
     //
     // - add a way to read configuration from a specific scope (aka subject, but "scope" is probably a better word)
     // - describe how configuration defaults are supported
-}
-
-/**
- * The application windows on the client.
- */
-export interface Windows extends Observable<Window[]> {
-    /**
-     * Display a prompt and request text input from the user.
-     *
-     * @todo TODO: always shows on the active window if any; should pass window as a param?
-     *
-     * @param message The message to show.
-     * @param defaultValue The default value for the user input, or undefined for no default.
-     * @returns The user's input, or null if the user (or the client) canceled the input request.
-     */
-    showInputBox(message: string, defaultValue?: string): Promise<string | null>
-
-    /**
-     * Sets the decorations for the given document. All previous decorations for the document are cleared.
-     *
-     * @param resource The document to decorate.
-     * @param decorations The decorations to apply to the document.
-     */
-    setDecorations(resource: TextDocumentIdentifier, decorations: TextDocumentDecoration[]): void
-}
-
-/**
- * The application window where the client is running.
- */
-export interface Window {
-    /**
-     * Whether this window is the active window in the application. At most 1 window can be active.
-     */
-    readonly isActive: boolean
-
-    /**
-     * The active user interface component (such as a text editor) in this window, or null if there is no active
-     * component.
-     */
-    readonly activeComponent: Component | null
-}
-
-/**
- * A user interface component in an application window (such as a text editor).
- */
-export interface Component {
-    /**
-     * Whether this component is the active component in the application. At most 1 component can be active.
-     */
-    readonly isActive: boolean
-
-    /**
-     * The URI of the resource (such as a file) that this component is displaying, or null if there is none.
-     */
-    resource: sourcegraph.URI | null
 }
 
 /**

@@ -10,19 +10,14 @@ import {
 } from '../../protocol'
 import { Connection, createConnection, Logger, MessageTransports } from '../../protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../protocol/jsonrpc2/transports/webWorker'
-import { Commands, Configuration, Observable, SourcegraphExtensionAPI, Window, Windows } from './api'
+import { Commands, Configuration, Observable, SourcegraphExtensionAPI } from './api'
 import { createExtCommands } from './features/commands'
 import { createExtConfiguration } from './features/configuration'
-import { ExtWindows } from './features/windows'
 
 class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
     public readonly configuration: Configuration<C> & Observable<C>
-    public get windows(): Windows & Observable<Window[]> {
-        return this._windows
-    }
     public readonly commands: Commands
 
-    private _windows: ExtWindows
     private subscription = new Subscription()
 
     constructor(public readonly rawConnection: Connection, public readonly initializeParams: InitializeParams) {
@@ -32,12 +27,7 @@ class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
             this.rawConnection,
             initializeParams.configurationCascade as ConfigurationCascade<C>
         )
-        this._windows = new ExtWindows(this.rawConnection)
         this.commands = createExtCommands(this.rawConnection)
-    }
-
-    public get activeWindow(): Window | null {
-        return this._windows.activeWindow
     }
 
     public close(): void {

@@ -18,7 +18,7 @@ describe('createExtensionHost', () => {
         clientConnection.listen()
 
         const initParams: InitializeParams = {
-            capabilities: { decoration: true, experimental: { a: 1 } },
+            capabilities: { experimental: { a: 1 } },
             configurationCascade: { merged: {} },
         }
         const initResult: InitializeResult = {}

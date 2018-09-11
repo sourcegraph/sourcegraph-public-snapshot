@@ -2,7 +2,7 @@ import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { TextDocumentIdentifier } from '../../client/types/textDocument'
-import { TextDocumentDecoration } from '../../protocol'
+import { TextDocumentDecoration } from '../../protocol/plainTypes'
 import { getDecorations, ProvideTextDocumentDecorationSignature } from './decoration'
 import { FIXTURE as COMMON_FIXTURE } from './registry.test'
 
