@@ -13,8 +13,8 @@ describe('Position', () => {
         assert.throws(() => ((pos as any).line = 12))
 
         const { line, character } = pos.toJSON()
-        assert.equal(line, 0)
-        assert.equal(character, 0)
+        assert.strictEqual(line, 0)
+        assert.strictEqual(character, 0)
     })
 
     it('toJSON', () => {
@@ -50,11 +50,11 @@ describe('Position', () => {
         const p2 = new Position(1, 2)
         const p3 = new Position(0, 4)
 
-        assert.equal(p1.compareTo(p1), 0)
-        assert.equal(p2.compareTo(p1), -1)
-        assert.equal(p1.compareTo(p2), 1)
-        assert.equal(p2.compareTo(p3), 1)
-        assert.equal(p1.compareTo(p3), 1)
+        assert.strictEqual(p1.compareTo(p1), 0)
+        assert.strictEqual(p2.compareTo(p1), -1)
+        assert.strictEqual(p1.compareTo(p2), 1)
+        assert.strictEqual(p2.compareTo(p3), 1)
+        assert.strictEqual(p1.compareTo(p3), 1)
     })
 
     it('translate', () => {
@@ -68,24 +68,24 @@ describe('Position', () => {
         assert.ok(p1.translate(undefined) === p1)
 
         let res = p1.translate(-1)
-        assert.equal(res.line, 0)
-        assert.equal(res.character, 3)
+        assert.strictEqual(res.line, 0)
+        assert.strictEqual(res.character, 3)
 
         res = p1.translate({ lineDelta: -1 })
-        assert.equal(res.line, 0)
-        assert.equal(res.character, 3)
+        assert.strictEqual(res.line, 0)
+        assert.strictEqual(res.character, 3)
 
         res = p1.translate(undefined, -1)
-        assert.equal(res.line, 1)
-        assert.equal(res.character, 2)
+        assert.strictEqual(res.line, 1)
+        assert.strictEqual(res.character, 2)
 
         res = p1.translate({ characterDelta: -1 })
-        assert.equal(res.line, 1)
-        assert.equal(res.character, 2)
+        assert.strictEqual(res.line, 1)
+        assert.strictEqual(res.character, 2)
 
         res = p1.translate(11)
-        assert.equal(res.line, 12)
-        assert.equal(res.character, 3)
+        assert.strictEqual(res.line, 12)
+        assert.strictEqual(res.character, 3)
 
         assert.throws(() => p1.translate(null as any))
         assert.throws(() => p1.translate(null as any, null as any))
@@ -108,8 +108,8 @@ describe('Position', () => {
         assert.ok(p1.with({ line: 1, character: 3 }) === p1)
 
         const p2 = p1.with({ line: 0, character: 11 })
-        assert.equal(p2.line, 0)
-        assert.equal(p2.character, 11)
+        assert.strictEqual(p2.line, 0)
+        assert.strictEqual(p2.character, 11)
 
         assert.throws(() => p1.with(null as any))
         assert.throws(() => p1.with(-9))
