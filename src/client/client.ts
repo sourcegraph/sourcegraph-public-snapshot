@@ -1,15 +1,18 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { DocumentSelector } from 'sourcegraph'
 import {
+    ExitNotification,
     InitializedNotification,
     InitializeParams,
+    InitializeRequest,
     InitializeResult,
     RegistrationParams,
     RegistrationRequest,
+    ShutdownRequest,
     UnregistrationParams,
     UnregistrationRequest,
 } from '../protocol'
-import { MessageTransports } from '../protocol/jsonrpc2/connection'
+import { createMessageConnection, MessageConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
 import {
     GenericNotificationHandler,
     GenericRequestHandler,
@@ -20,7 +23,6 @@ import { Message, MessageType as RPCMessageType } from '../protocol/jsonrpc2/mes
 import { NotificationType, RequestType } from '../protocol/jsonrpc2/messages'
 import { noopTracer, Trace, Tracer } from '../protocol/jsonrpc2/trace'
 import { isFunction, tryCatchPromise } from '../util'
-import { Connection, createConnection } from './connection'
 import { CloseAction, DefaultErrorHandler, ErrorAction, ErrorHandler } from './errorHandler'
 import { DynamicFeature, RegistrationData, StaticFeature } from './features/common'
 
@@ -97,8 +99,8 @@ export class Client implements Unsubscribable {
         return this._state
     }
 
-    private connectionPromise: Promise<Connection> | null = null
-    private connection: Connection | null = null
+    private connectionPromise: Promise<MessageConnection> | null = null
+    private connection: MessageConnection | null = null
 
     private onStop: Promise<void> | null = null
 
@@ -146,7 +148,7 @@ export class Client implements Unsubscribable {
      */
     protected activateAndWait(): Promise<void> {
         this._state.next(ClientState.Connecting)
-        let activateConnection: Connection | null = null // track so we know if we're dealing with the same value upon error
+        let activateConnection: MessageConnection | null = null // track so we know if we're dealing with the same value upon error
         return this.resolveConnection()
             .then(connection => {
                 activateConnection = connection
@@ -163,20 +165,19 @@ export class Client implements Unsubscribable {
             })
     }
 
-    private resolveConnection(): Promise<Connection> {
+    private resolveConnection(): Promise<MessageConnection> {
         if (!this.connectionPromise) {
-            this.connectionPromise = tryCatchPromise(this.options.createMessageTransports).then(transports =>
-                createConnection(
-                    transports,
-                    (error, message, count) => this.handleConnectionError(error, message, count),
-                    () => this.handleConnectionClosed()
-                )
-            )
+            this.connectionPromise = tryCatchPromise(this.options.createMessageTransports).then(transports => {
+                const connection = createMessageConnection(transports)
+                connection.onError(data => this.handleConnectionError(data[0], data[1], data[2]))
+                connection.onClose(() => this.handleConnectionClosed())
+                return connection
+            })
         }
         return this.connectionPromise
     }
 
-    private initialize(connection: Connection): Promise<void> {
+    private initialize(connection: MessageConnection): Promise<void> {
         connection.trace(this._trace, this.options.tracer)
 
         const initParams: InitializeParams = {
@@ -198,7 +199,7 @@ export class Client implements Unsubscribable {
         }
 
         return connection
-            .initialize(initParams)
+            .sendRequest(InitializeRequest.type, initParams)
             .then(result => {
                 // If this client was stopped during the initialize call, don't continue'
                 if (this._state.value === ClientState.ShuttingDown || this._state.value === ClientState.Stopped) {
@@ -307,7 +308,7 @@ export class Client implements Unsubscribable {
             return this.onStop
         }
 
-        const closeConnection = (connection: Connection) => {
+        const closeConnection = (connection: MessageConnection) => {
             // It's possible for the connection to be alive and this.isConnectionActive === false (e.g., if we're
             // still waiting to hear back from the server), so make sure we close it.
             if (connection) {
@@ -341,12 +342,12 @@ export class Client implements Unsubscribable {
             // Shut down gracefully before closing the connection.
             const connection = this.connection!
             return (this.onStop = connection
-                .shutdown()
+                .sendRequest(ShutdownRequest.type, undefined)
                 .catch(() => {
                     /* Ignore shutdown errors from server. */
                 })
                 .then(() => {
-                    connection.exit()
+                    connection.sendNotification(ExitNotification.type)
                     closeConnection(connection)
                 }))
         }
@@ -371,7 +372,9 @@ export class Client implements Unsubscribable {
         if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
-        return Promise.resolve(this.connection!.sendRequest<R>(type, ...params))
+        return Promise.resolve(
+            this.connection!.sendRequest<R>(typeof type === 'string' ? type : type.method, ...params)
+        )
     }
 
     public onRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, handler: RequestHandler<P, R, E>): void
@@ -380,7 +383,7 @@ export class Client implements Unsubscribable {
         if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
-        this.connection!.onRequest(type, handler)
+        this.connection!.onRequest(typeof type === 'string' ? type : type.method, handler)
     }
 
     public sendNotification<P, RO>(type: NotificationType<P, RO>, params?: P): void
@@ -389,7 +392,7 @@ export class Client implements Unsubscribable {
         if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
-        this.connection!.sendNotification(type, params)
+        this.connection!.sendNotification(typeof type === 'string' ? type : type.method, params)
     }
 
     public onNotification<P, RO>(type: NotificationType<P, RO>, handler: NotificationHandler<P>): void
@@ -398,7 +401,7 @@ export class Client implements Unsubscribable {
         if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
-        this.connection!.onNotification(type, handler)
+        this.connection!.onNotification(typeof type === 'string' ? type : type.method, handler)
     }
 
     public get trace(): Trace {

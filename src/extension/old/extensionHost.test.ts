@@ -1,5 +1,4 @@
 import * as assert from 'assert'
-import { createConnection as createClientConnection } from '../../client/connection'
 import {
     InitializedNotification,
     InitializeParams,
@@ -7,13 +6,14 @@ import {
     InitializeResult,
     RegistrationRequest,
 } from '../../protocol'
+import { createMessageConnection } from '../../protocol/jsonrpc2/connection'
 import { createMessageTransports } from '../../test/integration/helpers'
 import { activateExtension } from './extensionHost'
 
 describe('activateExtension (old)', () => {
     it('initialize request parameters and result', async () => {
         const [clientTransports, serverTransports] = createMessageTransports()
-        const clientConnection = createClientConnection(clientTransports)
+        const clientConnection = createMessageConnection(clientTransports)
         clientConnection.listen()
 
         const initParams: InitializeParams = {
