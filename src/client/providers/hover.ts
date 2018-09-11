@@ -5,7 +5,9 @@ import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../
 import { Hover } from '../../protocol/plainTypes'
 import { FeatureProviderRegistry } from './registry'
 
-export type ProvideTextDocumentHoverSignature = (params: TextDocumentPositionParams) => Observable<Hover | null>
+export type ProvideTextDocumentHoverSignature = (
+    params: TextDocumentPositionParams
+) => Observable<Hover | null | undefined>
 
 /** Provides hovers from all extensions. */
 export class TextDocumentHoverProviderRegistry extends FeatureProviderRegistry<
