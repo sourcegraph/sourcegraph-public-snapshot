@@ -1,6 +1,5 @@
 import { Unsubscribable } from 'sourcegraph'
 import * as sourcegraph from 'sourcegraph'
-import uuidv4 from 'uuid/v4'
 import {
     HoverRequest,
     RegistrationParams,
@@ -12,6 +11,7 @@ import {
 } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
 import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
+import { idSequence } from '../../util'
 import { Position } from '../types/position'
 
 /**
@@ -45,7 +45,7 @@ export function createRegisterProviderFunctions(connection: Connection): Registe
  * @return An {@link Unsubscribable} that unregisters the provider.
  */
 function registerProvider<RO>(connection: Connection, type: RPCMessageType, registerOptions: RO): Unsubscribable {
-    const id = uuidv4()
+    const id = idSequence()
     // TODO(sqs): handle errors in sendRequest calls
     connection
         .sendRequest(RegistrationRequest.type, {

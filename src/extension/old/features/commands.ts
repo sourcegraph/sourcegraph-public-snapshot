@@ -1,5 +1,4 @@
 import { Subscription } from 'rxjs'
-import uuidv4 from 'uuid/v4'
 import { CommandRegistry } from '../../../client/providers/command'
 import {
     ExecuteCommandRegistrationOptions,
@@ -10,6 +9,7 @@ import {
     UnregistrationRequest,
 } from '../../../protocol'
 import { Connection } from '../../../protocol/jsonrpc2/connection'
+import { idSequence } from '../../../util'
 import { Commands } from '../api'
 
 /**
@@ -26,7 +26,7 @@ export function createExtCommands(rawConnection: Connection): Commands {
         register: (command: string, run: (...args: any[]) => Promise<any>): Subscription => {
             const subscription = new Subscription()
 
-            const id = uuidv4()
+            const id = idSequence()
             subscription.add(commandRegistry.registerCommand({ command, run }))
             rawConnection
                 .sendRequest(RegistrationRequest.type, {

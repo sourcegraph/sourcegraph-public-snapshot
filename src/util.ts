@@ -83,3 +83,13 @@ export function tryCatchPromise<T>(f: () => T | Promise<T>): Promise<T> {
         return Promise.reject(err)
     }
 }
+
+let SEQ = 0
+
+/**
+ * Increments the sequence and returns the result.
+ */
+export function idSequence(): string {
+    SEQ++
+    return String(SEQ)
+}
