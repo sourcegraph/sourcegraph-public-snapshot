@@ -13,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
@@ -31,11 +29,7 @@ import (
 func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
-	authMiddlewares := auth.ComposeMiddleware(
-		auth.RequireAuthMiddleware,
-		openidconnect.Middleware,
-		saml.Middleware,
-	)
+	authMiddlewares := auth.AuthMiddleware()
 
 	// HTTP API handler.
 	apiHandler := httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))

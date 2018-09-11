@@ -5,17 +5,27 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/saml"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-type signoutURL struct {
+type SignOutURL struct {
 	ProviderDisplayName string
 	ProviderServiceType string
 	URL                 string
+}
+
+var ssoSignOutHandler func(w http.ResponseWriter, r *http.Request) []SignOutURL
+
+// RegisterSSOSignOutHandler registers a SSO sign-out handler that takes care of cleaning up SSO
+// session state, both on Sourcegraph and on the SSO provider. This function should only be called
+// once from an init function.
+func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request) []SignOutURL) {
+	if ssoSignOutHandler != nil {
+		panic("RegisterSSOSignOutHandler already called")
+	}
+	ssoSignOutHandler = f
 }
 
 func serveSignOut(w http.ResponseWriter, r *http.Request) {
@@ -25,26 +35,9 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 
 	// TODO(sqs): Show the auth provider name corresponding to each signout URL (helpful when there
 	// are multiple).
-	var signoutURLs []signoutURL
-	for _, p := range conf.AuthProviders() {
-		var e signoutURL
-		var err error
-		switch {
-		case p.Openidconnect != nil:
-			e.ProviderDisplayName = p.Openidconnect.DisplayName
-			e.ProviderServiceType = p.Openidconnect.Type
-			e.URL, err = openidconnect.SignOut(w, r)
-		case p.Saml != nil:
-			e.ProviderDisplayName = p.Saml.DisplayName
-			e.ProviderServiceType = p.Saml.Type
-			e.URL, err = saml.SignOut(w, r)
-		}
-		if e.URL != "" {
-			signoutURLs = append(signoutURLs, e)
-		}
-		if err != nil {
-			log15.Error("Error clearing auth provider session data.", "err", err)
-		}
+	var signoutURLs []SignOutURL
+	if ssoSignOutHandler != nil {
+		signoutURLs = ssoSignOutHandler(w, r)
 	}
 	if conf.MultipleAuthProvidersEnabled() {
 		if len(signoutURLs) > 0 {
@@ -56,9 +49,9 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutURLs []signoutURL) {
+func renderSignoutPageTemplate(w http.ResponseWriter, r *http.Request, signoutURLs []SignOutURL) {
 	data := struct {
-		SignoutURLs []signoutURL
+		SignoutURLs []SignOutURL
 	}{
 		SignoutURLs: signoutURLs,
 	}

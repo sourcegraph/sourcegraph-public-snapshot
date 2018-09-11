@@ -8,6 +8,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+
+	// TODO(opensource): move this to enterprise/cmd/frontend/main.go
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/enterprise_auth"
 )
 
 // Main is the main function that runs the frontend process.

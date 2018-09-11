@@ -21,8 +21,25 @@ type Middleware struct {
 	App func(http.Handler) http.Handler
 }
 
-// ComposeMiddleware returns a new Middleware that composes the middlewares together.
-func ComposeMiddleware(middlewares ...*Middleware) *Middleware {
+var extraAuthMiddlewares []*Middleware
+
+// RegisterMiddlewares registers additional authentication middlewares. Currently this is used to
+// register enterprise-only SSO middleware. This should only be called from an init function.
+func RegisterMiddlewares(m ...*Middleware) {
+	extraAuthMiddlewares = append(extraAuthMiddlewares, m...)
+}
+
+// AuthMiddleware returns the authentication middleware that combines all authentication middlewares
+// that have been registered.
+func AuthMiddleware() *Middleware {
+	m := make([]*Middleware, 0, 1+len(extraAuthMiddlewares))
+	m = append(m, RequireAuthMiddleware)
+	m = append(m, extraAuthMiddlewares...)
+	return composeMiddleware(m...)
+}
+
+// composeMiddleware returns a new Middleware that composes the middlewares together.
+func composeMiddleware(middlewares ...*Middleware) *Middleware {
 	return &Middleware{
 		API: func(h http.Handler) http.Handler {
 			for _, m := range middlewares {
