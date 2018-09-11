@@ -292,7 +292,6 @@ declare module 'sourcegraph' {
     export interface TextDocument {
         readonly uri: string
         readonly languageId: string
-        readonly version: number
         readonly text: string
     }
 

@@ -37,7 +37,6 @@ describe('getComputedContextProperty', () => {
                 document: {
                     uri: 'file:///a/b.c',
                     languageId: 'l',
-                    version: 0,
                     text: 't',
                 },
                 selections: [],

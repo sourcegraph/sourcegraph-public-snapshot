@@ -2,7 +2,7 @@ import * as assert from 'assert'
 import { DocumentSelector } from 'sourcegraph'
 import { match, score, TextDocumentItem } from './textDocument'
 
-const FIXTURE_TEXT_DOCUMENT: TextDocumentItem = { uri: 'file:///f', languageId: 'l', version: 1, text: '' }
+const FIXTURE_TEXT_DOCUMENT: TextDocumentItem = { uri: 'file:///f', languageId: 'l', text: '' }
 
 describe('match', () => {
     it('reports true if any selectors match', () => {

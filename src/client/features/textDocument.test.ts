@@ -108,7 +108,6 @@ describe('TextDocumentDidOpenFeature', () => {
             const textDocument: TextDocumentItem = {
                 uri: 'file:///f',
                 languageId: 'l',
-                version: 1,
                 text: '',
             }
 
@@ -160,7 +159,6 @@ describe('TextDocumentDidCloseFeature', () => {
             const textDocument: TextDocumentItem = {
                 uri: 'file:///f',
                 languageId: 'l',
-                version: 1,
                 text: '',
             }
 

@@ -30,7 +30,7 @@ describe('ExtWindows', () => {
         it('handles when a resource is opened', () => {
             const { extWindows, mockConnection } = create()
             mockConnection.recvNotification(DidOpenTextDocumentNotification.type, {
-                textDocument: { uri: 'file:///a', languageId: 'l', text: 't', version: 1 },
+                textDocument: { uri: 'file:///a', languageId: 'l', text: 't' },
             } as DidOpenTextDocumentParams)
             const expectedWindows: Window[] = [
                 { isActive: true, activeComponent: { isActive: true, resource: URI.parse('file:///a') } },
@@ -42,7 +42,7 @@ describe('ExtWindows', () => {
         it('handles when the open resource is closed', () => {
             const { extWindows, mockConnection } = create()
             mockConnection.recvNotification(DidOpenTextDocumentNotification.type, {
-                textDocument: { uri: 'file:///a', languageId: 'l', text: 't', version: 1 },
+                textDocument: { uri: 'file:///a', languageId: 'l', text: 't' },
             } as DidOpenTextDocumentParams)
             mockConnection.recvNotification(DidCloseTextDocumentNotification.type, {
                 textDocument: { uri: 'file:///a' },
@@ -53,7 +53,7 @@ describe('ExtWindows', () => {
         it('handles when a background resource is closed', () => {
             const { extWindows, mockConnection } = create()
             mockConnection.recvNotification(DidOpenTextDocumentNotification.type, {
-                textDocument: { uri: 'file:///a', languageId: 'l', text: 't', version: 1 },
+                textDocument: { uri: 'file:///a', languageId: 'l', text: 't' },
             } as DidOpenTextDocumentParams)
             mockConnection.recvNotification(DidCloseTextDocumentNotification.type, {
                 textDocument: { uri: 'file:///b' },
