@@ -3,12 +3,12 @@ import * as sourcegraph from 'sourcegraph'
 import { createMessageConnection, Logger, MessageConnection, MessageTransports } from '../jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../jsonrpc2/transports/webWorker'
 import { InitializedNotification, InitializeParams, InitializeRequest, InitializeResult } from '../protocol'
-import { Location } from '../types/location'
-import { Position } from '../types/position'
-import { Range } from '../types/range'
-import { Selection } from '../types/selection'
-import { URI } from '../types/uri'
 import { createRegisterProviderFunctions } from './api/provider'
+import { Location } from './types/location'
+import { Position } from './types/position'
+import { Range } from './types/range'
+import { Selection } from './types/selection'
+import { URI } from './types/uri'
 
 const consoleLogger: Logger = {
     error(message: string): void {

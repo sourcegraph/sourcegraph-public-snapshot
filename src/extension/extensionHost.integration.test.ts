@@ -3,11 +3,11 @@ import { from } from 'rxjs'
 import { filter, map, switchMap, take } from 'rxjs/operators'
 import { MarkupKind } from 'sourcegraph'
 import * as sourcegraph from 'sourcegraph'
+import { HoverMerged } from '../client/types/hover'
 import { Controller } from '../environment/controller'
 import { Environment } from '../environment/environment'
 import { clientStateIsActive } from '../test/helpers'
 import { createMessageTransports } from '../test/integration/helpers'
-import { HoverMerged } from '../types/hover'
 import { createExtensionHost } from './extensionHost'
 
 const FIXTURE_ENVIRONMENT: Environment<any, any> = {

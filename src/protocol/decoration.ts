@@ -1,6 +1,6 @@
+import { TextDocumentIdentifier } from '../client/types/textDocument'
 import { NotificationHandler } from '../jsonrpc2/handlers'
 import { NotificationType } from '../jsonrpc2/messages'
-import { TextDocumentIdentifier } from '../types/textDocument'
 import { Range } from './plainTypes'
 import { TextDocumentRegistrationOptions } from './textDocument'
 

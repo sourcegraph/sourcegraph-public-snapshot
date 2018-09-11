@@ -8,7 +8,7 @@ import {
     ShowInputParams,
     ShowInputRequest,
 } from '../../../protocol'
-import { URI } from '../../../types/uri'
+import { URI } from '../../types/uri'
 import { Window } from '../api'
 import { observableValue } from '../util'
 import { ExtWindows } from './windows'

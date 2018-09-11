@@ -3,8 +3,8 @@ import { ProvideTextDocumentDecorationSignature } from '../../environment/provid
 import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import { ClientCapabilities } from '../../protocol'
 import { TextDocumentDecoration, TextDocumentPublishDecorationsNotification } from '../../protocol/decoration'
-import { TextDocumentIdentifier } from '../../types/textDocument'
 import { Client } from '../client'
+import { TextDocumentIdentifier } from '../types/textDocument'
 import { ensure, StaticFeature } from './common'
 
 /**

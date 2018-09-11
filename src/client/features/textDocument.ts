@@ -10,8 +10,8 @@ import {
     DidOpenTextDocumentParams,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { match, TextDocumentItem } from '../../types/textDocument'
 import { Client } from '../client'
+import { match, TextDocumentItem } from '../types/textDocument'
 import { DynamicFeature, ensure, RegistrationData } from './common'
 
 type CreateParamsSignature<E, P> = (data: E) => P

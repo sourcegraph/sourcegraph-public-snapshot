@@ -1,4 +1,5 @@
 import { BehaviorSubject } from 'rxjs'
+import { TextDocumentIdentifier } from '../../../client/types/textDocument'
 import { MessageConnection } from '../../../jsonrpc2/connection'
 import {
     DidCloseTextDocumentNotification,
@@ -8,8 +9,7 @@ import {
     TextDocumentPublishDecorationsNotification,
     TextDocumentPublishDecorationsParams,
 } from '../../../protocol'
-import { TextDocumentIdentifier } from '../../../types/textDocument'
-import { URI } from '../../../types/uri'
+import { URI } from '../../types/uri'
 import { Observable, Window, Windows } from '../api'
 
 /**

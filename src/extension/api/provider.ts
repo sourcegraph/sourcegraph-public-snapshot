@@ -12,7 +12,7 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../../protocol'
-import { Position } from '../../types/position'
+import { Position } from '../types/position'
 
 /**
  * All `registerXyzProvider` functions in the Sourcegraph extension API.

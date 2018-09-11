@@ -11,8 +11,8 @@ import {
     DidOpenTextDocumentParams,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { TextDocumentItem } from '../../types/textDocument'
 import { Client } from '../client'
+import { TextDocumentItem } from '../types/textDocument'
 import {
     TextDocumentDidCloseFeature,
     TextDocumentDidOpenFeature,
