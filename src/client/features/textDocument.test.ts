@@ -120,7 +120,7 @@ describe('TextDocumentDidOpenFeature', () => {
 
             environment.next({
                 ...environment.value,
-                component: { document: textDocument, selections: [], visibleRanges: [] },
+                component: { document: textDocument },
             })
         })
     })
@@ -172,7 +172,7 @@ describe('TextDocumentDidCloseFeature', () => {
             // Open the document.
             environment.next({
                 ...environment.value,
-                component: { document: textDocument, selections: [], visibleRanges: [] },
+                component: { document: textDocument },
             })
             assert.deepStrictEqual(didCloseNotifications, [])
             didCloseNotifications = []
@@ -192,7 +192,7 @@ describe('TextDocumentDidCloseFeature', () => {
             // Reopen the document.
             environment.next({
                 ...environment.value,
-                component: { document: textDocument, selections: [], visibleRanges: [] },
+                component: { document: textDocument },
             })
             assert.deepStrictEqual(didCloseNotifications, [])
             didCloseNotifications = []
@@ -200,7 +200,7 @@ describe('TextDocumentDidCloseFeature', () => {
             // Close the document by setting component to a different document.
             environment.next({
                 ...environment.value,
-                component: { document: { ...textDocument, uri: 'file:///f2' }, selections: [], visibleRanges: [] },
+                component: { document: { ...textDocument, uri: 'file:///f2' } },
             })
             assert.deepStrictEqual(didCloseNotifications, [
                 {

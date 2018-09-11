@@ -12,8 +12,6 @@ import { createExtensionHost } from './extensionHost'
 const FIXTURE_ENVIRONMENT: Environment<any, any> = {
     component: {
         document: { uri: 'file:///f', languageId: 'l', text: '' },
-        selections: [],
-        visibleRanges: [],
     },
     extensions: [{ id: 'x' }],
     configuration: {},

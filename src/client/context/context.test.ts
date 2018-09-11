@@ -39,8 +39,6 @@ describe('getComputedContextProperty', () => {
                     languageId: 'l',
                     text: 't',
                 },
-                selections: [],
-                visibleRanges: [],
             },
         }
 

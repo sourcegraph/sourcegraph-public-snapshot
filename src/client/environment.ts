@@ -2,7 +2,6 @@ import { Observable, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { TextDocument } from 'sourcegraph'
 import { ConfigurationCascade } from '../protocol'
-import { Range, Selection } from '../protocol/plainTypes'
 import { isEqual } from '../util'
 import { Context, EMPTY_CONTEXT } from './context/context'
 import { Extension } from './extension'
@@ -47,15 +46,6 @@ export const EMPTY_ENVIRONMENT: Environment<any, any> = {
 export interface Component {
     /** The document displayed by the component. */
     readonly document: TextDocumentItem
-
-    /**
-     * The selections in this component's document. If empty, there are no selections. The first element is
-     * considered the primary selection (and some operations may only heed the primary selection).
-     */
-    readonly selections: Selection[]
-
-    /** The vertical ranges in the document that are visible in the component. */
-    readonly visibleRanges: Readonly<Range>[]
 }
 
 /**
