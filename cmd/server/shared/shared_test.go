@@ -1,4 +1,4 @@
-package main
+package shared
 
 import (
 	"go/parser"
@@ -9,7 +9,7 @@ import (
 
 func TestEnsurePostgresVersion(t *testing.T) {
 	fset := token.NewFileSet()
-	f, err := parser.ParseFile(fset, "postgres.go", nil, parser.ParseComments)
+	f, err := parser.ParseFile(fset, "../dockerfile.go", nil, parser.ParseComments)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,12 +1,12 @@
-package main
+package shared
 
 import (
 	"log"
 	"os"
 )
 
-// setDefaultEnv will set the environment variable if it is not set.
-func setDefaultEnv(k, v string) string {
+// SetDefaultEnv will set the environment variable if it is not set.
+func SetDefaultEnv(k, v string) string {
 	if s, ok := os.LookupEnv(k); ok {
 		return s
 	}

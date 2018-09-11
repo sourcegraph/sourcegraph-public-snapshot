@@ -1,12 +1,10 @@
-package main
+package shared
 
 import (
 	"os"
 	"path/filepath"
 	"text/template"
 )
-
-//docker:install redis
 
 var redisConfTmpl = template.Must(template.New("redis.conf").Parse(`# allow access from all instances
 protected-mode no
@@ -64,7 +62,7 @@ func maybeRedisProcFile() (string, error) {
 	}
 
 	// Run and use a local redis
-	setDefaultEnv("REDIS_ENDPOINT", "127.0.0.1:6379")
+	SetDefaultEnv("REDIS_ENDPOINT", "127.0.0.1:6379")
 
 	// Redis is noiser than we prefer even at the most quiet setting "warning"
 	// so we only output the last log line when redis stops in case it stopped unexpectly

@@ -1,4 +1,4 @@
-package main
+package shared
 
 import (
 	"encoding/json"

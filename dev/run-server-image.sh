@@ -1,5 +1,5 @@
 #!/bin/bash
-# This runs a published server image.
+# This runs a published or local server image.
 
 DATA=/tmp/sourcegraph
 

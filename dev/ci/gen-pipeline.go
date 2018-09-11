@@ -332,7 +332,8 @@ func main() {
 			"query-runner",
 			"repo-updater",
 			"searcher",
-			"server",
+			// TODO(opensource): re-enable after enterprise build/deploy is sorted out
+			// "server",
 			"symbols",
 			"xlang-go",
 		}
@@ -344,7 +345,8 @@ func main() {
 
 	case branch == "master":
 		addDockerImageStep("frontend", true)
-		addDockerImageStep("server", true)
+		// TODO(opensource): re-enable after enterprise build/deploy is sorted out
+		// addDockerImageStep("server", true)
 		pipeline.AddWait()
 		addDeploySteps()
 
