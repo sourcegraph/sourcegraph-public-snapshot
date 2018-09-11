@@ -1,4 +1,4 @@
-import AddIcon from '@sourcegraph/icons/lib/Add'
+import AddIcon from 'mdi-react/AddIcon'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'

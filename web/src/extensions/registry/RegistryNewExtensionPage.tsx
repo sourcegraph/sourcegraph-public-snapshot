@@ -1,7 +1,7 @@
-import AddIcon from '@sourcegraph/icons/lib/Add'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import { upperFirst } from 'lodash'
+import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'

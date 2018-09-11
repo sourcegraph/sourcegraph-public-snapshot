@@ -1,7 +1,7 @@
-import AddIcon from '@sourcegraph/icons/lib/Add'
 import DeleteIcon from '@sourcegraph/icons/lib/Delete'
 import GearIcon from '@sourcegraph/icons/lib/Gear'
 import { isEqual } from 'lodash'
+import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'

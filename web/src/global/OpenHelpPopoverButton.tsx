@@ -1,4 +1,4 @@
-import HelpIcon from '@sourcegraph/icons/lib/Help'
+import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import * as React from 'react'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -19,7 +19,7 @@ export const OpenHelpPopoverButton: React.SFC<{
         onClick={onHelpPopoverToggle}
         onMouseDown={logEvent}
     >
-        <HelpIcon className="icon-inline" />
+        <HelpCircleOutlineIcon className="icon-inline" />
         {text && <span className="open-help-popover-button__text ml-1">{text}</span>}
     </button>
 )

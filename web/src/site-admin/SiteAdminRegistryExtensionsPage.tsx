@@ -1,5 +1,5 @@
-import AddIcon from '@sourcegraph/icons/lib/Add'
 import { upperFirst } from 'lodash'
+import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'

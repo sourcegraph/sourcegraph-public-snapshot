@@ -7,7 +7,7 @@ import {
     ExtensionConfiguredSubjectItemForConfigure,
     ExtensionConfiguredSubjectItemForRemove,
 } from '@sourcegraph/extensions-client-common/lib/extensions/ExtensionConfigureButton'
-import AddIcon from '@sourcegraph/icons/lib/Add'
+import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { isErrorLike } from '../../util/errors'
 import { ConfigurationCascadeProps, ExtensionsProps } from '../ExtensionsClientCommonContext'

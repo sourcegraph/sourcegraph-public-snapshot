@@ -1,6 +1,6 @@
-import AddIcon from '@sourcegraph/icons/lib/Add'
 import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
+import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import {

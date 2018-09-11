@@ -1,8 +1,8 @@
-import AddIcon from '@sourcegraph/icons/lib/Add'
-import HelpIcon from '@sourcegraph/icons/lib/Help'
 import Loader from '@sourcegraph/icons/lib/Loader'
-import WandIcon from '@sourcegraph/icons/lib/MagicWand'
 import * as H from 'history'
+import AddIcon from 'mdi-react/AddIcon'
+import AutoFixIcon from 'mdi-react/AutoFixIcon'
+import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import * as React from 'react'
 import { Redirect } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -133,7 +133,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                         onClick={this.toggleExamples}
                                         disabled={this.state.isViewingExamples}
                                     >
-                                        <WandIcon className="icon-inline" /> Discover built-in searches
+                                        <AutoFixIcon className="icon-inline" /> Discover built-in searches
                                     </button>
                                 )}
 
@@ -151,7 +151,7 @@ export class SavedQueries extends React.Component<Props, State> {
                                     className="btn btn-link"
                                     target="_blank"
                                 >
-                                    <HelpIcon className="icon-inline" /> Help
+                                    <HelpCircleOutlineIcon className="icon-inline" /> Help
                                 </a>
                             </div>
                         </div>
