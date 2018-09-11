@@ -7,12 +7,12 @@ import {
     DidChangeConfigurationNotification,
     KeyPath,
 } from '../../../protocol'
-import { MessageConnection } from '../../../protocol/jsonrpc2/connection'
+import { Connection } from '../../../protocol/jsonrpc2/connection'
 import { isEqual } from '../../../util'
 import { Configuration, Observable } from '../api'
 
 class ExtConfiguration<C> extends BehaviorSubject<C> implements Configuration<C>, Observable<C> {
-    constructor(private rawConnection: MessageConnection, initial: ConfigurationCascade<C>) {
+    constructor(private rawConnection: Connection, initial: ConfigurationCascade<C>) {
         super(initial.merged as C)
 
         rawConnection.onNotification(DidChangeConfigurationNotification.type, params => {
@@ -112,7 +112,7 @@ export function setValueAtKeyPath(source: any, path: KeyPath, value: any): any {
  * @return The {@link SourcegraphExtensionAPI#configuration} value.
  */
 export function createExtConfiguration<C>(
-    rawConnection: MessageConnection,
+    rawConnection: Connection,
     initial: ConfigurationCascade<C>
 ): Configuration<C> & Observable<C> {
     return new ExtConfiguration(rawConnection, initial)

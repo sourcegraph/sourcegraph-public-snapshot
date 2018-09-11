@@ -1,12 +1,12 @@
 import assert from 'assert'
 import { ContextUpdateNotification, ContextUpdateParams } from '../../../protocol/context'
-import { MockMessageConnection } from '../../../protocol/jsonrpc2/test/mockMessageConnection'
+import { MockConnection } from '../../../protocol/jsonrpc2/test/mockConnection'
 import { ExtensionContext } from '../api'
 import { createExtContext } from './context'
 
 describe('ExtContext', () => {
-    function create(): { extContext: ExtensionContext; mockConnection: MockMessageConnection } {
-        const mockConnection = new MockMessageConnection()
+    function create(): { extContext: ExtensionContext; mockConnection: MockConnection } {
+        const mockConnection = new MockConnection()
         const extContext = createExtContext(mockConnection)
         return { extContext, mockConnection }
     }

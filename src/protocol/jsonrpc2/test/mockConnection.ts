@@ -1,6 +1,6 @@
 import { isFunction } from '../../../util'
 import { CancellationToken } from '../cancel'
-import { MessageConnection } from '../connection'
+import { Connection } from '../connection'
 import { Emitter } from '../events'
 import {
     GenericNotificationHandler,
@@ -12,23 +12,23 @@ import { Message, MessageType, NotificationMessage, NotificationType, RequestTyp
 import { Trace, Tracer } from '../trace'
 
 /**
- * A mock implementation of {@link MessageConnection} for use in tests.
+ * A mock implementation of {@link Connection} for use in tests.
  */
-export class MockMessageConnection implements MessageConnection {
+export class MockConnection implements Connection {
     /**
-     * Messages sent by calls to {@link MockMessageConnection#sendRequest} or
-     * {@link MockMessageConnection#sendNotification}.
+     * Messages sent by calls to {@link MockConnection#sendRequest} or
+     * {@link MockConnection#sendNotification}.
      */
     public sentMessages: { method: string; params?: any }[] = []
 
     /**
-     * Message handlers registered by calls to {@link MockMessageConnection#onRequest} or
-     * {@link MockMessageConnection#onNotification}.
+     * Message handlers registered by calls to {@link MockConnection#onRequest} or
+     * {@link MockConnection#onNotification}.
      */
     public registeredHandlers = new Map<string, GenericRequestHandler<any, any> | GenericNotificationHandler>()
 
     /**
-     * Mock responses that are returned as results from {@link MockMessageConnection#sendRequest}.
+     * Mock responses that are returned as results from {@link MockConnection#sendRequest}.
      */
     public mockResults = new Map<string, any>()
 

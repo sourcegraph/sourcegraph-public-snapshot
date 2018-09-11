@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import { ClientCapabilities, RegistrationParams, UnregistrationParams } from '../protocol'
-import { createMessageConnection, MessageConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
+import { Connection, createConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
 import { MessageType as RPCMessageType } from '../protocol/jsonrpc2/messages'
 import { clientStateIs, getClientState } from '../test/helpers'
 import { createMessageTransports } from '../test/integration/helpers'
@@ -199,10 +199,10 @@ describe('Client', () => {
         }
 
         const createClientTransportsForTestServer = (
-            registerServer?: (server: MessageConnection) => void
+            registerServer?: (server: Connection) => void
         ): MessageTransports => {
             const [clientTransports, serverTransports] = createMessageTransports()
-            const serverConnection = createMessageConnection(serverTransports)
+            const serverConnection = createConnection(serverTransports)
             serverConnection.listen()
             if (registerServer) {
                 registerServer(serverConnection)

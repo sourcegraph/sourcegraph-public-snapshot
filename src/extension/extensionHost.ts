@@ -1,7 +1,7 @@
 import { Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { InitializedNotification, InitializeParams, InitializeRequest, InitializeResult } from '../protocol'
-import { createMessageConnection, Logger, MessageConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
+import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../protocol/jsonrpc2/transports/webWorker'
 import { createRegisterProviderFunctions } from './api/provider'
 import { Location } from './types/location'
@@ -37,7 +37,7 @@ const consoleLogger: Logger = {
 export async function createExtensionHost(
     transports: MessageTransports = createWebWorkerMessageTransports()
 ): Promise<typeof sourcegraph> {
-    const connection = createMessageConnection(transports, consoleLogger)
+    const connection = createConnection(transports, consoleLogger)
     return new Promise<typeof sourcegraph>(resolve => {
         let initializationParams!: InitializeParams
         connection.onRequest(InitializeRequest.type, params => {
@@ -51,10 +51,7 @@ export async function createExtensionHost(
     })
 }
 
-function createExtensionHandle(
-    rawConnection: MessageConnection,
-    initializeParams: InitializeParams
-): typeof sourcegraph {
+function createExtensionHandle(rawConnection: Connection, initializeParams: InitializeParams): typeof sourcegraph {
     const subscription = new Subscription()
     subscription.add(rawConnection)
 

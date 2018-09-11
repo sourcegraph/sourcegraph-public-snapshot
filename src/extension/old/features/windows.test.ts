@@ -7,15 +7,15 @@ import {
     ShowInputParams,
     ShowInputRequest,
 } from '../../../protocol'
-import { MockMessageConnection } from '../../../protocol/jsonrpc2/test/mockMessageConnection'
+import { MockConnection } from '../../../protocol/jsonrpc2/test/mockConnection'
 import { URI } from '../../types/uri'
 import { Window } from '../api'
 import { observableValue } from '../util'
 import { ExtWindows } from './windows'
 
 describe('ExtWindows', () => {
-    function create(): { extWindows: ExtWindows; mockConnection: MockMessageConnection } {
-        const mockConnection = new MockMessageConnection()
+    function create(): { extWindows: ExtWindows; mockConnection: MockConnection } {
+        const mockConnection = new MockConnection()
         const extWindows = new ExtWindows(mockConnection)
         return { extWindows, mockConnection }
     }

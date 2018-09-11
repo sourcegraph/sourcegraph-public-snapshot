@@ -8,12 +8,7 @@ import {
     RegistrationParams,
     RegistrationRequest,
 } from '../../protocol'
-import {
-    createMessageConnection,
-    Logger,
-    MessageConnection,
-    MessageTransports,
-} from '../../protocol/jsonrpc2/connection'
+import { Connection, createConnection, Logger, MessageTransports } from '../../protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../protocol/jsonrpc2/transports/webWorker'
 import { Commands, Configuration, ExtensionContext, Observable, SourcegraphExtensionAPI, Window, Windows } from './api'
 import { createExtCommands } from './features/commands'
@@ -32,7 +27,7 @@ class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
     private _windows: ExtWindows
     private subscription = new Subscription()
 
-    constructor(public readonly rawConnection: MessageConnection, public readonly initializeParams: InitializeParams) {
+    constructor(public readonly rawConnection: Connection, public readonly initializeParams: InitializeParams) {
         this.subscription.add(this.rawConnection)
 
         this.configuration = createExtConfiguration<C>(
@@ -83,7 +78,7 @@ export function activateExtension<C>(
     run: (sourcegraph: SourcegraphExtensionAPI<C>) => void | Promise<void>,
     transports: MessageTransports = createWebWorkerMessageTransports()
 ): Promise<void> {
-    const connection = createMessageConnection(transports, consoleLogger)
+    const connection = createConnection(transports, consoleLogger)
     return new Promise<void>(resolve => {
         let initializationParams!: InitializeParams
         connection.onRequest(InitializeRequest.type, params => {

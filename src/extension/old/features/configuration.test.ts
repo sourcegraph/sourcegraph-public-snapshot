@@ -6,7 +6,7 @@ import {
     DidChangeConfigurationNotification,
     DidChangeConfigurationParams,
 } from '../../../protocol'
-import { MockMessageConnection } from '../../../protocol/jsonrpc2/test/mockMessageConnection'
+import { MockConnection } from '../../../protocol/jsonrpc2/test/mockConnection'
 import { Configuration, Observable } from '../api'
 import { observableValue } from '../util'
 import { createExtConfiguration, setValueAtKeyPath } from './configuration'
@@ -20,9 +20,9 @@ describe('ExtConfiguration', () => {
         initial: ConfigurationCascade<C> = { merged: {} as C }
     ): {
         extConfiguration: Configuration<C> & Observable<C>
-        mockConnection: MockMessageConnection
+        mockConnection: MockConnection
     } {
-        const mockConnection = new MockMessageConnection()
+        const mockConnection = new MockConnection()
         const extConfiguration = createExtConfiguration(mockConnection, initial)
         return { extConfiguration, mockConnection }
     }

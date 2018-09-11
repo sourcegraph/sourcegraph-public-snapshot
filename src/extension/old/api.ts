@@ -3,7 +3,7 @@ import * as sourcegraph from 'sourcegraph'
 import { Context } from '../../client/context/context'
 import { TextDocumentIdentifier } from '../../client/types/textDocument'
 import { InitializeParams, Settings, TextDocumentDecoration } from '../../protocol'
-import { MessageConnection } from '../../protocol/jsonrpc2/connection'
+import { Connection } from '../../protocol/jsonrpc2/connection'
 
 /**
  * The Sourcegraph extension API, which extensions use to interact with the client.
@@ -47,7 +47,7 @@ export interface SourcegraphExtensionAPI<C = Settings> {
      * The underlying connection to the Sourcegraph extension client.
      * @internal
      */
-    readonly rawConnection: MessageConnection
+    readonly rawConnection: Connection
 
     /**
      * Immediately stops the extension and closes the connection to the client.

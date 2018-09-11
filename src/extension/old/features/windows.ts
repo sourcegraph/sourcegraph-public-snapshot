@@ -8,7 +8,7 @@ import {
     TextDocumentPublishDecorationsNotification,
     TextDocumentPublishDecorationsParams,
 } from '../../../protocol'
-import { MessageConnection } from '../../../protocol/jsonrpc2/connection'
+import { Connection } from '../../../protocol/jsonrpc2/connection'
 import { URI } from '../../types/uri'
 import { Observable, Window, Windows } from '../api'
 
@@ -19,7 +19,7 @@ import { Observable, Window, Windows } from '../api'
  * @return The {@link SourcegraphExtensionAPI#windows} value.
  */
 export class ExtWindows extends BehaviorSubject<Window[]> implements Windows, Observable<Window[]> {
-    constructor(private rawConnection: MessageConnection) {
+    constructor(private rawConnection: Connection) {
         super([
             {
                 isActive: true,

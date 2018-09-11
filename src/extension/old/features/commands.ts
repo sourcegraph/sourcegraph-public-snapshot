@@ -9,7 +9,7 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../../../protocol'
-import { MessageConnection } from '../../../protocol/jsonrpc2/connection'
+import { Connection } from '../../../protocol/jsonrpc2/connection'
 import { Commands } from '../api'
 
 /**
@@ -18,7 +18,7 @@ import { Commands } from '../api'
  * @param rawConnection The connection to the Sourcegraph API client.
  * @return The {@link Creates the Sourcegraph extension API extension API's#commands} value.
  */
-export function createExtCommands(rawConnection: MessageConnection): Commands {
+export function createExtCommands(rawConnection: Connection): Commands {
     // TODO: move CommandRegistry to somewhere general since it's now used by the controller AND extension
     const commandRegistry = new CommandRegistry()
     rawConnection.onRequest(ExecuteCommandRequest.type, params => commandRegistry.executeCommand(params))

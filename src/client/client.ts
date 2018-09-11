@@ -12,7 +12,7 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../protocol'
-import { createMessageConnection, MessageConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
+import { Connection, createConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
 import {
     GenericNotificationHandler,
     GenericRequestHandler,
@@ -99,8 +99,8 @@ export class Client implements Unsubscribable {
         return this._state
     }
 
-    private connectionPromise: Promise<MessageConnection> | null = null
-    private connection: MessageConnection | null = null
+    private connectionPromise: Promise<Connection> | null = null
+    private connection: Connection | null = null
 
     private onStop: Promise<void> | null = null
 
@@ -148,7 +148,7 @@ export class Client implements Unsubscribable {
      */
     protected activateAndWait(): Promise<void> {
         this._state.next(ClientState.Connecting)
-        let activateConnection: MessageConnection | null = null // track so we know if we're dealing with the same value upon error
+        let activateConnection: Connection | null = null // track so we know if we're dealing with the same value upon error
         return this.resolveConnection()
             .then(connection => {
                 activateConnection = connection
@@ -165,10 +165,10 @@ export class Client implements Unsubscribable {
             })
     }
 
-    private resolveConnection(): Promise<MessageConnection> {
+    private resolveConnection(): Promise<Connection> {
         if (!this.connectionPromise) {
             this.connectionPromise = tryCatchPromise(this.options.createMessageTransports).then(transports => {
-                const connection = createMessageConnection(transports)
+                const connection = createConnection(transports)
                 connection.onError(data => this.handleConnectionError(data[0], data[1], data[2]))
                 connection.onClose(() => this.handleConnectionClosed())
                 return connection
@@ -177,7 +177,7 @@ export class Client implements Unsubscribable {
         return this.connectionPromise
     }
 
-    private initialize(connection: MessageConnection): Promise<void> {
+    private initialize(connection: Connection): Promise<void> {
         connection.trace(this._trace, this.options.tracer)
 
         const initParams: InitializeParams = {
@@ -308,7 +308,7 @@ export class Client implements Unsubscribable {
             return this.onStop
         }
 
-        const closeConnection = (connection: MessageConnection) => {
+        const closeConnection = (connection: Connection) => {
             // It's possible for the connection to be alive and this.isConnectionActive === false (e.g., if we're
             // still waiting to hear back from the server), so make sure we close it.
             if (connection) {

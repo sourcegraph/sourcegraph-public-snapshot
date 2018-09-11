@@ -2,7 +2,7 @@ import assert from 'assert'
 import { Duplex } from 'stream'
 import { inherits } from 'util'
 import { CancellationTokenSource } from './cancel'
-import { createMessageConnection } from './connection'
+import { createConnection } from './connection'
 import { ErrorCodes, NotificationType, RequestType, ResponseError } from './messages'
 import { StreamMessageReader, StreamMessageWriter } from './transports/stream'
 
@@ -40,7 +40,7 @@ const TestDuplex: TestDuplexConstructor = ((): TestDuplexConstructor => {
 })()
 
 // tslint:disable no-floating-promises
-describe('MessageConnection', () => {
+describe('Connection', () => {
     it('duplex stream', done => {
         const stream = new TestDuplex('ds1')
         stream.on('data', chunk => {
@@ -55,7 +55,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const connection = createMessageConnection({
+        const connection = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -77,7 +77,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -87,7 +87,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -100,14 +100,14 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
         server.onRequest(type, (p1, _token) => p1)
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -128,13 +128,13 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -152,7 +152,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -162,7 +162,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -175,7 +175,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -185,7 +185,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -198,7 +198,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -208,7 +208,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -223,7 +223,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -233,7 +233,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -248,7 +248,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -258,7 +258,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -270,7 +270,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -280,7 +280,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -293,11 +293,11 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -320,7 +320,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -338,7 +338,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -355,7 +355,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -371,7 +371,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -381,7 +381,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -394,7 +394,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -404,7 +404,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -417,7 +417,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -427,7 +427,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -441,7 +441,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -454,7 +454,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -468,7 +468,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -478,7 +478,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -490,7 +490,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -500,7 +500,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -513,7 +513,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -523,7 +523,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -536,7 +536,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -547,7 +547,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -560,7 +560,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -571,7 +571,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -585,7 +585,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -595,7 +595,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -608,14 +608,14 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
         server.onRequest(type, (params, _token) => 123)
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })
@@ -628,7 +628,7 @@ describe('MessageConnection', () => {
         const duplexStream1 = new TestDuplex('ds1')
         const duplexStream2 = new TestDuplex('ds2')
 
-        const server = createMessageConnection({
+        const server = createConnection({
             reader: new StreamMessageReader(duplexStream2),
             writer: new StreamMessageWriter(duplexStream1),
         })
@@ -638,7 +638,7 @@ describe('MessageConnection', () => {
         })
         server.listen()
 
-        const client = createMessageConnection({
+        const client = createConnection({
             reader: new StreamMessageReader(duplexStream1),
             writer: new StreamMessageWriter(duplexStream2),
         })

@@ -8,16 +8,16 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../../../protocol'
-import { MockMessageConnection } from '../../../protocol/jsonrpc2/test/mockMessageConnection'
+import { MockConnection } from '../../../protocol/jsonrpc2/test/mockConnection'
 import { Commands } from '../api'
 import { createExtCommands } from './commands'
 
 describe('ExtCommands', () => {
     function create(): {
         extCommands: Commands
-        mockConnection: MockMessageConnection
+        mockConnection: MockConnection
     } {
-        const mockConnection = new MockMessageConnection()
+        const mockConnection = new MockConnection()
         const extCommands = createExtCommands(mockConnection)
         return { extCommands, mockConnection }
     }

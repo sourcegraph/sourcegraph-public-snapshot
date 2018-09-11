@@ -7,14 +7,14 @@ import {
     InitializeResult,
     RegistrationRequest,
 } from '../protocol'
-import { createMessageConnection } from '../protocol/jsonrpc2/connection'
+import { createConnection } from '../protocol/jsonrpc2/connection'
 import { createMessageTransports } from '../test/integration/helpers'
 import { createExtensionHost } from './extensionHost'
 
 describe('createExtensionHost', () => {
     it('initialize request parameters and result', async () => {
         const [clientTransports, serverTransports] = createMessageTransports()
-        const clientConnection = createMessageConnection(clientTransports)
+        const clientConnection = createConnection(clientTransports)
         clientConnection.listen()
 
         const initParams: InitializeParams = {

@@ -1,6 +1,6 @@
 import { Context } from '../../../client/context/context'
 import { ContextUpdateNotification, ContextUpdateParams } from '../../../protocol/context'
-import { MessageConnection } from '../../../protocol/jsonrpc2/connection'
+import { Connection } from '../../../protocol/jsonrpc2/connection'
 import { ExtensionContext } from '../api'
 
 /**
@@ -9,7 +9,7 @@ import { ExtensionContext } from '../api'
  * @param rawConnection The connection to the Sourcegraph API client.
  * @return The {@link SourcegraphExtensionAPI#context} value.
  */
-export function createExtContext(rawConnection: MessageConnection): ExtensionContext {
+export function createExtContext(rawConnection: Connection): ExtensionContext {
     return {
         updateContext: (updates: Context): void => {
             rawConnection.sendNotification(ContextUpdateNotification.type, { updates } as ContextUpdateParams)

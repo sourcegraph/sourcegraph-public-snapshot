@@ -10,7 +10,7 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../../protocol'
-import { MessageConnection } from '../../protocol/jsonrpc2/connection'
+import { Connection } from '../../protocol/jsonrpc2/connection'
 import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { Position } from '../types/position'
 
@@ -22,7 +22,7 @@ interface RegisterProviderFunctions extends Pick<typeof sourcegraph, 'registerHo
 /**
  * Create all `registerXyzProvider` functions in the Sourcegraph extension API.
  */
-export function createRegisterProviderFunctions(connection: MessageConnection): RegisterProviderFunctions {
+export function createRegisterProviderFunctions(connection: Connection): RegisterProviderFunctions {
     return {
         registerHoverProvider: (selector, provider) => {
             connection.onRequest(HoverRequest.type, (params: TextDocumentPositionParams) =>
@@ -44,11 +44,7 @@ export function createRegisterProviderFunctions(connection: MessageConnection): 
  *
  * @return An {@link Unsubscribable} that unregisters the provider.
  */
-function registerProvider<RO>(
-    connection: MessageConnection,
-    type: RPCMessageType,
-    registerOptions: RO
-): Unsubscribable {
+function registerProvider<RO>(connection: Connection, type: RPCMessageType, registerOptions: RO): Unsubscribable {
     const id = uuidv4()
     // TODO(sqs): handle errors in sendRequest calls
     connection

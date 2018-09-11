@@ -81,7 +81,7 @@ export class ConnectionError extends Error {
 
 export type MessageQueue = LinkedMap<string, Message>
 
-export interface MessageConnection extends Unsubscribable {
+export interface Connection extends Unsubscribable {
     sendRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, params: P, token?: CancellationToken): Promise<R>
     sendRequest<R>(method: string, ...params: any[]): Promise<R>
 
@@ -110,15 +110,15 @@ export interface MessageTransports {
     writer: MessageWriter
 }
 
-export function createMessageConnection(
+export function createConnection(
     transports: MessageTransports,
     logger?: Logger,
     strategy?: ConnectionStrategy
-): MessageConnection {
+): Connection {
     if (!logger) {
         logger = NullLogger
     }
-    return _createMessageConnection(transports, logger, strategy)
+    return _createConnection(transports, logger, strategy)
 }
 
 interface ResponsePromise {
@@ -152,11 +152,7 @@ interface NotificationHandlerElement {
     handler: GenericNotificationHandler
 }
 
-function _createMessageConnection(
-    transports: MessageTransports,
-    logger: Logger,
-    strategy?: ConnectionStrategy
-): MessageConnection {
+function _createConnection(transports: MessageTransports, logger: Logger, strategy?: ConnectionStrategy): Connection {
     let sequenceNumber = 0
     let notificationSquenceNumber = 0
     let unknownResponseSquenceNumber = 0
@@ -559,7 +555,7 @@ function _createMessageConnection(
         }
     }
 
-    const connection: MessageConnection = {
+    const connection: Connection = {
         sendNotification: (type: string | MessageType, params: any): void => {
             throwIfClosedOrUnsubscribed()
 
