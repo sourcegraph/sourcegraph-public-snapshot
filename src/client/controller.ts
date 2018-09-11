@@ -20,16 +20,13 @@ import { ConfigurationChangeNotificationFeature, ConfigurationUpdateFeature } fr
 import { ContextFeature } from './features/context'
 import { ContributionFeature } from './features/contribution'
 import { TextDocumentDecorationFeature } from './features/decoration'
-import { TextDocumentHoverFeature } from './features/hover'
 import {
     TextDocumentDefinitionFeature,
     TextDocumentImplementationFeature,
     TextDocumentReferencesFeature,
     TextDocumentTypeDefinitionFeature,
 } from './features/location'
-import { WindowLogMessageFeature } from './features/logMessage'
 import { WindowShowMessageFeature } from './features/message'
-import { TextDocumentDidCloseFeature, TextDocumentDidOpenFeature } from './features/textDocument'
 import { Registries } from './registries'
 
 /** The minimal unique identifier for a client. */
@@ -240,8 +237,6 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
         )
         client.registerFeature(new ContributionFeature(this.registries.contribution))
         client.registerFeature(new ExecuteCommandFeature(client, this.registries.commands))
-        client.registerFeature(new TextDocumentDidOpenFeature(client, this.environment.textDocument))
-        client.registerFeature(new TextDocumentDidCloseFeature(client, this.environment.textDocument))
         client.registerFeature(new TextDocumentDefinitionFeature(client, this.registries.textDocumentDefinition))
         client.registerFeature(
             new TextDocumentImplementationFeature(client, this.registries.textDocumentImplementation)
@@ -250,13 +245,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
         client.registerFeature(
             new TextDocumentTypeDefinitionFeature(client, this.registries.textDocumentTypeDefinition)
         )
-        client.registerFeature(new TextDocumentHoverFeature(client, this.registries.textDocumentHover))
         client.registerFeature(new TextDocumentDecorationFeature(client, this.registries.textDocumentDecoration))
-        client.registerFeature(
-            new WindowLogMessageFeature(client, (params: LogMessageParams) =>
-                this._logMessages.next({ ...params, extension: client.id })
-            )
-        )
         client.registerFeature(
             new WindowShowMessageFeature(
                 client,
