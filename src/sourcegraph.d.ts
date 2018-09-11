@@ -388,8 +388,12 @@ declare module 'sourcegraph' {
         /** The marked up text. */
         value: string
 
-        /** The kind of markup used. */
-        kind: MarkupKind
+        /**
+         * The kind of markup used.
+         *
+         * @default MarkupKind.PlainText
+         */
+        kind?: MarkupKind
     }
 
     /**

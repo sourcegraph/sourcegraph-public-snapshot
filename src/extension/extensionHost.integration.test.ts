@@ -1,7 +1,6 @@
 import * as assert from 'assert'
 import { from } from 'rxjs'
 import { filter, map, switchMap, take } from 'rxjs/operators'
-import { MarkupKind } from 'sourcegraph'
 import * as sourcegraph from 'sourcegraph'
 import { Controller } from '../client/controller'
 import { Environment } from '../client/environment'
@@ -59,7 +58,7 @@ describe('Extension host (integration)', () => {
 
         // Register the hover provider and call it.
         const unsubscribe = extensionHost.registerHoverProvider(['*'], {
-            provideHover: () => ({ contents: { value: 'a', kind: MarkupKind.PlainText } }),
+            provideHover: () => ({ contents: { value: 'a' } }),
         })
         await ready
         assert.deepStrictEqual(
@@ -71,7 +70,7 @@ describe('Extension host (integration)', () => {
                 .pipe(take(1))
                 .toPromise(),
             {
-                contents: [{ value: 'a', kind: MarkupKind.PlainText }],
+                contents: [{ value: 'a' }],
             } as HoverMerged
         )
 
@@ -94,10 +93,10 @@ describe('Extension host (integration)', () => {
         const { clientController, extensionHost, ready } = await create()
 
         extensionHost.registerHoverProvider(['*'], {
-            provideHover: () => ({ contents: { value: 'a', kind: MarkupKind.PlainText } }),
+            provideHover: () => ({ contents: { value: 'a' } }),
         })
         extensionHost.registerHoverProvider(['*'], {
-            provideHover: () => ({ contents: { value: 'b', kind: MarkupKind.PlainText } }),
+            provideHover: () => ({ contents: { value: 'b' } }),
         })
         await ready
 
@@ -109,7 +108,7 @@ describe('Extension host (integration)', () => {
             .pipe(take(1))
             .toPromise()
         assert.deepStrictEqual(hover, {
-            contents: [{ value: 'a', kind: MarkupKind.PlainText }, { value: 'b', kind: MarkupKind.PlainText }],
+            contents: [{ value: 'a' }, { value: 'b' }],
         } as HoverMerged)
     })
 })
