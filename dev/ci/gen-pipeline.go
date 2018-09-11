@@ -151,8 +151,19 @@ func main() {
 		version = strings.TrimPrefix(version, "v")
 	}
 
+	// addDockerImageStep adds a build step for a given app. If the app name has prefix
+	// "enterprise/", that signals it is part of the enterprise distribution.
 	addDockerImageStep := func(app string, insiders bool) {
-		cmdDir := "./cmd/" + app
+		isEnterprise := strings.HasPrefix(app, "enterprise/")
+		appBase := strings.TrimPrefix(app, "enterprise/")
+
+		var cmdDir string
+		if isEnterprise {
+			cmdDir = "./enterprise/cmd/" + appBase
+		} else {
+			cmdDir = "./cmd/" + appBase
+		}
+
 		if _, err := os.Stat(cmdDir); err != nil {
 			fmt.Fprintln(os.Stderr, "app does not exist: "+app)
 			os.Exit(1)
@@ -186,7 +197,7 @@ func main() {
 		if insiders {
 			tags := []string{"insiders"}
 
-			if strings.HasPrefix(app, "xlang") {
+			if strings.HasPrefix(appBase, "xlang") {
 				// The "latest" tag is needed for the automatic docker management logic.
 				tags = append(tags, "latest")
 			}
@@ -325,6 +336,7 @@ func main() {
 		latest := branch == "master"
 		allDockerImages := []string{
 			"frontend",
+			"enterprise/frontend",
 			"github-proxy",
 			"gitserver",
 			"indexer",
@@ -332,8 +344,7 @@ func main() {
 			"query-runner",
 			"repo-updater",
 			"searcher",
-			// TODO(opensource): re-enable after enterprise build/deploy is sorted out
-			// "server",
+			"enterprise/server",
 			"symbols",
 			"xlang-go",
 		}
@@ -345,8 +356,8 @@ func main() {
 
 	case branch == "master":
 		addDockerImageStep("frontend", true)
-		// TODO(opensource): re-enable after enterprise build/deploy is sorted out
-		// addDockerImageStep("server", true)
+		addDockerImageStep("enterprise/frontend", true)
+		addDockerImageStep("enterprise/server", true)
 		pipeline.AddWait()
 		addDeploySteps()
 
