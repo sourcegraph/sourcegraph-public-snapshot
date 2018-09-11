@@ -101,6 +101,13 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
     }
 }
 
+declare global {
+    interface Window {
+        sx: any
+        sxenv: any
+    }
+}
+
 /**
  * Creates the controller, which handles all communication between the React app and Sourcegraph extensions.
  *
@@ -177,27 +184,10 @@ export function createController<S extends ConfigurationSubject, C extends Setti
 
         // Debug helpers: e.g., just run `sx` in devtools to get a reference to this controller. (If multiple
         // controllers are created, this points to the last one created.)
-        if ('sx' in window) {
-            delete (window as any).sx
-        }
-        Object.defineProperty(window, 'sx', {
-            get: () => controller,
-        })
-        if ('sxenv' in window) {
-            delete (window as any).sxenv
-        }
-        Object.defineProperty(window, 'sxenv', {
-            get: () => {
-                // This value is synchronously available because observable has an underlying
-                // BehaviorSubject source.
-                let value: Environment | undefined
-                controller.environment.environment.subscribe(v => (value = v)).unsubscribe()
-                if (value === undefined) {
-                    throw new Error('environment was not synchronously available')
-                }
-                return value!
-            },
-        })
+        window.sx = controller
+        // This value is synchronously available because observable has an underlying
+        // BehaviorSubject source.
+        controller.environment.environment.subscribe(v => (window.sxenv = v)).unsubscribe()
     }
 
     return controller
