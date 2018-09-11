@@ -43,7 +43,7 @@ describe('TextDocumentNotificationFeature', () => {
         }
     }
 
-    const FIXTURE_REGISTER_OPTIONS: TextDocumentRegistrationOptions = { documentSelector: ['*'], extensionID: 'test' }
+    const FIXTURE_REGISTER_OPTIONS: TextDocumentRegistrationOptions = { documentSelector: ['*'] }
 
     describe('registration', () => {
         it('supports dynamic registration and unregistration', () => {
@@ -102,7 +102,7 @@ describe('TextDocumentDidOpenFeature', () => {
             const { client, environment, feature } = create()
             feature.register(feature.messages, {
                 id: 'a',
-                registerOptions: { documentSelector: ['l'], extensionID: 'id' },
+                registerOptions: { documentSelector: ['l'] },
             })
 
             const textDocument: TextDocumentItem = {
@@ -154,7 +154,7 @@ describe('TextDocumentDidCloseFeature', () => {
             const { client, environment, feature } = create()
             feature.register(feature.messages, {
                 id: 'a',
-                registerOptions: { documentSelector: ['l'], extensionID: 'test' },
+                registerOptions: { documentSelector: ['l'] },
             })
 
             const textDocument: TextDocumentItem = {

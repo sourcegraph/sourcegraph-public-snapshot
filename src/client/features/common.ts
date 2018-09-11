@@ -64,20 +64,7 @@ export abstract class Feature<O> implements DynamicFeature<O> {
 
     public abstract get messages(): string
 
-    /**
-     * validateRegistrationOptions validates a proposed options object. This is used by the register
-     * method to verify registration options. At a minimum, the options
-     * object should conform to O (the options type of a Feature subclass).
-     *
-     * Implementors of this method should return the original options object unmodified if it is
-     * valid and throw an error if it is invalid (i.e., does not satisfy the type).
-     *
-     * @param options the options object to validate
-     */
-    protected abstract validateRegistrationOptions(options: any): O
-
     public register(message: string, data: RegistrationData<any>): void {
-        const registerOptions = this.validateRegistrationOptions(data.registerOptions)
         if (message !== this.messages) {
             throw new Error(
                 `Register called on wrong feature. Requested ${message} but reached feature ${this.messages}`
@@ -86,7 +73,7 @@ export abstract class Feature<O> implements DynamicFeature<O> {
         if (this.subscriptionsByID.has(data.id)) {
             throw new Error(`registration already exists with ID ${data.id}`)
         }
-        this.subscriptionsByID.set(data.id, this.registerProvider(registerOptions))
+        this.subscriptionsByID.set(data.id, this.registerProvider(data.registerOptions))
     }
 
     protected abstract registerProvider(options: O): Unsubscribable

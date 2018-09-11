@@ -32,7 +32,6 @@ export function createRegisterProviderFunctions(connection: Connection): Registe
             )
             return registerProvider<TextDocumentRegistrationOptions>(connection, HoverRequest.type, {
                 documentSelector: selector,
-                extensionID: '', // TODO(sqs): use provider ID
             })
         },
     }

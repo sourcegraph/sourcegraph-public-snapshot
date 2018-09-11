@@ -2,7 +2,6 @@ import { combineLatest, from, Observable } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { ReferenceParams, TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
-import { compact, flatten } from '../../util'
 import { FeatureProviderRegistry } from './registry'
 import { flattenAndCompact } from './util'
 
@@ -23,24 +22,6 @@ export class TextDocumentLocationProviderRegistry<
     public getLocation(params: P): Observable<L | L[] | null> {
         return getLocation<P, L>(this.providers, params)
     }
-
-    public getLocationsWithExtensionID(params: P): Observable<{ extensionID: string; location: L }[] | null> {
-        return getLocationsWithExtensionID<P, L>(this.providersWithID, params)
-    }
-
-    /**
-     * List of providers with their associated extension ID
-     */
-    public readonly providersWithID: Observable<
-        { extensionID: string; provider: ProvideTextDocumentLocationSignature<P, L> }[]
-    > = this.entries.pipe(
-        map(providers =>
-            providers.map(({ provider, registrationOptions }) => ({
-                extensionID: registrationOptions.extensionID,
-                provider,
-            }))
-        )
-    )
 }
 
 /**
@@ -82,29 +63,6 @@ export function getLocations<
 }
 
 /**
- * Like getLocations, but includes the ID of the extension that provided each location result
- */
-export function getLocationsWithExtensionID<
-    P extends TextDocumentPositionParams = TextDocumentPositionParams,
-    L extends Location = Location
->(
-    providersWithID: Observable<{ extensionID: string; provider: ProvideTextDocumentLocationSignature<P, L> }[]>,
-    params: P
-): Observable<{ extensionID: string; location: L }[]> {
-    return providersWithID.pipe(
-        switchMap(providersWithID =>
-            combineLatest(
-                providersWithID.map(({ provider, extensionID }) =>
-                    provider(params).pipe(
-                        map(r => flattenAndCompactNonNull([r]).map(l => ({ extensionID, location: l })))
-                    )
-                )
-            ).pipe(map(flattenAndCompactNonNull))
-        )
-    )
-}
-
-/**
  * Provides reference results from all extensions.
  *
  * Reference results are always an array or null, unlike results from other location providers (e.g., from
@@ -117,9 +75,4 @@ export class TextDocumentReferencesProviderRegistry extends TextDocumentLocation
         // null).
         return getLocations(this.providers, params)
     }
-}
-
-/** Flattens and compacts the argument. If it is null or if the result is empty, it returns null. */
-function flattenAndCompactNonNull<T>(value: (T | T[] | null)[] | null): T[] {
-    return value ? flatten(compact(value)) : []
 }

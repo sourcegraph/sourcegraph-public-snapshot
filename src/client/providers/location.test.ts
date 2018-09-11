@@ -2,12 +2,7 @@ import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Location } from '../../protocol/plainTypes'
-import {
-    getLocation,
-    getLocations,
-    getLocationsWithExtensionID,
-    ProvideTextDocumentLocationSignature,
-} from './location'
+import { getLocation, getLocations, ProvideTextDocumentLocationSignature } from './location'
 import { FIXTURE } from './registry.test'
 
 const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
@@ -184,34 +179,6 @@ describe('getLocations', () => {
                 )
             ).toBe('-a-|', {
                 a: FIXTURE_LOCATIONS,
-            })
-        ))
-})
-
-describe('getLocationsWithExtensionID', () => {
-    it('wraps single result in array', () =>
-        scheduler().run(({ cold, expectObservable }) => {
-            const res = getLocationsWithExtensionID(
-                cold<{ extensionID: string; provider: ProvideTextDocumentLocationSignature }[]>('-a-|', {
-                    a: [{ extensionID: 'test', provider: () => of(FIXTURE_LOCATION) }],
-                }),
-                FIXTURE.TextDocumentPositionParams
-            )
-            expectObservable(res).toBe('-a-|', {
-                a: [{ extensionID: 'test', location: FIXTURE_LOCATION }],
-            })
-        }))
-    it('preserves array results', () =>
-        scheduler().run(({ cold, expectObservable }) =>
-            expectObservable(
-                getLocationsWithExtensionID(
-                    cold<{ extensionID: string; provider: ProvideTextDocumentLocationSignature }[]>('-a-|', {
-                        a: [{ extensionID: 'test', provider: () => of(FIXTURE_LOCATIONS) }],
-                    }),
-                    FIXTURE.TextDocumentPositionParams
-                )
-            ).toBe('-a-|', {
-                a: FIXTURE_LOCATIONS.map(l => ({ extensionID: 'test', location: l })),
             })
         ))
 })

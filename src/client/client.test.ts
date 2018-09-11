@@ -79,14 +79,12 @@ describe('Client', () => {
 
                 // Request registration.
                 client.handleRegistrationRequest({
-                    registrations: [
-                        { id: 'a', method: 'm', registerOptions: { a: 1, extensionID: '' }, overwriteExisting: true },
-                    ],
+                    registrations: [{ id: 'a', method: 'm', registerOptions: { a: 1 }, overwriteExisting: true }],
                 })
                 assert.deepStrictEqual(registerCalls, [
                     {
                         message: 'm',
-                        data: { id: 'a', registerOptions: { a: 1, extensionID: '' }, overwriteExisting: true },
+                        data: { id: 'a', registerOptions: { a: 1 }, overwriteExisting: true },
                     },
                 ] as typeof registerCalls)
 

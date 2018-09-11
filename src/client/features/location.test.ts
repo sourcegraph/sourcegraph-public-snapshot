@@ -41,7 +41,7 @@ describe('TextDocumentLocationFeature', () => {
             )
             feature.register(feature.messages, {
                 id: 'a',
-                registerOptions: { documentSelector: ['*'], extensionID: 'test' },
+                registerOptions: { documentSelector: ['*'] },
             })
             assert.strictEqual(registry.providersSnapshot.length, 1)
             feature.unregister('a')

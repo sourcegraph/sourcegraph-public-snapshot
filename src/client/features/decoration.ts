@@ -46,10 +46,6 @@ export class TextDocumentDecorationFeature implements StaticFeature {
         }
     }
 
-    protected validateRegistrationOptions(_data: any): undefined {
-        return
-    }
-
     private getDecorationsSubject(
         textDocument: TextDocumentIdentifier,
         value?: TextDocumentDecoration[] | null

@@ -42,14 +42,6 @@ export abstract class TextDocumentLocationFeature<
             (params: P): Observable<L | L[] | null> => from(this.client.sendRequest(this.messages, params))
         )
     }
-
-    protected validateRegistrationOptions(data: any): TextDocumentRegistrationOptions {
-        const options: TextDocumentRegistrationOptions = data
-        if (!options.extensionID) {
-            throw new Error('extensionID should be non-empty in registration options')
-        }
-        return options
-    }
 }
 
 /**

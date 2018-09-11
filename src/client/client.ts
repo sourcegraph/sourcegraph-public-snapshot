@@ -427,9 +427,6 @@ export class Client implements Unsubscribable {
             if (!options.documentSelector && this.options.documentSelector) {
                 options.documentSelector = this.options.documentSelector
             }
-            if (!options.extensionID) {
-                options.extensionID = this.id
-            }
             const data: RegistrationData<any> = {
                 id: registration.id,
                 registerOptions: options,
