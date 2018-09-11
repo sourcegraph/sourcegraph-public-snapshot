@@ -1,8 +1,6 @@
 import { Unsubscribable } from 'sourcegraph'
 import * as sourcegraph from 'sourcegraph'
 import uuidv4 from 'uuid/v4'
-import { MessageConnection } from '../../jsonrpc2/connection'
-import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
     HoverRequest,
     RegistrationParams,
@@ -12,6 +10,8 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../../protocol'
+import { MessageConnection } from '../../protocol/jsonrpc2/connection'
+import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { Position } from '../types/position'
 
 /**

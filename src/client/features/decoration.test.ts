@@ -1,13 +1,13 @@
 import * as assert from 'assert'
-import { TextDocumentDecorationProviderRegistry } from '../providers/decoration'
-import { NotificationHandler } from '../../jsonrpc2/handlers'
-import { NotificationType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
     TextDocumentPublishDecorationsNotification,
     TextDocumentPublishDecorationsParams,
 } from '../../protocol'
+import { NotificationHandler } from '../../protocol/jsonrpc2/handlers'
+import { NotificationType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
+import { TextDocumentDecorationProviderRegistry } from '../providers/decoration'
 import { TextDocumentDecorationFeature } from './decoration'
 
 describe('TextDocumentDecorationFeature', () => {

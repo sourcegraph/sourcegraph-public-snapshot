@@ -1,5 +1,4 @@
 import assert from 'assert'
-import { MockMessageConnection } from '../../../jsonrpc2/test/mockMessageConnection'
 import {
     ConfigurationCascade,
     ConfigurationUpdateParams,
@@ -7,6 +6,7 @@ import {
     DidChangeConfigurationNotification,
     DidChangeConfigurationParams,
 } from '../../../protocol'
+import { MockMessageConnection } from '../../../protocol/jsonrpc2/test/mockMessageConnection'
 import { Configuration, Observable } from '../api'
 import { observableValue } from '../util'
 import { createExtConfiguration, setValueAtKeyPath } from './configuration'

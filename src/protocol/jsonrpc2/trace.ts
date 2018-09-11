@@ -1,4 +1,4 @@
-import { NotificationMessage, NotificationType, RequestMessage, ResponseMessage } from '../jsonrpc2/messages'
+import { NotificationMessage, NotificationType, RequestMessage, ResponseMessage } from './messages'
 
 // Copied from vscode-jsonrpc to avoid adding extraneous dependencies.
 

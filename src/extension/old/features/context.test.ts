@@ -1,6 +1,6 @@
 import assert from 'assert'
-import { MockMessageConnection } from '../../../jsonrpc2/test/mockMessageConnection'
 import { ContextUpdateNotification, ContextUpdateParams } from '../../../protocol/context'
+import { MockMessageConnection } from '../../../protocol/jsonrpc2/test/mockMessageConnection'
 import { ExtensionContext } from '../api'
 import { createExtContext } from './context'
 

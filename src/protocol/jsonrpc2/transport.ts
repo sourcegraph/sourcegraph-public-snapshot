@@ -1,4 +1,4 @@
-import { isFunction } from '../util'
+import { isFunction } from '../../util'
 import { Emitter, Event } from './events'
 import { Message } from './messages'
 

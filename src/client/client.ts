@@ -1,15 +1,5 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { DocumentSelector } from 'sourcegraph'
-import { MessageTransports } from '../jsonrpc2/connection'
-import {
-    GenericNotificationHandler,
-    GenericRequestHandler,
-    NotificationHandler,
-    RequestHandler,
-} from '../jsonrpc2/handlers'
-import { Message, MessageType as RPCMessageType } from '../jsonrpc2/messages'
-import { NotificationType, RequestType } from '../jsonrpc2/messages'
-import { noopTracer, Trace, Tracer } from '../jsonrpc2/trace'
 import {
     InitializedNotification,
     InitializeParams,
@@ -19,6 +9,16 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../protocol'
+import { MessageTransports } from '../protocol/jsonrpc2/connection'
+import {
+    GenericNotificationHandler,
+    GenericRequestHandler,
+    NotificationHandler,
+    RequestHandler,
+} from '../protocol/jsonrpc2/handlers'
+import { Message, MessageType as RPCMessageType } from '../protocol/jsonrpc2/messages'
+import { NotificationType, RequestType } from '../protocol/jsonrpc2/messages'
+import { noopTracer, Trace, Tracer } from '../protocol/jsonrpc2/trace'
 import { isFunction, tryCatchPromise } from '../util'
 import { Connection, createConnection } from './connection'
 import { CloseAction, DefaultErrorHandler, ErrorAction, ErrorHandler } from './errorHandler'

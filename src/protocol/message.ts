@@ -1,4 +1,4 @@
-import { NotificationType, RequestType } from '../jsonrpc2/messages'
+import { NotificationType, RequestType } from './jsonrpc2/messages'
 
 /**
  * The message type

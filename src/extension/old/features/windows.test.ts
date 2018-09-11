@@ -1,5 +1,4 @@
 import assert from 'assert'
-import { MockMessageConnection } from '../../../jsonrpc2/test/mockMessageConnection'
 import {
     DidCloseTextDocumentNotification,
     DidCloseTextDocumentParams,
@@ -8,6 +7,7 @@ import {
     ShowInputParams,
     ShowInputRequest,
 } from '../../../protocol'
+import { MockMessageConnection } from '../../../protocol/jsonrpc2/test/mockMessageConnection'
 import { URI } from '../../types/uri'
 import { Window } from '../api'
 import { observableValue } from '../util'

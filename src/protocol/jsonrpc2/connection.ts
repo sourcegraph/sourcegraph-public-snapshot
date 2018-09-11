@@ -1,5 +1,5 @@
 import { Unsubscribable } from 'rxjs'
-import { isFunction } from '../util'
+import { isFunction } from '../../util'
 import { CancelNotification, CancelParams } from './cancel'
 import { CancellationToken, CancellationTokenSource } from './cancel'
 import { ConnectionStrategy } from './connectionStrategy'

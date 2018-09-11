@@ -1,6 +1,5 @@
 import { Observable, Subscription } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
     ConfigurationCascade,
@@ -9,6 +8,7 @@ import {
     DidChangeConfigurationNotification,
     InitializeParams,
 } from '../../protocol'
+import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
 import { DynamicFeature, ensure, RegistrationData, StaticFeature } from './common'
 

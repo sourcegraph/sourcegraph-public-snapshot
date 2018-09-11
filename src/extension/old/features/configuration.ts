@@ -1,6 +1,5 @@
 import { BehaviorSubject } from 'rxjs'
 import { distinctUntilChanged } from 'rxjs/operators'
-import { MessageConnection } from '../../../jsonrpc2/connection'
 import {
     ConfigurationCascade,
     ConfigurationUpdateParams,
@@ -8,6 +7,7 @@ import {
     DidChangeConfigurationNotification,
     KeyPath,
 } from '../../../protocol'
+import { MessageConnection } from '../../../protocol/jsonrpc2/connection'
 import { isEqual } from '../../../util'
 import { Configuration, Observable } from '../api'
 

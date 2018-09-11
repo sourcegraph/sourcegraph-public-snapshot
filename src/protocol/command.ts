@@ -1,4 +1,4 @@
-import { RequestType } from '../jsonrpc2/messages'
+import { RequestType } from './jsonrpc2/messages'
 
 export interface CommandClientCapabilities {
     workspace?: {

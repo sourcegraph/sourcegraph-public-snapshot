@@ -1,15 +1,15 @@
 import { Unsubscribable } from 'rxjs'
-import { createMessageConnection, Logger, MessageTransports } from '../jsonrpc2/connection'
-import { ConnectionStrategy } from '../jsonrpc2/connectionStrategy'
+import { ExitNotification, InitializeParams, InitializeRequest, InitializeResult, ShutdownRequest } from '../protocol'
+import { createMessageConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
+import { ConnectionStrategy } from '../protocol/jsonrpc2/connectionStrategy'
 import {
     GenericNotificationHandler,
     GenericRequestHandler,
     NotificationHandler,
     RequestHandler,
-} from '../jsonrpc2/handlers'
-import { Message, MessageType as RPCMessageType, NotificationType, RequestType } from '../jsonrpc2/messages'
-import { Trace, Tracer } from '../jsonrpc2/trace'
-import { ExitNotification, InitializeParams, InitializeRequest, InitializeResult, ShutdownRequest } from '../protocol'
+} from '../protocol/jsonrpc2/handlers'
+import { Message, MessageType as RPCMessageType, NotificationType, RequestType } from '../protocol/jsonrpc2/messages'
+import { Trace, Tracer } from '../protocol/jsonrpc2/trace'
 
 export interface Connection extends Unsubscribable {
     listen(): void

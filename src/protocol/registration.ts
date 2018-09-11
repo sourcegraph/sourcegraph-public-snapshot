@@ -1,4 +1,4 @@
-import { RequestType } from '../jsonrpc2/messages'
+import { RequestType } from './jsonrpc2/messages'
 
 /**
  * General parameters to to register for an notification or to register a provider.

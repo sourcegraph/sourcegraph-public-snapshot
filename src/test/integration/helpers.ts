@@ -1,6 +1,6 @@
 import { Duplex } from 'stream'
-import { MessageTransports } from '../../jsonrpc2/connection'
-import { StreamMessageReader, StreamMessageWriter } from '../../jsonrpc2/transports/stream'
+import { MessageTransports } from '../../protocol/jsonrpc2/connection'
+import { StreamMessageReader, StreamMessageWriter } from '../../protocol/jsonrpc2/transports/stream'
 
 /** A bidirectional pipe. */
 class TestStream extends Duplex {

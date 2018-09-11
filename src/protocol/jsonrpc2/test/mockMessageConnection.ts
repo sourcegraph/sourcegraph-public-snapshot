@@ -1,4 +1,4 @@
-import { isFunction } from '../../util'
+import { isFunction } from '../../../util'
 import { CancellationToken } from '../cancel'
 import { MessageConnection } from '../connection'
 import { Emitter } from '../events'

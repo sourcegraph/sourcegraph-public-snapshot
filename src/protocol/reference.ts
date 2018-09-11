@@ -1,4 +1,4 @@
-import { RequestType } from '../jsonrpc2/messages'
+import { RequestType } from './jsonrpc2/messages'
 import { Location } from './plainTypes'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from './textDocument'
 

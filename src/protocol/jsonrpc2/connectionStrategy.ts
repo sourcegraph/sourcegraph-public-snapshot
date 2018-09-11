@@ -1,5 +1,5 @@
-import { Message, ResponseMessage } from '../jsonrpc2/messages'
-import { isFunction } from '../util'
+import { isFunction } from '../../util'
+import { Message, ResponseMessage } from './messages'
 
 // Copied from vscode-jsonrpc to avoid adding extraneous dependencies.
 

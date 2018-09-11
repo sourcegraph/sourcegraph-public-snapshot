@@ -1,6 +1,6 @@
 import { DocumentSelector, MarkupKind } from 'sourcegraph'
 import { TextDocumentIdentifier, TextDocumentItem } from '../client/types/textDocument'
-import { NotificationType } from '../jsonrpc2/messages'
+import { NotificationType } from './jsonrpc2/messages'
 import { Position } from './plainTypes'
 
 /**

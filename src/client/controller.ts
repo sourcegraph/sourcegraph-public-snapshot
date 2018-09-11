@@ -1,5 +1,4 @@
 import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { Trace } from '../jsonrpc2/trace'
 import {
     ConfigurationCascade,
     ConfigurationUpdateParams,
@@ -10,6 +9,7 @@ import {
     ShowMessageRequestParams,
 } from '../protocol'
 import { ContextUpdateParams } from '../protocol/context'
+import { Trace } from '../protocol/jsonrpc2/trace'
 import { isEqual } from '../util'
 import { Client, ClientOptions } from './client'
 import { applyContextUpdate, EMPTY_CONTEXT } from './context/context'

@@ -1,4 +1,4 @@
-import { NotificationType } from '../jsonrpc2/messages'
+import { NotificationType } from './jsonrpc2/messages'
 
 /**
  * The parameters for the context/update notification, which is sent from the server to the client to update

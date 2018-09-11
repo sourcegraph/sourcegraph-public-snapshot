@@ -1,5 +1,4 @@
 import assert from 'assert'
-import { MockMessageConnection } from '../../../jsonrpc2/test/mockMessageConnection'
 import {
     ExecuteCommandParams,
     ExecuteCommandRegistrationOptions,
@@ -9,6 +8,7 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../../../protocol'
+import { MockMessageConnection } from '../../../protocol/jsonrpc2/test/mockMessageConnection'
 import { Commands } from '../api'
 import { createExtCommands } from './commands'
 

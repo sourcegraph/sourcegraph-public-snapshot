@@ -1,7 +1,7 @@
 import * as assert from 'assert'
-import { CommandRegistry } from '../providers/command'
 import { ClientCapabilities } from '../../protocol'
 import { Client } from '../client'
+import { CommandRegistry } from '../providers/command'
 import { ExecuteCommandFeature } from './command'
 
 const create = (): {

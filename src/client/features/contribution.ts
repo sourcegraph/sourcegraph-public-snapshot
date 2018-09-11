@@ -1,10 +1,6 @@
-import {
-    ContributionRegistry,
-    ContributionsEntry,
-    ContributionUnsubscribable,
-} from '../providers/contribution'
-import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import { ClientCapabilities, Contributions } from '../../protocol'
+import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
+import { ContributionRegistry, ContributionsEntry, ContributionUnsubscribable } from '../providers/contribution'
 import { DynamicFeature, ensure, RegistrationData } from './common'
 
 /**

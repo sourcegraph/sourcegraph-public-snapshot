@@ -2,8 +2,8 @@ import { Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
 import { Context } from '../../client/context/context'
 import { TextDocumentIdentifier } from '../../client/types/textDocument'
-import { MessageConnection } from '../../jsonrpc2/connection'
 import { InitializeParams, Settings, TextDocumentDecoration } from '../../protocol'
+import { MessageConnection } from '../../protocol/jsonrpc2/connection'
 
 /**
  * The Sourcegraph extension API, which extensions use to interact with the client.

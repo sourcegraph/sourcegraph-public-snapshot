@@ -1,7 +1,6 @@
 import { Subscription } from 'rxjs'
 import uuidv4 from 'uuid/v4'
 import { CommandRegistry } from '../../../client/providers/command'
-import { MessageConnection } from '../../../jsonrpc2/connection'
 import {
     ExecuteCommandRegistrationOptions,
     ExecuteCommandRequest,
@@ -10,6 +9,7 @@ import {
     UnregistrationParams,
     UnregistrationRequest,
 } from '../../../protocol'
+import { MessageConnection } from '../../../protocol/jsonrpc2/connection'
 import { Commands } from '../api'
 
 /**

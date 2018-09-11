@@ -1,6 +1,4 @@
 import { from, Observable, Unsubscribable } from 'rxjs'
-import { ProvideTextDocumentLocationSignature } from '../providers/location'
-import { FeatureProviderRegistry } from '../providers/registry'
 import {
     ClientCapabilities,
     DefinitionRequest,
@@ -13,6 +11,8 @@ import {
 } from '../../protocol'
 import { Location } from '../../protocol/plainTypes'
 import { Client } from '../client'
+import { ProvideTextDocumentLocationSignature } from '../providers/location'
+import { FeatureProviderRegistry } from '../providers/registry'
 import { ensure, Feature } from './common'
 
 /**

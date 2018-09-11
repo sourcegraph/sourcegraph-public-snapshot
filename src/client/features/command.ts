@@ -1,13 +1,13 @@
 import { Subscription } from 'rxjs'
-import { CommandRegistry } from '../providers/command'
-import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
     ExecuteCommandParams,
     ExecuteCommandRegistrationOptions,
     ExecuteCommandRequest,
 } from '../../protocol'
+import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
+import { CommandRegistry } from '../providers/command'
 import { DynamicFeature, ensure, RegistrationData } from './common'
 
 /**

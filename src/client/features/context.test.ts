@@ -1,7 +1,7 @@
 import * as assert from 'assert'
-import { NotificationHandler } from '../../jsonrpc2/handlers'
-import { NotificationType } from '../../jsonrpc2/messages'
 import { ContextUpdateNotification, ContextUpdateParams } from '../../protocol/context'
+import { NotificationHandler } from '../../protocol/jsonrpc2/handlers'
+import { NotificationType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
 import { ContextFeature } from './context'
 

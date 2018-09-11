@@ -1,7 +1,5 @@
 import { from, Observable, Unsubscribable } from 'rxjs'
 import { MarkupKind } from 'sourcegraph'
-import { ProvideTextDocumentHoverSignature } from '../providers/hover'
-import { FeatureProviderRegistry } from '../providers/registry'
 import {
     ClientCapabilities,
     HoverRequest,
@@ -10,6 +8,8 @@ import {
 } from '../../protocol'
 import { Hover } from '../../protocol/plainTypes'
 import { Client } from '../client'
+import { ProvideTextDocumentHoverSignature } from '../providers/hover'
+import { FeatureProviderRegistry } from '../providers/registry'
 import { ensure, Feature } from './common'
 
 /**

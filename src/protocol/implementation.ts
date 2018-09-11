@@ -1,5 +1,5 @@
-import { RequestHandler } from '../jsonrpc2/handlers'
-import { RequestType } from '../jsonrpc2/messages'
+import { RequestHandler } from './jsonrpc2/handlers'
+import { RequestType } from './jsonrpc2/messages'
 import { Definition } from './plainTypes'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from './textDocument'
 

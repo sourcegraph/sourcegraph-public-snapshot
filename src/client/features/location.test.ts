@@ -1,7 +1,7 @@
 import * as assert from 'assert'
-import { TextDocumentLocationProviderRegistry } from '../providers/location'
 import { ClientCapabilities, DefinitionRequest, ReferenceParams, TextDocumentPositionParams } from '../../protocol'
 import { Client } from '../client'
+import { TextDocumentLocationProviderRegistry } from '../providers/location'
 import {
     TextDocumentDefinitionFeature,
     TextDocumentImplementationFeature,

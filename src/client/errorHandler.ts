@@ -1,4 +1,4 @@
-import { Message } from '../jsonrpc2/messages'
+import { Message } from '../protocol/jsonrpc2/messages'
 
 /**
  * A pluggable error handler that is invoked when the connection encounters an error or is closed.

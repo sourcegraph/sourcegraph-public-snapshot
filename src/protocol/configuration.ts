@@ -1,4 +1,4 @@
-import { NotificationType, RequestType } from '../jsonrpc2/messages'
+import { NotificationType, RequestType } from './jsonrpc2/messages'
 
 /**
  * Settings is a JSON document of key-value pairs containing configuration settings for extensions.

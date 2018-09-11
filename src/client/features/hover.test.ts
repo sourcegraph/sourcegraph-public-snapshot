@@ -1,8 +1,8 @@
 import * as assert from 'assert'
 import { MarkupKind } from 'sourcegraph'
-import { TextDocumentHoverProviderRegistry } from '../providers/hover'
 import { ClientCapabilities } from '../../protocol'
 import { Client } from '../client'
+import { TextDocumentHoverProviderRegistry } from '../providers/hover'
 import { TextDocumentHoverFeature } from './hover'
 
 const create = (): {

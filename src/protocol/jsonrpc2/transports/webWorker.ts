@@ -1,4 +1,4 @@
-import { isFunction } from '../../util'
+import { isFunction } from '../../../util'
 import { MessageTransports } from '../connection'
 import { Message } from '../messages'
 import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transport'

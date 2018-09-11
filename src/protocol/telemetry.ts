@@ -1,4 +1,4 @@
-import { NotificationType } from '../jsonrpc2/messages'
+import { NotificationType } from './jsonrpc2/messages'
 
 /**
  * The telemetry event notification is sent from the server to the client to ask

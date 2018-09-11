@@ -1,6 +1,4 @@
 import { Subscription } from 'rxjs'
-import { createMessageConnection, Logger, MessageConnection, MessageTransports } from '../../jsonrpc2/connection'
-import { createWebWorkerMessageTransports } from '../../jsonrpc2/transports/webWorker'
 import {
     ConfigurationCascade,
     InitializedNotification,
@@ -10,6 +8,13 @@ import {
     RegistrationParams,
     RegistrationRequest,
 } from '../../protocol'
+import {
+    createMessageConnection,
+    Logger,
+    MessageConnection,
+    MessageTransports,
+} from '../../protocol/jsonrpc2/connection'
+import { createWebWorkerMessageTransports } from '../../protocol/jsonrpc2/transports/webWorker'
 import { Commands, Configuration, ExtensionContext, Observable, SourcegraphExtensionAPI, Window, Windows } from './api'
 import { createExtCommands } from './features/commands'
 import { createExtConfiguration } from './features/configuration'

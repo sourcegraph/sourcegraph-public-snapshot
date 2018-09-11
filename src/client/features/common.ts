@@ -1,6 +1,6 @@
 import { Unsubscribable } from 'rxjs'
-import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import { ClientCapabilities, InitializeParams } from '../../protocol'
+import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { isFunction } from '../../util'
 import { Client } from '../client'
 
