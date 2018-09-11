@@ -109,7 +109,7 @@
     "reactstrap": "^5.0.0-beta.2",
     "rxjs": "^6.3.2",
     "socket.io-client": "^2.1.1",
-    "sourcegraph": "^14.1.1",
+    "sourcegraph": "^15.0.0",
     "string-score": "^1.0.1",
     "textarea-caret": "^3.1.0",
     "ts-key-enum": "^2.0.0",
