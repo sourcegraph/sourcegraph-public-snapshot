@@ -1,4 +1,3 @@
-import { isFunction } from '../../../util'
 import { TokenType } from './lexer'
 import { Expression, Parser, TemplateParser } from './parser'
 
@@ -117,7 +116,7 @@ function exec(node: Expression, context: ComputedContext): any {
     if ('FunctionCall' in node) {
         const expr = node.FunctionCall
         const func = FUNCS[expr.name]
-        if (isFunction(func)) {
+        if (typeof func === 'function') {
             const args = expr.args.map(arg => exec(arg, context))
             return func.apply(null, args)
         }

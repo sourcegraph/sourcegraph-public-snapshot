@@ -1,4 +1,3 @@
-import { isFunction } from '../../../util'
 import { MessageTransports } from '../connection'
 import { Message } from '../messages'
 import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from '../transport'
@@ -116,7 +115,7 @@ export function createWebWorkerMessageTransports(worker: Worker = globalWorkerSc
 function globalWorkerScope(): Worker {
     const worker: Worker = global as any
     // tslint:disable-next-line no-unbound-method
-    if (!isFunction(worker.postMessage) || 'document' in worker) {
+    if (!worker.postMessage || 'document' in worker) {
         throw new Error('global scope is not a Worker')
     }
     return worker

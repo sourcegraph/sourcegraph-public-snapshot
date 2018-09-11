@@ -24,6 +24,12 @@ export interface Location {
 export type Definition = Location | Location[] | null
 
 /** The plain properties of a {@link module:sourcegraph.Hover}, without methods and accessors. */
-export interface Hover extends Pick<sourcegraph.Hover, 'contents'> {
+export interface Hover extends Pick<sourcegraph.Hover, 'contents' | '__backcompatContents'> {
     range?: Range
+}
+
+/** The plain properties of a {@link module:sourcegraph.TextDocumentDecoration}, without methods and accessors. */
+export interface TextDocumentDecoration
+    extends Pick<sourcegraph.TextDocumentDecoration, Exclude<keyof sourcegraph.TextDocumentDecoration, 'range'>> {
+    range: Range
 }

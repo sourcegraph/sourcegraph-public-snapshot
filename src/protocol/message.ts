@@ -37,14 +37,6 @@ export interface ShowMessageParams {
     message: string
 }
 
-/**
- * The show message notification is sent from a server to a client to ask
- * the client to display a particular message in the user interface.
- */
-export namespace ShowMessageNotification {
-    export const type = 'window/showMessage'
-}
-
 export interface MessageActionItem {
     /**
      * A short title like 'Retry', 'Open Log' etc.
@@ -69,14 +61,6 @@ export interface ShowMessageRequestParams {
     actions?: MessageActionItem[]
 }
 
-/**
- * The show message request is sent from the server to the client to show a message and a set of actions to the
- * user.
- */
-export namespace ShowMessageRequest {
-    export const type = 'window/showMessageRequest'
-}
-
 /** The parameters for window/showInput. */
 export interface ShowInputParams {
     /** The message to display in the input dialog. */
@@ -84,21 +68,6 @@ export interface ShowInputParams {
 
     /** The default value to display in the input field. */
     defaultValue?: string
-}
-
-/**
- * The show input request is sent from the server to the client to show a message and prompt the user for input.
- */
-export namespace ShowInputRequest {
-    export const type = 'window/showInput'
-}
-
-/**
- * The log message notification is sent from the server to the client to ask
- * the client to log a particular message.
- */
-export namespace LogMessageNotification {
-    export const type = 'window/logMessage'
 }
 
 /**

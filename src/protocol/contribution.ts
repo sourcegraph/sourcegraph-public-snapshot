@@ -1,23 +1,5 @@
 import { KeyPath } from './configuration'
 
-/** Partial contribution-related client capabilities. */
-export interface ContributionClientCapabilities {
-    /** The window client capabilities. */
-    window?: {
-        /** Contribution-related client capabilities. */
-        contribution?: {
-            /** Whether the client supports dynamic registration of contributions. */
-            dynamicRegistration?: boolean
-        }
-    }
-}
-
-/** Partial contribution-related server capabilities. */
-export interface ContributionServerCapabilities {
-    /** The contributions provided by the server. */
-    contributions?: Contributions
-}
-
 /**
  * Contributions describes the functionality provided by an extension.
  */

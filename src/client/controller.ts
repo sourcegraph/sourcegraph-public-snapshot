@@ -1,4 +1,5 @@
 import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { ContextValues } from 'sourcegraph'
 import {
     ConfigurationCascade,
     ConfigurationUpdateParams,
@@ -8,49 +9,43 @@ import {
     ShowMessageParams,
     ShowMessageRequestParams,
 } from '../protocol'
-import { Trace } from '../protocol/jsonrpc2/trace'
+import { Connection, createConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
+import { BrowserConsoleTracer, Trace } from '../protocol/jsonrpc2/trace'
 import { isEqual } from '../util'
-import { Client, ClientOptions } from './client'
-import { EMPTY_CONTEXT } from './context/context'
+import { ClientCodeEditor } from './api/codeEditor'
+import { ClientCommands } from './api/commands'
+import { ClientConfiguration } from './api/configuration'
+import { ClientContext } from './api/context'
+import { ClientDocuments } from './api/documents'
+import { ClientLanguageFeatures } from './api/languageFeatures'
+import { ClientWindows } from './api/windows'
+import { applyContextUpdate, EMPTY_CONTEXT } from './context/context'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment, ObservableEnvironment } from './environment'
 import { Extension } from './extension'
-import { ContributionFeature } from './features/contribution'
-import {
-    TextDocumentDefinitionFeature,
-    TextDocumentImplementationFeature,
-    TextDocumentReferencesFeature,
-    TextDocumentTypeDefinitionFeature,
-} from './features/location'
-import { WindowShowMessageFeature } from './features/message'
 import { Registries } from './registries'
 
 /** The minimal unique identifier for a client. */
-export interface ClientKey {
+export interface ExtensionConnectionKey {
     /** The extension ID. */
     id: string
 }
 
-/** A client and its unique identifier (key). */
-export interface ClientEntry {
-    client: Client
-    key: ClientKey
-}
-
-/** The source of a message (used with LogMessageParams, ShowMessageParams, ShowMessageRequestParams). */
-interface MessageSource {
-    /** The ID of the extension that produced this log message. */
-    extension: string
+/** A connection to an extension and its unique identifier (key). */
+export interface ExtensionConnection {
+    connection: Promise<Connection>
+    subscription: Subscription
+    key: ExtensionConnectionKey
 }
 
 interface PromiseCallback<T> {
     resolve: (p: T | Promise<T>) => void
 }
 
-type ShowMessageRequest = ShowMessageRequestParams & MessageSource & PromiseCallback<MessageActionItem | null>
+type ShowMessageRequest = ShowMessageRequestParams & PromiseCallback<MessageActionItem | null>
 
-type ShowInputRequest = ShowInputParams & MessageSource & PromiseCallback<string | null>
+type ShowInputRequest = ShowInputParams & PromiseCallback<string | null>
 
-type ConfigurationUpdate = ConfigurationUpdateParams & MessageSource & PromiseCallback<void>
+export type ConfigurationUpdate = ConfigurationUpdateParams & PromiseCallback<void>
 
 /**
  * Options for creating the controller.
@@ -61,13 +56,9 @@ type ConfigurationUpdate = ConfigurationUpdateParams & MessageSource & PromiseCa
 export interface ControllerOptions<X extends Extension, C extends ConfigurationCascade> {
     /** Returns additional options to use when creating a client. */
     clientOptions: (
-        key: ClientKey,
-        options: ClientOptions,
+        key: ExtensionConnectionKey,
         extension: X
-    ) => Pick<
-        ClientOptions,
-        'createMessageTransports' | 'errorHandler' | 'trace' | 'tracer' | 'experimentalClientCapabilities'
-    >
+    ) => { createMessageTransports: () => MessageTransports | Promise<MessageTransports> }
 
     /**
      * Called before applying the next environment in Controller#setEnvironment. It should have no side effects.
@@ -84,10 +75,10 @@ export interface ControllerOptions<X extends Extension, C extends ConfigurationC
 export class Controller<X extends Extension, C extends ConfigurationCascade> implements Unsubscribable {
     private _environment = new BehaviorSubject<Environment<X, C>>(EMPTY_ENVIRONMENT)
 
-    private _clientEntries = new BehaviorSubject<ClientEntry[]>([])
+    private _clientEntries = new BehaviorSubject<ExtensionConnection[]>([])
 
     /** An observable that emits whenever the set of clients managed by this controller changes. */
-    public get clientEntries(): Observable<ClientEntry[]> {
+    public get clientEntries(): Observable<ExtensionConnection[]> {
         return this._clientEntries
     }
 
@@ -96,17 +87,17 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
     /** The registries for various providers that expose extension functionality. */
     public readonly registries: Registries<X, C>
 
-    private readonly _logMessages = new Subject<LogMessageParams & MessageSource>()
-    private readonly _showMessages = new Subject<ShowMessageParams & MessageSource>()
+    private readonly _logMessages = new Subject<LogMessageParams>()
+    private readonly _showMessages = new Subject<ShowMessageParams>()
     private readonly _showMessageRequests = new Subject<ShowMessageRequest>()
     private readonly _showInputs = new Subject<ShowInputRequest>()
     private readonly _configurationUpdates = new Subject<ConfigurationUpdate>()
 
     /** Log messages from extensions. */
-    public readonly logMessages: Observable<LogMessageParams & MessageSource> = this._logMessages
+    public readonly logMessages: Observable<LogMessageParams> = this._logMessages
 
     /** Messages from extensions intended for display to the user. */
-    public readonly showMessages: Observable<ShowMessageParams & MessageSource> = this._showMessages
+    public readonly showMessages: Observable<ShowMessageParams> = this._showMessages
 
     /** Messages from extensions requesting the user to select an action. */
     public readonly showMessageRequests: Observable<ShowMessageRequest> = this._showMessageRequests
@@ -120,7 +111,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
     constructor(private options: ControllerOptions<X, C>) {
         this.subscriptions.add(() => {
             for (const c of this._clientEntries.value) {
-                c.client.unsubscribe()
+                c.subscription.unsubscribe()
             }
         })
 
@@ -162,8 +153,8 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
 
         // Diff clients.
         const newClients = computeClients(environment)
-        const nextClients: ClientEntry[] = []
-        const unusedClients: ClientEntry[] = []
+        const nextClients: ExtensionConnection[] = []
+        const unusedClients: ExtensionConnection[] = []
         for (const oldClient of this._clientEntries.value) {
             const newIndex = newClients.findIndex(newClient => isEqual(oldClient.key, newClient))
             if (newIndex === -1) {
@@ -178,7 +169,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
         }
         // Remove clients that are no longer in use.
         for (const unusedClient of unusedClients) {
-            unusedClient.client.unsubscribe()
+            unusedClient.subscription.unsubscribe()
         }
         // Create new clients.
         for (const key of newClients) {
@@ -189,57 +180,84 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
             }
 
             // Construct client.
-            const clientOptions: ClientOptions = {
-                documentSelector: ['*'],
-                createMessageTransports: null as any, // will be overwritten by Object.assign call below
-            }
-            Object.assign(clientOptions, this.options.clientOptions(key, clientOptions, extension))
-            const client = new Client(key.id, clientOptions)
-
-            // Register client features.
-            this.registerClientFeatures(client, this.environment.configuration)
-
-            // Activate client.
-            client.activate()
-            nextClients.push({
+            const clientOptions = this.options.clientOptions(key, extension)
+            const subscription = new Subscription()
+            const extensionConnection: ExtensionConnection = {
                 key,
-                client,
-            })
+                subscription,
+                connection: Promise.resolve(clientOptions.createMessageTransports()).then(transports => {
+                    const connection = createConnection(transports)
+                    subscription.add(connection)
+                    connection.listen()
+                    connection.onRequest('ping', () => 'pong')
+                    this.registerClientFeatures(connection, subscription, this.environment.configuration)
+                    return connection
+                }),
+            }
+
+            nextClients.push(extensionConnection)
         }
         this._clientEntries.next(nextClients)
     }
 
-    private registerClientFeatures(client: Client, configuration: Observable<C>): void {
-        client.registerFeature(new ContributionFeature(this.registries.contribution))
-        client.registerFeature(new TextDocumentDefinitionFeature(client, this.registries.textDocumentDefinition))
-        client.registerFeature(
-            new TextDocumentImplementationFeature(client, this.registries.textDocumentImplementation)
-        )
-        client.registerFeature(new TextDocumentReferencesFeature(client, this.registries.textDocumentReferences))
-        client.registerFeature(
-            new TextDocumentTypeDefinitionFeature(client, this.registries.textDocumentTypeDefinition)
-        )
-        client.registerFeature(
-            new WindowShowMessageFeature(
+    private registerClientFeatures(client: Connection, subscription: Subscription, configuration: Observable<C>): void {
+        subscription.add(
+            new ClientConfiguration(
                 client,
-                (params: ShowMessageParams) => this._showMessages.next({ ...params, extension: client.id }),
+                configuration,
+                (params: ConfigurationUpdateParams) =>
+                    new Promise<void>(resolve => this._configurationUpdates.next({ ...params, resolve }))
+            )
+        )
+        subscription.add(
+            new ClientContext(client, (updates: ContextValues) =>
+                // Set environment manually, not via Controller#setEnvironment, to avoid recursive setEnvironment calls
+                // (when this callback is called during setEnvironment's teardown of unused clients).
+                this._environment.next({
+                    ...this._environment.value,
+                    context: applyContextUpdate(this._environment.value.context, updates),
+                })
+            )
+        )
+        subscription.add(
+            new ClientWindows(
+                client,
+                this.environment.component,
+                (params: ShowMessageParams) => this._showMessages.next({ ...params }),
                 (params: ShowMessageRequestParams) =>
                     new Promise<MessageActionItem | null>(resolve => {
-                        this._showMessageRequests.next({ ...params, extension: client.id, resolve })
+                        this._showMessageRequests.next({ ...params, resolve })
                     }),
                 (params: ShowInputParams) =>
                     new Promise<string | null>(resolve => {
-                        this._showInputs.next({ ...params, extension: client.id, resolve })
+                        this._showInputs.next({ ...params, resolve })
                     })
             )
         )
+        subscription.add(new ClientCodeEditor(client, this.registries.textDocumentDecoration))
+        subscription.add(new ClientDocuments(client, this.environment.textDocument))
+        subscription.add(
+            new ClientLanguageFeatures(
+                client,
+                this.registries.textDocumentHover,
+                this.registries.textDocumentDefinition,
+                this.registries.textDocumentTypeDefinition,
+                this.registries.textDocumentImplementation,
+                this.registries.textDocumentReferences
+            )
+        )
+        subscription.add(new ClientCommands(client, this.registries.commands))
     }
 
     public readonly environment: ObservableEnvironment<X, C> = createObservableEnvironment<X, C>(this._environment)
 
     public set trace(value: Trace) {
         for (const client of this._clientEntries.value) {
-            client.client.trace = value
+            client.connection
+                .then(connection => {
+                    connection.trace(value, new BrowserConsoleTracer(client.key.id))
+                })
+                .catch(() => void 0)
         }
     }
 
@@ -248,8 +266,10 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
     }
 }
 
-function computeClients<X extends Extension>(environment: Pick<Environment<X, any>, 'extensions'>): ClientKey[] {
-    const clients: ClientKey[] = []
+function computeClients<X extends Extension>(
+    environment: Pick<Environment<X, any>, 'extensions'>
+): ExtensionConnectionKey[] {
+    const clients: ExtensionConnectionKey[] = []
     if (!environment.extensions) {
         return clients
     }

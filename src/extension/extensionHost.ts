@@ -1,9 +1,14 @@
 import { Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { InitializedNotification, InitializeParams, InitializeRequest, InitializeResult } from '../protocol'
+import { createProxy, handleRequests } from '../common/proxy'
 import { Connection, createConnection, Logger, MessageTransports } from '../protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../protocol/jsonrpc2/transports/webWorker'
-import { createRegisterProviderFunctions } from './api/provider'
+import { ExtCommands } from './api/commands'
+import { ExtConfiguration } from './api/configuration'
+import { ExtContext } from './api/context'
+import { ExtDocuments } from './api/documents'
+import { ExtLanguageFeatures } from './api/languageFeatures'
+import { ExtWindows } from './api/windows'
 import { Location } from './types/location'
 import { Position } from './types/position'
 import { Range } from './types/range'
@@ -32,28 +37,43 @@ const consoleLogger: Logger = {
  * @param transports The message reader and writer to use for communication with the client. Defaults to
  *                   communicating using self.postMessage and MessageEvents with the parent (assuming that it is
  *                   called in a Web Worker).
- * @return A promise that resolves when the extension host is ready (and extensions may be activated in it).
+ * @return The extension API.
  */
-export async function createExtensionHost(
+export function createExtensionHost(
     transports: MessageTransports = createWebWorkerMessageTransports()
-): Promise<typeof sourcegraph> {
+): typeof sourcegraph {
     const connection = createConnection(transports, consoleLogger)
-    return new Promise<typeof sourcegraph>(resolve => {
-        let initializationParams!: InitializeParams
-        connection.onRequest(InitializeRequest.type, params => {
-            initializationParams = params
-            return {} as InitializeResult
-        })
-        connection.onNotification(InitializedNotification.type, () =>
-            resolve(createExtensionHandle(connection, initializationParams))
-        )
-        connection.listen()
-    })
+    connection.listen()
+    return createExtensionHandle(connection)
 }
 
-function createExtensionHandle(rawConnection: Connection, initializeParams: InitializeParams): typeof sourcegraph {
+function createExtensionHandle(connection: Connection): typeof sourcegraph {
     const subscription = new Subscription()
-    subscription.add(rawConnection)
+    subscription.add(connection)
+
+    // For debugging/tests.
+    const sync = () => connection.sendRequest<void>('ping')
+    connection.onRequest('ping', () => 'pong')
+
+    const proxy = (prefix: string) => createProxy((name, args) => connection.sendRequest(`${prefix}/${name}`, args))
+
+    const context = new ExtContext(proxy('context'))
+    handleRequests(connection, 'context', context)
+
+    const documents = new ExtDocuments(sync)
+    handleRequests(connection, 'documents', documents)
+
+    const windows = new ExtWindows(proxy('windows'), proxy('codeEditor'), documents)
+    handleRequests(connection, 'windows', windows)
+
+    const configuration = new ExtConfiguration<any>(proxy('configuration'))
+    handleRequests(connection, 'configuration', configuration)
+
+    const languageFeatures = new ExtLanguageFeatures(proxy('languageFeatures'), documents)
+    handleRequests(connection, 'languageFeatures', languageFeatures)
+
+    const commands = new ExtCommands(proxy('commands'))
+    handleRequests(connection, 'commands', commands)
 
     return {
         URI,
@@ -66,12 +86,48 @@ function createExtensionHandle(rawConnection: Connection, initializeParams: Init
             Markdown: sourcegraph.MarkupKind.Markdown,
         },
 
-        ...createRegisterProviderFunctions(rawConnection),
+        app: {
+            get activeWindow(): sourcegraph.Window | undefined {
+                return windows.getActive()
+            },
+            get windows(): sourcegraph.Window[] {
+                return windows.getAll()
+            },
+        },
+
+        workspace: {
+            get textDocuments(): sourcegraph.TextDocument[] {
+                return documents.getAll()
+            },
+            onDidOpenTextDocument: documents.onDidOpenTextDocument,
+        },
+
+        configuration: {
+            get: () => configuration.get(),
+            subscribe: next => configuration.subscribe(next),
+        },
+
+        languages: {
+            registerHoverProvider: (selector, provider) => languageFeatures.registerHoverProvider(selector, provider),
+            registerDefinitionProvider: (selector, provider) =>
+                languageFeatures.registerDefinitionProvider(selector, provider),
+            registerTypeDefinitionProvider: (selector, provider) =>
+                languageFeatures.registerTypeDefinitionProvider(selector, provider),
+            registerImplementationProvider: (selector, provider) =>
+                languageFeatures.registerImplementationProvider(selector, provider),
+            registerReferenceProvider: (selector, provider) =>
+                languageFeatures.registerReferenceProvider(selector, provider),
+        },
+
+        commands: {
+            registerCommand: (command, callback) => commands.registerCommand({ command, callback }),
+            executeCommand: (command, ...args) => commands.executeCommand(command, args),
+        },
 
         internal: {
-            sync: () => rawConnection.sendRequest('ping'),
-            experimentalCapabilities: initializeParams.capabilities.experimental,
-            rawConnection,
+            sync,
+            updateContext: updates => context.updateContext(updates),
+            rawConnection: connection,
         },
     }
 }

@@ -1,23 +1,5 @@
 import * as assert from 'assert'
-import { compact, flatten, isEqual, isFunction, tryCatchPromise } from './util'
-
-describe('isFunction', () => {
-    it('reports true for functions', () => {
-        assert.ok(isFunction(() => void 0))
-        assert.ok(
-            // tslint:disable-next-line:only-arrow-functions
-            isFunction(function(): void {
-                /* noop */
-            })
-        )
-        assert.ok(isFunction({ f: () => void 0 }.f))
-    })
-
-    it('reports true for non-functions', () => {
-        assert.strictEqual(isFunction('[object Function]'), false)
-        assert.strictEqual(isFunction({}), false)
-    })
-})
+import { compact, flatten, isEqual, tryCatchPromise } from './util'
 
 describe('flatten', () => {
     it('flattens arrays 1 level deep', () => {

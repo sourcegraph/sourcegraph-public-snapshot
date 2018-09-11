@@ -62,7 +62,6 @@ export class Range implements sourcegraph.Range {
     }
 
     public contains(positionOrRange: sourcegraph.Position | sourcegraph.Range): boolean {
-        // TODO(sqs): need to use structural check, not instanceof
         if (positionOrRange instanceof Range) {
             return this.contains(positionOrRange._start) && this.contains(positionOrRange._end)
         } else if (positionOrRange instanceof Position) {

@@ -337,42 +337,251 @@ declare module 'sourcegraph' {
     export type DocumentSelector = (string | DocumentFilter)[]
 
     /**
-     * A provider result represents the values a provider, like the [`HoverProvider`](#HoverProvider),
-     * may return. For once this is the actual result type `T`, like `Hover`, or a thenable that resolves
-     * to that type `T`. In addition, `null` and `undefined` can be returned - either directly or from a
-     * thenable.
-     *
-     * The snippets below are all valid implementations of the [`HoverProvider`](#HoverProvider):
-     *
-     * ```ts
-     * let a: HoverProvider = {
-     * 	provideHover(doc, pos, token): ProviderResult<Hover> {
-     * 		return new Hover('Hello World');
-     * 	}
-     * }
-     *
-     * let b: HoverProvider = {
-     * 	provideHover(doc, pos, token): ProviderResult<Hover> {
-     * 		return new Promise(resolve => {
-     * 			resolve(new Hover('Hello World'));
-     * 	 	});
-     * 	}
-     * }
-     *
-     * let c: HoverProvider = {
-     * 	provideHover(doc, pos, token): ProviderResult<Hover> {
-     * 		return; // undefined
-     * 	}
-     * }
-     * ```
+     * Options for an input box displayed as a result of calling {@link Window#showInputBox}.
      */
-    export type ProviderResult<T> = T | undefined | null | Promise<T | undefined | null>
+    export interface InputBoxOptions {
+        /**
+         * The text that describes what input the user should provide.
+         */
+        prompt?: string
+
+        /**
+         * The pre-filled input value for the input box.
+         */
+        value?: string
+    }
 
     /**
-     * The definition of a symbol represented as one or many [locations](#Location). For most programming languages
-     * there is only one location at which a symbol is defined. If no definition can be found `null` is returned.
+     * A window in the client application that is running the extension.
      */
-    export type Definition = Location | Location[] | null
+    export interface Window {
+        /**
+         * The user interface view components that are visible in the window.
+         */
+        visibleViewComponents: ViewComponent[]
+
+        /**
+         * Show a notification message to the user that does not require interaction or steal focus.
+         *
+         * @deprecated This API will change.
+         * @param message The message to show.
+         * @return A promise that resolves when the user dismisses the message.
+         */
+        showNotification(message: string): void
+
+        /**
+         * Show a modal message to the user that the user must dismiss before continuing.
+         *
+         * @param message The message to show.
+         * @return A promise that resolves when the user dismisses the message.
+         */
+        showMessage(message: string): Promise<void>
+
+        /**
+         * Displays an input box to ask the user for input.
+         *
+         * The returned value will be `undefined` if the input box was canceled (e.g., because the user pressed the
+         * ESC key). Otherwise the returned value will be the string provided by the user.
+         *
+         * @param options Configures the behavior of the input box.
+         * @return The string provided by the user, or `undefined` if the input box was canceled.
+         */
+        showInputBox(options?: InputBoxOptions): Promise<string | undefined>
+    }
+
+    /**
+     * A user interface component in an application window.
+     *
+     * Each {@link ViewComponent} has a distinct {@link ViewComponent#type} value that indicates what kind of
+     * component it is ({@link CodeEditor}, etc.).
+     */
+    export type ViewComponent = CodeEditor
+
+    /**
+     * A text document decoration changes the appearance of a range in the document and/or adds other content to
+     * it.
+     */
+    export interface TextDocumentDecoration {
+        /** The range that the decoration applies to. */
+        range: Range
+
+        /**
+         * If true, the decoration applies to all lines in the range (inclusive), even if not all characters on the
+         * line are included.
+         */
+        isWholeLine?: boolean
+
+        /** Content to display after the range. */
+        after?: DecorationAttachmentRenderOptions
+
+        /** The CSS background-color property value for the line. */
+        backgroundColor?: string
+
+        /** The CSS border property value for the line. */
+        border?: string
+
+        /** The CSS border-color property value for the line. */
+        borderColor?: string
+
+        /** The CSS border-width property value for the line. */
+        borderWidth?: string
+    }
+
+    /** A decoration attachment adds content after a {@link TextDocumentDecoration}. */
+    export interface DecorationAttachmentRenderOptions {
+        /** The CSS background-color property value for the attachment. */
+        backgroundColor?: string
+
+        /** The CSS color property value for the attachment. */
+        color?: string
+
+        /** Text to display in the attachment. */
+        contentText?: string
+
+        /** Tooltip text to display when hovering over the attachment. */
+        hoverMessage?: string
+
+        /** If set, the attachment becomes a link with this destination URL. */
+        linkURL?: string
+    }
+
+    /**
+     * A text editor for code files (as opposed to a rich text editor for documents or other kinds of file format
+     * editors).
+     */
+    export interface CodeEditor {
+        /** The type tag for this kind of {@link ViewComponent}. */
+        type: 'CodeEditor'
+
+        /**
+         * The text document that is open in this editor.
+         */
+        readonly document: TextDocument
+
+        /**
+         * Draw decorations on this editor.
+         *
+         * @todo Implement a "decoration type" as in VS Code to make deltas more efficient.
+         * @param decorationType Currently unused. Always pass `null`.
+         */
+        setDecorations(decorationType: null, decorations: TextDocumentDecoration[]): void
+    }
+
+    /**
+     * The client application that is running the extension.
+     */
+    export namespace app {
+        /**
+         * The currently active window, or `undefined`. The active window is the window that has focus, or when
+         * none has focus, the window that was most recently focused.
+         */
+        export const activeWindow: Window | undefined
+
+        /**
+         * All application windows that are accessible by the extension.
+         *
+         * @readonly
+         */
+        export const windows: Window[]
+    }
+
+    /**
+     * The logical workspace that the extension is running in, which may consist of multiple folders, projects, and
+     * repositories.
+     */
+    export namespace workspace {
+        /**
+         * All text documents currently known to the system.
+         *
+         * @readonly
+         */
+        export const textDocuments: TextDocument[]
+
+        /**
+         * An event that is fired when a new text document is opened.
+         */
+        export const onDidOpenTextDocument: Subscribable<TextDocument>
+    }
+
+    /**
+     * The full configuration value, containing all settings for the current subject.
+     *
+     * @template C The configuration schema.
+     */
+    export interface Configuration<C extends object> {
+        /**
+         * Returns a value at a specific key in the configuration.
+         *
+         * @template C The configuration schema.
+         * @template K Valid key on the configuration object.
+         * @param key The name of the configuration property to get.
+         * @return The configuration value, or `undefined`.
+         */
+        get<K extends keyof C>(key: K): Readonly<C[K]> | undefined
+
+        /**
+         * Updates the configuration value for the given key. The updated configuration value is persisted by the
+         * client.
+         *
+         * @template C The configuration schema.
+         * @template K Valid key on the configuration object.
+         * @param key The name of the configuration property to update.
+         * @param value The new value, or undefined to remove it.
+         * @return A promise that resolves when the client acknowledges the update.
+         */
+        update<K extends keyof C>(key: K, value: C[K] | undefined): Promise<void>
+
+        /**
+         * The configuration value as a plain object.
+         */
+        readonly value: Readonly<C>
+    }
+
+    /**
+     * The configuration settings.
+     *
+     * It may be merged from the following sources of settings, in order:
+     *
+     * Default settings
+     * Global settings
+     * Organization settings (for all organizations the user is a member of)
+     * User settings
+     * Client settings
+     * Repository settings
+     * Directory settings
+     *
+     * @todo Add a way to get/update configuration for a specific scope or subject.
+     * @todo Support applying defaults to the configuration values.
+     */
+    export namespace configuration {
+        /**
+         * Returns the full configuration object.
+         *
+         * @todo This function throws an error if it is called synchronously in the extension's `activate`
+         *       function. This will be fixed before beta. See the test "Configuration (integration) / is usable in
+         *       synchronous activation functions".
+         *
+         * @template C The configuration schema.
+         * @return The full configuration object.
+         */
+        export function get<C extends object = { [key: string]: any }>(): Configuration<C>
+
+        /**
+         * Subscribe to changes to the configuration. The {@link next} callback is called when any configuration
+         * value changes (and synchronously immediately). Call {@link get} in the callback to obtain the new
+         * configuration values.
+         *
+         * @template C The configuration schema.
+         * @return An unsubscribable to stop calling the callback for configuration changes.
+         */
+        export function subscribe(next: () => void): Unsubscribable
+    }
+
+    /**
+     * A provider result represents the values that a provider, such as the {@link HoverProvider},
+     * may return.
+     */
+    export type ProviderResult<T> = T | undefined | null | Promise<T | undefined | null>
 
     /** The kinds of markup that can be used. */
     export const enum MarkupKind {
@@ -390,7 +599,7 @@ declare module 'sourcegraph' {
         /**
          * The kind of markup used.
          *
-         * @default MarkupKind.PlainText
+         * @default MarkupKind.Markdown
          */
         kind?: MarkupKind
     }
@@ -405,6 +614,9 @@ declare module 'sourcegraph' {
          */
         contents: MarkupContent
 
+        /** @deprecated */
+        __backcompatContents?: (MarkupContent | string | { language: string; value: string })[]
+
         /**
          * The range to which this hover applies. When missing, the editor will use the range at the current
          * position or the current position itself.
@@ -416,7 +628,184 @@ declare module 'sourcegraph' {
         provideHover(document: TextDocument, position: Position): ProviderResult<Hover>
     }
 
-    export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable
+    /**
+     * The definition of a symbol represented as one or many [locations](#Location). For most programming languages
+     * there is only one location at which a symbol is defined. If no definition can be found `null` is returned.
+     */
+    export type Definition = Location | Location[] | null
+
+    /**
+     * A definition provider implements the "go-to-definition" feature.
+     */
+    export interface DefinitionProvider {
+        /**
+         * Provide the definition of the symbol at the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @return A definition location, or an array of definitions, or `null` if there is no definition.
+         */
+        provideDefinition(document: TextDocument, position: Position): ProviderResult<Definition>
+    }
+
+    /**
+     * A type definition provider implements the "go-to-type-definition" feature.
+     */
+    export interface TypeDefinitionProvider {
+        /**
+         * Provide the type definition of the symbol at the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @return A type definition location, or an array of definitions, or `null` if there is no type
+         *         definition.
+         */
+        provideTypeDefinition(document: TextDocument, position: Position): ProviderResult<Definition>
+    }
+
+    /**
+     * An implementation provider implements the "go-to-implementations" and "go-to-interfaces" features.
+     */
+    export interface ImplementationProvider {
+        /**
+         * Provide the implementations of the symbol at the given position and document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @return Implementation locations, or `null` if there are none.
+         */
+        provideImplementation(document: TextDocument, position: Position): ProviderResult<Definition>
+    }
+
+    /**
+     * Additional information and parameters for a references request.
+     */
+    export interface ReferenceContext {
+        /** Include the declaration of the current symbol. */
+        includeDeclaration: boolean
+    }
+
+    /**
+     * The reference provider interface defines the contract between extensions and
+     * the [find references](https://code.visualstudio.com/docs/editor/editingevolved#_peek)-feature.
+     */
+    export interface ReferenceProvider {
+        /**
+         * Provides a set of workspace-wide references for the given position in a document.
+         *
+         * @param document The document in which the command was invoked.
+         * @param position The position at which the command was invoked.
+         * @param context Additional information and parameters for the request.
+         * @return An array of reference locations.
+         */
+        provideReferences(
+            document: TextDocument,
+            position: Position,
+            context: ReferenceContext
+        ): ProviderResult<Location[]>
+    }
+
+    export namespace languages {
+        export function registerHoverProvider(selector: DocumentSelector, provider: HoverProvider): Unsubscribable
+
+        /**
+         * Registers a definition provider.
+         *
+         * Multiple providers can be registered for a language. In that case, providers are queried in parallel and
+         * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
+         * operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A definition provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerDefinitionProvider(
+            selector: DocumentSelector,
+            provider: DefinitionProvider
+        ): Unsubscribable
+
+        /**
+         * Registers a type definition provider.
+         *
+         * Multiple providers can be registered for a language. In that case, providers are queried in parallel and
+         * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
+         * operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A type definition provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerTypeDefinitionProvider(
+            selector: DocumentSelector,
+            provider: TypeDefinitionProvider
+        ): Unsubscribable
+
+        /**
+         * Registers an implementation provider.
+         *
+         * Multiple providers can be registered for a language. In that case, providers are queried in parallel and
+         * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
+         * operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider An implementation provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerImplementationProvider(
+            selector: DocumentSelector,
+            provider: ImplementationProvider
+        ): Unsubscribable
+
+        /**
+         * Registers a reference provider.
+         *
+         * Multiple providers can be registered for a language. In that case, providers are queried in parallel and
+         * the results are merged. A failing provider (rejected promise or exception) will not cause the whole
+         * operation to fail.
+         *
+         * @param selector A selector that defines the documents this provider is applicable to.
+         * @param provider A reference provider.
+         * @return An unsubscribable to unregister this provider.
+         */
+        export function registerReferenceProvider(
+            selector: DocumentSelector,
+            provider: ReferenceProvider
+        ): Unsubscribable
+    }
+
+    /**
+     * Commands are functions that are implemented and registered by extensions. Extensions can invoke any command
+     * (including commands registered by other extensions). The extension can also define contributions (in
+     * package.json), such as actions and menu items, that invoke a command.
+     */
+    export namespace commands {
+        /**
+         * Registers a command that can be invoked by an action or menu item, or directly (with
+         * {@link commands.executeCommand}).
+         *
+         * @param command A unique identifier for the command.
+         * @param callback A command function. If it returns a {@link Promise}, execution waits until it is
+         *                 resolved.
+         * @return Unsubscribable to unregister this command.
+         * @throws Registering a command with an existing command identifier throws an error.
+         */
+        export function registerCommand(command: string, callback: (...args: any[]) => any): Unsubscribable
+
+        /**
+         * Executes the command with the given command identifier.
+         *
+         * @template T The result type of the command.
+         * @param command Identifier of the command to execute.
+         * @param rest Parameters passed to the command function.
+         * @return A {@link Promise} that resolves to the result of the given command.
+         * @throws If no command exists wih the given command identifier, an error is thrown.
+         */
+        export function executeCommand<T>(command: string, ...args: any[]): Promise<T>
+    }
+
+    export interface ContextValues {
+        [key: string]: string | number | boolean | null
+    }
 
     /**
      * Internal API for Sourcegraph extensions. These will be removed for the beta release of
@@ -435,12 +824,11 @@ declare module 'sourcegraph' {
         export function sync(): Promise<void>
 
         /**
-         * Information about the client's capabilities beyond that which is handled by the extension
-         * host.
+         * Updates context values for use in context expressions and contribution labels.
          *
-         * @internal
+         * @param updates The updates to apply to the context. If a context property's value is null, it is deleted from the context.
          */
-        export const experimentalCapabilities: any
+        export function updateContext(updates: ContextValues): void
 
         /**
          * The underlying connection to the Sourcegraph extension client.
@@ -449,6 +837,19 @@ declare module 'sourcegraph' {
          * @internal
          */
         export const rawConnection: any
+    }
+
+    /**
+     * A stream of values that may be subscribed to.
+     */
+    export interface Subscribable<T> {
+        /**
+         * Subscribes to the stream of values, calling {@link next} for each value until unsubscribed.
+         *
+         * @returns An unsubscribable that, when its {@link Unsubscribable#unsubscribe} method is called, causes
+         *          the subscription to stop calling {@link next} with values.
+         */
+        subscribe(next: (value: T) => void): Unsubscribable
     }
 
     export interface Unsubscribable {

@@ -1,17 +1,17 @@
 import * as assert from 'assert'
 import { Observable } from 'rxjs'
 import { first } from 'rxjs/operators'
-import { ClientEntry, ClientKey, Controller } from './controller'
+import { Controller, ExtensionConnection, ExtensionConnectionKey } from './controller'
 import { EMPTY_ENVIRONMENT, Environment } from './environment'
 
 class TestController extends Controller<any, any> {
-    public get clientEntries(): Observable<ClientEntry[]> & { value: ClientEntry[] } {
-        let value!: ClientEntry[]
+    public get clientEntries(): Observable<ExtensionConnection[]> & { value: ExtensionConnection[] } {
+        let value!: ExtensionConnection[]
         super.clientEntries
             .pipe(first())
             .subscribe(clients => (value = clients))
             .unsubscribe()
-        return { ...super.clientEntries, value } as Observable<ClientEntry[]> & { value: ClientEntry[] }
+        return { ...super.clientEntries, value } as Observable<ExtensionConnection[]> & { value: ExtensionConnection[] }
     }
 }
 
@@ -42,8 +42,8 @@ describe('Controller', () => {
     it('creates clients for the environment', () => {
         const controller = create(FIXTURE_ENVIRONMENT)
         assert.deepStrictEqual(
-            controller.clientEntries.value.map(({ client }) => ({ id: client.id })) as ClientKey[],
-            [{ id: 'x' }] as ClientKey[]
+            controller.clientEntries.value.map(({ key }) => ({ id: key.id })) as ExtensionConnectionKey[],
+            [{ id: 'x' }] as ExtensionConnectionKey[]
         )
     })
 

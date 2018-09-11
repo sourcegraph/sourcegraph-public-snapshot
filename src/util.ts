@@ -5,15 +5,6 @@
  * code, if tree-shaking is enabled (and the npm lodash-es package is used).
  */
 
-// tslint:disable-next-line:no-unbound-method
-const toString = Object.prototype.toString
-
-/** Reports whether value is a function. */
-// tslint:disable-next-line:ban-types
-export function isFunction(value: any): value is Function {
-    return toString.call(value) === '[object Function]'
-}
-
 /** Flattens the array one level deep. */
 export function flatten<T>(array: (T | T[])[]): T[] {
     const result: T[] = []
@@ -82,14 +73,4 @@ export function tryCatchPromise<T>(f: () => T | Promise<T>): Promise<T> {
     } catch (err) {
         return Promise.reject(err)
     }
-}
-
-let SEQ = 0
-
-/**
- * Increments the sequence and returns the result.
- */
-export function idSequence(): string {
-    SEQ++
-    return String(SEQ)
 }

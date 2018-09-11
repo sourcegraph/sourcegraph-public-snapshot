@@ -8,23 +8,6 @@ export enum Trace {
     Verbose = 'verbose',
 }
 
-export interface SetTraceParams {
-    value: Trace
-}
-
-export namespace SetTraceNotification {
-    export const type = '$/setTraceNotification'
-}
-
-export interface LogTraceParams {
-    message: string
-    verbose?: string
-}
-
-export namespace LogTraceNotification {
-    export const type = '$/logTraceNotification'
-}
-
 /** Records messages sent and received on a JSON-RPC 2.0 connection. */
 export interface Tracer {
     log(message: string, details?: string): void

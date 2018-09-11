@@ -1,4 +1,4 @@
-import * as sourcegraph from 'sourcegraph'
+import { tryCatchPromise } from '../util'
 import { createExtensionHost } from './extensionHost'
 
 interface MessageEvent {
@@ -46,38 +46,35 @@ export function extensionHostWorkerMain(self: DedicatedWorkerGlobalScope): void 
             self.close()
         }
 
-        createExtensionHost()
-            .then((api: typeof sourcegraph) => {
-                // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension host's
-                // implementation of the `sourcegraph` module.
-                ;(self as any).require = (modulePath: string): any => {
-                    if (modulePath === 'sourcegraph') {
-                        return api
-                    }
-                    throw new Error(`require: module not found: ${modulePath}`)
-                }
+        const api = createExtensionHost()
+        // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension host's
+        // implementation of the `sourcegraph` module.
+        ;(self as any).require = (modulePath: string): any => {
+            if (modulePath === 'sourcegraph') {
+                return api
+            }
+            throw new Error(`require: module not found: ${modulePath}`)
+        }
 
-                // Load the extension bundle and retrieve the extension entrypoint module's exports on the global
-                // `module` property.
-                ;(self as any).exports = {}
-                ;(self as any).module = {}
-                self.importScripts(bundleURL)
-                const extensionExports = (self as any).module.exports
-                delete (self as any).module
+        // Load the extension bundle and retrieve the extension entrypoint module's exports on the global
+        // `module` property.
+        ;(self as any).exports = {}
+        ;(self as any).module = {}
+        self.importScripts(bundleURL)
+        const extensionExports = (self as any).module.exports
+        delete (self as any).module
 
-                if ('activate' in extensionExports) {
-                    try {
-                        return extensionExports.activate()
-                    } catch (err) {
-                        console.error(`Error activating extension.`, err)
-                    }
-                } else {
-                    console.error(`Extension did not export an 'activate' function.`)
-                }
-            })
-            .catch((err: any) => {
-                console.error(`Error creating extension host:`, err)
-                self.close()
-            })
+        if ('activate' in extensionExports) {
+            try {
+                tryCatchPromise(() => extensionExports.activate()).catch((err: any) => {
+                    console.error(`Error creating extension host:`, err)
+                    self.close()
+                })
+            } catch (err) {
+                console.error(`Error activating extension.`, err)
+            }
+        } else {
+            console.error(`Extension did not export an 'activate' function.`)
+        }
     }
 }

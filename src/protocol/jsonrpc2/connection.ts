@@ -1,5 +1,4 @@
 import { Unsubscribable } from 'rxjs'
-import { isFunction } from '../../util'
 import { CancelNotification, CancelParams } from './cancel'
 import { CancellationToken, CancellationTokenSource } from './cancel'
 import { ConnectionStrategy } from './connectionStrategy'
@@ -22,7 +21,7 @@ import {
     ResponseError,
     ResponseMessage,
 } from './messages'
-import { LogTraceNotification, noopTracer, SetTraceNotification, Trace, Tracer } from './trace'
+import { noopTracer, Trace, Tracer } from './trace'
 import { DataCallback, MessageReader, MessageWriter } from './transport'
 
 // Copied from vscode-languageserver to avoid adding extraneous dependencies.
@@ -77,6 +76,7 @@ class ConnectionError extends Error {
 type MessageQueue = LinkedMap<string, Message>
 
 export interface Connection extends Unsubscribable {
+    sendRequest<R>(method: string, params?: any): Promise<R>
     sendRequest<R>(method: string, ...params: any[]): Promise<R>
 
     onRequest<R, E>(method: string, handler: GenericRequestHandler<R, E>): void
@@ -87,7 +87,7 @@ export interface Connection extends Unsubscribable {
     onNotification(method: string, handler: GenericNotificationHandler): void
     onNotification(handler: StarNotificationHandler): void
 
-    trace(value: Trace, tracer: Tracer, sendNotification?: boolean): void
+    trace(value: Trace, tracer: Tracer): void
 
     onError: Event<[Error, Message | undefined, number | undefined]>
     onClose: Event<void>
@@ -559,8 +559,8 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         },
         onNotification: (type: string | StarNotificationHandler, handler?: GenericNotificationHandler): void => {
             throwIfClosedOrUnsubscribed()
-            if ((isFunction as (v: any) => v is StarNotificationHandler)(type)) {
-                starNotificationHandler = type as StarNotificationHandler
+            if (typeof type === 'function') {
+                starNotificationHandler = type
             } else if (handler) {
                 notificationHandlers[type] = { type: undefined, handler }
             }
@@ -608,8 +608,8 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         onRequest: <R, E>(type: string | StarRequestHandler, handler?: GenericRequestHandler<R, E>): void => {
             throwIfClosedOrUnsubscribed()
 
-            if ((isFunction as (v: any) => v is StarRequestHandler)(type)) {
-                starRequestHandler = type as StarRequestHandler
+            if (typeof type === 'function') {
+                starRequestHandler = type
             } else if (handler) {
                 requestHandlers[type] = { type: undefined, handler }
             }
@@ -620,9 +620,6 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                 tracer = noopTracer
             } else {
                 tracer = _tracer
-            }
-            if (sendNotification && !isClosed() && !isUnsubscribed()) {
-                connection.sendNotification(SetTraceNotification.type, { value })
             }
         },
         onError: errorEmitter.event,
@@ -642,15 +639,8 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             responsePromises = Object.create(null)
             requestTokens = Object.create(null)
             messageQueue = new LinkedMap<string, Message>()
-            // Test for backwards compatibility
-            // tslint:disable-next-line:no-unbound-method
-            if (isFunction(transports.writer.unsubscribe)) {
-                transports.writer.unsubscribe()
-            }
-            // tslint:disable-next-line:no-unbound-method
-            if (isFunction(transports.reader.unsubscribe)) {
-                transports.reader.unsubscribe()
-            }
+            transports.writer.unsubscribe()
+            transports.reader.unsubscribe()
         },
         listen: () => {
             throwIfClosedOrUnsubscribed()
@@ -660,10 +650,6 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             transports.reader.listen(callback)
         },
     }
-
-    connection.onNotification(LogTraceNotification.type, params => {
-        tracer.log(params.message, trace === Trace.Verbose ? params.verbose : undefined)
-    })
 
     return connection
 }

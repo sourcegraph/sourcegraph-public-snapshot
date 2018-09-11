@@ -1,15 +1,15 @@
 import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
-import { Hover } from 'sourcegraph'
+import { Hover, MarkupKind } from 'sourcegraph'
 import { HoverMerged } from '../../client/types/hover'
 import { getHover, ProvideTextDocumentHoverSignature } from './hover'
 import { FIXTURE } from './registry.test'
 
 const scheduler = () => new TestScheduler((a, b) => assert.deepStrictEqual(a, b))
 
-const FIXTURE_RESULT: Hover | null = { contents: { value: 'c' } }
-const FIXTURE_RESULT_MERGED: HoverMerged | null = { contents: [{ value: 'c' }] }
+const FIXTURE_RESULT: Hover | null = { contents: { value: 'c', kind: MarkupKind.PlainText } }
+const FIXTURE_RESULT_MERGED: HoverMerged | null = { contents: [{ value: 'c', kind: MarkupKind.PlainText }] }
 
 describe('getHover', () => {
     describe('0 providers', () => {
@@ -105,7 +105,10 @@ describe('getHover', () => {
                     )
                 ).toBe('-a-|', {
                     a: {
-                        contents: [{ value: 'c1' }, { value: 'c2' }],
+                        contents: [
+                            { value: 'c1', kind: MarkupKind.PlainText },
+                            { value: 'c2', kind: MarkupKind.PlainText },
+                        ],
                         range: { start: { line: 1, character: 2 }, end: { line: 3, character: 4 } },
                     },
                 })
