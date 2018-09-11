@@ -5,15 +5,9 @@ import { Message } from './messages'
 
 export type DataCallback = (data: Message) => void
 
-export interface PartialMessageInfo {
-    readonly messageToken: number
-    readonly waitingTime: number
-}
-
 export interface MessageReader {
     readonly onError: Event<Error>
     readonly onClose: Event<void>
-    readonly onPartialMessage: Event<PartialMessageInfo>
     listen(callback: DataCallback): void
     unsubscribe(): void
 }
@@ -22,12 +16,9 @@ export abstract class AbstractMessageReader {
     private errorEmitter: Emitter<Error>
     private closeEmitter: Emitter<void>
 
-    private partialMessageEmitter: Emitter<PartialMessageInfo>
-
     constructor() {
         this.errorEmitter = new Emitter<Error>()
         this.closeEmitter = new Emitter<void>()
-        this.partialMessageEmitter = new Emitter<PartialMessageInfo>()
     }
 
     public unsubscribe(): void {
@@ -49,14 +40,6 @@ export abstract class AbstractMessageReader {
 
     protected fireClose(): void {
         this.closeEmitter.fire(undefined)
-    }
-
-    public get onPartialMessage(): Event<PartialMessageInfo> {
-        return this.partialMessageEmitter.event
-    }
-
-    protected firePartialMessage(info: PartialMessageInfo): void {
-        this.partialMessageEmitter.fire(info)
     }
 
     private asError(error: any): Error {
