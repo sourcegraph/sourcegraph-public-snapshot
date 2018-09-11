@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import { MarkupKind } from 'sourcegraph'
-import { TextDocumentHoverProviderRegistry } from '../../environment/providers/hover'
+import { TextDocumentHoverProviderRegistry } from '../providers/hover'
 import { ClientCapabilities } from '../../protocol'
 import { Client } from '../client'
 import { TextDocumentHoverFeature } from './hover'

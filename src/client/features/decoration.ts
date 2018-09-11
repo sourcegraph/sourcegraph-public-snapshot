@@ -1,9 +1,9 @@
 import { BehaviorSubject, Observable } from 'rxjs'
-import { ProvideTextDocumentDecorationSignature } from '../../environment/providers/decoration'
-import { FeatureProviderRegistry } from '../../environment/providers/registry'
 import { ClientCapabilities } from '../../protocol'
 import { TextDocumentDecoration, TextDocumentPublishDecorationsNotification } from '../../protocol/decoration'
 import { Client } from '../client'
+import { ProvideTextDocumentDecorationSignature } from '../providers/decoration'
+import { FeatureProviderRegistry } from '../providers/registry'
 import { TextDocumentIdentifier } from '../types/textDocument'
 import { ensure, StaticFeature } from './common'
 

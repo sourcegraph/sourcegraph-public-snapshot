@@ -1,12 +1,12 @@
 import { Observable, of } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { TextDocument } from 'sourcegraph'
-import { TextDocumentItem } from '../client/types/textDocument'
 import { ConfigurationCascade } from '../protocol'
 import { Range, Selection } from '../protocol/plainTypes'
 import { isEqual } from '../util'
 import { Context, EMPTY_CONTEXT } from './context/context'
 import { Extension } from './extension'
+import { TextDocumentItem } from './types/textDocument'
 
 /**
  * A description of the environment represented by the Sourcegraph extension client application.

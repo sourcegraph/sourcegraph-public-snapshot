@@ -1,20 +1,4 @@
 import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { Client, ClientOptions } from '../client/client'
-import { ExecuteCommandFeature } from '../client/features/command'
-import { ConfigurationChangeNotificationFeature, ConfigurationUpdateFeature } from '../client/features/configuration'
-import { ContextFeature } from '../client/features/context'
-import { ContributionFeature } from '../client/features/contribution'
-import { TextDocumentDecorationFeature } from '../client/features/decoration'
-import { TextDocumentHoverFeature } from '../client/features/hover'
-import {
-    TextDocumentDefinitionFeature,
-    TextDocumentImplementationFeature,
-    TextDocumentReferencesFeature,
-    TextDocumentTypeDefinitionFeature,
-} from '../client/features/location'
-import { WindowLogMessageFeature } from '../client/features/logMessage'
-import { WindowShowMessageFeature } from '../client/features/message'
-import { TextDocumentDidCloseFeature, TextDocumentDidOpenFeature } from '../client/features/textDocument'
 import { Trace } from '../jsonrpc2/trace'
 import {
     ConfigurationCascade,
@@ -27,9 +11,25 @@ import {
 } from '../protocol'
 import { ContextUpdateParams } from '../protocol/context'
 import { isEqual } from '../util'
+import { Client, ClientOptions } from './client'
 import { applyContextUpdate, EMPTY_CONTEXT } from './context/context'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment, ObservableEnvironment } from './environment'
 import { Extension } from './extension'
+import { ExecuteCommandFeature } from './features/command'
+import { ConfigurationChangeNotificationFeature, ConfigurationUpdateFeature } from './features/configuration'
+import { ContextFeature } from './features/context'
+import { ContributionFeature } from './features/contribution'
+import { TextDocumentDecorationFeature } from './features/decoration'
+import { TextDocumentHoverFeature } from './features/hover'
+import {
+    TextDocumentDefinitionFeature,
+    TextDocumentImplementationFeature,
+    TextDocumentReferencesFeature,
+    TextDocumentTypeDefinitionFeature,
+} from './features/location'
+import { WindowLogMessageFeature } from './features/logMessage'
+import { WindowShowMessageFeature } from './features/message'
+import { TextDocumentDidCloseFeature, TextDocumentDidOpenFeature } from './features/textDocument'
 import { Registries } from './registries'
 
 /** The minimal unique identifier for a client. */

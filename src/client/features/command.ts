@@ -1,5 +1,5 @@
 import { Subscription } from 'rxjs'
-import { CommandRegistry } from '../../environment/providers/command'
+import { CommandRegistry } from '../providers/command'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,

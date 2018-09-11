@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { TextDocumentDecorationProviderRegistry } from '../../environment/providers/decoration'
+import { TextDocumentDecorationProviderRegistry } from '../providers/decoration'
 import { NotificationHandler } from '../../jsonrpc2/handlers'
 import { NotificationType } from '../../jsonrpc2/messages'
 import {

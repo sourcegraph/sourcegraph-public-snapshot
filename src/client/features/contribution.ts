@@ -2,7 +2,7 @@ import {
     ContributionRegistry,
     ContributionsEntry,
     ContributionUnsubscribable,
-} from '../../environment/providers/contribution'
+} from '../providers/contribution'
 import { MessageType as RPCMessageType } from '../../jsonrpc2/messages'
 import { ClientCapabilities, Contributions } from '../../protocol'
 import { DynamicFeature, ensure, RegistrationData } from './common'

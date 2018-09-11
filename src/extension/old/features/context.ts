@@ -1,4 +1,4 @@
-import { Context } from '../../../environment/context/context'
+import { Context } from '../../../client/context/context'
 import { MessageConnection } from '../../../jsonrpc2/connection'
 import { ContextUpdateNotification, ContextUpdateParams } from '../../../protocol/context'
 import { ExtensionContext } from '../api'

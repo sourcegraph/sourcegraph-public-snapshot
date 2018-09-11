@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { CommandRegistry } from '../../environment/providers/command'
+import { CommandRegistry } from '../providers/command'
 import { ClientCapabilities } from '../../protocol'
 import { Client } from '../client'
 import { ExecuteCommandFeature } from './command'

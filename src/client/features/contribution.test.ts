@@ -1,8 +1,8 @@
 import * as assert from 'assert'
-import { EMPTY_OBSERVABLE_ENVIRONMENT } from '../../environment/environment'
-import { ContributionRegistry, ContributionsEntry } from '../../environment/providers/contribution'
 import { ClientCapabilities } from '../../protocol'
 import { Client } from '../client'
+import { EMPTY_OBSERVABLE_ENVIRONMENT } from '../environment'
+import { ContributionRegistry, ContributionsEntry } from '../providers/contribution'
 import { ContributionFeature } from './contribution'
 
 const create = (): {

@@ -1,7 +1,6 @@
 import * as assert from 'assert'
 import { BehaviorSubject, Subject } from 'rxjs'
 import { DocumentSelector } from 'sourcegraph'
-import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment } from '../../environment/environment'
 import { NotificationType } from '../../jsonrpc2/messages'
 import {
     ClientCapabilities,
@@ -12,6 +11,7 @@ import {
     TextDocumentRegistrationOptions,
 } from '../../protocol'
 import { Client } from '../client'
+import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment } from '../environment'
 import { TextDocumentItem } from '../types/textDocument'
 import {
     TextDocumentDidCloseFeature,

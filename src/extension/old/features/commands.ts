@@ -1,6 +1,6 @@
 import { Subscription } from 'rxjs'
 import uuidv4 from 'uuid/v4'
-import { CommandRegistry } from '../../../environment/providers/command'
+import { CommandRegistry } from '../../../client/providers/command'
 import { MessageConnection } from '../../../jsonrpc2/connection'
 import {
     ExecuteCommandRegistrationOptions,
