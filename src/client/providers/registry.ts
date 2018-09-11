@@ -49,6 +49,3 @@ export abstract class FeatureProviderRegistry<O, P> {
         return this.entries.value.map(({ provider }) => provider)
     }
 }
-
-/** An empty provider registry, mainly useful in tests and example code. */
-export class NoopProviderRegistry extends FeatureProviderRegistry<any, any> {}

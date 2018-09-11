@@ -48,7 +48,7 @@ export namespace ErrorCodes {
     export const MessageReadError = 2
 }
 
-export interface ResponseErrorLiteral<D> {
+interface ResponseErrorLiteral<D> {
     /**
      * A number indicating the error type that occured.
      */
@@ -81,7 +81,7 @@ export class ResponseError<D> extends Error {
         Object.setPrototypeOf(this, ResponseError.prototype)
     }
 
-    public toJson(): ResponseErrorLiteral<D> {
+    public toJSON(): ResponseErrorLiteral<D> {
         return {
             code: this.code,
             message: this.message,
@@ -121,7 +121,7 @@ export interface MessageType<M extends string = string> {
 /**
  * An abstract implementation of a MessageType.
  */
-export abstract class AbstractMessageType<M extends string = string> implements MessageType<M> {
+abstract class AbstractMessageType<M extends string = string> implements MessageType<M> {
     constructor(public readonly method: M) {}
 }
 

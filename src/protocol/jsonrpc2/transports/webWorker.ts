@@ -14,7 +14,7 @@ interface WorkerEventMap {
     error: any
     message: MessageEvent
 }
-export interface Worker {
+interface Worker {
     postMessage(message: any): void
     addEventListener<K extends keyof WorkerEventMap>(
         type: K,

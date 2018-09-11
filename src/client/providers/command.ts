@@ -1,8 +1,6 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { ExecuteCommandParams } from '../../protocol'
 
-export type ExecuteCommandSignature = (params: ExecuteCommandParams) => Promise<any>
-
 /** A registered command in the command registry. */
 export interface CommandEntry {
     /** The command ID (conventionally, e.g., "myextension.mycommand"). */

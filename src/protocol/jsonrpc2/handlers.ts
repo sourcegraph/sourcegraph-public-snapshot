@@ -1,12 +1,7 @@
 import { CancellationToken } from './cancel'
 import { ResponseError } from './messages'
 
-export type HandlerResult<R, E> =
-    | R
-    | ResponseError<E>
-    | Promise<R>
-    | Promise<ResponseError<E>>
-    | Promise<R | ResponseError<E>>
+type HandlerResult<R, E> = R | ResponseError<E> | Promise<R> | Promise<ResponseError<E>> | Promise<R | ResponseError<E>>
 
 export type StarRequestHandler = (method: string, ...params: any[]) => HandlerResult<any, any>
 

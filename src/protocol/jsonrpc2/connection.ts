@@ -39,7 +39,7 @@ export interface Logger {
     log(message: string): void
 }
 
-export const NullLogger: Logger = Object.freeze({
+const NullLogger: Logger = Object.freeze({
     error: () => {
         /* noop */
     },
@@ -54,7 +54,7 @@ export const NullLogger: Logger = Object.freeze({
     },
 })
 
-export enum ConnectionErrors {
+enum ConnectionErrors {
     /**
      * The connection is closed.
      */
@@ -69,7 +69,7 @@ export enum ConnectionErrors {
     AlreadyListening = 3,
 }
 
-export class ConnectionError extends Error {
+class ConnectionError extends Error {
     public readonly code: ConnectionErrors
 
     constructor(code: ConnectionErrors, message: string) {
@@ -79,7 +79,7 @@ export class ConnectionError extends Error {
     }
 }
 
-export type MessageQueue = LinkedMap<string, Message>
+type MessageQueue = LinkedMap<string, Message>
 
 export interface Connection extends Unsubscribable {
     sendRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, params: P, token?: CancellationToken): Promise<R>
@@ -314,7 +314,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                 id: requestMessage.id,
             }
             if (resultOrError instanceof ResponseError) {
-                message.error = (resultOrError as ResponseError<any>).toJson()
+                message.error = (resultOrError as ResponseError<any>).toJSON()
             } else {
                 message.result = resultOrError === undefined ? null : resultOrError
             }
@@ -325,7 +325,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             const message: ResponseMessage = {
                 jsonrpc: version,
                 id: requestMessage.id,
-                error: error.toJson(),
+                error: error.toJSON(),
             }
             tracer.responseSent(message, requestMessage, startTime)
             transports.writer.write(message)
@@ -652,15 +652,15 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                 }
             }
         },
-        trace: (_value: Trace, _tracer: Tracer, sendNotification = false) => {
-            trace = _value
+        trace: (value: Trace, _tracer: Tracer, sendNotification = false) => {
+            trace = value
             if (trace === Trace.Off) {
                 tracer = noopTracer
             } else {
                 tracer = _tracer
             }
             if (sendNotification && !isClosed() && !isUnsubscribed()) {
-                connection.sendNotification(SetTraceNotification.type, { value: Trace.toString(_value) })
+                connection.sendNotification(SetTraceNotification.type, { value })
             }
         },
         onError: errorEmitter.event,

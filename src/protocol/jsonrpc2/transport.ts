@@ -1,4 +1,3 @@
-import { isFunction } from '../../util'
 import { Emitter, Event } from './events'
 import { Message } from './messages'
 
@@ -17,22 +16,6 @@ export interface MessageReader {
     readonly onPartialMessage: Event<PartialMessageInfo>
     listen(callback: DataCallback): void
     unsubscribe(): void
-}
-
-export namespace MessageReader {
-    export function is(value: any): value is MessageReader {
-        const candidate: MessageReader = value
-        return (
-            candidate &&
-            // tslint:disable-next-line:no-unbound-method
-            isFunction(candidate.listen) &&
-            // tslint:disable-next-line:no-unbound-method
-            isFunction(candidate.unsubscribe) &&
-            isFunction(candidate.onError) &&
-            isFunction(candidate.onClose) &&
-            isFunction(candidate.onPartialMessage)
-        )
-    }
 }
 
 export abstract class AbstractMessageReader {
@@ -91,21 +74,6 @@ export interface MessageWriter {
     readonly onClose: Event<void>
     write(msg: Message): void
     unsubscribe(): void
-}
-
-export namespace MessageWriter {
-    export function is(value: any): value is MessageWriter {
-        const candidate: MessageWriter = value
-        return (
-            candidate &&
-            // tslint:disable-next-line:no-unbound-method
-            isFunction(candidate.unsubscribe) &&
-            isFunction(candidate.onClose) &&
-            isFunction(candidate.onError) &&
-            // tslint:disable-next-line:no-unbound-method
-            isFunction(candidate.write)
-        )
-    }
 }
 
 export abstract class AbstractMessageWriter {

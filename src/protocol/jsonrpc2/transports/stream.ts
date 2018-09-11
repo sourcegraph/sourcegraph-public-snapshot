@@ -4,8 +4,8 @@ import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageRead
 const DefaultSize = 8192
 const CR: number = Buffer.from('\r', 'ascii')[0]
 const LF: number = Buffer.from('\n', 'ascii')[0]
-export const CRLF = '\r\n'
-export const ContentLength = 'Content-Length: '
+const CRLF = '\r\n'
+const ContentLength = 'Content-Length: '
 
 class MessageBuffer {
     private encoding: string

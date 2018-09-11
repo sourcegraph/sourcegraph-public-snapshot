@@ -53,10 +53,3 @@ export function clientStateIs(
         )
         .toPromise()
 }
-
-/** Returns a promise that resolves with the value after the given delay (in milliseconds). */
-export function delayed<T>(value: T, msec: number): Promise<T> {
-    return new Promise(resolve => {
-        setTimeout(() => resolve(value), msec)
-    })
-}

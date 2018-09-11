@@ -83,18 +83,11 @@ class CallbackList {
     }
 }
 
-export interface EmitterOptions<T> {
-    onFirstListenerAdd?: (emitter: Emitter<T>) => void
-    onLastListenerRemove?: (emitter: Emitter<T>) => void
-}
-
 export class Emitter<T> {
     private static _noop = () => void 0
 
     private _event?: Event<T>
     private _callbacks: CallbackList | undefined
-
-    constructor(private _options?: EmitterOptions<T>) {}
 
     /**
      * For the public to allow to subscribe
@@ -106,9 +99,6 @@ export class Emitter<T> {
                 if (!this._callbacks) {
                     this._callbacks = new CallbackList()
                 }
-                if (this._options && this._options.onFirstListenerAdd && this._callbacks.isEmpty()) {
-                    this._options.onFirstListenerAdd(this)
-                }
                 this._callbacks.add(listener, thisArgs)
 
                 let result: Unsubscribable
@@ -116,9 +106,6 @@ export class Emitter<T> {
                     unsubscribe: () => {
                         this._callbacks!.remove(listener, thisArgs)
                         result.unsubscribe = Emitter._noop
-                        if (this._options && this._options.onLastListenerRemove && this._callbacks!.isEmpty()) {
-                            this._options.onLastListenerRemove(this)
-                        }
                     },
                 }
                 if (Array.isArray(Unsubscribables)) {
