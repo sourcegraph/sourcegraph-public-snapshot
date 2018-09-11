@@ -1,6 +1,5 @@
 import { Unsubscribable } from 'rxjs'
 import { ClientCapabilities, InitializeParams } from '../../protocol'
-import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { isFunction } from '../../util'
 import { Client } from '../client'
 
@@ -28,10 +27,10 @@ export interface RegistrationData<T> {
 
 /** A client feature that exposes functionality that the server can enable, configure, and disable. */
 export interface DynamicFeature<T> {
-    messages: RPCMessageType | RPCMessageType[]
+    messages: string
     fillInitializeParams?: (params: InitializeParams) => void
     fillClientCapabilities(capabilities: ClientCapabilities): void
-    register(message: RPCMessageType, data: RegistrationData<T>): void
+    register(message: string, data: RegistrationData<T>): void
     unregister(id: string): void
 
     /**
@@ -63,7 +62,7 @@ export abstract class Feature<O> implements DynamicFeature<O> {
 
     constructor(protected client: Client) {}
 
-    public abstract get messages(): RPCMessageType
+    public abstract get messages(): string
 
     /**
      * validateRegistrationOptions validates a proposed options object. This is used by the register
@@ -77,13 +76,11 @@ export abstract class Feature<O> implements DynamicFeature<O> {
      */
     protected abstract validateRegistrationOptions(options: any): O
 
-    public register(message: RPCMessageType, data: RegistrationData<any>): void {
+    public register(message: string, data: RegistrationData<any>): void {
         const registerOptions = this.validateRegistrationOptions(data.registerOptions)
-        if (message.method !== this.messages.method) {
+        if (message !== this.messages) {
             throw new Error(
-                `Register called on wrong feature. Requested ${message.method} but reached feature ${
-                    this.messages.method
-                }`
+                `Register called on wrong feature. Requested ${message} but reached feature ${this.messages}`
             )
         }
         if (this.subscriptionsByID.has(data.id)) {

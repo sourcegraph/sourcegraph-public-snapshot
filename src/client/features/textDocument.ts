@@ -9,7 +9,6 @@ import {
     DidOpenTextDocumentParams,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { MessageType as RPCMessageType, NotificationType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
 import { match, TextDocumentItem } from '../types/textDocument'
 import { DynamicFeature, ensure, RegistrationData } from './common'
@@ -24,16 +23,16 @@ export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFe
     constructor(
         protected client: Client,
         protected observable: Observable<E>,
-        protected type: NotificationType<P, TextDocumentRegistrationOptions>,
+        protected method: string,
         protected createParams: CreateParamsSignature<E, P>,
         protected selectorFilter?: (selectors: IterableIterator<DocumentSelector>, data: E) => boolean
     ) {}
 
-    public abstract messages: RPCMessageType | RPCMessageType[]
+    public abstract messages: string
 
     public abstract fillClientCapabilities(capabilities: ClientCapabilities): void
 
-    public register(_message: RPCMessageType, data: RegistrationData<TextDocumentRegistrationOptions>): void {
+    public register(_message: string, data: RegistrationData<TextDocumentRegistrationOptions>): void {
         if (!data.registerOptions.documentSelector) {
             return
         }
@@ -48,7 +47,7 @@ export abstract class TextDocumentNotificationFeature<P, E> implements DynamicFe
 
     private callback(data: E): void {
         if (!this.selectorFilter || this.selectorFilter(this.selectors.values(), data)) {
-            this.client.sendNotification(this.type, this.createParams(data))
+            this.client.sendNotification(this.method, this.createParams(data))
             this.notificationSent(data)
         }
     }

@@ -33,7 +33,7 @@ export function createExtCommands(rawConnection: Connection): Commands {
                     registrations: [
                         {
                             id,
-                            method: ExecuteCommandRequest.type.method,
+                            method: ExecuteCommandRequest.type,
                             registerOptions: { commands: [command] } as ExecuteCommandRegistrationOptions,
                         },
                     ],
@@ -43,7 +43,7 @@ export function createExtCommands(rawConnection: Connection): Commands {
             subscription.add(() => {
                 rawConnection
                     .sendRequest(UnregistrationRequest.type, {
-                        unregisterations: [{ id, method: ExecuteCommandRequest.type.method }],
+                        unregisterations: [{ id, method: ExecuteCommandRequest.type }],
                     } as UnregistrationParams)
                     .catch(err => console.error(err))
             })

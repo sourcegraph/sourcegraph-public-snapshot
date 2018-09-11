@@ -1,7 +1,6 @@
 import * as assert from 'assert'
 import { ContextUpdateNotification, ContextUpdateParams } from '../../protocol/context'
 import { NotificationHandler } from '../../protocol/jsonrpc2/handlers'
-import { NotificationType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
 import { ContextFeature } from './context'
 
@@ -27,16 +26,8 @@ describe('ContextFeature', () => {
         it('registers the provider and listens for notifications', done => {
             const { client, feature } = create()
 
-            function mockOnNotification(method: string, handler: NotificationHandler<any>): void
-            function mockOnNotification(
-                type: NotificationType<ContextUpdateParams, void>,
-                params: NotificationHandler<ContextUpdateParams>
-            ): void
-            function mockOnNotification(
-                type: string | NotificationType<ContextUpdateParams, void>,
-                params: NotificationHandler<any>
-            ): void {
-                assert.strictEqual(typeof type === 'string' ? type : type.method, ContextUpdateNotification.type.method)
+            function mockOnNotification(method: string, _handler: NotificationHandler<any>): void {
+                assert.strictEqual(method, ContextUpdateNotification.type)
                 done()
             }
             client.onNotification = mockOnNotification
@@ -51,10 +42,7 @@ describe('ContextFeature', () => {
             const { client, feature } = create(params => (setContextParams = params))
 
             const params: ContextUpdateParams = { updates: { a: 1, b: '2', c: true, d: null } }
-            client.onNotification = (
-                _type: NotificationType<ContextUpdateParams, void> | string,
-                handler: NotificationHandler<ContextUpdateParams>
-            ) => {
+            client.onNotification = (_type: string, handler: NotificationHandler<ContextUpdateParams>) => {
                 handler(params)
             }
 

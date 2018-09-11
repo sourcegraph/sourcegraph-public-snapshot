@@ -67,12 +67,12 @@ describe('ExtWindows', () => {
     describe('showInputBox', () => {
         it('sends to the client', async () => {
             const { extWindows, mockConnection } = create()
-            mockConnection.mockResults.set(ShowInputRequest.type.method, 'c')
+            mockConnection.mockResults.set(ShowInputRequest.type, 'c')
             const input = await extWindows.showInputBox('a', 'b')
             assert.strictEqual(input, 'c')
             assert.deepStrictEqual(mockConnection.sentMessages, [
                 {
-                    method: ShowInputRequest.type.method,
+                    method: ShowInputRequest.type,
                     params: { message: 'a', defaultValue: 'b' } as ShowInputParams,
                 },
             ])

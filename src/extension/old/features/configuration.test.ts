@@ -34,7 +34,7 @@ describe('ExtConfiguration', () => {
 
     it('reflects client updates', () => {
         const { extConfiguration, mockConnection } = create({ merged: { a: 'b' } })
-        mockConnection.recvNotification(DidChangeConfigurationNotification.type.method, {
+        mockConnection.recvNotification(DidChangeConfigurationNotification.type, {
             configurationCascade: { merged: { c: 'd' } as Settings },
         } as DidChangeConfigurationParams)
         assert.deepStrictEqual(observableValue(extConfiguration), { c: 'd' } as Settings)
@@ -43,7 +43,7 @@ describe('ExtConfiguration', () => {
     describe('update', () => {
         it('sends to the client and immediately reflects locally', async () => {
             const { extConfiguration, mockConnection } = create()
-            mockConnection.mockResults.set(ConfigurationUpdateRequest.type.method, void 0)
+            mockConnection.mockResults.set(ConfigurationUpdateRequest.type, void 0)
             const updated = extConfiguration.update('a', 'b')
             const want = { a: 'b' } as Settings
             assert.deepStrictEqual(observableValue(extConfiguration), want)
@@ -51,7 +51,7 @@ describe('ExtConfiguration', () => {
             assert.deepStrictEqual(observableValue(extConfiguration), want)
             assert.deepStrictEqual(mockConnection.sentMessages, [
                 {
-                    method: ConfigurationUpdateRequest.type.method,
+                    method: ConfigurationUpdateRequest.type,
                     params: { path: ['a'], value: 'b' } as ConfigurationUpdateParams,
                 },
             ])
@@ -59,10 +59,10 @@ describe('ExtConfiguration', () => {
 
         it('handles interleaved update calls and didChangeConfiguration notifications', async () => {
             const { extConfiguration, mockConnection } = create()
-            mockConnection.mockResults.set(ConfigurationUpdateRequest.type.method, void 0)
+            mockConnection.mockResults.set(ConfigurationUpdateRequest.type, void 0)
             const updated = extConfiguration.update('a', 'b')
             assert.deepStrictEqual(observableValue(extConfiguration), { a: 'b' } as Settings)
-            mockConnection.recvNotification(DidChangeConfigurationNotification.type.method, {
+            mockConnection.recvNotification(DidChangeConfigurationNotification.type, {
                 configurationCascade: { merged: { c: 'd' } as Settings },
             } as DidChangeConfigurationParams)
             assert.deepStrictEqual(observableValue(extConfiguration), { c: 'd' } as Settings)

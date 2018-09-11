@@ -1,5 +1,3 @@
-import { RequestType } from './jsonrpc2/messages'
-
 export interface CommandClientCapabilities {
     workspace?: {
         executeCommand?: {
@@ -39,7 +37,5 @@ export interface ExecuteCommandRegistrationOptions extends ExecuteCommandOptions
  * a workspace edit which the client will apply to the workspace.
  */
 export namespace ExecuteCommandRequest {
-    export const type = new RequestType<ExecuteCommandParams, any | null, void, ExecuteCommandRegistrationOptions>(
-        'workspace/executeCommand'
-    )
+    export const type = 'workspace/executeCommand'
 }

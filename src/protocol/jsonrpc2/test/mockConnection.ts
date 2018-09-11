@@ -8,7 +8,7 @@ import {
     StarNotificationHandler,
     StarRequestHandler,
 } from '../handlers'
-import { Message, MessageType, NotificationMessage, NotificationType, RequestType } from '../messages'
+import { Message, NotificationMessage } from '../messages'
 import { Trace, Tracer } from '../trace'
 
 /**
@@ -37,10 +37,7 @@ export class MockConnection implements Connection {
      *
      * @return The result returned by the request handler.
      */
-    public recvRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, params: P): Promise<R>
-    public recvRequest<R>(method: string, params: any): Promise<R>
-    public recvRequest<R>(type: MessageType | string, params: any): Promise<R> {
-        const method = typeof type === 'string' ? type : type.method
+    public recvRequest<R>(method: string, params: any): Promise<R> {
         const handler = this.registeredHandlers.get(method)
         if (!handler) {
             throw new Error(`no mock request handler for method ${method}`)
@@ -51,10 +48,7 @@ export class MockConnection implements Connection {
     /**
      * Simulates receiving the given notification by calling the handler registered for it.
      */
-    public recvNotification<P, RO>(type: NotificationType<P, RO>, params: P): void
-    public recvNotification<R>(method: string, params: any): void
-    public recvNotification<R>(type: MessageType | string, params: any): void {
-        const method = typeof type === 'string' ? type : type.method
+    public recvNotification<R>(method: string, params: any): void {
         const handler = this.registeredHandlers.get(method)
         if (!handler) {
             throw new Error(`no mock notification handler for method ${method}`)
@@ -62,8 +56,7 @@ export class MockConnection implements Connection {
         handler(params)
     }
 
-    public sendRequest(type: string | MessageType, params: any, token?: CancellationToken): Promise<any> {
-        const method = typeof type === 'string' ? type : type.method
+    public sendRequest(method: string, params: any, token?: CancellationToken): Promise<any> {
         this.sentMessages.push({ method, params })
         if (!this.mockResults.has(method)) {
             throw new Error(`no mock result for method ${method}`)
@@ -72,27 +65,24 @@ export class MockConnection implements Connection {
         return resultOrError instanceof Error ? Promise.reject(resultOrError) : Promise.resolve(resultOrError)
     }
 
-    public sendNotification(type: string | MessageType, params: any): void {
-        this.sentMessages.push({ method: typeof type === 'string' ? type : type.method, params })
+    public sendNotification(method: string, params: any): void {
+        this.sentMessages.push({ method, params })
     }
 
-    public onRequest(type: string | MessageType, handler: GenericRequestHandler<any, any>): void
+    public onRequest(method: string, handler: GenericRequestHandler<any, any>): void
     public onRequest(handler: StarRequestHandler): void
-    public onRequest(arg1: string | MessageType | StarRequestHandler, arg2?: GenericRequestHandler<any, any>): void {
+    public onRequest(arg1: string | StarRequestHandler, arg2?: GenericRequestHandler<any, any>): void {
         return this.onHandler(arg1, arg2)
     }
 
-    public onNotification(method: string | MessageType, handler: GenericNotificationHandler): void
+    public onNotification(method: string, handler: GenericNotificationHandler): void
     public onNotification(handler: StarNotificationHandler): void
-    public onNotification(
-        arg1: string | MessageType | StarNotificationHandler,
-        arg2?: GenericNotificationHandler
-    ): void {
+    public onNotification(arg1: string | StarNotificationHandler, arg2?: GenericNotificationHandler): void {
         return this.onHandler(arg1, arg2)
     }
 
     private onHandler(
-        arg1: string | MessageType | StarRequestHandler | StarNotificationHandler,
+        arg1: string | StarRequestHandler | StarNotificationHandler,
         arg2?: GenericRequestHandler<any, any> | GenericNotificationHandler
     ): void {
         let method: string
@@ -101,7 +91,7 @@ export class MockConnection implements Connection {
             method = '*'
             handler = arg1
         } else {
-            method = typeof arg1 === 'string' ? arg1 : arg1.method
+            method = arg1
             handler = arg2!
         }
         this.registeredHandlers.set(method, handler)

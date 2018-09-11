@@ -8,7 +8,6 @@ import {
     DidChangeConfigurationNotification,
     InitializeParams,
 } from '../../protocol'
-import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
 import { DynamicFeature, ensure, RegistrationData, StaticFeature } from './common'
 
@@ -46,7 +45,7 @@ export class ConfigurationChangeNotificationFeature<C extends ConfigurationCasca
         ensure(ensure(capabilities, 'configuration')!, 'didChangeConfiguration')!.dynamicRegistration = true
     }
 
-    public register(_message: RPCMessageType, data: RegistrationData<undefined>): void {
+    public register(_message: string, data: RegistrationData<undefined>): void {
         if (this.subscriptionsByID.has(data.id)) {
             throw new Error(`registration already exists with ID ${data.id}`)
         }

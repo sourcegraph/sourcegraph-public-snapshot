@@ -1,5 +1,3 @@
-import { RequestType } from './jsonrpc2/messages'
-
 /**
  * General parameters to to register for an notification or to register a provider.
  */
@@ -41,7 +39,7 @@ export interface RegistrationParams {
  * handler on the client side.
  */
 export namespace RegistrationRequest {
-    export const type = new RequestType<RegistrationParams, void, void, void>('client/registerCapability')
+    export const type = 'client/registerCapability'
 }
 
 /**
@@ -72,5 +70,5 @@ export interface UnregistrationParams {
  * handler on the client side.
  */
 export namespace UnregistrationRequest {
-    export const type = new RequestType<UnregistrationParams, void, void, void>('client/unregisterCapability')
+    export const type = 'client/unregisterCapability'
 }

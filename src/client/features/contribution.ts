@@ -1,5 +1,4 @@
 import { ClientCapabilities, Contributions } from '../../protocol'
-import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { ContributionRegistry, ContributionsEntry, ContributionUnsubscribable } from '../providers/contribution'
 import { DynamicFeature, ensure, RegistrationData } from './common'
 
@@ -11,17 +10,17 @@ export class ContributionFeature implements DynamicFeature<Contributions> {
 
     constructor(private registry: ContributionRegistry) {}
 
-    public get messages(): RPCMessageType {
+    public get messages(): string {
         // This method is not actually a protocol method, but some value is required here because the client tracks
         // DynamicFeatures based on their method name.
-        return { method: 'window/contribution' }
+        return 'window/contribution'
     }
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         ensure(ensure(capabilities, 'window')!, 'contribution')!.dynamicRegistration = true
     }
 
-    public register(_message: RPCMessageType, data: RegistrationData<Contributions>): void {
+    public register(_message: string, data: RegistrationData<Contributions>): void {
         const existing = this.contributions.get(data.id)
         if (existing && !data.overwriteExisting) {
             throw new Error(`registration already exists with ID ${data.id}`)

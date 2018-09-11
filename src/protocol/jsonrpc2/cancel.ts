@@ -1,5 +1,4 @@
 import { Emitter, Event } from './events'
-import { NotificationType } from './messages'
 
 // Copied from vscode-jsonrpc to avoid adding extraneous dependencies.
 
@@ -11,7 +10,7 @@ export interface CancelParams {
 }
 
 export namespace CancelNotification {
-    export const type = new NotificationType<CancelParams, void>('$/cancelRequest')
+    export const type = '$/cancelRequest'
 }
 
 /**

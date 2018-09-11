@@ -1,6 +1,5 @@
 import { ClientCapabilities } from './capabilities'
 import { ConfigurationCascade } from './configuration'
-import { NotificationType, RequestType } from './jsonrpc2/messages'
 
 /**
  * The initialize request is sent from the client to the server. It is sent once as the request after starting up
@@ -8,7 +7,7 @@ import { NotificationType, RequestType } from './jsonrpc2/messages'
  * [InitializeResult](#InitializeResult) of a Thenable that resolves to such.
  */
 export namespace InitializeRequest {
-    export const type = new RequestType<InitializeParams, InitializeResult, void, void>('initialize')
+    export const type = 'initialize'
 }
 
 /**
@@ -49,7 +48,7 @@ export interface InitializedParams {}
  * is allowed to send requests from the server to the client.
  */
 export namespace InitializedNotification {
-    export const type = new NotificationType<InitializedParams, void>('initialized')
+    export const type = 'initialized'
 }
 
 /**
@@ -59,7 +58,7 @@ export namespace InitializedNotification {
  * is the exit event.
  */
 export namespace ShutdownRequest {
-    export const type = new RequestType<null, void, void, void>('shutdown')
+    export const type = 'shutdown'
 }
 
 /**
@@ -67,5 +66,5 @@ export namespace ShutdownRequest {
  * ask the server to exit its process.
  */
 export namespace ExitNotification {
-    export const type = new NotificationType<null, void>('exit')
+    export const type = 'exit'
 }

@@ -1,8 +1,6 @@
 import { TextDocumentIdentifier } from '../client/types/textDocument'
 import { NotificationHandler } from './jsonrpc2/handlers'
-import { NotificationType } from './jsonrpc2/messages'
 import { Range } from './plainTypes'
-import { TextDocumentRegistrationOptions } from './textDocument'
 
 export interface DecorationClientCapabilities {
     decoration?: DecorationCapabilityOptions
@@ -78,8 +76,6 @@ export interface TextDocumentPublishDecorationsParams {
  * document.
  */
 export namespace TextDocumentPublishDecorationsNotification {
-    export const type = new NotificationType<TextDocumentPublishDecorationsParams, TextDocumentRegistrationOptions>(
-        'textDocument/publishDecorations'
-    )
+    export const type = 'textDocument/publishDecorations'
     export type HandlerSignature = NotificationHandler<TextDocumentPublishDecorationsParams>
 }

@@ -17,7 +17,7 @@ describe('ExtContext', () => {
             extContext.updateContext({ a: 'b' })
             assert.deepStrictEqual(mockConnection.sentMessages, [
                 {
-                    method: ContextUpdateNotification.type.method,
+                    method: ContextUpdateNotification.type,
                     params: { updates: { a: 'b' } } as ContextUpdateParams,
                 },
             ])

@@ -10,7 +10,6 @@ import {
     UnregistrationRequest,
 } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
-import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { idSequence } from '../../util'
 import { Position } from '../types/position'
 
@@ -44,19 +43,19 @@ export function createRegisterProviderFunctions(connection: Connection): Registe
  *
  * @return An {@link Unsubscribable} that unregisters the provider.
  */
-function registerProvider<RO>(connection: Connection, type: RPCMessageType, registerOptions: RO): Unsubscribable {
+function registerProvider<RO>(connection: Connection, method: string, registerOptions: RO): Unsubscribable {
     const id = idSequence()
     // TODO(sqs): handle errors in sendRequest calls
     connection
         .sendRequest(RegistrationRequest.type, {
-            registrations: [{ id, method: type.method, registerOptions }],
+            registrations: [{ id, method, registerOptions }],
         } as RegistrationParams)
         .catch(err => console.error(err))
     return {
         unsubscribe: () =>
             connection
                 .sendRequest(UnregistrationRequest.type, {
-                    unregisterations: [{ id, method: type.method }],
+                    unregisterations: [{ id, method }],
                 } as UnregistrationParams)
                 .catch(err => console.error(err)),
     }

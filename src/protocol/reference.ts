@@ -1,6 +1,4 @@
-import { RequestType } from './jsonrpc2/messages'
-import { Location } from './plainTypes'
-import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from './textDocument'
+import { TextDocumentPositionParams } from './textDocument'
 
 export interface ReferenceContext {
     /**
@@ -23,7 +21,5 @@ export interface ReferenceParams extends TextDocumentPositionParams {
  * [Location[]](#Location) or a Thenable that resolves to such.
  */
 export namespace ReferencesRequest {
-    export const type = new RequestType<ReferenceParams, Location[] | null, void, TextDocumentRegistrationOptions>(
-        'textDocument/references'
-    )
+    export const type = 'textDocument/references'
 }

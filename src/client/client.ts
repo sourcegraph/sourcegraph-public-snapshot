@@ -13,14 +13,8 @@ import {
     UnregistrationRequest,
 } from '../protocol'
 import { Connection, createConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
-import {
-    GenericNotificationHandler,
-    GenericRequestHandler,
-    NotificationHandler,
-    RequestHandler,
-} from '../protocol/jsonrpc2/handlers'
-import { Message, MessageType as RPCMessageType } from '../protocol/jsonrpc2/messages'
-import { NotificationType, RequestType } from '../protocol/jsonrpc2/messages'
+import { GenericNotificationHandler, GenericRequestHandler } from '../protocol/jsonrpc2/handlers'
+import { Message } from '../protocol/jsonrpc2/messages'
 import { noopTracer, Trace, Tracer } from '../protocol/jsonrpc2/trace'
 import { isFunction, tryCatchPromise } from '../util'
 import { CloseAction, DefaultErrorHandler, ErrorAction, ErrorHandler } from './errorHandler'
@@ -366,42 +360,32 @@ export class Client implements Unsubscribable {
         }
     }
 
-    public sendRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, params: P): Promise<R>
-    public sendRequest<R>(method: string, params?: any): Promise<R>
-    public sendRequest<R>(type: string | RPCMessageType, ...params: any[]): Promise<R> {
+    public sendRequest<R>(method: string, params?: any): Promise<R> {
         if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
-        return Promise.resolve(
-            this.connection!.sendRequest<R>(typeof type === 'string' ? type : type.method, ...params)
-        )
+        return Promise.resolve(this.connection!.sendRequest<R>(method, params))
     }
 
-    public onRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, handler: RequestHandler<P, R, E>): void
-    public onRequest<R, E>(method: string, handler: GenericRequestHandler<R, E>): void
-    public onRequest<R, E>(type: string | RPCMessageType, handler: GenericRequestHandler<R, E>): void {
+    public onRequest<R, E>(method: string, handler: GenericRequestHandler<R, E>): void {
         if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
-        this.connection!.onRequest(typeof type === 'string' ? type : type.method, handler)
+        this.connection!.onRequest(method, handler)
     }
 
-    public sendNotification<P, RO>(type: NotificationType<P, RO>, params?: P): void
-    public sendNotification(method: string, params?: any): void
-    public sendNotification<P>(type: string | RPCMessageType, params?: P): void {
+    public sendNotification(method: string, params?: any): void {
         if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
-        this.connection!.sendNotification(typeof type === 'string' ? type : type.method, params)
+        this.connection!.sendNotification(method, params)
     }
 
-    public onNotification<P, RO>(type: NotificationType<P, RO>, handler: NotificationHandler<P>): void
-    public onNotification(method: string, handler: GenericNotificationHandler): void
-    public onNotification(type: string | RPCMessageType, handler: GenericNotificationHandler): void {
+    public onNotification(method: string, handler: GenericNotificationHandler): void {
         if (!this.isConnectionActive) {
             throw new Error('connection is inactive')
         }
-        this.connection!.onNotification(typeof type === 'string' ? type : type.method, handler)
+        this.connection!.onNotification(method, handler)
     }
 
     public get trace(): Trace {
@@ -416,20 +400,18 @@ export class Client implements Unsubscribable {
     }
 
     protected readonly features: (StaticFeature | DynamicFeature<any>)[] = []
-    private readonly _method2Message: Map<string, RPCMessageType> = new Map<string, RPCMessageType>()
+    private readonly _method2Message: Map<string, string> = new Map<string, string>()
     private readonly _dynamicFeatures: Map<string, DynamicFeature<any>> = new Map<string, DynamicFeature<any>>()
 
     public registerFeature(feature: StaticFeature | DynamicFeature<any>): void {
         if (DynamicFeature.is(feature)) {
             const messages = Array.isArray(feature.messages) ? feature.messages : [feature.messages]
             for (const message of messages) {
-                if (this._method2Message.has(message.method)) {
-                    throw new Error(
-                        `dynamic feature is already registered for method ${JSON.stringify(message.method)}`
-                    )
+                if (this._method2Message.has(message)) {
+                    throw new Error(`dynamic feature is already registered for method ${JSON.stringify(message)}`)
                 }
-                this._method2Message.set(message.method, message)
-                this._dynamicFeatures.set(message.method, feature)
+                this._method2Message.set(message, message)
+                this._dynamicFeatures.set(message, feature)
             }
         }
         this.features.push(feature)

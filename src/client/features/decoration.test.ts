@@ -1,11 +1,6 @@
 import * as assert from 'assert'
-import {
-    ClientCapabilities,
-    TextDocumentPublishDecorationsNotification,
-    TextDocumentPublishDecorationsParams,
-} from '../../protocol'
+import { ClientCapabilities, TextDocumentPublishDecorationsNotification } from '../../protocol'
 import { NotificationHandler } from '../../protocol/jsonrpc2/handlers'
-import { NotificationType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
 import { TextDocumentDecorationProviderRegistry } from '../providers/decoration'
 import { TextDocumentDecorationFeature } from './decoration'
@@ -32,19 +27,8 @@ describe('TextDocumentDecorationFeature', () => {
         it('registers the provider and listens for notifications', done => {
             const { client, registry, feature } = create()
 
-            function mockOnNotification(method: string, handler: NotificationHandler<any>): void
-            function mockOnNotification(
-                type: NotificationType<TextDocumentPublishDecorationsParams, void>,
-                params: NotificationHandler<TextDocumentPublishDecorationsParams>
-            ): void
-            function mockOnNotification(
-                type: string | NotificationType<TextDocumentPublishDecorationsParams, void>,
-                _params: NotificationHandler<any>
-            ): void {
-                assert.strictEqual(
-                    typeof type === 'string' ? type : type.method,
-                    TextDocumentPublishDecorationsNotification.type.method
-                )
+            function mockOnNotification(method: string, _handler: NotificationHandler<any>): void {
+                assert.strictEqual(method, TextDocumentPublishDecorationsNotification.type)
                 done()
             }
             client.onNotification = mockOnNotification

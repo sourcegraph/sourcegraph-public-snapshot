@@ -25,7 +25,7 @@ describe('ExtCommands', () => {
     describe('register', () => {
         describe('registering a command', async () => {
             const { extCommands, mockConnection } = create()
-            mockConnection.mockResults.set(RegistrationRequest.type.method, void 0)
+            mockConnection.mockResults.set(RegistrationRequest.type, void 0)
 
             let called = false
             let callArgs: any
@@ -38,13 +38,13 @@ describe('ExtCommands', () => {
             it('sends a request', () =>
                 assert.deepStrictEqual(mockConnection.sentMessages, [
                     {
-                        method: RegistrationRequest.type.method,
+                        method: RegistrationRequest.type,
                         params: {
                             registrations: [
                                 {
                                     id: (mockConnection.sentMessages[0].params as RegistrationParams).registrations[0]
                                         .id,
-                                    method: ExecuteCommandRequest.type.method,
+                                    method: ExecuteCommandRequest.type,
                                     registerOptions: { commands: ['a'] } as ExecuteCommandRegistrationOptions,
                                 },
                             ],
@@ -53,7 +53,7 @@ describe('ExtCommands', () => {
                 ]))
 
             it('invokes the run function when the client executes the command', async () => {
-                await mockConnection.recvRequest(ExecuteCommandRequest.type.method, {
+                await mockConnection.recvRequest(ExecuteCommandRequest.type, {
                     command: 'a',
                     arguments: [1],
                 } as ExecuteCommandParams)
@@ -64,26 +64,26 @@ describe('ExtCommands', () => {
 
         it('unregisters a command', () => {
             const { extCommands, mockConnection } = create()
-            mockConnection.mockResults.set(RegistrationRequest.type.method, void 0)
+            mockConnection.mockResults.set(RegistrationRequest.type, void 0)
 
             let called = false
             const subscription = extCommands.register('a', () => (called = true))
 
             mockConnection.sentMessages = [] // clear
-            mockConnection.mockResults.set(UnregistrationRequest.type.method, void 0)
+            mockConnection.mockResults.set(UnregistrationRequest.type, void 0)
             subscription.unsubscribe()
             const id = (mockConnection.sentMessages[0].params as UnregistrationParams).unregisterations[0].id
             assert.deepStrictEqual(mockConnection.sentMessages, [
                 {
-                    method: UnregistrationRequest.type.method,
+                    method: UnregistrationRequest.type,
                     params: {
-                        unregisterations: [{ id, method: ExecuteCommandRequest.type.method }],
+                        unregisterations: [{ id, method: ExecuteCommandRequest.type }],
                     } as UnregistrationParams,
                 },
             ])
 
             assert.throws(() =>
-                mockConnection.recvRequest(ExecuteCommandRequest.type.method, {
+                mockConnection.recvRequest(ExecuteCommandRequest.type, {
                     command: 'a',
                 } as ExecuteCommandParams)
             )

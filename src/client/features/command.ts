@@ -5,7 +5,6 @@ import {
     ExecuteCommandRegistrationOptions,
     ExecuteCommandRequest,
 } from '../../protocol'
-import { MessageType as RPCMessageType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
 import { CommandRegistry } from '../providers/command'
 import { DynamicFeature, ensure, RegistrationData } from './common'
@@ -18,14 +17,14 @@ export class ExecuteCommandFeature implements DynamicFeature<ExecuteCommandRegis
 
     constructor(private client: Client, private registry: CommandRegistry) {}
 
-    public get messages(): RPCMessageType {
+    public get messages(): string {
         return ExecuteCommandRequest.type
     }
 
     public fillClientCapabilities(capabilities: ClientCapabilities): void {
         ensure(ensure(capabilities, 'workspace')!, 'executeCommand')!.dynamicRegistration = true
     }
-    public register(_message: RPCMessageType, data: RegistrationData<ExecuteCommandRegistrationOptions>): void {
+    public register(_message: string, data: RegistrationData<ExecuteCommandRegistrationOptions>): void {
         const existing = this.commands.has(data.id)
         if (existing) {
             throw new Error(`registration already exists with ID ${data.id}`)

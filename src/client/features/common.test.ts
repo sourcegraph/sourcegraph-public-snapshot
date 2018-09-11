@@ -16,7 +16,7 @@ const create = <F extends AbstractTextDocumentFeature<TextDocumentRegistrationOp
 }
 
 class TextDocumentFeature extends AbstractTextDocumentFeature<TextDocumentRegistrationOptions> {
-    public readonly messages = { method: 'm' }
+    public readonly messages = 'm'
     protected registerProvider(): Unsubscribable {
         return { unsubscribe: () => void 0 }
     }

@@ -1,5 +1,4 @@
 import { RequestHandler } from './jsonrpc2/handlers'
-import { RequestType } from './jsonrpc2/messages'
 import { Definition } from './plainTypes'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from './textDocument'
 
@@ -34,11 +33,6 @@ export interface TypeDefinitionServerCapabilities {
  * Thenable that resolves to such.
  */
 export namespace TypeDefinitionRequest {
-    export const type = new RequestType<
-        TextDocumentPositionParams,
-        Definition | null,
-        void,
-        TextDocumentRegistrationOptions
-    >('textDocument/typeDefinition')
+    export const type = 'textDocument/typeDefinition'
     export type HandlerSignature = RequestHandler<TextDocumentPositionParams, Definition | null, void>
 }

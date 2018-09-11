@@ -1,5 +1,3 @@
-import { NotificationType } from './jsonrpc2/messages'
-
 /**
  * The parameters for the context/update notification, which is sent from the server to the client to update
  * context values.
@@ -15,5 +13,5 @@ export interface ContextUpdateParams {
  * The context/update notification, which is sent from the server to the client to update context values.
  */
 export namespace ContextUpdateNotification {
-    export const type = new NotificationType<ContextUpdateParams, void>('context/update')
+    export const type = 'context/update'
 }

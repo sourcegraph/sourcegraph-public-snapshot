@@ -1,7 +1,6 @@
 import * as assert from 'assert'
 import { ClientCapabilities, RegistrationParams, UnregistrationParams } from '../protocol'
 import { Connection, createConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
-import { MessageType as RPCMessageType } from '../protocol/jsonrpc2/messages'
 import { clientStateIs, getClientState } from '../test/helpers'
 import { createMessageTransports } from '../test/integration/helpers'
 import { Client, ClientOptions, ClientState } from './client'
@@ -35,7 +34,7 @@ describe('Client', () => {
         }
 
         const FIXTURE_DYNAMIC_FEATURE: DynamicFeature<any> = {
-            messages: { method: 'm' },
+            messages: 'm',
             fillClientCapabilities: (capabilities: ClientCapabilities) => (capabilities.experimental = 'test'),
             register: () => void 0,
             unregister: () => void 0,
@@ -63,7 +62,7 @@ describe('Client', () => {
 
         describe('dynamic (un)registration', () => {
             interface RegisterCallArgs {
-                message: RPCMessageType
+                message: string
                 data: RegistrationData<any>
                 overwriteExisting?: boolean
             }
@@ -86,7 +85,7 @@ describe('Client', () => {
                 })
                 assert.deepStrictEqual(registerCalls, [
                     {
-                        message: { method: 'm' },
+                        message: 'm',
                         data: { id: 'a', registerOptions: { a: 1, extensionID: '' }, overwriteExisting: true },
                     },
                 ] as typeof registerCalls)

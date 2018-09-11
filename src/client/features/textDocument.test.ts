@@ -9,7 +9,6 @@ import {
     DidOpenTextDocumentParams,
     TextDocumentRegistrationOptions,
 } from '../../protocol'
-import { NotificationType } from '../../protocol/jsonrpc2/messages'
 import { Client } from '../client'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment } from '../environment'
 import { TextDocumentItem } from '../types/textDocument'
@@ -35,7 +34,7 @@ describe('TextDocumentNotificationFeature', () => {
         constructor(client: Client) {
             super(client, new Subject<any>(), DidOpenTextDocumentNotification.type, () => void 0)
         }
-        public readonly messages = { method: 'm' }
+        public readonly messages = 'm'
         public fillClientCapabilities(): void {
             /* noop */
         }
@@ -113,19 +112,8 @@ describe('TextDocumentDidOpenFeature', () => {
                 text: '',
             }
 
-            function mockSendNotification(method: string, params: any): void
-            function mockSendNotification(
-                type: NotificationType<DidOpenTextDocumentParams, TextDocumentRegistrationOptions>,
-                params: DidOpenTextDocumentParams
-            ): void
-            function mockSendNotification(
-                type: string | NotificationType<DidOpenTextDocumentParams, TextDocumentRegistrationOptions>,
-                params: any
-            ): void {
-                assert.strictEqual(
-                    typeof type === 'string' ? type : type.method,
-                    DidOpenTextDocumentNotification.type.method
-                )
+            function mockSendNotification(method: string, params: any): void {
+                assert.strictEqual(method, DidOpenTextDocumentNotification.type)
                 assert.deepStrictEqual(params, { textDocument } as DidOpenTextDocumentParams)
                 done()
             }
@@ -177,19 +165,8 @@ describe('TextDocumentDidCloseFeature', () => {
             }
 
             let didCloseNotifications: DidCloseTextDocumentParams[] = []
-            function mockSendNotification(method: string, params: any): void
-            function mockSendNotification(
-                type: NotificationType<DidCloseTextDocumentParams, TextDocumentRegistrationOptions>,
-                params: DidCloseTextDocumentParams
-            ): void
-            function mockSendNotification(
-                type: string | NotificationType<DidCloseTextDocumentParams, TextDocumentRegistrationOptions>,
-                params: any
-            ): void {
-                assert.strictEqual(
-                    typeof type === 'string' ? type : type.method,
-                    DidCloseTextDocumentNotification.type.method
-                )
+            function mockSendNotification(method: string, params: any): void {
+                assert.strictEqual(method, DidCloseTextDocumentNotification.type)
                 didCloseNotifications.push(params)
             }
             client.sendNotification = mockSendNotification

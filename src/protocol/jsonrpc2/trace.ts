@@ -1,4 +1,4 @@
-import { NotificationMessage, NotificationType, RequestMessage, ResponseMessage } from './messages'
+import { NotificationMessage, RequestMessage, ResponseMessage } from './messages'
 
 // Copied from vscode-jsonrpc to avoid adding extraneous dependencies.
 
@@ -13,7 +13,7 @@ export interface SetTraceParams {
 }
 
 export namespace SetTraceNotification {
-    export const type = new NotificationType<SetTraceParams, void>('$/setTraceNotification')
+    export const type = '$/setTraceNotification'
 }
 
 export interface LogTraceParams {
@@ -22,7 +22,7 @@ export interface LogTraceParams {
 }
 
 export namespace LogTraceNotification {
-    export const type = new NotificationType<LogTraceParams, void>('$/logTraceNotification')
+    export const type = '$/logTraceNotification'
 }
 
 /** Records messages sent and received on a JSON-RPC 2.0 connection. */

@@ -7,8 +7,6 @@ import { Emitter, Event } from './events'
 import {
     GenericNotificationHandler,
     GenericRequestHandler,
-    NotificationHandler,
-    RequestHandler,
     StarNotificationHandler,
     StarRequestHandler,
 } from './handlers'
@@ -19,11 +17,8 @@ import {
     isRequestMessage,
     isResponseMessage,
     Message,
-    MessageType,
     NotificationMessage,
-    NotificationType,
     RequestMessage,
-    RequestType,
     ResponseError,
     ResponseMessage,
 } from './messages'
@@ -82,17 +77,13 @@ class ConnectionError extends Error {
 type MessageQueue = LinkedMap<string, Message>
 
 export interface Connection extends Unsubscribable {
-    sendRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, params: P, token?: CancellationToken): Promise<R>
     sendRequest<R>(method: string, ...params: any[]): Promise<R>
 
-    onRequest<P, R, E, RO>(type: RequestType<P, R, E, RO>, handler: RequestHandler<P, R, E>): void
     onRequest<R, E>(method: string, handler: GenericRequestHandler<R, E>): void
     onRequest(handler: StarRequestHandler): void
 
-    sendNotification<P, RO>(type: NotificationType<P, RO>, params?: P): void
     sendNotification(method: string, ...params: any[]): void
 
-    onNotification<P, RO>(type: NotificationType<P, RO>, handler: NotificationHandler<P>): void
     onNotification(method: string, handler: GenericNotificationHandler): void
     onNotification(handler: StarNotificationHandler): void
 
@@ -143,12 +134,12 @@ enum ConnectionState {
 }
 
 interface RequestHandlerElement {
-    type: MessageType | undefined
+    type: string | undefined
     handler: GenericRequestHandler<any, any>
 }
 
 interface NotificationHandlerElement {
-    type: MessageType | undefined
+    type: string | undefined
     handler: GenericNotificationHandler
 }
 
@@ -276,7 +267,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
         try {
             // We have received a cancellation message. Check if the message is still in the queue and cancel it if
             // allowed to do so.
-            if (isNotificationMessage(message) && message.method === CancelNotification.type.method) {
+            if (isNotificationMessage(message) && message.method === CancelNotification.type) {
                 const key = createRequestQueueKey((message.params as CancelParams).id)
                 const toCancel = messageQueue.get(key)
                 if (isRequestMessage(toCancel)) {
@@ -479,7 +470,7 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             return
         }
         let notificationHandler: GenericNotificationHandler | undefined
-        if (message.method === CancelNotification.type.method) {
+        if (message.method === CancelNotification.type) {
             notificationHandler = (params: CancelParams) => {
                 const id = params.id
                 const source = requestTokens[String(id)]
@@ -556,15 +547,8 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
     }
 
     const connection: Connection = {
-        sendNotification: (type: string | MessageType, params: any): void => {
+        sendNotification: (method: string, params: any): void => {
             throwIfClosedOrUnsubscribed()
-
-            let method: string
-            if (typeof type === 'string') {
-                method = type
-            } else {
-                method = type.method
-            }
             const notificationMessage: NotificationMessage = {
                 jsonrpc: version,
                 method,
@@ -573,35 +557,20 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             tracer.notificationSent(notificationMessage)
             transports.writer.write(notificationMessage)
         },
-        onNotification: (
-            type: string | MessageType | StarNotificationHandler,
-            handler?: GenericNotificationHandler
-        ): void => {
+        onNotification: (type: string | StarNotificationHandler, handler?: GenericNotificationHandler): void => {
             throwIfClosedOrUnsubscribed()
             if ((isFunction as (v: any) => v is StarNotificationHandler)(type)) {
                 starNotificationHandler = type as StarNotificationHandler
             } else if (handler) {
-                if (typeof type === 'string') {
-                    notificationHandlers[type] = { type: undefined, handler }
-                } else {
-                    notificationHandlers[type.method] = { type, handler }
-                }
+                notificationHandlers[type] = { type: undefined, handler }
             }
         },
-        sendRequest: <R, E>(type: string | MessageType, params: any, token?: CancellationToken) => {
+        sendRequest: <R>(method: string, params: any, token?: CancellationToken) => {
             throwIfClosedOrUnsubscribed()
             throwIfNotListening()
-
-            let method: string
-            if (typeof type === 'string') {
-                method = type
-            } else {
-                method = type.method
-                token = CancellationToken.is(token) ? token : undefined
-            }
-
+            token = CancellationToken.is(token) ? token : undefined
             const id = sequenceNumber++
-            const result = new Promise<R | ResponseError<E>>((resolve, reject) => {
+            const result = new Promise<R>((resolve, reject) => {
                 const requestMessage: RequestMessage = {
                     jsonrpc: version,
                     id,
@@ -636,20 +605,13 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             }
             return result
         },
-        onRequest: <R, E>(
-            type: string | MessageType | StarRequestHandler,
-            handler?: GenericRequestHandler<R, E>
-        ): void => {
+        onRequest: <R, E>(type: string | StarRequestHandler, handler?: GenericRequestHandler<R, E>): void => {
             throwIfClosedOrUnsubscribed()
 
             if ((isFunction as (v: any) => v is StarRequestHandler)(type)) {
                 starRequestHandler = type as StarRequestHandler
             } else if (handler) {
-                if (typeof type === 'string') {
-                    requestHandlers[type] = { type: undefined, handler }
-                } else {
-                    requestHandlers[type.method] = { type, handler }
-                }
+                requestHandlers[type] = { type: undefined, handler }
             }
         },
         trace: (value: Trace, _tracer: Tracer, sendNotification = false) => {

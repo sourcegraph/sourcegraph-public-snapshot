@@ -1,5 +1,3 @@
-import { NotificationType, RequestType } from './jsonrpc2/messages'
-
 /**
  * Settings is a JSON document of key-value pairs containing configuration settings for extensions.
  */
@@ -28,7 +26,7 @@ export interface ConfigurationUpdateParams {
  * The configuration/update request, which the server sends to the client to update the client's configuration.
  */
 export namespace ConfigurationUpdateRequest {
-    export const type = new RequestType<ConfigurationUpdateParams, void, void, void>('configuration/update')
+    export const type = 'configuration/update'
 }
 
 export interface ConfigurationClientCapabilities {
@@ -44,9 +42,7 @@ export interface ConfigurationClientCapabilities {
  * the changed configuration as defined by the language client.
  */
 export namespace DidChangeConfigurationNotification {
-    export const type = new NotificationType<DidChangeConfigurationParams, DidChangeConfigurationRegistrationOptions>(
-        'workspace/didChangeConfiguration'
-    )
+    export const type = 'workspace/didChangeConfiguration'
 }
 
 export interface DidChangeConfigurationRegistrationOptions {

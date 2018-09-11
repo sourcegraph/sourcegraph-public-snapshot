@@ -112,28 +112,6 @@ export interface ResponseMessage extends Message {
 }
 
 /**
- * An interface to type messages.
- */
-export interface MessageType<M extends string = string> {
-    readonly method: M
-}
-
-/**
- * An abstract implementation of a MessageType.
- */
-abstract class AbstractMessageType<M extends string = string> implements MessageType<M> {
-    constructor(public readonly method: M) {}
-}
-
-/**
- * Classes to type request response pairs
- */
-
-export class RequestType<P, R, E, RO, M extends string = string> extends AbstractMessageType<M> {
-    public readonly _?: [P, R, E, RO]
-}
-
-/**
  * Notification Message
  */
 export interface NotificationMessage extends Message {
@@ -146,10 +124,6 @@ export interface NotificationMessage extends Message {
      * The notification's params.
      */
     params?: any
-}
-
-export class NotificationType<P, RO> extends AbstractMessageType {
-    public readonly _?: [P, RO]
 }
 
 /**

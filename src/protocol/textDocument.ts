@@ -1,6 +1,5 @@
 import { DocumentSelector, MarkupKind } from 'sourcegraph'
 import { TextDocumentIdentifier, TextDocumentItem } from '../client/types/textDocument'
-import { NotificationType } from './jsonrpc2/messages'
 import { Position } from './plainTypes'
 
 /**
@@ -114,9 +113,7 @@ export interface DidOpenTextDocumentParams {
  * is one.
  */
 export namespace DidOpenTextDocumentNotification {
-    export const type = new NotificationType<DidOpenTextDocumentParams, TextDocumentRegistrationOptions>(
-        'textDocument/didOpen'
-    )
+    export const type = 'textDocument/didOpen'
 }
 
 /**
@@ -139,7 +136,5 @@ export interface DidCloseTextDocumentParams {
  * notification requires a previous open notification to be sent.
  */
 export namespace DidCloseTextDocumentNotification {
-    export const type = new NotificationType<DidCloseTextDocumentParams, TextDocumentRegistrationOptions>(
-        'textDocument/didClose'
-    )
+    export const type = 'textDocument/didClose'
 }

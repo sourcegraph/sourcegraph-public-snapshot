@@ -1,5 +1,3 @@
-import { NotificationType, RequestType } from './jsonrpc2/messages'
-
 /**
  * The message type
  */
@@ -44,7 +42,7 @@ export interface ShowMessageParams {
  * the client to display a particular message in the user interface.
  */
 export namespace ShowMessageNotification {
-    export const type = new NotificationType<ShowMessageParams, void>('window/showMessage')
+    export const type = 'window/showMessage'
 }
 
 export interface MessageActionItem {
@@ -76,9 +74,7 @@ export interface ShowMessageRequestParams {
  * user.
  */
 export namespace ShowMessageRequest {
-    export const type = new RequestType<ShowMessageRequestParams, MessageActionItem | null, void, void>(
-        'window/showMessageRequest'
-    )
+    export const type = 'window/showMessageRequest'
 }
 
 /** The parameters for window/showInput. */
@@ -94,7 +90,7 @@ export interface ShowInputParams {
  * The show input request is sent from the server to the client to show a message and prompt the user for input.
  */
 export namespace ShowInputRequest {
-    export const type = new RequestType<ShowInputParams, string | null, void, void>('window/showInput')
+    export const type = 'window/showInput'
 }
 
 /**
@@ -102,7 +98,7 @@ export namespace ShowInputRequest {
  * the client to log a particular message.
  */
 export namespace LogMessageNotification {
-    export const type = new NotificationType<LogMessageParams, void>('window/logMessage')
+    export const type = 'window/logMessage'
 }
 
 /**
