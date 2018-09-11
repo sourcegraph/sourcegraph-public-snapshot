@@ -7,7 +7,7 @@
 monolith/ @keegancsmith
 search @keegancsmith
 /web/ @felixfbecker
-/xlang/ @keegancsmith
+/xlang/ @keegancsmith @beyang
 /schema/ @sqs
 /web/src/site-admin/ @sqs
 /web/src/settings/ @sqs
@@ -18,6 +18,21 @@ conf/ @sqs
 /client/vscode/ @chrismwendt
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
 /web/src/tracking/ @dadlerj
+/enterprise/ @beyang
+/cmd/frontend/ @beyang
+/cmd/gitserver/ @beyang
+/cmd/indexer/ @beyang
+/cmd/lsp-proxy/ @beyang
+/cmd/repo-updater/ @beyang
+/cmd/searcher/ @beyang
+/cmd/server/ @beyang
+/cmd/symbols/ @beyang
+/cmd/xlang-go/ @beyang
+/cmd/xlang-java/ @beyang
+/cmd/xlang-java-skinny/ @beyang
+/cmd/xlang-python/ @beyang
+/enterprise/ @beyang
+/pkg/ @beyang
 
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)
