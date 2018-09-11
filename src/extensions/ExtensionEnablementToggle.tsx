@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { combineLatest, Subject, Subscription } from 'rxjs'
+import { combineLatest, Subject, Subscription, from } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsProps } from '../context'
 import { asError, ErrorLike, isErrorLike } from '../errors'
@@ -64,22 +64,22 @@ export class ExtensionEnablementToggle<S extends ConfigurationSubject, C extends
             this.toggles
                 .pipe(
                     switchMap(enabled =>
-                        this.props.extensions.context
-                            .updateExtensionSettings(this.props.subject.id, {
+                        from(
+                            this.props.extensions.context.updateExtensionSettings(this.props.subject.id, {
                                 extensionID: this.props.extension.id,
                                 enabled,
                             })
-                            .pipe(
-                                mapTo(true),
-                                catchError(error => [asError(error) as ErrorLike]),
-                                map(c => ({ toggleOrError: c } as State)),
-                                tap(() => {
-                                    if (this.props.onChange) {
-                                        this.props.onChange(enabled)
-                                    }
-                                }),
-                                startWith<State>({ toggleOrError: LOADING })
-                            )
+                        ).pipe(
+                            mapTo(true),
+                            catchError(error => [asError(error) as ErrorLike]),
+                            map(c => ({ toggleOrError: c } as State)),
+                            tap(() => {
+                                if (this.props.onChange) {
+                                    this.props.onChange(enabled)
+                                }
+                            }),
+                            startWith<State>({ toggleOrError: LOADING })
+                        )
                     )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))

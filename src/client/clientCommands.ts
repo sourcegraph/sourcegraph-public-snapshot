@@ -1,5 +1,5 @@
 import { isArray } from 'lodash-es'
-import { Subscription, throwError, Unsubscribable } from 'rxjs'
+import { from, Subscription, throwError, Unsubscribable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
 import { Controller } from 'sourcegraph/module/environment/controller'
 import {
@@ -60,7 +60,7 @@ export function updateConfiguration<S extends ConfigurationSubject, C extends Se
 ): Promise<void> {
     // TODO(sqs): Allow extensions to specify which subject's configuration to update
     // (instead of always updating the highest-precedence subject's configuration).
-    return context.configurationCascade
+    return from(context.configurationCascade)
         .pipe(
             take(1),
             switchMap(x => {

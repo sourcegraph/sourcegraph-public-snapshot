@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { Subscribable } from 'rxjs'
 import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
 import { Controller } from './controller'
 import { QueryResult } from './graphql'
@@ -13,7 +13,7 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
      * An observable that emits whenever the configuration cascade changes (including when any individual subject's
      * settings change).
      */
-    readonly configurationCascade: Observable<ConfigurationCascadeOrError<S, C>>
+    readonly configurationCascade: Subscribable<ConfigurationCascadeOrError<S, C>>
 
     /**
      * Updates the extension settings for extensionID and for the given subject.
@@ -28,7 +28,7 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
                   enabled?: boolean
                   remove?: boolean
               }
-    ): Observable<void>
+    ): Subscribable<void>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.
@@ -40,7 +40,7 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
     queryGraphQL(
         request: string,
         variables?: { [name: string]: any }
-    ): Observable<QueryResult<Pick<GQL.IQuery, 'extensionRegistry'>>>
+    ): Subscribable<QueryResult<Pick<GQL.IQuery, 'extensionRegistry'>>>
 
     /**
      * React components for icons. They are expected to size themselves appropriately with the surrounding DOM flow

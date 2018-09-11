@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { combineLatest, concat, Observable, of, Subject, Subscription } from 'rxjs'
+import { combineLatest, concat, from, Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -254,8 +254,8 @@ export class ExtensionsList<S extends ConfigurationSubject, C extends Settings> 
             take(1),
 
             switchMap(viewerExtensions =>
-                this.props.extensions.context
-                    .queryGraphQL(
+                from(
+                    this.props.extensions.context.queryGraphQL(
                         gql`
                             query RegistryExtensions($query: String, $prioritizeExtensionIDs: [String!]!) {
                                 extensionRegistry {
@@ -274,17 +274,17 @@ export class ExtensionsList<S extends ConfigurationSubject, C extends Settings> 
                             prioritizeExtensionIDs: viewerExtensions.map(({ id }) => id),
                         } as GQL.IExtensionsOnExtensionRegistryArguments
                     )
-                    .pipe(
-                        map(({ data, errors }) => {
-                            if (!data || !data.extensionRegistry || !data.extensionRegistry.extensions || errors) {
-                                throw createAggregateError(errors)
-                            }
-                            return {
-                                registryExtensions: data.extensionRegistry.extensions.nodes,
-                                error: data.extensionRegistry.extensions.error,
-                            }
-                        })
-                    )
+                ).pipe(
+                    map(({ data, errors }) => {
+                        if (!data || !data.extensionRegistry || !data.extensionRegistry.extensions || errors) {
+                            throw createAggregateError(errors)
+                        }
+                        return {
+                            registryExtensions: data.extensionRegistry.extensions.nodes,
+                            error: data.extensionRegistry.extensions.error,
+                        }
+                    })
+                )
             ),
             switchMap(({ registryExtensions, error }) =>
                 this.props.extensions

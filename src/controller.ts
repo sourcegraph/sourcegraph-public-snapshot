@@ -1,4 +1,4 @@
-import { combineLatest, Observable, of, throwError } from 'rxjs'
+import { combineLatest, from, Observable, of, throwError } from 'rxjs'
 import { catchError, filter, map, startWith, switchMap } from 'rxjs/operators'
 import { Context } from './context'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from './errors'
@@ -20,7 +20,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
 
     private readonly viewerConfiguredExtensionsOrLoading: Observable<
         typeof Controller.LOADING | ConfiguredExtension[] | ErrorLike
-    > = this.context.configurationCascade.pipe(
+    > = from(this.context.configurationCascade).pipe(
         switchMap(
             cascade =>
                 isErrorLike(cascade.merged)
@@ -43,8 +43,8 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
         extensionID: string,
         registryExtensionFragment: GraphQLDocument | string
     ): Observable<ConfiguredExtension> {
-        return this.context
-            .queryGraphQL(
+        return from(
+            this.context.queryGraphQL(
                 gql`
                     query RegistryExtension($extensionID: String!) {
                         extensionRegistry {
@@ -57,6 +57,7 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
                 `[graphQLContent],
                 { extensionID }
             )
+        )
             .pipe(
                 map(({ data, errors }) => {
                     if (!data || !data.extensionRegistry || !data.extensionRegistry.extension) {
@@ -81,8 +82,8 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
             return of([])
         }
         const extensionIDs = Object.keys(cascade.merged.extensions)
-        return this.context
-            .queryGraphQL(
+        return from(
+            this.context.queryGraphQL(
                 gql`
                     query Extensions($first: Int!, $prioritizeExtensionIDs: [String!]!) {
                         extensionRegistry {
@@ -105,45 +106,44 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
                     prioritizeExtensionIDs: extensionIDs,
                 }
             )
-            .pipe(
-                map(({ data, errors }) => {
-                    if (
-                        !data ||
-                        !data.extensionRegistry ||
-                        !data.extensionRegistry.extensions ||
-                        !data.extensionRegistry.extensions.nodes
-                    ) {
-                        throw createAggregateError(errors)
-                    }
-                    return data.extensionRegistry.extensions.nodes.map(
-                        ({ id, extensionID, url, manifest, viewerCanAdminister }) => ({
-                            id,
-                            extensionID,
-                            url,
-                            manifest: manifest ? { raw: manifest.raw } : null,
-                            viewerCanAdminister,
-                        })
-                    )
-                }),
-                map(registryExtensions => {
-                    const configuredExtensions: ConfiguredExtension[] = []
-                    for (const extensionID of extensionIDs) {
-                        const registryExtension = registryExtensions.find(x => x.extensionID === extensionID)
-                        configuredExtensions.push({
-                            id: extensionID,
-                            manifest:
-                                registryExtension && registryExtension.manifest
-                                    ? parseJSONCOrError(registryExtension.manifest.raw)
-                                    : null,
-                            rawManifest:
-                                (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) ||
-                                null,
-                            registryExtension,
-                        })
-                    }
-                    return configuredExtensions
-                })
-            )
+        ).pipe(
+            map(({ data, errors }) => {
+                if (
+                    !data ||
+                    !data.extensionRegistry ||
+                    !data.extensionRegistry.extensions ||
+                    !data.extensionRegistry.extensions.nodes
+                ) {
+                    throw createAggregateError(errors)
+                }
+                return data.extensionRegistry.extensions.nodes.map(
+                    ({ id, extensionID, url, manifest, viewerCanAdminister }) => ({
+                        id,
+                        extensionID,
+                        url,
+                        manifest: manifest ? { raw: manifest.raw } : null,
+                        viewerCanAdminister,
+                    })
+                )
+            }),
+            map(registryExtensions => {
+                const configuredExtensions: ConfiguredExtension[] = []
+                for (const extensionID of extensionIDs) {
+                    const registryExtension = registryExtensions.find(x => x.extensionID === extensionID)
+                    configuredExtensions.push({
+                        id: extensionID,
+                        manifest:
+                            registryExtension && registryExtension.manifest
+                                ? parseJSONCOrError(registryExtension.manifest.raw)
+                                : null,
+                        rawManifest:
+                            (registryExtension && registryExtension.manifest && registryExtension.manifest.raw) || null,
+                        registryExtension,
+                    })
+                }
+                return configuredExtensions
+            })
+        )
     }
 
     public withConfiguration(

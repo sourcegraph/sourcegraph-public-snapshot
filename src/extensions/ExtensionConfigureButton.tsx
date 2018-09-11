@@ -2,7 +2,7 @@ import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 import DropdownItem from 'reactstrap/lib/DropdownItem'
-import { Subject, Subscription } from 'rxjs'
+import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { ExtensionsProps } from '../context'
 import { asError, ErrorLike, isErrorLike } from '../errors'
@@ -80,19 +80,19 @@ export class ExtensionConfiguredSubjectItemForAdd<
             this.addClicks
                 .pipe(
                     switchMap(() =>
-                        this.props.extensions.context
-                            .updateExtensionSettings(this.props.item.subject.subject.id, {
+                        from(
+                            this.props.extensions.context.updateExtensionSettings(this.props.item.subject.subject.id, {
                                 extensionID: this.props.item.extension.id,
                                 enabled: true,
                             })
-                            .pipe(
-                                mapTo(null),
-                                tap(() => this.props.onComplete()),
-                                catchError(error => [asError(error) as ErrorLike]),
-                                map(c => ({ addOrError: c } as ExtensionConfiguredSubjectItemForAddState)),
-                                tap(() => this.props.onUpdate()),
-                                startWith<ExtensionConfiguredSubjectItemForAddState>({ addOrError: LOADING })
-                            )
+                        ).pipe(
+                            mapTo(null),
+                            tap(() => this.props.onComplete()),
+                            catchError(error => [asError(error) as ErrorLike]),
+                            map(c => ({ addOrError: c } as ExtensionConfiguredSubjectItemForAddState)),
+                            tap(() => this.props.onUpdate()),
+                            startWith<ExtensionConfiguredSubjectItemForAddState>({ addOrError: LOADING })
+                        )
                     )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
@@ -160,19 +160,19 @@ export class ExtensionConfiguredSubjectItemForRemove<
             this.removeClicks
                 .pipe(
                     switchMap(() =>
-                        this.props.extensions.context
-                            .updateExtensionSettings(this.props.item.subject.subject.id, {
+                        from(
+                            this.props.extensions.context.updateExtensionSettings(this.props.item.subject.subject.id, {
                                 extensionID: this.props.item.extension.id,
                                 remove: true,
                             })
-                            .pipe(
-                                mapTo(null),
-                                tap(() => this.props.onComplete()),
-                                catchError(error => [asError(error) as ErrorLike]),
-                                map(c => ({ removeOrError: c } as ExtensionConfiguredSubjectItemForRemoveState)),
-                                tap(() => this.props.onUpdate()),
-                                startWith<ExtensionConfiguredSubjectItemForRemoveState>({ removeOrError: LOADING })
-                            )
+                        ).pipe(
+                            mapTo(null),
+                            tap(() => this.props.onComplete()),
+                            catchError(error => [asError(error) as ErrorLike]),
+                            map(c => ({ removeOrError: c } as ExtensionConfiguredSubjectItemForRemoveState)),
+                            tap(() => this.props.onUpdate()),
+                            startWith<ExtensionConfiguredSubjectItemForRemoveState>({ removeOrError: LOADING })
+                        )
                     )
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
