@@ -10,10 +10,9 @@ import {
 } from '../../protocol'
 import { Connection, createConnection, Logger, MessageTransports } from '../../protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from '../../protocol/jsonrpc2/transports/webWorker'
-import { Commands, Configuration, ExtensionContext, Observable, SourcegraphExtensionAPI, Window, Windows } from './api'
+import { Commands, Configuration, Observable, SourcegraphExtensionAPI, Window, Windows } from './api'
 import { createExtCommands } from './features/commands'
 import { createExtConfiguration } from './features/configuration'
-import { createExtContext } from './features/context'
 import { ExtWindows } from './features/windows'
 
 class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
@@ -22,7 +21,6 @@ class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
         return this._windows
     }
     public readonly commands: Commands
-    public readonly context: ExtensionContext
 
     private _windows: ExtWindows
     private subscription = new Subscription()
@@ -36,7 +34,6 @@ class ExtensionHandle<C> implements SourcegraphExtensionAPI<C> {
         )
         this._windows = new ExtWindows(this.rawConnection)
         this.commands = createExtCommands(this.rawConnection)
-        this.context = createExtContext(this.rawConnection)
     }
 
     public get activeWindow(): Window | null {

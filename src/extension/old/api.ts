@@ -1,6 +1,5 @@
 import { Subscription } from 'rxjs'
 import * as sourcegraph from 'sourcegraph'
-import { Context } from '../../client/context/context'
 import { TextDocumentIdentifier } from '../../client/types/textDocument'
 import { InitializeParams, Settings, TextDocumentDecoration } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
@@ -36,12 +35,6 @@ export interface SourcegraphExtensionAPI<C = Settings> {
      * Command registration and execution.
      */
     commands: Commands
-
-    /**
-     * Arbitrary key-value pairs that describe application state in a namespace shared by the client and all other
-     * extensions used by the client.
-     */
-    context: ExtensionContext
 
     /**
      * The underlying connection to the Sourcegraph extension client.
@@ -204,18 +197,4 @@ export interface Commands {
      * @return A subscription that unregisters this command upon unsubscription.
      */
     register(command: string, run: (...args: any[]) => any): Subscription
-}
-
-/**
- * Arbitrary key-value pairs that describe application state in a namespace shared by the client and all other
- * extensions used by the client.
- */
-export interface ExtensionContext {
-    /**
-     * Applies the given updates to the client's context, overwriting any existing values for the same key and
-     * deleting any keys whose value is `null`.
-     *
-     * @param updates New values for context keys (or deletions for keys if the value is `null`).
-     */
-    updateContext(updates: Context): void
 }

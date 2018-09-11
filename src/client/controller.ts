@@ -8,7 +8,6 @@ import {
     ShowMessageParams,
     ShowMessageRequestParams,
 } from '../protocol'
-import { ContextUpdateParams } from '../protocol/context'
 import { Trace } from '../protocol/jsonrpc2/trace'
 import { isEqual } from '../util'
 import { Client, ClientOptions } from './client'
@@ -17,7 +16,6 @@ import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment, Observable
 import { Extension } from './extension'
 import { ExecuteCommandFeature } from './features/command'
 import { ConfigurationChangeNotificationFeature, ConfigurationUpdateFeature } from './features/configuration'
-import { ContextFeature } from './features/context'
 import { ContributionFeature } from './features/contribution'
 import { TextDocumentDecorationFeature } from './features/decoration'
 import {
@@ -223,16 +221,6 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
                     new Promise<void>(resolve =>
                         this._configurationUpdates.next({ ...params, extension: client.id, resolve })
                     )
-            )
-        )
-        client.registerFeature(
-            new ContextFeature(client, (params: ContextUpdateParams) =>
-                // Set environment manually, not via Controller#setEnvironment, to avoid recursive setEnvironment calls
-                // (when this callback is called during setEnvironment's teardown of unused clients).
-                this._environment.next({
-                    ...this._environment.value,
-                    context: applyContextUpdate(this._environment.value.context, params.updates),
-                })
             )
         )
         client.registerFeature(new ContributionFeature(this.registries.contribution))
