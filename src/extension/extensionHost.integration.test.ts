@@ -5,9 +5,9 @@ import { MarkupKind } from 'sourcegraph'
 import * as sourcegraph from 'sourcegraph'
 import { Controller } from '../client/controller'
 import { Environment } from '../client/environment'
+import { clientStateIsActive } from '../client/helpers.test'
 import { HoverMerged } from '../client/types/hover'
-import { clientStateIsActive } from '../test/helpers'
-import { createMessageTransports } from '../test/integration/helpers'
+import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
 import { createExtensionHost } from './extensionHost'
 
 const FIXTURE_ENVIRONMENT: Environment<any, any> = {

@@ -1,7 +1,7 @@
 import assert from 'assert'
-import { createMessagePipe, createMessageTransports } from '../../test/integration/helpers'
 import { CancellationTokenSource } from './cancel'
 import { createConnection } from './connection'
+import { createMessagePipe, createMessageTransports } from './helpers.test'
 import { ErrorCodes, ResponseError } from './messages'
 
 describe('Connection', () => {

@@ -1,11 +1,11 @@
 import * as assert from 'assert'
 import { ClientCapabilities, RegistrationParams, UnregistrationParams } from '../protocol'
 import { Connection, createConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
-import { clientStateIs, getClientState } from '../test/helpers'
-import { createMessageTransports } from '../test/integration/helpers'
+import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
 import { Client, ClientOptions, ClientState } from './client'
 import { CloseAction, ErrorAction, ErrorHandler } from './errorHandler'
 import { DynamicFeature, RegistrationData, StaticFeature } from './features/common'
+import { clientStateIs, getClientState } from './helpers.test'
 
 class TestClient extends Client {
     constructor(

@@ -1,6 +1,6 @@
 import { throwError } from 'rxjs'
 import { first, switchMap } from 'rxjs/operators'
-import { Client, ClientState } from '../client/client'
+import { Client, ClientState } from './client'
 
 /** Reports the client's current state. */
 export function getClientState(client: Client): ClientState {

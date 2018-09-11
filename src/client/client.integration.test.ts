@@ -1,10 +1,10 @@
 import * as assert from 'assert'
 import { ClientCapabilities, InitializeParams, InitializeRequest, InitializeResult } from '../protocol'
 import { Connection, createConnection, MessageTransports } from '../protocol/jsonrpc2/connection'
+import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
 import { Trace } from '../protocol/jsonrpc2/trace'
-import { clientStateIsActive, getClientState } from '../test/helpers'
-import { createMessageTransports } from '../test/integration/helpers'
 import { Client, ClientState } from './client'
+import { clientStateIsActive, getClientState } from './helpers.test'
 
 const createClientTransportsForTestServer = (registerServer: (server: Connection) => void): MessageTransports => {
     const [clientTransports, serverTransports] = createMessageTransports()

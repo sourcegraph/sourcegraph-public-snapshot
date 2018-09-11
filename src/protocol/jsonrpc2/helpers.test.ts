@@ -1,12 +1,6 @@
-import { MessageTransports } from '../../protocol/jsonrpc2/connection'
-import { Message } from '../../protocol/jsonrpc2/messages'
-import {
-    AbstractMessageReader,
-    AbstractMessageWriter,
-    DataCallback,
-    MessageReader,
-    MessageWriter,
-} from '../../protocol/jsonrpc2/transport'
+import { MessageTransports } from './connection'
+import { Message } from './messages'
+import { AbstractMessageReader, AbstractMessageWriter, DataCallback, MessageReader, MessageWriter } from './transport'
 
 /**
  * Creates a pair of message transports that are connected to each other. One can be used as the server and the

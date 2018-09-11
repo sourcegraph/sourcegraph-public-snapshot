@@ -8,7 +8,7 @@ import {
     RegistrationRequest,
 } from '../protocol'
 import { createConnection } from '../protocol/jsonrpc2/connection'
-import { createMessageTransports } from '../test/integration/helpers'
+import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
 import { createExtensionHost } from './extensionHost'
 
 describe('createExtensionHost', () => {
