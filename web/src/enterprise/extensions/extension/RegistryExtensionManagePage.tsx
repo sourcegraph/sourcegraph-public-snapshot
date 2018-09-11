@@ -6,16 +6,16 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
-import { gql, mutateGraphQL } from '../../backend/graphql'
-import * as GQL from '../../backend/graphqlschema'
-import { Form } from '../../components/Form'
-import { HeroPage } from '../../components/HeroPage'
-import { PageTitle } from '../../components/PageTitle'
-import { eventLogger } from '../../tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { RegistryPublisher, toExtensionID } from '../extension/extension'
-import { ExtensionAreaPageProps } from '../extension/ExtensionArea'
-import { queryViewerRegistryPublishers } from './backend'
+import { gql, mutateGraphQL } from '../../../backend/graphql'
+import * as GQL from '../../../backend/graphqlschema'
+import { Form } from '../../../components/Form'
+import { HeroPage } from '../../../components/HeroPage'
+import { PageTitle } from '../../../components/PageTitle'
+import { RegistryPublisher, toExtensionID } from '../../../extensions/extension/extension'
+import { ExtensionAreaRouteContext } from '../../../extensions/extension/ExtensionArea'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../util/errors'
+import { queryViewerRegistryPublishers } from '../registry/backend'
 import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
 
@@ -53,7 +53,7 @@ function updateExtension(
     )
 }
 
-interface Props extends ExtensionAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {}
 
 interface State {
     /** The viewer's authorized publishers, 'loading', or an error. */

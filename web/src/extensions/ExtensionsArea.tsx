@@ -5,61 +5,71 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
+import { RouteDescriptor } from '../util/contributions'
 import { USE_PLATFORM } from './environment/ExtensionsEnvironment'
-import { ExtensionArea } from './extension/ExtensionArea'
-import { ExtensionsAreaHeader } from './ExtensionsAreaHeader'
+import { ExtensionAreaRoute } from './extension/ExtensionArea'
+import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
+import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
 import { ConfigurationCascadeProps, ExtensionsProps } from './ExtensionsClientCommonContext'
-import { ExtensionsOverviewPage } from './ExtensionsOverviewPage'
-import { RegistryArea } from './registry/RegistryArea'
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
-interface Props extends RouteComponentProps<{ extensionID: string }>, ConfigurationCascadeProps, ExtensionsProps {
+export interface ExtensionsAreaRoute extends RouteDescriptor<ExtensionsAreaRouteContext> {}
+
+/**
+ * Properties passed to all page components in the extensions area.
+ */
+export interface ExtensionsAreaRouteContext extends ConfigurationCascadeProps, ExtensionsProps {
+    /** The currently authenticated user. */
+    authenticatedUser: GQL.IUser | null
+
+    /** The subject whose extensions and configuration to display. */
+    subject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
+    isLightTheme: boolean
+    clientConnection: Promise<ClientConnection>
+    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
+    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+}
+
+interface ExtensionsAreaProps
+    extends RouteComponentProps<{ extensionID: string }>,
+        ConfigurationCascadeProps,
+        ExtensionsProps {
+    routes: ReadonlyArray<ExtensionsAreaRoute>
+
     /**
      * The currently authenticated user.
      */
     user: GQL.IUser | null
 
     viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
-
     isLightTheme: boolean
-
     clientConnection: Promise<ClientConnection>
-}
-
-/**
- * Properties passed to all page components in the extensions area.
- */
-export interface ExtensionsAreaPageProps extends ConfigurationCascadeProps, ExtensionsProps {
-    /** The currently authenticated user. */
-    authenticatedUser: GQL.IUser | null
-
-    /** The subject whose extensions and configuration to display. */
-    subject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
-
-    clientConnection: Promise<ClientConnection>
+    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
+    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
+    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
 }
 
 const LOADING: 'loading' = 'loading'
 
-interface State {}
+interface ExtensionsAreaState {}
 
 /**
  * The extensions area.
  */
-export class ExtensionsArea extends React.Component<Props, State> {
-    public state: State = {
+export class ExtensionsArea extends React.Component<ExtensionsAreaProps, ExtensionsAreaState> {
+    public state: ExtensionsAreaState = {
         subjectOrError: LOADING,
     }
 
-    private componentUpdates = new Subject<Props>()
+    private componentUpdates = new Subject<ExtensionsAreaProps>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: Props): void {
+    public componentWillReceiveProps(props: ExtensionsAreaProps): void {
         this.componentUpdates.next(props)
     }
 
@@ -72,52 +82,37 @@ export class ExtensionsArea extends React.Component<Props, State> {
             return <NotFoundPage />
         }
 
-        const transferProps: ExtensionsAreaPageProps = {
+        const context: ExtensionsAreaRouteContext = {
             authenticatedUser: this.props.user,
             configurationCascade: this.props.configurationCascade,
             extensions: this.props.extensions,
             subject: this.props.viewerSubject,
             clientConnection: this.props.clientConnection,
+            extensionAreaRoutes: this.props.extensionAreaRoutes,
+            extensionAreaHeaderNavItems: this.props.extensionAreaHeaderNavItems,
+            isLightTheme: this.props.isLightTheme,
         }
 
         return (
             <div className="extensions-area area--vertical">
                 <ExtensionsAreaHeader
                     {...this.props}
-                    {...transferProps}
+                    {...context}
+                    actionButtons={this.props.extensionsAreaHeaderActionButtons}
                     isPrimaryHeader={this.props.location.pathname === this.props.match.path}
                 />
                 <Switch>
-                    <Route
-                        path={this.props.match.url}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        exact={true}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => (
-                            <ExtensionsOverviewPage {...routeComponentProps} {...transferProps} />
-                        )}
-                    />
-                    <Route
-                        path={`${this.props.match.url}/registry`}
-                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={routeComponentProps => <RegistryArea {...routeComponentProps} {...transferProps} />}
-                    />
-                    {[`${this.props.match.url}/:extensionID(.*)/-/`, `${this.props.match.url}/:extensionID(.*)`].map(
-                        path => (
-                            <Route
-                                path={path}
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                // tslint:disable-next-line:jsx-no-lambda
-                                render={routeComponentProps => (
-                                    <ExtensionArea
-                                        {...routeComponentProps}
-                                        {...transferProps}
-                                        isLightTheme={this.props.isLightTheme}
-                                    />
-                                )}
-                            />
-                        )
+                    {this.props.routes.map(
+                        ({ path, exact, condition = () => true, render }) =>
+                            condition(context) && (
+                                <Route
+                                    key="hardcoded-key"
+                                    path={this.props.match.url + path}
+                                    exact={exact}
+                                    // tslint:disable-next-line:jsx-no-lambda
+                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                />
+                            )
                     )}
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>

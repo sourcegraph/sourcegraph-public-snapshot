@@ -8,7 +8,6 @@ import { SiteAdminCreateUserPage } from './SiteAdminCreateUserPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
 import { SiteAdminOverviewPage } from './SiteAdminOverviewPage'
 import { SiteAdminPingsPage } from './SiteAdminPingsPage'
-import { SiteAdminRegistryExtensionsPage } from './SiteAdminRegistryExtensionsPage'
 import { SiteAdminRepositoriesPage } from './SiteAdminRepositoriesPage'
 import { SiteAdminSettingsPage } from './SiteAdminSettingsPage'
 import { SiteAdminSurveyResponsesPage } from './SiteAdminSurveyResponsesPage'
@@ -61,11 +60,6 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
         path: '/tokens',
         exact: true,
         render: props => <SiteAdminTokensPage {...props} />,
-    },
-    {
-        path: '/registry/extensions',
-        render: props => <SiteAdminRegistryExtensionsPage {...props} />,
-        exact: true,
     },
     {
         path: '/analytics',

@@ -4,9 +4,9 @@ import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
-import * as GQL from '../../backend/graphqlschema'
-import { asError, ErrorLike, isErrorLike } from '../../util/errors'
-import { deleteRegistryExtensionWithConfirmation } from './backend'
+import * as GQL from '../../../backend/graphqlschema'
+import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
+import { deleteRegistryExtensionWithConfirmation } from '../registry/backend'
 
 interface RegistryExtensionDeleteButtonProps {
     extension: Pick<GQL.IRegistryExtension, 'id'>

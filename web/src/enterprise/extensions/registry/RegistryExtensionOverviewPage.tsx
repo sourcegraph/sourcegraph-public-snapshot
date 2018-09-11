@@ -1,16 +1,16 @@
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
-import { LinkOrSpan } from '../../components/LinkOrSpan'
-import { PageTitle } from '../../components/PageTitle'
-import { Timestamp } from '../../components/time/Timestamp'
-import { eventLogger } from '../../tracking/eventLogger'
-import { isErrorLike } from '../../util/errors'
-import { extensionIDPrefix } from '../extension/extension'
-import { ExtensionAreaPageProps } from '../extension/ExtensionArea'
-import { ExtensionREADME } from '../extension/RegistryExtensionREADME'
+import { LinkOrSpan } from '../../../components/LinkOrSpan'
+import { PageTitle } from '../../../components/PageTitle'
+import { Timestamp } from '../../../components/time/Timestamp'
+import { extensionIDPrefix } from '../../../extensions/extension/extension'
+import { ExtensionAreaRouteContext } from '../../../extensions/extension/ExtensionArea'
+import { ExtensionREADME } from '../../../extensions/extension/RegistryExtensionREADME'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { isErrorLike } from '../../../util/errors'
 
-interface Props extends ExtensionAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {}
 
 /** A page that displays overview information about a registry extension. */
 export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {

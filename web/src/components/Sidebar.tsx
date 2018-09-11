@@ -45,22 +45,3 @@ export const SidebarGroup: React.SFC<{}> = ({ children }) => <div className={SID
 export const SidebarGroupItems: React.SFC<{}> = ({ children }) => (
     <div className="list-group list-group-flush">{children}</div>
 )
-
-/**
- * Used to customize sidebar items
- *
- * @template C Context information that is made available to determine whether the item should be shown (different for each sidebar)
- */
-export interface SidebarItem<C extends object = {}> {
-    /** The text of the item */
-    label: string
-
-    /** The link destination (appended to the current match) */
-    to: string
-
-    /** Whether highlighting the item should only be done if `to` matches exactly */
-    exact?: boolean
-
-    /** Optional condition under which this item should be shown */
-    condition?: (context: C) => boolean
-}

@@ -26,6 +26,10 @@ import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
 import { ExtensionsEnvironmentProps, USE_PLATFORM } from './extensions/environment/ExtensionsEnvironment'
+import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
+import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
+import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
+import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import {
     ConfigurationCascadeProps,
     createMessageTransports,
@@ -44,6 +48,10 @@ import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
 import { isErrorLike } from './util/errors'
 
 export interface SourcegraphWebAppProps {
+    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
+    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
+    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
     siteAdminSideBarItems: SiteAdminSideBarItems
     userAccountSideBarItems: UserAccountSidebarItems
@@ -230,37 +238,58 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             return null
         }
 
+        const { children, ...props } = this.props
+
         return (
             <>
                 <BrowserRouter key={0}>
                     <Route
                         path="/"
                         // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                        render={routeComponentProps => (
-                            <Layout
-                                {...routeComponentProps}
-                                user={user}
-                                siteAdminAreaRoutes={this.props.siteAdminAreaRoutes}
-                                siteAdminSideBarItems={this.props.siteAdminSideBarItems}
-                                userAccountSideBarItems={this.props.userAccountSideBarItems}
-                                userAccountAreaRoutes={this.props.userAccountAreaRoutes}
-                                viewerSubject={this.state.viewerSubject}
-                                clientConnection={this.state.clientConnection}
-                                isLightTheme={this.state.isLightTheme}
-                                onThemeChange={this.onThemeChange}
-                                navbarSearchQuery={this.state.navbarSearchQuery}
-                                onNavbarQueryChange={this.onNavbarQueryChange}
-                                showHelpPopover={this.state.showHelpPopover}
-                                showHistoryPopover={this.state.showHistoryPopover}
-                                onHelpPopoverToggle={this.onHelpPopoverToggle}
-                                onHistoryPopoverToggle={this.onHistoryPopoverToggle}
-                                configurationCascade={this.state.configurationCascade}
-                                extensions={this.state.extensions}
-                                extensionsEnvironment={this.state.extensionsEnvironment}
-                                extensionsOnComponentChange={this.extensionsOnComponentChange}
-                                extensionsController={this.state.extensionsController}
-                            />
-                        )}
+                        render={routeComponentProps => {
+                            let viewerSubject: LayoutProps['viewerSubject']
+                            if (this.state.user) {
+                                viewerSubject = this.state.user
+                            } else if (
+                                this.state.configurationCascade &&
+                                !isErrorLike(this.state.configurationCascade) &&
+                                this.state.configurationCascade.subjects &&
+                                !isErrorLike(this.state.configurationCascade.subjects) &&
+                                this.state.configurationCascade.subjects.length > 0
+                            ) {
+                                viewerSubject = this.state.configurationCascade.subjects[0].subject
+                            } else {
+                                viewerSubject = SITE_SUBJECT_NO_ADMIN
+                            }
+
+                            return (
+                                <Layout
+                                    {...props}
+                                    {...routeComponentProps}
+                                    user={user}
+                                    viewerSubject={viewerSubject}
+                                    configurationCascade={this.state.configurationCascade}
+                                    // Theme
+                                    isLightTheme={this.state.isLightTheme}
+                                    onThemeChange={this.onThemeChange}
+                                    // Search query
+                                    navbarSearchQuery={this.state.navbarSearchQuery}
+                                    onNavbarQueryChange={this.onNavbarQueryChange}
+                                    // Help popover
+                                    showHelpPopover={this.state.showHelpPopover}
+                                    onHelpPopoverToggle={this.onHelpPopoverToggle}
+                                    // History popover
+                                    showHistoryPopover={this.state.showHistoryPopover}
+                                    onHistoryPopoverToggle={this.onHistoryPopoverToggle}
+                                    // Extensions
+                                    extensions={this.state.extensions}
+                                    extensionsEnvironment={this.state.extensionsEnvironment}
+                                    extensionsOnComponentChange={this.extensionsOnComponentChange}
+                                    extensionsController={this.state.extensionsController}
+                                    clientConnection={this.state.clientConnection}
+                                />
+                            )
+                        }}
                     />
                 </BrowserRouter>
                 <Tooltip key={1} />

@@ -149,7 +149,7 @@ export const routes: LayoutRouteProps[] = [
             ? [
                   {
                       path: '/extensions',
-                      render: props => <ExtensionsArea {...props} />,
+                      render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
                   },
               ]
             : [])(),

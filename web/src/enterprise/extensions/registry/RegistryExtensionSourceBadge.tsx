@@ -1,8 +1,8 @@
 import CircleRemoveAlternateIcon from '@sourcegraph/icons/lib/CircleRemoveAlternate'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import * as React from 'react'
-import * as GQL from '../../backend/graphqlschema'
-import { LinkOrSpan } from '../../components/LinkOrSpan'
+import * as GQL from '../../../backend/graphqlschema'
+import { LinkOrSpan } from '../../../components/LinkOrSpan'
 
 export const RegistryExtensionSourceBadge: React.SFC<{
     extension: Pick<GQL.IRegistryExtension, 'remoteURL' | 'registryName' | 'isLocal'>

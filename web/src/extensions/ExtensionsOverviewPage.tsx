@@ -4,10 +4,10 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
-import { ExtensionsAreaPageProps } from './ExtensionsArea'
+import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 import { ExtensionsEmptyState } from './ExtensionsEmptyState'
 
-interface Props extends ExtensionsAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {}
 
 /** A page that displays overview information about viewer's configured extensions. */
 export class ExtensionsOverviewPage extends React.PureComponent<Props> {

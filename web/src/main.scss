@@ -1,3 +1,8 @@
 // Entry point for the web app
 
 @import './SourcegraphWebApp';
+
+// Enterprise styles
+@import './enterprise/extensions/registry/RegistryArea';
+@import './enterprise/extensions/registry/RegistryNewExtensionPage';
+@import './enterprise/extensions/extension/RegistryExtensionManagePage';

@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { PageTitle } from '../../components/PageTitle'
-import { ExtensionAreaPageProps } from '../extension/ExtensionArea'
+import { PageTitle } from '../../../components/PageTitle'
+import { ExtensionAreaRouteContext } from '../../../extensions/extension/ExtensionArea'
 
-interface Props extends ExtensionAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {}
 
 /** A page for publishing a new release of an extension to the extension registry. */
 export const RegistryExtensionNewReleasePage: React.SFC<Props> = props => {

@@ -10,13 +10,10 @@ import { gql, graphQLContent } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { ConfigurationCascadeProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { RouteDescriptor } from '../../util/contributions'
 import { ErrorLike, isErrorLike } from '../../util/errors'
-import { RegistryExtensionManifestPage } from '../extension/RegistryExtensionManifestPage'
-import { ExtensionsAreaPageProps } from '../ExtensionsArea'
-import { RegistryExtensionManagePage } from '../registry/RegistryExtensionManagePage'
-import { RegistryExtensionNewReleasePage } from '../registry/RegistryExtensionNewReleasePage'
-import { RegistryExtensionOverviewPage } from '../registry/RegistryExtensionOverviewPage'
-import { ExtensionAreaHeader } from './ExtensionAreaHeader'
+import { ExtensionsAreaRouteContext } from '../ExtensionsArea'
+import { ExtensionAreaHeader, ExtensionAreaHeaderNavItem } from './ExtensionAreaHeader'
 
 export const registryExtensionFragment = gql`
     fragment RegistryExtensionFields on RegistryExtension {
@@ -56,11 +53,15 @@ export const registryExtensionFragment = gql`
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
-interface Props extends ExtensionsAreaPageProps, RouteComponentProps<{ extensionID: string }> {
+export interface ExtensionAreaRoute extends RouteDescriptor<ExtensionAreaRouteContext> {}
+
+export interface ExtensionAreaProps extends ExtensionsAreaRouteContext, RouteComponentProps<{ extensionID: string }> {
+    routes: ReadonlyArray<ExtensionAreaRoute>
     isLightTheme: boolean
+    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
 }
 
-interface State {
+interface ExtensionAreaState {
     /** The registry extension, undefined while loading, or an error.  */
     extensionOrError?: ConfiguredExtension<GQL.IRegistryExtension> | ErrorLike
 }
@@ -68,7 +69,7 @@ interface State {
 /**
  * Properties passed to all page components in the registry extension area.
  */
-export interface ExtensionAreaPageProps extends ConfigurationCascadeProps, ExtensionsProps {
+export interface ExtensionAreaRouteContext extends ConfigurationCascadeProps, ExtensionsProps {
     /** The extension registry area main URL. */
     url: string
 
@@ -80,15 +81,16 @@ export interface ExtensionAreaPageProps extends ConfigurationCascadeProps, Exten
 
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
+    isLightTheme: boolean
 }
 
 /**
  * An extension area.
  */
-export class ExtensionArea extends React.Component<Props> {
-    public state: State = {}
+export class ExtensionArea extends React.Component<ExtensionAreaProps> {
+    public state: ExtensionAreaState = {}
 
-    private componentUpdates = new Subject<Props>()
+    private componentUpdates = new Subject<ExtensionAreaProps>()
     private refreshRequests = new Subject<void>()
     private subscriptions = new Subscription()
 
@@ -122,7 +124,7 @@ export class ExtensionArea extends React.Component<Props> {
             )
                 .pipe(
                     switchMap(([extensionID, forceRefresh]) => {
-                        type PartialStateUpdate = Pick<State, 'extensionOrError'>
+                        type PartialStateUpdate = Pick<ExtensionAreaState, 'extensionOrError'>
                         return this.props.extensions
                             .forExtensionID(extensionID, registryExtensionFragment[graphQLContent])
                             .pipe(
@@ -141,7 +143,7 @@ export class ExtensionArea extends React.Component<Props> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentWillReceiveProps(props: Props): void {
+    public componentWillReceiveProps(props: ExtensionAreaProps): void {
         this.componentUpdates.next(props)
     }
 
@@ -161,60 +163,33 @@ export class ExtensionArea extends React.Component<Props> {
 
         const url = this.props.match.url.replace(/\/-\/?$/, '')
 
-        const transferProps: ExtensionAreaPageProps = {
+        const context: ExtensionAreaRouteContext = {
             url,
             authenticatedUser: this.props.authenticatedUser,
             onDidUpdateExtension: this.onDidUpdateExtension,
             configurationCascade: this.props.configurationCascade,
             extension: this.state.extensionOrError,
             extensions: this.props.extensions,
+            isLightTheme: this.props.isLightTheme,
         }
 
         return (
             <div className="registry-extension-area area--vertical">
-                <ExtensionAreaHeader {...this.props} {...transferProps} />
+                <ExtensionAreaHeader {...this.props} {...context} navItems={this.props.extensionAreaHeaderNavItems} />
                 <div className="container pt-3">
                     <Switch>
-                        <Route
-                            path={url}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <RegistryExtensionOverviewPage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
-                        <Route
-                            path={`${url}/-/manifest`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <RegistryExtensionManifestPage
-                                    {...routeComponentProps}
-                                    {...transferProps}
-                                    isLightTheme={this.props.isLightTheme}
-                                />
-                            )}
-                        />
-                        <Route
-                            path={`${url}/-/manage`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <RegistryExtensionManagePage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
-                        <Route
-                            path={`${url}/-/releases/new`}
-                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                            exact={true}
-                            // tslint:disable-next-line:jsx-no-lambda
-                            render={routeComponentProps => (
-                                <RegistryExtensionNewReleasePage {...routeComponentProps} {...transferProps} />
-                            )}
-                        />
+                        {this.props.routes.map(
+                            ({ path, render, exact, condition = () => true }) =>
+                                condition(context) && (
+                                    <Route
+                                        path={this.props.match.url + path}
+                                        exact={exact}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        // tslint:disable-next-line:jsx-no-lambda
+                                        render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                    />
+                                )
+                        )}
                         <Route key="hardcoded-key" component={NotFoundPage} />
                     </Switch>
                 </div>

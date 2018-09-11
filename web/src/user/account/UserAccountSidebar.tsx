@@ -8,12 +8,12 @@ import {
     SidebarGroup,
     SidebarGroupHeader,
     SidebarGroupItems,
-    SidebarItem,
     SidebarNavItem,
 } from '../../components/Sidebar'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../tracking/eventLogger'
+import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaPageProps } from '../area/UserArea'
 
 export interface UserAccountSidebarItemConditionContext {
@@ -24,7 +24,7 @@ export interface UserAccountSidebarItemConditionContext {
 
 export type UserAccountSidebarItems = Record<
     'account',
-    ReadonlyArray<SidebarItem<UserAccountSidebarItemConditionContext>>
+    ReadonlyArray<NavItemDescriptor<UserAccountSidebarItemConditionContext>>
 >
 
 export interface UserAccountSidebarProps extends UserAreaPageProps, RouteComponentProps<{}> {

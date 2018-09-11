@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom'
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { eventLogger } from '../../tracking/eventLogger'
-import { ExtensionAreaPageProps } from './ExtensionArea'
+import { ExtensionAreaRouteContext } from './ExtensionArea'
 
 export const ExtensionNoManifestAlert: React.SFC<{
     extension: ConfiguredExtension
@@ -27,7 +27,7 @@ export const ExtensionNoManifestAlert: React.SFC<{
     </div>
 )
 
-interface Props extends ExtensionAreaPageProps, RouteComponentProps<{}> {
+interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     isLightTheme: boolean
 }
 

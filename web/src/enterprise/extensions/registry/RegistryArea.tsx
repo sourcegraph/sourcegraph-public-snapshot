@@ -3,16 +3,16 @@ import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
-import * as GQL from '../../backend/graphqlschema'
-import { HeroPage } from '../../components/HeroPage'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
-import { USE_PLATFORM } from '../environment/ExtensionsEnvironment'
-import { ExtensionsAreaPageProps } from '../ExtensionsArea'
+import * as GQL from '../../../backend/graphqlschema'
+import { HeroPage } from '../../../components/HeroPage'
+import { USE_PLATFORM } from '../../../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
+import { ExtensionsProps } from '../../../extensions/ExtensionsClientCommonContext'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
-interface Props extends RouteComponentProps<{}>, ExtensionsAreaPageProps {}
+interface Props extends RouteComponentProps<{}>, ExtensionsAreaRouteContext {}
 
 /**
  * Properties passed to all page components in the registry area.

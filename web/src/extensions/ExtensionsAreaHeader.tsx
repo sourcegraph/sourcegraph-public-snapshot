@@ -1,17 +1,24 @@
-import AddIcon from 'mdi-react/AddIcon'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
-import { ExtensionsAreaPageProps } from './ExtensionsArea'
+import { ActionButtonDescriptor } from '../util/contributions'
+import { ExtensionsAreaRouteContext } from './ExtensionsArea'
 
-interface Props extends ExtensionsAreaPageProps, RouteComponentProps<{}> {
+export interface ExtensionsAreaHeaderProps extends ExtensionsAreaRouteContext, RouteComponentProps<{}> {
+    isPrimaryHeader: boolean
+    actionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
+}
+
+export interface ExtensionAreaHeaderContext {
     isPrimaryHeader: boolean
 }
+
+export interface ExtensionsAreaHeaderActionButton extends ActionButtonDescriptor<ExtensionAreaHeaderContext> {}
 
 /**
  * Header for the extensions area.
  */
-export const ExtensionsAreaHeader: React.SFC<Props> = (props: Props) => (
+export const ExtensionsAreaHeader: React.SFC<ExtensionsAreaHeaderProps> = (props: ExtensionsAreaHeaderProps) => (
     <div className="border-bottom simple-area-header">
         <div className="navbar navbar-expand py-2">
             <div className="container">
@@ -33,12 +40,15 @@ export const ExtensionsAreaHeader: React.SFC<Props> = (props: Props) => (
                 </ul>
                 <div className="spacer" />
                 <ul className="navbar-nav nav">
-                    {props.isPrimaryHeader && (
-                        <li className="nav-item">
-                            <Link className="btn ml-2 btn-secondary" to="/extensions/registry/new">
-                                {props.isPrimaryHeader && <AddIcon className="icon-inline" />} Publish new extension
-                            </Link>
-                        </li>
+                    {props.actionButtons.map(
+                        ({ condition = () => true, to, icon: Icon, label }) =>
+                            condition(props) && (
+                                <li className="nav-item" key={label}>
+                                    <Link className="btn ml-2 btn-secondary" to={to}>
+                                        {Icon && <Icon className="icon-inline" />} {label}
+                                    </Link>
+                                </li>
+                            )
                     )}
                 </ul>
             </div>

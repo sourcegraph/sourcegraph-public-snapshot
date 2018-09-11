@@ -1,19 +1,25 @@
 import { isExtensionAdded, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import LockIcon from '@sourcegraph/icons/lib/Lock'
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { isErrorLike } from '../../util/errors'
-import { ExtensionAreaPageProps } from './ExtensionArea'
+import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionConfigurationState } from './ExtensionConfigurationState'
 import { RegistryExtensionDetailActionButton } from './RegistryExtensionDetailActionButton'
 
-interface Props extends ExtensionAreaPageProps, RouteComponentProps<{}> {}
+interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
+    navItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+}
+
+export type ExtensionAreaHeaderContext = Pick<ExtensionAreaHeaderProps, 'extension'>
+
+export interface ExtensionAreaHeaderNavItem extends NavItemWithIconDescriptor<ExtensionAreaHeaderContext> {}
 
 /**
  * Header for the extension area.
  */
-export const ExtensionAreaHeader: React.SFC<Props> = (props: Props) => (
+export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: ExtensionAreaHeaderProps) => (
     <div className="extension-area-header border-bottom simple-area-header pt-4">
         <div className="container">
             {props.extension && (
@@ -79,24 +85,20 @@ export const ExtensionAreaHeader: React.SFC<Props> = (props: Props) => (
                     </div>
                     <div className="area-header__nav mt-3">
                         <div className="area-header__nav-links">
-                            <NavLink
-                                to={props.url}
-                                exact={true}
-                                className="btn area-header__nav-link"
-                                activeClassName="area-header__nav-link--active"
-                            >
-                                Extension
-                            </NavLink>
-                            {props.extension.registryExtension &&
-                                props.extension.registryExtension.viewerCanAdminister && (
-                                    <NavLink
-                                        to={`${props.url}/-/manage`}
-                                        className="btn area-header__nav-link"
-                                        activeClassName="area-header__nav-link--active"
-                                    >
-                                        <LockIcon className="icon-inline" /> Manage
-                                    </NavLink>
-                                )}
+                            {props.navItems.map(
+                                ({ to, label, exact, icon: Icon, condition = () => true }) =>
+                                    condition(props) && (
+                                        <NavLink
+                                            key={label}
+                                            to={props.url + to}
+                                            className="btn area-header__nav-link"
+                                            activeClassName="area-header__nav-link--active"
+                                            exact={exact}
+                                        >
+                                            {Icon && <Icon className="icon-inline" />} {label}
+                                        </NavLink>
+                                    )
+                            )}
                         </div>
                     </div>
                 </>

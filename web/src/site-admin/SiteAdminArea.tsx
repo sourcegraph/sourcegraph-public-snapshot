@@ -5,7 +5,7 @@ import { Redirect } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
-import { RouteConfiguration } from '../util/routes'
+import { RouteDescriptor } from '../util/contributions'
 import { SiteAdminSidebar, SiteAdminSideBarItems } from './SiteAdminSidebar'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
@@ -26,7 +26,7 @@ export interface SiteAdminAreaRouteContext extends ExtensionsProps {
     isLightTheme: boolean
 }
 
-export interface SiteAdminAreaRoute extends RouteConfiguration<SiteAdminAreaRouteContext> {}
+export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
 
 interface SiteAdminAreaProps extends RouteComponentProps<{}>, ExtensionsProps {
     routes: ReadonlyArray<SiteAdminAreaRoute>

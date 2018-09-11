@@ -4,6 +4,10 @@ import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from './backend/graphqlschema'
 import { LinkExtension } from './extension/Link'
 import { ExtensionsComponentProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
+import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
+import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
+import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
+import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import {
     ConfigurationCascadeProps,
     ExtensionsControllerProps,
@@ -27,6 +31,10 @@ export interface LayoutProps
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps,
         ExtensionsComponentProps {
+    extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
+    extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
+    extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
+    extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
     siteAdminSideBarItems: SiteAdminSideBarItems
     userAccountSideBarItems: UserAccountSidebarItems

@@ -9,14 +9,14 @@ import {
     SidebarGroup,
     SidebarGroupHeader,
     SidebarGroupItems,
-    SidebarItem,
     SidebarNavItem,
 } from '../components/Sidebar'
 import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
+import { NavItemDescriptor } from '../util/contributions'
 
 export type SiteAdminSideBarItems = Record<
     'primary' | 'secondary' | 'registry' | 'auth' | 'other',
-    ReadonlyArray<SidebarItem>
+    ReadonlyArray<NavItemDescriptor>
 >
 
 export interface SiteAdminSidebarProps {

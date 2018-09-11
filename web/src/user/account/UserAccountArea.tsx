@@ -7,13 +7,13 @@ import { map } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { siteFlags } from '../../site/backend'
-import { RouteConfiguration } from '../../util/routes'
+import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaPageProps } from '../area/UserArea'
 import { UserAccountSidebar, UserAccountSidebarItems } from './UserAccountSidebar'
 
 const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
 
-export interface UserAccountAreaRoute extends RouteConfiguration<UserAccountAreaRouteContext> {}
+export interface UserAccountAreaRoute extends RouteDescriptor<UserAccountAreaRouteContext> {}
 
 export interface UserAccountAreaProps extends UserAreaPageProps, RouteComponentProps<{}> {
     isLightTheme: boolean

@@ -9,6 +9,10 @@ import './highlight'
 
 import React from 'react'
 import { render } from 'react-dom'
+import { enterpriseExtensionAreaHeaderNavItems } from './enterprise/extensions/extension/extensionAreaHeaderNavItems'
+import { enterpriseExtensionAreaRoutes } from './enterprise/extensions/extension/routes'
+import { enterpriseExtensionsAreaHeaderActionButtons } from './enterprise/extensions/extensionsAreaHeaderActionButtons'
+import { enterpriseExtensionsAreaRoutes } from './enterprise/extensions/routes'
 import { enterpriseSiteAdminAreaRoutes } from './enterprise/site-admin/routes'
 import { enterpriseSiteAdminSidebarNavItems } from './enterprise/site-admin/sidebaritems'
 import { enterpriseUserAccountAreaRoutes } from './enterprise/user/account/routes'
@@ -18,6 +22,10 @@ import { SourcegraphWebApp } from './SourcegraphWebApp'
 window.addEventListener('DOMContentLoaded', () => {
     render(
         <SourcegraphWebApp
+            extensionAreaRoutes={enterpriseExtensionAreaRoutes}
+            extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
+            extensionsAreaRoutes={enterpriseExtensionsAreaRoutes}
+            extensionsAreaHeaderActionButtons={enterpriseExtensionsAreaHeaderActionButtons}
             siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
             siteAdminSideBarItems={enterpriseSiteAdminSidebarNavItems}
             userAccountSideBarItems={enterpriseUserAccountSideBarItems}
