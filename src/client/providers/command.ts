@@ -1,5 +1,4 @@
 import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
-import { ExecuteCommandParams } from '../../protocol'
 
 /** A registered command in the command registry. */
 export interface CommandEntry {
@@ -8,6 +7,18 @@ export interface CommandEntry {
 
     /** The function called to run the command and return an async value. */
     run: (...args: any[]) => Promise<any>
+}
+
+export interface ExecuteCommandParams {
+    /**
+     * The identifier of the actual command handler.
+     */
+    command: string
+
+    /**
+     * Arguments that the command should be invoked with.
+     */
+    arguments?: any[]
 }
 
 /** Manages and executes commands from all extensions. */

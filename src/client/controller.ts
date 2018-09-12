@@ -14,7 +14,6 @@ import { Client, ClientOptions } from './client'
 import { EMPTY_CONTEXT } from './context/context'
 import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment, ObservableEnvironment } from './environment'
 import { Extension } from './extension'
-import { ExecuteCommandFeature } from './features/command'
 import { ContributionFeature } from './features/contribution'
 import {
     TextDocumentDefinitionFeature,
@@ -212,7 +211,6 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
 
     private registerClientFeatures(client: Client, configuration: Observable<C>): void {
         client.registerFeature(new ContributionFeature(this.registries.contribution))
-        client.registerFeature(new ExecuteCommandFeature(client, this.registries.commands))
         client.registerFeature(new TextDocumentDefinitionFeature(client, this.registries.textDocumentDefinition))
         client.registerFeature(
             new TextDocumentImplementationFeature(client, this.registries.textDocumentImplementation)

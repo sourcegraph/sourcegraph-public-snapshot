@@ -1,5 +1,4 @@
 export * from './capabilities'
-export * from './command'
 export * from './configuration'
 export * from './contribution'
 export * from './definition'
