@@ -151,7 +151,7 @@
     "worker-loader": "^2.0.0"
   },
   "dependencies": {
-    "@sourcegraph/codeintellify": "^3.8.3",
+    "@sourcegraph/codeintellify": "^3.8.4",
     "@sourcegraph/extensions-client-common": "^8.2.0",
     "@sourcegraph/icons": "^1.15.0",
     "@sourcegraph/phabricator-extension": "^1.12.2",
