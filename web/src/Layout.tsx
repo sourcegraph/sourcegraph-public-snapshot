@@ -1,3 +1,4 @@
+import { ClientConnection } from '@sourcegraph/extensions-client-common/lib/messaging'
 import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from './backend/graphqlschema'
@@ -38,6 +39,8 @@ export interface LayoutProps
      * This is either the site's GraphQL node ID (for anonymous users) or the authenticated user's GraphQL node ID.
      */
     viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
+
+    clientConnection: Promise<ClientConnection>
 
     isLightTheme: boolean
     onThemeChange: () => void

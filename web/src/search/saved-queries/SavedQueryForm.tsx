@@ -1,3 +1,4 @@
+import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -32,7 +33,7 @@ interface Props {
 interface State {
     values: SavedQueryFields
 
-    subjectOptions: GQL.ConfigurationSubject[]
+    subjectOptions: ConfigurationSubject[]
     isSubmitting: boolean
     isFocused: boolean
     error?: any
@@ -167,7 +168,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
                     <div className="saved-query-form__save-location">
                         {subjectOptions
                             .filter(
-                                (subjectOption: GQL.ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
+                                (subjectOption: ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
                                     subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
                             )
                             .map((subjectOption, i) => (
@@ -299,7 +300,7 @@ export class SavedQueryForm extends React.Component<Props, State> {
     private saveTargetName = () => {
         const chosen = this.state.subjectOptions
             .filter(
-                (subjectOption: GQL.ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
+                (subjectOption: ConfigurationSubject): subjectOption is GQL.IOrg | GQL.IUser =>
                     subjectOption.__typename === 'Org' || subjectOption.__typename === 'User'
             )
             .find(subjectOption => subjectOption.id === this.state.values.subject)

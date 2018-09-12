@@ -1,3 +1,4 @@
+import { ClientConnection } from '@sourcegraph/extensions-client-common/lib/messaging'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -22,6 +23,8 @@ interface Props extends RouteComponentProps<{ extensionID: string }>, Configurat
     viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
 
     isLightTheme: boolean
+
+    clientConnection: Promise<ClientConnection>
 }
 
 /**
@@ -33,6 +36,8 @@ export interface ExtensionsAreaPageProps extends ConfigurationCascadeProps, Exte
 
     /** The subject whose extensions and configuration to display. */
     subject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
+
+    clientConnection: Promise<ClientConnection>
 }
 
 const LOADING: 'loading' = 'loading'
@@ -72,6 +77,7 @@ export class ExtensionsArea extends React.Component<Props, State> {
             configurationCascade: this.props.configurationCascade,
             extensions: this.props.extensions,
             subject: this.props.viewerSubject,
+            clientConnection: this.props.clientConnection,
         }
 
         return (

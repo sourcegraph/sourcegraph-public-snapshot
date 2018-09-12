@@ -1,8 +1,12 @@
 import { ControllerProps as GenericExtensionsControllerProps } from '@sourcegraph/extensions-client-common/lib/client/controller'
-import { ExtensionsProps as GenericExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
+import {
+    ExtensionsProps as GenericExtensionsProps,
+    UpdateExtensionSettingsArgs,
+} from '@sourcegraph/extensions-client-common/lib/context'
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { QueryResult } from '@sourcegraph/extensions-client-common/lib/graphql'
+import { ClientConnection } from '@sourcegraph/extensions-client-common/lib/messaging'
 import * as ECCGQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
 import {
     ConfigurationCascadeProps as GenericConfigurationCascadeProps,
@@ -15,11 +19,10 @@ import Loader from '@sourcegraph/icons/lib/Loader'
 import Menu from '@sourcegraph/icons/lib/Menu'
 import Warning from '@sourcegraph/icons/lib/Warning'
 import { isEqual } from 'lodash'
-import { concat, Observable } from 'rxjs'
-import { distinctUntilChanged, map, switchMap, take } from 'rxjs/operators'
+import { concat, from, Observable } from 'rxjs'
+import { distinctUntilChanged, map, mapTo, switchMap, take } from 'rxjs/operators'
 import { MessageTransports } from 'sourcegraph/module/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from 'sourcegraph/module/jsonrpc2/transports/webWorker'
-import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { Tooltip } from '../components/tooltip/Tooltip'
@@ -35,13 +38,15 @@ export interface ConfigurationCascadeProps extends GenericConfigurationCascadePr
 
 export interface ExtensionsProps extends GenericExtensionsProps<ConfigurationSubject, Settings> {}
 
-export function createExtensionsContextController(): ExtensionsContextController<ConfigurationSubject, Settings> {
+export function createExtensionsContextController(
+    clientConnection: Promise<ClientConnection>
+): ExtensionsContextController<ConfigurationSubject, Settings> {
     return new ExtensionsContextController<ConfigurationSubject, Settings>({
         configurationCascade: configurationCascade.pipe(
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
-        updateExtensionSettings,
+        updateExtensionSettings: (subject, args) => updateExtensionSettings(subject, args, clientConnection),
         queryGraphQL: (request, variables) =>
             queryGraphQL(
                 gql`
@@ -61,12 +66,8 @@ export function createExtensionsContextController(): ExtensionsContextController
 
 function updateExtensionSettings(
     subject: string,
-    args: {
-        extensionID: string
-        edit?: ConfigurationUpdateParams
-        enabled?: boolean
-        remove?: boolean
-    }
+    args: UpdateExtensionSettingsArgs,
+    clientConnection: Promise<ClientConnection>
 ): Observable<void> {
     return configurationCascade.pipe(
         take(1),
@@ -78,28 +79,40 @@ function updateExtensionSettings(
             const lastID = subjectConfig.latestSettings ? subjectConfig.latestSettings.id : null
 
             let edit: GQL.IConfigurationEdit
-            if (args.edit) {
+            if ('edit' in args && args.edit) {
                 edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
-            } else if (typeof args.enabled === 'boolean') {
-                edit = { keyPath: toGQLKeyPath(['extensions', args.extensionID]), value: args.enabled }
-            } else if (args.remove) {
-                edit = { keyPath: toGQLKeyPath(['extensions', args.extensionID]), value: null }
+            } else if ('extensionID' in args) {
+                edit = {
+                    keyPath: toGQLKeyPath(['extensions', args.extensionID]),
+                    value: typeof args.enabled === 'boolean' ? args.enabled : null,
+                }
             } else {
                 throw new Error('no edit')
             }
+
+            if (subject === 'Client') {
+                return from(clientConnection.then(connection => connection.editSetting(args))).pipe(mapTo(undefined))
+            }
+
             return editConfiguration(subject, lastID, edit)
         }),
         switchMap(() => concat(refreshConfiguration(), [void 0]))
     )
 }
 
-export function updateUserExtensionSettings(args: { extensionID: string; enabled?: boolean }): Observable<void> {
+export function updateHighestPrecedenceExtensionSettings(
+    args: {
+        extensionID: string
+        enabled?: boolean
+    },
+    clientConnection: Promise<ClientConnection>
+): Observable<void> {
     return configurationCascade.pipe(
         take(1),
         switchMap(configurationCascade => {
             // Only support configuring extension settings in user settings with this action.
             const subject = configurationCascade.subjects[configurationCascade.subjects.length - 1]
-            return updateExtensionSettings(subject.id, args)
+            return updateExtensionSettings(subject.id, args, clientConnection)
         })
     )
 }

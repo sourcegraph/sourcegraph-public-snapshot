@@ -101,7 +101,7 @@ export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"
 
 # Make sure chokidar-cli is installed in the background
-npm install &
+[ -n $OFFLINE ] || npm install &
 
 if ! ./dev/go-install.sh; then
 	# let NPM finish, otherwise we get NPM diagnostics AFTER the

@@ -1,3 +1,4 @@
+import { ClientConnection } from '@sourcegraph/extensions-client-common/lib/messaging'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import { upperFirst } from 'lodash'
@@ -14,7 +15,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { RegistryPublisher, toExtensionID } from '../extension/extension'
-import { updateUserExtensionSettings } from '../ExtensionsClientCommonContext'
+import { updateHighestPrecedenceExtensionSettings } from '../ExtensionsClientCommonContext'
 import { queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
@@ -54,8 +55,11 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
  * It is convenient and less confusing for users if newly created extensions are added to their user settings. That
  * means that they are immediately usable.
  */
-function configureNewExtensionAsDisabled(extensionID: string): Observable<void> {
-    return updateUserExtensionSettings({ extensionID, enabled: true }) as Observable<any>
+function configureNewExtensionAsDisabled(
+    extensionID: string,
+    clientConnection: Promise<ClientConnection>
+): Observable<void> {
+    return updateHighestPrecedenceExtensionSettings({ extensionID, enabled: true }, clientConnection) as Observable<any>
 }
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {}
@@ -104,7 +108,10 @@ export class RegistryNewExtensionPage extends React.PureComponent<Props, State> 
                             [{ creationOrError: 'loading' }],
                             createExtension(this.state.publisher!, this.state.name).pipe(
                                 switchMap(result =>
-                                    configureNewExtensionAsDisabled(result.extension.extensionID).pipe(mapTo(result))
+                                    configureNewExtensionAsDisabled(
+                                        result.extension.extensionID,
+                                        this.props.clientConnection
+                                    ).pipe(mapTo(result))
                                 ),
                                 tap(result => {
                                     // Go to the page for the newly created extension.

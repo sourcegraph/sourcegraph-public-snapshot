@@ -1,3 +1,4 @@
+import { ClientConnection } from '@sourcegraph/extensions-client-common/lib/messaging'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -19,6 +20,7 @@ interface Props extends RouteComponentProps<{}>, ExtensionsAreaPageProps {}
 export interface RegistryAreaPageProps extends ExtensionsProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
+    clientConnection: Promise<ClientConnection>
 }
 
 /**
@@ -48,6 +50,7 @@ export class RegistryArea extends React.Component<Props> {
         const transferProps: RegistryAreaPageProps = {
             authenticatedUser: this.props.authenticatedUser,
             extensions: this.props.extensions,
+            clientConnection: this.props.clientConnection,
         }
 
         return (

@@ -1,6 +1,7 @@
 import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
 import { createController as createExtensionsController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
+import { ClientConnection, connectAsPage } from '@sourcegraph/extensions-client-common/lib/messaging'
 import {
     ConfigurationCascadeOrError,
     ConfigurationSubject,
@@ -12,7 +13,9 @@ import ServerIcon from '@sourcegraph/icons/lib/Server'
 import * as React from 'react'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { Subscription } from 'rxjs'
+import { combineLatest, Subscription } from 'rxjs'
+import { from } from 'rxjs'
+import { startWith } from 'rxjs/operators'
 import {
     Component as ExtensionsComponent,
     EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT,
@@ -32,6 +35,7 @@ import {
 import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
+import { clientConfiguration } from './settings/configuration'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarItems } from './site-admin/SiteAdminSidebar'
 import { eventLogger } from './tracking/eventLogger'
@@ -54,6 +58,8 @@ interface SourcegraphWebAppState
     error?: Error
     user?: GQL.IUser | null
 
+    viewerSubject: LayoutProps['viewerSubject']
+
     /**
      * Whether the light theme is enabled or not
      */
@@ -69,6 +75,8 @@ interface SourcegraphWebAppState
 
     /** Whether the history popover is shown. */
     showHistoryPopover: boolean
+
+    clientConnection: Promise<ClientConnection>
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -85,7 +93,8 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAd
 export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     constructor(props: SourcegraphWebAppProps) {
         super(props)
-        const extensions = createExtensionsContextController()
+        const clientConnection = connectAsPage()
+        const extensions = createExtensionsContextController(clientConnection)
         this.state = {
             isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
             navbarSearchQuery: '',
@@ -95,6 +104,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             extensions,
             extensionsEnvironment: EXTENSIONS_EMPTY_ENVIRONMENT,
             extensionsController: createExtensionsController(extensions.context, createMessageTransports),
+            viewerSubject: SITE_SUBJECT_NO_ADMIN,
+            clientConnection,
         }
     }
 
@@ -106,6 +117,48 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         document.body.classList.add('theme')
         this.subscriptions.add(
             currentUser.subscribe(user => this.setState({ user }), () => this.setState({ user: null }))
+        )
+
+        this.state.clientConnection
+            .then(connection => {
+                connection
+                    .getSettings()
+                    .then(settings => clientConfiguration.next(settings))
+                    .catch(error => console.error(error))
+
+                connection.onSettings(settings => clientConfiguration.next(settings))
+            })
+            .catch(error => console.error(error))
+
+        this.subscriptions.add(
+            combineLatest(
+                from(this.state.extensions.context.configurationCascade).pipe(startWith(null)),
+                currentUser.pipe(startWith(null)),
+                clientConfiguration
+            ).subscribe(([cascade, user, clientConfiguration]) => {
+                this.setState(() => {
+                    if (clientConfiguration !== undefined) {
+                        return {
+                            viewerSubject: {
+                                id: 'Client',
+                                viewerCanAdminister: true,
+                            },
+                        }
+                    } else if (user) {
+                        return { viewerSubject: user }
+                    } else if (
+                        cascade &&
+                        !isErrorLike(cascade) &&
+                        cascade.subjects &&
+                        !isErrorLike(cascade.subjects) &&
+                        cascade.subjects.length > 0
+                    ) {
+                        return { viewerSubject: cascade.subjects[0].subject }
+                    } else {
+                        return { viewerSubject: SITE_SUBJECT_NO_ADMIN }
+                    }
+                })
+            })
         )
 
         if (USE_PLATFORM) {
@@ -183,47 +236,31 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     <Route
                         path="/"
                         // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                        render={routeComponentProps => {
-                            let viewerSubject: LayoutProps['viewerSubject']
-                            if (this.state.user) {
-                                viewerSubject = this.state.user
-                            } else if (
-                                this.state.configurationCascade &&
-                                !isErrorLike(this.state.configurationCascade) &&
-                                this.state.configurationCascade.subjects &&
-                                !isErrorLike(this.state.configurationCascade.subjects) &&
-                                this.state.configurationCascade.subjects.length > 0
-                            ) {
-                                viewerSubject = this.state.configurationCascade.subjects[0].subject
-                            } else {
-                                viewerSubject = SITE_SUBJECT_NO_ADMIN
-                            }
-
-                            return (
-                                <Layout
-                                    {...routeComponentProps}
-                                    user={user}
-                                    siteAdminAreaRoutes={this.props.siteAdminAreaRoutes}
-                                    siteAdminSideBarItems={this.props.siteAdminSideBarItems}
-                                    userAccountSideBarItems={this.props.userAccountSideBarItems}
-                                    userAccountAreaRoutes={this.props.userAccountAreaRoutes}
-                                    viewerSubject={viewerSubject}
-                                    isLightTheme={this.state.isLightTheme}
-                                    onThemeChange={this.onThemeChange}
-                                    navbarSearchQuery={this.state.navbarSearchQuery}
-                                    onNavbarQueryChange={this.onNavbarQueryChange}
-                                    showHelpPopover={this.state.showHelpPopover}
-                                    showHistoryPopover={this.state.showHistoryPopover}
-                                    onHelpPopoverToggle={this.onHelpPopoverToggle}
-                                    onHistoryPopoverToggle={this.onHistoryPopoverToggle}
-                                    configurationCascade={this.state.configurationCascade}
-                                    extensions={this.state.extensions}
-                                    extensionsEnvironment={this.state.extensionsEnvironment}
-                                    extensionsOnComponentChange={this.extensionsOnComponentChange}
-                                    extensionsController={this.state.extensionsController}
-                                />
-                            )
-                        }}
+                        render={routeComponentProps => (
+                            <Layout
+                                {...routeComponentProps}
+                                user={user}
+                                siteAdminAreaRoutes={this.props.siteAdminAreaRoutes}
+                                siteAdminSideBarItems={this.props.siteAdminSideBarItems}
+                                userAccountSideBarItems={this.props.userAccountSideBarItems}
+                                userAccountAreaRoutes={this.props.userAccountAreaRoutes}
+                                viewerSubject={this.state.viewerSubject}
+                                clientConnection={this.state.clientConnection}
+                                isLightTheme={this.state.isLightTheme}
+                                onThemeChange={this.onThemeChange}
+                                navbarSearchQuery={this.state.navbarSearchQuery}
+                                onNavbarQueryChange={this.onNavbarQueryChange}
+                                showHelpPopover={this.state.showHelpPopover}
+                                showHistoryPopover={this.state.showHistoryPopover}
+                                onHelpPopoverToggle={this.onHelpPopoverToggle}
+                                onHistoryPopoverToggle={this.onHistoryPopoverToggle}
+                                configurationCascade={this.state.configurationCascade}
+                                extensions={this.state.extensions}
+                                extensionsEnvironment={this.state.extensionsEnvironment}
+                                extensionsOnComponentChange={this.extensionsOnComponentChange}
+                                extensionsController={this.state.extensionsController}
+                            />
+                        )}
                     />
                 </BrowserRouter>
                 <Tooltip key={1} />
