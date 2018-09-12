@@ -1,20 +1,18 @@
-import { Subject, Unsubscribable } from 'rxjs'
+import { from, Subject, Unsubscribable } from 'rxjs'
 import { filter, map, mergeMap } from 'rxjs/operators'
-import { ClientOptions } from 'sourcegraph/module/client/client'
-import { ClientKey, Controller as BaseController } from 'sourcegraph/module/client/controller'
+import { Controller as BaseController, ExtensionConnectionKey } from 'sourcegraph/module/client/controller'
 import { Environment } from 'sourcegraph/module/client/environment'
-import { Contributions, ExecuteCommandParams, MessageType } from 'sourcegraph/module/protocol'
+import { ExecuteCommandParams } from 'sourcegraph/module/client/providers/command'
+import { Contributions, MessageType } from 'sourcegraph/module/protocol'
 import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
-import { BrowserConsoleTracer } from 'sourcegraph/module/protocol/jsonrpc2/trace'
+import { BrowserConsoleTracer, Trace } from 'sourcegraph/module/protocol/jsonrpc2/trace'
 import { Notification } from '../app/notifications/notification'
 import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
 import { ConfiguredExtension, isExtensionEnabled } from '../extensions/extension'
 import { ExtensionManifest } from '../schema/extension.schema'
 import { ConfigurationCascade, ConfigurationSubject, Settings } from '../settings'
-import { getSavedClientTrace } from './client'
 import { registerBuiltinClientCommands, updateConfiguration } from './clientCommands'
-import { ErrorHandler } from './errorHandler'
 import { log } from './log'
 
 /**
@@ -119,58 +117,66 @@ declare global {
  */
 export function createController<S extends ConfigurationSubject, C extends Settings>(
     context: Context<S, C>,
-    createMessageTransports: (extension: ConfiguredExtension, options: ClientOptions) => Promise<MessageTransports>
+    createMessageTransports: (extension: ConfiguredExtension) => Promise<MessageTransports>
 ): Controller<S, C> {
     const controller = new Controller<S, C>({
-        clientOptions: (key: ClientKey, options: ClientOptions, extension: ConfiguredExtension) => {
-            const errorHandler = new ErrorHandler(extension.id)
-            return {
-                createMessageTransports: () => createMessageTransports(extension, options),
-                errorHandler,
-                trace: getSavedClientTrace(key),
-                tracer: new BrowserConsoleTracer(extension.id),
-                experimentalClientCapabilities: context.experimentalClientCapabilities,
-            }
-        },
+        clientOptions: (_key: ExtensionConnectionKey, extension: ConfiguredExtension) => ({
+            createMessageTransports: () => createMessageTransports(extension),
+        }),
         environmentFilter,
+    })
+
+    // Apply trace settings.
+    //
+    // HACK(sqs): This is inefficient and doesn't unsubscribe itself.
+    controller.clientEntries.subscribe(entries => {
+        const traceEnabled = localStorage.getItem('traceExtensions') !== null
+        for (const e of entries) {
+            e.connection
+                .then(c => c.trace(traceEnabled ? Trace.Verbose : Trace.Off, new BrowserConsoleTracer(e.key.id)))
+                .catch(err => console.error(err))
+        }
     })
 
     registerBuiltinClientCommands(context, controller)
     registerExtensionContributions(controller)
 
     // Show messages (that don't need user input) as global notifications.
-    controller.showMessages.subscribe(({ message, type, extension }) =>
-        controller.notifications.next({ message, type, source: extension })
-    )
+    controller.showMessages.subscribe(({ message, type }) => controller.notifications.next({ message, type }))
 
-    function messageFromExtension(extension: string, message: string): string {
-        return `From extension ${extension}:\n\n${message}`
+    function messageFromExtension(message: string): string {
+        return `From extension:\n\n${message}`
     }
-    controller.showMessageRequests.subscribe(({ extension, message, actions, resolve }) => {
+    controller.showMessageRequests.subscribe(({ message, actions, resolve }) => {
         if (!actions || actions.length === 0) {
-            alert(messageFromExtension(extension, message))
+            alert(messageFromExtension(message))
             resolve(null)
             return
         }
         const value = prompt(
             messageFromExtension(
-                extension,
                 `${message}\n\nValid responses: ${actions.map(({ title }) => JSON.stringify(title)).join(', ')}`
             ),
             actions[0].title
         )
         resolve(actions.find(a => a.title === value) || null)
     })
-    controller.showInputs.subscribe(({ extension, message, defaultValue, resolve }) =>
-        resolve(prompt(messageFromExtension(extension, message), defaultValue))
+    controller.showInputs.subscribe(({ message, defaultValue, resolve }) =>
+        resolve(prompt(messageFromExtension(message), defaultValue))
     )
     controller.configurationUpdates
-        .pipe(mergeMap(params => updateConfiguration(context, params)))
+        .pipe(
+            mergeMap(params => {
+                const update = updateConfiguration(context, params)
+                params.resolve(update)
+                return from(update)
+            })
+        )
         .subscribe(undefined, err => console.error(err))
 
     // Print window/logMessage log messages to the browser devtools console.
-    controller.logMessages.subscribe(({ message, extension }) => {
-        log('info', extension, message)
+    controller.logMessages.subscribe(({ message }) => {
+        log('info', 'EXT', message)
     })
 
     // Debug helpers.

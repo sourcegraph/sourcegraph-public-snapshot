@@ -1,14 +1,14 @@
 import { fromEvent, Subscribable, Subscription } from 'rxjs'
 import { filter, map } from 'rxjs/operators'
-import { createMessageConnection, MessageConnection } from 'sourcegraph/module/jsonrpc2/connection'
-import { Message } from 'sourcegraph/module/jsonrpc2/messages'
+import { Connection, createConnection } from 'sourcegraph/module/protocol/jsonrpc2/connection'
+import { Message } from 'sourcegraph/module/protocol/jsonrpc2/messages'
 import {
     AbstractMessageReader,
     AbstractMessageWriter,
     DataCallback,
     MessageReader,
     MessageWriter,
-} from 'sourcegraph/module/jsonrpc2/transport'
+} from 'sourcegraph/module/protocol/jsonrpc2/transport'
 import { UpdateExtensionSettingsArgs } from './context'
 
 class SubscribableMessageReader extends AbstractMessageReader implements MessageReader {
@@ -70,8 +70,8 @@ export type Source = 'Page' | 'Client'
 /**
  * Connects the Sourcegraph extension registry page to a client (such as a browser extension) or vice versa.
  */
-function connectAs(source: Source): Promise<MessageConnection> {
-    const messageConnection = createMessageConnection({
+function connectAs(source: Source): Promise<Connection> {
+    const connection = createConnection({
         reader: new SubscribableMessageReader(
             fromEvent<MessageEvent>(window, 'message').pipe(
                 // Filter to relevant messages, ignoring our own
@@ -84,17 +84,17 @@ function connectAs(source: Source): Promise<MessageConnection> {
         }),
     })
 
-    messageConnection.listen()
+    connection.listen()
 
     return new Promise(resolve => {
-        messageConnection.onNotification('Ping', () => {
-            messageConnection.sendNotification('Pong')
-            resolve(messageConnection)
+        connection.onNotification('Ping', () => {
+            connection.sendNotification('Pong')
+            resolve(connection)
         })
-        messageConnection.onNotification('Pong', () => {
-            resolve(messageConnection)
+        connection.onNotification('Pong', () => {
+            resolve(connection)
         })
-        messageConnection.sendNotification('Ping')
+        connection.sendNotification('Ping')
     })
 }
 
@@ -110,7 +110,7 @@ export interface ClientConnection {
     getSettings: () => Promise<string>
 
     /** The underlying JSON RPC connection. */
-    rawConnection: MessageConnection
+    rawConnection: Connection
 }
 
 /** A connection to the page. */
@@ -125,7 +125,7 @@ export interface PageConnection {
     sendSettings: (settings: string) => void
 
     /** The underlying JSON RPC connection. */
-    rawConnection: MessageConnection
+    rawConnection: Connection
 }
 
 /**
