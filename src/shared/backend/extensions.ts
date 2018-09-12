@@ -1,3 +1,4 @@
+import { UpdateExtensionSettingsArgs } from '@sourcegraph/extensions-client-common/lib/context'
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { gql, graphQLContent } from '@sourcegraph/extensions-client-common/lib/graphql'
@@ -17,15 +18,14 @@ import { isEqual } from 'lodash'
 import Alert from 'mdi-react/AlertIcon'
 import MenuDown from 'mdi-react/MenuDownIcon'
 import Menu from 'mdi-react/MenuIcon'
-import { combineLatest, Observable, Subject, throwError } from 'rxjs'
+import { combineLatest, from, Observable, throwError } from 'rxjs'
 import { distinctUntilChanged, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import { ClientOptions } from 'sourcegraph/module/client/client'
 import { MessageTransports } from 'sourcegraph/module/jsonrpc2/connection'
 import { TextDocumentDecoration } from 'sourcegraph/module/protocol'
-import { ConfigurationUpdateParams } from 'sourcegraph/module/protocol'
 import uuid from 'uuid'
 import { Disposable } from 'vscode-languageserver'
-import storage from '../../browser/storage'
+import storage, { StorageItems } from '../../browser/storage'
 import { ExtensionConnectionInfo } from '../../extension/scripts/background'
 import { onFirstMessage } from '../../extension/scripts/background'
 import { getContext } from './context'
@@ -255,45 +255,7 @@ export function createExtensionsContextController(
             map(([gqlCascade, storageCascade]) => mergeCascades(gqlToCascade(gqlCascade), storageCascade)),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
-        updateExtensionSettings: (
-            subjectID,
-            args: { extensionID: string; edit?: ConfigurationUpdateParams; enabled?: boolean; remove?: boolean }
-        ) => {
-            if (subjectID !== 'Client') {
-                return throwError('Cannot update settings for ' + subjectID + '.')
-            }
-            const update = new Subject<undefined>()
-            storage.getSync(storageItems => {
-                let clientSettings = storageItems.clientSettings
-
-                const format = { tabSize: 2, insertSpaces: true, eol: '\n' }
-
-                if (args.edit) {
-                    clientSettings = applyEdits(
-                        clientSettings,
-                        // TODO(chris): remove `.slice()` (which guards against
-                        // mutation) once
-                        // https://github.com/Microsoft/node-jsonc-parser/pull/12
-                        // is merged in.
-                        setProperty(clientSettings, args.edit.path.slice(), args.edit.value, format)
-                    )
-                } else if (typeof args.enabled === 'boolean') {
-                    clientSettings = applyEdits(
-                        clientSettings,
-                        setProperty(clientSettings, ['extensions', args.extensionID], args.enabled, format)
-                    )
-                } else if (args.remove) {
-                    clientSettings = applyEdits(
-                        clientSettings,
-                        removeProperty(clientSettings, ['extensions', args.extensionID], format)
-                    )
-                }
-                storage.setSync({ clientSettings }, () => {
-                    update.next(undefined)
-                })
-            })
-            return update
-        },
+        updateExtensionSettings,
         queryGraphQL: (request, variables) =>
             storage.observeSync('sourcegraphURL').pipe(
                 take(1),
@@ -314,4 +276,42 @@ export function createExtensionsContextController(
             sourcegraphLanguageServerURL: sourcegraphLanguageServerURL.href,
         },
     })
+}
+
+export const updateExtensionSettings = (subjectID, args: UpdateExtensionSettingsArgs): Observable<undefined> => {
+    if (subjectID !== 'Client') {
+        return throwError('Cannot update settings for ' + subjectID + '.')
+    }
+    return from(
+        new Promise<StorageItems>(resolve => storage.getSync(storageItems => resolve(storageItems))).then(
+            storageItems => {
+                let clientSettings = storageItems.clientSettings
+
+                const format = { tabSize: 2, insertSpaces: true, eol: '\n' }
+
+                if ('edit' in args && args.edit) {
+                    clientSettings = applyEdits(
+                        clientSettings,
+                        // TODO(chris): remove `.slice()` (which guards against
+                        // mutation) once
+                        // https://github.com/Microsoft/node-jsonc-parser/pull/12
+                        // is merged in.
+                        setProperty(clientSettings, args.edit.path.slice(), args.edit.value, format)
+                    )
+                } else if ('extensionID' in args) {
+                    clientSettings = applyEdits(
+                        clientSettings,
+                        typeof args.enabled === 'boolean'
+                            ? setProperty(clientSettings, ['extensions', args.extensionID], args.enabled, format)
+                            : removeProperty(clientSettings, ['extensions', args.extensionID], format)
+                    )
+                }
+                return new Promise<undefined>(resolve =>
+                    storage.setSync({ clientSettings }, () => {
+                        resolve(undefined)
+                    })
+                )
+            }
+        )
+    )
 }

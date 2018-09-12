@@ -45,13 +45,17 @@ export class ConnectionCard extends React.Component<Props, State> {
         }
     }
 
+    private setContentScriptUrls(props: Props): void {
+        this.contentScriptUrls = [...props.storage.clientConfiguration.contentScriptUrls, props.storage.sourcegraphURL]
+    }
+
     public componentDidMount(): void {
-        this.contentScriptUrls = this.props.storage.clientConfiguration.contentScriptUrls
+        this.setContentScriptUrls(this.props)
         this.checkConnection()
     }
 
     public componentWillReceiveProps(nextProps: Props): void {
-        this.contentScriptUrls = nextProps.storage.clientConfiguration.contentScriptUrls
+        this.setContentScriptUrls(nextProps)
     }
 
     private sourcegraphServerAlert = (): JSX.Element => {
@@ -74,12 +78,14 @@ export class ConnectionCard extends React.Component<Props, State> {
                 </div>
             )
         }
-        const hasPermissions = this.contentScriptUrls.every(val => permissionOrigins.indexOf(`${val}/*`) >= 0)
-        if (!hasPermissions && !permissionOrigins.includes('<all_urls>')) {
+        const forbiddenUrls = permissionOrigins.includes('<all_urls>')
+            ? []
+            : this.contentScriptUrls.filter(url => !permissionOrigins.includes(`${url}/*`))
+        if (forbiddenUrls.length !== 0) {
             return (
                 <div className="pt-2">
                     <Alert color="warning">
-                        {`Missing content script permissions: ${this.contentScriptUrls.join(', ')}.`}
+                        {`Missing content script permissions: ${forbiddenUrls.join(', ')}.`}
                         <div className="pt-2">
                             <Button
                                 onClick={this.requestPermissions}
