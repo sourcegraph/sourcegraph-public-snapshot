@@ -19,7 +19,7 @@ import { startWith } from 'rxjs/operators'
 import {
     Component as ExtensionsComponent,
     EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT,
-} from 'sourcegraph/module/environment/environment'
+} from 'sourcegraph/module/client/environment'
 import { currentUser } from './auth'
 import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'

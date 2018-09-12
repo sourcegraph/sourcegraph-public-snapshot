@@ -21,10 +21,12 @@ import { isEqual } from 'lodash'
 import Warning from 'mdi-react/WarningIcon'
 import { concat, from, Observable } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, switchMap, take } from 'rxjs/operators'
-import { MessageTransports } from 'sourcegraph/module/jsonrpc2/connection'
-import { createWebWorkerMessageTransports } from 'sourcegraph/module/jsonrpc2/transports/webWorker'
+import { InitData } from 'sourcegraph/module/extension/extensionHost'
+import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
+import { createWebWorkerMessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/transports/webWorker'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
+import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { editConfiguration } from '../configuration/backend'
 import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
@@ -54,6 +56,7 @@ export function createExtensionsContextController(
                 `,
                 variables
             ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry'>>>,
+        queryLSP: requests => sendLSPHTTPRequests(requests),
         icons: {
             Loader: Loader as React.ComponentType<{ className: string; onClick?: () => void }>,
             Warning: Warning as React.ComponentType<{ className: string; onClick?: () => void }>,
@@ -129,12 +132,6 @@ export function createMessageTransports(
         )
     }
 
-    // Whether the extension is the new kind that merely exports an `activate` function and expects
-    // the extension host to run it
-    // (https://github.com/sourcegraph/sourcegraph-extension-api/pull/51). Old extensions will
-    // continue to work as before.
-    const isExportActivateExtension = !!(extension.manifest as any).__exportsActivate
-
     if (extension.manifest.url) {
         const url = extension.manifest.url
         return fetch(url, { credentials: 'same-origin' })
@@ -152,18 +149,15 @@ export function createMessageTransports(
                         type: 'application/javascript',
                     })
                 )
-                if (isExportActivateExtension) {
-                    try {
-                        const worker = new ExtensionHostWorker()
-                        worker.postMessage(blobURL)
-                        return createWebWorkerMessageTransports(worker)
-                    } catch (err) {
-                        console.error(err)
-                    }
-                    throw new Error('failed to initialize extension host')
-                } else {
-                    return createWebWorkerMessageTransports(new Worker(blobURL))
+                try {
+                    const worker = new ExtensionHostWorker()
+                    const initData: InitData = { bundleURL: blobURL }
+                    worker.postMessage(initData)
+                    return createWebWorkerMessageTransports(worker)
+                } catch (err) {
+                    console.error(err)
                 }
+                throw new Error('failed to initialize extension host')
             })
     }
     throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)

@@ -1,10 +1,10 @@
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { compact, flatten } from 'lodash'
 import { forkJoin, Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { TextDocumentDecoration } from 'sourcegraph/module/protocol'
-import { HoverMerged } from 'sourcegraph/module/types/hover'
-import { Definition, Location } from 'vscode-languageserver-types'
+import { Definition, Hover, Location, TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
+import { Hover as VSCodeHover } from 'vscode-languageserver-types'
 import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
@@ -51,17 +51,37 @@ export function getHover(
     { extensionsController }: ExtensionsControllerProps | typeof FORCE_NO_EXTENSIONS
 ): Observable<HoverMerged | null> {
     if (extensionsController && USE_PLATFORM) {
-        return extensionsController.registries.textDocumentHover.getHover({
-            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-            position: {
-                character: ctx.position.character - 1,
-                line: ctx.position.line - 1,
-            },
-        })
+        return extensionsController.registries.textDocumentHover
+            .getHover({
+                textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+                position: {
+                    character: ctx.position.character - 1,
+                    line: ctx.position.line - 1,
+                },
+            })
+            .pipe(map(hover => hover as HoverMerged | null))
     }
     return forkJoin(getModes(ctx).map(({ mode }) => fetchHover({ ...ctx, mode }))).pipe(
-        map(hovers => HoverMerged.from(hovers))
+        map(hovers => toHoverMerged(hovers))
     )
+}
+
+function toHoverMerged(values: (Hover | VSCodeHover | null)[]): HoverMerged | null {
+    const contents: HoverMerged['contents'] = []
+    let range: HoverMerged['range']
+    for (const result of values) {
+        if (result) {
+            if (Array.isArray(result.contents)) {
+                contents.push(...result.contents)
+            } else if (typeof result.contents === 'string') {
+                contents.push(result.contents)
+            }
+            if (result.range && !range) {
+                range = result.range
+            }
+        }
+    }
+    return contents.length === 0 ? null : range ? { contents, range } : { contents }
 }
 
 /**
@@ -110,7 +130,9 @@ export function getJumpURL(
             }
 
             const uri = parseRepoURI(def.uri) as LSPTextDocumentPositionParams
-            uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+            if (def.range) {
+                uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+            }
             if (uri.repoPath === ctx.repoPath && uri.commitID === ctx.commitID) {
                 // Use pretty rev from the current context for same-repo J2D.
                 uri.rev = ctx.rev

@@ -13,8 +13,7 @@ import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { TextDocumentDecoration } from 'sourcegraph/module/protocol'
-import { Range } from 'vscode-languageserver-types'
+import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
@@ -23,7 +22,7 @@ import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/Ext
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
-import { LineOrPositionOrRange, lprToRange, parseHash, toPositionOrRangeHash } from '../../util/url'
+import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
@@ -296,12 +295,8 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         document: {
                             uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
                             languageId: model.mode,
-                            version: 0,
                             text: model.content,
                         },
-                        selections:
-                            pos && pos.line !== undefined ? [{ ...(lprToRange(pos) as Range), isReversed: false }] : [],
-                        visibleRanges: [], // TODO(sqs): fill these in when there are extensions that use them
                     })
                 })
         )

@@ -5,13 +5,14 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
+import { Location } from 'sourcegraph/module/protocol/plainTypes'
 import { isError } from 'util'
-import { Location } from 'vscode-languageserver-types'
 import { parseRepoURI } from '../..'
 import { FileMatch, IFileMatch, ILineMatch } from '../../../components/FileMatch'
 import { VirtualList } from '../../../components/VirtualList'
 import { asError } from '../../../util/errors'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
+import { propertyIsDefined } from '../../../util/types'
 import { toPrettyBlobURL, toRepoURL } from '../../../util/url'
 
 export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
@@ -220,7 +221,7 @@ function refsToFileMatch(uri: string, rev: string | undefined, refs: Location[])
             url: toRepoURL(p.repoPath),
         },
         limitHit: false,
-        lineMatches: refs.map(
+        lineMatches: refs.filter(propertyIsDefined('range')).map(
             (ref): ILineMatch => ({
                 preview: '',
                 limitHit: false,

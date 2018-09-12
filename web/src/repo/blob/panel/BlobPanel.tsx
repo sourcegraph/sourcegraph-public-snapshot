@@ -19,7 +19,8 @@ import {
     switchMap,
     takeUntil,
 } from 'rxjs/operators'
-import { Location, MarkupContent, Position } from 'vscode-languageserver-types'
+import { Location, Position } from 'sourcegraph/module/protocol/plainTypes'
+import { MarkupContent } from 'vscode-languageserver-types'
 import { ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import {

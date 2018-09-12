@@ -4,7 +4,7 @@ import {
     ConfigurationSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { Component, Environment } from 'sourcegraph/module/environment/environment'
+import { Component, Environment } from 'sourcegraph/module/client/environment'
 
 /**
  * Whether the platform (Sourcegraph extensions and the extension registry) should be enabled for the viewer.
