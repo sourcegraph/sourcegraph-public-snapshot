@@ -178,7 +178,6 @@ export class Client implements Unsubscribable {
             capabilities: {
                 experimental: this.options.experimentalClientCapabilities,
             },
-            configurationCascade: { merged: {} },
             trace: this._trace || Trace.Off,
         }
 

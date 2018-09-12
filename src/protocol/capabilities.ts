@@ -1,5 +1,4 @@
 import { CommandClientCapabilities } from './command'
-import { ConfigurationClientCapabilities } from './configuration'
 import { ContributionClientCapabilities } from './contribution'
 import { ImplementationClientCapabilities } from './implementation'
 import { TextDocumentClientCapabilities } from './textDocument'
@@ -25,5 +24,4 @@ export type ClientCapabilities = _ClientCapabilities &
     CommandClientCapabilities &
     ImplementationClientCapabilities &
     TypeDefinitionClientCapabilities &
-    ConfigurationClientCapabilities &
     ContributionClientCapabilities

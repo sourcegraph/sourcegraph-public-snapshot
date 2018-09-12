@@ -1,5 +1,5 @@
 import { Subscription } from 'rxjs'
-import { InitializeParams, Settings } from '../../protocol'
+import { InitializeParams } from '../../protocol'
 import { Connection } from '../../protocol/jsonrpc2/connection'
 
 /**
@@ -7,16 +7,11 @@ import { Connection } from '../../protocol/jsonrpc2/connection'
  *
  * @template C the extension's settings
  */
-export interface SourcegraphExtensionAPI<C = Settings> {
+export interface SourcegraphExtensionAPI<C = any> {
     /**
      * The params passed by the client in the `initialize` request.
      */
     initializeParams: InitializeParams
-
-    /**
-     * The configuration settings from the client.
-     */
-    configuration: Configuration<C>
 
     /**
      * Command registration and execution.
@@ -62,58 +57,6 @@ export interface Observable<T> {
      * @internal
      */
     [Symbol.observable]?(): any
-}
-
-/**
- * Configuration settings for a specific resource (such as a file, directory, or repository) or subject (such as a
- * user or organization, depending on the client).
- *
- * It may be merged from the following sources of settings, in order:
- *
- * - Default settings
- * - Global settings
- * - Organization settings (for all organizations the user is a member of)
- * - User settings
- * - Client settings
- * - Repository settings
- * - Directory settings
- *
- * @template C configuration type
- */
-export interface Configuration<C> extends Observable<C> {
-    /**
-     * Returns a value from the configuration.
-     *
-     * @template K Valid keys on the configuration object.
-     * @param key The name of the configuration property to get.
-     * @return The configuration value, or undefined.
-     */
-    get<K extends keyof C>(key: K): C[K] | undefined
-
-    /**
-     * Observes changes to the configuration values for the given keys.
-     *
-     * @template K Valid keys on the configuration object.
-     * @param keys The names of the configuration properties to observe.
-     * @return An observable that emits when any of the keys' values change (using deep comparison).
-     */
-    watch<K extends keyof C>(...keys: K[]): Observable<Pick<C, K>>
-
-    /**
-     * Updates the configuration value for the given key. The updated configuration value is sent to the client for
-     * persistence.
-     *
-     * @template K Valid keys on the configuration object.
-     * @param key The name of the configuration property to update.
-     * @param value The new value, or undefined to remove it.
-     * @return A promise that resolves when the client acknowledges the update.
-     */
-    update<K extends keyof C>(key: K, value: C[K] | undefined): Promise<void>
-
-    // TODO: Future plans:
-    //
-    // - add a way to read configuration from a specific scope (aka subject, but "scope" is probably a better word)
-    // - describe how configuration defaults are supported
 }
 
 /**

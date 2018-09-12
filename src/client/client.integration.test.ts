@@ -32,7 +32,6 @@ describe('Client', () => {
                         try {
                             assert.deepStrictEqual(params, {
                                 capabilities: { experimental: 'test' },
-                                configurationCascade: { merged: {} },
                                 trace: Trace.Off,
                             } as InitializeParams)
                             resolve()

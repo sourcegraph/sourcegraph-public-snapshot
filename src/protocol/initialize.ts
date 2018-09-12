@@ -1,5 +1,4 @@
 import { ClientCapabilities } from './capabilities'
-import { ConfigurationCascade } from './configuration'
 
 /**
  * The initialize request is sent from the client to the server. It is sent once as the request after starting up
@@ -19,13 +18,6 @@ export interface _InitializeParams {
      * The capabilities provided by the client (editor or tool)
      */
     capabilities: ClientCapabilities
-
-    /**
-     * The configuration at initialization time. If the configuration changes on the client, the client will report
-     * the update to the extension by sending a `workspace/didChangeConfiguration`
-     * ({@link DidChangeConfigurationNotification}) notification.
-     */
-    configurationCascade: ConfigurationCascade
 
     /**
      * The initial trace setting. If omitted trace is disabled ('off').

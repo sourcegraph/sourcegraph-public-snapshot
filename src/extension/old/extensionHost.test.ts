@@ -18,7 +18,6 @@ describe('activateExtension (old)', () => {
 
         const initParams: InitializeParams = {
             capabilities: {},
-            configurationCascade: { merged: {} },
         }
         const initResult: InitializeResult = {}
 

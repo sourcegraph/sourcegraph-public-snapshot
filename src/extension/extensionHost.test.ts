@@ -19,7 +19,6 @@ describe('createExtensionHost', () => {
 
         const initParams: InitializeParams = {
             capabilities: { experimental: { a: 1 } },
-            configurationCascade: { merged: {} },
         }
         const initResult: InitializeResult = {}
 
