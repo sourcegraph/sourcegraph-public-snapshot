@@ -5,6 +5,15 @@ import { QueryResult } from './graphql'
 import * as GQL from './schema/graphqlschema'
 import { ConfigurationCascadeOrError, ConfigurationSubject, ID, Settings } from './settings'
 
+export type UpdateExtensionSettingsArgs =
+    | { edit?: ConfigurationUpdateParams }
+    | {
+          extensionID: string
+          // TODO: unclean api, allows 4 states (2 bools), but only 3 are valid (none/disabled/enabled)
+          enabled?: boolean
+          remove?: boolean
+      }
+
 /**
  * Description of the context in which extensions-client-common is running, and platform-specific hooks.
  */
@@ -15,20 +24,7 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
      */
     readonly configurationCascade: Subscribable<ConfigurationCascadeOrError<S, C>>
 
-    /**
-     * Updates the extension settings for extensionID and for the given subject.
-     */
-    updateExtensionSettings(
-        subject: ID,
-        args:
-            | { edit?: ConfigurationUpdateParams }
-            | {
-                  extensionID: string
-                  // TODO: unclean api, allows 4 states (2 bools), but only 3 are valid (none/disabled/enabled)
-                  enabled?: boolean
-                  remove?: boolean
-              }
-    ): Subscribable<void>
+    updateExtensionSettings(subject: ID, args: UpdateExtensionSettingsArgs): Subscribable<void>
 
     /**
      * Sends a request to the Sourcegraph GraphQL API and returns the response.
