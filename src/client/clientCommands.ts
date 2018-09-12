@@ -1,7 +1,7 @@
 import { isArray } from 'lodash-es'
 import { from, Subscription, throwError, Unsubscribable } from 'rxjs'
 import { switchMap, take } from 'rxjs/operators'
-import { Controller } from 'sourcegraph/module/environment/controller'
+import { Controller } from 'sourcegraph/module/client/controller'
 import {
     ActionContributionClientCommandUpdateConfiguration,
     ConfigurationUpdateParams,

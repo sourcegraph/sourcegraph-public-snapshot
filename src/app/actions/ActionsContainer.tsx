@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { Component } from 'sourcegraph/module/environment/environment'
+import { Component } from 'sourcegraph/module/client/environment'
 import { ConfigurationSubject, Settings } from '../../settings'
 import { ActionItem, ActionItemProps } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'

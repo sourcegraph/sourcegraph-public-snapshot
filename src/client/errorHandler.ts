@@ -1,5 +1,5 @@
 import { CloseAction, ErrorAction, ErrorHandler as _ErrorHandler } from 'sourcegraph/module/client/errorHandler'
-import { Message } from 'sourcegraph/module/jsonrpc2/messages'
+import { Message } from 'sourcegraph/module/protocol/jsonrpc2/messages'
 import { log } from './log'
 
 /** The extension client initialization-failed and error handler. */

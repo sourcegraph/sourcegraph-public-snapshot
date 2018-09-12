@@ -1,4 +1,4 @@
-import { Component } from 'sourcegraph/module/environment/environment'
+import { Component } from 'sourcegraph/module/client/environment'
 import { ContributableMenu, Contributions } from 'sourcegraph/module/protocol'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
