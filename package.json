@@ -24,16 +24,16 @@
     "schema:graphql": "cp ../sourcegraph/web/src/backend/graphqlschema.ts src/schema/graphqlschema.ts",
     "clean": "del-cli 'lib/**/*'",
     "typecheck": "tsc -p tsconfig.json",
-    "build": "npm run clean && npm run build:assets && npm run build:typescript",
+    "build": "yarn run clean && yarn run build:assets && yarn run build:typescript",
     "build:assets": "cpy --parents --cwd=src '**/*.{css,d.ts,json}' '../lib/'",
     "build:typescript": "tsc -p tsconfig.dist.json",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
     "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000",
     "watch:typecheck": "tsc -p tsconfig.json -w",
     "watch:build:typescript": "tsc -p tsconfig.dist.json -w",
-    "watch:build:assets": "nodemon --watch src/ --ext css,d.ts,json --exec 'npm run build:assets || exit 1'",
-    "watch:build": "npm run clean && concurrently --kill-others 'npm:watch:build:*'",
-    "watch:test": "npm run test -- -w"
+    "watch:build:assets": "nodemon --watch src/ --ext css,d.ts,json --exec 'yarn run build:assets || exit 1'",
+    "watch:build": "yarn run clean && concurrently --kill-others 'npm:watch:build:*'",
+    "watch:test": "yarn run test -- -w"
   },
   "nyc": {
     "extension": [
@@ -65,6 +65,7 @@
     "react-router-dom": "^4.3.1",
     "reactstrap": "^6.4.0",
     "rxjs": "^6.3.2",
+    "sourcegraph": "^16.0.1",
     "string-score": "^1.0.1",
     "ts-key-enum": "^2.0.0"
   },
@@ -95,7 +96,6 @@
     "react-dom": "^16.4.2",
     "semantic-release": "^15.9.12",
     "source-map-support": "^0.5.9",
-    "sourcegraph": "^16.0.1",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
     "tslint-language-service": "^0.9.9",

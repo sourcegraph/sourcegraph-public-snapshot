@@ -20,12 +20,12 @@ TODO
 ## Usage
 
 ```shell
-npm install --save @sourcegraph/extensions-client-common
+yarn add @sourcegraph/extensions-client-common
 ```
 
 ## Development
 
 ```shell
-npm install
-npm test
+yarn
+yarn test
 ```
