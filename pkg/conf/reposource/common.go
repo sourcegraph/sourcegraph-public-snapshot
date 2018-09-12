@@ -31,6 +31,10 @@ type repoSource interface {
 func CloneURLToRepoURI(cloneURL string) (repoURI api.RepoURI, err error) {
 	cfg := conf.Get()
 
+	if repoURI := customCloneURLToRepoURI(cloneURL); repoURI != "" {
+		return repoURI, nil
+	}
+
 	repoSources := make([]repoSource, 0, len(cfg.Github)+
 		len(cfg.Gitlab)+
 		len(cfg.BitbucketServer)+

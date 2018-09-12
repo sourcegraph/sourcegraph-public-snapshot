@@ -201,6 +201,14 @@ const SiteSchemaJSON = `{
         }
       }
     },
+    "git.cloneURLToRepositoryName": {
+      "description":
+        "JSON array of configuration that maps from Git clone URL to repository URI. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/CloneURLToRepositoryName"
+      }
+    },
     "github": {
       "description":
         "JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information.",
@@ -828,6 +836,25 @@ const SiteSchemaJSON = `{
         "phabricatorMetadataCommand": {
           "description":
             "Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the URI of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires ` + "`" + `bash` + "`" + ` to be installed.)",
+          "type": "string"
+        }
+      }
+    },
+    "CloneURLToRepositoryName": {
+      "description":
+        "Describes a mapping from clone URL to repository name. The ` + "`" + `from` + "`" + ` field contains a regular expression with named capturing groups. The ` + "`" + `to` + "`" + ` field contains a template string that references capturing group names. For instance, if ` + "`" + `from` + "`" + ` is \"^../(?P<name>\\w+)$\" and ` + "`" + `to` + "`" + ` is \"github.com/user/{name}\", the clone URL \"../myRepository\" would be mapped to the repository name \"github.com/user/myRepository\".",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to"],
+      "properties": {
+        "from": {
+          "description":
+            "A regular expression that matches a set of clone URLs. The regular expression should use the Go regular expression syntax (https://golang.org/pkg/regexp/) and contain at least one named capturing group. The regular expression matches partially by default, so use \"^...$\" if whole-string matching is desired.",
+          "type": "string"
+        },
+        "to": {
+          "description":
+            "The repository name output pattern. This should use ` + "`" + `{matchGroup}` + "`" + ` syntax to reference the capturing groups from the ` + "`" + `from` + "`" + ` field.",
           "type": "string"
         }
       }

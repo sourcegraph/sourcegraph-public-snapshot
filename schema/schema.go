@@ -96,6 +96,12 @@ type CXPExtensionManifest struct {
 	Url              string                  `json:"url"`
 }
 
+// CloneURLToRepositoryName description: Describes a mapping from clone URL to repository name. The `from` field contains a regular expression with named capturing groups. The `to` field contains a template string that references capturing group names. For instance, if `from` is "^../(?P<name>\w+)$" and `to` is "github.com/user/{name}", the clone URL "../myRepository" would be mapped to the repository name "github.com/user/myRepository".
+type CloneURLToRepositoryName struct {
+	From string `json:"from"`
+	To   string `json:"to"`
+}
+
 // Contributions description: Features contributed by this extension. Extensions may also register certain types of contributions dynamically.
 type Contributions struct {
 	Configuration *jsonschema.Schema `json:"configuration,omitempty"`
@@ -303,6 +309,7 @@ type SiteConfiguration struct {
 	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`
 	ExecuteGradleOriginalRootPaths    string                       `json:"executeGradleOriginalRootPaths,omitempty"`
 	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
+	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName  `json:"git.cloneURLToRepositoryName,omitempty"`
 	GitMaxConcurrentClones            int                          `json:"gitMaxConcurrentClones,omitempty"`
 	Github                            []*GitHubConnection          `json:"github,omitempty"`
 	GithubClientID                    string                       `json:"githubClientID,omitempty"`
