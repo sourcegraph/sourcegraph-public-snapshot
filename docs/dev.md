@@ -241,6 +241,8 @@ Requires "Debugger for Chrome" extension.
 
 ### Go
 
+**Note: If you run into an error `could not launch process: decoding dwarf section info at offset 0x0: too short` make sure you are on the latest delve version**
+
 - Install [Delve](https://github.com/derekparker/delve)
 - Run `DELVE=frontend,searcher ./dev/start.sh` (`DELVE` accepts a comma-separated list of components as specified in [../dev/Procfile](../dev/Procfile))
 - Set a breakpoint in VS Code (there's a bug where setting the breakpoint after attaching results in "Unverified breakpoint")
