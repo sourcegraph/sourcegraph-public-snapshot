@@ -165,6 +165,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
             )
         }
 
+        // The URL, without the trailing "/-" that `this.props.match.url` includes on sub-pages.
         const url = this.props.match.url.replace(/\/-\/?$/, '')
 
         const context: ExtensionAreaRouteContext = {
@@ -186,7 +187,7 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
                             ({ path, render, exact, condition = () => true }) =>
                                 condition(context) && (
                                     <Route
-                                        path={this.props.match.url + path}
+                                        path={url + path}
                                         exact={exact}
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         // tslint:disable-next-line:jsx-no-lambda
