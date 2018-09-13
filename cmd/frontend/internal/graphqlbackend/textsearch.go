@@ -132,7 +132,7 @@ func (lm *lineMatch) LineNumber() int32 {
 }
 
 func (lm *lineMatch) OffsetAndLengths() [][]int32 {
-	r := make([][]int32, len(lm.JOffsetAndLengths), len(lm.JOffsetAndLengths))
+	r := make([][]int32, len(lm.JOffsetAndLengths))
 	for i := range lm.JOffsetAndLengths {
 		r[i] = lm.JOffsetAndLengths[i][:]
 	}

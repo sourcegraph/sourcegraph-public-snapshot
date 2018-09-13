@@ -22,7 +22,6 @@ import (
 )
 
 var numWorkers = env.Get("NUM_WORKERS", "4", "The maximum number of indexing done in parallel.")
-var googleAPIKey = env.Get("GOOGLE_CSE_API_TOKEN", "", "API token for issuing Google:github.com search queries")
 
 var queueLength = prometheus.NewGauge(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -40,13 +39,6 @@ func main() {
 	env.HandleHelpFlag()
 
 	tracer.Init()
-
-	if googleAPIKey != "" {
-		if err := idx.Google.SetAPIKey(googleAPIKey); err != nil {
-			log.Println("Could not initialize Google API client: ", err)
-			os.Exit(1)
-		}
-	}
 
 	ctx := context.Background()
 

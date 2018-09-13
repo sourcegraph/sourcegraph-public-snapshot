@@ -181,45 +181,6 @@ func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposUnindexedDependencies(w http.ResponseWriter, r *http.Request) error {
-	var args api.RepoUnindexedDependenciesRequest
-	err := json.NewDecoder(r.Body).Decode(&args)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.Get(r.Context(), args.RepoID)
-	if err != nil {
-		return err
-	}
-	commitID, err := backend.Repos.ResolveRev(r.Context(), repo, "")
-	if err != nil {
-		return err
-	}
-	deps, err := backend.Dependencies.List(r.Context(), repo, commitID, true)
-	if err != nil {
-		return fmt.Errorf("backend.Dependencies.List failed: %s", err)
-	}
-
-	// Filter out already-indexed dependencies
-	var unfetchedDeps []*api.DependencyReference
-	for _, dep := range deps {
-		pkgs, err := db.Pkgs.ListPackages(r.Context(), &api.ListPackagesOp{Lang: args.Language, PkgQuery: depReferenceToPkgQuery(args.Language, dep), Limit: 1})
-		if err != nil {
-			return err
-		}
-		if len(pkgs) == 0 {
-			unfetchedDeps = append(unfetchedDeps, dep)
-		}
-	}
-	data, err := json.Marshal(unfetchedDeps)
-	if err != nil {
-		return err
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write(data)
-	return nil
-}
-
 func serveReposInventoryUncached(w http.ResponseWriter, r *http.Request) error {
 	var req api.ReposGetInventoryUncachedRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -605,18 +566,6 @@ func packetWrite(str string) []byte {
 		s = strings.Repeat("0", 4-len(s)%4) + s
 	}
 	return []byte(s + str)
-}
-
-// depReferenceToPkgQuery maps from a DependencyReference to a package descriptor query that
-// uniquely identifies the dependency package (typically discarding version information).  The
-// mapping can be different for different languages, so languages are handled case-by-case.
-func depReferenceToPkgQuery(lang string, dep *api.DependencyReference) map[string]interface{} {
-	switch lang {
-	case "Java":
-		return map[string]interface{}{"id": dep.DepData["id"]}
-	default:
-		return nil
-	}
 }
 
 func handlePing(w http.ResponseWriter, r *http.Request) {

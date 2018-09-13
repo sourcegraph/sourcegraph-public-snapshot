@@ -1,7 +1,6 @@
 package idx
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -50,13 +49,6 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 
 		if err := api.InternalClient.PkgsRefreshIndex(w.Ctx, repo.URI, commit); err != nil {
 			errs = append(errs, fmt.Errorf("Pkgs.RefreshIndex failed: %s", err))
-		}
-
-		if isPrimary {
-			// Spider out to index dependencies
-			if err := w.enqueueDependencies(lang, repo.ID); err != nil {
-				errs = append(errs, fmt.Errorf("Could not enqueue dependencies: %s", err))
-			}
 		}
 
 		if err := makeMultiErr(errs...); err != nil {
@@ -126,76 +118,6 @@ func (w *Worker) handleLangServersMigration(repo *api.Repo, commit api.CommitID)
 	// Automatically enable the language server for each language detected in
 	// the repository.
 	w.enableLangservers(inv)
-}
-
-// enqueueDependencies makes a best effort to enqueue dependencies of the specified repository
-// (repo) for certain languages. The languages covered are languages where the language server
-// itself cannot resolve dependencies to source repository URLs. For those languages, dependency
-// repositories must be indexed before cross-repo jump-to-def can work. enqueueDependencies tries to
-// best-effort determine what those dependencies are and enqueue them.
-func (w *Worker) enqueueDependencies(lang string, repo api.RepoID) error {
-	// do nothing if this is not a language that requires heuristic dependency resolution
-	if lang != "Java" {
-		return nil
-	}
-	log15.Info("Enqueuing dependencies for repo", "repo", repo, "lang", lang)
-
-	unfetchedDeps, err := api.InternalClient.ReposUnindexedDependencies(w.Ctx, repo, lang)
-	if err != nil {
-		return err
-	}
-
-	// Resolve and enqueue unindexed dependencies for indexing
-	resolvedDeps := resolveDependencies(w.Ctx, lang, unfetchedDeps)
-	resolvedDepsList := make([]api.RepoURI, 0, len(resolvedDeps))
-	for rawDepRepo := range resolvedDeps {
-		repo, err := api.InternalClient.ReposGetByURI(w.Ctx, rawDepRepo)
-		if err != nil {
-			log15.Warn("Could not resolve repository, skipping", "repo", rawDepRepo, "error", err)
-			continue
-		}
-		w.primary.Enqueue(repo.URI, "")
-		resolvedDepsList = append(resolvedDepsList, repo.URI)
-	}
-	log15.Info("Enqueued dependencies for repo", "repo", repo, "lang", lang, "num", len(resolvedDeps), "dependencies", resolvedDepsList)
-	return nil
-}
-
-// resolveDependencies resolves a list of DependencyReferences to a set of source repository URIs.
-// This mapping is different from language to language and is often heuristic, so different
-// languages are handled case-by-case.
-func resolveDependencies(ctx context.Context, lang string, deps []*api.DependencyReference) map[api.RepoURI]struct{} {
-	switch lang {
-	case "Java":
-		if !Google.Enabled() {
-			return nil
-		}
-
-		// Best-effort fetch from GitHub via Google Search. Equivalent to searching for "site:github.com $groupId:$artifactId".
-		depQueries := make(map[string]struct{})
-		for _, dep := range deps {
-			if dep.DepData == nil {
-				continue
-			}
-			id, ok := dep.DepData["id"].(string)
-			if !ok {
-				continue
-			}
-			depQueries[id] = struct{}{}
-		}
-		resolvedDeps := map[api.RepoURI]struct{}{}
-		for depQuery := range depQueries {
-			depRepoURI, err := Google.Search(depQuery)
-			if err != nil {
-				log15.Warn("Could not resolve dependency to repository via Google, skipping", "query", depQuery, "error", err)
-				continue
-			}
-			resolvedDeps[depRepoURI] = struct{}{}
-		}
-		return resolvedDeps
-	default:
-		return nil
-	}
 }
 
 type multiError []error

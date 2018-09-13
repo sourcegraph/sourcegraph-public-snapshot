@@ -1435,20 +1435,6 @@
   revision = "0aa4b8830f481fed77b73cf7cea2bc3129e05148"
 
 [[projects]]
-  branch = "master"
-  digest = "1:f2401297e13f0068bbb0a9accb1a8b640c70684c8b71cc8e4660db5345944645"
-  name = "google.golang.org/api"
-  packages = [
-    "customsearch/v1",
-    "gensupport",
-    "googleapi",
-    "googleapi/internal/uritemplates",
-    "googleapi/transport",
-  ]
-  pruneopts = "NUT"
-  revision = "49a9310a91459e9e5d4187bfb5a591434de572f7"
-
-[[projects]]
   digest = "1:af71cb57ffcbc389c2f8af1e6a763c0d2e6f08d2ceb64140c0fd4c57fdbc2898"
   name = "google.golang.org/appengine"
   packages = [
@@ -1906,8 +1892,6 @@
     "golang.org/x/tools/godoc/vfs",
     "golang.org/x/tools/godoc/vfs/zipfs",
     "golang.org/x/tools/imports",
-    "google.golang.org/api/customsearch/v1",
-    "google.golang.org/api/googleapi/transport",
     "gopkg.in/inconshreveable/log15.v2",
     "gopkg.in/jpoehls/gophermail.v0",
     "gopkg.in/redsync.v1",

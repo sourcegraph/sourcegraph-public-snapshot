@@ -273,18 +273,6 @@ func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoURI, error
 	return names, err
 }
 
-func (c *internalClient) ReposUnindexedDependencies(ctx context.Context, repo RepoID, lang string) ([]*DependencyReference, error) {
-	var unfetchedDeps []*DependencyReference
-	err := c.postInternal(ctx, "repos/unindexed-dependencies", RepoUnindexedDependenciesRequest{
-		RepoID:   repo,
-		Language: lang,
-	}, &unfetchedDeps)
-	if err != nil {
-		return nil, err
-	}
-	return unfetchedDeps, nil
-}
-
 func (c *internalClient) ReposUpdateMetadata(ctx context.Context, uri RepoURI, description string, fork bool, archived bool) error {
 	return c.postInternal(ctx, "repos/update-metadata", ReposUpdateMetadataRequest{
 		RepoURI:     uri,
