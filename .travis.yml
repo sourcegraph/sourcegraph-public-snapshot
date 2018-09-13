@@ -2,26 +2,27 @@ language: node_js
 node_js: '10'
 
 cache:
+  yarn: true
   directories:
-    - ~/.npm
+    - node_modules
 
 env:
   global:
     - FORCE_COLOR=1
 
 script:
-  - npm run prettier
-  - npm run tslint
-  - npm run build
-  - npm run typecheck
-  - npm run cover
+  - yarn run prettier
+  - yarn run tslint
+  - yarn run build
+  - yarn run typecheck
+  - yarn run cover
   - ./node_modules/.bin/nyc report --reporter json
   - bash <(curl -s https://codecov.io/bash)
 
 deploy:
   provider: script
   skip_cleanup: true
-  script: npm run semantic-release
+  script: yarn run semantic-release
   on:
     branch: master
 
