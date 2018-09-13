@@ -97,9 +97,7 @@ const gqlSearchQuery = `query Search(
 				description
 				proposedQueries {
 					description
-					query {
-						query
-					}
+					query
 				}
 			}
 		}
