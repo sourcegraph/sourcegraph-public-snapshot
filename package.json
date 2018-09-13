@@ -27,16 +27,16 @@
     "build:assets": "mkdir -p lib/protocol && typescript-json-schema --id 'https://sourcegraph.com/v1/contribution.schema.json' --noExtraProps --required --include src/protocol/contribution.ts --out lib/protocol/contribution.schema.json tsconfig.dist.json Contributions && node -e \"/* Deletes the top-level additionalProperties property in the file. */ fs = require('fs');f = process.argv[1];o = JSON.parse(fs.readFileSync(f, 'utf8'));delete o.additionalProperties;fs.writeFileSync(f, JSON.stringify(o, null, 4))\" lib/protocol/contribution.schema.json",
     "build:module": "tsc -p tsconfig.dist.json",
     "build:api": "mkdir -p lib/extension && cpy src/sourcegraph.d.ts lib/ && cpy src/extension/index.js lib/extension",
-    "build": "npm run build:module && npm run build:assets && npm run build:api",
+    "build": "yarn run build:module && yarn run build:assets && yarn run build:api",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --opts mocha.opts",
     "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register --all mocha --opts mocha.opts --timeout 10000",
     "watch:typecheck": "tsc -p tsconfig.json -w",
-    "watch:build:assets": "npm run build:assets && nodemon --watch src/protocol/contribution.ts --exec 'npm run build:assets || exit 1'",
+    "watch:build:assets": "yarn run build:assets && nodemon --watch src/protocol/contribution.ts --exec 'yarn run build:assets || exit 1'",
     "watch:build:module": "tsc -p tsconfig.dist.json -w",
-    "watch:build:api": "nodemon --watch src/sourcegraph.d.ts --watch src/extension/index.js --ext ts,js --exec 'npm run build:api'",
+    "watch:build:api": "nodemon --watch src/sourcegraph.d.ts --watch src/extension/index.js --ext ts,js --exec 'yarn run build:api'",
     "watch:build": "concurrently --kill-others 'npm:watch:build:*'",
-    "watch:test": "npm run test -- -w",
-    "watch:cover": "nodemon --watch src/ --ext ts,js,json --watch package.json --exec 'npm run cover || exit 1'"
+    "watch:test": "yarn run test -- -w",
+    "watch:cover": "nodemon --watch src/ --ext ts,js,json --watch package.json --exec 'yarn run cover || exit 1'"
   },
   "nyc": {
     "extension": [

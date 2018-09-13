@@ -81,8 +81,8 @@ Adapters make it so that Sourcegraph extensions can modify the UI of existing to
 ## Development
 
 ```shell
-npm install
-npm test
+yarn
+yarn test
 ```
 
 ## Acknowledgments
