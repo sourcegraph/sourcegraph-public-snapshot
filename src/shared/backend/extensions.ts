@@ -11,8 +11,8 @@ import {
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { applyEdits } from '@sqs/jsonc-parser'
 import * as JSONC from '@sqs/jsonc-parser'
+import { applyEdits } from '@sqs/jsonc-parser'
 import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { isEqual } from 'lodash'
 import Alert from 'mdi-react/AlertIcon'
@@ -20,17 +20,17 @@ import MenuDown from 'mdi-react/MenuDownIcon'
 import Menu from 'mdi-react/MenuIcon'
 import { combineLatest, from, Observable, throwError } from 'rxjs'
 import { distinctUntilChanged, map, mergeMap, switchMap, take } from 'rxjs/operators'
-import { ClientOptions } from 'sourcegraph/module/client/client'
-import { MessageTransports } from 'sourcegraph/module/jsonrpc2/connection'
-import { TextDocumentDecoration } from 'sourcegraph/module/protocol'
+import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
+import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import uuid from 'uuid'
 import { Disposable } from 'vscode-languageserver'
 import storage, { StorageItems } from '../../browser/storage'
-import { ExtensionConnectionInfo } from '../../extension/scripts/background'
 import { onFirstMessage } from '../../extension/scripts/background'
+import { ExtensionConnectionInfo } from '../../extension/scripts/background'
 import { getContext } from './context'
 import { createAggregateError, isErrorLike } from './errors'
 import { queryGraphQL } from './graphql'
+import { sendLSPHTTPRequests } from './lsp'
 import { createPortMessageTransports } from './PortMessageTransports'
 
 const createPlatformMessageTransports = (connectionInfo: ExtensionConnectionInfo) =>
@@ -48,8 +48,7 @@ const createPlatformMessageTransports = (connectionInfo: ExtensionConnectionInfo
     })
 
 export function createMessageTransports(
-    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
-    options: ClientOptions
+    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>
 ): Promise<MessageTransports> {
     if (!extension.manifest) {
         throw new Error(`unable to connect to extension ${JSON.stringify(extension.id)}: no manifest found`)
@@ -263,6 +262,7 @@ export function createExtensionsContextController(
                     queryGraphQL(getContext({ repoKey: '', isRepoSpecific: false }), request, variables, url)
                 )
             ),
+        queryLSP: requests => sendLSPHTTPRequests(requests),
         icons: {
             Loader: LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>,
             Warning: Alert as React.ComponentType<{ className: string; onClick?: () => void }>,

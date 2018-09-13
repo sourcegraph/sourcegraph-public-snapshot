@@ -4,6 +4,8 @@ import '../../config/polyfill'
 
 import { without } from 'lodash'
 import { ajax } from 'rxjs/ajax'
+import { InitData } from 'sourcegraph/module/extension/extensionHost'
+import ExtensionHostWorker from 'worker-loader?inline!./extensionHost.worker'
 import * as browserAction from '../../browser/browserAction'
 import * as contextMenus from '../../browser/contextMenu'
 import * as omnibox from '../../browser/omnibox'
@@ -393,7 +395,18 @@ function spawnWebWorkerFromURL(url: string): Promise<Worker> {
         responseType: 'blob',
     })
         .toPromise()
-        .then(response => new Worker(window.URL.createObjectURL(response.response)))
+        .then(response => {
+            const blobURL = window.URL.createObjectURL(response.response)
+            try {
+                const worker = new ExtensionHostWorker()
+                const initData: InitData = { bundleURL: blobURL }
+                worker.postMessage(initData)
+                return worker
+            } catch (err) {
+                console.error(err)
+            }
+            throw new Error('failed to initialize extension host')
+        })
 }
 
 /**

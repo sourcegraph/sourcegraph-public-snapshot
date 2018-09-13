@@ -4,8 +4,8 @@ import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-c
 import { from, Observable, of, OperatorFunction, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
+import { HoverMerged } from 'sourcegraph/module/client/types/hover'
 import { TextDocumentPositionParams } from 'sourcegraph/module/protocol'
-import { HoverMerged } from 'sourcegraph/module/types/hover'
 import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
 import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import {
@@ -42,6 +42,31 @@ const unsupportedModes = new Set<string>()
 
 export function isEmptyHover(hover: HoverMerged | null): boolean {
     return !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
+}
+
+export function sendLSPHTTPRequests(requests: any[]): Observable<any> {
+    const urlPathHint = requests[1] && requests[1].method
+    return ajax({
+        method: 'POST',
+        url: `${sourcegraphUrl}/.api/xlang/${urlPathHint || ''}`,
+        headers: getHeaders(),
+        crossDomain: true,
+        withCredentials: true,
+        body: JSON.stringify(requests),
+        async: true,
+    }).pipe(
+        // Workaround for https://github.com/ReactiveX/rxjs/issues/3606
+        tap(response => {
+            if (response.status === 0) {
+                throw Object.assign(new Error('Ajax status 0'), response)
+            }
+        }),
+        catchError<AjaxResponse, never>(err => {
+            normalizeAjaxError(err)
+            throw err
+        }),
+        map(({ response }) => response)
+    )
 }
 
 function wrapLSP(req: LSPRequest, ctx: AbsoluteRepo, path: string): any[] {

@@ -10,20 +10,19 @@ import {
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
-import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
 import {
     Controller as ClientController,
     createController,
 } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
 import { isErrorLike } from '@sourcegraph/extensions-client-common/lib/errors'
+import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
+import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import {
     ConfigurationCascadeOrError,
     ConfiguredSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
-import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
 import { identity } from 'lodash'
 import mermaid from 'mermaid'
 import * as React from 'react'
@@ -34,8 +33,8 @@ import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { Disposable } from 'vscode-languageserver'
 import { findElementWithOffset, getTargetLineAndOffset, GitHubBlobUrl } from '.'
 import storage from '../../browser/storage'
-import { applyDecoration, createMessageTransports } from '../../shared/backend/extensions'
 import { createExtensionsContextController } from '../../shared/backend/extensions'
+import { applyDecoration, createMessageTransports } from '../../shared/backend/extensions'
 import {
     createJumpURLFetcher,
     createLSPFromExtensions,
@@ -133,10 +132,10 @@ function injectCodeIntelligence(): void {
     if (isSingleCodeFile && useExtensions && filePath) {
         extensionsContextController = createExtensionsContextController(sourcegraphUrl)
         extensionsController = createController(extensionsContextController.context, createMessageTransports)
-        simpleProviderFns = createLSPFromExtensions(extensionsController)
+        simpleProviderFns = createLSPFromExtensions(extensionsController!)
 
-        const constExtensionsContextController = extensionsContextController
-        const constController = extensionsController
+        const constExtensionsContextController = extensionsContextController!
+        const constController = extensionsController!
 
         injectExtensionsGlobalComponents({
             extensionsController: constController,
@@ -220,11 +219,8 @@ function injectCodeIntelligence(): void {
                                         document: {
                                             uri: toURIWithPath({ repoPath, commitID, filePath }),
                                             languageId: getModeFromPath(filePath) || 'could not determine mode',
-                                            version: 0,
                                             text: gitHubCurrentFileContent,
                                         },
-                                        selections: [],
-                                        visibleRanges: [],
                                     },
                                     extensions: configuredExtensions,
                                     configuration: logThenDropConfigurationErrors(configurationCascade),
@@ -322,17 +318,6 @@ function injectExtensionsGlobalComponents({
     extensionsController: ClientController<ConfigurationSubject, Settings>
     extensionsContextController: Controller<ConfigurationSubject, Settings>
 }): void {
-    const statusElem = document.createElement('div')
-    statusElem.className = 'sourcegraph-extensions-global'
-    document.body.appendChild(statusElem)
-    render(
-        <ExtensionStatusPopover
-            extensionsController={extensionsController}
-            caretIcon={extensionsContextController.context.icons.CaretDown}
-            loaderIcon={extensionsContextController.context.icons.Loader}
-        />,
-        statusElem
-    )
     const headerElem = document.querySelector('div.HeaderMenu>div:last-child')
     if (headerElem) {
         const commandListElem = document.createElement('div')
