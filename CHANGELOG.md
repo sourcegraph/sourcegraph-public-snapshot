@@ -9,7 +9,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
-- Reduced the size of in-memory data structured used for storing search results. This should reduce the backend memory usage of large result sets.
+- Reduced the size of in-memory data structured used for storing search results. This shdould reduce the backend memory usage of large result sets.
 
 ### Added
 
@@ -22,6 +22,16 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Removed
 
 - The deprecated environment variables `SRC_SESSION_STORE_REDIS` and `REDIS_MASTER_ENDPOINT` are no longer used to configure alternative redis endpoints. For more information view the [External Database](https://about.sourcegraph.com/docs/config/external-database) documentation.
+
+## 2.11.1
+
+### Added
+
+- A new site config option `git.cloneURLToRepositoryName` specifies manual mapping from Git clone URLs to Sourcegraph repository names. This is useful, for example, for Git submodules that have local clone URLs.
+
+### Fixed
+
+- Slack notifications for saved searches have been fixed.
 
 ## 2.11.0
 
@@ -52,6 +62,12 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Creation of a new user with the same name as an existing organization (and vice versa) is prevented.
 
 ### Removed
+
+## 2.10.5
+
+### Fixed
+
+- Slack notifications for saved searches have been fixed.
 
 ## 2.10.4
 
