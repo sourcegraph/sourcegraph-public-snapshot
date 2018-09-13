@@ -1,5 +1,5 @@
 import { tryCatchPromise } from '../util'
-import { createExtensionHost } from './extensionHost'
+import { createExtensionHost, InitData } from './extensionHost'
 
 interface MessageEvent {
     data: any
@@ -23,8 +23,8 @@ interface DedicatedWorkerGlobalScope {
 /**
  * The entrypoint for Web Workers that are spawned to run an extension.
  *
- * To initialize the worker, the parent sends it a message whose data is a URL of the extension's JavaScript
- * bundle.
+ * To initialize the worker, the parent sends it a message whose data is an object conforming to the
+ * {@link InitData} interface. Among other things, this contains the URL of the extension's JavaScript bundle.
  *
  * @param self The worker's `self` global scope.
  */
@@ -40,13 +40,13 @@ export function extensionHostWorkerMain(self: DedicatedWorkerGlobalScope): void 
             self.close()
         }
 
-        const bundleURL: string = ev.data
-        if (typeof bundleURL !== 'string' || !bundleURL.startsWith('blob:')) {
-            console.error(`Invalid extension bundle URL: ${bundleURL}`)
+        const initData: InitData = ev.data
+        if (typeof initData.bundleURL !== 'string' || !initData.bundleURL.startsWith('blob:')) {
+            console.error(`Invalid extension bundle URL: ${initData.bundleURL}`)
             self.close()
         }
 
-        const api = createExtensionHost()
+        const api = createExtensionHost(initData)
         // Make `import 'sourcegraph'` or `require('sourcegraph')` return the extension host's
         // implementation of the `sourcegraph` module.
         ;(self as any).require = (modulePath: string): any => {
@@ -60,7 +60,7 @@ export function extensionHostWorkerMain(self: DedicatedWorkerGlobalScope): void 
         // `module` property.
         ;(self as any).exports = {}
         ;(self as any).module = {}
-        self.importScripts(bundleURL)
+        self.importScripts(initData.bundleURL)
         const extensionExports = (self as any).module.exports
         delete (self as any).module
 

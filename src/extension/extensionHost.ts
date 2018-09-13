@@ -31,23 +31,36 @@ const consoleLogger: Logger = {
 }
 
 /**
+ * Required information when initializing an extension host.
+ */
+export interface InitData {
+    /** The URL to the JavaScript source file (that exports an `activate` function) for the extension. */
+    bundleURL: string
+
+    /** @see {@link module:sourcegraph.internal.sourcegraphURL} */
+    sourcegraphURL: string
+}
+
+/**
  * Creates the Sourcegraph extension host and the extension API handle (which extensions access with `import
  * sourcegraph from 'sourcegraph'`).
  *
+ * @param initData The information to initialize this extension host.
  * @param transports The message reader and writer to use for communication with the client. Defaults to
  *                   communicating using self.postMessage and MessageEvents with the parent (assuming that it is
  *                   called in a Web Worker).
  * @return The extension API.
  */
 export function createExtensionHost(
+    initData: InitData,
     transports: MessageTransports = createWebWorkerMessageTransports()
 ): typeof sourcegraph {
     const connection = createConnection(transports, consoleLogger)
     connection.listen()
-    return createExtensionHandle(connection)
+    return createExtensionHandle(initData, connection)
 }
 
-function createExtensionHandle(connection: Connection): typeof sourcegraph {
+function createExtensionHandle(initData: InitData, connection: Connection): typeof sourcegraph {
     const subscription = new Subscription()
     subscription.add(connection)
 
@@ -127,6 +140,7 @@ function createExtensionHandle(connection: Connection): typeof sourcegraph {
         internal: {
             sync,
             updateContext: updates => context.updateContext(updates),
+            sourcegraphURL: new URI(initData.sourcegraphURL),
         },
     }
 }
