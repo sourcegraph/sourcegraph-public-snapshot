@@ -39,6 +39,16 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
     ): Subscribable<QueryResult<Pick<GQL.IQuery, 'extensionRegistry'>>>
 
     /**
+     * Sends a batch of LSP requests to the Sourcegraph LSP gateway API and returns the result.
+     *
+     * @param requests An array of LSP requests (with methods `initialize`, the (optional) request, `shutdown`,
+     *                 `exit`).
+     * @return Observable that emits the result and then completes, or an error if the request fails. The value is
+     *         an array of LSP responses.
+     */
+    queryLSP(requests: object[]): Subscribable<object[]>
+
+    /**
      * React components for icons. They are expected to size themselves appropriately with the surrounding DOM flow
      * content.
      */

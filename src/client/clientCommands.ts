@@ -17,7 +17,7 @@ import { ConfigurationCascade, ConfigurationSubject, Settings } from '../setting
  * documentation.
  */
 export function registerBuiltinClientCommands<S extends ConfigurationSubject, C extends Settings>(
-    context: Pick<Context<S, C>, 'configurationCascade' | 'updateExtensionSettings'>,
+    context: Pick<Context<S, C>, 'configurationCascade' | 'updateExtensionSettings' | 'queryGraphQL' | 'queryLSP'>,
     controller: Controller<ConfiguredExtension, ConfigurationCascade<S, C>>
 ): Unsubscribable {
     const subscription = new Subscription()
@@ -45,6 +45,29 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
                 const args = anyArgs as ActionContributionClientCommandUpdateConfiguration['commandArguments']
                 return updateConfiguration(context, convertUpdateConfigurationCommandArgs(args))
             },
+        })
+    )
+
+    /**
+     * Sends a GraphQL request to the Sourcegraph GraphQL API and returns the result. The request is performed
+     * with the privileges of the current user.
+     */
+    subscription.add(
+        controller.registries.commands.registerCommand({
+            command: 'queryGraphQL',
+            run: (query: string, variables: { [name: string]: any }): Promise<any> =>
+                from(context.queryGraphQL(query, variables)).toPromise(),
+        })
+    )
+
+    /**
+     * Sends a batched LSP request to the Sourcegraph LSP gateway API and returns the result. The request is
+     * performed with the privileges of the current user.
+     */
+    subscription.add(
+        controller.registries.commands.registerCommand({
+            command: 'queryLSP',
+            run: requests => from(context.queryLSP(requests)).toPromise(),
         })
     )
 
