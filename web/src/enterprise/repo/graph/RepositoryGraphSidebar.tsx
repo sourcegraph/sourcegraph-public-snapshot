@@ -1,12 +1,12 @@
 import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
-import * as GQL from '../../backend/graphqlschema'
+import * as GQL from '../../../backend/graphqlschema'
 import {
     SIDEBAR_BUTTON_CLASS,
     SIDEBAR_CARD_CLASS,
     SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
-} from '../../components/Sidebar'
+} from '../../../components/Sidebar'
 
 interface Props extends RouteComponentProps<any> {
     className: string

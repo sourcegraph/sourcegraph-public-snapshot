@@ -17,6 +17,7 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
+import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -39,6 +40,7 @@ export interface LayoutProps
     siteAdminSideBarItems: SiteAdminSideBarItems
     userAccountSideBarItems: UserAccountSidebarItems
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
 
     user: GQL.IUser | null
 

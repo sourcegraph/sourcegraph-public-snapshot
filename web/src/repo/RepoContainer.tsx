@@ -8,6 +8,7 @@ import { parseBrowserRepoURL } from '.'
 import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
+import { RepositoryGraphAction } from '../enterprise/repo/graph/RepositoryGraphAction'
 import { ExtensionsComponentProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
@@ -18,11 +19,10 @@ import { EREPONOTFOUND, EREPOSEEOTHER, fetchRepository, RepoSeeOtherError, Resol
 import { RepositoryBranchesArea } from './branches/RepositoryBranchesArea'
 import { RepositoryCommitPage } from './commit/RepositoryCommitPage'
 import { RepositoryCompareArea } from './compare/RepositoryCompareArea'
-import { RepositoryGraphAction } from './graph/RepositoryGraphAction'
 import { RepositoryReleasesArea } from './releases/RepositoryReleasesArea'
 import { RepoHeader, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
-import { RepoRevContainer } from './RepoRevContainer'
+import { RepoRevContainer, RepoRevContainerRoute } from './RepoRevContainer'
 import { RepositoryErrorPage } from './RepositoryErrorPage'
 import { RepositoryGitDataContainer } from './RepositoryGitDataContainer'
 import { RepoSettingsArea } from './settings/RepoSettingsArea'
@@ -32,17 +32,18 @@ const RepoPageNotFound: React.SFC = () => (
     <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="The repository page was not found." />
 )
 
-interface Props
+export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         ExtensionsProps,
         ExtensionsComponentProps,
         ExtensionsControllerProps {
+    repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     user: GQL.IUser | null
     onHelpPopoverToggle: () => void
     isLightTheme: boolean
 }
 
-interface State extends ParsedRepoRev {
+interface RepoRevContainerState extends ParsedRepoRev {
     filePath?: string
     rest?: string
 
@@ -70,13 +71,13 @@ const enableRepositoryGraph = localStorage.getItem('repositoryGraph') !== null
 /**
  * Renders a horizontal bar and content for a repository page.
  */
-export class RepoContainer extends React.Component<Props, State> {
+export class RepoContainer extends React.Component<RepoContainerProps, RepoRevContainerState> {
     private routeMatchChanges = new Subject<{ repoRevAndRest: string }>()
     private repositoryUpdates = new Subject<Partial<GQL.IRepository>>()
     private repositoryAdds = new Subject<void>()
     private subscriptions = new Subscription()
 
-    constructor(props: Props) {
+    constructor(props: RepoContainerProps) {
         super(props)
 
         this.state = {
@@ -147,7 +148,7 @@ export class RepoContainer extends React.Component<Props, State> {
         )
     }
 
-    public componentWillReceiveProps(props: Props): void {
+    public componentWillReceiveProps(props: RepoContainerProps): void {
         if (props.match.params !== this.props.match.params) {
             this.routeMatchChanges.next(props.match.params)
         }
@@ -266,6 +267,7 @@ export class RepoContainer extends React.Component<Props, State> {
                                     <RepoRevContainer
                                         {...routeComponentProps}
                                         {...transferProps}
+                                        routes={this.props.repoRevContainerRoutes}
                                         rev={this.state.rev || ''}
                                         resolvedRevOrError={this.state.resolvedRevOrError}
                                         onResolvedRevOrError={this.onResolvedRevOrError}

@@ -1,7 +1,7 @@
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import * as React from 'react'
-import { ActionItem } from '../../components/ActionItem'
-import { encodeRepoRev } from '../../util/url'
+import { ActionItem } from '../../../components/ActionItem'
+import { encodeRepoRev } from '../../../util/url'
 
 /**
  * A repository header action links to the repository graph area.
