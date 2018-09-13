@@ -698,8 +698,13 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 // gitDir/info/attributes. This will override .gitattributes inside of
 // repositories. It is used to unset attributes such as export-ignore.
 func setGitAttributes(gitDir string) error {
+	infoDir := filepath.Join(gitDir, "info")
+	if err := os.Mkdir(infoDir, os.ModePerm); err != nil && !os.IsExist(err) {
+		return errors.Wrap(err, "failed to set git attributes")
+	}
+
 	_, err := updateFileIfDifferent(
-		filepath.Join(gitDir, "info/attributes"),
+		filepath.Join(infoDir, "attributes"),
 		[]byte(`# Managed by Sourcegraph gitserver.
 
 # We want every file to be present in git archive.

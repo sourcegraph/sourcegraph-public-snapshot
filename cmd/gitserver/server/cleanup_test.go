@@ -167,21 +167,27 @@ func TestCleanupOldLocks(t *testing.T) {
 
 	assertPaths(t, root,
 		"github.com/foo/empty/.git/HEAD",
+		"github.com/foo/empty/.git/info/attributes",
 
 		"github.com/foo/freshconfiglock/.git/HEAD",
 		"github.com/foo/freshconfiglock/.git/config.lock",
+		"github.com/foo/freshconfiglock/.git/info/attributes",
 
 		"github.com/foo/freshpacked/.git/HEAD",
 		"github.com/foo/freshpacked/.git/packed-refs.lock",
+		"github.com/foo/freshpacked/.git/info/attributes",
 
 		"github.com/foo/staleconfiglock/.git/HEAD",
+		"github.com/foo/staleconfiglock/.git/info/attributes",
 
 		"github.com/foo/stalepacked/.git/HEAD",
+		"github.com/foo/stalepacked/.git/info/attributes",
 
 		"github.com/foo/refslock/.git/HEAD",
 		"github.com/foo/refslock/.git/refs/heads/fresh",
 		"github.com/foo/refslock/.git/refs/heads/fresh.lock",
 		"github.com/foo/refslock/.git/refs/heads/stale",
+		"github.com/foo/refslock/.git/info/attributes",
 	)
 }
 
