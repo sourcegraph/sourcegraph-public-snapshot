@@ -158,10 +158,13 @@ func main() {
 		appBase := strings.TrimPrefix(app, "enterprise/")
 
 		var cmdDir string
+		var pkgPath string
 		if isEnterprise {
 			cmdDir = "./enterprise/cmd/" + appBase
+			pkgPath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/" + appBase
 		} else {
 			cmdDir = "./cmd/" + appBase
+			pkgPath = "github.com/sourcegraph/sourcegraph/cmd/" + appBase
 		}
 
 		if _, err := os.Stat(cmdDir); err != nil {
@@ -188,7 +191,7 @@ func main() {
 		} else {
 			cmds = append(cmds,
 				Cmd("go build github.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/godockerize"),
-				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --go-build-flags='-ldflags' --go-build-flags='-X github.com/sourcegraph/sourcegraph/pkg/version.version=%s' --env VERSION=%s github.com/sourcegraph/sourcegraph/cmd/%s", image, version, version, version, app)),
+				Cmd(fmt.Sprintf("./godockerize build -t %s:%s --go-build-flags='-ldflags' --go-build-flags='-X github.com/sourcegraph/sourcegraph/pkg/version.version=%s' --env VERSION=%s %s", image, version, version, version, pkgPath)),
 			)
 		}
 		cmds = append(cmds,
