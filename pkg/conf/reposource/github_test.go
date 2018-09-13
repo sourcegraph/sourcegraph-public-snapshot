@@ -26,7 +26,7 @@ func TestGitHub_cloneURLToRepoURI(t *testing.T) {
 		},
 	}, {
 		conn: schema.GitHubConnection{
-			Url: "https://github.mycompany.com",
+			Url:                   "https://github.mycompany.com",
 			RepositoryPathPattern: "{nameWithOwner}",
 		},
 		urls: []urlURI{
