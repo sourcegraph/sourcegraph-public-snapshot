@@ -47,7 +47,7 @@ export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, 
             {items.secondary.map(
                 ({ label, to, exact, condition = () => true }) =>
                     condition({}) && (
-                        <SidebarNavItem to={to} exact={exact}>
+                        <SidebarNavItem to={to} exact={exact} key={label}>
                             {label}
                         </SidebarNavItem>
                     )
@@ -59,7 +59,7 @@ export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, 
                 {items.auth.map(
                     ({ label, to, exact, condition = () => true }) =>
                         condition({}) && (
-                            <SidebarNavItem to={to} exact={exact}>
+                            <SidebarNavItem to={to} exact={exact} key={label}>
                                 {label}
                             </SidebarNavItem>
                         )
@@ -73,7 +73,7 @@ export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, 
                     {items.registry.map(
                         ({ label, to, exact, condition = () => true }) =>
                             condition({}) && (
-                                <SidebarNavItem to={to} exact={exact}>
+                                <SidebarNavItem to={to} exact={exact} key={label}>
                                     {label}
                                 </SidebarNavItem>
                             )
@@ -86,7 +86,7 @@ export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, 
                 {items.other.map(
                     ({ label, to, exact, condition = () => true }) =>
                         condition({}) && (
-                            <SidebarNavItem to={to} exact={exact}>
+                            <SidebarNavItem to={to} exact={exact} key={label}>
                                 {label}
                             </SidebarNavItem>
                         )
