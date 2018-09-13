@@ -800,7 +800,7 @@ declare module 'sourcegraph' {
          * @return A {@link Promise} that resolves to the result of the given command.
          * @throws If no command exists wih the given command identifier, an error is thrown.
          */
-        export function executeCommand<T>(command: string, ...args: any[]): Promise<T>
+        export function executeCommand<T = any>(command: string, ...args: any[]): Promise<T>
     }
 
     export interface ContextValues {
