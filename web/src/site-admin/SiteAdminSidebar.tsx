@@ -44,14 +44,16 @@ export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, 
             </SidebarGroupItems>
         </SidebarGroup>
         <SidebarGroup>
-            {items.secondary.map(
-                ({ label, to, exact, condition = () => true }) =>
-                    condition({}) && (
-                        <SidebarNavItem to={to} exact={exact} key={label}>
-                            {label}
-                        </SidebarNavItem>
-                    )
-            )}
+            <SidebarGroupItems>
+                {items.secondary.map(
+                    ({ label, to, exact, condition = () => true }) =>
+                        condition({}) && (
+                            <SidebarNavItem to={to} exact={exact} key={label}>
+                                {label}
+                            </SidebarNavItem>
+                        )
+                )}
+            </SidebarGroupItems>
         </SidebarGroup>
         <SidebarGroup>
             <SidebarGroupHeader icon={LockIcon} label="Auth" />
