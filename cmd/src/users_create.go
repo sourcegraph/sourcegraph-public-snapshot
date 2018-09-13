@@ -35,7 +35,7 @@ Examples:
   $username: String!,
   $email: String!,
 ) {
-  createUserBySiteAdmin(
+  createUser(
     username: $username,
     email: $email,
   ) {
@@ -44,7 +44,7 @@ Examples:
 }`
 
 		var result struct {
-			CreateUserBySiteAdmin struct {
+			CreateUser struct {
 				ResetPasswordURL string
 			}
 		}
@@ -57,9 +57,9 @@ Examples:
 			result: &result,
 			done: func() error {
 				fmt.Printf("User %q created.\n", *usernameFlag)
-				if *resetPasswordURLFlag && result.CreateUserBySiteAdmin.ResetPasswordURL != "" {
+				if *resetPasswordURLFlag && result.CreateUser.ResetPasswordURL != "" {
 					fmt.Println()
-					fmt.Printf("\tReset pasword URL: %s\n", result.CreateUserBySiteAdmin.ResetPasswordURL)
+					fmt.Printf("\tReset pasword URL: %s\n", result.CreateUser.ResetPasswordURL)
 				}
 				return nil
 			},
