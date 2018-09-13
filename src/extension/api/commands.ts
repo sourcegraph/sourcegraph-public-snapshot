@@ -29,7 +29,7 @@ export class ExtCommands implements ExtCommandsAPI {
      * to execute the command because the desired command might be implemented on the client (or otherwise not in
      * this extension host).
      */
-    public executeCommand(command: string, ...args: any[]): Promise<any> {
+    public executeCommand(command: string, args: any[]): Promise<any> {
         return this.proxy.$executeCommand(command, args)
     }
 
