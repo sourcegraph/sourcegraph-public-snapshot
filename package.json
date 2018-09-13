@@ -23,7 +23,14 @@
       "@commitlint/config-conventional"
     ]
   },
+  "browserslist": [
+    "last 3 Chrome versions",
+    "last 3 Firefox versions"
+  ],
   "devDependencies": {
+    "@babel/core": "^7.0.1",
+    "@babel/polyfill": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
     "@commitlint/cli": "^7.0.0",
     "@commitlint/config-conventional": "^7.0.1",
     "@semantic-release/exec": "^3.1.0",
@@ -53,11 +60,7 @@
     "@types/uuid": "3.4.4",
     "@types/webpack": "4.4.11",
     "autoprefixer": "^9.0.0",
-    "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.4",
-    "babel-plugin-add-module-exports": "^0.2.1",
-    "babel-plugin-transform-new-target": "^7.0.0-alpha.14",
-    "babel-preset-env": "^1.6.1",
+    "babel-loader": "^8.0.2",
     "css-loader": "^1.0.0",
     "cypress": "^3.1.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",

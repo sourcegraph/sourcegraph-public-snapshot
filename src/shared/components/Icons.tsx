@@ -3,8 +3,7 @@
 import * as React from 'react'
 import { render } from 'react-dom'
 import CloseIcon from 'mdi-react/CloseIcon'
-
-const IconBase = require('react-icon-base')
+import IconBase from 'react-icon-base'
 
 export class SourcegraphIcon extends React.Component<any, {}> {
     public render(): JSX.Element {

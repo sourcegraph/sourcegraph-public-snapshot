@@ -1,4 +1,3 @@
-import UglifyJsPlugin from 'uglifyjs-webpack-plugin'
 import * as webpack from 'webpack'
 import baseConfig from './base.config'
 import { generateBundleUID } from './utils'
@@ -10,16 +9,6 @@ export default {
     mode: 'production',
     optimization: {
         minimize: true,
-        minimizer: [
-            new UglifyJsPlugin({
-                output: {
-                    // Without this, Uglify will change \u0000 to \0 (NULL byte),
-                    // which causes Chrome to complain that the bundle is not UTF8
-                    ascii_only: true,
-                    beautify: false,
-                },
-            }),
-        ],
     },
     plugins: (plugins || []).concat(
         ...[

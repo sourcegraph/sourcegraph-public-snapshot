@@ -10,6 +10,13 @@ const backgroundEntry = '../src/config/background.entry.js'
 const pageEntry = '../src/config/page.entry.js'
 const extEntry = '../src/config/extension.entry.js'
 
+const babelLoader: webpack.RuleSetUseItem = {
+    loader: 'babel-loader',
+    options: {
+        cacheDirectory: true,
+    },
+}
+
 export default {
     entry: {
         background: buildEntry(extEntry, backgroundEntry, '../src/extension/scripts/background.tsx'),
@@ -41,11 +48,12 @@ export default {
             {
                 test: /\.tsx?$/,
                 use: [
-                    'babel-loader',
+                    babelLoader,
                     {
                         loader: 'ts-loader',
                         options: {
                             compilerOptions: {
+                                target: 'es6',
                                 module: 'esnext',
                                 noEmit: false, // tsconfig.json sets this to true to avoid output when running tsc manually
                             },
@@ -56,7 +64,7 @@ export default {
             },
             {
                 test: /\.jsx?$/,
-                loader: 'babel-loader',
+                loader: babelLoader,
             },
             {
                 // sass / scss loader for webpack
