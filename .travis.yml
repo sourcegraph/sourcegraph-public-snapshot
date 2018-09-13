@@ -3,6 +3,10 @@ language: node_js
 node_js:
   - '10'
 
+addons:
+  chrome: stable
+sudo: required # see https://github.com/travis-ci/travis-ci/issues/8836
+
 env:
   global:
     - FORCE_COLOR=1
