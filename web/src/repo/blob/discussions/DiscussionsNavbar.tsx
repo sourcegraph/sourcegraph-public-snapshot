@@ -1,5 +1,5 @@
-import ChevronRight from '@sourcegraph/icons/lib/ChevronRight'
 import * as H from 'history'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../../backend/graphqlschema'
@@ -22,7 +22,7 @@ export class DiscussionsNavbar extends React.PureComponent<Props> {
                 <Link to={this.locationWith(location)} data-tooltip={`All discussions on ${filePath}`}>
                     {filePath}
                 </Link>
-                <ChevronRight className="icon-inline" />
+                <ChevronRightIcon className="icon-inline" />
                 {threadID !== undefined &&
                     commentID !== undefined && (
                         <>
@@ -33,7 +33,7 @@ export class DiscussionsNavbar extends React.PureComponent<Props> {
                                 {threadTitle !== undefined && `${threadTitle} `}
                                 #{threadID}
                             </Link>
-                            <ChevronRight className="icon-inline" />
+                            <ChevronRightIcon className="icon-inline" />
                             <strong>
                                 {commentContent !== undefined && `${commentContent} `}
                                 #{this.props.commentID}

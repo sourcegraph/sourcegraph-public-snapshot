@@ -1,6 +1,6 @@
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import MoreIcon from '@sourcegraph/icons/lib/More'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -88,7 +88,9 @@ class DependencyNode extends React.PureComponent<DependencyNodeProps, Dependency
                         <>
                             {this.state.referenceCountOrError === undefined && <Loader className="icon-inline" />}
                             {isErrorLike(this.state.referenceCountOrError) ? (
-                                <ErrorIcon title={this.state.referenceCountOrError.message} className="icon-inline" />
+                                <span title={this.state.referenceCountOrError.message}>
+                                    <AlertCircleIcon className="icon-inline" />
+                                </span>
                             ) : (
                                 <Link
                                     to={this.urlToSearch(node.references.queryString)}

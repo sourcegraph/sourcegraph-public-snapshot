@@ -1,12 +1,12 @@
 import DocumentIcon from '@sourcegraph/icons/lib/Document'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import ReportIcon from '@sourcegraph/icons/lib/Report'
-import SearchIcon from '@sourcegraph/icons/lib/Search'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import SearchIcon from 'mdi-react/SearchIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
@@ -263,7 +263,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                     ) : isErrorLike(this.props.resultsOrError) ? (
                         /* GraphQL, network, query syntax error */
                         <div className="alert alert-warning">
-                            <ErrorIcon className="icon-inline" />
+                            <AlertCircleIcon className="icon-inline" />
                             {upperFirst(this.props.resultsOrError.message)}
                         </div>
                     ) : (

@@ -1,7 +1,7 @@
 import DeleteIcon from '@sourcegraph/icons/lib/Delete'
-import GearIcon from '@sourcegraph/icons/lib/Gear'
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -96,7 +96,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     </div>
                     <div>
                         <Link className="btn btn-sm btn-secondary" to={`${userURL(this.props.node.username)}/settings`}>
-                            <GearIcon className="icon-inline" /> Settings
+                            <SettingsIcon className="icon-inline" /> Settings
                         </Link>{' '}
                         {window.context.resetPasswordEnabled && (
                             <button
@@ -288,7 +288,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                     </Link>
                     &nbsp;
                     <Link to="/site-admin/configuration" className="btn btn-secondary">
-                        <GearIcon className="icon-inline" /> Configure SSO
+                        <SettingsIcon className="icon-inline" /> Configure SSO
                     </Link>
                 </div>
                 <FilteredUserConnection

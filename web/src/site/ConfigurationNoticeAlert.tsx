@@ -1,4 +1,4 @@
-import WarningIcon from '@sourcegraph/icons/lib/Warning'
+import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 

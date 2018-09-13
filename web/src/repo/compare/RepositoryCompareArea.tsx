@@ -7,8 +7,8 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { isEqual, upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
@@ -154,7 +154,7 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         if (this.state.error) {
-            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.error)} />
+            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.error)} />
         }
 
         let spec: { base: string | null; head: string | null } | null | undefined

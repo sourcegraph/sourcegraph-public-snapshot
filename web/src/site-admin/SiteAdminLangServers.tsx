@@ -1,11 +1,11 @@
 import BugIcon from '@sourcegraph/icons/lib/Bug'
 import DownloadSimpleIcon from '@sourcegraph/icons/lib/DownloadSimple'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import RefreshIcon from '@sourcegraph/icons/lib/Refresh'
 import { sortBy } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { concat, merge, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, filter, map, repeatWhen, switchMap, tap } from 'rxjs/operators'
@@ -210,7 +210,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                     )}
                 {this.state.error && (
                     <div className="site-admin-lang-servers__error">
-                        <ErrorIcon className="icon-inline" />
+                        <AlertCircleIcon className="icon-inline" />
                         <span className="site-admin-lang-servers__error-text">Error: {this.state.error.message}</span>
                     </div>
                 )}

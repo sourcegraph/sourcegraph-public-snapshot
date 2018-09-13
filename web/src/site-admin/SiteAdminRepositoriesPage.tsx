@@ -1,10 +1,10 @@
-import { Checkmark } from '@sourcegraph/icons/lib/Checkmark'
 import { Cloud } from '@sourcegraph/icons/lib/Cloud'
-import GearIcon from '@sourcegraph/icons/lib/Gear'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
+import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -56,7 +56,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                                 data-tooltip="Access to this repository is enabled. All users can view and search it."
                                 className="ml-2 text-success"
                             >
-                                <Checkmark className="icon-inline" />Enabled
+                                <CheckIcon className="icon-inline" />Enabled
                             </small>
                         ) : (
                             <small
@@ -89,7 +89,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                                 to={`/${this.props.node.name}/-/settings`}
                                 data-tooltip="Repository settings"
                             >
-                                <GearIcon className="icon-inline" /> Settings
+                                <SettingsIcon className="icon-inline" /> Settings
                             </Link>
                         }{' '}
                         {this.props.node.enabled ? (
@@ -355,7 +355,7 @@ export class SiteAdminRepositoriesPage extends React.PureComponent<Props, State>
                         )}
                     </button>{' '}
                     <Link to="/site-admin/configuration" className="btn btn-secondary">
-                        <GearIcon className="icon-inline" /> Configure repositories
+                        <SettingsIcon className="icon-inline" /> Configure repositories
                     </Link>
                 </div>
                 {this.state.addPublicRepositoryFormVisible && (

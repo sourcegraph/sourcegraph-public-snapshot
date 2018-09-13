@@ -1,6 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs'
@@ -51,7 +51,7 @@ export class RepositoryGraphArea extends React.Component<Props> {
 
     public render(): JSX.Element | null {
         if (this.state.error) {
-            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.error)} />
+            return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.error)} />
         }
 
         const transferProps: {

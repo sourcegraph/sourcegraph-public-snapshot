@@ -1,7 +1,7 @@
 import { gqlToCascade } from '@sourcegraph/extensions-client-common/lib/settings'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
@@ -109,7 +109,9 @@ export class SettingsArea extends React.Component<Props, State> {
             return null // loading
         }
         if (isErrorLike(this.state.dataOrError)) {
-            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.dataOrError.message)} />
+            return (
+                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.dataOrError.message)} />
+            )
         }
 
         let term: string

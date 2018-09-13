@@ -8,8 +8,8 @@ import {
     ConfiguredSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
@@ -206,7 +206,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
     public render(): React.ReactFragment | null {
         if (this.state.error) {
-            return <HeroPage icon={ErrorIcon} title={'Something happened'} subtitle={this.state.error.message} />
+            return <HeroPage icon={AlertCircleIcon} title={'Something happened'} subtitle={this.state.error.message} />
         }
 
         if (window.pageError && window.pageError.statusCode !== 404) {

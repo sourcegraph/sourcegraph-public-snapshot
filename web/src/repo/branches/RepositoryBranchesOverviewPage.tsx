@@ -1,6 +1,6 @@
-import { ChevronRight } from '@sourcegraph/icons/lib/ChevronRight'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -139,7 +139,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                                             className="list-group-item list-group-item-action py-2 d-flex"
                                             to={`/${this.props.repo.name}/-/branches/all`}
                                         >
-                                            View more branches<ChevronRight className="icon-inline" />
+                                            View more branches<ChevronRightIcon className="icon-inline" />
                                         </Link>
                                     )}
                                 </div>

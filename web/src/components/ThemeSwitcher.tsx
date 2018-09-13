@@ -14,7 +14,7 @@ export const ThemeSwitcher: React.SFC<Props> = props => (
         title={props.isLightTheme ? 'Switch to dark color theme' : 'Switch to light color theme'}
     >
         <button className="theme-switcher__button btn-icon">
-            <ThemeLightDarkIcon />
+            <ThemeLightDarkIcon className="icon-inline" />
         </button>
     </div>
 )

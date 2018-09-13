@@ -1,6 +1,6 @@
-import GearIcon from '@sourcegraph/icons/lib/Gear'
 import SlidersVerticalIcon from '@sourcegraph/icons/lib/SlidersVertical'
 import UserIcon from '@sourcegraph/icons/lib/User'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { OrgAvatar } from '../OrgAvatar'
@@ -47,7 +47,7 @@ export const OrgHeader: React.SFC<Props> = (props: Props) => (
                                     className="btn area-header__nav-link"
                                     activeClassName="area-header__nav-link--active"
                                 >
-                                    <GearIcon className="icon-inline" /> Settings
+                                    <SettingsIcon className="icon-inline" /> Settings
                                 </NavLink>
                             )}
                             {props.org.viewerCanAdminister && (

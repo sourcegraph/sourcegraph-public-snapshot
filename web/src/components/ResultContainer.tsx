@@ -1,6 +1,6 @@
-import ChevronDownIcon from '@sourcegraph/icons/lib/ChevronDown'
-import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
-import ChevronUpIcon from '@sourcegraph/icons/lib/ChevronUp'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
 import { eventLogger } from '../tracking/eventLogger'
 

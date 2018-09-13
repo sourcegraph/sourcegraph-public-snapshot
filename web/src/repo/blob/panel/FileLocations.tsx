@@ -1,7 +1,7 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
@@ -16,7 +16,7 @@ import { toPrettyBlobURL, toRepoURL } from '../../../util/url'
 
 export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLike }> = ({ pluralNoun, error }) => (
     <div className="file-locations__error alert alert-danger m-2">
-        <ErrorIcon className="icon-inline" /> Error getting {pluralNoun}: {upperFirst(error.message)}
+        <AlertCircleIcon className="icon-inline" /> Error getting {pluralNoun}: {upperFirst(error.message)}
     </div>
 )
 

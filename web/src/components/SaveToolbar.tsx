@@ -1,6 +1,6 @@
-import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 
@@ -28,7 +28,7 @@ export const SaveToolbar: React.SFC<Props> = ({ dirty, disabled, saving, error, 
             {error &&
                 !saving && (
                     <div className="save-toolbar__error">
-                        <ErrorIcon className="icon-inline save-toolbar__error-icon" />
+                        <AlertCircleIcon className="icon-inline save-toolbar__error-icon" />
                         {error.message}
                     </div>
                 )}
@@ -39,7 +39,7 @@ export const SaveToolbar: React.SFC<Props> = ({ dirty, disabled, saving, error, 
                     className="btn btn-sm btn-success save-toolbar__item save-toolbar__btn save-toolbar__btn-first"
                     onClick={onSave}
                 >
-                    <CheckmarkIcon className="icon-inline" /> Save changes
+                    <CheckIcon className="icon-inline" /> Save changes
                 </button>
                 <button
                     disabled={saveDiscardDisabled}

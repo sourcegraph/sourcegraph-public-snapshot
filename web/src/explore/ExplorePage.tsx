@@ -1,5 +1,5 @@
-import GearIcon from '@sourcegraph/icons/lib/Gear'
 import Loader from '@sourcegraph/icons/lib/Loader'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
@@ -67,7 +67,7 @@ export class ExplorePage extends React.PureComponent<Props, State> {
                         this.props.user.siteAdmin && (
                             <div>
                                 <Link to="/site-admin/repositories" className="btn btn-primary">
-                                    <GearIcon className="icon-inline" /> Configure repositories
+                                    <SettingsIcon className="icon-inline" /> Configure repositories
                                 </Link>
                             </div>
                         )}

@@ -1,7 +1,7 @@
-import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import LockIcon from '@sourcegraph/icons/lib/Lock'
 import { upperFirst } from 'lodash'
+import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -205,7 +205,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                         {this.state.result &&
                             (this.state.result.error === null ? (
                                 <div className="alert alert-success action-container__alert">
-                                    <CheckmarkIcon className="icon-inline" /> The remote repository is reachable.
+                                    <CheckIcon className="icon-inline" /> The remote repository is reachable.
                                 </div>
                             ) : (
                                 <div className="alert alert-danger action-container__alert">

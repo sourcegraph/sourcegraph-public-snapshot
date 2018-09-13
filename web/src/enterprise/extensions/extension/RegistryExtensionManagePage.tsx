@@ -1,6 +1,6 @@
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -139,7 +139,7 @@ export class RegistryExtensionManagePage extends React.PureComponent<Props, Stat
         if (!this.props.extension.registryExtension || !this.props.extension.registryExtension.viewerCanAdminister) {
             return (
                 <HeroPage
-                    icon={ErrorIcon}
+                    icon={AlertCircleIcon}
                     title="Unauthorized"
                     subtitle="You are not authorized to adminster this extension."
                 />
@@ -148,7 +148,7 @@ export class RegistryExtensionManagePage extends React.PureComponent<Props, Stat
 
         const publisher = this.props.extension.registryExtension.publisher
         if (!publisher) {
-            return <HeroPage icon={ErrorIcon} title="Publisher not found" />
+            return <HeroPage icon={AlertCircleIcon} title="Publisher not found" />
         }
 
         const extensionName =

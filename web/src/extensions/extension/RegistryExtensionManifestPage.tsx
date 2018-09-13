@@ -1,7 +1,7 @@
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/extensions-client-common/lib/schema/extension.schema.json'
-import InfoIcon from '@sourcegraph/icons/lib/Info'
 import ViewIcon from '@sourcegraph/icons/lib/View'
+import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -67,7 +67,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="d-flex align-items-center">
                         <h3 className="mb-0 mr-1">Manifest</h3>
-                        <InfoIcon
+                        <InformationOutlineIcon
                             className="icon-inline text-muted"
                             data-tooltip="The published JSON description of how to run or access the extension"
                         />

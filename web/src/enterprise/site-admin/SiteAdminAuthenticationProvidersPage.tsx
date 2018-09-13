@@ -1,4 +1,4 @@
-import GearIcon from '@sourcegraph/icons/lib/Gear'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -85,7 +85,7 @@ export class SiteAdminAuthenticationProvidersPage extends React.Component<Props>
                 </p>
                 <div>
                     <Link to="/site-admin/configuration" className="btn btn-secondary">
-                        <GearIcon className="icon-inline" /> Configure auth providers
+                        <SettingsIcon className="icon-inline" /> Configure auth providers
                     </Link>
                 </div>
                 <FilteredAuthProviderConnection

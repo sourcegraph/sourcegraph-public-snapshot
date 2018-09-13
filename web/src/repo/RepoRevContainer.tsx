@@ -1,6 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { isEqual, upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
@@ -171,7 +171,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 default:
                     return (
                         <HeroPage
-                            icon={ErrorIcon}
+                            icon={AlertCircleIcon}
                             title="Error"
                             subtitle={upperFirst(this.props.resolvedRevOrError.message)}
                         />

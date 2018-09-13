@@ -1,6 +1,6 @@
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import * as H from 'history'
 import { isEqual, pick, upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
@@ -176,7 +176,9 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
     public render(): React.ReactNode {
         if (isErrorLike(this.state.blobOrError)) {
-            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.blobOrError.message)} />
+            return (
+                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.blobOrError.message)} />
+            )
         }
 
         const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)

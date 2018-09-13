@@ -1,7 +1,7 @@
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import RepoQuestionIcon from '@sourcegraph/icons/lib/RepoQuestion'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
@@ -123,7 +123,7 @@ export class RepositoryGitDataContainer extends React.PureComponent<Props, State
                 default:
                     return (
                         <HeroPage
-                            icon={ErrorIcon}
+                            icon={AlertCircleIcon}
                             title="Error"
                             subtitle={upperFirst(this.state.gitDataPresentOrError.message)}
                         />

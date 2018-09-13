@@ -1,7 +1,7 @@
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import { ChevronDown } from '@sourcegraph/icons/lib/ChevronDown'
-import { ChevronUp } from '@sourcegraph/icons/lib/ChevronUp'
 import * as H from 'history'
+import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
+import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
@@ -80,9 +80,9 @@ export class FileDiffNode extends React.PureComponent<FileDiffNodeProps, State> 
                             </Link>
                             <button type="button" className="btn btn-sm btn-icon ml-2" onClick={this.toggleExpand}>
                                 {this.state.expanded ? (
-                                    <ChevronDown className="icon-inline" />
+                                    <ChevronDownIcon className="icon-inline" />
                                 ) : (
-                                    <ChevronUp className="icon-inline" />
+                                    <ChevronUpIcon className="icon-inline" />
                                 )}
                             </button>
                         </div>

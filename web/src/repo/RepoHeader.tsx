@@ -1,7 +1,7 @@
 import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
-import ChevronRightIcon from '@sourcegraph/icons/lib/ChevronRight'
-import GearIcon from '@sourcegraph/icons/lib/Gear'
 import * as H from 'history'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as GQL from '../backend/graphqlschema'
@@ -223,7 +223,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                     {this.props.repo.viewerCanAdminister && (
                         <li className="nav-item">
                             <ActionItem to={`/${this.props.repo.name}/-/settings`} data-tooltip="Repository settings">
-                                <GearIcon className="icon-inline" />{' '}
+                                <SettingsIcon className="icon-inline" />{' '}
                                 <span className="d-none d-lg-inline">Settings</span>
                             </ActionItem>
                         </li>

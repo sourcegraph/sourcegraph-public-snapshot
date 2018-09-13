@@ -1,7 +1,7 @@
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, of, Subject, Subscription } from 'rxjs'
@@ -157,7 +157,11 @@ export class ExtensionArea extends React.Component<ExtensionAreaProps> {
         }
         if (isErrorLike(this.state.extensionOrError)) {
             return (
-                <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.extensionOrError.message)} />
+                <HeroPage
+                    icon={AlertCircleIcon}
+                    title="Error"
+                    subtitle={upperFirst(this.state.extensionOrError.message)}
+                />
             )
         }
 

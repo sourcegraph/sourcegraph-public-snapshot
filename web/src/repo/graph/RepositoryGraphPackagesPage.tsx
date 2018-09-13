@@ -1,6 +1,6 @@
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import MoreIcon from '@sourcegraph/icons/lib/More'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -113,10 +113,9 @@ class PackageNode extends React.PureComponent<PackageNodeProps, PackageNodeState
                                 <Loader className="icon-inline" />
                             )}
                             {isErrorLike(this.state.internalReferenceCountOrError) ? (
-                                <ErrorIcon
-                                    title={this.state.internalReferenceCountOrError.message}
-                                    className="icon-inline"
-                                />
+                                <span title={this.state.internalReferenceCountOrError.message}>
+                                    <AlertCircleIcon className="icon-inline" />
+                                </span>
                             ) : (
                                 <Link
                                     to={this.urlToInternalSearch(node.internalReferences.queryString)}
@@ -151,10 +150,9 @@ class PackageNode extends React.PureComponent<PackageNodeProps, PackageNodeState
                                 )}
                             {isErrorLike(this.state.externalReferenceCountOrError) ? (
                                 !isErrorLike(this.state.internalReferenceCountOrError) && (
-                                    <ErrorIcon
-                                        title={this.state.externalReferenceCountOrError.message}
-                                        className="icon-inline"
-                                    />
+                                    <span title={this.state.externalReferenceCountOrError.message}>
+                                        <AlertCircleIcon className="icon-inline" />
+                                    </span>
                                 )
                             ) : (
                                 <Link

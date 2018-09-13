@@ -1,6 +1,6 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -160,7 +160,9 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             return null // loading
         }
         if (isErrorLike(this.state.userOrError)) {
-            return <HeroPage icon={ErrorIcon} title="Error" subtitle={upperFirst(this.state.userOrError.message)} />
+            return (
+                <HeroPage icon={AlertCircleIcon} title="Error" subtitle={upperFirst(this.state.userOrError.message)} />
+            )
         }
 
         const transferProps: UserAreaPageProps = {

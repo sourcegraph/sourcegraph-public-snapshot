@@ -1,6 +1,6 @@
 import DeleteIcon from '@sourcegraph/icons/lib/Delete'
-import WarningIcon from '@sourcegraph/icons/lib/Warning'
 import { upperFirst } from 'lodash'
+import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'

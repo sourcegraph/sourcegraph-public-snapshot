@@ -1,4 +1,4 @@
-import SearchIcon from '@sourcegraph/icons/lib/Search'
+import SearchIcon from 'mdi-react/SearchIcon'
 import * as React from 'react'
 
 export class SearchButton extends React.Component {

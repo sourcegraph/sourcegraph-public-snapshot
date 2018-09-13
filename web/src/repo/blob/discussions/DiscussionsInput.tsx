@@ -1,6 +1,6 @@
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, concat, filter, map, mergeMap, startWith, tap, withLatestFrom } from 'rxjs/operators'
@@ -282,7 +282,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                 </div>
                 {error && (
                     <div className="discussions-input__error alert alert-danger">
-                        <ErrorIcon className="icon-inline discussions-input__error-icon" />
+                        <AlertCircleIcon className="icon-inline discussions-input__error-icon" />
                         {error.message}
                     </div>
                 )}

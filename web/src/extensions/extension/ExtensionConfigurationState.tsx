@@ -1,4 +1,4 @@
-import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
+import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
 
 /** Displays the extension's configuration state (not added, added and enabled, added and disabled). */
@@ -13,7 +13,7 @@ export const ExtensionConfigurationState: React.SFC<{
     isAdded ? (
         isEnabled ? (
             <span className={`text-success ${className}`}>
-                <CheckmarkIcon className="icon-inline" /> {!enabledIconOnly && 'Enabled'}
+                <CheckIcon className="icon-inline" /> {!enabledIconOnly && 'Enabled'}
             </span>
         ) : (
             <span className={`text-muted ${className}`}>Disabled</span>

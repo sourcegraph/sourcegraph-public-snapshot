@@ -1,6 +1,6 @@
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Redirect } from 'react-router'
 import { combineLatest, Subject, Subscription, throwError } from 'rxjs'
@@ -98,7 +98,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                 {loading && <LoaderIcon className="icon-inline" />}
                 {error && (
                     <div className="discussions-thread__error alert alert-danger">
-                        <ErrorIcon className="icon-inline discussions-thread__error-icon" />
+                        <AlertCircleIcon className="icon-inline discussions-thread__error-icon" />
                         Error loading thread: {error.message}
                     </div>
                 )}

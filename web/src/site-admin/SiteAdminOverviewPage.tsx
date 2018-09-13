@@ -1,10 +1,10 @@
 import CityIcon from '@sourcegraph/icons/lib/City'
-import GearIcon from '@sourcegraph/icons/lib/Gear'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import UserIcon from '@sourcegraph/icons/lib/User'
 import AddIcon from 'mdi-react/AddIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -55,7 +55,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             actions={
                                 <>
                                     <Link to="/site-admin/configuration" className="btn btn-primary btn-sm">
-                                        <GearIcon className="icon-inline" /> Configure repositories
+                                        <SettingsIcon className="icon-inline" /> Configure repositories
                                     </Link>
                                     <Link to="/site-admin/repositories" className="btn btn-secondary btn-sm">
                                         View all
@@ -79,7 +79,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                         <AddIcon className="icon-inline" /> Create user account
                                     </Link>
                                     <Link to="/site-admin/configuration" className="btn btn-secondary btn-sm">
-                                        <GearIcon className="icon-inline" /> Configure SSO
+                                        <SettingsIcon className="icon-inline" /> Configure SSO
                                     </Link>
                                     <Link to="/site-admin/users" className="btn btn-secondary btn-sm">
                                         View all
@@ -114,7 +114,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 icon={GlobeIcon}
                                 actions={
                                     <Link to="/site-admin/code-intelligence" className="btn btn-primary btn-sm">
-                                        <GearIcon className="icon-inline" /> Manage code intelligence
+                                        <SettingsIcon className="icon-inline" /> Manage code intelligence
                                     </Link>
                                 }
                             >

@@ -1,5 +1,5 @@
 import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
-import ErrorIcon from '@sourcegraph/icons/lib/Error'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { merge, Subject, Subscription } from 'rxjs'
@@ -182,7 +182,7 @@ export class RepoContainer extends React.Component<Props, State> {
                         />
                     )
                 default:
-                    return <HeroPage icon={ErrorIcon} title="Error" subtitle={this.state.repoOrError.message} />
+                    return <HeroPage icon={AlertCircleIcon} title="Error" subtitle={this.state.repoOrError.message} />
             }
         }
 

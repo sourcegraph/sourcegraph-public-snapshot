@@ -1,8 +1,8 @@
-import CheckmarkIcon from '@sourcegraph/icons/lib/Checkmark'
 import DownloadIcon from '@sourcegraph/icons/lib/Download'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import formatDistance from 'date-fns/formatDistance'
 import { upperFirst } from 'lodash'
+import CheckIcon from 'mdi-react/CheckIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -86,8 +86,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                                     </div>
                                 ) : (
                                     <div className="site-admin-updates-page__alert alert alert-success">
-                                        <CheckmarkIcon className="icon-inline" /> {this.state.productName} is up to
-                                        date.
+                                        <CheckIcon className="icon-inline" /> {this.state.productName} is up to date.
                                     </div>
                                 ))}
                             {this.state.updateCheck.errorMessage && (
