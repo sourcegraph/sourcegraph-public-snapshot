@@ -127,7 +127,6 @@ function createExtensionHandle(connection: Connection): typeof sourcegraph {
         internal: {
             sync,
             updateContext: updates => context.updateContext(updates),
-            rawConnection: connection,
         },
     }
 }

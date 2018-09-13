@@ -829,14 +829,6 @@ declare module 'sourcegraph' {
          * @param updates The updates to apply to the context. If a context property's value is null, it is deleted from the context.
          */
         export function updateContext(updates: ContextValues): void
-
-        /**
-         * The underlying connection to the Sourcegraph extension client.
-         *
-         * @deprecated
-         * @internal
-         */
-        export const rawConnection: any
     }
 
     /**
