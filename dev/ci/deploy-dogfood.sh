@@ -2,11 +2,6 @@
 set -ex
 
 case "$BUILDKITE_BRANCH" in
-    master)
-        DEPLOYMENT=sourcegraph-frontend
-        CONTAINER=frontend
-        ;;
-
     docker-images/gitserver)
         DEPLOYMENT="gitserver-1"
         CONTAINER="gitserver-1"

@@ -223,6 +223,13 @@ func main() {
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
 
 	addDeploySteps := func() {
+		// Trigger an enterprise repository master branch build.
+		pipeline.AddStep(":partyparrot:",
+			bk.ConcurrencyGroup("deploy"),
+			bk.Concurrency(1),
+			bk.Cmd("go run ./dev/ci/trigger-enterprise-ci.go"))
+		pipeline.AddWait()
+
 		// Deploy to dogfood
 		pipeline.AddStep(":dog:",
 			bk.ConcurrencyGroup("deploy"),
@@ -271,10 +278,9 @@ func main() {
 		}
 		pipeline.AddWait()
 
-	// TODO(opensource): builds on master should trigger deploy of enterprise frontend
-	//case branch == "master":
-	//	pipeline.AddWait()
-	//	addDeploySteps()
+	case branch == "master":
+		pipeline.AddWait()
+		addDeploySteps()
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		version = version + "_patch"
