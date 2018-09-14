@@ -48,7 +48,6 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		defer resp.Body.Close()
 		var build struct {
 			State string
 		}
@@ -56,6 +55,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		resp.body.Close()
 		bs := build.State
 		switch bs {
 		case "passed":
