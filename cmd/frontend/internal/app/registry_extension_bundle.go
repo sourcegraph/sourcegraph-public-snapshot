@@ -50,8 +50,10 @@ func serveRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Frame-Options", "deny")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("X-XSS-Protection", "1; mode=block")
-	w.Header().Del("Access-Control-Allow-Credentials")
-	w.Header().Del("Access-Control-Allow-Origin")
+
+	// Allow downstream Sourcegraph sites' clients to access this file directly.
+	w.Header().Del("Access-Control-Allow-Credentials") // credentials are not needed
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// We want to cache forever because an extension release is immutable, except that if the
 	// database is reset and and the registry_extension_releases.id sequence starts over, we don't
