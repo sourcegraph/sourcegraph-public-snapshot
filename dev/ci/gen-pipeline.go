@@ -271,9 +271,10 @@ func main() {
 		}
 		pipeline.AddWait()
 
-	case branch == "master":
-		pipeline.AddWait()
-		addDeploySteps()
+	// TODO(opensource): builds on master should trigger deploy of enterprise frontend
+	//case branch == "master":
+	//	pipeline.AddWait()
+	//	addDeploySteps()
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		version = version + "_patch"
