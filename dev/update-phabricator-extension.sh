@@ -11,7 +11,7 @@ rm -f ui/assets/extension/scripts/phabricator.bundle.js
 rm -f ui/assets/extension/css/style.bundle.css
 
 if [ -n "$SYMLINK" ]; then
-    # Symlink for development. Assumes you are running `npm run dev` in a local clone of browser-extension.
+    # Symlink for development. Assumes you are running `yarn run dev` in a local clone of browser-extension.
     BUILDDIR=../browser-extensions
 
     ln $BUILDDIR/build/dist/js/phabricator.bundle.js client/phabricator/scripts
@@ -22,7 +22,7 @@ if [ -n "$SYMLINK" ]; then
     echo
     echo 'Symlinked Phabricator bundle files to dev bundles in ../browser-extensions.'
     echo
-    echo 'Ensure you are running `npm run dev` in that directory to keep the bundle files up to date.'
+    echo 'Ensure you are running `yarn run dev` in that directory to keep the bundle files up to date.'
     echo
     echo "Don't commit the symlinks!"
 else
@@ -30,7 +30,7 @@ else
     BUILDDIR=client/phabricator/.extension
     rm -rf $BUILDDIR
     git clone git@github.com:sourcegraph/browser-extensions.git $BUILDDIR
-    (cd $BUILDDIR && npm install && npm run build)
+    (cd $BUILDDIR && yarn && yarn run build)
 
     cp $BUILDDIR/build/dist/js/phabricator.bundle.js client/phabricator/scripts
     cp $BUILDDIR/build/dist/css/style.bundle.css client/phabricator/scripts

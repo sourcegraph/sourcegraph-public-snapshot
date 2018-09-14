@@ -3,10 +3,10 @@ set -ex
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 
 # Build the webapp typescript code.
-[[ -z "${CI}" ]] && npm install || npm ci
+[[ -z "${CI}" ]] && yarn || yarn --frozen-lockfile
 pushd web
-[[ -z "${CI}" ]] && npm install || npm ci
-NODE_ENV=production DISABLE_TYPECHECKING=true npm run build
+[[ -z "${CI}" ]] && yarn || yarn --frozen-lockfile
+NODE_ENV=production DISABLE_TYPECHECKING=true yarn run build
 popd
 
 go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates

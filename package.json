@@ -2,7 +2,6 @@
   "name": "sourcegraph",
   "private": true,
   "engines": {
-    "npm": "^6.0.0",
     "node": ">=8.0.0 <11.0.0"
   },
   "scripts": {

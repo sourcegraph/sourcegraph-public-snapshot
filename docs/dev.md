@@ -86,19 +86,17 @@ sudo apt-get install -y nodejs
 
 As of this writing, `setup_8.x` also works, but you may want to prefer the newer one.
 
-You may need to explicitly request `npm` version 6:
+Install Yarn:
 
 ```
-npm i npm@^6 -g
+npm i yarn@1.9.4
 ```
 
-Package version problems can usually be solved by making sure you get the versions of npm and Node.js specified in `package.json`. To fix these:
+Noticing problems with `node_modules/` or package versions? Try:
 
 ```
-npm cache clear -f; npm ci; cd web; npm ci
+yarn cache clean; rm -rf node_modules web/node_modules; yarn; cd web; yarn
 ```
-
-If this doesn't work, try deleting the `web/node_modules` subdirectory of your sourcegraph tree entirely.
 
 If you want to test things across multiple node versions, consider using nvm:
 
@@ -126,8 +124,8 @@ You need to have the redis image running when you run the Sourcegraph `dev/start
 Make sure your [`$GOPATH` is set](https://golang.org/doc/code.html#GOPATH) and your `$PATH` includes `$GOPATH/bin`:
 
 ```
-echo $GOPATH   # should print something
-echo $PATH     # should include $GOPATH/bin
+echo $GOPATH # should print something
+echo $PATH # should include $GOPATH/bin
 ```
 
 Then in your terminal run:
@@ -143,7 +141,7 @@ docker-machine start default
 eval $(docker-machine env)
 ```
 
-Then run the following commands (**NOTE: Node.js and npm must be installed for the this step**):
+Then run the following commands (**NOTE: Node.js and Yarn must be installed for the this step**):
 
 ```
 ./dev/start.sh
@@ -310,7 +308,7 @@ steps are required to run Sourcegraph in a Windows environment:
   After checking out Sourcegraph, run `bash dev/git-windows-aliases.sh` to install the git aliases needed to do
   the conversion. Then run `git rm-symlinks` from the repository root
   to convert all symlinks into Windows symlinks and mark them as "not
-  changed" (necessary to avoid issues related to running npm-based
+  changed" (necessary to avoid issues related to running yarn-based
   tasks).
 
 Note that multiple unit tests currently fail on Windows. We would be happy to accept contributions here! :)

@@ -101,17 +101,17 @@ export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"
 
 # Make sure chokidar-cli is installed in the background
-[ -n $OFFLINE ] || npm install &
+[ -n "${OFFLINE-}" ] || yarn &
 
 if ! ./dev/go-install.sh; then
-	# let NPM finish, otherwise we get NPM diagnostics AFTER the
+	# let Yarn finish, otherwise we get Yarn diagnostics AFTER the
 	# actual reason we're failing.
 	wait
 	echo >&2 "WARNING: go-install.sh failed, some builds may have failed."
 	exit 1
 fi
 
-# Wait for npm install if it is still running
+# Wait for yarn if it is still running
 wait
 
 # Increase ulimit (not needed on Windows/WSL)

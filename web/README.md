@@ -56,17 +56,17 @@ and runtime color manipulation is not yet implemented in CSS (coming in CSS Colo
 ## Formatting
 
 We use [Prettier](https://github.com/prettier/prettier) so you never have to worry about how to format your code.
-`npm run prettier` will check & autoformat all code.
+`yarn run prettier` will check & autoformat all code.
 
 ## Tests
 
 - We write unit tests and e2e tests.
 - Unit tests are for things that can be tested in isolation; you provide inputs and make assertion on the outputs and/or side effects.
-- Run unit tests via `npm run test`.
+- Run unit tests via `yarn run test`.
 - E2E tests are for the whole app: JS, CSS, and backend. These tests require hitting a backend like https://sourcegraph.com or https://sourcegraph.sgdev.org (default `SOURCEGRAPH_BASE_URL=http://localhost:3080`).
-- Run E2E tests via `npm run test-e2e`.
+- Run E2E tests via `yarn run test-e2e`.
 - E2E tests send messages to a chrome debugger port (9222), telling chrome to do things like "go to this URL" and "click on this selector" and "execute this JavaScript in the page".
-- `npm run test-e2e` will automatically start a headless chrome process; to prevent that, set the environment variable `SKIP_LAUNCH_CHROME=t`
+- `yarn run test-e2e` will automatically start a headless chrome process; to prevent that, set the environment variable `SKIP_LAUNCH_CHROME=t`
 - E2E caveats:
   - don't overdo them; they are the tip of the testing pyramid and the mass of tests should be at lower layers
   - avoid coupling your tests too tightly to the implementation (e.g. with strict selectors that are coupled to the DOM structure), or we will have many test failures

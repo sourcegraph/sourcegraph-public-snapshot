@@ -35,6 +35,7 @@ grapher/ruby/rubysonar/target
 grapher/ruby/rubysonar/dependency-reduced-pom.xml
 grapher/ruby/yard/.bundle
 npm-debug.log
+yarn-error.log
 .codemod.bookmark
 .elasticbeanstalk/
 
@@ -87,3 +88,5 @@ cmd/indexer/debug
 /.gtm/
 
 node_modules/
+
+package-lock.json

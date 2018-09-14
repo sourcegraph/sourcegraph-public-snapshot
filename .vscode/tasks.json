@@ -14,19 +14,19 @@
     },
     {
       "label": "tslint",
-      "command": "npm",
+      "command": "yarn",
       "args": ["--prefix", "web", "run", "tslint"],
       "problemMatcher": "$tslint5"
     },
     {
       "label": "graphql",
-      "command": "npm",
+      "command": "yarn",
       "args": ["--prefix", "web", "run", "graphql"],
       "problemMatcher": "$tslint5"
     },
     {
       "label": "stylelint",
-      "command": "npm",
+      "command": "yarn",
       "args": ["--prefix", "web", "run", "stylelint-compact"],
       "problemMatcher": {
         "owner": "stylelint",
@@ -46,7 +46,7 @@
     },
     {
       "label": "build",
-      "command": "npm",
+      "command": "yarn",
       "args": ["--prefix", "web", "run", "build"],
       "problemMatcher": {
         "fileLocation": "relative",
@@ -68,7 +68,7 @@
     },
     {
       "label": "watch",
-      "command": "npm",
+      "command": "yarn",
       "args": ["--prefix", "web", "run", "watch"],
       "isBackground": true,
       "problemMatcher": {

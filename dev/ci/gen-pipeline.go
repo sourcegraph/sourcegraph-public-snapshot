@@ -235,43 +235,43 @@ func main() {
 		Cmd("./dev/check/all.sh"))
 
 	pipeline.AddStep(":lipstick:",
-		Cmd("npm ci"),
-		Cmd("npm run prettier"))
+		Cmd("yarn --frozen-lockfile"),
+		Cmd("yarn run prettier"))
 
 	pipeline.AddStep(":typescript:",
 		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
-		Cmd("npm ci"),
-		Cmd("npm run tslint"))
+		Cmd("yarn --frozen-lockfile"),
+		Cmd("yarn run tslint"))
 
 	pipeline.AddStep(":stylelint:",
 		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
-		Cmd("npm ci"),
-		Cmd("npm run stylelint -- --quiet"))
+		Cmd("yarn --frozen-lockfile"),
+		Cmd("yarn run stylelint --quiet"))
 
 	pipeline.AddStep(":graphql:",
-		Cmd("npm ci"),
-		Cmd("npm run graphql-lint"))
+		Cmd("yarn --frozen-lockfile"),
+		Cmd("yarn run graphql-lint"))
 
 	pipeline.AddStep(":webpack:",
 		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
-		Cmd("npm ci"),
+		Cmd("yarn --frozen-lockfile"),
 		Cmd("cd web"),
-		Cmd("npm ci"),
-		Cmd("npm run browserslist"),
-		Cmd("NODE_ENV=production npm run build -- --color"),
-		Cmd("GITHUB_TOKEN= npm run bundlesize"))
+		Cmd("yarn --frozen-lockfile"),
+		Cmd("yarn run browserslist"),
+		Cmd("NODE_ENV=production yarn run build --color"),
+		Cmd("GITHUB_TOKEN= yarn run bundlesize"))
 
 	pipeline.AddStep(":mocha:",
 		Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		Env("FORCE_COLOR", "1"),
 		Cmd("cd web"),
-		Cmd("npm ci"),
-		Cmd("npm run cover"),
+		Cmd("yarn --frozen-lockfile"),
+		Cmd("yarn run cover"),
 		Cmd("node_modules/.bin/nyc report -r json"),
 		ArtifactPaths("web/coverage/coverage-final.json"))
 
@@ -323,8 +323,8 @@ func main() {
 			Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
 			Env("FORCE_COLOR", "1"),
 			Cmd("cd web"),
-			Cmd("npm ci"),
-			Cmd("npm run test-e2e -- --retries 5"),
+			Cmd("yarn --frozen-lockfile"),
+			Cmd("yarn run test-e2e --retries 5"),
 			ArtifactPaths("web/puppeteer/*.png"))
 		pipeline.AddWait()
 

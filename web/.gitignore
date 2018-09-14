@@ -5,3 +5,4 @@ npm-debug.log
 out/
 src/backend/graphqlschema.ts
 puppeteer/
+package-lock.json

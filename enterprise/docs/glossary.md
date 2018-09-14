@@ -70,9 +70,9 @@ A single monolithic repository holding all of a company's code, as contrasted wi
 
 ### [Node](https://nodejs.org/en/) / NodeJS
 
-JavaScript runtime for using JavaScript code outside of web pages/browsers, based on Chrome's V8 JavaScript engine. Package management is handled by [npm](#npm). Used internally for running things written in JavaScript.
+JavaScript runtime for using JavaScript code outside of web pages/browsers, based on Chrome's V8 JavaScript engine. Package management is handled by [Yarn](#Yarn). Used internally for running things written in JavaScript.
 
-### [npm](https://www.npmjs.com/)
+### [Yarn](https://yarnpkg.com/)
 
 The [Node](#node) package management tool and ecosystem.
 
