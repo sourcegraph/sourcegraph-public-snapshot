@@ -7,7 +7,7 @@ verifyConditions:
 prepare:
   # Build bundles and output them to the dist folders
   - path: '@semantic-release/exec'
-    cmd: npm run build
+    cmd: yarn run build
   # Update Firefox manifest version, create xpi and zip sources
   - path: semantic-release-firefox
     distFolder: &firefoxDistFolder build/firefox
@@ -48,8 +48,8 @@ publish:
 
       Running from source:
 
-      1.  With npm 6 installed, run `npm install`
-      2.  npm run build
+      1.  With yarn 1.9.4 installed, run `yarn`
+      2.  yarn run build
       3.  Go to about:debugging
       4.  Select "Enable add-on debugging"
       5.  Load Temporary Add-on

@@ -64,7 +64,7 @@ It works as follows:
 ## Requirements
 
 - `node`
-- `npm`
+- `yarn`
 - `make`
 
 ## Development
@@ -72,8 +72,8 @@ It works as follows:
 For each browser run:
 
 ```bash
-$ npm install
-$ npm run dev
+$ yarn
+$ yarn run dev
 ```
 
 Now, follow the steps below for the browser you intend to work with.
@@ -97,7 +97,7 @@ Click reload for Sourcegraph at `chrome://extensions`
 In a separate terminal session run:
 
 ```bash
-npm run dev:firefox
+yarn run dev:firefox
 ```
 
 A Firefox window will be spun up with the extension already installed.
@@ -109,7 +109,7 @@ Save a file and wait for webpack to finish rebuilding.
 #### Caveats
 
 The window that is spun up is completely separate from any existing sessions you have on Firefox.
-You'll have to sign into everything at the begining of each development session(each time you run `npm run dev:firefox`).
+You'll have to sign into everything at the begining of each development session(each time you run `yarn run dev:firefox`).
 You should ensure you're signed into any Sourcegraph instance you point the extension at as well as Github.
 
 ### Firefox (manual)

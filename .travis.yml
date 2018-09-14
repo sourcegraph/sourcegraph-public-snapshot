@@ -12,12 +12,17 @@ env:
     - FORCE_COLOR=1
 
 cache:
+  yarn: true
   directories:
-    - ~/.npm
+    - node_modules
     - ~/.cache
 
+before_install:
+  - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 1.9.4
+  - export PATH="$HOME/.yarn/bin:$PATH"
+
 install:
-  - npm ci
+  - yarn --frozen-lockfile
 
 jobs:
   include:
@@ -26,14 +31,14 @@ jobs:
         - CYPRESS_INSTALL_BINARY=0
         - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
       script:
-        - npm run prettier
-        - npm run tslint
-        - npm run build
+        - yarn run prettier
+        - yarn run tslint
+        - yarn run build
     - stage: test
       env:
         - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
       script:
-        - npm run test:e2e
+        - yarn run test:e2e
     - stage: release
       env:
         - CYPRESS_INSTALL_BINARY=0

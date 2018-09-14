@@ -3,11 +3,11 @@
 default: bundle
 
 install:
-	npm install
+	yarn install
 
 build: install
-	npm run tslint
-	npm run build
+	yarn run tslint
+	yarn run build
 
 bundle: clean build all
 
@@ -39,10 +39,10 @@ watch-all:
 	fswatch -o ./dist | xargs -n1 $(MAKE) all
 
 test-unit:
-	npm run test
+	yarn run test
 
 test-watch:
-	npm run test:auto
+	yarn run test:auto
 
 
 selenium-chrome: build
