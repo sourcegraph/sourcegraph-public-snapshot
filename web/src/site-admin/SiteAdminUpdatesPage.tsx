@@ -1,8 +1,8 @@
-import DownloadIcon from '@sourcegraph/icons/lib/Download'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import formatDistance from 'date-fns/formatDistance'
 import { upperFirst } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
+import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -79,7 +79,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                             {!this.state.updateCheck.errorMessage &&
                                 (this.state.updateCheck.updateVersionAvailable ? (
                                     <div className="site-admin-updates-page__alert alert alert-success">
-                                        <DownloadIcon className="icon-inline" /> Update available:{' '}
+                                        <CloudDownloadIcon className="icon-inline" /> Update available:{' '}
                                         <a href="https://about.sourcegraph.com">
                                             {this.state.productName} {this.state.updateCheck.updateVersionAvailable}
                                         </a>

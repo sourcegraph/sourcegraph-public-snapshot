@@ -1,6 +1,6 @@
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/extensions-client-common/lib/schema/extension.schema.json'
-import ViewIcon from '@sourcegraph/icons/lib/View'
+import EyeIcon from 'mdi-react/EyeIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -75,7 +75,7 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                     <div>
                         {this.props.extension.manifest && (
                             <button type="button" className="btn btn-secondary" onClick={this.onViewModeButtonClick}>
-                                <ViewIcon className="icon-inline" /> Use{' '}
+                                <EyeIcon className="icon-inline" /> Use{' '}
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
                             </button>
                         )}{' '}

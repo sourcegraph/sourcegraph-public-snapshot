@@ -1,4 +1,4 @@
-import DeleteIcon from '@sourcegraph/icons/lib/Delete'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'

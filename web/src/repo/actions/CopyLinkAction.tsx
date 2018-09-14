@@ -1,6 +1,6 @@
-import CopyIcon from '@sourcegraph/icons/lib/Copy'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
+import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import * as React from 'react'
 import { Tooltip } from '../../components/tooltip/Tooltip'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -32,7 +32,7 @@ export class CopyLinkAction extends React.PureComponent<Props, State> {
                 data-tooltip={this.state.copied ? 'Copied!' : 'Copy link to clipboard'}
                 onClick={this.onClick}
             >
-                <CopyIcon className="icon-inline" />
+                <ContentCopyIcon className="icon-inline" />
             </button>
         )
     }

@@ -1,5 +1,5 @@
-import DeleteIcon from '@sourcegraph/icons/lib/Delete'
 import { upperFirst } from 'lodash'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'

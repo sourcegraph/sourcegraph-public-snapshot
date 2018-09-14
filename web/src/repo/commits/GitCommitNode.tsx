@@ -1,7 +1,7 @@
-import CopyIcon from '@sourcegraph/icons/lib/Copy'
 import FileDocumentIcon from '@sourcegraph/icons/lib/FileDocument'
 import MoreIcon from '@sourcegraph/icons/lib/More'
 import copy from 'copy-to-clipboard'
+import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
@@ -163,7 +163,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                                 this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
                                             }
                                         >
-                                            <CopyIcon className="icon-inline" />
+                                            <ContentCopyIcon className="icon-inline" />
                                         </button>
                                     </div>
                                 )}
@@ -201,7 +201,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                                 onClick={this.copyToClipboard}
                                 data-tooltip={this.state.flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                             >
-                                <CopyIcon className="icon-inline" />
+                                <ContentCopyIcon className="icon-inline" />
                             </button>
                         </code>
                         <div className="git-commit-node__sha-and-parents-parents">

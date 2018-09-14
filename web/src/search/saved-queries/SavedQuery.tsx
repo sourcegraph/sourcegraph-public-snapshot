@@ -1,6 +1,6 @@
-import CopyIcon from '@sourcegraph/icons/lib/Copy'
-import DeleteIcon from '@sourcegraph/icons/lib/Delete'
 import PencilIcon from '@sourcegraph/icons/lib/Pencil'
+import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { startWith, switchMap, withLatestFrom } from 'rxjs/operators'
@@ -114,7 +114,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                         )}
                         {!this.state.isEditing && (
                             <button className="btn btn-icon action" onClick={this.duplicate}>
-                                <CopyIcon className="icon-inline" />
+                                <ContentCopyIcon className="icon-inline" />
                                 Duplicate
                             </button>
                         )}

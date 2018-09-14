@@ -1,7 +1,7 @@
-import DownloadIcon from '@sourcegraph/icons/lib/Download'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import PackageIcon from '@sourcegraph/icons/lib/Package'
 import { upperFirst } from 'lodash'
+import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -110,7 +110,7 @@ export class RepositoryGraphOverviewPage extends React.PureComponent<Props, Stat
                                 </>
                             )}
                         </OverviewItem>
-                        <OverviewItem link={`${this.props.routePrefix}/-/graph/dependencies`} icon={DownloadIcon}>
+                        <OverviewItem link={`${this.props.routePrefix}/-/graph/dependencies`} icon={CloudDownloadIcon}>
                             {this.state.overviewOrError === undefined ? (
                                 this.state.loading && (
                                     <>

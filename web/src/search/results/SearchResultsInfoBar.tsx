@@ -1,11 +1,11 @@
 import CalculatorIcon from '@sourcegraph/icons/lib/Calculator'
 import DirectionalSign from '@sourcegraph/icons/lib/DirectionalSign'
-import DownloadIcon from '@sourcegraph/icons/lib/Download'
 import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
-import SaveIcon from '@sourcegraph/icons/lib/Save'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
+import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
+import DownloadIcon from 'mdi-react/DownloadIcon'
 import * as React from 'react'
 import * as GQL from '../../backend/graphqlschema'
 import { ServerBanner } from '../../marketing/ServerBanner'
@@ -93,7 +93,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                             data-tooltip={props.results.cloning.map(repo => repo.name).join('\n')}
                         >
                             <span>
-                                <DownloadIcon className="icon-inline" /> {props.results.cloning.length}{' '}
+                                <CloudDownloadIcon className="icon-inline" /> {props.results.cloning.length}{' '}
                                 {pluralize('repository', props.results.cloning.length, 'repositories')} cloning (reload
                                 to try again)
                             </span>
@@ -124,7 +124,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                                 </>
                             ) : (
                                 <>
-                                    <SaveIcon className="icon-inline" /> Save this search query
+                                    <DownloadIcon className="icon-inline" /> Save this search query
                                 </>
                             )}
                         </button>

@@ -1,5 +1,5 @@
 import UnwrapIcon from '@sourcegraph/icons/lib/Unwrap'
-import WrapIcon from '@sourcegraph/icons/lib/Wrap'
+import WrapIcon from 'mdi-react/WrapIcon'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'

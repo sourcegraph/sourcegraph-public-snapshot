@@ -1,7 +1,7 @@
 import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
-import ShareIcon from '@sourcegraph/icons/lib/Share'
 import { upperFirst } from 'lodash'
+import ExportIcon from 'mdi-react/ExportIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -97,7 +97,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         const externalURL = externalURLs[0]
 
         const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURL.serviceType)
-        const Icon = icon || ShareIcon
+        const Icon = icon || ExportIcon
 
         // Special-case for GitHub: add line numbers to URL.
         let url = externalURL.url

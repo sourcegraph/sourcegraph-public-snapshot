@@ -1,5 +1,5 @@
-import ViewIcon from '@sourcegraph/icons/lib/View'
 import * as H from 'history'
+import EyeIcon from 'mdi-react/EyeIcon'
 import * as React from 'react'
 import { RenderMode } from '../..'
 import { ActionItem } from '../../../components/ActionItem'
@@ -60,7 +60,7 @@ export class ToggleRenderedFileMode extends React.PureComponent<Props> {
                 to={ToggleRenderedFileMode.getURLForMode(this.props.location, otherMode)}
                 data-tooltip={otherMode === 'code' ? 'Show raw code file' : 'Show formatted file'}
             >
-                <ViewIcon className="icon-inline" />{' '}
+                <EyeIcon className="icon-inline" />{' '}
                 <span className="d-none d-lg-inline">{otherMode === 'code' ? 'Raw' : 'Formatted'}</span>
             </ActionItem>
         )

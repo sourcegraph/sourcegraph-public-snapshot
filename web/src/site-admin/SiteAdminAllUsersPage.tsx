@@ -1,6 +1,6 @@
-import DeleteIcon from '@sourcegraph/icons/lib/Delete'
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
+import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
