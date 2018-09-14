@@ -40,7 +40,7 @@ func main() {
 		}
 	}
 	for {
-		req, err := http.NewRequest("POST", os.ExpandEnv(fmt.Sprintf("https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/enterprise/builds/%v?access_token=$BUILDKITE_TOKEN", build.Number)), nil)
+		req, err := http.NewRequest("GET", os.ExpandEnv(fmt.Sprintf("https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/enterprise/builds/%v?access_token=$BUILDKITE_TOKEN", build.Number)), nil)
 		if err != nil {
 			panic(err)
 		}
