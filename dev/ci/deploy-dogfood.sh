@@ -2,6 +2,10 @@
 set -ex
 
 case "$BUILDKITE_BRANCH" in
+    master)
+        exit 0 # nothing to do; frontend is deployed by trigger-enterprise-ci
+        ;;
+
     docker-images/gitserver)
         DEPLOYMENT="gitserver-1"
         CONTAINER="gitserver-1"
