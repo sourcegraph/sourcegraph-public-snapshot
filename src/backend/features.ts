@@ -1,19 +1,13 @@
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
-import { compact, flatten } from 'lodash'
-import { forkJoin, Observable, of } from 'rxjs'
+import { flatten } from 'lodash'
+import { forkJoin, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { Definition, Hover, Location, TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
-import { Hover as VSCodeHover } from 'vscode-languageserver-types'
-import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
+import { Definition, Location, TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import {
-    fetchDefinition,
-    fetchHover,
-    fetchImplementation,
-    fetchReferences,
     fetchXdefinition,
     fetchXreferences,
     LSPReferencesParams,
@@ -33,14 +27,6 @@ export interface ModeSpec {
 export { HoverMerged } // reexport to avoid needing to change all import sites - TODO(sqs): actually go change all them
 
 /**
- * A value that can be passed to several `getXyz` functions to force the use of the old (non-extensions) code
- * paths, even when the `platform` feature flag is enabled.
- *
- * This is used by pages (such as diff and compare) that are not yet supported by extensions.
- */
-export const FORCE_NO_EXTENSIONS = { extensionsController: null }
-
-/**
  * Fetches hover information for the given location.
  *
  * @param ctx the location
@@ -48,40 +34,17 @@ export const FORCE_NO_EXTENSIONS = { extensionsController: null }
  */
 export function getHover(
     ctx: LSPTextDocumentPositionParams,
-    { extensionsController }: ExtensionsControllerProps | typeof FORCE_NO_EXTENSIONS
+    { extensionsController }: ExtensionsControllerProps
 ): Observable<HoverMerged | null> {
-    if (extensionsController && USE_PLATFORM) {
-        return extensionsController.registries.textDocumentHover
-            .getHover({
-                textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-                position: {
-                    character: ctx.position.character - 1,
-                    line: ctx.position.line - 1,
-                },
-            })
-            .pipe(map(hover => hover as HoverMerged | null))
-    }
-    return forkJoin(getModes(ctx).map(({ mode }) => fetchHover({ ...ctx, mode }))).pipe(
-        map(hovers => toHoverMerged(hovers))
-    )
-}
-
-function toHoverMerged(values: (Hover | VSCodeHover | null)[]): HoverMerged | null {
-    const contents: HoverMerged['contents'] = []
-    let range: HoverMerged['range']
-    for (const result of values) {
-        if (result) {
-            if (Array.isArray(result.contents)) {
-                contents.push(...result.contents)
-            } else if (typeof result.contents === 'string') {
-                contents.push(result.contents)
-            }
-            if (result.range && !range) {
-                range = result.range
-            }
-        }
-    }
-    return contents.length === 0 ? null : range ? { contents, range } : { contents }
+    return extensionsController.registries.textDocumentHover
+        .getHover({
+            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+            position: {
+                character: ctx.position.character - 1,
+                line: ctx.position.line - 1,
+            },
+        })
+        .pipe(map(hover => hover as HoverMerged | null))
 }
 
 /**
@@ -92,20 +55,15 @@ function toHoverMerged(values: (Hover | VSCodeHover | null)[]): HoverMerged | nu
  */
 export function getDefinition(
     ctx: LSPTextDocumentPositionParams,
-    { extensionsController }: ExtensionsControllerProps | typeof FORCE_NO_EXTENSIONS
+    { extensionsController }: ExtensionsControllerProps
 ): Observable<Definition> {
-    if (extensionsController && USE_PLATFORM) {
-        return extensionsController.registries.textDocumentDefinition.getLocation({
-            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-            position: {
-                character: ctx.position.character - 1,
-                line: ctx.position.line - 1,
-            },
-        })
-    }
-    return forkJoin(getModes(ctx).map(({ mode }) => fetchDefinition({ ...ctx, mode }))).pipe(
-        map(results => flatten(compact(results)))
-    )
+    return extensionsController.registries.textDocumentDefinition.getLocation({
+        textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+        position: {
+            character: ctx.position.character - 1,
+            line: ctx.position.line - 1,
+        },
+    })
 }
 
 /**
@@ -119,7 +77,7 @@ export function getDefinition(
  */
 export function getJumpURL(
     ctx: LSPTextDocumentPositionParams,
-    extensions: ExtensionsControllerProps | typeof FORCE_NO_EXTENSIONS
+    extensions: ExtensionsControllerProps
 ): Observable<string | null> {
     return getDefinition(ctx, extensions).pipe(
         map(def => {
@@ -180,23 +138,18 @@ export function getReferences(
     ctx: LSPTextDocumentPositionParams & LSPReferencesParams,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[]> {
-    if (USE_PLATFORM) {
-        return extensionsController.registries.textDocumentReferences
-            .getLocation({
-                textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-                position: {
-                    character: ctx.position.character - 1,
-                    line: ctx.position.line - 1,
-                },
-                context: {
-                    includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
-                },
-            })
-            .pipe(map(castArray))
-    }
-    return forkJoin(getModes(ctx).map(({ mode }) => fetchReferences({ ...ctx, mode }))).pipe(
-        map(results => flatten(results))
-    )
+    return extensionsController.registries.textDocumentReferences
+        .getLocation({
+            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+            position: {
+                character: ctx.position.character - 1,
+                line: ctx.position.line - 1,
+            },
+            context: {
+                includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
+            },
+        })
+        .pipe(map(castArray))
 }
 
 /**
@@ -209,20 +162,15 @@ export function getImplementations(
     ctx: LSPTextDocumentPositionParams,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[]> {
-    if (USE_PLATFORM) {
-        return extensionsController.registries.textDocumentImplementation
-            .getLocation({
-                textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-                position: {
-                    character: ctx.position.character - 1,
-                    line: ctx.position.line - 1,
-                },
-            })
-            .pipe(map(castArray))
-    }
-    return forkJoin(getModes(ctx).map(({ mode }) => fetchImplementation({ ...ctx, mode }))).pipe(
-        map(results => flatten(results))
-    )
+    return extensionsController.registries.textDocumentImplementation
+        .getLocation({
+            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+            position: {
+                character: ctx.position.character - 1,
+                line: ctx.position.line - 1,
+            },
+        })
+        .pipe(map(castArray))
 }
 
 /**
@@ -247,12 +195,9 @@ export function getDecorations(
     ctx: AbsoluteRepoFile & LSPSelector,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<TextDocumentDecoration[] | null> {
-    if (USE_PLATFORM) {
-        return extensionsController.registries.textDocumentDecoration.getDecorations({
-            uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
-        })
-    }
-    return of(null)
+    return extensionsController.registries.textDocumentDecoration.getDecorations({
+        uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
+    })
 }
 
 /** Computes the set of LSP modes to use. */

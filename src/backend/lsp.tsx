@@ -3,14 +3,14 @@ import {
     SymbolLocationInformation,
     WorkspaceReferenceParams,
 } from 'javascript-typescript-langserver/lib/request-type'
-import { Observable, throwError } from 'rxjs'
+import { Observable } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { Definition, Hover, Location } from 'sourcegraph/module/protocol/plainTypes'
-import { Hover as VSCodeHover, MarkupContent } from 'vscode-languageserver-types'
+import { Location } from 'sourcegraph/module/protocol/plainTypes'
+import { MarkupContent } from 'vscode-languageserver-types'
 import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
-import { ErrorLike, normalizeAjaxError } from '../util/errors'
+import { normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 import { HoverMerged, ModeSpec } from './features'
 
@@ -25,7 +25,7 @@ export interface LSPSelector extends AbsoluteRepo, ModeSpec {}
  */
 export interface LSPTextDocumentPositionParams extends LSPSelector, PositionSpec, FileSpec {}
 
-export interface LSPRequest {
+interface LSPRequest {
     method: string
     params?: any
 }
@@ -43,22 +43,12 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
         return !c.value
     })
 
-/** JSON-RPC2 error for methods that are not found */
-const EMETHODNOTFOUND = -32601
-
-/** Returns whether the LSP message is a "method not found" error. */
-function isMethodNotFoundError(val: any): boolean {
-    return val && val.code === EMETHODNOTFOUND
-}
-
 /** LSP proxy error code for unsupported modes */
 export const EMODENOTFOUND = -32000
 
 type ResponseMessages = { 0: { result: InitializeResult } } & any[]
 
-export type ResponseResults = { 0: InitializeResult } & any[]
-
-type ResponseError = ErrorLike & { responses: ResponseMessages }
+type ResponseResults = { 0: InitializeResult } & any[]
 
 export function sendLSPHTTPRequests(requests: any[], urlPathHint?: string): Observable<any> {
     if (!urlPathHint) {
@@ -133,88 +123,6 @@ export const fetchServerCapabilities = memoizeObservable(
     cacheKey
 )
 
-/**
- * Fixes a response to textDocument/hover that is invalid because either
- * `range` or `contents` are `null`.
- *
- * See the spec:
- *
- * https://microsoft.github.io/language-server-protocol/specification#textDocument_hover
- *
- * @param response The LSP response to fix (will be mutated)
- */
-const normalizeHoverResponse = (hoverResponse: any): void => {
-    // rls for Rust sometimes responds with `range: null`.
-    // https://github.com/sourcegraph/sourcegraph/issues/11880
-    if (hoverResponse && !hoverResponse.range) {
-        hoverResponse.range = undefined
-    }
-
-    // clangd for C/C++ sometimes responds with `contents: null`.
-    // https://github.com/sourcegraph/sourcegraph/issues/11880#issuecomment-396650342
-    if (hoverResponse && !hoverResponse.contents) {
-        hoverResponse.contents = []
-    }
-}
-
-/** Callers should use features.getHover instead. */
-export const fetchHover = memoizeObservable(
-    (ctx: LSPTextDocumentPositionParams & LSPSelector): Observable<Hover | null> =>
-        sendLSPRequest(ctx, {
-            method: 'textDocument/hover',
-            params: {
-                textDocument: {
-                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
-                },
-                position: {
-                    character: ctx.position.character! - 1,
-                    line: ctx.position.line - 1,
-                },
-            },
-        }).pipe(
-            catchError((error: ResponseError) => {
-                // If the language server doesn't support textDocument/hover and it reported that it doesn't
-                // support it, ignore the error.
-                if (
-                    isMethodNotFoundError(error) &&
-                    error.responses &&
-                    error.responses[0] &&
-                    error.responses[0].result.capabilities &&
-                    !error.responses[0].result.capabilities.hoverProvider
-                ) {
-                    return [null]
-                }
-                return throwError(error)
-            }),
-            tap(hover => {
-                normalizeHoverResponse(hover)
-                // Do some shallow validation on response, e.g. to catch https://github.com/sourcegraph/sourcegraph/issues/11711
-                if (hover !== null && !VSCodeHover.is(hover)) {
-                    throw Object.assign(new Error('Invalid hover response from language server'), { hover })
-                }
-            })
-        ),
-    cacheKey
-)
-
-/** Callers should use features.getDefinition instead. */
-export const fetchDefinition = memoizeObservable(
-    (ctx: LSPTextDocumentPositionParams & LSPSelector): Observable<Definition> =>
-        sendLSPRequest(ctx, {
-            method: 'textDocument/definition',
-            params: {
-                textDocument: {
-                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
-                },
-                position: {
-                    character: ctx.position.character! - 1,
-                    line: ctx.position.line - 1,
-                },
-            },
-        }),
-    cacheKey
-)
-
 /** Callers should use features.getXdefinition instead. */
 export const fetchXdefinition = memoizeObservable(
     (ctx: LSPTextDocumentPositionParams & LSPSelector): Observable<SymbolLocationInformation | undefined> =>
@@ -236,45 +144,6 @@ export const fetchXdefinition = memoizeObservable(
 export interface LSPReferencesParams {
     includeDeclaration?: boolean
 }
-
-/** Callers should use features.getReferences instead. */
-export const fetchReferences = memoizeObservable(
-    (ctx: LSPTextDocumentPositionParams & LSPReferencesParams & LSPSelector): Observable<Location[]> =>
-        sendLSPRequest(ctx, {
-            method: 'textDocument/references',
-            params: {
-                textDocument: {
-                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
-                },
-                position: {
-                    character: ctx.position.character! - 1,
-                    line: ctx.position.line - 1,
-                },
-                context: {
-                    includeDeclaration: ctx.includeDeclaration !== false, // undefined means true
-                },
-            },
-        }),
-    cacheKey
-)
-
-/** Callers should use features.getImplementation instead. */
-export const fetchImplementation = memoizeObservable(
-    (ctx: LSPTextDocumentPositionParams & LSPSelector): Observable<Location[]> =>
-        sendLSPRequest(ctx, {
-            method: 'textDocument/implementation',
-            params: {
-                textDocument: {
-                    uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
-                },
-                position: {
-                    character: ctx.position.character! - 1,
-                    line: ctx.position.line - 1,
-                },
-            },
-        }),
-    cacheKey
-)
 
 export interface XReferenceOptions extends WorkspaceReferenceParams {
     /**
