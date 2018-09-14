@@ -89,7 +89,7 @@ As of this writing, `setup_8.x` also works, but you may want to prefer the newer
 Install Yarn:
 
 ```
-npm i yarn@1.9.4
+npm i -g yarn@1.9.4
 ```
 
 Noticing problems with `node_modules/` or package versions? Try:
