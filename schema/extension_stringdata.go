@@ -6,8 +6,8 @@ package schema
 const ExtensionSchemaJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://sourcegraph.com/v1/extension.schema.json#",
-  "title": "CXP extension manifest",
-  "description": "The CXP extension manifest describes the extension and the features it provides.",
+  "title": "Sourcegraph extension manifest",
+  "description": "The Sourcegraph extension manifest describes the extension and the features it provides.",
   "type": "object",
   "additionalProperties": false,
   "required": ["url", "activationEvents"],

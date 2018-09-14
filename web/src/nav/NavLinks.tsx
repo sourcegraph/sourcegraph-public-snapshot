@@ -1,6 +1,6 @@
 import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
-import { ContributableMenu } from 'cxp/module/protocol'
+import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -9,14 +9,14 @@ import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
 import { HistoryPopoverContainer } from '../components/HistoryPopoverContainer'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { USE_PLATFORM } from '../cxp/CXPEnvironment'
-import { CXPControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
-interface Props extends ExtensionsProps, CXPControllerProps {
+interface Props extends ExtensionsProps, ExtensionsControllerProps {
     location: H.Location
     history: H.History
     user: GQL.IUser | null
@@ -59,7 +59,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 {USE_PLATFORM && (
                     <ActionsNavItems
                         menu={ContributableMenu.GlobalNav}
-                        cxpController={this.props.cxpController}
+                        extensionsController={this.props.extensionsController}
                         extensions={this.props.extensions}
                     />
                 )}
@@ -102,7 +102,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 {USE_PLATFORM && (
                     <CommandListPopoverButton
                         menu={ContributableMenu.CommandPalette}
-                        cxpController={this.props.cxpController}
+                        extensionsController={this.props.extensionsController}
                         extensions={this.props.extensions}
                     />
                 )}
@@ -136,7 +136,7 @@ export class NavLinks extends React.PureComponent<Props> {
                 {this.props.showHelpPopover && (
                     <HelpPopover
                         onDismiss={this.onHelpPopoverToggle}
-                        cxpController={this.props.cxpController}
+                        extensionsController={this.props.extensionsController}
                         extensions={this.props.extensions}
                     />
                 )}

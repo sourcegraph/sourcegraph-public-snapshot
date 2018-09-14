@@ -8,6 +8,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -54,7 +55,6 @@ func (*extensionRegistryResolver) viewerCanAdministerExtension(ctx context.Conte
 func (*extensionRegistryResolver) UpdateExtension(ctx context.Context, args *struct {
 	Extension graphql.ID
 	Name      *string
-	Manifest  *string
 }) (*extensionRegistryMutationResult, error) {
 	id, err := unmarshalRegistryExtensionID(args.Extension)
 	if err != nil {
@@ -66,7 +66,7 @@ func (*extensionRegistryResolver) UpdateExtension(ctx context.Context, args *str
 		return nil, err
 	}
 
-	if err := db.RegistryExtensions.Update(ctx, id.LocalID, args.Name, args.Manifest); err != nil {
+	if err := db.RegistryExtensions.Update(ctx, id.LocalID, args.Name); err != nil {
 		return nil, err
 	}
 	return &extensionRegistryMutationResult{id: id.LocalID}, nil
@@ -94,6 +94,8 @@ func (*extensionRegistryResolver) DeleteExtension(ctx context.Context, args *str
 func (*extensionRegistryResolver) PublishExtension(ctx context.Context, args *struct {
 	ExtensionID string
 	Manifest    string
+	Bundle      *string
+	SourceMap   *string
 	Force       bool
 }) (*extensionRegistryMutationResult, error) {
 	// Add the prefix if needed, for ease of use.
@@ -164,7 +166,15 @@ func (*extensionRegistryResolver) PublishExtension(ctx context.Context, args *st
 		}
 	}
 
-	if err := db.RegistryExtensions.Update(ctx, id.LocalID, nil, &args.Manifest); err != nil {
+	release := db.RegistryExtensionRelease{
+		RegistryExtensionID: id.LocalID,
+		CreatorUserID:       actor.FromContext(ctx).UID,
+		ReleaseTag:          "release",
+		Manifest:            args.Manifest,
+		Bundle:              args.Bundle,
+		SourceMap:           args.SourceMap,
+	}
+	if _, err := db.RegistryExtensionReleases.Create(ctx, &release); err != nil {
 		return nil, err
 	}
 	return &extensionRegistryMutationResult{id: id.LocalID}, nil

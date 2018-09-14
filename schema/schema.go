@@ -85,17 +85,6 @@ type BuiltinAuthProvider struct {
 	Type        string `json:"type"`
 }
 
-// CXPExtensionManifest description: The CXP extension manifest describes the extension and the features it provides.
-type CXPExtensionManifest struct {
-	ActivationEvents []string                `json:"activationEvents"`
-	Args             *map[string]interface{} `json:"args,omitempty"`
-	Contributes      *Contributions          `json:"contributes,omitempty"`
-	Description      string                  `json:"description,omitempty"`
-	Readme           string                  `json:"readme,omitempty"`
-	Title            string                  `json:"title,omitempty"`
-	Url              string                  `json:"url"`
-}
-
 // CloneURLToRepositoryName description: Describes a mapping from clone URL to repository name. The `from` field contains a regular expression with named capturing groups. The `to` field contains a template string that references capturing group names. For instance, if `from` is "^../(?P<name>\w+)$" and `to` is "github.com/user/{name}", the clone URL "../myRepository" would be mapped to the repository name "github.com/user/myRepository".
 type CloneURLToRepositoryName struct {
 	From string `json:"from"`
@@ -351,4 +340,15 @@ type SiteConfiguration struct {
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.
 type SlackNotificationsConfig struct {
 	WebhookURL string `json:"webhookURL"`
+}
+
+// SourcegraphExtensionManifest description: The Sourcegraph extension manifest describes the extension and the features it provides.
+type SourcegraphExtensionManifest struct {
+	ActivationEvents []string                `json:"activationEvents"`
+	Args             *map[string]interface{} `json:"args,omitempty"`
+	Contributes      *Contributions          `json:"contributes,omitempty"`
+	Description      string                  `json:"description,omitempty"`
+	Readme           string                  `json:"readme,omitempty"`
+	Title            string                  `json:"title,omitempty"`
+	Url              string                  `json:"url"`
 }

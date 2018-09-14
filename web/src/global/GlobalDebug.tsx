@@ -1,13 +1,15 @@
 import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
 import { CaretDown } from '@sourcegraph/icons/lib/CaretDown'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
+import * as H from 'history'
 import * as React from 'react'
 import * as GQL from '../backend/graphqlschema'
-import { CXPEnvironmentProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
-import { CXPControllerProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsEnvironmentProps, USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 
-interface Props extends CXPEnvironmentProps, CXPControllerProps {
+interface Props extends ExtensionsEnvironmentProps, ExtensionsControllerProps {
     user: GQL.IUser | null
+    location: H.Location
 }
 
 /**
@@ -23,7 +25,8 @@ export const GlobalDebug: React.SFC<Props> = props =>
                     <ExtensionStatusPopover
                         loaderIcon={Loader as React.ComponentType<{ className: string; onClick?: () => void }>}
                         caretIcon={CaretDown as React.ComponentType<{ className: string; onClick?: () => void }>}
-                        cxpController={props.cxpController}
+                        extensionsController={props.extensionsController}
+                        location={props.location}
                     />
                 </li>
             </ul>

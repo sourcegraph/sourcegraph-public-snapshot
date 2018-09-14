@@ -1,6 +1,6 @@
 import { from, Observable } from 'rxjs'
 import { bufferCount, catchError, concatMap, filter, map, mergeMap, tap } from 'rxjs/operators'
-import { Location } from 'vscode-languageserver-types'
+import { Location } from 'sourcegraph/module/protocol/plainTypes'
 import { makeRepoURI } from '../..'
 import { getXdefinition, getXreferences } from '../../../backend/features'
 import { gql, queryGraphQL } from '../../../backend/graphql'

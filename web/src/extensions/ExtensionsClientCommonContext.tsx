@@ -1,7 +1,9 @@
-import { ExtensionsProps as GenericExtensionsProps } from '@sourcegraph/extensions-client-common/lib/context'
+import { ControllerProps as GenericExtensionsControllerProps } from '@sourcegraph/extensions-client-common/lib/client/controller'
+import {
+    ExtensionsProps as GenericExtensionsProps,
+    UpdateExtensionSettingsArgs,
+} from '@sourcegraph/extensions-client-common/lib/context'
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
-import { CXPControllerProps as GenericCXPControllerProps } from '@sourcegraph/extensions-client-common/lib/cxp/controller'
-import { importScriptsBlobURL } from '@sourcegraph/extensions-client-common/lib/cxp/webWorker'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { QueryResult } from '@sourcegraph/extensions-client-common/lib/graphql'
 import * as ECCGQL from '@sourcegraph/extensions-client-common/lib/schema/graphqlschema'
@@ -14,23 +16,24 @@ import {
 import CaretDown from '@sourcegraph/icons/lib/CaretDown'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import Menu from '@sourcegraph/icons/lib/Menu'
-import Warning from '@sourcegraph/icons/lib/Warning'
-import { ClientOptions } from 'cxp/module/client/client'
-import { MessageTransports } from 'cxp/module/jsonrpc2/connection'
-import { createWebWorkerMessageTransports } from 'cxp/module/jsonrpc2/transports/webWorker'
-import { ConfigurationUpdateParams } from 'cxp/module/protocol'
 import { isEqual } from 'lodash'
+import Warning from 'mdi-react/WarningIcon'
 import { concat, Observable } from 'rxjs'
 import { distinctUntilChanged, map, switchMap, take } from 'rxjs/operators'
+import { InitData } from 'sourcegraph/module/extension/extensionHost'
+import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
+import { createWebWorkerMessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/transports/webWorker'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
+import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { editConfiguration } from '../configuration/backend'
 import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
 import { isErrorLike } from '../util/errors'
+import ExtensionHostWorker from './extensionHost.worker.ts'
 
-export interface CXPControllerProps extends GenericCXPControllerProps<ConfigurationSubject, Settings> {}
+export interface ExtensionsControllerProps extends GenericExtensionsControllerProps<ConfigurationSubject, Settings> {}
 
 export interface ConfigurationCascadeProps extends GenericConfigurationCascadeProps<ConfigurationSubject, Settings> {}
 
@@ -42,7 +45,7 @@ export function createExtensionsContextController(): ExtensionsContextController
             map(gqlToCascade),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
-        updateExtensionSettings,
+        updateExtensionSettings: (subject, args) => updateExtensionSettings(subject, args),
         queryGraphQL: (request, variables) =>
             queryGraphQL(
                 gql`
@@ -50,6 +53,7 @@ export function createExtensionsContextController(): ExtensionsContextController
                 `,
                 variables
             ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry'>>>,
+        queryLSP: requests => sendLSPHTTPRequests(requests),
         icons: {
             Loader: Loader as React.ComponentType<{ className: string; onClick?: () => void }>,
             Warning: Warning as React.ComponentType<{ className: string; onClick?: () => void }>,
@@ -60,15 +64,7 @@ export function createExtensionsContextController(): ExtensionsContextController
     })
 }
 
-function updateExtensionSettings(
-    subject: string,
-    args: {
-        extensionID: string
-        edit?: ConfigurationUpdateParams
-        enabled?: boolean
-        remove?: boolean
-    }
-): Observable<void> {
+function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsArgs): Observable<void> {
     return configurationCascade.pipe(
         take(1),
         switchMap(configurationCascade => {
@@ -79,22 +75,27 @@ function updateExtensionSettings(
             const lastID = subjectConfig.latestSettings ? subjectConfig.latestSettings.id : null
 
             let edit: GQL.IConfigurationEdit
-            if (args.edit) {
+            if ('edit' in args && args.edit) {
                 edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
-            } else if (typeof args.enabled === 'boolean') {
-                edit = { keyPath: toGQLKeyPath(['extensions', args.extensionID]), value: args.enabled }
-            } else if (args.remove) {
-                edit = { keyPath: toGQLKeyPath(['extensions', args.extensionID]), value: null }
+            } else if ('extensionID' in args) {
+                edit = {
+                    keyPath: toGQLKeyPath(['extensions', args.extensionID]),
+                    value: typeof args.enabled === 'boolean' ? args.enabled : null,
+                }
             } else {
                 throw new Error('no edit')
             }
+
             return editConfiguration(subject, lastID, edit)
         }),
         switchMap(() => concat(refreshConfiguration(), [void 0]))
     )
 }
 
-export function updateUserExtensionSettings(args: { extensionID: string; enabled?: boolean }): Observable<void> {
+export function updateHighestPrecedenceExtensionSettings(args: {
+    extensionID: string
+    enabled?: boolean
+}): Observable<void> {
     return configurationCascade.pipe(
         take(1),
         switchMap(configurationCascade => {
@@ -106,8 +107,7 @@ export function updateUserExtensionSettings(args: { extensionID: string; enabled
 }
 
 export function createMessageTransports(
-    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>,
-    options: ClientOptions
+    extension: Pick<ConfiguredExtension, 'id' | 'manifest'>
 ): Promise<MessageTransports> {
     if (!extension.manifest) {
         throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no manifest found`)
@@ -117,9 +117,34 @@ export function createMessageTransports(
             `unable to run extension ${JSON.stringify(extension.id)}: invalid manifest: ${extension.manifest.message}`
         )
     }
+
     if (extension.manifest.url) {
-        const worker = new Worker(importScriptsBlobURL(extension.id, extension.manifest.url))
-        return Promise.resolve(createWebWorkerMessageTransports(worker))
+        const url = extension.manifest.url
+        return fetch(url, { credentials: 'same-origin' })
+            .then(resp => {
+                if (resp.status !== 200) {
+                    return resp
+                        .text()
+                        .then(text => Promise.reject(new Error(`loading bundle from ${url} failed: ${text}`)))
+                }
+                return resp.text()
+            })
+            .then(bundleSource => {
+                const blobURL = window.URL.createObjectURL(
+                    new Blob([bundleSource], {
+                        type: 'application/javascript',
+                    })
+                )
+                try {
+                    const worker = new ExtensionHostWorker()
+                    const initData: InitData = { bundleURL: blobURL }
+                    worker.postMessage(initData)
+                    return createWebWorkerMessageTransports(worker)
+                } catch (err) {
+                    console.error(err)
+                }
+                throw new Error('failed to initialize extension host')
+            })
     }
     throw new Error(`unable to run extension ${JSON.stringify(extension.id)}: no "url" property in manifest`)
 }
