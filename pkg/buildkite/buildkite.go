@@ -23,11 +23,18 @@ type Step struct {
 
 var Plugins = make(map[string]interface{})
 
+// OnEveryStepOpts are e.g. commands that are run on every AddStep, similar to
+// Plugins.
+var OnEveryStepOpts []StepOpt
+
 func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	step := &Step{
 		Label:   label,
 		Env:     make(map[string]string),
 		Plugins: Plugins,
+	}
+	for _, opt := range OnEveryStepOpts {
+		opt(step)
 	}
 	for _, opt := range opts {
 		opt(step)
