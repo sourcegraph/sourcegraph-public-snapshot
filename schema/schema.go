@@ -103,8 +103,13 @@ type ExperimentalFeatures struct {
 	Discussions           string `json:"discussions,omitempty"`
 	JumpToDefOSSIndex     string `json:"jumpToDefOSSIndex,omitempty"`
 	MultipleAuthProviders string `json:"multipleAuthProviders,omitempty"`
-	Platform              *bool  `json:"platform,omitempty"`
 	UpdateScheduler       string `json:"updateScheduler,omitempty"`
+}
+
+// Extensions description: Configures Sourcegraph extensions.
+type Extensions struct {
+	Disabled       *bool       `json:"disabled,omitempty"`
+	RemoteRegistry interface{} `json:"remoteRegistry,omitempty"`
 }
 type GitHubConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
@@ -190,11 +195,6 @@ type Phabricator struct {
 	Repos []*Repos `json:"repos,omitempty"`
 	Token string   `json:"token,omitempty"`
 	Url   string   `json:"url,omitempty"`
-}
-
-// Platform description: Configures the Sourcegraph platform functionality. Requires experimentalFeatures.platform to be `true` to take effect. EXPERIMENTAL: This configuration is subject to change without notice.
-type Platform struct {
-	RemoteRegistry interface{} `json:"remoteRegistry,omitempty"`
 }
 type Repos struct {
 	Callsign string `json:"callsign"`
@@ -307,6 +307,7 @@ type SiteConfiguration struct {
 	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`
 	ExecuteGradleOriginalRootPaths    string                       `json:"executeGradleOriginalRootPaths,omitempty"`
 	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
+	Extensions                        *Extensions                  `json:"extensions,omitempty"`
 	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName  `json:"git.cloneURLToRepositoryName,omitempty"`
 	GitMaxConcurrentClones            int                          `json:"gitMaxConcurrentClones,omitempty"`
 	Github                            []*GitHubConnection          `json:"github,omitempty"`
@@ -328,7 +329,6 @@ type SiteConfiguration struct {
 	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
 	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
-	Platform                          *Platform                    `json:"platform,omitempty"`
 	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
 	PrivateArtifactRepoPassword       string                       `json:"privateArtifactRepoPassword,omitempty"`
 	PrivateArtifactRepoURL            string                       `json:"privateArtifactRepoURL,omitempty"`

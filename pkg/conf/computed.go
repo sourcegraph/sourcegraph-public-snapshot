@@ -253,10 +253,3 @@ func SupportsManagingLanguageServers() (reason string, ok bool) {
 	}
 	return "", true
 }
-
-// IsPlatformEnabled reports whether the platform (Sourcegraph extensions and the extension
-// registry) is enabled.
-func IsPlatformEnabled() bool {
-	x := Get().ExperimentalFeatures
-	return x != nil && x.Platform != nil && *x.Platform
-}

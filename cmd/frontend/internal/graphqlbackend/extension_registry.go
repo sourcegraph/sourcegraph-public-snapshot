@@ -9,9 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
+var errExtensionsDisabled = errors.New("extensions are disabled in site configuration (contact the site admin to enable extensions)")
+
 func (r *schemaResolver) ExtensionRegistry(ctx context.Context) (*extensionRegistryResolver, error) {
-	if !conf.IsPlatformEnabled() {
-		return nil, errors.New("platform disabled")
+	if conf.Extensions() == nil {
+		return nil, errExtensionsDisabled
 	}
 	return &extensionRegistryResolver{}, nil
 }

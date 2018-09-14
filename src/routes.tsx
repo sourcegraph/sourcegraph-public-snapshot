@@ -144,14 +144,9 @@ export const routes: LayoutRouteProps[] = [
         path: '/survey/:score?',
         render: props => <SurveyPage {...props} />,
     },
-    ...((): LayoutRouteProps[] =>
-        window.context.platformEnabled
-            ? [
-                  {
-                      path: '/extensions',
-                      render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
-                  },
-              ]
-            : [])(),
+    {
+        path: '/extensions',
+        render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
+    },
     repoRevRoute,
 ]

@@ -4,7 +4,7 @@ import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
 import * as React from 'react'
 import * as GQL from '../backend/graphqlschema'
-import { ExtensionsEnvironmentProps, USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsEnvironmentProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 
 interface Props extends ExtensionsEnvironmentProps, ExtensionsControllerProps {
@@ -12,13 +12,13 @@ interface Props extends ExtensionsEnvironmentProps, ExtensionsControllerProps {
     location: H.Location
 }
 
+const SHOW_DEBUG = localStorage.getItem('debug') !== null
+
 /**
  * A global debug toolbar shown in the bottom right of the window.
- *
- * It is only useful for platform debug, so it's only shown for platform-enabled users.
  */
 export const GlobalDebug: React.SFC<Props> = props =>
-    USE_PLATFORM ? (
+    SHOW_DEBUG ? (
         <div className="global-debug navbar navbar-expand">
             <ul className="navbar-nav align-items-center">
                 <li className="nav-item">

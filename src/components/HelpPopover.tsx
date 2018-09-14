@@ -11,7 +11,6 @@ import { fromEvent, merge, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { Key } from 'ts-key-enum'
-import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 
 interface Props extends ExtensionsControllerProps, ExtensionsProps {
@@ -105,28 +104,26 @@ export class HelpPopover extends React.Component<Props> {
                         </Link>
                     ))}
                 </div>
-                {USE_PLATFORM && (
-                    <ActionsContainer
-                        menu={ContributableMenu.Help}
-                        // tslint:disable-next-line:jsx-no-lambda
-                        render={items => (
-                            <>
-                                <h4 className="card-header pl-3">Extensions help</h4>
-                                {items.map((item, i) => (
-                                    <ActionItem
-                                        key={i}
-                                        {...item}
-                                        extensionsController={this.props.extensionsController}
-                                        extensions={this.props.extensions}
-                                    />
-                                ))}
-                            </>
-                        )}
-                        empty={null}
-                        extensionsController={this.props.extensionsController}
-                        extensions={this.props.extensions}
-                    />
-                )}
+                <ActionsContainer
+                    menu={ContributableMenu.Help}
+                    // tslint:disable-next-line:jsx-no-lambda
+                    render={items => (
+                        <>
+                            <h4 className="card-header pl-3">Extensions help</h4>
+                            {items.map((item, i) => (
+                                <ActionItem
+                                    key={i}
+                                    {...item}
+                                    extensionsController={this.props.extensionsController}
+                                    extensions={this.props.extensions}
+                                />
+                            ))}
+                        </>
+                    )}
+                    empty={null}
+                    extensionsController={this.props.extensionsController}
+                    extensions={this.props.extensions}
+                />
             </div>
         )
     }

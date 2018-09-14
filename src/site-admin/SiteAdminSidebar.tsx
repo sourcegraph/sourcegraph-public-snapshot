@@ -11,7 +11,6 @@ import {
     SidebarGroupItems,
     SidebarNavItem,
 } from '../components/Sidebar'
-import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 import { NavItemDescriptor } from '../util/contributions'
 
 export type SiteAdminSideBarItems = Record<
@@ -68,21 +67,19 @@ export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, 
                 )}
             </SidebarGroupItems>
         </SidebarGroup>
-        {USE_PLATFORM && (
-            <SidebarGroup>
-                <SidebarGroupHeader icon={PuzzleIcon} label="Registry" />
-                <SidebarGroupItems>
-                    {items.registry.map(
-                        ({ label, to, exact, condition = () => true }) =>
-                            condition({}) && (
-                                <SidebarNavItem to={to} exact={exact} key={label}>
-                                    {label}
-                                </SidebarNavItem>
-                            )
-                    )}
-                </SidebarGroupItems>
-            </SidebarGroup>
-        )}
+        <SidebarGroup>
+            <SidebarGroupHeader icon={PuzzleIcon} label="Registry" />
+            <SidebarGroupItems>
+                {items.registry.map(
+                    ({ label, to, exact, condition = () => true }) =>
+                        condition({}) && (
+                            <SidebarNavItem to={to} exact={exact} key={label}>
+                                {label}
+                            </SidebarNavItem>
+                        )
+                )}
+            </SidebarGroupItems>
+        </SidebarGroup>
         <SidebarGroup>
             <SidebarGroupItems>
                 {items.other.map(

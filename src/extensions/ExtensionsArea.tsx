@@ -6,7 +6,6 @@ import { Subject, Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { RouteDescriptor } from '../util/contributions'
-import { USE_PLATFORM } from './environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
 import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
@@ -78,10 +77,6 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
     }
 
     public render(): JSX.Element | null {
-        if (!USE_PLATFORM) {
-            return <NotFoundPage />
-        }
-
         const context: ExtensionsAreaRouteContext = {
             authenticatedUser: this.props.user,
             configurationCascade: this.props.configurationCascade,

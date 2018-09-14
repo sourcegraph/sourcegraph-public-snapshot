@@ -35,8 +35,8 @@ func registryExtensionByID(ctx context.Context, id graphql.ID) (*registryExtensi
 }
 
 func registryExtensionByIDInt32(ctx context.Context, id int32) (*registryExtensionDBResolver, error) {
-	if !conf.IsPlatformEnabled() {
-		return nil, errors.New("platform disabled")
+	if conf.Extensions() == nil {
+		return nil, errExtensionsDisabled
 	}
 	x, err := db.RegistryExtensions.GetByID(ctx, id)
 	if err != nil {

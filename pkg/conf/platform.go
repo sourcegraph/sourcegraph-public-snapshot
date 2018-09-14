@@ -7,16 +7,17 @@ type PlatformConfiguration struct {
 	RemoteRegistryURL string
 }
 
-// Platform returns the configuration for the Sourcegraph platform, or nil if it is disabled.
-func Platform() *PlatformConfiguration {
+// Extensions returns the configuration for the Sourcegraph platform, or nil if it is disabled.
+func Extensions() *PlatformConfiguration {
 	cfg := Get()
-	if cfg.ExperimentalFeatures == nil || cfg.ExperimentalFeatures.Platform == nil || !*cfg.ExperimentalFeatures.Platform {
-		return nil
+
+	x := cfg.Extensions
+	if x == nil {
+		x = &schema.Extensions{}
 	}
 
-	p := cfg.Platform
-	if p == nil {
-		p = &schema.Platform{}
+	if x.Disabled != nil && *x.Disabled {
+		return nil
 	}
 
 	var pc PlatformConfiguration
@@ -24,9 +25,9 @@ func Platform() *PlatformConfiguration {
 	// If the "remoteRegistry" value is a string, use that. If false, then keep it empty. Otherwise
 	// use the default.
 	const defaultRemoteRegistry = "https://sourcegraph.com/.api/registry"
-	if s, ok := p.RemoteRegistry.(string); ok {
+	if s, ok := x.RemoteRegistry.(string); ok {
 		pc.RemoteRegistryURL = s
-	} else if b, ok := p.RemoteRegistry.(bool); ok && !b {
+	} else if b, ok := x.RemoteRegistry.(bool); ok && !b {
 		// Nothing to do.
 	} else {
 		pc.RemoteRegistryURL = defaultRemoteRegistry

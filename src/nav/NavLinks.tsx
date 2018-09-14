@@ -9,7 +9,6 @@ import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
 import { HistoryPopoverContainer } from '../components/HistoryPopoverContainer'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
-import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { eventLogger } from '../tracking/eventLogger'
@@ -62,13 +61,11 @@ export class NavLinks extends React.PureComponent<Props> {
                         </a>
                     </li>
                 )}
-                {USE_PLATFORM && (
-                    <ActionsNavItems
-                        menu={ContributableMenu.GlobalNav}
-                        extensionsController={this.props.extensionsController}
-                        extensions={this.props.extensions}
-                    />
-                )}
+                <ActionsNavItems
+                    menu={ContributableMenu.GlobalNav}
+                    extensionsController={this.props.extensionsController}
+                    extensions={this.props.extensions}
+                />
                 {this.props.user && (
                     <li className="nav-item">
                         <Link to="/search/searches" className="nav-link">
@@ -90,14 +87,13 @@ export class NavLinks extends React.PureComponent<Props> {
                         </Link>
                     </li>
                 )}
-                {USE_PLATFORM &&
-                    !HIDE_EXTENSIONS_LINK && (
-                        <li className="nav-item">
-                            <Link to="/extensions" className="nav-link">
-                                Extensions
-                            </Link>
-                        </li>
-                    )}
+                {!HIDE_EXTENSIONS_LINK && (
+                    <li className="nav-item">
+                        <Link to="/extensions" className="nav-link">
+                            Extensions
+                        </Link>
+                    </li>
+                )}
                 {this.props.user &&
                     this.props.user.siteAdmin && (
                         <li className="nav-item">
@@ -106,13 +102,11 @@ export class NavLinks extends React.PureComponent<Props> {
                             </Link>
                         </li>
                     )}
-                {USE_PLATFORM && (
-                    <CommandListPopoverButton
-                        menu={ContributableMenu.CommandPalette}
-                        extensionsController={this.props.extensionsController}
-                        extensions={this.props.extensions}
-                    />
-                )}
+                <CommandListPopoverButton
+                    menu={ContributableMenu.CommandPalette}
+                    extensionsController={this.props.extensionsController}
+                    extensions={this.props.extensions}
+                />
                 {fileHistoryEnabled && (
                     <li>
                         <HistoryPopoverContainer location={this.props.location} history={this.props.history} />

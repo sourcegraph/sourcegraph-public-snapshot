@@ -5,7 +5,6 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import * as GQL from '../../../backend/graphqlschema'
 import { HeroPage } from '../../../components/HeroPage'
-import { USE_PLATFORM } from '../../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsAreaRouteContext } from '../../../extensions/ExtensionsArea'
 import { ExtensionsProps } from '../../../extensions/ExtensionsClientCommonContext'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
@@ -43,10 +42,6 @@ export class RegistryArea extends React.Component<Props> {
     }
 
     public render(): JSX.Element | null {
-        if (!USE_PLATFORM) {
-            return <NotFoundPage />
-        }
-
         const transferProps: RegistryAreaPageProps = {
             authenticatedUser: this.props.authenticatedUser,
             extensions: this.props.extensions,

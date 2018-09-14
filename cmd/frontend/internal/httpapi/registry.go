@@ -124,7 +124,7 @@ func init() {
 
 // serveRegistry serves the external HTTP API for the extension registry.
 func serveRegistry(w http.ResponseWriter, r *http.Request) (err error) {
-	if conf.Platform() == nil {
+	if conf.Extensions() == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}

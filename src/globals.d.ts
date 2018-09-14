@@ -86,9 +86,6 @@ interface SourcegraphContext {
     /** Whether the reset-password flow is enabled. */
     resetPasswordEnabled: boolean
 
-    /** Whether the platform experiment is enabled. */
-    platformEnabled?: boolean
-
     /**
      * Likely running within a Docker container under a Mac host OS.
      */

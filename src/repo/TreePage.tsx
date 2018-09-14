@@ -22,7 +22,6 @@ import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { searchQueryForRepoRev } from '../search'
@@ -311,29 +310,27 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     />
                                 </div>
                             )}
-                            {USE_PLATFORM && (
-                                <ActionsContainer
-                                    menu={ContributableMenu.DirectoryPage}
-                                    // tslint:disable-next-line:jsx-no-lambda
-                                    render={items => (
-                                        <section className="tree-page__section">
-                                            <h3 className="tree-page__section-header">Actions</h3>
-                                            {items.map((item, i) => (
-                                                <ActionItem
-                                                    key={i}
-                                                    {...item}
-                                                    className="btn btn-secondary mr-1 mb-1"
-                                                    extensionsController={this.props.extensionsController}
-                                                    extensions={this.props.extensions}
-                                                />
-                                            ))}
-                                        </section>
-                                    )}
-                                    empty={null}
-                                    extensionsController={this.props.extensionsController}
-                                    extensions={this.props.extensions}
-                                />
-                            )}
+                            <ActionsContainer
+                                menu={ContributableMenu.DirectoryPage}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={items => (
+                                    <section className="tree-page__section">
+                                        <h3 className="tree-page__section-header">Actions</h3>
+                                        {items.map((item, i) => (
+                                            <ActionItem
+                                                key={i}
+                                                {...item}
+                                                className="btn btn-secondary mr-1 mb-1"
+                                                extensionsController={this.props.extensionsController}
+                                                extensions={this.props.extensions}
+                                            />
+                                        ))}
+                                    </section>
+                                )}
+                                empty={null}
+                                extensionsController={this.props.extensionsController}
+                                extensions={this.props.extensions}
+                            />
                             <div className="tree-page__section">
                                 <h3 className="tree-page__section-header">Changes</h3>
                                 <FilteredConnection<

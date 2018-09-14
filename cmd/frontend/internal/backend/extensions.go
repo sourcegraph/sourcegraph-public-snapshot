@@ -168,7 +168,7 @@ func GetLocalRegistryExtensionIDPrefix() *string {
 // GetRemoteRegistryURL returns the remote registry URL from site configuration, or nil if there is
 // none. If an error exists while parsing the value in site configuration, the error is returned.
 func GetRemoteRegistryURL() (*url.URL, error) {
-	pc := conf.Platform()
+	pc := conf.Extensions()
 	if pc == nil || pc.RemoteRegistryURL == "" {
 		return nil, nil
 	}

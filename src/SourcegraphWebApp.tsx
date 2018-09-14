@@ -23,7 +23,7 @@ import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
-import { ExtensionsEnvironmentProps, USE_PLATFORM } from './extensions/environment/ExtensionsEnvironment'
+import { ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -171,26 +171,24 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
         )
 
-        if (USE_PLATFORM) {
-            this.subscriptions.add(this.state.extensionsController)
+        this.subscriptions.add(this.state.extensionsController)
 
-            this.subscriptions.add(
-                this.state.extensions.context.configurationCascade.subscribe(
-                    v => this.onConfigurationCascadeChange(v),
-                    err => console.error(err)
-                )
+        this.subscriptions.add(
+            this.state.extensions.context.configurationCascade.subscribe(
+                v => this.onConfigurationCascadeChange(v),
+                err => console.error(err)
             )
+        )
 
-            // Keep the Sourcegraph extensions controller's extensions up-to-date.
-            //
-            // TODO(sqs): handle loading and errors
-            this.subscriptions.add(
-                this.state.extensions.viewerConfiguredExtensions.subscribe(
-                    extensions => this.onViewerConfiguredExtensionsChange(extensions),
-                    err => console.error(err)
-                )
+        // Keep the Sourcegraph extensions controller's extensions up-to-date.
+        //
+        // TODO(sqs): handle loading and errors
+        this.subscriptions.add(
+            this.state.extensions.viewerConfiguredExtensions.subscribe(
+                extensions => this.onViewerConfiguredExtensionsChange(extensions),
+                err => console.error(err)
             )
-        }
+        )
     }
 
     public componentWillUnmount(): void {
@@ -295,7 +293,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     />
                 </BrowserRouter>
                 <Tooltip key={1} />
-                {USE_PLATFORM ? <Notifications key={2} extensionsController={this.state.extensionsController} /> : null}
+                <Notifications key={2} extensionsController={this.state.extensionsController} />
             </>
         )
     }

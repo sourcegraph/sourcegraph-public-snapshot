@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"sort"
 	"strings"
 	"sync"
@@ -62,8 +61,8 @@ func (r *extensionRegistryResolver) Extensions(ctx context.Context, args *struct
 func (r *userResolver) RegistryExtensions(ctx context.Context, args *struct {
 	registryExtensionConnectionArgs
 }) (*registryExtensionConnectionResolver, error) {
-	if !conf.IsPlatformEnabled() {
-		return nil, errors.New("platform disabled")
+	if conf.Extensions() == nil {
+		return nil, errExtensionsDisabled
 	}
 
 	opt := db.RegistryExtensionsListOptions{Publisher: db.RegistryPublisher{UserID: r.user.ID}}
@@ -77,8 +76,8 @@ func (r *userResolver) RegistryExtensions(ctx context.Context, args *struct {
 func (r *orgResolver) RegistryExtensions(ctx context.Context, args *struct {
 	registryExtensionConnectionArgs
 }) (*registryExtensionConnectionResolver, error) {
-	if !conf.IsPlatformEnabled() {
-		return nil, errors.New("platform disabled")
+	if conf.Extensions() == nil {
+		return nil, errExtensionsDisabled
 	}
 
 	opt := db.RegistryExtensionsListOptions{Publisher: db.RegistryPublisher{OrgID: r.org.ID}}

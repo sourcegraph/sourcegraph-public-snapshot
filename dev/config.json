@@ -5,12 +5,11 @@
     "configVars": "enabled",
     "canonicalURLRedirect": "enabled",
     "multipleAuthProviders": "enabled",
-    "platform": true,
     "updateScheduler": "enabled",
     "discussions": "enabled"
   },
   "htmlHeadTop":
-    "<script>if (localStorage.getItem('disableDefaultFeatureFlags') !== 'true') { localStorage.setItem('treeVersion', '3'); localStorage.setItem('codeIntelStatusIndicator', 'true'); localStorage.setItem('blobVersion', '2'); localStorage.setItem('enable-file-history', 'true'); localStorage.setItem('platform', true); }</script>",
+    "<script>if (localStorage.getItem('disableDefaultFeatureFlags') !== 'true') { localStorage.setItem('treeVersion', '3'); localStorage.setItem('codeIntelStatusIndicator', 'true'); localStorage.setItem('blobVersion', '2'); localStorage.setItem('enable-file-history', 'true'); }</script>",
   "disablePublicRepoRedirects": true,
   "phabricator": [
     {

@@ -19,7 +19,7 @@ import (
 // serveRegistryExtensionBundle serves the bundled JavaScript source file or the source map for an
 // extension in the registry as a raw JavaScript or JSON file.
 func serveRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
-	if conf.Platform() == nil {
+	if conf.Extensions() == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
