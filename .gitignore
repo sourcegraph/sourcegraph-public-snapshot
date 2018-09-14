@@ -88,5 +88,5 @@ cmd/indexer/debug
 /.gtm/
 
 node_modules/
-
 package-lock.json
+yarn-error.lock

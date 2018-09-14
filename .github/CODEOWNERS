@@ -37,4 +37,4 @@ conf/ @sqs
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)
 **/package.json
-**/package-lock.json
+**/yarn.lock
