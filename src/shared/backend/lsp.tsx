@@ -1,7 +1,7 @@
 import { DiffPart, JumpURLFetcher } from '@sourcegraph/codeintellify'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
-import { from, Observable, of, OperatorFunction, throwError as error } from 'rxjs'
+import { from, Observable, of, OperatorFunction, throwError, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { HoverMerged } from 'sourcegraph/module/client/types/hover'
@@ -21,10 +21,10 @@ import {
     ResolvedRevSpec,
     RevSpec,
 } from '../repo'
-import { canFetchForURL, getModeFromPath, repoUrlCache, sourcegraphUrl } from '../util/context'
+import { canFetchForURL, DEFAULT_SOURCEGRAPH_URL, getModeFromPath, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { memoizeObservable } from '../util/memoize'
 import { toAbsoluteBlobURL } from '../util/url'
-import { normalizeAjaxError } from './errors'
+import { normalizeAjaxError, NoSourcegraphURLError } from './errors'
 import { getHeaders } from './headers'
 
 export interface LSPRequest {
@@ -44,27 +44,45 @@ export function isEmptyHover(hover: HoverMerged | null): boolean {
     return !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
 }
 
-export function sendLSPHTTPRequests(requests: any[]): Observable<any> {
-    const urlPathHint = requests[1] && requests[1].method
-    return ajax({
-        method: 'POST',
-        url: `${sourcegraphUrl}/.api/xlang/${urlPathHint || ''}`,
-        headers: getHeaders(),
-        crossDomain: true,
-        withCredentials: true,
-        body: JSON.stringify(requests),
-        async: true,
-    }).pipe(
-        // Workaround for https://github.com/ReactiveX/rxjs/issues/3606
-        tap(response => {
-            if (response.status === 0) {
-                throw Object.assign(new Error('Ajax status 0'), response)
-            }
-        }),
-        catchError<AjaxResponse, never>(err => {
-            normalizeAjaxError(err)
-            throw err
-        }),
+export function sendLSPHTTPRequests(requests: any[], url: string = sourcegraphUrl): Observable<any[]> {
+    const sendTo = (urlsToTry: string[]): Observable<AjaxResponse> => {
+        if (urlsToTry.length === 0) {
+            return throwError(new NoSourcegraphURLError())
+        }
+
+        const urlToTry = urlsToTry[0]
+        const urlPathHint = requests[1] && requests[1].method
+        return ajax({
+            method: 'POST',
+            url: `${urlToTry}/.api/xlang/${urlPathHint || ''}`,
+            headers: getHeaders(),
+            crossDomain: true,
+            withCredentials: true,
+            body: JSON.stringify(requests),
+            async: true,
+        }).pipe(
+            // Workaround for https://github.com/ReactiveX/rxjs/issues/3606
+            tap(response => {
+                if (response.status === 0) {
+                    throw Object.assign(new Error('Ajax status 0'), response)
+                }
+            }),
+            catchError(err => {
+                if (urlsToTry.length === 1) {
+                    // We don't have any fallbacks left, so throw the most recent error.
+                    throw err
+                } else {
+                    return sendTo(urlsToTry.slice(1))
+                }
+            }),
+            catchError<AjaxResponse, never>(err => {
+                normalizeAjaxError(err)
+                throw err
+            })
+        )
+    }
+
+    return sendTo([url, DEFAULT_SOURCEGRAPH_URL].filter(url => canFetchForURL(url))).pipe(
         map(({ response }) => response)
     )
 }
