@@ -93,7 +93,7 @@
     "@sourcegraph/extensions-client-common": "^8.4.0",
     "@sourcegraph/react-loading-spinner": "0.0.6",
     "@sqs/jsonc-parser": "^1.0.3",
-    "@types/uglifyjs-webpack-plugin": "^1.1.0",
+    "@types/uglifyjs-webpack-plugin": "1.1.0",
     "bootstrap": "^4.0.0",
     "cypress-browser-extension-plugin": "^0.1.0",
     "downshift": "^2.0.14",

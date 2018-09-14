@@ -1133,7 +1133,7 @@
   dependencies:
     source-map "^0.6.1"
 
-"@types/uglifyjs-webpack-plugin@^1.1.0":
+"@types/uglifyjs-webpack-plugin@1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@types/uglifyjs-webpack-plugin/-/uglifyjs-webpack-plugin-1.1.0.tgz#94647396472e1d3e3586e3e2a5c7d1ab41509d20"
   dependencies:
