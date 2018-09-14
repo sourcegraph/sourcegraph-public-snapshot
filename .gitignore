@@ -87,6 +87,12 @@ cmd/indexer/debug
 /dev/e2e/log.html
 /.gtm/
 
+# Web
 node_modules/
 package-lock.json
-yarn-error.lock
+.nyc_output/
+coverage/
+out/
+src/backend/graphqlschema.ts
+puppeteer/
+package-lock.json

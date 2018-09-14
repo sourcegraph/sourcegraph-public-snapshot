@@ -27,7 +27,7 @@ const PHABRICATOR_EXTENSION_FILES = './node_modules/@sourcegraph/phabricator-ext
  * The package is published from https://github.com/sourcegraph/browser-extensions
  */
 export function phabricator(): NodeJS.ReadWriteStream {
-    return gulp.src(PHABRICATOR_EXTENSION_FILES).pipe(gulp.dest('../ui/assets/extension'))
+    return gulp.src(PHABRICATOR_EXTENSION_FILES).pipe(gulp.dest('./ui/assets/extension'))
 }
 
 export const watchPhabricator = gulp.series(phabricator, async () => {
@@ -67,7 +67,7 @@ export async function webpackServe(): Promise<void> {
                 ...webpackConfig,
                 serve: {
                     clipboard: false,
-                    content: '../ui/assets',
+                    content: './ui/assets',
                     port: 3080,
                     hotClient: false,
                     devMiddleware: {
@@ -112,7 +112,7 @@ export async function webpackServe(): Promise<void> {
     )
 }
 
-const GRAPHQL_SCHEMA_PATH = __dirname + '/../cmd/frontend/internal/graphqlbackend/schema.graphql'
+const GRAPHQL_SCHEMA_PATH = __dirname + '/cmd/frontend/internal/graphqlbackend/schema.graphql'
 
 export async function watchGraphQLTypes(): Promise<void> {
     await graphQLTypes()
@@ -127,7 +127,7 @@ export async function graphQLTypes(): Promise<void> {
     const schema = buildSchema(schemaStr)
     const result = (await graphql(schema, introspectionQuery)) as { data: IntrospectionQuery }
 
-    const formatOptions = (await resolveConfig(__dirname, { config: __dirname + '/../prettier.config.js' }))!
+    const formatOptions = (await resolveConfig(__dirname, { config: __dirname + '/prettier.config.js' }))!
     const typings =
         'export type ID = string\n\n' +
         generateNamespace(
@@ -158,7 +158,7 @@ export async function schemaTypes(): Promise<void> {
     await mkdirp(__dirname + '/src/schema')
     await Promise.all(
         ['settings', 'site', 'extension'].map(async file => {
-            let data = await readFile(__dirname + `/../schema/${file}.schema.json`, 'utf8')
+            let data = await readFile(__dirname + `/schema/${file}.schema.json`, 'utf8')
             // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
             // when the schema is in a oneOf (to be merged with extension schemas).
             data = data.replace(
@@ -166,7 +166,7 @@ export async function schemaTypes(): Promise<void> {
                 '#/definitions/'
             )
             const types = await compileJSONSchema(JSON.parse(data), 'settings.schema', {
-                cwd: __dirname + '/../schema',
+                cwd: __dirname + '/schema',
             })
             await writeFile(__dirname + `/src/schema/${file}.schema.d.ts`, types)
         })
@@ -176,7 +176,7 @@ export async function schemaTypes(): Promise<void> {
 export async function watchSchemaTypes(): Promise<void> {
     await schemaTypes()
     await new Promise<never>((resolve, reject) => {
-        gulp.watch(__dirname + '/../schema/*.schema.json', schemaTypes).on('error', reject)
+        gulp.watch(__dirname + '/schema/*.schema.json', schemaTypes).on('error', reject)
     })
 }
 

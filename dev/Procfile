@@ -10,7 +10,7 @@ lsp-proxy: ./dev/delve-hook lsp-proxy
 xlang-go: ./dev/delve-hook xlang-go -mode=tcp -addr=:4389
 frontend: ./dev/delve-hook .bin/frontend
 watch: ./dev/changewatch.sh
-web: sh -c "cd web && ([ -n \"$OFFLINE\" ] || yarn) && ./node_modules/.bin/gulp --color watch"
+web: ./node_modules/.bin/gulp --color watch
 syntect_server: ./dev/syntect_server
 zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
 zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc

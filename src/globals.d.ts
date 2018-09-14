@@ -116,19 +116,6 @@ interface SourcegraphContext {
     }[]
 }
 
-declare module '*.schema.json' {
-    const value: {
-        $id: string
-        [key: string]: any
-    }
-    export default value
-}
-
-declare module '*.json' {
-    const value: any
-    export default value
-}
-
 /**
  * For Web Worker entrypoints using Webpack's worker-loader.
  *

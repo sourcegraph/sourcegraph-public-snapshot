@@ -54,7 +54,7 @@ Here are the services that compose Sourcegraph.
 
 ### frontend ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/frontend))
 
-The frontend serves our [web app](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/web) and hosts our [GraphQL API](https://about.sourcegraph.com/docs/features/api/).
+The frontend serves our [web app](./web.md) and hosts our [GraphQL API](https://about.sourcegraph.com/docs/features/api/).
 
 Application data is stored in our Postgresql database.
 

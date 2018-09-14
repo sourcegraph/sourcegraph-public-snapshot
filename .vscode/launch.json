@@ -5,8 +5,8 @@
       "type": "node",
       "request": "launch",
       "name": "Mocha Tests",
-      "cwd": "${workspaceFolder}/web",
-      "program": "${workspaceFolder}/web/node_modules/mocha/bin/_mocha",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
       "args": ["--require", "ts-node/register", "--colors", "--no-timeouts", "src/**/*.test.ts?(x)"],
       "env": {
         "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
@@ -17,8 +17,8 @@
       "type": "node",
       "request": "launch",
       "name": "Mocha E2E Tests",
-      "cwd": "${workspaceFolder}/web",
-      "program": "${workspaceFolder}/web/node_modules/mocha/bin/_mocha",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
       "args": [
         "--require",
         "ts-node/register",
@@ -39,8 +39,8 @@
       "type": "node",
       "request": "launch",
       "name": "Gulp",
-      "cwd": "${workspaceFolder}/web",
-      "program": "${workspaceFolder}/web/node_modules/gulp/bin/gulp.js",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
       "args": ["webpack"],
       "env": {
         "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
@@ -52,7 +52,7 @@
       "type": "chrome",
       "request": "attach",
       "port": 9222,
-      "webRoot": "${workspaceRoot}/web",
+      "webRoot": "${workspaceRoot}",
       "url": "http://localhost:3080/*",
       "sourceMaps": true
     },

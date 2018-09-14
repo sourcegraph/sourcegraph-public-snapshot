@@ -6,18 +6,18 @@
 /migrations/ @keegancsmith
 monolith/ @keegancsmith
 search @keegancsmith
-/web/ @felixfbecker
+/src/ @felixfbecker
 /xlang/ @keegancsmith @beyang
 /schema/ @sqs
-/web/src/site-admin/ @sqs
-/web/src/settings/ @sqs
+/src/site-admin/ @sqs
+/src/settings/ @sqs
 conf/ @sqs
 /cmd/frontend/internal/auth/ @sqs
 /dev/auth-provider/ @sqs
 /dev/config.json @sqs
 /client/vscode/ @chrismwendt
 /cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
-/web/src/tracking/ @dadlerj
+/src/tracking/ @dadlerj
 /enterprise/ @beyang
 /cmd/frontend/ @beyang
 /cmd/gitserver/ @beyang

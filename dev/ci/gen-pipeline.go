@@ -158,14 +158,12 @@ func main() {
 	pipeline.AddStep(":typescript:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("cd web"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run tslint"))
 
 	pipeline.AddStep(":stylelint:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("cd web"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run stylelint --quiet"))
 
@@ -177,8 +175,6 @@ func main() {
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("cd web"),
-		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run browserslist"),
 		bk.Cmd("NODE_ENV=production yarn run build --color"),
 		bk.Cmd("GITHUB_TOKEN= yarn run bundlesize"))
@@ -186,11 +182,10 @@ func main() {
 	pipeline.AddStep(":mocha:",
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("cd web"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run cover"),
 		bk.Cmd("node_modules/.bin/nyc report -r json"),
-		bk.ArtifactPaths("web/coverage/coverage-final.json"))
+		bk.ArtifactPaths("coverage/coverage-final.json"))
 
 	pipeline.AddStep(":docker:",
 		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
@@ -246,10 +241,9 @@ func main() {
 			bk.Concurrency(1),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
 			bk.Env("FORCE_COLOR", "1"),
-			bk.Cmd("cd web"),
 			bk.Cmd("yarn --frozen-lockfile"),
 			bk.Cmd("yarn run test-e2e --retries 5"),
-			bk.ArtifactPaths("web/puppeteer/*.png"))
+			bk.ArtifactPaths("puppeteer/*.png"))
 		pipeline.AddWait()
 
 		// Deploy to prod

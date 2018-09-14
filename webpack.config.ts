@@ -68,7 +68,7 @@ const config: webpack.Configuration = {
         'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
     },
     output: {
-        path: path.join(__dirname, '../ui/assets'),
+        path: path.join(__dirname, 'ui', 'assets'),
         filename: 'scripts/[name].bundle.js',
         chunkFilename: 'scripts/[id]-[chunkhash].chunk.js',
         publicPath: '/.assets/',
