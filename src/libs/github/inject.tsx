@@ -320,16 +320,22 @@ function injectExtensionsGlobalComponents({
 }): void {
     const headerElem = document.querySelector('div.HeaderMenu>div:last-child')
     if (headerElem) {
-        const commandListElem = document.createElement('div')
-        commandListElem.className = 'command-palette-button'
-        headerElem.appendChild(commandListElem)
+        const commandListClass = 'command-palette-button'
+
+        function createCommandList(): HTMLElement {
+            const commandListElem = document.createElement('div')
+            commandListElem.className = commandListClass
+            headerElem!.appendChild(commandListElem)
+            return commandListElem
+        }
+
         render(
             <CommandListPopoverButton
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
                 extensions={extensionsContextController}
             />,
-            commandListElem
+            document.querySelector('.' + commandListClass) || createCommandList()
         )
     }
 }
