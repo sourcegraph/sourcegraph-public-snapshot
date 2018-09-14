@@ -143,7 +143,7 @@ func Main() {
 	} else if line != "" {
 		procfile = append(procfile, line)
 	}
-	if lines, err := maybeZoektProcfile(shared.DataDir); err != nil {
+	if lines, err := maybeZoektProcfile(DataDir); err != nil {
 		log.Fatal(err)
 	} else if lines != nil {
 		procfile = append(procfile, lines...)

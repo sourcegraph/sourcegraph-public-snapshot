@@ -19,7 +19,7 @@ func maybeZoektProcfile(dataDir string) ([]string, error) {
 	SetDefaultEnv("ZOEKT_HOST", zoektHost)
 	indexDir := filepath.Join(dataDir, "zoekt/index")
 	return []string{
-		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072", shared.FrontendInternalHost, indexDir),
+		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072", FrontendInternalHost, indexDir),
 		fmt.Sprintf("zoekt-webserver: zoekt-webserver -rpc -pprof -listen %s -index %s", zoektHost, indexDir),
 	}, nil
 }
