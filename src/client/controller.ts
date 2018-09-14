@@ -234,7 +234,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
             new ClientWindows(
                 client,
                 this.environment.pipe(
-                    map(({ component }) => component),
+                    map(({ visibleTextDocuments }) => visibleTextDocuments),
                     distinctUntilChanged()
                 ),
                 (params: ShowMessageParams) => this._showMessages.next({ ...params }),
@@ -253,7 +253,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
             new ClientDocuments(
                 client,
                 this.environment.pipe(
-                    map(({ component }) => component && component.document),
+                    map(({ visibleTextDocuments }) => visibleTextDocuments),
                     distinctUntilChanged()
                 )
             )

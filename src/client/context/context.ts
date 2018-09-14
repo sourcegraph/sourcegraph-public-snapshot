@@ -1,5 +1,6 @@
 import { basename, dirname, extname } from 'path'
-import { Component, Environment } from '../environment'
+import { Environment } from '../environment'
+import { TextDocumentItem } from '../types/textDocument'
 
 /**
  * Returns a new context created by applying the update context to the base context. It is equivalent to `{...base,
@@ -34,7 +35,7 @@ export const EMPTY_CONTEXT: Context = {}
  * @param key the context property key to look up
  * @param scope the user interface component in whose scope this computation should occur
  */
-export function getComputedContextProperty(environment: Environment, key: string, scope?: Component): any {
+export function getComputedContextProperty(environment: Environment, key: string, scope?: TextDocumentItem): any {
     if (key.startsWith('config.')) {
         const prop = key.slice('config.'.length)
         const value = environment.configuration.merged[prop]
@@ -43,12 +44,13 @@ export function getComputedContextProperty(environment: Environment, key: string
         // which a falsey null default is useful).
         return value === undefined ? null : value
     }
-    const component = scope || environment.component
-    if (key === 'resource' || key === 'component') {
-        return !!component
+    const textDocument: TextDocumentItem | null =
+        scope || (environment.visibleTextDocuments && environment.visibleTextDocuments[0])
+    if (key === 'resource' || key === 'component' /* BACKCOMPAT: allow 'component' */) {
+        return !!textDocument
     }
     if (key.startsWith('resource.')) {
-        if (!component) {
+        if (!textDocument) {
             return undefined
         }
         // TODO(sqs): Define these precisely. If the resource is in a repository, what is the "path"? Is it the
@@ -57,23 +59,23 @@ export function getComputedContextProperty(environment: Environment, key: string
         const prop = key.slice('resource.'.length)
         switch (prop) {
             case 'uri':
-                return component.document.uri
+                return textDocument.uri
             case 'basename':
-                return basename(component.document.uri)
+                return basename(textDocument.uri)
             case 'dirname':
-                return dirname(component.document.uri)
+                return dirname(textDocument.uri)
             case 'extname':
-                return extname(component.document.uri)
+                return extname(textDocument.uri)
             case 'language':
-                return component.document.languageId
+                return textDocument.languageId
             case 'textContent':
-                return component.document.text
+                return textDocument.text
             case 'type':
                 return 'textDocument'
         }
     }
     if (key.startsWith('component.')) {
-        if (!component) {
+        if (!textDocument) {
             return undefined
         }
         const prop = key.slice('component.'.length)

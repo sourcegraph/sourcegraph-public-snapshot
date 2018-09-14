@@ -33,13 +33,13 @@ describe('getComputedContextProperty', () => {
     describe('environment with component', () => {
         const env: Environment = {
             ...EMPTY_ENVIRONMENT,
-            component: {
-                document: {
+            visibleTextDocuments: [
+                {
                     uri: 'file:///a/b.c',
                     languageId: 'l',
                     text: 't',
                 },
-            },
+            ],
         }
 
         describe('resource', () => {

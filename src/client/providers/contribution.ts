@@ -12,7 +12,8 @@ import { flatten, isEqual } from '../../util'
 import { getComputedContextProperty } from '../context/context'
 import { ComputedContext, evaluate, evaluateTemplate } from '../context/expr/evaluator'
 import { TEMPLATE_BEGIN } from '../context/expr/lexer'
-import { Component, Environment } from '../environment'
+import { Environment } from '../environment'
+import { TextDocumentItem } from '../types/textDocument'
 
 /** A registered set of contributions from an extension in the registry. */
 export interface ContributionsEntry {
@@ -74,13 +75,13 @@ export class ContributionRegistry {
      * Returns an observable that emits all contributions (merged) evaluated in the current
      * environment (with the optional scope). It emits whenever there is any change.
      */
-    public getContributions(scope?: Component): Observable<Contributions> {
+    public getContributions(scope?: TextDocumentItem): Observable<Contributions> {
         return this.getContributionsFromEntries(this._entries, scope)
     }
 
     protected getContributionsFromEntries(
         entries: Observable<ContributionsEntry[]>,
-        scope?: Component
+        scope?: TextDocumentItem
     ): Observable<Contributions> {
         return combineLatest(
             entries.pipe(

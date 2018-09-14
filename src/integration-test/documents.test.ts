@@ -19,9 +19,7 @@ describe('Documents (integration)', () => {
             const prevEnvironment = getEnvironment()
             clientController.setEnvironment({
                 ...prevEnvironment,
-                component: {
-                    document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
-                },
+                visibleTextDocuments: [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }],
             })
 
             await ready
@@ -43,9 +41,7 @@ describe('Documents (integration)', () => {
             const prevEnvironment = getEnvironment()
             clientController.setEnvironment({
                 ...prevEnvironment,
-                component: {
-                    document: { uri: 'file:///f2', languageId: 'l2', text: 't2' },
-                },
+                visibleTextDocuments: [{ uri: 'file:///f2', languageId: 'l2', text: 't2' }],
             })
             await extensionHost.internal.sync()
 

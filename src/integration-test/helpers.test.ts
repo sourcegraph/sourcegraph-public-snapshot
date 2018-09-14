@@ -6,9 +6,13 @@ import { createExtensionHost } from '../extension/extensionHost'
 import { createMessageTransports } from '../protocol/jsonrpc2/helpers.test'
 
 const FIXTURE_ENVIRONMENT: Environment = {
-    component: {
-        document: { uri: 'file:///f', languageId: 'l', text: 't' },
-    },
+    visibleTextDocuments: [
+        {
+            uri: 'file:///f',
+            languageId: 'l',
+            text: 't',
+        },
+    ],
     extensions: [{ id: 'x' }],
     configuration: { merged: { a: 1 } },
     context: {},

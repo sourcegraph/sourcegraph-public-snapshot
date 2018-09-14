@@ -30,9 +30,7 @@ const create = (environment?: Environment): TestController => {
 }
 
 const FIXTURE_ENVIRONMENT: Environment<any, any> = {
-    component: {
-        document: { uri: 'file:///f', languageId: 'l', text: '' },
-    },
+    visibleTextDocuments: [{ uri: 'file:///f', languageId: 'l', text: '' }],
     extensions: [{ id: 'x' }],
     configuration: {},
     context: {},

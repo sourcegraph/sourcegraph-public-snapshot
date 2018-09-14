@@ -4,7 +4,7 @@ import { TextDocumentItem } from '../../client/types/textDocument'
 
 /** @internal */
 export interface ExtDocumentsAPI {
-    $acceptDocumentData(doc: TextDocumentItem): void
+    $acceptDocumentData(doc: TextDocumentItem[]): void
 }
 
 /** @internal */
@@ -54,8 +54,17 @@ export class ExtDocuments implements ExtDocumentsAPI {
     private textDocumentAdds = new Subject<TextDocument>()
     public readonly onDidOpenTextDocument: Observable<TextDocument> = this.textDocumentAdds
 
-    public $acceptDocumentData(doc: TextDocumentItem): void {
-        this.documents.set(doc.uri, doc)
-        this.textDocumentAdds.next(doc)
+    public $acceptDocumentData(docs: TextDocumentItem[] | null): void {
+        if (!docs) {
+            // We don't ever (yet) communicate to the extension when docs are closed.
+            return
+        }
+        for (const doc of docs) {
+            const isNew = !this.documents.has(doc.uri)
+            this.documents.set(doc.uri, doc)
+            if (isNew) {
+                this.textDocumentAdds.next(doc)
+            }
+        }
     }
 }
