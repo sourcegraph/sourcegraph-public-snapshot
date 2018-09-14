@@ -3,8 +3,7 @@ set -ex
 
 case "$BUILDKITE_BRANCH" in
     master)
-        DEPLOYMENT=sourcegraph-frontend
-        CONTAINER=frontend
+        exit 0 # nothing to do; frontend is deployed by trigger-enterprise-ci
         ;;
 
     docker-images/gitserver)
