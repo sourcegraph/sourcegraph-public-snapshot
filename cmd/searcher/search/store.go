@@ -245,16 +245,17 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 		if hdr.Typeflag != tar.TypeReg && hdr.Typeflag != tar.TypeRegA {
 			continue
 		}
-		// We do not search large files
-		if hdr.Size > maxFileSize {
-			continue
+
+		// We are happy with the file, so we can write it to zw.
+		w, err := zw.CreateHeader(&zip.FileHeader{
+			Name:   hdr.Name,
+			Method: zip.Store,
+		})
+		if err != nil {
+			return err
 		}
-		// Heuristic: Assume file is binary if first 256 bytes contain a
-		// 0x00. Best effort, so ignore err
+
 		n, err := tr.Read(buf)
-		if n > 0 && bytes.IndexByte(buf[:n], 0x00) >= 0 {
-			continue
-		}
 		switch err {
 		case io.EOF:
 			if n == 0 {
@@ -265,13 +266,15 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 			return err
 		}
 
-		// We are happy with the file, so we can write it to zw.
-		w, err := zw.CreateHeader(&zip.FileHeader{
-			Name:   hdr.Name,
-			Method: zip.Store,
-		})
-		if err != nil {
-			return err
+		// We do not search the content of large files
+		if hdr.Size > maxFileSize {
+			continue
+		}
+
+		// Heuristic: Assume file is binary if first 256 bytes contain a
+		// 0x00. Best effort, so ignore err. We only search names of binary files.
+		if n > 0 && bytes.IndexByte(buf[:n], 0x00) >= 0 {
+			continue
 		}
 
 		// First write the data already read into buf
@@ -287,6 +290,7 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer) error {
 		if err != nil {
 			return err
 		}
+
 	}
 }
 

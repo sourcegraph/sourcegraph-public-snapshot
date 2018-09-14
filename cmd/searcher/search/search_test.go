@@ -26,6 +26,9 @@ import (
 )
 
 func TestSearch(t *testing.T) {
+	// Create byte buffer of binary file
+	miltonPNG := bytes.Repeat([]byte{0x00}, 32*1024)
+
 	files := map[string]string{
 		"README.md": `# Hello World
 
@@ -38,7 +41,8 @@ func main() {
 	fmt.Println("Hello world")
 }
 `,
-		"abc.txt": "w",
+		"abc.txt":    "w",
+		"milton.png": string(miltonPNG),
 	}
 
 	cases := []struct {
@@ -122,6 +126,9 @@ main.go:6:	fmt.Println("Hello world")
 `},
 
 		{protocol.PatternInfo{Pattern: "doesnotmatch"}, ""},
+		{protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PathPatternsAreRegExps: true, PatternMatchesPath: true}, `
+milton.png
+`},
 	}
 
 	store, cleanup, err := newStore(files)
@@ -379,6 +386,10 @@ func newStore(files map[string]string) (*search.Store, func(), error) {
 func toString(m []protocol.FileMatch) string {
 	buf := new(bytes.Buffer)
 	for _, f := range m {
+		if len(f.LineMatches) == 0 {
+			buf.WriteString(f.Path)
+			buf.WriteByte('\n')
+		}
 		for _, l := range f.LineMatches {
 			buf.WriteString(f.Path)
 			buf.WriteByte(':')
@@ -387,6 +398,7 @@ func toString(m []protocol.FileMatch) string {
 			buf.WriteString(l.Preview)
 			buf.WriteByte('\n')
 		}
+
 	}
 	return buf.String()
 }
