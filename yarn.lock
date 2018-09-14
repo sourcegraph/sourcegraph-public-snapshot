@@ -4783,9 +4783,9 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
 
-sourcegraph@^17.1.0:
-  version "17.1.0"
-  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-17.1.0.tgz#ea45c2cd119508d2d0be0a2bd6e1407572c30b4d"
+sourcegraph@^18.0.0:
+  version "18.0.0"
+  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.0.0.tgz#bbb61f7ab03ed169138d12dd258b1195198fe851"
   dependencies:
     minimatch "^3.0.4"
     rxjs "^6.3.2"

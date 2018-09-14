@@ -74,7 +74,6 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
             nextEnvironment.extensions &&
             nextEnvironment.extensions.filter(x => {
                 try {
-                    const component = nextEnvironment.component
                     if (!isExtensionEnabled(nextEnvironment.configuration.merged, x.id)) {
                         return false
                     } else if (!x.manifest) {
@@ -89,8 +88,11 @@ function environmentFilter<S extends ConfigurationSubject, CC extends Configurat
                         console.warn(`Extension ${x.id} has no activation events, so it will never be activated.`)
                         return false
                     }
+                    const visibleTextDocumentLanguages = nextEnvironment.visibleTextDocuments
+                        ? nextEnvironment.visibleTextDocuments.map(({ languageId }) => languageId)
+                        : []
                     return x.manifest.activationEvents.some(
-                        e => e === '*' || (!!component && e === `onLanguage:${component.document.languageId}`)
+                        e => e === '*' || visibleTextDocumentLanguages.some(l => e === `onLanguage:${l}`)
                     )
                 } catch (err) {
                     console.error(err)
@@ -186,7 +188,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
         // Debug helper: log environment changes.
         const LOG_ENVIRONMENT = false
         if (LOG_ENVIRONMENT) {
-            controller.environment.environment.subscribe(environment => log('info', 'env', environment))
+            controller.environment.subscribe(environment => log('info', 'env', environment))
         }
 
         // Debug helpers: e.g., just run `sx` in devtools to get a reference to this controller. (If multiple
@@ -194,7 +196,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
         window.sx = controller
         // This value is synchronously available because observable has an underlying
         // BehaviorSubject source.
-        controller.environment.environment.subscribe(v => (window.sxenv = v)).unsubscribe()
+        controller.environment.subscribe(v => (window.sxenv = v)).unsubscribe()
     }
 
     return controller
@@ -208,7 +210,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
 function registerExtensionContributions<S extends ConfigurationSubject, C extends Settings>(
     controller: Controller<S, C>
 ): Unsubscribable {
-    const contributions = controller.environment.environment.pipe(
+    const contributions = controller.environment.pipe(
         map(({ extensions }) => extensions),
         filter((extensions): extensions is ConfiguredExtension[] => !!extensions),
         map(extensions =>

@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { Component } from 'sourcegraph/module/client/environment'
+import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
 import { ConfigurationSubject, Settings } from '../../settings'
 import { ActionItem } from './ActionItem'
 import { ActionsProps, ActionsState } from './actions'
@@ -17,7 +17,7 @@ export class ActionsNavItems<S extends ConfigurationSubject, C extends Settings>
 > {
     public state: ActionsState = {}
 
-    private scopeChanges = new Subject<Component | undefined>()
+    private scopeChanges = new Subject<TextDocumentItem | undefined>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
