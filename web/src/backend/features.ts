@@ -1,12 +1,12 @@
-import { TextDocumentDecoration } from 'cxp/module/protocol'
-import { HoverMerged } from 'cxp/module/types/hover'
+import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { SymbolLocationInformation } from 'javascript-typescript-langserver/lib/request-type'
 import { compact, flatten } from 'lodash'
 import { forkJoin, Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { Definition, Location } from 'vscode-languageserver-types'
-import { USE_PLATFORM } from '../cxp/CXPEnvironment'
-import { CXPControllerProps } from '../extensions/ExtensionsClientCommonContext'
+import { Definition, Hover, Location, TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
+import { Hover as VSCodeHover } from 'vscode-languageserver-types'
+import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { AbsoluteRepo, AbsoluteRepoFile, parseRepoURI } from '../repo'
 import { toAbsoluteBlobURL, toPrettyBlobURL } from '../util/url'
 import {
@@ -33,12 +33,12 @@ export interface ModeSpec {
 export { HoverMerged } // reexport to avoid needing to change all import sites - TODO(sqs): actually go change all them
 
 /**
- * A value that can be passed to several `getXyz` functions to force the use of the old (non-CXP) code paths, even
- * when the `platform` feature flag is enabled.
+ * A value that can be passed to several `getXyz` functions to force the use of the old (non-extensions) code
+ * paths, even when the `platform` feature flag is enabled.
  *
- * This is used by pages (such as diff and compare) that are not yet supported by CXP.
+ * This is used by pages (such as diff and compare) that are not yet supported by extensions.
  */
-export const FORCE_NO_CXP = { cxpController: null }
+export const FORCE_NO_EXTENSIONS = { extensionsController: null }
 
 /**
  * Fetches hover information for the given location.
@@ -48,20 +48,40 @@ export const FORCE_NO_CXP = { cxpController: null }
  */
 export function getHover(
     ctx: LSPTextDocumentPositionParams,
-    { cxpController }: CXPControllerProps | typeof FORCE_NO_CXP
+    { extensionsController }: ExtensionsControllerProps | typeof FORCE_NO_EXTENSIONS
 ): Observable<HoverMerged | null> {
-    if (cxpController && USE_PLATFORM) {
-        return cxpController.registries.textDocumentHover.getHover({
-            textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
-            position: {
-                character: ctx.position.character - 1,
-                line: ctx.position.line - 1,
-            },
-        })
+    if (extensionsController && USE_PLATFORM) {
+        return extensionsController.registries.textDocumentHover
+            .getHover({
+                textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
+                position: {
+                    character: ctx.position.character - 1,
+                    line: ctx.position.line - 1,
+                },
+            })
+            .pipe(map(hover => hover as HoverMerged | null))
     }
     return forkJoin(getModes(ctx).map(({ mode }) => fetchHover({ ...ctx, mode }))).pipe(
-        map(hovers => HoverMerged.from(hovers))
+        map(hovers => toHoverMerged(hovers))
     )
+}
+
+function toHoverMerged(values: (Hover | VSCodeHover | null)[]): HoverMerged | null {
+    const contents: HoverMerged['contents'] = []
+    let range: HoverMerged['range']
+    for (const result of values) {
+        if (result) {
+            if (Array.isArray(result.contents)) {
+                contents.push(...result.contents)
+            } else if (typeof result.contents === 'string') {
+                contents.push(result.contents)
+            }
+            if (result.range && !range) {
+                range = result.range
+            }
+        }
+    }
+    return contents.length === 0 ? null : range ? { contents, range } : { contents }
 }
 
 /**
@@ -72,10 +92,10 @@ export function getHover(
  */
 export function getDefinition(
     ctx: LSPTextDocumentPositionParams,
-    { cxpController }: CXPControllerProps | typeof FORCE_NO_CXP
+    { extensionsController }: ExtensionsControllerProps | typeof FORCE_NO_EXTENSIONS
 ): Observable<Definition> {
-    if (cxpController && USE_PLATFORM) {
-        return cxpController.registries.textDocumentDefinition.getLocation({
+    if (extensionsController && USE_PLATFORM) {
+        return extensionsController.registries.textDocumentDefinition.getLocation({
             textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
             position: {
                 character: ctx.position.character - 1,
@@ -99,7 +119,7 @@ export function getDefinition(
  */
 export function getJumpURL(
     ctx: LSPTextDocumentPositionParams,
-    extensions: CXPControllerProps | typeof FORCE_NO_CXP
+    extensions: ExtensionsControllerProps | typeof FORCE_NO_EXTENSIONS
 ): Observable<string | null> {
     return getDefinition(ctx, extensions).pipe(
         map(def => {
@@ -110,7 +130,9 @@ export function getJumpURL(
             }
 
             const uri = parseRepoURI(def.uri) as LSPTextDocumentPositionParams
-            uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+            if (def.range) {
+                uri.position = { line: def.range.start.line + 1, character: def.range.start.character + 1 }
+            }
             if (uri.repoPath === ctx.repoPath && uri.commitID === ctx.commitID) {
                 // Use pretty rev from the current context for same-repo J2D.
                 uri.rev = ctx.rev
@@ -156,10 +178,10 @@ function castArray<T>(value: null | T | T[]): T[] {
  */
 export function getReferences(
     ctx: LSPTextDocumentPositionParams & LSPReferencesParams,
-    { cxpController }: CXPControllerProps
+    { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[]> {
     if (USE_PLATFORM) {
-        return cxpController.registries.textDocumentReferences
+        return extensionsController.registries.textDocumentReferences
             .getLocation({
                 textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
                 position: {
@@ -185,10 +207,10 @@ export function getReferences(
  */
 export function getImplementations(
     ctx: LSPTextDocumentPositionParams,
-    { cxpController }: CXPControllerProps
+    { extensionsController }: ExtensionsControllerProps
 ): Observable<Location[]> {
     if (USE_PLATFORM) {
-        return cxpController.registries.textDocumentImplementation
+        return extensionsController.registries.textDocumentImplementation
             .getLocation({
                 textDocument: { uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}` },
                 position: {
@@ -223,10 +245,10 @@ export function getXreferences(ctx: XReferenceOptions & AbsoluteRepo & LSPSelect
  */
 export function getDecorations(
     ctx: AbsoluteRepoFile & LSPSelector,
-    { cxpController }: CXPControllerProps
+    { extensionsController }: ExtensionsControllerProps
 ): Observable<TextDocumentDecoration[] | null> {
     if (USE_PLATFORM) {
-        return cxpController.registries.textDocumentDecoration.getDecorations({
+        return extensionsController.registries.textDocumentDecoration.getDecorations({
             uri: `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`,
         })
     }

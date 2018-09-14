@@ -8,14 +8,14 @@ import { AbsoluteRepoFile } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
-import { CXPControllerProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
 
-interface Props extends AbsoluteRepoFile, CXPControllerProps {
+interface Props extends AbsoluteRepoFile, ExtensionsControllerProps {
     repoID: GQL.ID
     isDir: boolean
     defaultBranch: string

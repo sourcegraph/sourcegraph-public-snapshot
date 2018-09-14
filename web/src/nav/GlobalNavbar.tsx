@@ -4,12 +4,12 @@ import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { authRequired } from '../auth'
 import * as GQL from '../backend/graphqlschema'
-import { CXPControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { parseSearchURLQuery, SearchOptions } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { NavLinks } from './NavLinks'
 
-interface Props extends ExtensionsProps, CXPControllerProps {
+interface Props extends ExtensionsProps, ExtensionsControllerProps {
     history: H.History
     location: H.Location
     user: GQL.IUser | null

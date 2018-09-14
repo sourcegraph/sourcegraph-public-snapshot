@@ -6,7 +6,8 @@ import {
 import { Observable, throwError } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
-import { Definition, Hover, Location, MarkupContent } from 'vscode-languageserver-types'
+import { Definition, Hover, Location } from 'sourcegraph/module/protocol/plainTypes'
+import { Hover as VSCodeHover, MarkupContent } from 'vscode-languageserver-types'
 import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
 import { ErrorLike, normalizeAjaxError } from '../util/errors'
@@ -32,7 +33,15 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
     !hover ||
     !hover.contents ||
     (Array.isArray(hover.contents) && hover.contents.length === 0) ||
-    (MarkupContent.is(hover.contents) && !hover.contents.value)
+    hover.contents.every(c => {
+        if (MarkupContent.is(c)) {
+            return !c.value
+        }
+        if (typeof c === 'string') {
+            return !c
+        }
+        return !c.value
+    })
 
 /** JSON-RPC2 error for methods that are not found */
 const EMETHODNOTFOUND = -32601
@@ -51,31 +60,19 @@ export type ResponseResults = { 0: InitializeResult } & any[]
 
 type ResponseError = ErrorLike & { responses: ResponseMessages }
 
-const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<ResponseResults> =>
-    ajax({
+export function sendLSPHTTPRequests(requests: any[], urlPathHint?: string): Observable<any> {
+    if (!urlPathHint) {
+        urlPathHint = requests[1] && requests[1].method
+    }
+    return ajax({
         method: 'POST',
-        url: `/.api/xlang/${request ? request.method : 'initialize'}`,
+        url: `/.api/xlang/${urlPathHint || '_'}`,
         headers: {
             ...window.context.xhrHeaders,
             Accept: 'application/json',
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(
-            [
-                {
-                    id: 0,
-                    method: 'initialize',
-                    params: {
-                        rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
-                        mode: ctx.mode,
-                        initializationOptions: { mode: ctx.mode },
-                    },
-                },
-                request ? { id: 1, ...request } : null,
-                { id: 2, method: 'shutdown' },
-                { method: 'exit' },
-            ].filter(m => m !== null)
-        ),
+        body: JSON.stringify(requests),
     }).pipe(
         // Workaround for https://github.com/ReactiveX/rxjs/issues/3606
         tap(response => {
@@ -87,14 +84,34 @@ const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<
             normalizeAjaxError(err)
             throw err
         }),
-        map(({ response }) => response),
+        map(({ response }) => response)
+    )
+}
+
+const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<ResponseResults> =>
+    sendLSPHTTPRequests(
+        [
+            {
+                id: 0,
+                method: 'initialize',
+                params: {
+                    rootUri: `git://${ctx.repoPath}?${ctx.commitID}`,
+                    mode: ctx.mode,
+                    initializationOptions: { mode: ctx.mode },
+                },
+            },
+            request ? { id: 1, ...request } : null,
+            { id: 2, method: 'shutdown' },
+            { method: 'exit' },
+        ].filter(m => m !== null),
+        request ? request.method : 'initialize'
+    ).pipe(
         map((results: ResponseMessages) => {
             for (const result of results) {
                 if (result && result.error) {
                     throw Object.assign(new Error(result.error.message), result.error, { responses: results })
                 }
             }
-
             return results.map(result => result && result.result) as ResponseResults
         })
     )
@@ -172,7 +189,7 @@ export const fetchHover = memoizeObservable(
             tap(hover => {
                 normalizeHoverResponse(hover)
                 // Do some shallow validation on response, e.g. to catch https://github.com/sourcegraph/sourcegraph/issues/11711
-                if (hover !== null && !Hover.is(hover)) {
+                if (hover !== null && !VSCodeHover.is(hover)) {
                     throw Object.assign(new Error('Invalid hover response from language server'), { hover })
                 }
             })

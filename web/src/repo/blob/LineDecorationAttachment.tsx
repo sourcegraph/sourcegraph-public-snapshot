@@ -1,6 +1,6 @@
-import { DecorationAttachmentRenderOptions } from 'cxp/module/protocol'
 import * as React from 'react'
 import ReactDOM from 'react-dom'
+import { DecorationAttachmentRenderOptions } from 'sourcegraph'
 import { AbsoluteRepoFile } from '..'
 import { LinkOrSpan } from '../../components/LinkOrSpan'
 

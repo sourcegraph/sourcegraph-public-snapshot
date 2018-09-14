@@ -5,13 +5,11 @@ import * as React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap } from 'rxjs/operators'
-import { makeRepoURI } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
-import { CXPComponentProps, USE_PLATFORM } from '../cxp/CXPEnvironment'
-import { CXPRoot, CXPRootProps } from '../cxp/CXPRoot'
-import { CXPControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsComponentProps } from '../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
@@ -38,9 +36,8 @@ interface RepoRevContainerProps
     extends RouteComponentProps<{}>,
         RepoHeaderContributionsLifecycleProps,
         ExtensionsProps,
-        CXPComponentProps,
-        CXPRootProps,
-        CXPControllerProps {
+        ExtensionsComponentProps,
+        ExtensionsControllerProps {
     repo: GQL.IRepository
     rev: string
     user: GQL.IUser | null
@@ -316,7 +313,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                             }
                                             history={this.props.history}
                                             location={this.props.location}
-                                            cxpController={this.props.cxpController}
+                                            extensionsController={this.props.extensionsController}
                                         />
                                         {!hideRepoRevContent && (
                                             <div className="repo-rev-container__content">
@@ -334,8 +331,10 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                             this.props.repoHeaderContributionsLifecycleProps
                                                         }
                                                         extensions={this.props.extensions}
-                                                        cxpOnComponentChange={this.props.cxpOnComponentChange}
-                                                        cxpController={this.props.cxpController}
+                                                        extensionsOnComponentChange={
+                                                            this.props.extensionsOnComponentChange
+                                                        }
+                                                        extensionsController={this.props.extensionsController}
                                                         location={this.props.location}
                                                         history={this.props.history}
                                                         isLightTheme={this.props.isLightTheme}
@@ -350,7 +349,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                                                         }
                                                         rev={this.props.rev}
                                                         filePath={routeComponentProps.match.params.filePath || ''}
-                                                        cxpController={this.props.cxpController}
+                                                        extensionsController={this.props.extensionsController}
                                                         extensions={this.props.extensions}
                                                         location={this.props.location}
                                                         history={this.props.history}
@@ -423,17 +422,6 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                {USE_PLATFORM &&
-                    this.props.resolvedRevOrError &&
-                    !isErrorLike(this.props.resolvedRevOrError) && (
-                        <CXPRoot
-                            root={makeRepoURI({
-                                repoPath: this.props.repo.uri,
-                                commitID: this.props.resolvedRevOrError.commitID,
-                            })}
-                            cxpOnRootChange={this.props.cxpOnRootChange}
-                        />
-                    )}
             </div>
         )
     }

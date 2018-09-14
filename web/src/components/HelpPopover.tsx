@@ -5,16 +5,16 @@ import CloseIcon from '@sourcegraph/icons/lib/Close'
 import DraftsIcon from '@sourcegraph/icons/lib/Drafts'
 import LinkIcon from '@sourcegraph/icons/lib/Link'
 import StarIcon from '@sourcegraph/icons/lib/Star'
-import { ContributableMenu } from 'cxp/module/protocol'
+import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { fromEvent, merge, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import { USE_PLATFORM } from '../cxp/CXPEnvironment'
-import { CXPControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 
-interface Props extends CXPControllerProps, ExtensionsProps {
+interface Props extends ExtensionsControllerProps, ExtensionsProps {
     onDismiss: () => void
 }
 
@@ -116,14 +116,14 @@ export class HelpPopover extends React.Component<Props> {
                                     <ActionItem
                                         key={i}
                                         {...item}
-                                        cxpController={this.props.cxpController}
+                                        extensionsController={this.props.extensionsController}
                                         extensions={this.props.extensions}
                                     />
                                 ))}
                             </>
                         )}
                         empty={null}
-                        cxpController={this.props.cxpController}
+                        extensionsController={this.props.extensionsController}
                         extensions={this.props.extensions}
                     />
                 )}

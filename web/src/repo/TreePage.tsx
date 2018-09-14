@@ -8,7 +8,7 @@ import { Loader } from '@sourcegraph/icons/lib/Loader'
 import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
 import TagIcon from '@sourcegraph/icons/lib/Tag'
 import UserIcon from '@sourcegraph/icons/lib/User'
-import { ContributableMenu } from 'cxp/module/protocol'
+import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as H from 'history'
 import { escapeRegExp, upperFirst } from 'lodash'
 import * as React from 'react'
@@ -21,9 +21,9 @@ import { FilteredConnection } from '../components/FilteredConnection'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
-import { USE_PLATFORM } from '../cxp/CXPEnvironment'
+import { USE_PLATFORM } from '../extensions/environment/ExtensionsEnvironment'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import { CXPControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
@@ -95,7 +95,7 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends CXPControllerProps, ExtensionsProps {
+interface Props extends ExtensionsControllerProps, ExtensionsProps {
     repoPath: string
     repoID: GQL.ID
     repoDescription: string
@@ -323,14 +323,14 @@ export class TreePage extends React.PureComponent<Props, State> {
                                                     key={i}
                                                     {...item}
                                                     className="btn btn-secondary mr-1 mb-1"
-                                                    cxpController={this.props.cxpController}
+                                                    extensionsController={this.props.extensionsController}
                                                     extensions={this.props.extensions}
                                                 />
                                             ))}
                                         </section>
                                     )}
                                     empty={null}
-                                    cxpController={this.props.cxpController}
+                                    extensionsController={this.props.extensionsController}
                                     extensions={this.props.extensions}
                                 />
                             )}

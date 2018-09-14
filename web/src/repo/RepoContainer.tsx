@@ -8,9 +8,8 @@ import { parseBrowserRepoURL } from '.'
 import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
-import { CXPComponentProps } from '../cxp/CXPEnvironment'
-import { CXPRootProps } from '../cxp/CXPRoot'
-import { CXPControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { ExtensionsComponentProps } from '../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { ErrorLike, isErrorLike } from '../util/errors'
@@ -36,9 +35,8 @@ const RepoPageNotFound: React.SFC = () => (
 interface Props
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         ExtensionsProps,
-        CXPComponentProps,
-        CXPRootProps,
-        CXPControllerProps {
+        ExtensionsComponentProps,
+        ExtensionsControllerProps {
     user: GQL.IUser | null
     onHelpPopoverToggle: () => void
     isLightTheme: boolean
@@ -197,9 +195,8 @@ export class RepoContainer extends React.Component<Props, State> {
             repoMatchURL,
             onHelpPopoverToggle: this.props.onHelpPopoverToggle,
             extensions: this.props.extensions,
-            cxpOnComponentChange: this.props.cxpOnComponentChange,
-            cxpOnRootChange: this.props.cxpOnRootChange,
-            cxpController: this.props.cxpController,
+            extensionsOnComponentChange: this.props.extensionsOnComponentChange,
+            extensionsController: this.props.extensionsController,
             ...this.state.repoHeaderContributionsLifecycleProps,
         }
 
@@ -213,7 +210,7 @@ export class RepoContainer extends React.Component<Props, State> {
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
                     extensions={this.props.extensions}
-                    cxpController={this.props.cxpController}
+                    extensionsController={this.props.extensionsController}
                     onLifecyclePropsChange={this.onRepoHeaderContributionsLifecyclePropsChange}
                     location={this.props.location}
                     history={this.props.history}

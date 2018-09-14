@@ -7,23 +7,22 @@ import {
     HoverState,
 } from '@sourcegraph/codeintellify'
 import { getCodeElementsInRange, locateTarget } from '@sourcegraph/codeintellify/lib/token_position'
-import { TextDocumentDecoration } from 'cxp/module/protocol'
 import * as H from 'history'
 import { isEqual, pick } from 'lodash'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
-import { Range } from 'vscode-languageserver-types'
+import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { CXPComponentProps, USE_PLATFORM } from '../../cxp/CXPEnvironment'
-import { CXPControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { ExtensionsComponentProps, USE_PLATFORM } from '../../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
-import { LineOrPositionOrRange, lprToRange, parseHash, toPositionOrRangeHash } from '../../util/url'
+import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
 import { BlameLine } from './blame/BlameLine'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
@@ -33,7 +32,12 @@ import { LineDecorationAttachment } from './LineDecorationAttachment'
  */
 const toPortalID = (line: number) => `blame-portal-${line}`
 
-interface BlobProps extends AbsoluteRepoFile, ModeSpec, ExtensionsProps, CXPComponentProps, CXPControllerProps {
+interface BlobProps
+    extends AbsoluteRepoFile,
+        ModeSpec,
+        ExtensionsProps,
+        ExtensionsComponentProps,
+        ExtensionsControllerProps {
     /** The raw content of the blob. */
     content: string
 
@@ -282,26 +286,22 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             share()
         )
 
-        // Update the CXP state to reflect the current file.
+        // Update the Sourcegraph extensions state to reflect the current file.
         this.subscriptions.add(
             combineLatest(modelChanges, locationPositions)
                 .pipe(filter(() => USE_PLATFORM))
                 .subscribe(([model, pos]) => {
-                    this.props.cxpOnComponentChange({
+                    this.props.extensionsOnComponentChange({
                         document: {
                             uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
                             languageId: model.mode,
-                            version: 0,
                             text: model.content,
                         },
-                        selections:
-                            pos && pos.line !== undefined ? [{ ...(lprToRange(pos) as Range), isReversed: false }] : [],
-                        visibleRanges: [], // TODO(sqs): fill these in when there are extensions that use them
                     })
                 })
         )
-        // Clear the CXP state's component when the blob is no longer shown.
-        this.subscriptions.add(() => this.props.cxpOnComponentChange(null))
+        // Clear the Sourcegraph extensions state's component when the blob is no longer shown.
+        this.subscriptions.add(() => this.props.extensionsOnComponentChange(null))
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined

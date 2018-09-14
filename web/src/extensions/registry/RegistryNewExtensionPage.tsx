@@ -11,10 +11,10 @@ import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
+import { updateHighestPrecedenceExtensionSettings } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { RegistryPublisher, toExtensionID } from '../extension/extension'
-import { updateUserExtensionSettings } from '../ExtensionsClientCommonContext'
 import { queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
@@ -55,7 +55,7 @@ function createExtension(publisher: GQL.ID, name: string): Observable<GQL.IExten
  * means that they are immediately usable.
  */
 function configureNewExtensionAsDisabled(extensionID: string): Observable<void> {
-    return updateUserExtensionSettings({ extensionID, enabled: true }) as Observable<any>
+    return updateHighestPrecedenceExtensionSettings({ extensionID, enabled: true }) as Observable<any>
 }
 
 interface Props extends RegistryAreaPageProps, RouteComponentProps<{}> {}

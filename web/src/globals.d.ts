@@ -128,3 +128,15 @@ declare module '*.json' {
     const value: any
     export default value
 }
+
+/**
+ * For Web Worker entrypoints using Webpack's worker-loader.
+ *
+ * See https://github.com/webpack-contrib/worker-loader#integrating-with-typescript.
+ */
+declare module '*.worker.ts' {
+    class WebpackWorker extends Worker {
+        constructor()
+    }
+    export default WebpackWorker
+}

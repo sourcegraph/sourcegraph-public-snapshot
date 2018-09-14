@@ -108,13 +108,13 @@ func init() {
 				readme += "\n\n## Status: unavailable\nThis language server is unavailable because no TCP address is specified for it in site configuration."
 			}
 
-			x := schema.CXPExtensionManifest{
+			x := schema.SourcegraphExtensionManifest{
 				Title:       title,
 				Description: description,
 				Readme:      readme,
 				// The same extension is used for each language server (for now). It is built from
-				// https://github.com/sourcegraph/cx-langserver-http.
-				Url:              "https://storage.googleapis.com/sourcegraph-cx-dev/cx-langserver-http.js",
+				// https://github.com/sourcegraph/sourcegraph-langserver-http.
+				Url:              "https://storage.googleapis.com/sourcegraph-cx-dev/sourcegraph-langserver-http.3.js",
 				ActivationEvents: []string{"onLanguage:" + ls.Language},
 			}
 			if ls.InitializationOptions != nil {
