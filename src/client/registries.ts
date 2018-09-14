@@ -1,5 +1,6 @@
+import { Observable } from 'rxjs'
 import { ConfigurationCascade } from '../protocol'
-import { ObservableEnvironment } from './environment'
+import { Environment } from './environment'
 import { Extension } from './extension'
 import { CommandRegistry } from './providers/command'
 import { ContributionRegistry } from './providers/contribution'
@@ -14,10 +15,10 @@ import { TextDocumentLocationProviderRegistry, TextDocumentReferencesProviderReg
  * @template C configuration cascade type
  */
 export class Registries<X extends Extension, C extends ConfigurationCascade> {
-    constructor(private environment: ObservableEnvironment<X, C>) {}
+    constructor(private environment: Observable<Environment<X, C>>) {}
 
     public readonly commands = new CommandRegistry()
-    public readonly contribution = new ContributionRegistry(this.environment.environment)
+    public readonly contribution = new ContributionRegistry(this.environment)
     public readonly textDocumentDefinition = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentImplementation = new TextDocumentLocationProviderRegistry()
     public readonly textDocumentReferences = new TextDocumentReferencesProviderRegistry()

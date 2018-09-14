@@ -58,7 +58,7 @@ export async function integrationTestContext(): Promise<
             // Confirm it is synchronous just in case, because a bug here would be hard to diagnose.
             let value!: Environment
             let sync = false
-            clientController.environment.environment
+            clientController.environment
                 .pipe(first())
                 .subscribe(environment => {
                     value = environment

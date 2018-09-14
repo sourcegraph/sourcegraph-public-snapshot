@@ -4,7 +4,7 @@ import { Subscription } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { ConfigurationCascade, ContributableMenu, Contributions } from '../../protocol'
 import { EMPTY_COMPUTED_CONTEXT } from '../context/expr/evaluator'
-import { EMPTY_ENVIRONMENT, EMPTY_OBSERVABLE_ENVIRONMENT, Environment, ObservableEnvironment } from '../environment'
+import { EMPTY_ENVIRONMENT, Environment } from '../environment'
 import { Extension } from '../extension'
 import {
     contextFilter,
@@ -49,9 +49,9 @@ const FIXTURE_CONTRIBUTIONS_MERGED: Contributions = {
 
 describe('ContributionRegistry', () => {
     function create(
-        env: ObservableEnvironment<Extension, ConfigurationCascade> = EMPTY_OBSERVABLE_ENVIRONMENT
+        env: Observable<Environment<Extension, ConfigurationCascade>> = of(EMPTY_ENVIRONMENT)
     ): ContributionRegistry {
-        return new ContributionRegistry(env.environment)
+        return new ContributionRegistry(env)
     }
 
     it('is initially empty', () => {
@@ -103,7 +103,7 @@ describe('ContributionRegistry', () => {
                 ): Observable<Contributions> {
                     return super.getContributionsFromEntries(entries)
                 }
-            }(EMPTY_OBSERVABLE_ENVIRONMENT.environment)
+            }(of(EMPTY_ENVIRONMENT))
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributionsFromEntries(
@@ -127,7 +127,7 @@ describe('ContributionRegistry', () => {
                 ): Observable<Contributions> {
                     return super.getContributionsFromEntries(entries)
                 }
-            }(EMPTY_OBSERVABLE_ENVIRONMENT.environment)
+            }(of(EMPTY_ENVIRONMENT))
             scheduler().run(({ cold, expectObservable }) =>
                 expectObservable(
                     registry.getContributionsFromEntries(

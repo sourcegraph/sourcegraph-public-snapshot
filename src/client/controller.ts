@@ -1,4 +1,5 @@
 import { BehaviorSubject, Observable, Subject, Subscription, Unsubscribable } from 'rxjs'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 import { ContextValues } from 'sourcegraph'
 import {
     ConfigurationCascade,
@@ -20,7 +21,7 @@ import { ClientDocuments } from './api/documents'
 import { ClientLanguageFeatures } from './api/languageFeatures'
 import { ClientWindows } from './api/windows'
 import { applyContextUpdate, EMPTY_CONTEXT } from './context/context'
-import { createObservableEnvironment, EMPTY_ENVIRONMENT, Environment, ObservableEnvironment } from './environment'
+import { EMPTY_ENVIRONMENT, Environment } from './environment'
 import { Extension } from './extension'
 import { Registries } from './registries'
 
@@ -74,6 +75,9 @@ export interface ControllerOptions<X extends Extension, C extends ConfigurationC
  */
 export class Controller<X extends Extension, C extends ConfigurationCascade> implements Unsubscribable {
     private _environment = new BehaviorSubject<Environment<X, C>>(EMPTY_ENVIRONMENT)
+
+    /** The environment. */
+    public readonly environment: Observable<Environment<X, C>> = this._environment
 
     private _clientEntries = new BehaviorSubject<ExtensionConnection[]>([])
 
@@ -190,7 +194,14 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
                     subscription.add(connection)
                     connection.listen()
                     connection.onRequest('ping', () => 'pong')
-                    this.registerClientFeatures(connection, subscription, this.environment.configuration)
+                    this.registerClientFeatures(
+                        connection,
+                        subscription,
+                        this.environment.pipe(
+                            map(({ configuration }) => configuration),
+                            distinctUntilChanged()
+                        )
+                    )
                     return connection
                 }),
             }
@@ -222,7 +233,10 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
         subscription.add(
             new ClientWindows(
                 client,
-                this.environment.component,
+                this.environment.pipe(
+                    map(({ component }) => component),
+                    distinctUntilChanged()
+                ),
                 (params: ShowMessageParams) => this._showMessages.next({ ...params }),
                 (params: ShowMessageRequestParams) =>
                     new Promise<MessageActionItem | null>(resolve => {
@@ -235,7 +249,15 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
             )
         )
         subscription.add(new ClientCodeEditor(client, this.registries.textDocumentDecoration))
-        subscription.add(new ClientDocuments(client, this.environment.textDocument))
+        subscription.add(
+            new ClientDocuments(
+                client,
+                this.environment.pipe(
+                    map(({ component }) => component && component.document),
+                    distinctUntilChanged()
+                )
+            )
+        )
         subscription.add(
             new ClientLanguageFeatures(
                 client,
@@ -248,8 +270,6 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
         )
         subscription.add(new ClientCommands(client, this.registries.commands))
     }
-
-    public readonly environment: ObservableEnvironment<X, C> = createObservableEnvironment<X, C>(this._environment)
 
     public set trace(value: Trace) {
         for (const client of this._clientEntries.value) {
