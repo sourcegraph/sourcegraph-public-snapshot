@@ -2,6 +2,7 @@
 set -ex
 cd $(dirname "${BASH_SOURCE[0]}")/../..
 
+pwd
 # Build the webapp typescript code.
 [[ -z "${CI}" ]] && yarn || yarn --frozen-lockfile
 pushd web
