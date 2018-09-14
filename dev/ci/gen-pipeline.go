@@ -227,7 +227,7 @@ func main() {
 		pipeline.AddStep(":partyparrot:",
 			bk.ConcurrencyGroup("deploy"),
 			bk.Concurrency(1),
-			bk.Cmd("go run ./dev/ci/trigger-enterprise-ci.go"))
+			bk.Cmd("go run ./dev/ci/trigger-enterprise-ci/trigger-enterprise-ci.go"))
 		pipeline.AddWait()
 
 		// Deploy to dogfood
