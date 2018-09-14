@@ -6,7 +6,7 @@ export const enterpriseExtensionsAreaHeaderActionButtons: ReadonlyArray<Extensio
     ...extensionsAreaHeaderActionButtons,
     {
         label: 'Publish new extension',
-        to: '/extensions/registry/new',
+        to: () => '/extensions/registry/new',
         icon: AddIcon,
         condition: context => context.isPrimaryHeader,
     },

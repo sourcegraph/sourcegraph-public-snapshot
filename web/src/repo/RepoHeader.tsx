@@ -111,8 +111,10 @@ export interface RepoHeaderContributionsLifecycleProps {
  * Context passed into action button render functions
  */
 export interface RepoHeaderContext {
+    /** The current repository name */
     repoName: string
-    encodedRev: string
+    /** The current URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
+    encodedRev?: string
 }
 
 export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
@@ -244,7 +246,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                             condition(context) && (
                                 <li className="nav-item" key={label}>
                                     <ActionItem to={to(context)} data-tooltip={tooltip}>
-                                        <Icon className="icon-inline" />{' '}
+                                        {Icon && <Icon className="icon-inline" />}{' '}
                                         <span className="d-none d-lg-inline">{label}</span>
                                     </ActionItem>
                                 </li>
