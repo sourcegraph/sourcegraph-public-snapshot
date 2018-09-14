@@ -27,9 +27,8 @@ jobs:
         - npm run build
     - stage: test
       env:
-        - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true  
+        - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
       script:
-        - npm run build
         - npm run test:e2e
     - stage: release
       env:

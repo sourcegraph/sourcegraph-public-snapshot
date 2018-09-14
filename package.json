@@ -14,8 +14,8 @@
     "tslint": "tslint -t stylish -c tslint.json -p tsconfig.json 'src/**/*.ts?(x)'",
     "stylelint": "stylelint 'app/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
-    "cypress:open": "cypress open",
-    "test:e2e": "cypress run --browser chrome",
+    "cypress:open": "npm run build && cypress open",
+    "test:e2e": "npm run build && cypress run --browser chrome",
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js"
   },
   "commitlint": {
@@ -59,7 +59,7 @@
     "babel-plugin-transform-new-target": "^7.0.0-alpha.14",
     "babel-preset-env": "^1.6.1",
     "css-loader": "^1.0.0",
-    "cypress": "^3.0.0",
+    "cypress": "^3.1.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "get-graphql-schema": "^2.1.1",
     "gql2ts": "^1.2.1",
