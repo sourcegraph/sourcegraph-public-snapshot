@@ -41,10 +41,10 @@ export const ExtensionsAreaHeader: React.SFC<ExtensionsAreaHeaderProps> = (props
                 <div className="spacer" />
                 <ul className="navbar-nav nav">
                     {props.actionButtons.map(
-                        ({ condition = () => true, to, icon: Icon, label }) =>
+                        ({ condition = () => true, to, icon: Icon, label, tooltip }) =>
                             condition(props) && (
                                 <li className="nav-item" key={label}>
-                                    <Link className="btn ml-2 btn-secondary" to={to}>
+                                    <Link className="btn ml-2 btn-secondary" to={to(props)} data-tooltip={tooltip}>
                                         {Icon && <Icon className="icon-inline" />} {label}
                                     </Link>
                                 </li>

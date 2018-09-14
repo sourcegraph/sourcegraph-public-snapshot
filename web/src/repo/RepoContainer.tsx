@@ -20,7 +20,7 @@ import { RepositoryBranchesArea } from './branches/RepositoryBranchesArea'
 import { RepositoryCommitPage } from './commit/RepositoryCommitPage'
 import { RepositoryCompareArea } from './compare/RepositoryCompareArea'
 import { RepositoryReleasesArea } from './releases/RepositoryReleasesArea'
-import { RepoHeader, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
+import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RepoRevContainer, RepoRevContainerRoute } from './RepoRevContainer'
 import { RepositoryErrorPage } from './RepositoryErrorPage'
@@ -38,6 +38,7 @@ export interface RepoContainerProps
         ExtensionsComponentProps,
         ExtensionsControllerProps {
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
+    repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     user: GQL.IUser | null
     onHelpPopoverToggle: () => void
     isLightTheme: boolean
@@ -65,8 +66,6 @@ interface RepoRevContainerState extends ParsedRepoRev {
 
     repoHeaderContributionsLifecycleProps?: RepoHeaderContributionsLifecycleProps
 }
-
-const enableRepositoryGraph = localStorage.getItem('repositoryGraph') !== null
 
 /**
  * Renders a horizontal bar and content for a repository page.
@@ -208,6 +207,8 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         return (
             <div className="repo-container w-100 d-flex flex-column">
                 <RepoHeader
+                    actionButtons={this.props.repoHeaderActionButtons}
+                    rev={this.state.rev}
                     repo={this.state.repoOrError}
                     resolvedRev={this.state.resolvedRevOrError}
                     extensions={this.props.extensions}
@@ -216,20 +217,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                     location={this.props.location}
                     history={this.props.history}
                 />
-                {enableRepositoryGraph && (
-                    <RepoHeaderContributionPortal
-                        position="right"
-                        priority={-1}
-                        element={
-                            <RepositoryGraphAction
-                                key="repository-graph"
-                                repo={this.state.repoOrError.name}
-                                rev={this.state.rev}
-                            />
-                        }
-                        {...this.state.repoHeaderContributionsLifecycleProps}
-                    />
-                )}
                 <RepoHeaderContributionPortal
                     position="right"
                     key="go-to-code-host"

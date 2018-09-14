@@ -9,6 +9,7 @@ import { ActionItem } from '../components/ActionItem'
 import { PopoverButton } from '../components/PopoverButton'
 import { displayRepoPath, splitPath } from '../components/RepoFileLink'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import { ActionButtonDescriptor } from '../util/contributions'
 import { ErrorLike, isErrorLike } from '../util/errors'
 import { ResolvedRev } from './backend'
 import { RepositoriesPopover } from './RepositoriesPopover'
@@ -106,7 +107,23 @@ export interface RepoHeaderContributionsLifecycleProps {
     }
 }
 
+/**
+ * Context passed into action button render functions
+ */
+export interface RepoHeaderContext {
+    repoName: string
+    encodedRev: string
+}
+
+export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
+
 interface Props extends ExtensionsProps, ExtensionsControllerProps {
+    /**
+     * An array of render functions for action buttons that can be configured *in addition* to action buttons
+     * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
+     */
+    actionButtons: ReadonlyArray<RepoHeaderActionButton>
+
     /**
      * The repository that this header is for.
      */
@@ -125,6 +142,9 @@ interface Props extends ExtensionsProps, ExtensionsControllerProps {
 
     /** Information about the revision of the repository. */
     resolvedRev: ResolvedRev | ErrorLike | undefined
+
+    /** The URI-decoded revision (e.g., "my#branch" in "my/repo@my%23branch"). */
+    rev?: string
 
     /**
      * Called in the constructor when the store is constructed. The parent component propagates these lifecycle
@@ -159,6 +179,10 @@ export class RepoHeader extends React.PureComponent<Props, State> {
         const rightActions = this.state.repoHeaderContributions.filter(({ position }) => position === 'right')
 
         const [repoDir, repoBase] = splitPath(displayRepoPath(this.props.repo.name))
+        const context: RepoHeaderContext = {
+            repoName: this.props.repo.name,
+            encodedRev: this.props.rev,
+        }
         return (
             <nav className="repo-header navbar navbar-expand">
                 <div className="navbar-nav">
@@ -215,6 +239,17 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         extensionsController={this.props.extensionsController}
                         extensions={this.props.extensions}
                     />
+                    {this.props.actionButtons.map(
+                        ({ condition = () => true, label, tooltip, icon: Icon, to }) =>
+                            condition(context) && (
+                                <li className="nav-item" key={label}>
+                                    <ActionItem to={to(context)} data-tooltip={tooltip}>
+                                        <Icon className="icon-inline" />{' '}
+                                        <span className="d-none d-lg-inline">{label}</span>
+                                    </ActionItem>
+                                </li>
+                            )
+                    )}
                     {rightActions.map((a, i) => (
                         <li className="nav-item" key={a.element.key || i}>
                             {a.element}

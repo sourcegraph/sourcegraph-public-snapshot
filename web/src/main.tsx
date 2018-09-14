@@ -13,6 +13,7 @@ import { enterpriseExtensionAreaHeaderNavItems } from './enterprise/extensions/e
 import { enterpriseExtensionAreaRoutes } from './enterprise/extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './enterprise/extensions/extensionsAreaHeaderActionButtons'
 import { enterpriseExtensionsAreaRoutes } from './enterprise/extensions/routes'
+import { enterpriseRepoHeaderActionButtons } from './enterprise/repo/repoHeaderActionButtons'
 import { enterpriseRepoRevContainerRoutes } from './enterprise/repo/routes'
 import { enterpriseSiteAdminAreaRoutes } from './enterprise/site-admin/routes'
 import { enterpriseSiteAdminSidebarNavItems } from './enterprise/site-admin/sidebaritems'
@@ -32,6 +33,7 @@ window.addEventListener('DOMContentLoaded', () => {
             userAccountSideBarItems={enterpriseUserAccountSideBarItems}
             userAccountAreaRoutes={enterpriseUserAccountAreaRoutes}
             repoRevContainerRoutes={enterpriseRepoRevContainerRoutes}
+            repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
         />,
         document.querySelector('#root')
     )

@@ -17,6 +17,7 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
+import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { routes } from './routes'
 import { parseSearchURLQuery } from './search'
@@ -41,6 +42,7 @@ export interface LayoutProps
     userAccountSideBarItems: UserAccountSidebarItems
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
+    repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
 
     user: GQL.IUser | null
 

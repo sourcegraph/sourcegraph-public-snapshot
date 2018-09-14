@@ -39,6 +39,7 @@ import {
 import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
+import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { clientConfiguration } from './settings/configuration'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
@@ -58,6 +59,7 @@ export interface SourcegraphWebAppProps {
     userAccountSideBarItems: UserAccountSidebarItems
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
+    repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
 }
 
 interface SourcegraphWebAppState
