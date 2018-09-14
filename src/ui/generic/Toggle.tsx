@@ -4,6 +4,9 @@ interface Props {
     /** The initial value.  */
     value?: boolean
 
+    /** The DOM ID of the element. */
+    id?: string
+
     /**
      * Called when the user changes the input's value.
      */
@@ -31,6 +34,7 @@ export class Toggle extends React.PureComponent<Props, State> {
         return (
             <input
                 className={`toggle toggle--${value ? 'on' : 'off'}`}
+                id={this.props.id}
                 title={this.props.title}
                 type="range"
                 value={value ? 1 : 0}

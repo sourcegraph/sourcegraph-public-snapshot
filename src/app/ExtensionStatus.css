@@ -2,9 +2,3 @@
     min-width: 24vw;
     max-width: 50vw;
 }
-.extension-status__client-actions {
-    visibility: hidden;
-}
-.extension-status__client:hover .extension-status__client-actions {
-    visibility: visible;
-}

@@ -6,6 +6,7 @@ import { ExecuteCommandParams } from 'sourcegraph/module/client/providers/comman
 import { Contributions, MessageType } from 'sourcegraph/module/protocol'
 import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
 import { BrowserConsoleTracer, Trace } from 'sourcegraph/module/protocol/jsonrpc2/trace'
+import { ExtensionStatus } from '../app/ExtensionStatus'
 import { Notification } from '../app/notifications/notification'
 import { Context } from '../context'
 import { asError, isErrorLike } from '../errors'
@@ -130,7 +131,7 @@ export function createController<S extends ConfigurationSubject, C extends Setti
     //
     // HACK(sqs): This is inefficient and doesn't unsubscribe itself.
     controller.clientEntries.subscribe(entries => {
-        const traceEnabled = localStorage.getItem('traceExtensions') !== null
+        const traceEnabled = localStorage.getItem(ExtensionStatus.TRACE_STORAGE_KEY) !== null
         for (const e of entries) {
             e.connection
                 .then(c => c.trace(traceEnabled ? Trace.Verbose : Trace.Off, new BrowserConsoleTracer(e.key.id)))
