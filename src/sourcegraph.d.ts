@@ -829,14 +829,6 @@ declare module 'sourcegraph' {
          * @param updates The updates to apply to the context. If a context property's value is null, it is deleted from the context.
          */
         export function updateContext(updates: ContextValues): void
-
-        /**
-         * The URL to the Sourcegraph site that the user's session is associated with. This refers to
-         * Sourcegraph.com (`https://sourcegraph.com`) by default, or a self-hosted instance of Sourcegraph.
-         *
-         * @example `https://sourcegraph.com`
-         */
-        export const sourcegraphURL: URI
     }
 
     /**
