@@ -129,6 +129,7 @@ func Main() {
 		`github-proxy: github-proxy`,
 		`frontend: frontend`,
 		`repo-updater: repo-updater`,
+		`indexer: indexer`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=9238 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
 	}
 	procfile = append(procfile, ProcfileAdditions...)
@@ -141,6 +142,11 @@ func Main() {
 		log.Fatal(err)
 	} else if line != "" {
 		procfile = append(procfile, line)
+	}
+	if lines, err := maybeZoektProcfile(shared.DataDir); err != nil {
+		log.Fatal(err)
+	} else if lines != nil {
+		procfile = append(procfile, lines...)
 	}
 
 	const goremanAddr = "127.0.0.1:5005"

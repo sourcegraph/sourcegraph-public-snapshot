@@ -14,6 +14,7 @@ var SrcProfServices = []map[string]string{
 	{"Name": "lsp-proxy", "Host": "127.0.0.1:6061"},
 	{"Name": "symbols", "Host": "127.0.0.1:6071"},
 	{"Name": "repo-updater", "Host": "127.0.0.1:6074"},
+	{"Name": "indexer", "Host": "127.0.0.1:6073"},
 	{"Name": "query-runner", "Host": "127.0.0.1:6067"},
 }
 
