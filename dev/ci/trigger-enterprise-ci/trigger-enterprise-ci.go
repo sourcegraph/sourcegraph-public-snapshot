@@ -55,7 +55,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		resp.body.Close()
+		resp.Body.Close()
 		bs := build.State
 		switch bs {
 		case "passed":
