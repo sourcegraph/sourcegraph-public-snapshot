@@ -108,7 +108,9 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                         context.repoHeaderContributionsLifecycleProps
                                     }
                                     extensions={context.extensions}
-                                    extensionsOnComponentChange={context.extensionsOnComponentChange}
+                                    extensionsOnVisibleTextDocumentsChange={
+                                        context.extensionsOnVisibleTextDocumentsChange
+                                    }
                                     extensionsController={context.extensionsController}
                                     location={context.location}
                                     history={context.history}

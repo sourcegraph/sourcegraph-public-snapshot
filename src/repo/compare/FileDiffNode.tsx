@@ -5,11 +5,11 @@ import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { DiffStat } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'
 
-export interface FileDiffNodeProps extends ExtensionsProps {
+export interface FileDiffNodeProps extends ExtensionsProps, ExtensionsControllerProps {
     node: GQL.IFileDiff
 
     /** The base repository and revision. */

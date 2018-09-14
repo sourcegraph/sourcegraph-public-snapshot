@@ -8,7 +8,7 @@ import { parseBrowserRepoURL } from '.'
 import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
-import { ExtensionsComponentProps } from '../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
@@ -34,7 +34,7 @@ const RepoPageNotFound: React.SFC = () => (
 export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         ExtensionsProps,
-        ExtensionsComponentProps,
+        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
@@ -194,7 +194,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             repoMatchURL,
             onHelpPopoverToggle: this.props.onHelpPopoverToggle,
             extensions: this.props.extensions,
-            extensionsOnComponentChange: this.props.extensionsOnComponentChange,
+            extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             extensionsController: this.props.extensionsController,
             ...this.state.repoHeaderContributionsLifecycleProps,
         }

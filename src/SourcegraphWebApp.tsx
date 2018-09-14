@@ -16,10 +16,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { combineLatest, Subscription } from 'rxjs'
 import { from } from 'rxjs'
 import { startWith } from 'rxjs/operators'
-import {
-    Component as ExtensionsComponent,
-    EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT,
-} from 'sourcegraph/module/client/environment'
+import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from 'sourcegraph/module/client/environment'
+import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
 import { currentUser } from './auth'
 import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
@@ -30,13 +28,13 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
+import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import {
     ConfigurationCascadeProps,
     createMessageTransports,
     ExtensionsControllerProps,
     ExtensionsProps,
 } from './extensions/ExtensionsClientCommonContext'
-import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
@@ -288,7 +286,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     // Extensions
                                     extensions={this.state.extensions}
                                     extensionsEnvironment={this.state.extensionsEnvironment}
-                                    extensionsOnComponentChange={this.extensionsOnComponentChange}
+                                    extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}
                                     extensionsController={this.state.extensionsController}
                                     clientConnection={this.state.clientConnection}
                                 />
@@ -379,9 +377,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
     }
 
-    private extensionsOnComponentChange = (component: ExtensionsComponent | null): void => {
+    private extensionsOnVisibleTextDocumentsChange = (visibleTextDocuments: TextDocumentItem[] | null): void => {
         this.setState(
-            prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, component } }),
+            prevState => ({ extensionsEnvironment: { ...prevState.extensionsEnvironment, visibleTextDocuments } }),
             () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
         )
     }

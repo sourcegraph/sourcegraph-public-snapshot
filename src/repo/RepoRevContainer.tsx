@@ -8,7 +8,7 @@ import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
-import { ExtensionsComponentProps } from '../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
@@ -26,7 +26,7 @@ import { RevisionsPopover } from './RevisionsPopover'
 export interface RepoRevContainerContext
     extends RepoHeaderContributionsLifecycleProps,
         ExtensionsControllerProps,
-        ExtensionsComponentProps,
+        ExtensionsDocumentsProps,
         ExtensionsProps {
     repo: GQL.IRepository
     rev: string
@@ -43,7 +43,7 @@ interface RepoRevContainerProps
     extends RouteComponentProps<{}>,
         RepoHeaderContributionsLifecycleProps,
         ExtensionsProps,
-        ExtensionsComponentProps,
+        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     routes: ReadonlyArray<RepoRevContainerRoute>
     repo: GQL.IRepository
@@ -187,7 +187,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
         const context: RepoRevContainerContext = {
             extensions: this.props.extensions,
             extensionsController: this.props.extensionsController,
-            extensionsOnComponentChange: this.props.extensionsOnComponentChange,
+            extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             isLightTheme: this.props.isLightTheme,
             onHelpPopoverToggle: this.props.onHelpPopoverToggle,
             repo: this.props.repo,

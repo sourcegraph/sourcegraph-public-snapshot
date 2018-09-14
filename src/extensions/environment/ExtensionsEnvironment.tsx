@@ -4,7 +4,8 @@ import {
     ConfigurationSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { Component, Environment } from 'sourcegraph/module/client/environment'
+import { Environment } from 'sourcegraph/module/client/environment'
+import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
 
 /**
  * Whether the platform (Sourcegraph extensions and the extension registry) should be enabled for the viewer.
@@ -24,9 +25,9 @@ export interface ExtensionsEnvironmentProps {
 }
 
 /** React props for components that participate in the Sourcegraph extensions environment. */
-export interface ExtensionsComponentProps {
+export interface ExtensionsDocumentsProps {
     /**
-     * Called when the Sourcegraph extensions environment component changes.
+     * Called when the Sourcegraph extensions environment's set of visible text documents changes.
      */
-    extensionsOnComponentChange: (component: Component | null) => void
+    extensionsOnVisibleTextDocumentsChange: (visibleTextDocuments: TextDocumentItem[] | null) => void
 }

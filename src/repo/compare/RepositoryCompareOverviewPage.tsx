@@ -8,7 +8,8 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
@@ -68,7 +69,12 @@ function queryRepositoryComparison(args: {
     )
 }
 
-interface Props extends RepositoryCompareAreaPageProps, RouteComponentProps<{}>, ExtensionsProps {
+interface Props
+    extends RepositoryCompareAreaPageProps,
+        RouteComponentProps<{}>,
+        ExtensionsProps,
+        ExtensionsControllerProps,
+        ExtensionsDocumentsProps {
     /** The base of the comparison. */
     base: { repoPath: string; repoID: GQL.ID; rev?: string | null }
 
@@ -157,6 +163,8 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                                 rev: this.props.head.rev || null,
                                 commitID: this.state.rangeOrError.headRevSpec.object!.oid,
                             }}
+                            extensionsController={this.props.extensionsController}
+                            extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
                         />
                     </>
                 )}

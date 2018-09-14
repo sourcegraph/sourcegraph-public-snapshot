@@ -14,10 +14,11 @@ import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { filter, map, withLatestFrom } from 'rxjs/operators'
-import { FORCE_NO_EXTENSIONS, getHover, getJumpURL } from '../../backend/features'
+import { getHover, getJumpURL } from '../../backend/features'
 import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { HeroPage } from '../../components/HeroPage'
+import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
@@ -41,7 +42,8 @@ interface Props
     extends RouteComponentProps<{ spec: string }>,
         RepoHeaderContributionsLifecycleProps,
         ExtensionsProps,
-        ExtensionsControllerProps {
+        ExtensionsControllerProps,
+        ExtensionsDocumentsProps {
     repo: GQL.IRepository
 }
 
@@ -113,10 +115,8 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
             ),
             pushHistory: path => this.props.history.push(path),
             logTelemetryEvent,
-            fetchHover: hoveredToken =>
-                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_EXTENSIONS),
-            fetchJumpURL: hoveredToken =>
-                getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_EXTENSIONS),
+            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
@@ -198,6 +198,10 @@ export class RepositoryCompareArea extends React.Component<Props, State> {
                                             {...routeComponentProps}
                                             {...commonProps}
                                             hoverifier={this.hoverifier}
+                                            extensionsController={this.props.extensionsController}
+                                            extensionsOnVisibleTextDocumentsChange={
+                                                this.props.extensionsOnVisibleTextDocumentsChange
+                                            }
                                         />
                                     )}
                                 />

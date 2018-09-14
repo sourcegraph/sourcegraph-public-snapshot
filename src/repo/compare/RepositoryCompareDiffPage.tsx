@@ -5,10 +5,11 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
-import { FilteredConnection } from '../../components/FilteredConnection'
-import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { createAggregateError } from '../../util/errors'
-import { FileDiffNode, FileDiffNodeProps } from './FileDiffNode'
+import { FileDiffConnection } from './FileDiffConnection'
+import { FileDiffNode } from './FileDiffNode'
 import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 
 export function queryRepositoryComparisonFileDiffs(args: {
@@ -92,7 +93,9 @@ export function queryRepositoryComparisonFileDiffs(args: {
 interface RepositoryCompareDiffPageProps
     extends RepositoryCompareAreaPageProps,
         RouteComponentProps<{}>,
-        ExtensionsProps {
+        ExtensionsProps,
+        ExtensionsControllerProps,
+        ExtensionsDocumentsProps {
     /** The base of the comparison. */
     base: { repoPath: string; repoID: GQL.ID; rev: string | null; commitID: string }
 
@@ -106,20 +109,7 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
     public render(): JSX.Element | null {
         return (
             <div className="repository-compare-page">
-                <FilteredConnection<
-                    GQL.IFileDiff,
-                    Pick<
-                        FileDiffNodeProps,
-                        | 'base'
-                        | 'head'
-                        | 'lineNumbers'
-                        | 'className'
-                        | 'extensions'
-                        | 'location'
-                        | 'history'
-                        | 'hoverifier'
-                    >
-                >
+                <FileDiffConnection
                     listClassName="list-group list-group-flush"
                     noun="changed file"
                     pluralNoun="changed files"
@@ -133,12 +123,14 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
                         location: this.props.location,
                         history: this.props.history,
                         hoverifier: this.props.hoverifier,
+                        extensionsController: this.props.extensionsController,
                     }}
                     defaultFirst={25}
                     hideSearch={true}
                     noSummaryIfAllNodesVisible={true}
                     history={this.props.history}
                     location={this.props.location}
+                    extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
                 />
             </div>
         )

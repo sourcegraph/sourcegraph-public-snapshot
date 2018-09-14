@@ -13,12 +13,12 @@ import { RouteComponentProps } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, switchMap, tap, withLatestFrom } from 'rxjs/operators'
-import { FORCE_NO_EXTENSIONS, getHover, getJumpURL } from '../../backend/features'
+import { getHover, getJumpURL } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
+import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { getModeFromPath } from '../../util'
@@ -27,7 +27,8 @@ import { memoizeObservable } from '../../util/memoize'
 import { propertyIsDefined } from '../../util/types'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { FileDiffNode, FileDiffNodeProps } from '../compare/FileDiffNode'
+import { FileDiffConnection } from '../compare/FileDiffConnection'
+import { FileDiffNode } from '../compare/FileDiffNode'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
 
 const queryCommit = memoizeObservable(
@@ -62,7 +63,11 @@ const queryCommit = memoizeObservable(
     args => `${args.repo}:${args.revspec}`
 )
 
-interface Props extends RouteComponentProps<{ revspec: string }>, ExtensionsProps, ExtensionsControllerProps {
+interface Props
+    extends RouteComponentProps<{ revspec: string }>,
+        ExtensionsProps,
+        ExtensionsControllerProps,
+        ExtensionsDocumentsProps {
     repo: GQL.IRepository
 
     onDidUpdateExternalLinks: (externalLinks: GQL.IExternalLink[] | undefined) => void
@@ -72,14 +77,6 @@ interface State extends HoverState {
     /** The commit, undefined while loading, or an error. */
     commitOrError?: GQL.IGitCommit | ErrorLike
 }
-
-class FilteredFileDiffConnection extends FilteredConnection<
-    GQL.IFileDiff,
-    Pick<
-        FileDiffNodeProps,
-        'base' | 'head' | 'lineNumbers' | 'className' | 'extensions' | 'location' | 'history' | 'hoverifier'
-    >
-> {}
 
 const logTelemetryEvent = (event: string, data?: any) => eventLogger.log(event, data)
 const LinkComponent = (props: LinkProps) => <Link {...props} />
@@ -126,10 +123,8 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
             ),
             pushHistory: path => this.props.history.push(path),
             logTelemetryEvent,
-            fetchHover: hoveredToken =>
-                getHover(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_EXTENSIONS),
-            fetchJumpURL: hoveredToken =>
-                getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), FORCE_NO_EXTENSIONS),
+            fetchHover: hoveredToken => getHover(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
+            fetchJumpURL: hoveredToken => getJumpURL(this.getLSPTextDocumentPositionParams(hoveredToken), this.props),
         })
         this.subscriptions.add(this.hoverifier)
         this.state = this.hoverifier.hoverState
@@ -227,7 +222,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 </div>
                             </div>
                             <div className="mb-3" />
-                            <FilteredFileDiffConnection
+                            <FileDiffConnection
                                 listClassName="list-group list-group-flush"
                                 noun="changed file"
                                 pluralNoun="changed files"
@@ -251,6 +246,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                     location: this.props.location,
                                     history: this.props.history,
                                     hoverifier: this.hoverifier,
+                                    extensionsController: this.props.extensionsController,
                                 }}
                                 updateOnChange={`${this.props.repo.id}:${this.state.commitOrError.oid}`}
                                 defaultFirst={25}
@@ -258,6 +254,9 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                                 noSummaryIfAllNodesVisible={true}
                                 history={this.props.history}
                                 location={this.props.location}
+                                extensionsOnVisibleTextDocumentsChange={
+                                    this.props.extensionsOnVisibleTextDocumentsChange
+                                }
                             />
                         </>
                     )}

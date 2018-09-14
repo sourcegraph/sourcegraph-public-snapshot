@@ -10,7 +10,7 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { ExtensionsComponentProps } from '../../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -84,7 +84,7 @@ interface Props
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
         ExtensionsProps,
-        ExtensionsComponentProps,
+        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     location: H.Location
     history: H.History
@@ -268,7 +268,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             mode={this.props.mode}
                             extensions={this.props.extensions}
                             extensionsController={this.props.extensionsController}
-                            extensionsOnComponentChange={this.props.extensionsOnComponentChange}
+                            extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
                             wrapCode={this.state.wrapCode}
                             renderMode={renderMode}
                             location={this.props.location}

@@ -17,7 +17,7 @@ import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { ExtensionsComponentProps, USE_PLATFORM } from '../../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsDocumentsProps, USE_PLATFORM } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
@@ -36,7 +36,7 @@ interface BlobProps
     extends AbsoluteRepoFile,
         ModeSpec,
         ExtensionsProps,
-        ExtensionsComponentProps,
+        ExtensionsDocumentsProps,
         ExtensionsControllerProps {
     /** The raw content of the blob. */
     content: string
@@ -291,17 +291,17 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             combineLatest(modelChanges, locationPositions)
                 .pipe(filter(() => USE_PLATFORM))
                 .subscribe(([model, pos]) => {
-                    this.props.extensionsOnComponentChange({
-                        document: {
+                    this.props.extensionsOnVisibleTextDocumentsChange([
+                        {
                             uri: `git://${model.repoPath}?${model.commitID}#${model.filePath}`,
                             languageId: model.mode,
                             text: model.content,
                         },
-                    })
+                    ])
                 })
         )
         // Clear the Sourcegraph extensions environment's component when the blob is no longer shown.
-        this.subscriptions.add(() => this.props.extensionsOnComponentChange(null))
+        this.subscriptions.add(() => this.props.extensionsOnVisibleTextDocumentsChange(null))
 
         /** Decorations */
         let lastModel: (AbsoluteRepoFile & LSPSelector) | undefined

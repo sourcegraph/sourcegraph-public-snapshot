@@ -3,7 +3,7 @@ import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from './backend/graphqlschema'
 import { LinkExtension } from './extension/Link'
-import { ExtensionsComponentProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
+import { ExtensionsDocumentsProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
@@ -32,7 +32,7 @@ export interface LayoutProps
         ExtensionsProps,
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps,
-        ExtensionsComponentProps {
+        ExtensionsDocumentsProps {
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
     extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
