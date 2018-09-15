@@ -67,7 +67,9 @@ Or via the configuration file (`~/src-config.json`):
 	{"accessToken": "secret"}
 ```
 
-See `src -h` for more information.
+See `src -h` for more information on specifying access tokens.
+
+To acquire the access token, visit your Sourcegraph instance (or https://sourcegraph.com), click your profile picture, and select **access tokens** in the left hand menu.
 
 ## Development
 
