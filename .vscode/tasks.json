@@ -7,8 +7,8 @@
   },
   "tasks": [
     {
-      "label": "start",
-      "command": "${workspaceRoot}/dev/start.sh",
+      "label": "launch",
+      "command": "${workspaceRoot}/dev/launch.sh",
       "isBackground": true,
       "problemMatcher": []
     },

@@ -117,7 +117,7 @@ docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
 
 _`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data._
 
-You need to have the redis image running when you run the Sourcegraph `dev/start.sh` script. If you do not have docker access without root, run these commands under `sudo`.
+You need to have the redis image running when you run the Sourcegraph `dev/launch.sh` script. If you do not have docker access without root, run these commands under `sudo`.
 
 ## Build
 
@@ -144,7 +144,7 @@ eval $(docker-machine env)
 Then run the following commands (**NOTE: Node.js and Yarn must be installed for the this step**):
 
 ```
-./dev/start.sh
+./dev/launch.sh
 ```
 
 This will continuously compile your code and live reload your locally running
@@ -188,7 +188,7 @@ in the terminal.
 
 #### Increase maximum available file descriptors.
 
-`./dev/start.sh` may ask you to run ulimit to increase the maximum number
+`./dev/launch.sh` may ask you to run ulimit to increase the maximum number
 of available file descriptors for a process. You can make this setting
 permanent for every shell session by adding the following line to your
 `.*rc` file (usually `.bashrc` or `.zshrc`):
@@ -242,7 +242,7 @@ Requires "Debugger for Chrome" extension.
 **Note: If you run into an error `could not launch process: decoding dwarf section info at offset 0x0: too short` make sure you are on the latest delve version**
 
 - Install [Delve](https://github.com/derekparker/delve)
-- Run `DELVE=frontend,searcher ./dev/start.sh` (`DELVE` accepts a comma-separated list of components as specified in [../dev/Procfile](../dev/Procfile))
+- Run `DELVE=frontend,searcher ./dev/launch.sh` (`DELVE` accepts a comma-separated list of components as specified in [../dev/Procfile](../dev/Procfile))
 - Set a breakpoint in VS Code (there's a bug where setting the breakpoint after attaching results in "Unverified breakpoint")
 - Run "Attach to $component" in the VS Code debug view
 - The process should start once the debugger is attached

@@ -13,10 +13,10 @@ import (
 	pkgerrors "github.com/pkg/errors"
 )
 
-// usingGoremanDev is whether we are running goreman in dev/start.sh
+// usingGoremanDev is whether we are running goreman in dev/launch.sh
 var usingGoremanDev = os.Getenv("GOREMAN") != ""
 
-// restartGoremanDev restarts the processes when running goreman in dev/start.sh. It takes care to
+// restartGoremanDev restarts the processes when running goreman in dev/launch.sh. It takes care to
 // avoid a race condition where some services have started up with the new config and some are still
 // running with the old config.
 func restartGoremanDev() error {

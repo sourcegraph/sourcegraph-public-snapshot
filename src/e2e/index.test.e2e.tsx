@@ -17,7 +17,7 @@ describe('e2e test suite', () => {
         overrideAuthSecret = '2qzNBYQmUigCFdVVjDGyFfp'
     } else {
         baseURL = 'http://localhost:3080'
-        // Use OVERRIDE_AUTH_SECRET env var from dev/start.sh.
+        // Use OVERRIDE_AUTH_SECRET env var from dev/launch.sh.
         overrideAuthSecret = 'sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ'
     }
     console.log('Using base URL', baseURL)
