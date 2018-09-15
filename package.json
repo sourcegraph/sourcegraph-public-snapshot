@@ -65,7 +65,7 @@
     "last 1 Chrome versions",
     "not IE > 0"
   ],
-  "depependencies": {
+  "dependencies": {
     "@babel/core": "^7.0.0",
     "@babel/plugin-syntax-dynamic-import": "^7.0.0",
     "@babel/polyfill": "^7.0.0",
