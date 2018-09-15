@@ -225,15 +225,22 @@ func main() {
 			bk.Cmd("go run ./dev/ci/trigger-enterprise-ci/trigger-enterprise-ci.go"))
 		pipeline.AddWait()
 
-		// Deploy to dogfood
-		pipeline.AddStep(":dog:",
-			bk.ConcurrencyGroup("deploy"),
-			bk.Concurrency(1),
-			bk.Env("VERSION", version),
-			bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
-			bk.Env("NAMESPACE", "default"),
-			bk.Cmd("./dev/ci/deploy-dogfood.sh"))
-		pipeline.AddWait()
+		// Only deploy pure-OSS images dogfood/prod. Images that contain some
+		// private code (server/frontend) are already deployed by the
+		// enterprise CI above.
+		deploy := branch != "master"
+
+		if deploy {
+			// Deploy to dogfood
+			pipeline.AddStep(":dog:",
+				bk.ConcurrencyGroup("deploy"),
+				bk.Concurrency(1),
+				bk.Env("VERSION", version),
+				bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
+				bk.Env("NAMESPACE", "default"),
+				bk.Cmd("./dev/ci/deploy-dogfood.sh"))
+			pipeline.AddWait()
+		}
 
 		// Run e2e tests against dogfood
 		pipeline.AddStep(":chromium:",
@@ -246,10 +253,12 @@ func main() {
 			bk.ArtifactPaths("puppeteer/*.png"))
 		pipeline.AddWait()
 
-		// Deploy to prod
-		pipeline.AddStep(":rocket:",
-			bk.Env("VERSION", version),
-			bk.Cmd("./dev/ci/deploy-prod.sh"))
+		if deploy {
+			// Deploy to prod
+			pipeline.AddStep(":rocket:",
+				bk.Env("VERSION", version),
+				bk.Cmd("./dev/ci/deploy-prod.sh"))
+		}
 	}
 
 	switch {
