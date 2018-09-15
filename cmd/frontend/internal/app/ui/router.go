@@ -70,6 +70,9 @@ const (
 	routeLegacyEditorAuth              = "legacy.editor-auth"
 	routeLegacyEditorAuth2             = "legacy.editor-auth2"
 	routeLegacySearchQueries           = "search-queries"
+
+	// Vanity redirects
+	routeVanityHackMIT = "hackmit"
 )
 
 // aboutRedirects contains map entries, each of which indicates that
@@ -134,6 +137,9 @@ func newRouter() *mux.Router {
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
 	r.Path("/editor-auth").Methods("GET").Name(routeLegacyEditorAuth)
 	r.Path("/search/queries").Methods("GET").Name(routeLegacySearchQueries)
+
+	// Vanity redirects
+	r.Path("/hackmit").Methods("GET").Name(routeVanityHackMIT)
 
 	// repo
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
@@ -203,8 +209,8 @@ func initRouter() {
 		return mux.Vars(r)["username"] + " - Sourcegraph"
 	})))
 
-	// Legacy redirects
 	if envvar.SourcegraphDotComMode() {
+		// Legacy redirects
 		router.Get(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
 		router.Get(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
 		router.Get(routeLegacyOldRouteDefLanding).Handler(http.HandlerFunc(serveOldRouteDefLanding))
@@ -213,6 +219,9 @@ func initRouter() {
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
 		router.Get(routeLegacyEditorAuth).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
 		router.Get(routeLegacyEditorAuth2).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
+
+		// Vanity redirects
+		router.Get(routeVanityHackMIT).Handler(staticRedirectHandler("https://github.com/sourcegraph/careers/blob/master/events/hack-mit-2018.md", http.StatusTemporaryRedirect))
 	}
 	router.Get(routeLegacySearchQueries).Handler(staticRedirectHandler("/search/searches", http.StatusMovedPermanently))
 
