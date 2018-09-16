@@ -357,7 +357,19 @@ input DiscussionThreadTargetRepoSelectionInput {
 #
 input DiscussionThreadTargetRepoInput {
     # The repository in which the thread was created.
-    repository: ID!
+    #
+    # One of 'repositoryID', 'repositoryGitCloneURL', or 'repositoryName' must be specified.
+    repositoryID: ID
+
+    # The repository in which the thread was created.
+    #
+    # One of 'repositoryID', 'repositoryGitCloneURL', or 'repositoryName' must be specified.
+    repositoryName: String
+
+    # The repository in which the thread was created.
+    #
+    # One of 'repositoryID', 'repositoryGitCloneURL', or 'repositoryName' must be specified.
+    repositoryGitCloneURL: String
 
     # The path (relative to the repository root) of the file or directory that
     # the thread is referencing, if any. If the path is null, the thread is not
@@ -634,7 +646,17 @@ type Query {
         # When present, lists only the threads created by this author.
         authorUserID: ID
         # When present, lists only the threads whose target is a repository with this ID.
+        #
+        # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
         targetRepositoryID: ID
+        # When present, lists only the threads whose target is a repository with this name.
+        #
+        # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
+        targetRepositoryName: String
+        # When present, lists only the threads whose target is a repository with this Git clone URL.
+        #
+        # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
+        targetRepositoryGitCloneURL: String
         # When present, lists only the threads whose target is a repository with this file path.
         #
         # If the path ends with "/**", any path below that is matched.

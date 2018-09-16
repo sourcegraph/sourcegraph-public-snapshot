@@ -13,7 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 )
 
 var errDiscussionsNotEnabled = errors.New("discussions are not enabled on this site")
@@ -44,21 +46,63 @@ type discussionThreadTargetRepoSelectionInput struct {
 	LinesAfter     *[]string
 }
 
+// discussionsResolveRepository resolves the repository given an ID, name, or
+// git clone URL. Only one must be specified, or else this function will panic.
+func discussionsResolveRepository(ctx context.Context, id *graphql.ID, name, gitCloneURL *string) (*repositoryResolver, error) {
+	switch {
+	case id != nil:
+		return repositoryByID(ctx, *id)
+	case name != nil:
+		repo, err := backend.Repos.GetByURI(ctx, api.RepoURI(*name))
+		if err != nil {
+			return nil, err
+		}
+		return repositoryByIDInt32(ctx, repo.ID)
+	case gitCloneURL != nil:
+		repositoryName, err := reposource.CloneURLToRepoURI(*gitCloneURL)
+		if err != nil {
+			return nil, err
+		}
+		repo, err := backend.Repos.GetByURI(ctx, api.RepoURI(repositoryName))
+		if err != nil {
+			return nil, err
+		}
+		return repositoryByIDInt32(ctx, repo.ID)
+	default:
+		panic("invalid state")
+	}
+}
+
 type discussionThreadTargetRepoInput struct {
-	Repository graphql.ID
-	Path       *string
-	Branch     *string
-	Revision   *string
-	Selection  *discussionThreadTargetRepoSelectionInput
+	RepositoryID          *graphql.ID
+	RepositoryName        *string
+	RepositoryGitCloneURL *string
+	Path                  *string
+	Branch                *string
+	Revision              *string
+	Selection             *discussionThreadTargetRepoSelectionInput
 }
 
 func (d *discussionThreadTargetRepoInput) convert(ctx context.Context) (*types.DiscussionThreadTargetRepo, error) {
-	repoID, err := unmarshalRepositoryID(d.Repository)
+	count := 0
+	if d.RepositoryID != nil {
+		count++
+	}
+	if d.RepositoryName != nil {
+		count++
+	}
+	if d.RepositoryGitCloneURL != nil {
+		count++
+	}
+	if count != 1 {
+		return nil, errors.New("exactly one of repositoryID, repositoryName, or repositoryGitCloneURL must be specified")
+	}
+	repo, err := discussionsResolveRepository(ctx, d.RepositoryID, d.RepositoryName, d.RepositoryGitCloneURL)
 	if err != nil {
 		return nil, err
 	}
 	tr := &types.DiscussionThreadTargetRepo{
-		RepoID:   repoID,
+		RepoID:   repo.repo.ID,
 		Path:     d.Path,
 		Branch:   d.Branch,
 		Revision: d.Revision,
@@ -72,7 +116,7 @@ func (d *discussionThreadTargetRepoInput) convert(ctx context.Context) (*types.D
 		if d.Selection.Lines == nil {
 			// The caller wishes for us to populate the lines using repository
 			// data. We do this now.
-			if err := d.populateLinesFromRepository(ctx); err != nil {
+			if err := d.populateLinesFromRepository(ctx, repo); err != nil {
 				return nil, err
 			}
 		}
@@ -80,7 +124,7 @@ func (d *discussionThreadTargetRepoInput) convert(ctx context.Context) (*types.D
 		tr.Lines = d.Selection.Lines
 		tr.LinesAfter = d.Selection.LinesAfter
 	}
-	return tr, err
+	return tr, nil
 }
 
 // validate checks the validity of the input and returns an error, if any.
@@ -111,13 +155,9 @@ func (d *discussionThreadTargetRepoInput) validate() error {
 // d.LinesAfter fields by pulling the information directly from the repository.
 //
 // Precondition: d.Selection != nil && d.validate() == nil
-func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context) error {
+func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx context.Context, repo *repositoryResolver) error {
 	if d.Selection == nil {
 		panic("precondition failed")
-	}
-	repo, err := repositoryByID(ctx, d.Repository)
-	if err != nil {
-		return err
 	}
 
 	// First we must get the commit resolver with whichever revision is more
@@ -257,11 +297,13 @@ func (s *schemaResolver) Discussions(ctx context.Context) (*discussionsMutationR
 
 func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	connectionArgs
-	Query                *string
-	ThreadID             *graphql.ID
-	AuthorUserID         *graphql.ID
-	TargetRepositoryID   *graphql.ID
-	TargetRepositoryPath *string
+	Query                       *string
+	ThreadID                    *graphql.ID
+	AuthorUserID                *graphql.ID
+	TargetRepositoryID          *graphql.ID
+	TargetRepositoryName        *string
+	TargetRepositoryGitCloneURL *string
+	TargetRepositoryPath        *string
 }) (*discussionThreadsConnectionResolver, error) {
 	if !conf.DiscussionsEnabled() {
 		return nil, errDiscussionsNotEnabled
@@ -291,12 +333,25 @@ func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 		}
 		opt.AuthorUserID = &authorUserID
 	}
+
+	count := 0
 	if args.TargetRepositoryID != nil {
-		repositoryID, err := unmarshalRepositoryID(*args.TargetRepositoryID)
+		count++
+	}
+	if args.TargetRepositoryName != nil {
+		count++
+	}
+	if args.TargetRepositoryGitCloneURL != nil {
+		count++
+	}
+	if count == 1 {
+		repo, err := discussionsResolveRepository(ctx, args.TargetRepositoryID, args.TargetRepositoryName, args.TargetRepositoryGitCloneURL)
 		if err != nil {
 			return nil, err
 		}
-		opt.TargetRepoID = &repositoryID
+		opt.TargetRepoID = &repo.repo.ID
+	} else if count > 1 {
+		return nil, errors.New("only one of targetRepositoryID, targetRepositoryName, or targetRepositoryGitCloneURL can be specified")
 	}
 	return &discussionThreadsConnectionResolver{opt: opt}, nil
 }

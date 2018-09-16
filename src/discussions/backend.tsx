@@ -102,6 +102,8 @@ export function fetchDiscussionThreads(opts: {
     threadID?: GQL.ID
     authorUserID?: GQL.ID
     targetRepositoryID?: GQL.ID
+    targetRepositoryName?: string
+    targetRepositoryGitCloneURL?: string
     targetRepositoryPath?: string
 }): Observable<GQL.IDiscussionThreadConnection> {
     return queryGraphQL(
@@ -112,6 +114,8 @@ export function fetchDiscussionThreads(opts: {
                 $threadID: ID
                 $authorUserID: ID
                 $targetRepositoryID: ID
+                $targetRepositoryName: String
+                $targetRepositoryGitCloneURL: String
                 $targetRepositoryPath: String
             ) {
                 discussionThreads(
@@ -120,6 +124,8 @@ export function fetchDiscussionThreads(opts: {
                     threadID: $threadID
                     authorUserID: $authorUserID
                     targetRepositoryID: $targetRepositoryID
+                    targetRepositoryName: $targetRepositoryName
+                    targetRepositoryGitCloneURL: $targetRepositoryGitCloneURL
                     targetRepositoryPath: $targetRepositoryPath
                 ) {
                     totalCount

@@ -74,7 +74,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
             title,
             contents,
             targetRepo: {
-                repository: this.props.repoID,
+                repositoryID: this.props.repoID,
                 path: this.props.filePath,
                 branch: this.props.rev,
                 revision: this.props.commitID,
