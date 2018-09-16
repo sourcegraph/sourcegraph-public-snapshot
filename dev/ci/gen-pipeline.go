@@ -219,7 +219,7 @@ func main() {
 
 	addDeploySteps := func() {
 		// Trigger an enterprise repository master branch build.
-		pipeline.AddStep(":partyparrot:",
+		pipeline.AddStep(":satellite_antenna:",
 			bk.ConcurrencyGroup("deploy"),
 			bk.Concurrency(1),
 			bk.Cmd("go run ./dev/ci/trigger-enterprise-ci/trigger-enterprise-ci.go"))
