@@ -173,13 +173,6 @@ func TestRouter(t *testing.T) {
 			wantRoute: routeLegacyCareers,
 			wantVars:  map[string]string{},
 		},
-
-		// vanity hackmit
-		{
-			path:      "/hackmit",
-			wantRoute: routeVanityHackMIT,
-			wantVars:  map[string]string{},
-		},
 	}
 	for _, tst := range tests {
 		t.Run(tst.wantRoute+"/"+tst.path, func(t *testing.T) {
