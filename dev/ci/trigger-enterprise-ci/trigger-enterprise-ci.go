@@ -13,13 +13,20 @@ func main() {
 	var build struct {
 		Number int64
 	}
+	commit := os.Getenv("BUILDKITE_COMMIT")
+	if commit == "" {
+		panic("BUILDKITE_COMMIT env var not set")
+	}
 	{
 		body, err := json.Marshal(map[string]interface{}{
 			"commit":  "HEAD",
 			"branch":  "master",
-			"message": "Open source repository master commit :rocket:",
+			"message": "Open source repository commit " + commit[0:7],
 			"author": map[string]interface{}{
 				"name": "Sourcegraph Bot",
+			},
+			"meta_data": map[string]interface{}{
+				"OSS_REPO_REVISION": commit,
 			},
 		})
 		if err != nil {
