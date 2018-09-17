@@ -14,6 +14,7 @@ import (
 func main() {
 	var build struct {
 		Number int64
+		WebURL string `json:"web_url"`
 	}
 	commit := os.Getenv("BUILDKITE_COMMIT")
 	if commit == "" {
@@ -74,6 +75,11 @@ func main() {
 		defer resp.Body.Close()
 		err = json.NewDecoder(resp.Body).Decode(&build)
 		if err != nil {
+			panic(err)
+		}
+		cmd := exec.Command("buildkite-agent annotate --style info")
+		cmd.Stdin = strings.NewReader(fmt.Sprintf("This build triggered enterprise build [#%d](%s)", build.Number, build.WebURL))
+		if err := cmd.Run(); err != nil {
 			panic(err)
 		}
 	}
