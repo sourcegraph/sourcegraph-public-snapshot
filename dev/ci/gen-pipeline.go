@@ -234,8 +234,7 @@ func main() {
 
 		// Trigger an enterprise repository master branch build.
 		pipeline.AddStep(":satellite_antenna:",
-			bk.ConcurrencyGroup("deploy"),
-			bk.Concurrency(1),
+			bk.ConcurrencyGroup("trigger-enterprise"),
 			bk.Cmd("go run ./dev/ci/trigger-enterprise-ci/trigger-enterprise-ci.go"))
 		pipeline.AddWait()
 
@@ -247,6 +246,7 @@ func main() {
 		if deploy {
 			// Deploy to dogfood
 			pipeline.AddStep(":dog:",
+				// Protect against concurrent/out-of-order deploys
 				bk.ConcurrencyGroup("deploy"),
 				bk.Concurrency(1),
 				bk.Env("VERSION", version),
@@ -258,6 +258,7 @@ func main() {
 
 		// Run e2e tests against dogfood
 		pipeline.AddStep(":chromium:",
+			// Protect against deploys while tests are running
 			bk.ConcurrencyGroup("deploy"),
 			bk.Concurrency(1),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
