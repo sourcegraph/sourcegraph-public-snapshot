@@ -111,5 +111,5 @@ type ulimit > /dev/null && ulimit -n 10000 || true
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
-export GOREMAN="goreman -f dev/Procfile"
+export GOREMAN="goreman -f ${PROCFILE:-dev/Procfile}"
 exec $GOREMAN start
