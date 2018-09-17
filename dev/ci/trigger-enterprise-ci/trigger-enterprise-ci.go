@@ -17,13 +17,23 @@ func main() {
 	if commit == "" {
 		panic("BUILDKITE_COMMIT env var not set")
 	}
+	buildCreator := os.Getenv("BUILDKITE_BUILD_CREATOR")
+	if buildCreator == "" {
+		panic("BUILDKITE_BUILD_CREATOR env var not set")
+	}
+	buildCreatorEmail := os.Getenv("BUILDKITE_BUILD_CREATOR_EMAIL")
+	if buildCreatorEmail == "" {
+		panic("BUILDKITE_BUILD_CREATOR_EMAIL env var not set")
+	}
 	{
 		body, err := json.Marshal(map[string]interface{}{
 			"commit":  "HEAD",
 			"branch":  "master",
 			"message": "Open source repository commit " + commit[0:7],
 			"author": map[string]interface{}{
-				"name": "Sourcegraph Bot",
+				// Forward creator data so that build appears in "my builds" list etc.
+				"name":  buildCreator,
+				"email": buildCreatorEmail,
 			},
 			"meta_data": map[string]interface{}{
 				"OSS_REPO_REVISION": commit,
@@ -46,6 +56,7 @@ func main() {
 			panic(err)
 		}
 	}
+	fmt.Println("Waiting for enterprise build to finish")
 	for {
 		req, err := http.NewRequest("GET", os.ExpandEnv(fmt.Sprintf("https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/enterprise/builds/%v?access_token=$BUILDKITE_TOKEN", build.Number)), nil)
 		if err != nil {
@@ -64,6 +75,7 @@ func main() {
 		}
 		resp.Body.Close()
 		bs := build.State
+		fmt.Println("State: " + bs)
 		switch bs {
 		case "passed":
 			os.Exit(0)
