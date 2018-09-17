@@ -1,14 +1,14 @@
 import { assert } from 'chai'
 import mkdirp from 'mkdirp-promise'
 import * as path from 'path'
-import { Browser, connect, launch, Page } from 'puppeteer'
+import puppeteer from 'puppeteer'
 import { retry } from '../util/e2e-test-utils'
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..', '..')
 const SCREENSHOT_DIRECTORY = path.resolve(__dirname, '..', '..', 'puppeteer')
 
 describe('e2e test suite', () => {
-    let authenticate: (page: Page) => Promise<void>
+    let authenticate: (page: puppeteer.Page) => Promise<void>
     let baseURL: string
     let overrideAuthSecret: string
     if (process.env.SOURCEGRAPH_BASE_URL && process.env.SOURCEGRAPH_BASE_URL !== 'http://localhost:3080') {
@@ -25,7 +25,7 @@ describe('e2e test suite', () => {
 
     const browserWSEndpoint = process.env.BROWSER_WS_ENDPOINT
 
-    const disableDefaultFeatureFlags = async (page: Page) => {
+    const disableDefaultFeatureFlags = async (page: puppeteer.Page) => {
         // Make feature flags mirror production
         await page.goto(baseURL)
         await page.evaluate(() => {
@@ -34,11 +34,11 @@ describe('e2e test suite', () => {
         })
     }
 
-    let browser: Browser
-    let page: Page
+    let browser: puppeteer.Browser
+    let page: puppeteer.Page
     if (browserWSEndpoint) {
         before('Connect to browser', async () => {
-            browser = await connect({ browserWSEndpoint })
+            browser = await puppeteer.connect({ browserWSEndpoint })
         })
         after('Disconnect from browser', async () => {
             if (browser) {
@@ -53,7 +53,7 @@ describe('e2e test suite', () => {
                 console.warn('Running as root, disabling sandbox')
                 args = ['--no-sandbox', '--disable-setuid-sandbox']
             }
-            browser = await launch({ args })
+            browser = await puppeteer.launch({ args })
         })
         after('Close browser', async () => {
             if (browser) {
