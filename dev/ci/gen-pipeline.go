@@ -254,21 +254,7 @@ func main() {
 				bk.Env("NAMESPACE", "default"),
 				bk.Cmd("./dev/ci/deploy-dogfood.sh"))
 			pipeline.AddWait()
-		}
 
-		// Run e2e tests against dogfood
-		pipeline.AddStep(":chromium:",
-			// Protect against deploys while tests are running
-			bk.ConcurrencyGroup("deploy"),
-			bk.Concurrency(1),
-			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
-			bk.Env("FORCE_COLOR", "1"),
-			bk.Cmd("yarn --frozen-lockfile"),
-			bk.Cmd("yarn run test-e2e --retries 5"),
-			bk.ArtifactPaths("puppeteer/*.png"))
-		pipeline.AddWait()
-
-		if deploy {
 			// Deploy to prod
 			pipeline.AddStep(":rocket:",
 				bk.Env("VERSION", version),
