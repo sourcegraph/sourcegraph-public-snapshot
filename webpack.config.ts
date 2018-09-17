@@ -100,7 +100,6 @@ const config: webpack.Configuration = {
         rules: [
             ((): webpack.RuleSetRule => ({
                 test: /\.tsx?$/,
-                exclude: /\.worker\.ts$/,
                 include: path.resolve(__dirname, 'src'),
                 use: [{ loader: 'thread-loader', options: workerPool }, babelLoader, typescriptLoader],
             }))(),
@@ -108,11 +107,6 @@ const config: webpack.Configuration = {
                 test: /\.m?js$/,
                 use: [{ loader: 'thread-loader', options: workerPool }, babelLoader, typescriptLoader],
             }))(),
-            {
-                test: /\.worker\.ts$/,
-                include: path.resolve(__dirname, 'src'),
-                use: [{ loader: 'worker-loader' }, babelLoader, typescriptLoader],
-            },
             {
                 test: /\.mjs$/,
                 include: path.resolve(__dirname, 'node_modules'),
