@@ -647,7 +647,9 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		ensureRevisionStatus = "noop"
 	}
 
-	w.Header().Set("Trailer", "X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr")
+	w.Header().Set("Trailer", "X-Exec-Error")
+	w.Header().Add("Trailer", "X-Exec-Exit-Status")
+	w.Header().Add("Trailer", "X-Exec-Stderr")
 	w.WriteHeader(http.StatusOK)
 
 	// Special-case `git rev-parse HEAD` requests. These are invoked by search queries for every repo in scope.

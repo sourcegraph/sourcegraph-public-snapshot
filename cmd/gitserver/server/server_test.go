@@ -20,11 +20,11 @@ import (
 )
 
 type Test struct {
-	Name            string
-	Request         *http.Request
-	ExpectedCode    int
-	ExpectedBody    string
-	ExpectedHeaders http.Header
+	Name             string
+	Request          *http.Request
+	ExpectedCode     int
+	ExpectedBody     string
+	ExpectedTrailers http.Header
 }
 
 func TestRequest(t *testing.T) {
@@ -34,8 +34,7 @@ func TestRequest(t *testing.T) {
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "teststdout",
-			ExpectedHeaders: http.Header{
-				"Trailer":            {"X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr"},
+			ExpectedTrailers: http.Header{
 				"X-Exec-Error":       {""},
 				"X-Exec-Exit-Status": {"42"},
 				"X-Exec-Stderr":      {"teststderr"},
@@ -46,8 +45,7 @@ func TestRequest(t *testing.T) {
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "my-mux", "url": "https://github.com/gorilla/mux.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusOK,
 			ExpectedBody: "teststdout",
-			ExpectedHeaders: http.Header{
-				"Trailer":            {"X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr"},
+			ExpectedTrailers: http.Header{
 				"X-Exec-Error":       {""},
 				"X-Exec-Exit-Status": {"42"},
 				"X-Exec-Stderr":      {"teststderr"},
@@ -81,8 +79,7 @@ func TestRequest(t *testing.T) {
 			Name:         "Error",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
 			ExpectedCode: http.StatusOK,
-			ExpectedHeaders: http.Header{
-				"Trailer":            {"X-Exec-Error, X-Exec-Exit-Status, X-Exec-Stderr"},
+			ExpectedTrailers: http.Header{
 				"X-Exec-Error":       {"testerror"},
 				"X-Exec-Exit-Status": {"0"},
 				"X-Exec-Stderr":      {""},
@@ -137,19 +134,22 @@ func TestRequest(t *testing.T) {
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
 			h.ServeHTTP(&w, test.Request)
 
-			if w.Code != test.ExpectedCode {
+			res := w.Result()
+			if res.StatusCode != test.ExpectedCode {
 				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
 			}
 
-			body := strings.TrimSpace(w.Body.String())
-			if body != test.ExpectedBody {
-				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, body)
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.TrimSpace(string(body)) != test.ExpectedBody {
+				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
 			}
 
-			for k, v := range test.ExpectedHeaders {
-				//lint:ignore SA1019 HeaderMap is deprecated but ResponseRecorder has a bug with parsing Trailers
-				if got := w.HeaderMap.Get(k); got != v[0] {
-					t.Errorf("wrong header %q: expected %q, got %q", k, v[0], got)
+			for k, v := range test.ExpectedTrailers {
+				if got := res.Trailer.Get(k); got != v[0] {
+					t.Errorf("wrong trailer %q: expected %q, got %q", k, v[0], got)
 				}
 			}
 		})
