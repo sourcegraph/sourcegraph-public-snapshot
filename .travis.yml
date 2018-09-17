@@ -33,6 +33,7 @@ jobs:
       script:
         - yarn run prettier
         - yarn run tslint
+        - yarn run browserslist
         - yarn run build
     - stage: test
       env:
