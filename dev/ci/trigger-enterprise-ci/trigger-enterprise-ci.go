@@ -77,7 +77,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		cmd := exec.Command("buildkite-agent annotate --style info")
+		cmd := exec.Command("buildkite-agent", "annotate", "--style", "info")
 		cmd.Stdin = strings.NewReader(fmt.Sprintf("This build triggered enterprise build [#%d](%s)", build.Number, build.WebURL))
 		if err := cmd.Run(); err != nil {
 			panic(err)
