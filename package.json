@@ -37,7 +37,8 @@
   },
   "nyc": {
     "extension": [
-      ".ts"
+      ".ts",
+      ".tsx"
     ],
     "exclude": [
       "examples/",
