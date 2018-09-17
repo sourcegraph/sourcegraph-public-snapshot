@@ -18,7 +18,7 @@ For Linux users or if you don't want to use Homebrew on macOS.
 - [make](https://www.gnu.org/software/make/)
 - [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
   - if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
-- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 or higher)
+- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 to v9.6.x)
 - [Redis](http://redis.io/) (v3.0.7 or higher)
 
 ### Homebrew setup for macOS
@@ -30,7 +30,7 @@ This is a streamlined setup for Mac machines.
 3.  Install Go, Node, PostgreSQL, Redis, Git.
 
     ```
-    brew install go node redis postgresql git gnu-sed
+    brew install go node redis postgresql@9.6 git gnu-sed
     ```
 
 4.  Set up your [Go Workspace](https://golang.org/doc/code.html#Workspaces)
@@ -38,7 +38,7 @@ This is a streamlined setup for Mac machines.
 5.  Configure PostgreSQL and Redis to start automatically
 
     ```
-    brew services start postgresql
+    brew services start postgresql@9.6
     brew services start redis
     ```
 
@@ -141,7 +141,7 @@ docker-machine start default
 eval $(docker-machine env)
 ```
 
-Then run the following commands (**NOTE: Node.js and Yarn must be installed for the this step**):
+Then run the following commands (**NOTE: Node.js and Yarn must be installed for this step**):
 
 ```
 ./dev/launch.sh
