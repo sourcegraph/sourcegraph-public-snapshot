@@ -1,5 +1,4 @@
 import ExtractTextPlugin from 'extract-text-webpack-plugin'
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin'
 import sassImportOnce from 'node-sass-import-once'
 import * as path from 'path'
 // @ts-ignore
@@ -41,7 +40,7 @@ const typescriptLoader: webpack.RuleSetUseItem = {
             noEmit: false,
         },
         experimentalWatchApi: true,
-        happyPackMode: true, // typecheck in fork-ts-checker-webpack-plugin for build perf
+        happyPackMode: true, // Typechecking is done by a separate tsc process, disable here for performance
     },
 }
 
@@ -91,7 +90,6 @@ const config: webpack.Configuration = {
         // Same for "advanced" languages
         new webpack.IgnorePlugin(/^\.\/.+$/, /\/node_modules\/monaco-editor\/esm\/vs\/language\/(?!json)/),
         new webpack.IgnorePlugin(/\.flow$/, /.*/),
-        new ForkTsCheckerWebpackPlugin({ checkSyntacticErrors: true }),
     ],
     resolve: {
         extensions: ['.mjs', '.ts', '.tsx', '.js'],

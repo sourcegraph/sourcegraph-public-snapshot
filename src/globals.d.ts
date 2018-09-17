@@ -113,12 +113,19 @@ interface SourcegraphContext {
     }[]
 }
 
+// We cannot use resolveJsonModule because of https://github.com/Microsoft/TypeScript/issues/25755
+// I tried updating to 3.1-rc.1 but it crashed
+declare module '*.json' {
+    const value: any
+    export = value
+}
+
 /**
  * For Web Worker entrypoints using Webpack's worker-loader.
  *
  * See https://github.com/webpack-contrib/worker-loader#integrating-with-typescript.
  */
-declare module '*.worker.ts' {
+declare module 'worker-loader!*' {
     class WebpackWorker extends Worker {
         constructor()
     }

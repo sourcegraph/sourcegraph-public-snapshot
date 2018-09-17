@@ -1,5 +1,7 @@
 import { generateNamespace } from '@gql2ts/from-schema'
 import { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } from '@gql2ts/language-typescript'
+import { ChildProcess, spawn } from 'child_process'
+import execa from 'execa'
 import log from 'fancy-log'
 import globby from 'globby'
 import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'graphql'
@@ -8,11 +10,13 @@ import httpProxyMiddleware from 'http-proxy-middleware'
 import { compile as compileJSONSchema } from 'json-schema-to-typescript'
 // @ts-ignore
 import convert from 'koa-connect'
+import latestVersion from 'latest-version'
 import mkdirp from 'mkdirp-promise'
 import { readFile, stat, writeFile } from 'mz/fs'
 import * as path from 'path'
 import PluginError from 'plugin-error'
 import { format, resolveConfig } from 'prettier'
+import * as semver from 'semver'
 // ironically, has no published typings (but will soon)
 // @ts-ignore
 import tsUnusedExports from 'ts-unused-exports'
@@ -30,7 +34,7 @@ export function phabricator(): NodeJS.ReadWriteStream {
     return gulp.src(PHABRICATOR_EXTENSION_FILES).pipe(gulp.dest('./ui/assets/extension'))
 }
 
-export const watchPhabricator = gulp.series(phabricator, async () => {
+export const watchPhabricator = gulp.series(phabricator, async function watchPhabricator(): Promise<void> {
     await new Promise<never>((_, reject) => {
         gulp.watch(PHABRICATOR_EXTENSION_FILES, phabricator).on('error', reject)
     })
@@ -153,30 +157,41 @@ export async function graphQLTypes(): Promise<void> {
     await writeFile(__dirname + '/src/backend/graphqlschema.ts', typings)
 }
 
-/** Generates the TypeScript types for the JSON schemas */
-export async function schemaTypes(): Promise<void> {
-    await mkdirp(__dirname + '/src/schema')
+/**
+ * Generates the TypeScript types for the JSON schemas and copies the schemas to src/ so they can be imported
+ */
+export async function schema(): Promise<void> {
+    await Promise.all([mkdirp(__dirname + '/src/schema'), mkdirp(__dirname + '/dist/schema')])
     await Promise.all(
-        ['settings', 'site', 'extension'].map(async file => {
-            let data = await readFile(__dirname + `/schema/${file}.schema.json`, 'utf8')
+        ['json-schema', 'settings', 'site', 'extension'].map(async file => {
+            let schema = await readFile(__dirname + `/schema/${file}.schema.json`, 'utf8')
             // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
             // when the schema is in a oneOf (to be merged with extension schemas).
-            data = data.replace(
+            schema = schema.replace(
                 /https:\/\/sourcegraph\.com\/v1\/settings\.schema\.json#\/definitions\//g,
                 '#/definitions/'
             )
-            const types = await compileJSONSchema(JSON.parse(data), 'settings.schema', {
+            const types = await compileJSONSchema(JSON.parse(schema), 'settings.schema', {
                 cwd: __dirname + '/schema',
             })
-            await writeFile(__dirname + `/src/schema/${file}.schema.d.ts`, types)
+            await Promise.all([
+                writeFile(__dirname + `/src/schema/${file}.schema.d.ts`, types),
+                // Copy schema to src/ so it can be imported in TypeScript
+                writeFile(__dirname + `/src/schema/${file}.schema.json`, schema),
+                // Copy schema to dist/ so it's part of the dist package
+                // This would not be needed with tsconfig `resolevJsonModule: true`,
+                // but we cannot enable that because of https://github.com/Microsoft/TypeScript/issues/25755
+                // and TS3.1 has blocking compiler bugs
+                writeFile(__dirname + `/dist/schema/${file}.schema.json`, schema),
+            ])
         })
     )
 }
 
-export async function watchSchemaTypes(): Promise<void> {
-    await schemaTypes()
+export async function watchSchema(): Promise<void> {
+    await schema()
     await new Promise<never>((resolve, reject) => {
-        gulp.watch(__dirname + '/schema/*.schema.json', schemaTypes).on('error', reject)
+        gulp.watch(__dirname + '/schema/*.schema.json', schema).on('error', reject)
     })
 }
 
@@ -214,5 +229,88 @@ export async function unusedExports(): Promise<void> {
     }
 }
 
-export const build = gulp.parallel(phabricator, gulp.series(gulp.parallel(schemaTypes, graphQLTypes), webpack))
-export const watch = gulp.parallel(watchPhabricator, watchSchemaTypes, watchGraphQLTypes, webpackServe)
+/**
+ * Builds and typechecks the TypeScript code, outputting compiled JavaScript, declaration files and sourcemaps to dist/
+ */
+export function typescript(): ChildProcess {
+    return spawn(__dirname + '/node_modules/.bin/tsc', ['-p', __dirname + '/tsconfig.dist.json'], {
+        stdio: 'inherit',
+    })
+}
+
+export function watchTypescript(): ChildProcess {
+    return spawn(__dirname + '/node_modules/.bin/tsc', ['-p', __dirname + '/tsconfig.dist.json', '--watch'], {
+        stdio: 'inherit',
+    })
+}
+
+const SASS_FILES = './src/**/*.scss'
+
+/**
+ * Copies the .scss files from src/ to dist/.
+ * These are not precompiled so that they can be imported individually and variables be set.
+ */
+export function sass(): NodeJS.ReadWriteStream {
+    return gulp.src(SASS_FILES).pipe(gulp.dest('./dist'))
+}
+
+export const watchSass = gulp.series(sass, async function watchSass(): Promise<void> {
+    await new Promise<never>((_, reject) => {
+        gulp.watch(SASS_FILES, sass).on('error', reject)
+    })
+})
+
+/**
+ * Builds only the dist/ folder.
+ */
+export const dist = gulp.parallel(sass, gulp.series(gulp.parallel(schema, graphQLTypes), typescript))
+
+/**
+ * Builds everything.
+ */
+export const build = gulp.parallel(
+    phabricator,
+    sass,
+    gulp.series(gulp.parallel(schema, graphQLTypes), gulp.parallel(webpack, typescript))
+)
+
+/**
+ * Watches everything and rebuilds on file changes.
+ */
+export const watch = gulp.parallel(
+    watchPhabricator,
+    watchSass,
+    watchSchema,
+    watchGraphQLTypes,
+    watchTypescript,
+    webpackServe
+)
+
+/**
+ * Publishes a new version of @sourcegraph/webapp to npm.
+ * Gets the last release from the npm registry, increases the patch version, writes it to package.json and publishes the package.
+ * It is not a goal to parse commit messages or follow semantic versioning - every commit gets released as a 0.0.x release.
+ * No git tags or GitHub releases are created.
+ */
+export async function release(): Promise<void> {
+    const packageJson = require('./package.json')
+    try {
+        const currentVersion = await latestVersion(packageJson.name)
+        log(`Current version is ${currentVersion}`)
+        packageJson.version = semver.inc(currentVersion, 'patch')
+    } catch (err) {
+        if (/doesn't exist/.test(err.message)) {
+            log('Package is not released yet')
+            packageJson.version = '0.0.0'
+        } else {
+            throw err
+        }
+    }
+    log(`New version is ${packageJson.version}`)
+    if (!process.env.CI) {
+        log('Not running in CI, aborting')
+        return
+    }
+    await writeFile(__dirname + '/package.json', JSON.stringify(packageJson, null, 2))
+    await execa('npm', ['publish'], { stdio: 'inherit' })
+}

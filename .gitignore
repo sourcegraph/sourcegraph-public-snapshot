@@ -94,5 +94,8 @@ package-lock.json
 coverage/
 out/
 src/backend/graphqlschema.ts
+src/schema/*
 puppeteer/
 package-lock.json
+/dist
+sourcegraph-webapp-*.tgz

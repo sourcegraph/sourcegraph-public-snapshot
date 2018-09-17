@@ -10,6 +10,7 @@ vendor/
 .nyc_output/
 coverage/
 out/
+dist/
 src/backend/graphqlschema.ts
 src/schema/
 ts-node-*

@@ -217,7 +217,21 @@ func main() {
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
 
+	if branch == "master" {
+		// Publish @sourcegraph/webapp to npm
+		pipeline.AddStep(":npm:",
+			bk.Cmd("yarn --frozen-lockfile"),
+			bk.Cmd("yarn run dist"),
+			bk.Cmd("yarn run release"),
+			bk.ConcurrencyGroup("webapp-publish"),
+			bk.Concurrency(1),
+		)
+	}
+
+	pipeline.AddWait()
+
 	addDeploySteps := func() {
+
 		// Trigger an enterprise repository master branch build.
 		pipeline.AddStep(":satellite_antenna:",
 			bk.ConcurrencyGroup("deploy"),
@@ -282,7 +296,6 @@ func main() {
 		pipeline.AddWait()
 
 	case branch == "master":
-		pipeline.AddWait()
 		addDeploySteps()
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):

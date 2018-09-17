@@ -14,12 +14,12 @@
     "downlevelIteration": true,
     "skipLibCheck": true,
     "noErrorTruncation": true,
-    "resolveJsonModule": true,
+    "importHelpers": true,
     "plugins": [
       {
         "name": "tslint-language-service"
       }
     ]
   },
-  "include": ["src/**/*", "./*.ts", "types/**/*"]
+  "include": ["src/**/*", "./*.ts"]
 }

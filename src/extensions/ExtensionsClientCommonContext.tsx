@@ -24,6 +24,7 @@ import { distinctUntilChanged, map, mapTo, switchMap, take } from 'rxjs/operator
 import { InitData } from 'sourcegraph/module/extension/extensionHost'
 import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/transports/webWorker'
+import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { sendLSPHTTPRequests } from '../backend/lsp'
@@ -32,7 +33,6 @@ import { editConfiguration } from '../configuration/backend'
 import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
 import { refreshConfiguration } from '../user/settings/backend'
 import { isErrorLike } from '../util/errors'
-import ExtensionHostWorker from './extensionHost.worker.ts'
 
 export interface ExtensionsControllerProps extends GenericExtensionsControllerProps<ConfigurationSubject, Settings> {}
 

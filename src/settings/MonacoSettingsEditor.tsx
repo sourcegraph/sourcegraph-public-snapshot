@@ -4,9 +4,9 @@ import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import contributionSchema from 'sourcegraph/lib/protocol/contribution.schema.json'
-import settingsSchema from '../../schema/settings.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
 import jsonSchemaMetaSchema from '../schema/json-schema.schema.json'
+import settingsSchema from '../schema/settings.schema.json'
 import { eventLogger } from '../tracking/eventLogger'
 
 const isLightThemeToMonacoTheme = (isLightTheme: boolean): BuiltinTheme => (isLightTheme ? 'vs' : 'sourcegraph-dark')
