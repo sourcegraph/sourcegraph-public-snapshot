@@ -6,4 +6,9 @@ export const extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavIt
         exact: true,
         label: 'Extension',
     },
+    {
+        to: '/-/contributions',
+        exact: true,
+        label: 'Contributions',
+    },
 ]
