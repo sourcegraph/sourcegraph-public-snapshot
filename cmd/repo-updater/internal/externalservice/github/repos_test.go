@@ -53,14 +53,13 @@ func (s mockHTTPEmptyResponse) RoundTrip(req *http.Request) (*http.Response, err
 	}, nil
 }
 
-func newTestClient() *Client {
-	const cachePrefix = "__test__gh_repo"
-	rcache.SetupForTest(cachePrefix)
+func newTestClient(t *testing.T) *Client {
+	rcache.SetupForTest(t)
 	return &Client{
 		apiURL:     &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
 		httpClient: &http.Client{},
 		RateLimit:  &ratelimit.Monitor{},
-		repoCache:  rcache.NewWithTTL(cachePrefix, 1000),
+		repoCache:  rcache.NewWithTTL("__test__gh_repo", 1000),
 	}
 }
 
@@ -76,7 +75,7 @@ func TestClient_GetRepository(t *testing.T) {
 	"fork": true
 }
 `}
-	c := newTestClient()
+	c := newTestClient(t)
 	c.httpClient.Transport = &mock
 
 	want := Repository{
@@ -121,7 +120,7 @@ func TestClient_GetRepository(t *testing.T) {
 // on a repository that does not exist.
 func TestClient_GetRepository_nonexistent(t *testing.T) {
 	mock := mockHTTPEmptyResponse{http.StatusNotFound}
-	c := newTestClient()
+	c := newTestClient(t)
 	c.httpClient.Transport = &mock
 
 	repo, err := c.GetRepository(context.Background(), "owner", "repo")
@@ -149,7 +148,7 @@ func TestClient_GetRepositoryByNodeID(t *testing.T) {
 	}
 }
 `}
-	c := newTestClient()
+	c := newTestClient(t)
 	c.httpClient.Transport = &mock
 
 	want := Repository{
@@ -201,7 +200,7 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 	}
 }
 `}
-	c := newTestClient()
+	c := newTestClient(t)
 	c.httpClient.Transport = &mock
 
 	repo, err := c.GetRepositoryByNodeID(context.Background(), "i")

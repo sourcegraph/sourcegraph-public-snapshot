@@ -2,6 +2,7 @@ package rcache
 
 import (
 	"fmt"
+	"os"
 	"time"
 	"unicode/utf8"
 
@@ -98,9 +99,18 @@ func (r *Cache) rkeyPrefix() string {
 	return fmt.Sprintf("%s:%s:", globalPrefix, r.keyPrefix)
 }
 
+// TB is a subset of testing.TB
+type TB interface {
+	Name() string
+	Skip(args ...interface{})
+	Helper()
+}
+
 // SetupForTest adjusts the globalPrefix and clears it out. You will have
 // conflicts if you do `t.Parallel()`
-func SetupForTest(name string) {
+func SetupForTest(t TB) {
+	t.Helper()
+
 	pool = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -113,11 +123,20 @@ func SetupForTest(name string) {
 		},
 	}
 
-	globalPrefix = "__test__" + name
+	globalPrefix = "__test__" + t.Name()
 	// Make mutex fails faster
 	mutexTries = 1
 	c := pool.Get()
 	defer c.Close()
+
+	// If we are not on CI, skip the test if our redis connection fails.
+	if os.Getenv("CI") == "" {
+		_, err := c.Do("PING")
+		if err != nil {
+			t.Skip("could not connect to redis", err)
+		}
+	}
+
 	_, err := c.Do("EVAL", `local keys = redis.call('keys', ARGV[1])
 if #keys > 0 then
 	return redis.call('del', unpack(keys))
@@ -125,7 +144,7 @@ else
 	return ''
 end`, 0, globalPrefix+":*")
 	if err != nil {
-		log15.Error("Could not clear test prefix", "name", name, "globalPrefix", globalPrefix, "error", err)
+		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}
 }
 

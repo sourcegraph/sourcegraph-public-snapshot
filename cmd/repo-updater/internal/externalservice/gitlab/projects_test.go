@@ -40,14 +40,13 @@ func (s mockHTTPEmptyResponse) RoundTrip(req *http.Request) (*http.Response, err
 	}, nil
 }
 
-func newTestClient() *Client {
-	const cachePrefix = "__test__gl_proj"
-	rcache.SetupForTest(cachePrefix)
+func newTestClient(t *testing.T) *Client {
+	rcache.SetupForTest(t)
 	return &Client{
 		baseURL:    &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
 		httpClient: &http.Client{},
 		RateLimit:  &ratelimit.Monitor{},
-		projCache:  rcache.NewWithTTL(cachePrefix, 1000),
+		projCache:  rcache.NewWithTTL("__test__gl_proj", 1000),
 	}
 }
 
@@ -64,7 +63,7 @@ func TestClient_GetProject(t *testing.T) {
 	"ssh_url_to_repo": "git@gitlab.example.com:n1/n2/r.git"
 }
 `}
-	c := newTestClient()
+	c := newTestClient(t)
 	c.httpClient.Transport = &mock
 
 	want := Project{
@@ -112,7 +111,7 @@ func TestClient_GetProject(t *testing.T) {
 // on a project that does not exist.
 func TestClient_GetProject_nonexistent(t *testing.T) {
 	mock := mockHTTPEmptyResponse{http.StatusNotFound}
-	c := newTestClient()
+	c := newTestClient(t)
 	c.httpClient.Transport = &mock
 
 	proj, err := c.GetProject(context.Background(), 0, "doesnt/exist")

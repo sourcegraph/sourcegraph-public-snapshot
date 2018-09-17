@@ -7,7 +7,7 @@ import (
 )
 
 func TestTryAcquireMutex(t *testing.T) {
-	SetupForTest("TestTryAcquireMutex")
+	SetupForTest(t)
 
 	ctx, release, ok := TryAcquireMutex(context.Background(), "test")
 	if !ok {

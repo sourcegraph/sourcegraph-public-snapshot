@@ -3,7 +3,7 @@ package rcache
 import "testing"
 
 func TestCache_namespace(t *testing.T) {
-	SetupForTest("TestCache_namespace")
+	SetupForTest(t)
 
 	type kvTTL struct {
 		k   string
@@ -63,7 +63,7 @@ func TestCache_namespace(t *testing.T) {
 }
 
 func TestCache_simple(t *testing.T) {
-	SetupForTest("TestCache_simple")
+	SetupForTest(t)
 
 	c := New("some_prefix")
 	_, ok := c.Get("a")

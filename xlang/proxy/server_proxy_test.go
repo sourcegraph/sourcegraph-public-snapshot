@@ -16,7 +16,7 @@ import (
 )
 
 func TestCache(t *testing.T) {
-	rcache.SetupForTest("xlang")
+	rcache.SetupForTest(t)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
