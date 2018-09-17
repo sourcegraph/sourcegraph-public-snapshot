@@ -51,8 +51,10 @@ dev/ci/ci-db-backcompat.sh  # NOTE: this checks out a different git revision, so
 
 ### Migrating up/down
 
-Up migrations happen automatically on server start-up after running the generate scripts. They can
-also be run manually using the migrate CLI. Run `./dev/migrate.sh` for more info.
+Up migrations happen automatically on server start-up after running the
+generate scripts. They can also be run manually using the migrate CLI:
+`run dev/migrate.sh up` to move forward to the latest migration. Run
+`./dev/migrate.sh` for a full list of options.
 
 You can run `./dev/migrate.sh down 1` to rollback the previous migration. If a migration fails and
 you need to revert to a previous state `./dev/migrate.sh force` may be helpful. Alternatively use
