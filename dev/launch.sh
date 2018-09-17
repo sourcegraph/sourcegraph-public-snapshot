@@ -7,15 +7,6 @@ set -euf -o pipefail
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
-# Temporary failure until everyone has
-# migrated. https://github.com/sourcegraph/sourcegraph/pull/10844
-if [[ $PWD = *"src/sourcegraph.com/"* ]]; then
-    echo "FAIL: You need to migrate the sourcegraph repo to its new import path."
-    echo "We are now using github.com/sourcegraph/sourcegraph as our import path."
-    echo "See the instructions at https://sourcegraph.slack.com/archives/C0EPTDE9L/p1524490333000538"
-    exit 1
-fi
-
 # Verify postgresql config.
 if ! psql -wc '\x' >/dev/null; then
     echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
