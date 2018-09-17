@@ -231,13 +231,6 @@ func main() {
 	pipeline.AddWait()
 
 	addDeploySteps := func() {
-
-		// Trigger an enterprise repository master branch build.
-		pipeline.AddStep(":satellite_antenna:",
-			bk.ConcurrencyGroup("trigger-enterprise"),
-			bk.Cmd("go run ./dev/ci/trigger-enterprise-ci/trigger-enterprise-ci.go"))
-		pipeline.AddWait()
-
 		// Only deploy pure-OSS images dogfood/prod. Images that contain some
 		// private code (server/frontend) are already deployed by the
 		// enterprise CI above.
@@ -254,7 +247,15 @@ func main() {
 				bk.Env("NAMESPACE", "default"),
 				bk.Cmd("./dev/ci/deploy-dogfood.sh"))
 			pipeline.AddWait()
+		}
 
+		// Trigger an enterprise repository master branch build.
+		pipeline.AddStep(":satellite_antenna:",
+			bk.ConcurrencyGroup("trigger-enterprise"),
+			bk.Cmd("go run ./dev/ci/trigger-enterprise-ci/trigger-enterprise-ci.go"))
+		pipeline.AddWait()
+
+		if deploy {
 			// Deploy to prod
 			pipeline.AddStep(":rocket:",
 				bk.Env("VERSION", version),
