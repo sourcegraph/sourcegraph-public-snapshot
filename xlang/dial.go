@@ -3,7 +3,7 @@ package xlang
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
@@ -60,8 +60,13 @@ func (h *ClientHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *js
 			h.RecvPartialResult(params.ID, params.Patch)
 		}
 
+	case "window/showMessage", "window/logMessage":
+		// These messages have already been logged by lsp-proxy.
+		return nil, nil
+
 	default:
-		return nil, &jsonrpc2.Error{Code: jsonrpc2.CodeMethodNotFound, Message: fmt.Sprintf("client handler: method not found: %q", req.Method)}
+		log.Printf("xlang client handler: ignoring %q from language server", req.Method)
+		return nil, nil
 	}
 	return nil, nil
 }
