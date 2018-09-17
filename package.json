@@ -70,7 +70,6 @@
     "@sourcegraph/codeintellify": "^3.8.4",
     "@sourcegraph/extensions-client-common": "^8.5.0",
     "@sourcegraph/icons": "^1.15.0",
-    "@sourcegraph/phabricator-extension": "^1.12.2",
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/react": "16.4.14",
     "@types/react-dom": "16.0.7",

@@ -839,10 +839,6 @@
   version "1.15.0"
   resolved "https://registry.yarnpkg.com/@sourcegraph/icons/-/icons-1.15.0.tgz#8aa704a89ec779230362d9b18d4fbf26e8267087"
 
-"@sourcegraph/phabricator-extension@^1.12.2":
-  version "1.14.0"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/phabricator-extension/-/phabricator-extension-1.14.0.tgz#ceb50ae77849a4c791206eac9d7d7ff4b0b8e9ab"
-
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/@sourcegraph/prettierrc/-/prettierrc-2.2.0.tgz#af4a6fcd465b0a39a07ffbd8f2d3414d01e603e8"

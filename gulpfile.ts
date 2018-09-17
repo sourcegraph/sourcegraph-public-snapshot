@@ -23,22 +23,6 @@ import tsUnusedExports from 'ts-unused-exports'
 import createWebpackCompiler, { Stats } from 'webpack'
 import serve from 'webpack-serve'
 import webpackConfig from './webpack.config'
-const PHABRICATOR_EXTENSION_FILES = './node_modules/@sourcegraph/phabricator-extension/dist/**'
-
-/**
- * Copies the bundles from the `@sourcegraph/phabricator-extension` package over to the ui/assets
- * folder so they can be served by the webapp.
- * The package is published from https://github.com/sourcegraph/browser-extensions
- */
-export function phabricator(): NodeJS.ReadWriteStream {
-    return gulp.src(PHABRICATOR_EXTENSION_FILES).pipe(gulp.dest('./ui/assets/extension'))
-}
-
-export const watchPhabricator = gulp.series(phabricator, async function watchPhabricator(): Promise<void> {
-    await new Promise<never>((_, reject) => {
-        gulp.watch(PHABRICATOR_EXTENSION_FILES, phabricator).on('error', reject)
-    })
-})
 
 const WEBPACK_STATS_OPTIONS = {
     all: false,
@@ -269,7 +253,6 @@ export const dist = gulp.parallel(sass, gulp.series(gulp.parallel(schema, graphQ
  * Builds everything.
  */
 export const build = gulp.parallel(
-    phabricator,
     sass,
     gulp.series(gulp.parallel(schema, graphQLTypes), gulp.parallel(webpack, typescript))
 )
@@ -277,14 +260,7 @@ export const build = gulp.parallel(
 /**
  * Watches everything and rebuilds on file changes.
  */
-export const watch = gulp.parallel(
-    watchPhabricator,
-    watchSass,
-    watchSchema,
-    watchGraphQLTypes,
-    watchTypescript,
-    webpackServe
-)
+export const watch = gulp.parallel(watchSass, watchSchema, watchGraphQLTypes, watchTypescript, webpackServe)
 
 /**
  * Publishes a new version of @sourcegraph/webapp to npm.
