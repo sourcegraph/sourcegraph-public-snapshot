@@ -7,7 +7,6 @@ import { Subscription } from 'rxjs'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
-import { HistoryPopoverContainer } from '../components/HistoryPopoverContainer'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
@@ -30,8 +29,6 @@ interface Props extends ExtensionsProps, ExtensionsControllerProps {
  * enable platform functionality without exposing extension creation and configuration to users yet.
  */
 const HIDE_EXTENSIONS_LINK = localStorage.getItem('hideExtensionsLink') !== null
-
-const fileHistoryEnabled = localStorage.getItem('enable-file-history') === 'true'
 
 export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
@@ -107,11 +104,6 @@ export class NavLinks extends React.PureComponent<Props> {
                     extensionsController={this.props.extensionsController}
                     extensions={this.props.extensions}
                 />
-                {fileHistoryEnabled && (
-                    <li>
-                        <HistoryPopoverContainer location={this.props.location} history={this.props.history} />
-                    </li>
-                )}
                 {this.props.user ? (
                     <li className="nav-item">
                         <Link className="nav-link py-0" to={`${this.props.user.url}/account`}>

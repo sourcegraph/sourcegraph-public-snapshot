@@ -8,8 +8,6 @@
     "updateScheduler": "enabled",
     "discussions": "enabled"
   },
-  "htmlHeadTop":
-    "<script>if (localStorage.getItem('disableDefaultFeatureFlags') !== 'true') { localStorage.setItem('enable-file-history', 'true'); }</script>",
   "disablePublicRepoRedirects": true,
   "phabricator": [
     {

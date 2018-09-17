@@ -59,9 +59,7 @@ export interface LayoutProps
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     showHelpPopover: boolean
-    showHistoryPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
-    onHistoryPopoverToggle: (visible?: boolean) => void
 
     children?: never
 }
