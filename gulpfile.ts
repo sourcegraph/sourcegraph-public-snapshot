@@ -313,4 +313,5 @@ export async function release(): Promise<void> {
     }
     await writeFile(__dirname + '/package.json', JSON.stringify(packageJson, null, 2))
     await execa('npm', ['publish'], { stdio: 'inherit' })
+    await execa('buildkite-agent', ['meta-data', 'set', 'oss-webapp-version', packageJson.version])
 }

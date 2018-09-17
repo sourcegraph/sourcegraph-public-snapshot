@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -25,6 +27,14 @@ func main() {
 	if buildCreatorEmail == "" {
 		panic("BUILDKITE_BUILD_CREATOR_EMAIL env var not set")
 	}
+	webappVersion, err := exec.Command("buildkite-agent", "meta-data", "get", "oss-webapp-version").Output()
+	if err != nil {
+		panic(err)
+	}
+	webappVersionStr := strings.TrimSpace(string(webappVersion))
+	if webappVersionStr == "" {
+		panic("no webapp version was set")
+	}
 	{
 		body, err := json.Marshal(map[string]interface{}{
 			"commit":  "HEAD",
@@ -36,7 +46,8 @@ func main() {
 				"email": buildCreatorEmail,
 			},
 			"meta_data": map[string]interface{}{
-				"OSS_REPO_REVISION": commit,
+				"oss-repo-revision":  commit,
+				"oss-webapp-version": webappVersionStr,
 			},
 		})
 		if err != nil {
