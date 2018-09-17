@@ -27,6 +27,10 @@ func main() {
 	if buildCreatorEmail == "" {
 		panic("BUILDKITE_BUILD_CREATOR_EMAIL env var not set")
 	}
+	buildURL := os.Getenv("BUILDKITE_BUILD_URL")
+	if buildURL == "" {
+		panic("BUILDKITE_BUILD_URL env var not set")
+	}
 	webappVersion, err := exec.Command("buildkite-agent", "meta-data", "get", "oss-webapp-version").Output()
 	if err != nil {
 		panic(err)
@@ -48,6 +52,7 @@ func main() {
 			"meta_data": map[string]interface{}{
 				"oss-repo-revision":  commit,
 				"oss-webapp-version": webappVersionStr,
+				"oss-build-url":      buildURL,
 			},
 		})
 		if err != nil {
