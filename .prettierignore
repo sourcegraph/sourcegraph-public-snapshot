@@ -14,4 +14,4 @@ dist/
 src/backend/graphqlschema.ts
 src/schema/
 ts-node-*
-xlang/testdata
+testdata
