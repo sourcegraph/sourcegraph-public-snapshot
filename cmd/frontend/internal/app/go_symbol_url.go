@@ -12,8 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
-	"github.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
@@ -38,10 +38,11 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	importPath := strings.Split(symbolID, "/-/")[0]
-	cloneURL, err := gobuildserver.ResolveImportPathCloneURL(httputil.CachingClient, importPath)
+	dir, err := gosrc.ResolveImportPath(httputil.CachingClient, importPath)
 	if err != nil {
 		return err
 	}
+	cloneURL := dir.CloneURL
 
 	if cloneURL == "" || !strings.HasPrefix(cloneURL, "https://github.com") {
 		return fmt.Errorf("non-github clone URL resolved for import path %s", importPath)

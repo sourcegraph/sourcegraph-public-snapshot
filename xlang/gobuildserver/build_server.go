@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
@@ -64,7 +65,7 @@ type BuildHandler struct {
 
 	mu             sync.Mutex
 	depURLMutex    *keyMutex
-	gopathDeps     []*directory
+	gopathDeps     []*gosrc.Directory
 	pinnedDepsOnce sync.Once
 	pinnedDeps     pinnedPkgs
 	findPkgMu      sync.Mutex // guards findPkg
@@ -363,7 +364,7 @@ func (h *BuildHandler) handle(ctx context.Context, conn *jsonrpc2.Conn, req *jso
 				// If the query does not start with `src/` and it is a request
 				// for a stdlib dir, it should return no results (the filter is
 				// dir, not package path).
-				if _, isStdlib := stdlibPackagePaths[q.Dir]; isStdlib && !strings.HasPrefix(q.Dir, "src") {
+				if gosrc.IsStdlibPkg(q.Dir) && !strings.HasPrefix(q.Dir, "src") {
 					q.Dir = "sginvalid"
 				} else {
 					q.Dir = util.PathTrimPrefix(q.Dir, "src") // "src/net/http" -> "net/http"
@@ -486,25 +487,25 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri lsp.DocumentURI) (lsp.Docume
 			// in the for loop to avoid holding the lock for
 			// longer than necessary.
 			h.HandlerShared.Mu.Lock()
-			deps := make([]*directory, len(h.gopathDeps))
+			deps := make([]*gosrc.Directory, len(h.gopathDeps))
 			copy(deps, h.gopathDeps)
 			h.HandlerShared.Mu.Unlock()
-			var d *directory
+			var d *gosrc.Directory
 			for _, dep := range deps {
-				if strings.HasPrefix(p, dep.projectRoot) {
+				if strings.HasPrefix(p, dep.ProjectRoot) {
 					d = dep
 				}
 			}
 			if d != nil {
-				rev := d.rev
+				rev := d.Rev
 				if rev == "" {
 					rev = "HEAD"
 				}
 
-				i := strings.Index(d.cloneURL, "://")
+				i := strings.Index(d.CloneURL, "://")
 				if i >= 0 {
-					repo := d.cloneURL[i+len("://"):]
-					path := strings.TrimPrefix(strings.TrimPrefix(p, d.projectRoot), "/")
+					repo := d.CloneURL[i+len("://"):]
+					path := strings.TrimPrefix(strings.TrimPrefix(p, d.ProjectRoot), "/")
 
 					// HACK
 					// In some cases, we see import paths of the form "blah/blah.git" or "blah/blah.git/blah/blah".
@@ -514,7 +515,7 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri lsp.DocumentURI) (lsp.Docume
 					repo = strings.TrimSuffix(repo, ".git")
 					path = strings.TrimPrefix(path, ".git/")
 
-					return lsp.DocumentURI(fmt.Sprintf("%s://%s?%s#%s", d.vcs, repo, rev, path)), nil
+					return lsp.DocumentURI(fmt.Sprintf("%s://%s?%s#%s", d.VCS, repo, rev, path)), nil
 				}
 			}
 		}

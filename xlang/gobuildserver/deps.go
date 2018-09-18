@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go/build"
 	"log"
+	"net/http"
 	"net/url"
 	"path"
 	"runtime"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
@@ -247,7 +249,7 @@ func (h *BuildHandler) doFindPackage2(ctx context.Context, bctx *build.Context, 
 
 	// Otherwise, it's an external dependency. Fetch the package
 	// and try again.
-	d, err := resolveImportPath(h.cachingClient, path)
+	d, err := gosrc.ResolveImportPath(h.cachingClient, path)
 	if err != nil {
 		return nil, err
 	}
@@ -256,11 +258,11 @@ func (h *BuildHandler) doFindPackage2(ctx context.Context, bctx *build.Context, 
 	// it; it is already on disk. If we fetch it, we might end up
 	// with multiple conflicting versions of the workspace's repo
 	// overlaid on each other.
-	if h.rootImportPath != "" && util.PathHasPrefix(d.projectRoot, h.rootImportPath) {
+	if h.rootImportPath != "" && util.PathHasPrefix(d.ProjectRoot, h.rootImportPath) {
 		return nil, fmt.Errorf("package %q is inside of workspace root, refusing to fetch remotely", path)
 	}
 
-	urlMu := h.depURLMutex.get(d.cloneURL)
+	urlMu := h.depURLMutex.get(d.CloneURL)
 	urlMu.Lock()
 	defer urlMu.Unlock()
 
@@ -271,8 +273,8 @@ func (h *BuildHandler) doFindPackage2(ctx context.Context, bctx *build.Context, 
 	}
 
 	// We may have a specific rev to use (from glide.lock)
-	if rev := h.pinnedDep(ctx, d.importPath); rev != "" {
-		d.rev = rev
+	if rev := h.pinnedDep(ctx, d.ImportPath); rev != "" {
+		d.Rev = rev
 	}
 
 	// If not, we hold the lock and we will fetch the dep.
@@ -287,16 +289,16 @@ func (h *BuildHandler) doFindPackage2(ctx context.Context, bctx *build.Context, 
 	return pkg, err
 }
 
-func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
-	if d.vcs != "git" {
-		return fmt.Errorf("dependency at import path %q has unsupported VCS %q (clone URL is %q)", d.importPath, d.vcs, d.cloneURL)
+func (h *BuildHandler) fetchDep(ctx context.Context, d *gosrc.Directory) error {
+	if d.VCS != "git" {
+		return fmt.Errorf("dependency at import path %q has unsupported VCS %q (clone URL is %q)", d.ImportPath, d.VCS, d.CloneURL)
 	}
 
-	rev := d.rev
+	rev := d.Rev
 	if rev == "" {
 		rev = "HEAD"
 	}
-	cloneURL, err := url.Parse(d.cloneURL)
+	cloneURL, err := url.Parse(d.CloneURL)
 	if err != nil {
 		return err
 	}
@@ -305,16 +307,16 @@ func (h *BuildHandler) fetchDep(ctx context.Context, d *directory) error {
 		return err
 	}
 
-	if _, isStdlib := stdlibPackagePaths[d.importPath]; isStdlib {
+	isStdlib := gosrc.IsStdlibPkg(d.ImportPath)
+	if isStdlib {
 		fs = addSysZversionFile(fs)
 	}
 
 	var oldPath string
-	_, isStdlib := stdlibPackagePaths[d.importPath]
 	if isStdlib {
 		oldPath = goroot // stdlib
 	} else {
-		oldPath = path.Join(gopath, "src", d.projectRoot) // non-stdlib
+		oldPath = path.Join(gopath, "src", d.ProjectRoot) // non-stdlib
 	}
 
 	h.HandlerShared.Mu.Lock()
@@ -470,9 +472,9 @@ func isMultiplePackageError(err error) bool {
 // fetch the dependency from the internet.
 func FetchCommonDeps() {
 	// github.com/golang/go
-	d, _ := resolveStaticImportPath("time")
-	u, _ := url.Parse(d.cloneURL)
-	_, _ = NewDepRepoVFS(context.Background(), u, d.rev)
+	d, _ := gosrc.ResolveImportPath(http.DefaultClient, "time")
+	u, _ := url.Parse(d.CloneURL)
+	_, _ = NewDepRepoVFS(context.Background(), u, d.Rev)
 }
 
 // NewDepRepoVFS returns a virtual file system interface for accessing

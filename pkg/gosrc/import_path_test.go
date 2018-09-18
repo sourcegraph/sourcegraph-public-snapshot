@@ -4,16 +4,16 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd.
 
-package gobuildserver
+package gosrc
 
 import (
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
@@ -43,139 +43,139 @@ func TestResolveImportPath(t *testing.T) {
 
 	tests := []struct {
 		importPath string
-		dir        *directory
+		dir        *Directory
 	}{
 		// static
-		{"fmt", &directory{
-			importPath:  "fmt",
-			projectRoot: "",
-			cloneURL:    "https://github.com/golang/go",
-			repoPrefix:  "src",
-			vcs:         "git",
-			rev:         RuntimeVersion,
+		{"fmt", &Directory{
+			ImportPath:  "fmt",
+			ProjectRoot: "",
+			CloneURL:    "https://github.com/golang/go",
+			RepoPrefix:  "src",
+			VCS:         "git",
+			Rev:         runtime.Version(),
 		}},
-		{"github.com/foo/bar", &directory{
-			importPath:  "github.com/foo/bar",
-			projectRoot: "github.com/foo/bar",
-			cloneURL:    "https://github.com/foo/bar",
-			vcs:         "git",
+		{"github.com/foo/bar", &Directory{
+			ImportPath:  "github.com/foo/bar",
+			ProjectRoot: "github.com/foo/bar",
+			CloneURL:    "https://github.com/foo/bar",
+			VCS:         "git",
 		}},
-		{"github.com/foo/bar/baz", &directory{
-			importPath:  "github.com/foo/bar/baz",
-			projectRoot: "github.com/foo/bar",
-			cloneURL:    "https://github.com/foo/bar",
-			vcs:         "git",
+		{"github.com/foo/bar/baz", &Directory{
+			ImportPath:  "github.com/foo/bar/baz",
+			ProjectRoot: "github.com/foo/bar",
+			CloneURL:    "https://github.com/foo/bar",
+			VCS:         "git",
 		}},
-		{"github.com/foo/bar/baz/bam", &directory{
-			importPath:  "github.com/foo/bar/baz/bam",
-			projectRoot: "github.com/foo/bar",
-			cloneURL:    "https://github.com/foo/bar",
-			vcs:         "git",
+		{"github.com/foo/bar/baz/bam", &Directory{
+			ImportPath:  "github.com/foo/bar/baz/bam",
+			ProjectRoot: "github.com/foo/bar",
+			CloneURL:    "https://github.com/foo/bar",
+			VCS:         "git",
 		}},
-		{"golang.org/x/foo", &directory{
-			importPath:  "github.com/golang/foo",
-			projectRoot: "golang.org/x/foo",
-			cloneURL:    "https://github.com/golang/foo",
-			vcs:         "git",
+		{"golang.org/x/foo", &Directory{
+			ImportPath:  "github.com/golang/foo",
+			ProjectRoot: "golang.org/x/foo",
+			CloneURL:    "https://github.com/golang/foo",
+			VCS:         "git",
 		}},
-		{"golang.org/x/foo/bar", &directory{
-			importPath:  "github.com/golang/foo/bar",
-			projectRoot: "golang.org/x/foo",
-			cloneURL:    "https://github.com/golang/foo",
-			vcs:         "git",
+		{"golang.org/x/foo/bar", &Directory{
+			ImportPath:  "github.com/golang/foo/bar",
+			ProjectRoot: "golang.org/x/foo",
+			CloneURL:    "https://github.com/golang/foo",
+			VCS:         "git",
 		}},
 		{"github.com/foo", nil},
 
 		// no go get (see noGoGetDomains)
-		{"mygitolite.aws.me.org/mux.git", &directory{
-			importPath:  "mygitolite.aws.me.org/mux.git",
-			projectRoot: "mygitolite.aws.me.org/mux.git",
-			cloneURL:    "http://mygitolite.aws.me.org/mux.git",
-			vcs:         "git",
+		{"mygitolite.aws.me.org/mux.git", &Directory{
+			ImportPath:  "mygitolite.aws.me.org/mux.git",
+			ProjectRoot: "mygitolite.aws.me.org/mux.git",
+			CloneURL:    "http://mygitolite.aws.me.org/mux.git",
+			VCS:         "git",
 		}},
-		{"mygitolite.aws.me.org/mux.git/subpkg", &directory{
-			importPath:  "mygitolite.aws.me.org/mux.git/subpkg",
-			projectRoot: "mygitolite.aws.me.org/mux.git",
-			cloneURL:    "http://mygitolite.aws.me.org/mux.git",
-			vcs:         "git",
+		{"mygitolite.aws.me.org/mux.git/subpkg", &Directory{
+			ImportPath:  "mygitolite.aws.me.org/mux.git/subpkg",
+			ProjectRoot: "mygitolite.aws.me.org/mux.git",
+			CloneURL:    "http://mygitolite.aws.me.org/mux.git",
+			VCS:         "git",
 		}},
-		{"mygitolite.aws.me.org/org/repo", &directory{
-			importPath:  "mygitolite.aws.me.org/org/repo",
-			projectRoot: "mygitolite.aws.me.org/org/repo",
-			cloneURL:    "http://mygitolite.aws.me.org/org/repo",
-			vcs:         "git",
+		{"mygitolite.aws.me.org/org/repo", &Directory{
+			ImportPath:  "mygitolite.aws.me.org/org/repo",
+			ProjectRoot: "mygitolite.aws.me.org/org/repo",
+			CloneURL:    "http://mygitolite.aws.me.org/org/repo",
+			VCS:         "git",
 		}},
-		{"mygitolite.aws.me.org/org/repo/subpkg", &directory{
-			importPath:  "mygitolite.aws.me.org/org/repo/subpkg",
-			projectRoot: "mygitolite.aws.me.org/org/repo",
-			cloneURL:    "http://mygitolite.aws.me.org/org/repo",
-			vcs:         "git",
+		{"mygitolite.aws.me.org/org/repo/subpkg", &Directory{
+			ImportPath:  "mygitolite.aws.me.org/org/repo/subpkg",
+			ProjectRoot: "mygitolite.aws.me.org/org/repo",
+			CloneURL:    "http://mygitolite.aws.me.org/org/repo",
+			VCS:         "git",
 		}},
 
 		// BlacklistGoGet
 		{"nohttp.google.com/pkg", nil},
 
 		// dynamic (see client setup below)
-		{"alice.org/pkg", &directory{
-			importPath:  "alice.org/pkg",
-			projectRoot: "alice.org/pkg",
-			cloneURL:    "https://github.com/alice/pkg",
-			vcs:         "git",
+		{"alice.org/pkg", &Directory{
+			ImportPath:  "alice.org/pkg",
+			ProjectRoot: "alice.org/pkg",
+			CloneURL:    "https://github.com/alice/pkg",
+			VCS:         "git",
 		}},
-		{"alice.org/pkg/sub", &directory{
-			importPath:  "alice.org/pkg/sub",
-			projectRoot: "alice.org/pkg",
-			cloneURL:    "https://github.com/alice/pkg",
-			vcs:         "git",
+		{"alice.org/pkg/sub", &Directory{
+			ImportPath:  "alice.org/pkg/sub",
+			ProjectRoot: "alice.org/pkg",
+			CloneURL:    "https://github.com/alice/pkg",
+			VCS:         "git",
 		}},
-		{"alice.org/pkg/http", &directory{
-			importPath:  "alice.org/pkg/http",
-			projectRoot: "alice.org/pkg",
-			cloneURL:    "https://github.com/alice/pkg",
-			vcs:         "git",
+		{"alice.org/pkg/http", &Directory{
+			ImportPath:  "alice.org/pkg/http",
+			ProjectRoot: "alice.org/pkg",
+			CloneURL:    "https://github.com/alice/pkg",
+			VCS:         "git",
 		}},
-		{"alice.org/pkg/ignore", &directory{
-			importPath:  "alice.org/pkg/ignore",
-			projectRoot: "alice.org/pkg",
-			cloneURL:    "https://github.com/alice/pkg",
-			vcs:         "git",
+		{"alice.org/pkg/ignore", &Directory{
+			ImportPath:  "alice.org/pkg/ignore",
+			ProjectRoot: "alice.org/pkg",
+			CloneURL:    "https://github.com/alice/pkg",
+			VCS:         "git",
 		}},
 		{"alice.org/pkg/mismatch", nil},
 		{"alice.org/pkg/multiple", nil},
 		{"alice.org/pkg/notfound", nil},
 
-		{"bob.com/pkg", &directory{
-			importPath:  "bob.com/pkg",
-			projectRoot: "bob.com/pkg",
-			cloneURL:    "https://vcs.net/bob/pkg.git",
-			vcs:         "git",
+		{"bob.com/pkg", &Directory{
+			ImportPath:  "bob.com/pkg",
+			ProjectRoot: "bob.com/pkg",
+			CloneURL:    "https://vcs.net/bob/pkg.git",
+			VCS:         "git",
 		}},
-		{"bob.com/pkg/sub", &directory{
-			importPath:  "bob.com/pkg/sub",
-			projectRoot: "bob.com/pkg",
-			cloneURL:    "https://vcs.net/bob/pkg.git",
-			vcs:         "git",
+		{"bob.com/pkg/sub", &Directory{
+			ImportPath:  "bob.com/pkg/sub",
+			ProjectRoot: "bob.com/pkg",
+			CloneURL:    "https://vcs.net/bob/pkg.git",
+			VCS:         "git",
 		}},
 
-		{"gopkg.in/yaml.v2", &directory{
-			importPath:  "gopkg.in/yaml.v2",
-			projectRoot: "gopkg.in/yaml.v2",
-			cloneURL:    "https://github.com/go-yaml/yaml",
-			vcs:         "git",
-			rev:         "v2",
+		{"gopkg.in/yaml.v2", &Directory{
+			ImportPath:  "gopkg.in/yaml.v2",
+			ProjectRoot: "gopkg.in/yaml.v2",
+			CloneURL:    "https://github.com/go-yaml/yaml",
+			VCS:         "git",
+			Rev:         "v2",
 		}},
-		{"gopkg.in/stretchr/testify.v1/assert", &directory{
-			importPath:  "gopkg.in/stretchr/testify.v1/assert",
-			projectRoot: "gopkg.in/stretchr/testify.v1",
-			cloneURL:    "https://github.com/stretchr/testify",
-			vcs:         "git",
-			rev:         "v1.1.4",
+		{"gopkg.in/stretchr/testify.v1/assert", &Directory{
+			ImportPath:  "gopkg.in/stretchr/testify.v1/assert",
+			ProjectRoot: "gopkg.in/stretchr/testify.v1",
+			CloneURL:    "https://github.com/stretchr/testify",
+			VCS:         "git",
+			Rev:         "v1.1.4",
 		}},
-		{"honnef.co/go/staticcheck/cmd/staticcheck", &directory{
-			importPath:  "honnef.co/go/staticcheck/cmd/staticcheck",
-			projectRoot: "honnef.co/go/staticcheck",
-			cloneURL:    "https://github.com/dominikh/go-staticcheck",
-			vcs:         "git",
+		{"honnef.co/go/staticcheck/cmd/staticcheck", &Directory{
+			ImportPath:  "honnef.co/go/staticcheck/cmd/staticcheck",
+			ProjectRoot: "honnef.co/go/staticcheck",
+			CloneURL:    "https://github.com/dominikh/go-staticcheck",
+			VCS:         "git",
 		}},
 
 		{"golang.org/x", nil},
@@ -234,7 +234,7 @@ func TestResolveImportPath(t *testing.T) {
 	client := &http.Client{Transport: testTransport(pages)}
 
 	for _, tt := range tests {
-		dir, err := resolveImportPath(client, tt.importPath)
+		dir, err := ResolveImportPath(client, tt.importPath)
 
 		if tt.dir == nil {
 			if err == nil {
@@ -252,14 +252,4 @@ func TestResolveImportPath(t *testing.T) {
 			t.Errorf("resolveImportPath(client, %q) =\n     %+v,\nwant %+v", tt.importPath, dir, tt.dir)
 		}
 	}
-}
-
-// mapFS lets us easily instantiate a VFS with a map[string]string
-// (which is less noisy than map[string][]byte in test fixtures).
-func mapFS(m map[string]string) ctxvfs.FileSystem {
-	m2 := make(map[string][]byte, len(m))
-	for k, v := range m {
-		m2[k] = []byte(v)
-	}
-	return ctxvfs.Map(m2)
 }

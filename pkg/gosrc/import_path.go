@@ -1,4 +1,4 @@
-package gobuildserver
+package gosrc
 
 import (
 	"encoding/xml"
@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -57,27 +58,18 @@ func init() {
 	conf.Watch(noGoGetDomains.reconfigure)
 }
 
-type directory struct {
-	importPath  string // the Go import path for this package
-	projectRoot string // import path prefix for all packages in the project
-	cloneURL    string // the VCS clone URL
-	repoPrefix  string // the path to this directory inside the repo, if set
-	vcs         string // one of "git", "hg", "svn", etc.
-	rev         string // the VCS revision specifier, if any
+type Directory struct {
+	ImportPath  string // the Go import path for this package
+	ProjectRoot string // import path prefix for all packages in the project
+	CloneURL    string // the VCS clone URL
+	RepoPrefix  string // the path to this directory inside the repo, if set
+	VCS         string // one of "git", "hg", "svn", etc.
+	Rev         string // the VCS revision specifier, if any
 }
 
 var errNoMatch = errors.New("no match")
 
-// ResolveImportPathCloneURL returns the clone URL for a Go package import path.
-func ResolveImportPathCloneURL(client *http.Client, importPath string) (string, error) {
-	d, err := resolveImportPath(client, importPath)
-	if err != nil {
-		return "", err
-	}
-	return d.cloneURL, nil
-}
-
-func resolveImportPath(client *http.Client, importPath string) (*directory, error) {
+func ResolveImportPath(client *http.Client, importPath string) (*Directory, error) {
 	if d, err := resolveStaticImportPath(importPath); err == nil {
 		return d, nil
 	} else if err != nil && err != errNoMatch {
@@ -86,15 +78,15 @@ func resolveImportPath(client *http.Client, importPath string) (*directory, erro
 	return resolveDynamicImportPath(client, importPath)
 }
 
-func resolveStaticImportPath(importPath string) (*directory, error) {
-	if _, isStdlib := stdlibPackagePaths[importPath]; isStdlib {
-		return &directory{
-			importPath:  importPath,
-			projectRoot: "",
-			cloneURL:    "https://github.com/golang/go",
-			repoPrefix:  "src",
-			vcs:         "git",
-			rev:         RuntimeVersion,
+func resolveStaticImportPath(importPath string) (*Directory, error) {
+	if IsStdlibPkg(importPath) {
+		return &Directory{
+			ImportPath:  importPath,
+			ProjectRoot: "",
+			CloneURL:    "https://github.com/golang/go",
+			RepoPrefix:  "src",
+			VCS:         "git",
+			Rev:         runtime.Version(),
 		}, nil
 	}
 
@@ -133,11 +125,11 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 			return nil, fmt.Errorf("invalid github.com/golang.org import path: %q", importPath)
 		}
 		repo := parts[0] + "/" + parts[1] + "/" + parts[2]
-		return &directory{
-			importPath:  importPath,
-			projectRoot: repo,
-			cloneURL:    "https://" + repo,
-			vcs:         "git",
+		return &Directory{
+			ImportPath:  importPath,
+			ProjectRoot: repo,
+			CloneURL:    "https://" + repo,
+			VCS:         "git",
 		}, nil
 
 	case strings.HasPrefix(importPath, "golang.org/x/"):
@@ -145,7 +137,7 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 		if err != nil {
 			return nil, err
 		}
-		d.projectRoot = strings.Replace(d.projectRoot, "github.com/golang/", "golang.org/x/", 1)
+		d.ProjectRoot = strings.Replace(d.ProjectRoot, "github.com/golang/", "golang.org/x/", 1)
 		return d, nil
 	}
 	return nil, errNoMatch
@@ -153,7 +145,7 @@ func resolveStaticImportPath(importPath string) (*directory, error) {
 
 // guessImportPath is used by noGoGetDomains since we can't do the usual
 // go get resolution.
-func guessImportPath(importPath string) (*directory, error) {
+func guessImportPath(importPath string) (*Directory, error) {
 	if !strings.Contains(importPath, ".git") {
 		// Assume GitHub-like where two path elements is the project
 		// root.
@@ -162,11 +154,11 @@ func guessImportPath(importPath string) (*directory, error) {
 			return nil, fmt.Errorf("invalid GitHub-like import path: %q", importPath)
 		}
 		repo := parts[0] + "/" + parts[1] + "/" + parts[2]
-		return &directory{
-			importPath:  importPath,
-			projectRoot: repo,
-			cloneURL:    "http://" + repo,
-			vcs:         "git",
+		return &Directory{
+			ImportPath:  importPath,
+			ProjectRoot: repo,
+			CloneURL:    "http://" + repo,
+			VCS:         "git",
 		}, nil
 	}
 
@@ -178,11 +170,11 @@ func guessImportPath(importPath string) (*directory, error) {
 		return nil, fmt.Errorf("expected one .git in %q", importPath)
 	}
 
-	return &directory{
-		importPath:  importPath,
-		projectRoot: split[0] + ".git",
-		cloneURL:    "http://" + split[0] + ".git",
-		vcs:         "git",
+	return &Directory{
+		ImportPath:  importPath,
+		ProjectRoot: split[0] + ".git",
+		CloneURL:    "http://" + split[0] + ".git",
+		VCS:         "git",
 	}, nil
 }
 
@@ -190,7 +182,7 @@ func guessImportPath(importPath string) (*directory, error) {
 // popular gopkg.in
 var gopkgSrcTemplate = regexp.MustCompile(`https://(github.com/[^/]*/[^/]*)/tree/([^/]*)\{/dir\}`)
 
-func resolveDynamicImportPath(client *http.Client, importPath string) (*directory, error) {
+func resolveDynamicImportPath(client *http.Client, importPath string) (*Directory, error) {
 	metaProto, im, sm, err := fetchMeta(client, importPath)
 	if err != nil {
 		return nil, err
@@ -219,14 +211,14 @@ func resolveDynamicImportPath(client *http.Client, importPath string) (*director
 	repo := strings.TrimSuffix(clonePath, "."+im.vcs)
 	dirName := importPath[len(im.prefix):]
 
-	var dir *directory
+	var dir *Directory
 	if sm != nil {
 		m := gopkgSrcTemplate.FindStringSubmatch(sm.dirTemplate)
 		if len(m) > 0 {
 			// We are doing best effort, so we ignore err
 			dir, _ = resolveStaticImportPath(m[1] + dirName)
 			if dir != nil {
-				dir.rev = m[2]
+				dir.Rev = m[2]
 			}
 		}
 	}
@@ -237,14 +229,14 @@ func resolveDynamicImportPath(client *http.Client, importPath string) (*director
 	}
 
 	if dir == nil {
-		dir = &directory{}
+		dir = &Directory{}
 	}
-	dir.importPath = importPath
-	dir.projectRoot = im.prefix
-	if dir.cloneURL == "" {
-		dir.cloneURL = metaProto + "://" + repo + "." + im.vcs
+	dir.ImportPath = importPath
+	dir.ProjectRoot = im.prefix
+	if dir.CloneURL == "" {
+		dir.CloneURL = metaProto + "://" + repo + "." + im.vcs
 	}
-	dir.vcs = im.vcs
+	dir.VCS = im.vcs
 	return dir, nil
 }
 

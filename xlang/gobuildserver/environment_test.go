@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -152,4 +153,14 @@ GOPATH_add /absolute
 			}
 		})
 	}
+}
+
+// mapFS lets us easily instantiate a VFS with a map[string]string
+// (which is less noisy than map[string][]byte in test fixtures).
+func mapFS(m map[string]string) ctxvfs.FileSystem {
+	m2 := make(map[string][]byte, len(m))
+	for k, v := range m {
+		m2[k] = []byte(v)
+	}
+	return ctxvfs.Map(m2)
 }
