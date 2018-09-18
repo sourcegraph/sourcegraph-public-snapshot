@@ -15,10 +15,10 @@ import (
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/debugserver"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
-	"github.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -63,7 +63,7 @@ func run() error {
 	cleanup := tmpfriend.SetupOrNOOP()
 	defer cleanup()
 
-	gobuildserver.Debug = true
+	server.Debug = true
 
 	// If xlang-go crashes, all the archives it has cached are not
 	// evicted. Over time this leads to us filling up the disk. This is a
@@ -72,7 +72,7 @@ func run() error {
 	_ = os.RemoveAll(vfsutil.ArchiveCacheDir)
 
 	// PERF: Hide latency of fetching golang/go from the first typecheck
-	go gobuildserver.FetchCommonDeps()
+	go server.FetchCommonDeps()
 
 	switch *mode {
 	case "tcp":
@@ -89,7 +89,7 @@ func run() error {
 				return err
 			}
 			openGauge.Inc()
-			c := jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(gobuildserver.NewHandler()))
+			c := jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(conn, jsonrpc2.VSCodeObjectCodec{}), jsonrpc2.AsyncHandler(server.NewHandler()))
 			go func() {
 				<-c.DisconnectNotify()
 				openGauge.Dec()

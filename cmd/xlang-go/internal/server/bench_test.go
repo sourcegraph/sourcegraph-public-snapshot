@@ -1,4 +1,4 @@
-package xlang_test
+package server_test
 
 import (
 	"context"

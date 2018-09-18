@@ -1,4 +1,4 @@
-package gobuildserver
+package server
 
 import (
 	"context"

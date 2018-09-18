@@ -1,4 +1,4 @@
-package xlang_test
+package server_test
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/ctxvfs"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
+	gobuildserver "github.com/sourcegraph/sourcegraph/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	gobuildserver "github.com/sourcegraph/sourcegraph/xlang/gobuildserver"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/proxy"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
