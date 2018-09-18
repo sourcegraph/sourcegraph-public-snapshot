@@ -1,5 +1,11 @@
 # xlang notes
 
+**HISTORICAL NOTE**: This document dates from September 2016. It explains our
+initial prototype when we switched away from srclib indexing to a just in time
+approach using LSP. It does not accurately reflect the current system, but
+largely the ideas survived until today. As such we leave it as around as a fun
+read.
+
 ## Shocking things!
 
 - Everything is done in memory (except reading source files from GOROOT for the Go language server at the moment).
