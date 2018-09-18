@@ -10,6 +10,7 @@ export const primaryGroup: SiteAdminSideBarGroup = {
         {
             label: 'Overview',
             to: '/site-admin',
+            exact: true,
         },
         {
             label: 'Configuration',
