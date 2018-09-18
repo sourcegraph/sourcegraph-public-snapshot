@@ -1,9 +1,9 @@
 import CircleCheckmarkIcon from '@sourcegraph/icons/lib/CircleCheckmark'
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, switchMap, withLatestFrom } from 'rxjs/operators'
@@ -220,7 +220,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
             Icon = NoEntryIcon
         } else {
             title = 'Repository not found'
-            Icon = DirectionalSignIcon
+            Icon = MapSearchIcon
         }
         return (
             <HeroPage

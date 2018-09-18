@@ -1,5 +1,5 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as H from 'history'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import { HeroPage } from '../../components/HeroPage'
@@ -9,7 +9,7 @@ import { OrgAccountSidebar } from './OrgAccountSidebar'
 
 const NotFoundPage = () => (
     <HeroPage
-        icon={DirectionalSignIcon}
+        icon={MapSearchIcon}
         title="404: Not Found"
         subtitle="Sorry, the requested organization page was not found."
     />

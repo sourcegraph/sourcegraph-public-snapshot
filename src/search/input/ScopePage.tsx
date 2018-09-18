@@ -1,6 +1,6 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
 import marked from 'marked'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -23,7 +23,7 @@ import { SearchButton } from './SearchButton'
 
 const ScopeNotFound = () => (
     <HeroPage
-        icon={DirectionalSignIcon}
+        icon={MapSearchIcon}
         title="404: Not Found"
         subtitle={
             <>

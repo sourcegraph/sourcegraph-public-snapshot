@@ -1,11 +1,11 @@
-import BugIcon from '@sourcegraph/icons/lib/Bug'
 import DownloadSimpleIcon from '@sourcegraph/icons/lib/DownloadSimple'
-import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { sortBy } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import BugIcon from 'mdi-react/BugIcon'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import RefreshIcon from 'mdi-react/RefreshIcon'
+import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
 import { concat, merge, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, delay, filter, map, repeatWhen, switchMap, tap } from 'rxjs/operators'
@@ -200,7 +200,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
             <div className="site-admin-lang-servers mb-3">
                 <div className="site-admin-lang-servers__header">
                     <div className="site-admin-lang-servers__header-icon">
-                        <GlobeIcon className="icon-inline" />
+                        <WebIcon className="icon-inline" />
                     </div>
                     <h5 className="site-admin-lang-servers__header-title">Language servers</h5>
                 </div>

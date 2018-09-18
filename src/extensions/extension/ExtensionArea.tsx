@@ -1,7 +1,7 @@
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, of, Subject, Subscription } from 'rxjs'
@@ -51,7 +51,7 @@ export const registryExtensionFragment = gql`
     }
 `
 
-const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
+const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface ExtensionAreaRoute extends RouteDescriptor<ExtensionAreaRouteContext> {}
 

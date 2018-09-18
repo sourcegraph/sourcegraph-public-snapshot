@@ -1,7 +1,7 @@
 import { gqlToCascade } from '@sourcegraph/extensions-client-common/lib/settings'
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
@@ -15,7 +15,7 @@ import settingsSchemaJSON from '../schema/settings.schema.json'
 import { createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { SettingsPage } from './SettingsPage'
 
-const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
+const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 /** Props shared by SettingsArea and its sub-pages. */
 interface SettingsAreaPageCommonProps extends ExtensionsProps {

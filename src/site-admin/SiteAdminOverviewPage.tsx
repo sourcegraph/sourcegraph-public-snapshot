@@ -1,10 +1,10 @@
 import CityIcon from '@sourcegraph/icons/lib/City'
-import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import AddIcon from 'mdi-react/AddIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserIcon from 'mdi-react/UserIcon'
+import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -111,7 +111,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                     {this.state.info &&
                         typeof this.state.info.repositories === 'number' && (
                             <OverviewItem
-                                icon={GlobeIcon}
+                                icon={WebIcon}
                                 actions={
                                     <Link to="/site-admin/code-intelligence" className="btn btn-primary btn-sm">
                                         <SettingsIcon className="icon-inline" /> Manage code intelligence

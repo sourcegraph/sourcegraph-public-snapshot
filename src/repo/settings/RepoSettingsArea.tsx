@@ -1,7 +1,7 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
@@ -18,7 +18,7 @@ import { RepoSettingsSidebar } from './RepoSettingsSidebar'
 
 const NotFoundPage = () => (
     <HeroPage
-        icon={DirectionalSignIcon}
+        icon={MapSearchIcon}
         title="404: Not Found"
         subtitle="Sorry, the requested repository page was not found."
     />

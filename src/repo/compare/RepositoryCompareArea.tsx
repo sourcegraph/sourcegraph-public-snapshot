@@ -6,9 +6,9 @@ import {
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Link, LinkProps } from 'react-router-dom'
@@ -32,7 +32,7 @@ import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
 const NotFoundPage = () => (
     <HeroPage
-        icon={DirectionalSignIcon}
+        icon={MapSearchIcon}
         title="404: Not Found"
         subtitle="Sorry, the requested repository comparison page was not found."
     />

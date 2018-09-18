@@ -1,5 +1,5 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { merge, Subject, Subscription } from 'rxjs'
@@ -28,7 +28,7 @@ import { RepoSettingsArea } from './settings/RepoSettingsArea'
 import { RepositoryStatsArea } from './stats/RepositoryStatsArea'
 
 const RepoPageNotFound: React.SFC = () => (
-    <HeroPage icon={DirectionalSignIcon} title="404: Not Found" subtitle="The repository page was not found." />
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
 )
 
 export interface RepoContainerProps

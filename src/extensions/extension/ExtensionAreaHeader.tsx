@@ -1,5 +1,5 @@
 import { isExtensionAdded, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { NavItemWithIconDescriptor } from '../../util/contributions'

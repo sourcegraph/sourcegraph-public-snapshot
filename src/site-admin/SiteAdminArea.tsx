@@ -1,4 +1,4 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
@@ -10,14 +10,14 @@ import { SiteAdminSidebar, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 const NotFoundPage: React.ComponentType<{}> = () => (
     <HeroPage
-        icon={DirectionalSignIcon}
+        icon={MapSearchIcon}
         title="404: Not Found"
         subtitle="Sorry, the requested site admin page was not found."
     />
 )
 
 const NotSiteAdminPage: React.ComponentType<{}> = () => (
-    <HeroPage icon={DirectionalSignIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
+    <HeroPage icon={MapSearchIcon} title="403: Forbidden" subtitle="Only site admins are allowed here." />
 )
 
 export interface SiteAdminAreaRouteContext extends ExtensionsProps {

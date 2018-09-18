@@ -1,5 +1,5 @@
-import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import { History, UnregisterCallback } from 'history'
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import * as React from 'react'
 import { matchPath } from 'react-router'
 import { Subscription } from 'rxjs'

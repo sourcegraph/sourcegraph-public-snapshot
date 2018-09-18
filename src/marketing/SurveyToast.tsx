@@ -1,4 +1,4 @@
-import EmoticonIcon from '@sourcegraph/icons/lib/Emoticon'
+import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'

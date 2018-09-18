@@ -1,6 +1,6 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import { isEqual, upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { defer, Subject, Subscription } from 'rxjs'
@@ -156,7 +156,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
                 case EREPONOTFOUND:
                     return (
                         <HeroPage
-                            icon={DirectionalSignIcon}
+                            icon={MapSearchIcon}
                             title="404: Not Found"
                             subtitle="The requested repository was not found."
                         />
@@ -168,7 +168,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
 
                     return (
                         <HeroPage
-                            icon={DirectionalSignIcon}
+                            icon={MapSearchIcon}
                             title="404: Not Found"
                             subtitle="The requested revision was not found."
                         />

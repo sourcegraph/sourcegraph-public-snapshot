@@ -1,4 +1,4 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Redirect } from 'react-router-dom'
@@ -11,7 +11,7 @@ import { RouteDescriptor } from '../../util/contributions'
 import { UserAreaPageProps } from '../area/UserArea'
 import { UserAccountSidebar, UserAccountSidebarItems } from './UserAccountSidebar'
 
-const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
+const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface UserAccountAreaRoute extends RouteDescriptor<UserAccountAreaRouteContext> {}
 
@@ -75,7 +75,7 @@ export class UserAccountArea extends React.Component<UserAccountAreaProps, UserA
         if (this.props.authenticatedUser.id !== this.props.user.id && !this.props.user.viewerCanAdminister) {
             return (
                 <HeroPage
-                    icon={DirectionalSignIcon}
+                    icon={MapSearchIcon}
                     title="403: Forbidden"
                     subtitle="You are not authorized to view or edit this user's settings."
                 />

@@ -1,6 +1,6 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -60,11 +60,7 @@ function queryOrganization(args: { name: string }): Observable<GQL.IOrg | null> 
 }
 
 const NotFoundPage = () => (
-    <HeroPage
-        icon={DirectionalSignIcon}
-        title="404: Not Found"
-        subtitle="Sorry, the requested organization was not found."
-    />
+    <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested organization was not found." />
 )
 
 interface Props extends RouteComponentProps<{ name: string }>, ExtensionsProps {

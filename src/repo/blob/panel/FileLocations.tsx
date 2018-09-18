@@ -1,7 +1,7 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, startWith, switchMap, takeUntil } from 'rxjs/operators'
@@ -23,7 +23,7 @@ export const FileLocationsError: React.SFC<{ pluralNoun: string; error: ErrorLik
 
 export const FileLocationsNotFound: React.SFC<{ pluralNoun: string }> = ({ pluralNoun }) => (
     <div className="file-locations__not-found m-2">
-        <DirectionalSignIcon className="icon-inline" /> No {pluralNoun} found
+        <MapSearchIcon className="icon-inline" /> No {pluralNoun} found
     </div>
 )
 
