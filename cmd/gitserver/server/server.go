@@ -599,7 +599,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if cmdDuration > shortGitCommandSlow(req.Args) {
-				log15.Warn("Long exec request", "repo", req.Repo, "args", req.Args, "duration", cmdDuration)
+				log15.Warn("Long exec request", "repo", req.Repo, "args", req.Args, "duration", cmdDuration.Round(time.Millisecond))
 			}
 			if fetchDuration > 10*time.Second {
 				log15.Warn("Slow fetch/clone for exec request", "repo", req.Repo, "args", req.Args, "duration", fetchDuration)
