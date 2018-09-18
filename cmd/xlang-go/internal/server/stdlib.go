@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 )
 
 // addSysZversionFile adds the zversion.go file, which is generated
@@ -21,5 +22,5 @@ const DefaultGoroot = %q
 const TheVersion = %q
 const Goexperiment=""
 const StackGuardMultiplier=1`,
-			goroot, RuntimeVersion)))
+			goroot, gosrc.RuntimeVersion)))
 }

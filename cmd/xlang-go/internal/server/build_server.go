@@ -77,10 +77,6 @@ type BuildHandler struct {
 	cachingClient  *http.Client             // http.Client with a cache backed by the LSP Proxy, set by BuildHandler.reset()
 }
 
-// RuntimeVersion is the version of go stdlib to use. We allow it to be
-// different to runtime.Version for test data.
-var RuntimeVersion = runtime.Version()
-
 // reset clears all internal state in h.
 func (h *BuildHandler) reset(init *lspext.InitializeParams, conn *jsonrpc2.Conn, rootURI lsp.DocumentURI) error {
 	h.mu.Lock()
@@ -469,7 +465,7 @@ func (h *BuildHandler) rewriteURIFromLangServer(uri lsp.DocumentURI) (lsp.Docume
 				// analyzing).
 				return lsp.DocumentURI("file:///" + fileInGoStdlib), nil
 			}
-			return lsp.DocumentURI("git://github.com/golang/go?" + RuntimeVersion + "#" + fileInGoStdlib), nil
+			return lsp.DocumentURI("git://github.com/golang/go?" + gosrc.RuntimeVersion + "#" + fileInGoStdlib), nil
 		}
 
 		// Refers to a file in the same workspace?

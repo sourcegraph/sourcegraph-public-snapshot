@@ -16,6 +16,10 @@ import (
 
 // Adapted from github.com/golang/gddo/gosrc.
 
+// RuntimeVersion is the version of go stdlib to use. We allow it to be
+// different to runtime.Version for test data.
+var RuntimeVersion = runtime.Version()
+
 type noGoGetDomainsT struct {
 	mu      sync.RWMutex
 	domains []string
@@ -86,7 +90,7 @@ func resolveStaticImportPath(importPath string) (*Directory, error) {
 			CloneURL:    "https://github.com/golang/go",
 			RepoPrefix:  "src",
 			VCS:         "git",
-			Rev:         runtime.Version(),
+			Rev:         RuntimeVersion,
 		}, nil
 	}
 

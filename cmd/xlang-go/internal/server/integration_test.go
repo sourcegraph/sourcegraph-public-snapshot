@@ -13,6 +13,7 @@ import (
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	gobuildserver "github.com/sourcegraph/sourcegraph/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/proxy"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
@@ -20,7 +21,7 @@ import (
 )
 
 func init() {
-	gobuildserver.RuntimeVersion = "go1.7.1"
+	gosrc.RuntimeVersion = "go1.7.1"
 }
 
 func TestIntegration(t *testing.T) {
@@ -214,7 +215,7 @@ func TestIntegration(t *testing.T) {
 				gobuildserver.NewDepRepoVFS = func(ctx context.Context, cloneURL *url.URL, rev string) (ctxvfs.FileSystem, error) {
 					if pinRev, ok := test.pinDepReposToRev[cloneURL.String()]; ok {
 						rev = pinRev
-					} else if len(rev) != 40 && rev != gobuildserver.RuntimeVersion {
+					} else if len(rev) != 40 && rev != gosrc.RuntimeVersion {
 						// It's OK to hardcode allowable Git tags
 						// (such as "goN.N.N") here, since we know
 						// those to be stable. Branches like "master"
