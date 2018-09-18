@@ -1,3 +1,9 @@
+// Package buildkite defines data types that reflect Buildkite's YAML pipeline format.
+//
+// Usage:
+//
+//    pipeline := buildkite.Pipeline{}
+//    pipeline.AddStep("check_mark", buildkite.Cmd("./dev/check/all.sh"))
 package buildkite
 
 import (

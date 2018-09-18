@@ -1,6 +1,19 @@
+// gen-pipeline.go generates a Buildkite YAML file that tests the entire
+// Sourcegraph application and writes it to stdout.
+//
+// The main reason to generate this file on demand is to ensure all Go packages
+// are tested. Go packages are tested in separate containers - instead of all
+// at once - so that Buildkite can schedule them to run across more machines
+// on Sourcegraph's build farm.
+//
+// This script also generates a different file for deploy/tag builds vs. PR
+// builds.
+//
+// See dev/ci/init-pipeline.yml for an example of where this script is invoked.
 package main
 
 import (
+	"flag"
 	"fmt"
 	"go/build"
 	"os"
@@ -61,6 +74,13 @@ func pkgs() []string {
 }
 
 func main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr,
+			`Generate a Buildkite YAML file that tests the entire Sourcegraph application and write it to stdout.
+`)
+		flag.PrintDefaults()
+	}
+	flag.Parse()
 	pipeline := &bk.Pipeline{}
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
@@ -250,8 +270,10 @@ func main() {
 			pipeline.AddWait()
 		}
 
-		// Precalculate the webapp version here because metadata cannot be forwarded in a trigger step, see https://github.com/buildkite/feedback/issues/403
-		// This is safe because the publish step has a concurrency group so no other publish can happen between now and its execution
+		// Precalculate the webapp version here because metadata cannot be
+		// forwarded in a trigger step, see https://github.com/buildkite/feedback/issues/403
+		// This is safe because the publish step has a concurrency group so no
+		// other publish can happen between now and its execution
 		out, err := exec.Command("bash", "-c", "npx --quiet semver --increment patch $(npm info @sourcegraph/webapp version)").Output()
 		if err != nil {
 			panic(err)
