@@ -1,6 +1,6 @@
 import SlidersVerticalIcon from '@sourcegraph/icons/lib/SlidersVertical'
-import UserIcon from '@sourcegraph/icons/lib/User'
 import SettingsIcon from 'mdi-react/SettingsIcon'
+import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { OrgAvatar } from '../OrgAvatar'

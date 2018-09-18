@@ -1,7 +1,7 @@
 import FeedIcon from '@sourcegraph/icons/lib/Feed'
-import LockIcon from '@sourcegraph/icons/lib/Lock'
 import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
 import ServerIcon from '@sourcegraph/icons/lib/Server'
+import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import {

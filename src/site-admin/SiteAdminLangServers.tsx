@@ -1,10 +1,10 @@
 import BugIcon from '@sourcegraph/icons/lib/Bug'
 import DownloadSimpleIcon from '@sourcegraph/icons/lib/DownloadSimple'
-import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { sortBy } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import RefreshIcon from 'mdi-react/RefreshIcon'
 import * as React from 'react'
 import { concat, merge, Subject, Subscription } from 'rxjs'
@@ -405,7 +405,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                                     target="_blank"
                                     onClick={this.generateClickHandler('LangServerHomepageClicked', langServer)}
                                 >
-                                    <GitHubIcon className="icon-inline" />{' '}
+                                    <GithubCircleIcon className="icon-inline" />{' '}
                                     {langServer.homepageURL.substr('https://github.com/'.length)}
                                 </a>
                             </>

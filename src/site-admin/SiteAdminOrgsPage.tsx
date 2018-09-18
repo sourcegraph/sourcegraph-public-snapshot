@@ -1,7 +1,7 @@
-import UserIcon from '@sourcegraph/icons/lib/User'
 import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
+import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'

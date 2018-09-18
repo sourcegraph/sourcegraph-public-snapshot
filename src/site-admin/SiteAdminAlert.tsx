@@ -1,4 +1,4 @@
-import LockIcon from '@sourcegraph/icons/lib/Lock'
+import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
 
 /**

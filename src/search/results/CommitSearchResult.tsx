@@ -1,6 +1,6 @@
-import CommitIcon from '@sourcegraph/icons/lib/Commit'
 import formatDistance from 'date-fns/formatDistance'
 import * as H from 'history'
+import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
@@ -231,7 +231,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
         <ResultContainer
             collapsible={true}
             defaultExpanded={true}
-            icon={CommitIcon}
+            icon={SourceCommitIcon}
             title={title}
             expandedChildren={expandedChildren}
         />

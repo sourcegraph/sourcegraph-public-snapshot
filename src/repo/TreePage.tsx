@@ -1,15 +1,15 @@
 import { ActionItem } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsContainer'
-import BranchIcon from '@sourcegraph/icons/lib/Branch'
-import CommitIcon from '@sourcegraph/icons/lib/Commit'
-import { Folder as FolderIcon } from '@sourcegraph/icons/lib/Folder'
 import HistoryIcon from '@sourcegraph/icons/lib/History'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
-import TagIcon from '@sourcegraph/icons/lib/Tag'
-import UserIcon from '@sourcegraph/icons/lib/User'
 import * as H from 'history'
 import { escapeRegExp, upperFirst } from 'lodash'
+import FolderIcon from 'mdi-react/FolderIcon'
+import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
+import TagIcon from 'mdi-react/TagIcon'
+import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
@@ -207,10 +207,10 @@ export class TreePage extends React.PureComponent<Props, State> {
                                             className="btn btn-secondary"
                                             to={`${this.state.treeOrError.url}/-/commits`}
                                         >
-                                            <CommitIcon className="icon-inline" /> Commits
+                                            <SourceCommitIcon className="icon-inline" /> Commits
                                         </Link>
                                         <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/branches`}>
-                                            <BranchIcon className="icon-inline" /> Branches
+                                            <SourceBranchIcon className="icon-inline" /> Branches
                                         </Link>
                                         <Link className="btn btn-secondary" to={`/${this.props.repoPath}/-/tags`}>
                                             <TagIcon className="icon-inline" /> Tags

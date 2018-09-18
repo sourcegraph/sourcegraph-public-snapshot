@@ -1,6 +1,6 @@
-import LinkIcon from '@sourcegraph/icons/lib/Link'
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
+import LinkIcon from 'mdi-react/LinkIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'

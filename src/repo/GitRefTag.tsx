@@ -1,6 +1,6 @@
-import BranchIcon from '@sourcegraph/icons/lib/Branch'
-import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
-import TagIcon from '@sourcegraph/icons/lib/Tag'
+import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
+import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
+import TagIcon from 'mdi-react/TagIcon'
 import React from 'react'
 import * as GQL from '../backend/graphqlschema'
 
@@ -27,7 +27,7 @@ export const GitRefTag: React.SFC<Props> = ({ gitRef, onMouseDown }: Props) => {
         case 'refs/heads/':
             kind = 'branch'
             url = url && `${url}/compare/${encodeURIComponent(abbrevName)}`
-            Icon = BranchIcon
+            Icon = SourceBranchIcon
             break
 
         case 'refs/tags/':
@@ -40,11 +40,11 @@ export const GitRefTag: React.SFC<Props> = ({ gitRef, onMouseDown }: Props) => {
             if (gitRef.name.endsWith('/head')) {
                 kind = 'pull request'
                 url = url && `${url}/pull/${abbrevName.split('/')[0]}`
-                Icon = GitHubIcon
+                Icon = GithubCircleIcon
             } else if (gitRef.name.endsWith('/merge')) {
                 kind = 'pull request merge'
                 url = url && `${url}/pull/${abbrevName.split('/')[0]}`
-                Icon = GitHubIcon
+                Icon = GithubCircleIcon
             }
             break
     }

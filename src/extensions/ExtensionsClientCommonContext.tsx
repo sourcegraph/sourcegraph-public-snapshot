@@ -14,11 +14,11 @@ import {
     gqlToCascade,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import CaretDown from '@sourcegraph/icons/lib/CaretDown'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import Menu from '@sourcegraph/icons/lib/Menu'
 import { isEqual } from 'lodash'
-import Warning from 'mdi-react/WarningIcon'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import WarningIcon from 'mdi-react/WarningIcon'
 import { concat, from, Observable } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, switchMap, take } from 'rxjs/operators'
 import { InitData } from 'sourcegraph/module/extension/extensionHost'
@@ -59,8 +59,8 @@ export function createExtensionsContextController(
         queryLSP: requests => sendLSPHTTPRequests(requests),
         icons: {
             Loader: Loader as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Warning: Warning as React.ComponentType<{ className: string; onClick?: () => void }>,
-            CaretDown: CaretDown as React.ComponentType<{ className: string; onClick?: () => void }>,
+            Warning: WarningIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
+            CaretDown: MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             Menu: Menu as React.ComponentType<{ className: string; onClick?: () => void }>,
         },
         forceUpdateTooltip: () => Tooltip.forceUpdate(),

@@ -1,4 +1,3 @@
-import DocumentIcon from '@sourcegraph/icons/lib/Document'
 import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
@@ -6,6 +5,7 @@ import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -413,7 +413,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
-                        icon={result.lineMatches && result.lineMatches.length > 0 ? RepoIcon : DocumentIcon}
+                        icon={result.lineMatches && result.lineMatches.length > 0 ? RepoIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}
                         expanded={false}

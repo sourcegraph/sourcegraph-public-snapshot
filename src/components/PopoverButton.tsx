@@ -1,4 +1,4 @@
-import CaretDownIcon from '@sourcegraph/icons/lib/CaretDown'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import Popover, { PopoverProps } from 'reactstrap/lib/Popover'
 import { Subscription } from 'rxjs'
@@ -57,7 +57,6 @@ interface State {
     /** Whether the popover is open. */
     open: boolean
 }
-
 /**
  * A button that toggles the visibility of a popover.
  */
@@ -85,7 +84,6 @@ export class PopoverButton extends React.PureComponent<Props, State> {
 
     public render(): React.ReactFragment {
         const isOpen = this.state.open || this.props.open
-
         const popoverAnchor = this.rootRef && (
             <Popover
                 placement={this.props.placement || 'auto-start'}
@@ -112,16 +110,13 @@ export class PopoverButton extends React.PureComponent<Props, State> {
                     onClick={this.props.link ? this.onClickLink : this.onPopoverVisibilityToggle}
                 >
                     {this.props.children}{' '}
-                    {!this.props.link && <CaretDownIcon className="icon-inline popover-button__icon" />}
+                    {!this.props.link && <MenuDownIcon className="icon-inline popover-button__icon" />}
                 </LinkOrSpan>
                 {this.props.link ? (
-                    <div className="popover-button__anchor">
-                        <CaretDownIcon
-                            className="icon-inline popover-button__icon popover-button__icon--outside"
-                            onClick={this.onPopoverVisibilityToggle}
-                        />
+                    <button className="popover-button__anchor btn-icon" onClick={this.onPopoverVisibilityToggle}>
+                        <MenuDownIcon className="icon-inline popover-button__icon popover-button__icon--outside" />
                         {popoverAnchor}
-                    </div>
+                    </button>
                 ) : (
                     popoverAnchor
                 )}

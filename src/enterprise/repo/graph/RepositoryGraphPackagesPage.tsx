@@ -1,6 +1,6 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import MoreIcon from '@sourcegraph/icons/lib/More'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -135,7 +135,7 @@ class PackageNode extends React.PureComponent<PackageNodeProps, PackageNodeState
                             )}
                         </>
                     ) : (
-                        <MoreIcon
+                        <DotsHorizontalIcon
                             className="icon-inline repository-graph-page__node-dotdotdot"
                             data-tooltip={`Reference search is not supported by the language server (${
                                 this.props.node.language
@@ -176,7 +176,7 @@ class PackageNode extends React.PureComponent<PackageNodeProps, PackageNodeState
                         </>
                     ) : (
                         !!node.internalReferences && (
-                            <MoreIcon
+                            <DotsHorizontalIcon
                                 className="icon-inline repository-graph-page__node-dotdotdot"
                                 data-tooltip={`External reference search is not supported by the language server (${
                                     this.props.node.language

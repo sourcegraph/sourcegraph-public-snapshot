@@ -1,5 +1,5 @@
-import ChatIcon from '@sourcegraph/icons/lib/Chat'
 import * as H from 'history'
+import MessageIcon from 'mdi-react/MessageIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { RepoFile } from '../..'
@@ -57,7 +57,7 @@ export const DiscussionsGutterOverlay: React.StatelessComponent<DiscussionsGutte
                 data-tooltip={onDiscussionsNew ? 'Close discussions' : 'Create a discussion for this selection'}
                 to={newURL}
             >
-                <ChatIcon className="icon-inline" />
+                <MessageIcon className="icon-inline" />
             </Link>
         </div>
     )

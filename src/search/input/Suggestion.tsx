@@ -1,5 +1,5 @@
-import FolderIcon from '@sourcegraph/icons/lib/Folder'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
+import FolderIcon from 'mdi-react/FolderIcon'
 import * as React from 'react'
 import * as GQL from '../../backend/graphqlschema'
 import { SymbolIcon } from '../../symbols/SymbolIcon'
@@ -100,7 +100,7 @@ const SuggestionIcon: React.StatelessComponent<SuggestionIconProps> = ({ suggest
         case 'repo':
             return <RepoIcon {...passThru} />
         case 'dir':
-            return <FolderIcon {...passThru} />
+            return <FolderIcon />
         case 'file':
             return <SymbolIcon kind={GQL.SymbolKind.FILE} {...passThru} />
         case 'symbol':

@@ -1,7 +1,7 @@
-import GitHubIcon from '@sourcegraph/icons/lib/GitHub'
 import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
 import { upperFirst } from 'lodash'
 import ExportIcon from 'mdi-react/ExportIcon'
+import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
@@ -122,7 +122,7 @@ function serviceTypeDisplayNameAndIcon(
 ): { displayName: string; icon?: React.ComponentType<{ className?: string }> } {
     switch (serviceType) {
         case 'github':
-            return { displayName: 'GitHub', icon: GitHubIcon }
+            return { displayName: 'GitHub', icon: GithubCircleIcon }
         case 'gitlab':
             return { displayName: 'GitLab' }
         case 'bitbucketserver':

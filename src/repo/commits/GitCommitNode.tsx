@@ -1,7 +1,7 @@
-import FileDocumentIcon from '@sourcegraph/icons/lib/FileDocument'
-import MoreIcon from '@sourcegraph/icons/lib/More'
 import copy from 'copy-to-clipboard'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
+import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
+import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
@@ -115,7 +115,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                             className="btn btn-secondary btn-sm git-commit-node__message-toggle"
                             onClick={this.toggleShowCommitMessageBody}
                         >
-                            <MoreIcon className="icon-inline" />
+                            <DotsHorizontalIcon className="icon-inline" />
                         </button>
                     )}
                 {this.props.compact && (

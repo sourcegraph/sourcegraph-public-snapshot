@@ -1,7 +1,7 @@
 import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
-import { CaretDown } from '@sourcegraph/icons/lib/CaretDown'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import * as H from 'history'
+import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import * as GQL from '../backend/graphqlschema'
 import { ExtensionsEnvironmentProps } from '../extensions/environment/ExtensionsEnvironment'
@@ -25,7 +25,7 @@ export const GlobalDebug: React.SFC<Props> = props =>
                     <ExtensionStatusPopover
                         location={props.location}
                         loaderIcon={Loader as React.ComponentType<{ className: string; onClick?: () => void }>}
-                        caretIcon={CaretDown as React.ComponentType<{ className: string; onClick?: () => void }>}
+                        caretIcon={MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>}
                         extensionsController={props.extensionsController}
                     />
                 </li>

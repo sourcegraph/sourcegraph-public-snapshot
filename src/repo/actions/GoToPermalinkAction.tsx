@@ -1,5 +1,5 @@
-import LinkIcon from '@sourcegraph/icons/lib/Link'
 import * as H from 'history'
+import LinkIcon from 'mdi-react/LinkIcon'
 import * as React from 'react'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'

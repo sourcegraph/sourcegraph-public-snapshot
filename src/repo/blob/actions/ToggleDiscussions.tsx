@@ -1,5 +1,5 @@
-import ChatIcon from '@sourcegraph/icons/lib/Chat'
 import * as H from 'history'
+import MessageIcon from 'mdi-react/MessageIcon'
 import * as React from 'react'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
@@ -69,7 +69,7 @@ export class ToggleDiscussionsPanel extends React.PureComponent<{
         const visible = ToggleDiscussionsPanel.isVisible(this.props.location)
         return (
             <ActionItem onSelect={this.onClick} data-tooltip={`${visible ? 'Hide' : 'Show'} discussions (Alt+D/Opt+D)`}>
-                <ChatIcon className="icon-inline" />
+                <MessageIcon className="icon-inline" />
             </ActionItem>
         )
     }

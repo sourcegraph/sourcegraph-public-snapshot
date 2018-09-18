@@ -1,7 +1,7 @@
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
-import LockIcon from '@sourcegraph/icons/lib/Lock'
 import { upperFirst } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
+import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'

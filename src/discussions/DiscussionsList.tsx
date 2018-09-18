@@ -1,5 +1,5 @@
-import ChatIcon from '@sourcegraph/icons/lib/Chat'
 import * as H from 'history'
+import MessageIcon from 'mdi-react/MessageIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -40,7 +40,7 @@ const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
                     className="discussions-list__row-comments-count"
                     data-tooltip={node.comments.totalCount + ' comments'}
                 >
-                    <ChatIcon className="icon-inline" /> {node.comments.totalCount}
+                    <MessageIcon className="icon-inline" /> {node.comments.totalCount}
                 </span>
             </div>
             <div className="discussions-list__row-bottom-line">

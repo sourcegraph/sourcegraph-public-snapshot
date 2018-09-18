@@ -1,7 +1,7 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import UserIcon from '@sourcegraph/icons/lib/User'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
+import UserIcon from 'mdi-react/UserIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Redirect } from 'react-router-dom'

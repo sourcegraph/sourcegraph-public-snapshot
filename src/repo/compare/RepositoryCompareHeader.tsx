@@ -1,4 +1,4 @@
-import MoreIcon from '@sourcegraph/icons/lib/More'
+import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import * as React from 'react'
 import { Form } from '../../components/Form'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -60,7 +60,7 @@ export class RepositoryCompareHeader extends React.PureComponent<Props, State> {
                             autoCorrect="off"
                             autoComplete="off"
                         />
-                        <MoreIcon className="icon-inline mr-2 mb-2" />
+                        <DotsHorizontalIcon className="icon-inline mr-2 mb-2" />
                         <label htmlFor={RepositoryCompareHeader.HEAD_INPUT_ID} className="sr-only">
                             Head Git revspec for comparison
                         </label>
