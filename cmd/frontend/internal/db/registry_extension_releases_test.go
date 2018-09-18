@@ -12,7 +12,7 @@ func TestRegistryExtensionReleases(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{Username: "u"})
 	if err != nil {

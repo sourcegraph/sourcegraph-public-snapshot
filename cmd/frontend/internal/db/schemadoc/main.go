@@ -26,7 +26,10 @@ func main() {
 		log.Fatal("createdb", out, err)
 	}
 	defer exec.Command("dropdb", dbname).Run()
-	db.ConnectToDB("dbname=" + dbname)
+
+	if err := db.ConnectToDB("dbname=" + dbname); err != nil {
+		log.Fatal(err)
+	}
 
 	db, err := db.Open("dbname=" + dbname)
 	if err != nil {

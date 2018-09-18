@@ -12,7 +12,7 @@ func TestUsers_SetTag(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	// Create user.
 	u, err := Users.Create(ctx, NewUser{Username: "u"})

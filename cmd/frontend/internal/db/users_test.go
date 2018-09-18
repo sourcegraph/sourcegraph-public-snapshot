@@ -54,7 +54,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	for _, test := range usernamesForTests {
 		t.Run(test.name, func(t *testing.T) {
@@ -78,7 +78,7 @@ func TestUsers_Create_SiteAdmin(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	if _, err := SiteConfig.Get(ctx); err != nil {
 		t.Fatal(err)
@@ -164,7 +164,7 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -212,7 +212,7 @@ func TestUsers_ListCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -268,7 +268,7 @@ func TestUsers_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -344,7 +344,7 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -377,7 +377,7 @@ func TestUsers_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",

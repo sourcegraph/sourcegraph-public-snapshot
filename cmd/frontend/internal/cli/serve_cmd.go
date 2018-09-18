@@ -137,7 +137,9 @@ func Main() error {
 
 	go debugserver.Start()
 
-	db.ConnectToDB("")
+	if err := db.ConnectToDB(""); err != nil {
+		log.Fatal(err)
+	}
 
 	siteid.Init()
 

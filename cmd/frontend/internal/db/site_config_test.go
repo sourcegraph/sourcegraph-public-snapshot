@@ -8,7 +8,7 @@ func TestSiteConfig_Get(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 	config, err := SiteConfig.Get(ctx)
 	if err != nil {
 		t.Fatal(err)

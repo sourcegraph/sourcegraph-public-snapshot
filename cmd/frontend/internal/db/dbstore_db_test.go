@@ -8,15 +8,17 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
+	"strings"
+	"sync"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 )
 
 func init() {
-	InitTest("db")
-
 	// We can't care about security in tests, we care about speed.
 	mockHashPassword = func(password string) (sql.NullString, error) {
 		h := fnv.New64()
@@ -34,6 +36,9 @@ func TestMigrations(t *testing.T) {
 	if os.Getenv("SKIP_MIGRATION_TEST") != "" {
 		t.Skip()
 	}
+
+	// get testing context to ensure we can connect to the DB
+	_ = testContext(t)
 
 	m := newMigrate(globalDB)
 	// Run all down migrations then up migrations again to ensure there are no SQL errors.
@@ -69,9 +74,29 @@ func TestPassword(t *testing.T) {
 	}
 }
 
+var (
+	connectOnce sync.Once
+	connectErr  error
+)
+
 // testContext constructs a new context that holds a temporary test DB
 // handle and other test configuration.
-func testContext() context.Context {
+func testContext(t *testing.T) context.Context {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	connectOnce.Do(func() {
+		connectErr = initTest("db")
+	})
+	if connectErr != nil {
+		// only ignore connection errors if not on CI
+		if os.Getenv("CI") == "" {
+			t.Skip("Could not connect to DB", connectErr)
+		}
+		t.Fatal("Could not connect to DB", connectErr)
+	}
+
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 
@@ -90,4 +115,23 @@ func emptyDBPreserveSchema(d *sql.DB) error {
 		return fmt.Errorf("Table schema_migrations not found: %v", err)
 	}
 	return truncateDB(d)
+}
+
+// initTest creates a test database, named with the given suffix, if one does
+// not already exist and configures this package to use it. It is called by
+// integration tests (in a package init func) that need to use a real
+// database.
+func initTest(nameSuffix string) error {
+	dbname := "sourcegraph-test-" + nameSuffix
+
+	out, err := exec.Command("createdb", dbname).CombinedOutput()
+	if err != nil {
+		if strings.Contains(string(out), "already exists") {
+			log.Printf("DB %s exists already (run `dropdb %s` to delete and force re-creation)", dbname, dbname)
+		} else {
+			return errors.Errorf("createdb failed: %v\n%s", err, string(out))
+		}
+	}
+
+	return ConnectToDB("dbname=" + dbname)
 }

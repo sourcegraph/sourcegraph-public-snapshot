@@ -13,7 +13,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	// Create fixtures.
 	org1, err := Orgs.Create(ctx, "org1", nil)

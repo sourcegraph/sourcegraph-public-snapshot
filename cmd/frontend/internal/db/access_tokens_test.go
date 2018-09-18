@@ -8,10 +8,7 @@ import (
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
 // to the user.
 func TestAccessTokens_Create(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	subject, err := Users.Create(ctx, NewUser{
 		Email:                 "a@example.com",
@@ -86,7 +83,7 @@ func TestAccessTokens_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	subject1, err := Users.Create(ctx, NewUser{
 		Email:                 "a@example.com",
@@ -163,7 +160,7 @@ func TestAccessTokens_Lookup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	subject, err := Users.Create(ctx, NewUser{
 		Email:                 "a@example.com",
@@ -230,7 +227,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	t.Run("subject", func(t *testing.T) {
 		subject, err := Users.Create(ctx, NewUser{

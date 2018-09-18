@@ -37,7 +37,7 @@ var (
 // Note: github.com/lib/pq parses the environment as well. This function will
 // also use the value of PGDATASOURCE if supplied and dataSource is the empty
 // string.
-func ConnectToDB(dataSource string) {
+func ConnectToDB(dataSource string) error {
 	if dataSource == "" {
 		dataSource = defaultDataSource
 	}
@@ -47,20 +47,22 @@ func ConnectToDB(dataSource string) {
 		log15.Warn("Ignoring PGTZ environment variable; using PGTZ=UTC.", "ignoredPGTZ", v)
 	}
 	if err := os.Setenv("PGTZ", "UTC"); err != nil {
-		log.Fatalln("Error setting PGTZ=UTC:", err)
+		return errors.Wrap(err, "Error setting PGTZ=UTC")
 	}
 
 	var err error
 	globalDB, err = openDBWithStartupWait(dataSource)
 	if err != nil {
-		log.Fatal("DB not available: " + err.Error())
+		return errors.Wrap(err, "DB not available")
 	}
 	registerPrometheusCollector(globalDB, "_app")
 	configureConnectionPool(globalDB)
 
 	if err := doMigrateAndClose(newMigrate(globalDB)); err != nil {
-		log.Fatal("Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: ", err.Error())
+		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
+
+	return nil
 }
 
 var (

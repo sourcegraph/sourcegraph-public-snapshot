@@ -14,7 +14,7 @@ func TestUserEmails_Get_GetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@example.com",
@@ -71,7 +71,7 @@ func TestUserEmails_ListByUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@example.com",
@@ -117,7 +117,7 @@ func TestUserEmails_Add_Remove(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	const emailA = "a@example.com"
 	const emailB = "b@example.com"
@@ -179,7 +179,7 @@ func TestUserEmails_SetVerified(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	const email = "a@example.com"
 	user, err := Users.Create(ctx, NewUser{

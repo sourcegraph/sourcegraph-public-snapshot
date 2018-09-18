@@ -14,7 +14,7 @@ func TestOrgInvitations(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	sender, err := Users.Create(ctx, NewUser{
 		Email:                 "a1@example.com",

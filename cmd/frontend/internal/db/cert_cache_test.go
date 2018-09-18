@@ -11,7 +11,7 @@ func TestCertCache(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	// all the possible bytes to ensure we encode correctly.
 	data := []byte("header")

@@ -59,7 +59,7 @@ func TestRepos_Get(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	want := mustCreate(ctx, t, &types.Repo{
 		URI: "r",
@@ -84,7 +84,7 @@ func TestRepos_List(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
@@ -104,7 +104,7 @@ func TestRepos_List_fork(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
@@ -146,7 +146,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
@@ -194,7 +194,7 @@ func TestRepos_List_query1(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
@@ -233,7 +233,7 @@ func TestRepos_List_query2(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
@@ -275,7 +275,7 @@ func TestRepos_List_indexedRevision(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
@@ -323,7 +323,7 @@ func TestRepos_List_sort(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
@@ -393,7 +393,7 @@ func TestRepos_List_patterns(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	ctx = actor.WithActor(ctx, &actor.Actor{})
 
@@ -468,7 +468,7 @@ func TestRepos_Create(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	// Add a repo.
 	createRepo(ctx, t, &types.Repo{URI: "a/b"})
@@ -487,7 +487,7 @@ func TestRepos_Create_dupe(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := testContext()
+	ctx := testContext(t)
 
 	// Add a repo.
 	createRepo(ctx, t, &types.Repo{URI: "a/b"})

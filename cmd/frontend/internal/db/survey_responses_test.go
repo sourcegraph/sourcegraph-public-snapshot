@@ -9,7 +9,7 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	count, err := SurveyResponses.Count(ctx)
 	if err != nil {

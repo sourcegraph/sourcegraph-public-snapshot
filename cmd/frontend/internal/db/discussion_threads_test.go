@@ -15,7 +15,7 @@ func TestDiscussionThreads_CreateGet(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -75,7 +75,7 @@ func TestDiscussionThreads_Update(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -127,7 +127,7 @@ func TestDiscussionThreads_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -191,7 +191,7 @@ func TestDiscussionThreads_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",
@@ -255,7 +255,7 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	user, err := Users.Create(ctx, NewUser{
 		Email:                 "a@a.com",

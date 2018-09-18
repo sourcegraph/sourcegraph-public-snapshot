@@ -70,7 +70,7 @@ func TestRepos_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
@@ -139,7 +139,7 @@ func TestRepos_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	if count, err := Repos.Count(ctx, ReposListOptions{Enabled: true}); err != nil {
 		t.Fatal(err)
@@ -176,7 +176,7 @@ func TestRepos_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := testContext()
+	ctx := testContext(t)
 
 	if _, err := Repos.GetByURI(ctx, "myrepo"); !errcode.IsNotFound(err) {
 		if err == nil {
@@ -249,7 +249,7 @@ func TestRepos_TryInsertNewBatch(t *testing.T) {
 
 	for _, batchSize := range []int{1, 2, 3, 4} {
 		insertBatchSize = batchSize
-		ctx := testContext()
+		ctx := testContext(t)
 
 		for _, expRP := range reposToInsert {
 			if _, err := Repos.GetByURI(ctx, expRP.URI); !errcode.IsNotFound(err) {
