@@ -676,6 +676,14 @@
   revision = "86e88902a513d613222857ee0f6e0e90f0a3adf7"
 
 [[projects]]
+  digest = "1:45891498b5a3071a998e553f349842befeefac552a2f9dac0d48336f16e7905d"
+  name = "github.com/kevinburke/differ"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "7596500234bb9fd09fcd94141dab52168ce40673"
+  version = "0.5"
+
+[[projects]]
   digest = "1:04eb2b1e456031d95dbc76c9a42fa8a2da0d61ae5111d6aa277cbefba53c7e8f"
   name = "github.com/kisielk/gotool"
   packages = [
@@ -1831,6 +1839,7 @@
     "github.com/kardianos/osext",
     "github.com/keegancsmith/sqlf",
     "github.com/keegancsmith/tmpfriend",
+    "github.com/kevinburke/differ",
     "github.com/kr/text",
     "github.com/lib/pq",
     "github.com/lightstep/lightstep-tracer-go",

@@ -34,7 +34,8 @@ required = [
   "github.com/mattn/goreman",
   "github.com/sourcegraph/godockerize",
   "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler",
-  "golang.org/x/tools/cmd/stringer"
+  "golang.org/x/tools/cmd/stringer",
+  "github.com/kevinburke/differ",
 ]
 
 [prune]
@@ -216,4 +217,3 @@ required = [
 [[override]]
   name = "google.golang.org/genproto"
   revision = "7fd901a49ba6a7f87732eb344f6e3c5b19d1b200"
-
