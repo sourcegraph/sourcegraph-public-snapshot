@@ -82,7 +82,16 @@ do_install() {
 	cmdlist="$*"
 	cmds=""
 	for cmd in $cmdlist; do
-		cmds="$cmds github.com/sourcegraph/sourcegraph/cmd/$cmd"
+		replaced=false
+    		for enterpriseCmd in $ENTERPRISE_COMMANDS; do
+			if [ "$cmd" == "$enterpriseCmd" ]; then
+				cmds="$cmds github.com/sourcegraph/enterprise/cmd/$enterpriseCmd"
+				replaced=true
+			fi
+		done
+		if [ $replaced == false ]; then
+			cmds="$cmds github.com/sourcegraph/sourcegraph/cmd/$cmd"
+		fi
 	done
 	if go install -v -gcflags="$GCFLAGS" -tags "$TAGS" -race=$race $cmds; then
 		if $verbose; then
