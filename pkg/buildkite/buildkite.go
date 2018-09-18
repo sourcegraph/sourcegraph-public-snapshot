@@ -11,11 +11,21 @@ type Pipeline struct {
 	Steps []interface{} `json:"steps"`
 }
 
+type BuildOptions struct {
+	Message  string                 `json:"message,omitemtpy"`
+	Commit   string                 `json:"commit,omitemtpy"`
+	MetaData map[string]interface{} `json:"meta_data,omitemtpy"`
+	Env      map[string]string      `json:"env,omitempty"`
+}
+
 type Step struct {
 	Label            string                 `json:"label"`
-	Command          string                 `json:"command"`
-	Env              map[string]string      `json:"env"`
-	Plugins          map[string]interface{} `json:"plugins"`
+	Command          string                 `json:"command,omitemtpy"`
+	Trigger          string                 `json:"trigger,omitempty"`
+	Async            bool                   `json:"async,omitempty"`
+	Build            *BuildOptions          `json:"build,omitempty"`
+	Env              map[string]string      `json:"env,omitempty"`
+	Plugins          map[string]interface{} `json:"plugins,omitempty"`
 	ArtifactPaths    string                 `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup string                 `json:"concurrency_group,omitempty"`
 	Concurrency      int                    `json:"concurrency,omitempty"`
@@ -57,6 +67,24 @@ type StepOpt func(step *Step)
 func Cmd(command string) StepOpt {
 	return func(step *Step) {
 		step.Command = strings.TrimSpace(step.Command + "\n" + command)
+	}
+}
+
+func Trigger(pipeline string) StepOpt {
+	return func(step *Step) {
+		step.Trigger = pipeline
+	}
+}
+
+func Async(async bool) StepOpt {
+	return func(step *Step) {
+		step.Async = async
+	}
+}
+
+func Build(buildOptions BuildOptions) StepOpt {
+	return func(step *Step) {
+		step.Build = &buildOptions
 	}
 }
 
