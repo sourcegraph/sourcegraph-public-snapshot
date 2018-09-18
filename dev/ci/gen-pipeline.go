@@ -19,7 +19,7 @@ func init() {
 }
 
 func pkgs() []string {
-	pkgs := []string{"xlang", "cmd/frontend/internal/db"} // put slow tests first
+	pkgs := []string{"cmd/xlang-go/internal/server", "cmd/frontend/internal/db"} // put slow tests first
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			panic(err)
