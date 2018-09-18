@@ -256,7 +256,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		webappVersion := string(out)
+		webappVersion := strings.TrimSpace(string(out))
 		fmt.Println("New webapp version will be " + webappVersion)
 
 		// Trigger an enterprise repository master branch build.
