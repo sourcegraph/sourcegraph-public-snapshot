@@ -1,4 +1,5 @@
-import { LockIcon, ServerIcon } from 'mdi-react'
+import LockIcon from 'mdi-react/LockIcon'
+import ServerIcon from 'mdi-react/ServerIcon'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
 export const primaryGroup: SiteAdminSideBarGroup = {
