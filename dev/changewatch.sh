@@ -1,5 +1,5 @@
 #!/bin/bash
-GO_DIRS="cmd dev pkg schema vendor xlang"
+GO_DIRS="cmd dev pkg schema vendor xlang${ADDITIONAL_GO_DIRS}"
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 dirs_starstar() {
