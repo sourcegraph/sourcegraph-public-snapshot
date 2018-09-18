@@ -759,6 +759,11 @@ const SiteSchemaJSON = `{
           "type": "string",
           "default": "{host}/{projectKey}/{repositorySlug}"
         },
+        "excludePersonalRepositories": {
+          "description":
+            "Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See https://about.sourcegraph.com/docs/config/repositories/#excluding-personal-repositories for more information. Default: false.",
+          "type": "boolean"
+        },
         "initialRepositoryEnablement": {
           "description":
             "Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.",

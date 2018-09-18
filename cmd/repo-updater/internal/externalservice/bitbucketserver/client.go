@@ -203,6 +203,11 @@ type Repo struct {
 	} `json:"links"`
 }
 
+// IsPersonalRepository tells if the repository is a personal one.
+func (r *Repo) IsPersonalRepository() bool {
+	return r.Project.Type == "PERSONAL"
+}
+
 type Project struct {
 	Key    string `json:"key"`
 	ID     int    `json:"id"`

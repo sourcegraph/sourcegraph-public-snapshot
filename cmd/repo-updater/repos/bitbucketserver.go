@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/pkg/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/time/rate"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -171,6 +172,9 @@ func GetBitbucketServerRepository(ctx context.Context, args protocol.RepoLookupA
 		if err != nil {
 			return nil, true, err
 		}
+		if conn.config.ExcludePersonalRepositories && repo.IsPersonalRepository() {
+			return nil, true, &vcs.RepoNotExistError{Repo: api.RepoURI(repoSlug)}
+		}
 		return bitbucketServerRepoInfo(conn.config, repo), true, nil
 	}
 
@@ -185,6 +189,9 @@ func GetBitbucketServerRepository(ctx context.Context, args protocol.RepoLookupA
 		repo, err := conn.client.Repo(ctx, projectKey, repoSlug)
 		if err != nil {
 			return nil, true, err
+		}
+		if conn.config.ExcludePersonalRepositories && repo.IsPersonalRepository() {
+			return nil, true, &vcs.RepoNotExistError{Repo: args.Repo}
 		}
 		return bitbucketServerRepoInfo(conn.config, repo), true, nil
 	}
@@ -329,6 +336,9 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) <-chan *bi
 		}
 		recent := map[int]bool{}
 		for _, r := range repos {
+			if c.config.ExcludePersonalRepositories && r.IsPersonalRepository() {
+				continue
+			}
 			recent[r.ID] = true
 			ch <- r
 		}
@@ -343,6 +353,9 @@ func (c *bitbucketServerConnection) listAllRepos(ctx context.Context) <-chan *bi
 				return
 			}
 			for _, r := range repos {
+				if c.config.ExcludePersonalRepositories && r.IsPersonalRepository() {
+					continue
+				}
 				if !recent[r.ID] {
 					ch <- r
 				}

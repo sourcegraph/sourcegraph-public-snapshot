@@ -70,6 +70,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 
 type BitbucketServerConnection struct {
 	Certificate                 string `json:"certificate,omitempty"`
+	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
 	GitURLType                  string `json:"gitURLType,omitempty"`
 	InitialRepositoryEnablement bool   `json:"initialRepositoryEnablement,omitempty"`
 	Password                    string `json:"password,omitempty"`
