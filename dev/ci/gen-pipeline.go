@@ -257,7 +257,6 @@ func main() {
 			panic(err)
 		}
 		webappVersion := strings.TrimSpace(string(out))
-		fmt.Println("New webapp version will be " + webappVersion)
 
 		// Trigger an enterprise repository master branch build.
 		pipeline.AddStep(":satellite_antenna:",
