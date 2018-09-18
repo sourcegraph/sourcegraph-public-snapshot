@@ -52,6 +52,19 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	p.Steps = append(p.Steps, step)
 }
 
+func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
+	step := &Step{
+		Label: label,
+	}
+	for _, opt := range OnEveryStepOpts {
+		opt(step)
+	}
+	for _, opt := range opts {
+		opt(step)
+	}
+	p.Steps = append(p.Steps, step)
+}
+
 func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
 	output, err := yaml.Marshal(p)
 	if err != nil {

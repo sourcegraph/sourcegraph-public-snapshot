@@ -259,9 +259,9 @@ func main() {
 		webappVersion := strings.TrimSpace(string(out))
 
 		// Trigger an enterprise repository master branch build.
-		pipeline.AddStep(":satellite_antenna:",
-			bk.ConcurrencyGroup("trigger-enterprise"),
+		pipeline.AddTrigger(":satellite_antenna:",
 			bk.Trigger("enterprise"),
+			bk.ConcurrencyGroup("trigger-enterprise"),
 			bk.Build(bk.BuildOptions{
 				Message: "OSS commit " + os.Getenv("BUILDKITE_COMMIT")[0:7] + ": " + os.Getenv("BUILDKITE_MESSAGE"),
 				Env: map[string]string{
