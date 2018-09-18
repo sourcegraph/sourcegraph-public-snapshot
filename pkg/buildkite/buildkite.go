@@ -12,15 +12,15 @@ type Pipeline struct {
 }
 
 type BuildOptions struct {
-	Message  string                 `json:"message,omitemtpy"`
-	Commit   string                 `json:"commit,omitemtpy"`
-	MetaData map[string]interface{} `json:"meta_data,omitemtpy"`
+	Message  string                 `json:"message,omitempty"`
+	Commit   string                 `json:"commit,omitempty"`
+	MetaData map[string]interface{} `json:"meta_data,omitempty"`
 	Env      map[string]string      `json:"env,omitempty"`
 }
 
 type Step struct {
 	Label            string                 `json:"label"`
-	Command          string                 `json:"command,omitemtpy"`
+	Command          string                 `json:"command,omitempty"`
 	Trigger          string                 `json:"trigger,omitempty"`
 	Async            bool                   `json:"async,omitempty"`
 	Build            *BuildOptions          `json:"build,omitempty"`
