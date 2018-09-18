@@ -9,31 +9,31 @@ import './highlight'
 
 import React from 'react'
 import { render } from 'react-dom'
-import { enterpriseExtensionAreaHeaderNavItems } from './enterprise/extensions/extension/extensionAreaHeaderNavItems'
-import { enterpriseExtensionAreaRoutes } from './enterprise/extensions/extension/routes'
-import { enterpriseExtensionsAreaHeaderActionButtons } from './enterprise/extensions/extensionsAreaHeaderActionButtons'
-import { enterpriseExtensionsAreaRoutes } from './enterprise/extensions/routes'
-import { enterpriseRepoHeaderActionButtons } from './enterprise/repo/repoHeaderActionButtons'
-import { enterpriseRepoRevContainerRoutes } from './enterprise/repo/routes'
-import { enterpriseSiteAdminAreaRoutes } from './enterprise/site-admin/routes'
-import { enterpriseSiteAdminSidebarNavItems } from './enterprise/site-admin/sidebaritems'
-import { enterpriseUserAccountAreaRoutes } from './enterprise/user/account/routes'
-import { enterpriseUserAccountSideBarItems } from './enterprise/user/account/sidebaritems'
+import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
+import { extensionAreaRoutes } from './extensions/extension/routes'
+import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
+import { extensionsAreaRoutes } from './extensions/routes'
+import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'
+import { repoRevContainerRoutes } from './repo/routes'
+import { siteAdminAreaRoutes } from './site-admin/routes'
+import { siteAdminSidebarNavItems } from './site-admin/sidebaritems'
 import { SourcegraphWebApp } from './SourcegraphWebApp'
+import { userAccountAreaRoutes } from './user/account/routes'
+import { userAccountSideBarItems } from './user/account/sidebaritems'
 
 window.addEventListener('DOMContentLoaded', () => {
     render(
         <SourcegraphWebApp
-            extensionAreaRoutes={enterpriseExtensionAreaRoutes}
-            extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
-            extensionsAreaRoutes={enterpriseExtensionsAreaRoutes}
-            extensionsAreaHeaderActionButtons={enterpriseExtensionsAreaHeaderActionButtons}
-            siteAdminAreaRoutes={enterpriseSiteAdminAreaRoutes}
-            siteAdminSideBarItems={enterpriseSiteAdminSidebarNavItems}
-            userAccountSideBarItems={enterpriseUserAccountSideBarItems}
-            userAccountAreaRoutes={enterpriseUserAccountAreaRoutes}
-            repoRevContainerRoutes={enterpriseRepoRevContainerRoutes}
-            repoHeaderActionButtons={enterpriseRepoHeaderActionButtons}
+            extensionAreaRoutes={extensionAreaRoutes}
+            extensionAreaHeaderNavItems={extensionAreaHeaderNavItems}
+            extensionsAreaRoutes={extensionsAreaRoutes}
+            extensionsAreaHeaderActionButtons={extensionsAreaHeaderActionButtons}
+            siteAdminAreaRoutes={siteAdminAreaRoutes}
+            siteAdminSideBarItems={siteAdminSidebarNavItems}
+            userAccountSideBarItems={userAccountSideBarItems}
+            userAccountAreaRoutes={userAccountAreaRoutes}
+            repoRevContainerRoutes={repoRevContainerRoutes}
+            repoHeaderActionButtons={repoHeaderActionButtons}
         />,
         document.querySelector('#root')
     )
