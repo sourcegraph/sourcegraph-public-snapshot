@@ -248,6 +248,7 @@ export const watchSass = gulp.series(sass, async function watchSass(): Promise<v
  * Builds only the dist/ folder.
  */
 export const dist = gulp.parallel(sass, gulp.series(gulp.parallel(schema, graphQLTypes), typescript))
+export const watchDist = gulp.parallel(watchSass, watchSchema, watchGraphQLTypes, watchTypescript)
 
 /**
  * Builds everything.
