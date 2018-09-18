@@ -263,7 +263,7 @@ func main() {
 			bk.Trigger("enterprise"),
 			bk.ConcurrencyGroup("trigger-enterprise"),
 			bk.Build(bk.BuildOptions{
-				Message: "OSS commit " + os.Getenv("BUILDKITE_COMMIT")[0:7] + ": " + os.Getenv("BUILDKITE_MESSAGE"),
+				Message: ":satellite_antenna: OSS commit " + os.Getenv("BUILDKITE_COMMIT")[0:7] + ": " + os.Getenv("BUILDKITE_MESSAGE"),
 				Env: map[string]string{
 					"OSS_REPO_REVISION":  os.Getenv("BUILDKITE_COMMIT"),
 					"OSS_WEBAPP_VERSION": webappVersion,
