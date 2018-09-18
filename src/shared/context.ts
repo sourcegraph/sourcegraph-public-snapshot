@@ -24,10 +24,10 @@ function getContext(): AppContext {
         const safari = window.safari
         const chrome = global.chrome
 
-        if ((chrome && chrome.runtime.getBackgroundPage) || (safari && safari.application)) {
-            scriptEnv = ScriptEnv.Background
-        } else if (options.test(window.location.pathname)) {
+        if (options.test(window.location.pathname)) {
             scriptEnv = ScriptEnv.Options
+        } else if ((chrome && chrome.runtime.getBackgroundPage) || (safari && safari.application)) {
+            scriptEnv = ScriptEnv.Background
         }
     }
 

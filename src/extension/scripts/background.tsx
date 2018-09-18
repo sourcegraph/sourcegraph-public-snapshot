@@ -15,6 +15,7 @@ import storage, { defaultStorageItems } from '../../browser/storage'
 import * as tabs from '../../browser/tabs'
 import initializeCli from '../../libs/cli'
 import { resolveClientConfiguration } from '../../shared/backend/server'
+import { isBackground } from '../../shared/context'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
 
 let customServerOrigins: string[] = []
@@ -457,29 +458,33 @@ export const onFirstMessage = (port: chrome.runtime.Port, callback: (message: an
     port.onMessage.addListener(cb)
 }
 
-// This is the bridge between content scripts (that want to connect to Sourcegraph extensions) and the background
-// script (that spawns JS bundles or connects to WebSocket endpoints).:
-chrome.runtime.onConnect.addListener(port => {
-    // When a content script wants to create a connection to a Sourcegraph extension, it first connects to the
-    // background script on a random port and sends a message containing the platform information for that
-    // Sourcegraph extension (e.g. a JS bundle at localhost:1234/index.js).
-    onFirstMessage(port, (connectionInfo: ExtensionConnectionInfo) => {
-        // The background script receives the message and attempts to spawn the
-        // extension:
-        spawnAndConnect({ connectionInfo, port }).then(
-            // If spawning succeeds, the background script sends {} (so the content script knows it succeeded) and
-            // the port communicates using the internal Sourcegraph extension RPC API after that.
-            () => {
-                // Success is represented by the absence of an error
-                port.postMessage({})
-            },
-            // If spawning fails, the background script sends { error } (so the content script knows it failed) and
-            // the port is immediately disconnected. There is always a 1-1 correspondence between ports and content
-            // scripts, so this won't disrupt any other connections.
-            error => {
-                port.postMessage({ error })
-                port.disconnect()
-            }
-        )
+// This must not execute anywhere but the background script, otherwise messages
+// will get duplicated and cause all kinds of unintuitive behavior.
+if (isBackground) {
+    // This is the bridge between content scripts (that want to connect to Sourcegraph extensions) and the background
+    // script (that spawns JS bundles or connects to WebSocket endpoints).:
+    chrome.runtime.onConnect.addListener(port => {
+        // When a content script wants to create a connection to a Sourcegraph extension, it first connects to the
+        // background script on a random port and sends a message containing the platform information for that
+        // Sourcegraph extension (e.g. a JS bundle at localhost:1234/index.js).
+        onFirstMessage(port, (connectionInfo: ExtensionConnectionInfo) => {
+            // The background script receives the message and attempts to spawn the
+            // extension:
+            spawnAndConnect({ connectionInfo, port }).then(
+                // If spawning succeeds, the background script sends {} (so the content script knows it succeeded) and
+                // the port communicates using the internal Sourcegraph extension RPC API after that.
+                () => {
+                    // Success is represented by the absence of an error
+                    port.postMessage({})
+                },
+                // If spawning fails, the background script sends { error } (so the content script knows it failed) and
+                // the port is immediately disconnected. There is always a 1-1 correspondence between ports and content
+                // scripts, so this won't disrupt any other connections.
+                error => {
+                    port.postMessage({ error })
+                    port.disconnect()
+                }
+            )
+        })
     })
-})
+}
