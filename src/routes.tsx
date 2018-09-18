@@ -104,7 +104,7 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/site-admin',
         render: props => (
-            <SiteAdminArea {...props} routes={props.siteAdminAreaRoutes} sideBarItems={props.siteAdminSideBarItems} />
+            <SiteAdminArea {...props} routes={props.siteAdminAreaRoutes} sideBarGroups={props.siteAdminSideBarGroups} />
         ),
     },
     {

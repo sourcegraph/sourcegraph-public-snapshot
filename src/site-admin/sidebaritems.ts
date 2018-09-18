@@ -1,7 +1,12 @@
-import { SiteAdminSideBarItems } from './SiteAdminSidebar'
+import { LockIcon, ServerIcon } from 'mdi-react'
+import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from './SiteAdminSidebar'
 
-export const siteAdminSidebarNavItems: SiteAdminSideBarItems = {
-    primary: [
+export const primaryGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Site admin',
+        icon: ServerIcon,
+    },
+    items: [
         {
             label: 'Overview',
             to: '/site-admin',
@@ -15,7 +20,10 @@ export const siteAdminSidebarNavItems: SiteAdminSideBarItems = {
             to: '/site-admin/repositories',
         },
     ],
-    secondary: [
+}
+
+export const secondaryGroup: SiteAdminSideBarGroup = {
+    items: [
         {
             label: 'Users',
             to: '/site-admin/users',
@@ -33,19 +41,23 @@ export const siteAdminSidebarNavItems: SiteAdminSideBarItems = {
             to: '/site-admin/code-intelligence',
         },
     ],
-    registry: [
-        {
-            label: 'Extensions',
-            to: '/site-admin/registry/extensions',
-        },
-    ],
-    auth: [
+}
+
+export const authGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: 'Auth',
+        icon: LockIcon,
+    },
+    items: [
         {
             label: 'Access Tokens',
             to: '/site-admin/tokens',
         },
     ],
-    other: [
+}
+
+export const otherGroup: SiteAdminSideBarGroup = {
+    items: [
         {
             label: 'Updates',
             to: '/site-admin/updates',
@@ -64,3 +76,5 @@ export const siteAdminSidebarNavItems: SiteAdminSideBarItems = {
         },
     ],
 }
+
+export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [primaryGroup, secondaryGroup, authGroup, otherGroup]

@@ -41,7 +41,7 @@ import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
 import { clientConfiguration } from './settings/configuration'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
-import { SiteAdminSideBarItems } from './site-admin/SiteAdminSidebar'
+import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { eventLogger } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
@@ -53,7 +53,7 @@ export interface SourcegraphWebAppProps {
     extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
     extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
-    siteAdminSideBarItems: SiteAdminSideBarItems
+    siteAdminSideBarGroups: SiteAdminSideBarGroups
     userAccountSideBarItems: UserAccountSidebarItems
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>

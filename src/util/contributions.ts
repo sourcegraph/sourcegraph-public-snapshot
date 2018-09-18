@@ -2,11 +2,11 @@ import { RouteComponentProps } from 'react-router'
 
 interface Conditional<C extends object> {
     /** Optional condition under which this item should be used */
-    condition?: (context: C) => boolean
+    readonly condition?: (context: C) => boolean
 }
 
 interface WithIcon {
-    icon?: React.ComponentType<{ className?: string }>
+    readonly icon?: React.ComponentType<{ className?: string }>
 }
 
 /**
@@ -16,9 +16,17 @@ interface WithIcon {
  */
 export interface RouteDescriptor<C extends object = {}> extends Conditional<C> {
     /** Path of this route (appended to the current match) */
-    path: string
-    exact?: boolean
-    render: ((props: C & RouteComponentProps<any>) => React.ReactNode)
+    readonly path: string
+    readonly exact?: boolean
+    readonly render: ((props: C & RouteComponentProps<any>) => React.ReactNode)
+}
+
+export interface NavGroupDescriptor<C extends object = {}> {
+    readonly header?: {
+        readonly label: string
+        readonly icon: React.ComponentType<{ className?: string }>
+    }
+    readonly items: ReadonlyArray<NavItemDescriptor<C>>
 }
 
 /**
@@ -29,13 +37,13 @@ export interface RouteDescriptor<C extends object = {}> extends Conditional<C> {
  */
 export interface NavItemDescriptor<C extends object = {}> extends Conditional<C> {
     /** The text of the item */
-    label: string
+    readonly label: string
 
     /** The link destination (appended to the current match) */
-    to: string
+    readonly to: string
 
     /** Whether highlighting the item should only be done if `to` matches exactly */
-    exact?: boolean
+    readonly exact?: boolean
 }
 
 export interface NavItemWithIconDescriptor<C extends object = {}> extends NavItemDescriptor<C>, WithIcon {}
@@ -47,11 +55,11 @@ export interface NavItemWithIconDescriptor<C extends object = {}> extends NavIte
  */
 export interface ActionButtonDescriptor<C extends object = {}> extends Conditional<C>, WithIcon {
     /** Label for for the button  */
-    label: string
+    readonly label: string
 
     /** Optional tooltip for the button (if set, should include more information than the label) */
-    tooltip?: string
+    readonly tooltip?: string
 
     /** Function to return the destination link for the button */
-    to: (context: C) => string
+    readonly to: (context: C) => string
 }
