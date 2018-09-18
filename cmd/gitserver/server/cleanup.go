@@ -386,7 +386,7 @@ func getRecloneTime(gitDir string) (time.Time, error) {
 		now := time.Now()
 		cmd := exec.Command("git", "config", "--add", "sourcegraph.recloneTimestamp", strconv.FormatInt(time.Now().Unix(), 10))
 		cmd.Dir = gitDir
-		if err := cmd.Run(); err != nil {
+		if _, err := cmd.Output(); err != nil {
 			return now, errors.Wrap(wrapCmdError(cmd, err), "failed to update recloneTimestamp")
 		}
 		return now, nil
@@ -421,8 +421,9 @@ func randDuration(d time.Duration) time.Duration {
 	return time.Duration(rand.Int63n(int64(d)))
 }
 
-// wrapCmdError will wrap errors for cmd to include the arguments. If the
-// error is an exec.ExitError it will also include the stderr it captures.
+// wrapCmdError will wrap errors for cmd to include the arguments. If the error
+// is an exec.ExitError and cmd was invoked with Output(), it will also include
+// the captured stderr.
 func wrapCmdError(cmd *exec.Cmd, err error) error {
 	if err == nil {
 		return nil
