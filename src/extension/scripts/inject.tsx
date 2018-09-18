@@ -20,6 +20,9 @@ import { injectBitbucketServer } from '../../libs/bitbucket/inject'
 import { injectGitHubApplication } from '../../libs/github/inject'
 import { injectPhabricatorApplication } from '../../libs/phabricator/app'
 import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
+import { assertEnv } from '../envAssertion'
+
+assertEnv('CONTENT')
 
 /**
  * Main entry point into browser extension.

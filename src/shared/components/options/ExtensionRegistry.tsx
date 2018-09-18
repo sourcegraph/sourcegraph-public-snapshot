@@ -7,10 +7,10 @@ import {
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { BrowserSettingsEditor } from '../../../extension/scripts/extensions'
 import { createExtensionsContextController } from '../../../shared/backend/extensions'
 import { GQL } from '../../../types/gqlschema'
 import { sourcegraphUrl } from '../../util/context'
+import { BrowserSettingsEditor } from './BrowserSettingsEditor'
 
 interface OptionsPageProps extends RouteComponentProps<{}> {}
 interface OptionsPageState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {}

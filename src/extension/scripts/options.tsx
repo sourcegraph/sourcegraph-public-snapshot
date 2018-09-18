@@ -6,6 +6,9 @@ import * as React from 'react'
 import { render } from 'react-dom'
 import storage from '../../browser/storage'
 import { OptionsDashboard } from '../../shared/components/options/OptionsDashboard'
+import { assertEnv } from '../envAssertion'
+
+assertEnv('OPTIONS')
 
 const inject = () => {
     const injectDOM = document.createElement('div')

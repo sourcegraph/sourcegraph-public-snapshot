@@ -7,6 +7,8 @@ const buildEntry = (...files) => files.map(file => path.join(__dirname, file))
 
 const contentEntry = '../src/config/content.entry.js'
 const backgroundEntry = '../src/config/background.entry.js'
+const linkEntry = '../src/config/link.entry.js'
+const optionsEntry = '../src/config/options.entry.js'
 const pageEntry = '../src/config/page.entry.js'
 const extEntry = '../src/config/extension.entry.js'
 
@@ -20,9 +22,8 @@ const babelLoader: webpack.RuleSetUseItem = {
 export default {
     entry: {
         background: buildEntry(extEntry, backgroundEntry, '../src/extension/scripts/background.tsx'),
-        link: buildEntry(extEntry, contentEntry, '../src/extension/scripts/link.tsx'),
-        options: buildEntry(extEntry, backgroundEntry, '../src/extension/scripts/options.tsx'),
-        extensions: buildEntry(extEntry, backgroundEntry, '../src/extension/scripts/extensions.tsx'),
+        link: buildEntry(extEntry, linkEntry, '../src/extension/scripts/link.tsx'),
+        options: buildEntry(extEntry, optionsEntry, '../src/extension/scripts/options.tsx'),
         inject: buildEntry(extEntry, contentEntry, '../src/extension/scripts/inject.tsx'),
         phabricator: buildEntry(pageEntry, '../src/libs/phabricator/extension.tsx'),
 

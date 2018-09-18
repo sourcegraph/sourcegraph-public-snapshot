@@ -1,4 +1,7 @@
 import storage from '../../browser/storage'
+import { assertEnv } from '../envAssertion'
+
+assertEnv('LINK')
 
 const searchParams = new URLSearchParams(window.location.search)
 

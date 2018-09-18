@@ -1,10 +1,10 @@
 // We want to polyfill first.
-import '../../config/polyfill'
+import '../../../config/polyfill'
 
 import * as React from 'react'
 import { Button, FormGroup, Input, Label } from 'reactstrap'
 import { Subscription } from 'rxjs'
-import storage from '../../browser/storage'
+import storage from '../../../browser/storage'
 
 interface State {
     clientSettings: string

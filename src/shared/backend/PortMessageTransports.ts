@@ -7,7 +7,7 @@ import {
     MessageReader,
     MessageWriter,
 } from 'sourcegraph/module/protocol/jsonrpc2/transport'
-import { ExtensionConnectionInfo } from '../../extension/scripts/background'
+import { ExtensionConnectionInfo } from '../messaging'
 
 class PortMessageReader extends AbstractMessageReader implements MessageReader {
     private pending: Message[] = []
