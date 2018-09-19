@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -17,6 +18,17 @@ import (
 //
 // For a detailed overview of the schema, see schema.md.
 type discussionComments struct{}
+
+// ErrCommentNotFound is the error returned by Discussions methods to indicate
+// that the comment could not be found.
+type ErrCommentNotFound struct {
+	// CommentID is the comment that was not found.
+	CommentID int64
+}
+
+func (e *ErrCommentNotFound) Error() string {
+	return fmt.Sprintf("comment %d not found", e.CommentID)
+}
 
 func (c *discussionComments) Create(ctx context.Context, newComment *types.DiscussionComment) (*types.DiscussionComment, error) {
 	if Mocks.DiscussionComments.Create != nil {
@@ -93,6 +105,19 @@ func (c *discussionComments) List(ctx context.Context, opts *DiscussionCommentsL
 	conds := c.getListSQL(opts)
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opts.LimitOffset.SQL())
 	return c.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+}
+
+func (c *discussionComments) Get(ctx context.Context, commentID int64) (*types.DiscussionComment, error) {
+	comments, err := c.List(ctx, &DiscussionCommentsListOptions{
+		CommentID: &commentID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(comments) == 0 {
+		return nil, &ErrCommentNotFound{CommentID: commentID}
+	}
+	return comments[0], nil
 }
 
 func (c *discussionComments) Count(ctx context.Context, opts *DiscussionCommentsListOptions) (int, error) {
