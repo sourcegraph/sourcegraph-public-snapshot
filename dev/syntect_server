@@ -4,6 +4,15 @@ set -euf -o pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
+if [[ ${USE_SYNTECT_SERVER_FROM_PATH-} == t* ]]; then
+    export QUIET='true'
+    export ROCKET_LIMITS='{json=10485760}'
+    export ROCKET_ENV="production"
+    export ROCKET_PORT=9238
+    export ROCKET_SECRET_KEY="+SecretKeyIsIrrelevantAndUnusedPleaseIgnore="
+    exec syntect_server
+fi
+
 if [[ -z "${OFFLINE-}" ]] && ! docker pull sourcegraph/syntect_server > /dev/null; then
 	echo
 	echo Unable to pull latest container image for sourcegraph/syntect_server from the server.
