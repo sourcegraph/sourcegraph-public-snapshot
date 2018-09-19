@@ -15,7 +15,7 @@ additional_images=${@:-github.com/sourcegraph/sourcegraph/cmd/frontend}
 server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
 
 ./vendor/.bin/godockerize build --base alpine:3.6 -t ${IMAGE} --go-build-flags="-ldflags" --go-build-flags="-X github.com/sourcegraph/sourcegraph/pkg/version.version=${VERSION}" --env VERSION=${VERSION} \
-    github.com/sourcegraph/sourcegraph/cmd/server \
+    $server_pkg \
     github.com/sourcegraph/sourcegraph/cmd/github-proxy \
     github.com/sourcegraph/sourcegraph/cmd/gitserver \
     github.com/sourcegraph/sourcegraph/cmd/query-runner \
