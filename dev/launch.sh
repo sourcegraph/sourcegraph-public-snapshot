@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # set to true if unset so set -u won't break us
 : ${SOURCEGRAPH_COMBINE_CONFIG:=false}
@@ -96,6 +96,7 @@ export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"
 
 # Make sure chokidar-cli is installed in the background
+printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
 [ -n "${OFFLINE-}" ] || yarn &
 
 if ! ./dev/go-install.sh; then
@@ -115,5 +116,6 @@ type ulimit > /dev/null && ulimit -n 10000 || true
 # Put .bin:node_modules/.bin onto the $PATH
 export PATH="$PWD/.bin:$PWD/node_modules/.bin:$PATH"
 
+printf >&2 "\nStarting all binaries...\n\n"
 export GOREMAN="goreman -f ${PROCFILE:-dev/Procfile}"
 exec $GOREMAN start

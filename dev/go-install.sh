@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # build commands, optionally with or without race detector.
 # a list of every command we know about, to use by default
