@@ -77,6 +77,10 @@ type DiscussionCommentsListOptions struct {
 	// ThreadID, when non-nil, specifies that only comments in this thread ID
 	// should be returned.
 	ThreadID *int64
+
+	// CommentID, when non-nil, specifies that only comments with this ID should
+	// be returned.
+	CommentID *int64
 }
 
 func (c *discussionComments) List(ctx context.Context, opts *DiscussionCommentsListOptions) ([]*types.DiscussionComment, error) {
@@ -111,6 +115,9 @@ func (*discussionComments) getListSQL(opts *DiscussionCommentsListOptions) (cond
 	}
 	if opts.ThreadID != nil {
 		conds = append(conds, sqlf.Sprintf("thread_id=%v", *opts.ThreadID))
+	}
+	if opts.CommentID != nil {
+		conds = append(conds, sqlf.Sprintf("comment_id=%v", *opts.CommentID))
 	}
 	return conds
 }
