@@ -1137,11 +1137,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:67e73cf69c614a0987935802404cdb8dba06bc5936d6c21e39520f3f08ff5b21"
+  digest = "1:db7e12d697352cd97276848cd030c3f719b645f80d0bb8dde12046ba4c411b32"
   name = "github.com/sourcegraph/godockerize"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "cec135d85f51812cec0d77cbbb72bd26f6fb1454"
+  revision = "822339a36b6df5e573e018304a3b2ed0ba2cec0e"
 
 [[projects]]
   branch = "master"

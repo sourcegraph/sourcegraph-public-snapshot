@@ -20,6 +20,11 @@ import (
 	"gopkg.in/urfave/cli.v2"
 )
 
+// Alpine doesn't do point releases, but if you are reading this, 3.8 downloads
+// 3.8.1 or newer, which contains the security fix for this RCE:
+// https://justi.cz/security/2018/09/13/alpine-apk-rce.html
+const baseDockerImage = "alpine:3.8"
+
 func main() {
 	app := &cli.App{
 		Name:    "godockerize",
@@ -40,7 +45,7 @@ func main() {
 					&cli.StringFlag{
 						Name:  "base",
 						Usage: "base Docker image name",
-						Value: "alpine:3.7",
+						Value: baseDockerImage,
 					},
 					&cli.StringSliceFlag{
 						Name:  "env",
