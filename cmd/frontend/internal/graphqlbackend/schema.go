@@ -407,6 +407,16 @@ input DiscussionThreadUpdateInput {
     Delete: Boolean
 }
 
+# Describes an update mutation to an existing comment in a thread.
+input DiscussionCommentUpdateInput {
+    # The ID of the comment to update.
+    CommentID: ID!
+
+    # When non-null, indicates that the thread should be deleted. Only admins
+    # can perform this action.
+    Delete: Boolean
+}
+
 # Mutations for discussions.
 type DiscussionsMutation {
     # Creates a new thread. Returns the new thread.
@@ -417,6 +427,9 @@ type DiscussionsMutation {
 
     # Adds a new comment to a thread. Returns the updated thread.
     addCommentToThread(threadID: ID!, contents: String!): DiscussionThread!
+
+    # Updates an existing comment. Returns the updated thread.
+    updateComment(input: DiscussionCommentUpdateInput!): DiscussionThread!
 }
 
 # Describes options for rendering Markdown.

@@ -8,6 +8,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
@@ -138,6 +139,62 @@ func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, ar
 	}
 	discussions.NotifyNewComment(updatedThread, newComment)
 	return &discussionThreadResolver{t: updatedThread}, nil
+}
+
+func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *struct {
+	Input *struct {
+		CommentID graphql.ID
+		Contents  *string
+		Delete    *bool
+	}
+}) (*discussionThreadResolver, error) {
+	commentID, err := unmarshalDiscussionID(args.Input.CommentID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only signed in users may update a discussion comment.
+	currentUser, err := currentUser(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if currentUser == nil {
+		return nil, errors.New("no current user")
+	}
+
+	var delete bool
+	if args.Input.Delete != nil && *args.Input.Delete {
+		// 🚨 SECURITY: Only site admins can delete discussion comments.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
+		delete = *args.Input.Delete
+	}
+
+	if args.Input.Contents != nil {
+		// 🚨 SECURITY: Only site admins and the comment author can update the contents.
+		comment, err := db.DiscussionComments.Get(ctx, commentID)
+		if err != nil {
+			return nil, err
+		}
+		err = backend.CheckSiteAdminOrSameUser(ctx, comment.AuthorUserID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	comment, err := db.DiscussionComments.Update(ctx, commentID, &db.DiscussionCommentsUpdateOptions{
+		Contents: args.Input.Contents,
+		Delete:   delete,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "DiscussionComments.Update")
+	}
+	thread, err := db.DiscussionThreads.Get(ctx, comment.ThreadID)
+	if err != nil {
+		return nil, errors.Wrap(err, "DiscussionThreads.Get")
+	}
+	return &discussionThreadResolver{t: thread}, nil
 }
 
 // discussionCommentsConnectionResolver resolves a list of discussion comments.
