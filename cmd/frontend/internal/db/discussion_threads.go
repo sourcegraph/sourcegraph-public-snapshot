@@ -160,12 +160,12 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 		if *opts.Archive {
 			archivedAt = &now
 		}
-		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET archived_at=$1 WHERE id=$2", archivedAt, threadID); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET archived_at=$1 WHERE id=$2 AND deleted_at IS NULL", archivedAt, threadID); err != nil {
 			return nil, err
 		}
 	}
 	if anyUpdate {
-		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET updated_at=$1 WHERE id=$2", now, threadID); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
 			return nil, err
 		}
 	}
