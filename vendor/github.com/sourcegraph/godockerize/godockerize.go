@@ -88,13 +88,10 @@ func doBuild(c *cli.Context) error {
 	defer os.RemoveAll(tmpdir)
 
 	fset := token.NewFileSet()
-	packages := []string{}
+	var packages, expose, repos, run, userDirs []string
 	env := c.StringSlice("env")
-	expose := []string{}
 	install := []string{"ca-certificates", "mailcap", "tini"} // mailcap is for /etc/mime.types
-	run := []string{}
 	user := ""
-	userDirs := []string{}
 
 	for i, pkgName := range args.Slice() {
 		pkg, err := build.Import(pkgName, wd, 0)
@@ -112,7 +109,7 @@ func doBuild(c *cli.Context) error {
 			for _, cg := range f.Comments {
 				for _, c := range cg.List {
 					if strings.HasPrefix(c.Text, "//docker:") {
-						parts := strings.SplitN(c.Text[9:], " ", 2)
+						parts := strings.SplitN(c.Text[len("//docker:"):], " ", 2)
 						switch parts[0] {
 						case "env":
 							env = append(env, strings.Fields(parts[1])...)
@@ -120,6 +117,8 @@ func doBuild(c *cli.Context) error {
 							expose = append(expose, strings.Fields(parts[1])...)
 						case "install":
 							install = append(install, strings.Fields(parts[1])...)
+						case "repository":
+							repos = append(repos, strings.Fields(parts[1])...)
 						case "run":
 							run = append(run, parts[1])
 						case "user":
@@ -149,9 +148,16 @@ func doBuild(c *cli.Context) error {
 
 	for _, pkg := range install {
 		if strings.HasSuffix(pkg, "@edge") {
-			fmt.Fprintf(&dockerfile, "  RUN echo -e \"@edge http://dl-cdn.alpinelinux.org/alpine/edge/main\\n@edge http://dl-cdn.alpinelinux.org/alpine/edge/community\" >> /etc/apk/repositories\n")
+			fmt.Fprintf(&dockerfile, `  RUN echo -e "http://dl-cdn.alpinelinux.org/alpine/edge/main\n" >> /etc/apk/repositories && \
+    echo -e "http://dl-cdn.alpinelinux.org/alpine/edge/community\n" >> /etc/apk/repositories
+`)
 			break
 		}
+	}
+	for i := range repos {
+		fmt.Fprintf(&dockerfile, `  RUN echo -e "http://dl-cdn.alpinelinux.org/alpine/%s/main\n" >> /etc/apk/repositories && \
+    echo -e "http://dl-cdn.alpinelinux.org/alpine/%s/community\n" >> /etc/apk/repositories
+`, repos[i], repos[i])
 	}
 	if len(install) != 0 {
 		fmt.Fprintf(&dockerfile, "  RUN apk add --no-cache %s\n", strings.Join(sortedStringSet(install), " "))
