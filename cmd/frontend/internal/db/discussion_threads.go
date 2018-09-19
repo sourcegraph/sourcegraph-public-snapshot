@@ -9,8 +9,11 @@ import (
 	"time"
 
 	"github.com/felixfbecker/stringscore"
+	"github.com/karrick/tparse"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchquery"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
@@ -176,24 +179,184 @@ type DiscussionThreadsListOptions struct {
 
 	// TitleQuery, when non-nil, specifies that only threads whose title
 	// matches this string should be returned.
-	TitleQuery *string
+	TitleQuery    *string
+	NotTitleQuery *string
 
-	// ThreadID, when non-nil, specifies that only the thread with this ID
-	// should be returned. This is the same as DiscussionThreads.Get, except in
-	// the same API format.
-	ThreadID *int64
+	// ThreadIDs, when len() > 0, specifies that only the thread with one of
+	// these IDs should be returned. See also DiscussionThreads.Get.
+	ThreadIDs    []int64
+	NotThreadIDs []int64
 
-	// AuthorUserID, when non-nil, specifies that only threads made by this
+	// AuthorUserID, when len() > 0, specifies that only threads made by this
 	// author should be returned.
-	AuthorUserID *int32
+	AuthorUserIDs    []int32
+	NotAuthorUserIDs []int32
 
 	// TargetRepoID, when non-nil, specifies that only threads that have a repo target and
 	// this repo ID should be returned.
-	TargetRepoID *api.RepoID
+	TargetRepoID    *api.RepoID
+	NotTargetRepoID *api.RepoID
 
 	// TargetRepoPath, when non-nil, specifies that only threads that have a repo target
 	// and this path should be returned.
-	TargetRepoPath *string
+	TargetRepoPath    *string
+	NotTargetRepoPath *string
+
+	// CreatedBefore, when non-nil, specifies that only threads that were
+	// created before this time should be returned.
+	CreatedBefore *time.Time
+	CreatedAfter  *time.Time
+
+	// Whether or not to return results in ascending (oldest first) order. When
+	// false, descending (latest first) order is used.
+	AscendingOrder bool
+}
+
+// SetFromQuery sets the options based on the search query string.
+func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, query string) {
+	userList := func(value string) (users []*types.User) {
+		for _, username := range strings.Fields(value) {
+			username = strings.TrimSpace(strings.TrimPrefix(username, "@"))
+			user, err := Users.GetByUsername(ctx, username)
+			if err != nil {
+				continue
+			}
+			users = append(users, user)
+		}
+		return
+	}
+	userIDsList := func(value string) (users []int32) {
+		for _, user := range userList(value) {
+			users = append(users, user.ID)
+		}
+		return
+	}
+
+	findInvolvedThreadIDs := func(value string) (threadIDs []int64) {
+		set := map[int64]struct{}{}
+		for _, user := range userList(value) {
+			comments, err := DiscussionComments.List(ctx, &DiscussionCommentsListOptions{
+				AuthorUserID: &user.ID,
+			})
+			if err != nil {
+				continue
+			}
+			for _, comment := range comments {
+				if _, ok := set[comment.ThreadID]; !ok {
+					set[comment.ThreadID] = struct{}{}
+					threadIDs = append(threadIDs, comment.ThreadID)
+				}
+			}
+		}
+		return
+	}
+
+	parseTimeOrDuration := func(value string) *time.Time {
+		// Try parsing as RFC3339 / ISO 8601 first.
+		t, err := time.Parse(time.RFC3339, value)
+		if err == nil {
+			return &t
+		}
+
+		// Try parsing as a relative duration, e.g. "3d ago", "3h4m", etc.
+		value = strings.TrimSuffix(value, " ago")
+		t, err = tparse.ParseNow(time.RFC3339, "now-"+value)
+		if err != nil {
+			return nil
+		}
+		return &t
+	}
+
+	operators := map[string]func(value string){
+		// syntax: `title:"some title"` or "title:sometitle"
+		// Primarily exists for the negation mode.
+		"title": func(value string) {
+			opts.TitleQuery = &value
+		},
+		"-title": func(value string) {
+			opts.NotTitleQuery = &value
+		},
+
+		// syntax: "involves:slimsag" or "involves:@slimsag" or "involves:slimsag @jack"
+		"involves": func(value string) {
+			for _, threadID := range findInvolvedThreadIDs(value) {
+				opts.ThreadIDs = append(opts.ThreadIDs, threadID)
+			}
+			if len(opts.ThreadIDs) == 0 {
+				opts.ThreadIDs = []int64{-1}
+			}
+		},
+		"-involves": func(value string) {
+			for _, threadID := range findInvolvedThreadIDs(value) {
+				opts.NotThreadIDs = append(opts.NotThreadIDs, threadID)
+			}
+		},
+
+		// syntax: "author:slimsag" or "author:@slimsag" or `author:"slimsag @jack"`
+		"author": func(value string) {
+			opts.AuthorUserIDs = userIDsList(value)
+			if len(opts.AuthorUserIDs) == 0 {
+				opts.AuthorUserIDs = []int32{-1}
+			}
+		},
+		"-author": func(value string) {
+			opts.NotAuthorUserIDs = userIDsList(value)
+		},
+
+		// syntax: "repo:github.com/gorilla/mux" or "repo:some/repo"
+		// TODO(slimsag:discussions): support list syntax here.
+		"repo": func(value string) {
+			repo, err := Repos.GetByURI(ctx, api.RepoURI(value))
+			if err != nil {
+				tmp := api.RepoID(-1)
+				opts.TargetRepoID = &tmp
+				return
+			}
+			opts.TargetRepoID = &repo.ID
+		},
+		"-repo": func(value string) {
+			repo, err := Repos.GetByURI(ctx, api.RepoURI(value))
+			if err != nil {
+				return
+			}
+			opts.NotTargetRepoID = &repo.ID
+		},
+
+		// syntax: "file:dir/file.go" or "file:something.go"
+		// TODO(slimsag:discussions): support list syntax here.
+		"file": func(value string) {
+			opts.TargetRepoPath = &value
+		},
+		"-file": func(value string) {
+			opts.NotTargetRepoPath = &value
+		},
+
+		// syntax: "file:dir/file.go" or "file:something.go"
+		"before": func(value string) {
+			opts.CreatedBefore = parseTimeOrDuration(value)
+		},
+		"after": func(value string) {
+			opts.CreatedAfter = parseTimeOrDuration(value)
+		},
+
+		// syntax: "order:oldest" OR "order:ascending" etc.
+		"order": func(value string) {
+			value = strings.ToLower(value)
+			opts.AscendingOrder = value == "oldest" || value == "oldest-first" || value == "asc" || value == "ascending"
+		},
+	}
+	remaining, operations := searchquery.Parse(query)
+	for _, operation := range operations {
+		operation, value := operation[0], operation[1]
+		if handler, ok := operators[operation]; ok {
+			handler(value)
+			continue
+		}
+		// Since we don't have an operator for this, consider it part of
+		// the remaining search query.
+		remaining = strings.Join([]string{remaining, operation + ":" + value}, " ")
+	}
+	opts.TitleQuery = &remaining
 }
 
 func (t *discussionThreads) List(ctx context.Context, opts *DiscussionThreadsListOptions) ([]*types.DiscussionThread, error) {
@@ -204,7 +367,11 @@ func (t *discussionThreads) List(ctx context.Context, opts *DiscussionThreadsLis
 		return nil, errors.New("options must not be nil")
 	}
 	conds := t.getListSQL(opts)
-	q := sqlf.Sprintf("WHERE %s ORDER BY id DESC %s", sqlf.Join(conds, "AND"), opts.LimitOffset.SQL())
+	order := "DESC"
+	if opts.AscendingOrder {
+		order = "ASC"
+	}
+	q := sqlf.Sprintf("WHERE %s ORDER BY id "+order+" %s", sqlf.Join(conds, "AND"), opts.LimitOffset.SQL())
 
 	threads, err := t.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -285,17 +452,37 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 	if opts.TitleQuery != nil && strings.TrimSpace(*opts.TitleQuery) != "" {
 		conds = append(conds, sqlf.Sprintf("title LIKE %v", extraFuzzy(*opts.TitleQuery)))
 	}
-	if opts.ThreadID != nil {
-		conds = append(conds, sqlf.Sprintf("id=%v", *opts.ThreadID))
+	if opts.NotTitleQuery != nil && strings.TrimSpace(*opts.NotTitleQuery) != "" {
+		// Using extraFuzzy here would exclude too many results, so instead we
+		// just do prefix/suffix fuzziness for now.
+		conds = append(conds, sqlf.Sprintf("title NOT LIKE %v", "%"+*opts.NotTitleQuery+"%"))
 	}
-	if opts.AuthorUserID != nil {
-		conds = append(conds, sqlf.Sprintf("author_user_id=%v", *opts.AuthorUserID))
+	if len(opts.ThreadIDs) > 0 {
+		conds = append(conds, sqlf.Sprintf("id = ANY(%v)", pq.Array(opts.ThreadIDs)))
+	}
+	if len(opts.NotThreadIDs) > 0 {
+		conds = append(conds, sqlf.Sprintf("id != ANY(%v)", pq.Array(opts.NotThreadIDs)))
+	}
+	if len(opts.AuthorUserIDs) > 0 {
+		conds = append(conds, sqlf.Sprintf("author_user_id = ANY(%v)", pq.Array(opts.AuthorUserIDs)))
+	}
+	if len(opts.NotAuthorUserIDs) > 0 {
+		conds = append(conds, sqlf.Sprintf("author_user_id != ANY(%v)", pq.Array(opts.NotAuthorUserIDs)))
+	}
+	if opts.CreatedBefore != nil {
+		conds = append(conds, sqlf.Sprintf("created_at < %v", *opts.CreatedBefore))
+	}
+	if opts.CreatedAfter != nil {
+		conds = append(conds, sqlf.Sprintf("created_at > %v", *opts.CreatedAfter))
 	}
 
-	if opts.TargetRepoID != nil || opts.TargetRepoPath != nil {
+	if opts.TargetRepoID != nil || opts.TargetRepoPath != nil || opts.NotTargetRepoID != nil || opts.NotTargetRepoPath != nil {
 		targetRepoConds := []*sqlf.Query{}
 		if opts.TargetRepoID != nil {
-			targetRepoConds = append(targetRepoConds, sqlf.Sprintf("repo_id=%v", *opts.TargetRepoID))
+			targetRepoConds = append(targetRepoConds, sqlf.Sprintf("repo_id = %v", *opts.TargetRepoID))
+		}
+		if opts.NotTargetRepoID != nil {
+			targetRepoConds = append(targetRepoConds, sqlf.Sprintf("repo_id != %v", *opts.NotTargetRepoID))
 		}
 		if opts.TargetRepoPath != nil {
 			if strings.HasSuffix(*opts.TargetRepoPath, "/**") {
@@ -303,6 +490,14 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 				targetRepoConds = append(targetRepoConds, sqlf.Sprintf("path LIKE %v", match))
 			} else {
 				targetRepoConds = append(targetRepoConds, sqlf.Sprintf("path=%v", *opts.TargetRepoPath))
+			}
+		}
+		if opts.NotTargetRepoPath != nil {
+			if strings.HasSuffix(*opts.NotTargetRepoPath, "/**") {
+				match := strings.TrimSuffix(*opts.NotTargetRepoPath, "/**") + "%"
+				targetRepoConds = append(targetRepoConds, sqlf.Sprintf("path NOT LIKE %v", match))
+			} else {
+				targetRepoConds = append(targetRepoConds, sqlf.Sprintf("path!=%v", *opts.NotTargetRepoPath))
 			}
 		}
 		conds = append(conds, sqlf.Sprintf("id IN (SELECT id FROM discussion_threads_target_repo WHERE %v)", sqlf.Join(targetRepoConds, "AND")))

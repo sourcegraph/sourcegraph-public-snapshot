@@ -315,7 +315,9 @@ func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 
 	opt := &db.DiscussionThreadsListOptions{
 		TargetRepoPath: args.TargetRepositoryPath,
-		TitleQuery:     args.Query,
+	}
+	if args.Query != nil {
+		opt.SetFromQuery(ctx, *args.Query)
 	}
 	args.connectionArgs.set(&opt.LimitOffset)
 
@@ -324,14 +326,14 @@ func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 		if err != nil {
 			return nil, err
 		}
-		opt.ThreadID = &threadID
+		opt.ThreadIDs = []int64{threadID}
 	}
 	if args.AuthorUserID != nil {
 		authorUserID, err := unmarshalUserID(*args.AuthorUserID)
 		if err != nil {
 			return nil, err
 		}
-		opt.AuthorUserID = &authorUserID
+		opt.AuthorUserIDs = []int32{authorUserID}
 	}
 
 	count := 0
