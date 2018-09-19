@@ -660,6 +660,14 @@
   revision = "ae77be60afb1dcacde03767a8c37337fad28ac14"
 
 [[projects]]
+  digest = "1:bd692efef70ccff2172a19d6f00e8a548e25c74b50df9cbb6f508c956b093b83"
+  name = "github.com/karrick/tparse"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "b24fe6eb26fe017920b4a500118e7c473d1e37ee"
+  version = "v2.6.0"
+
+[[projects]]
   digest = "1:c3061ae0ec96b4ca16b12df76d3eaf8f89e5efd769556a7bb4ac053fcda72a65"
   name = "github.com/keegancsmith/sqlf"
   packages = ["."]
@@ -1837,6 +1845,7 @@
     "github.com/joho/godotenv",
     "github.com/jteeuwen/go-bindata/go-bindata",
     "github.com/kardianos/osext",
+    "github.com/karrick/tparse",
     "github.com/keegancsmith/sqlf",
     "github.com/keegancsmith/tmpfriend",
     "github.com/kevinburke/differ",
