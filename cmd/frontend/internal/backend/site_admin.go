@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
@@ -53,6 +54,8 @@ func CheckUserIsSiteAdmin(ctx context.Context, userID int32) error {
 //
 // It is used when an action on a user can be performed by site admins and the
 // user themselves, but nobody else.
+//
+// Returns an error containing the name of the given user.
 func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 	if hasAuthzBypass(ctx) {
 		return nil
@@ -61,7 +64,15 @@ func CheckSiteAdminOrSameUser(ctx context.Context, subjectUserID int32) error {
 	if actor.IsAuthenticated() && actor.UID == subjectUserID {
 		return nil
 	}
-	return CheckCurrentUserIsSiteAdmin(ctx)
+	isSiteAdminErr := CheckCurrentUserIsSiteAdmin(ctx)
+	if isSiteAdminErr == nil {
+		return nil
+	}
+	subjectUser, err := db.Users.GetByID(ctx, subjectUserID)
+	if err != nil {
+		return fmt.Errorf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())
+	}
+	return fmt.Errorf("must be authenticated as %s or as an admin (%s)", subjectUser.Username, isSiteAdminErr.Error())
 }
 
 func currentUser(ctx context.Context) (*types.User, error) {

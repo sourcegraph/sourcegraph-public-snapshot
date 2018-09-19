@@ -166,11 +166,15 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		resetMocks()
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return nil, db.ErrNoCurrentUser }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
+			return &types.User{ID: 0, Username: "username"}, nil
+		}
+		defer func() { db.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), nil)
 		result, err := (&schemaResolver{}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
-		if want := backend.ErrNotAuthenticated; err != want {
-			t.Errorf("got err %v, want %v", err, want)
+		if err == nil {
+			t.Error("Expected error, but there was none")
 		}
 		if result != nil {
 			t.Errorf("got result %v, want nil", result)
@@ -182,11 +186,15 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		const differentNonSiteAdminUID = 456
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{ID: differentNonSiteAdminUID}, nil }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
+			return &types.User{ID: 0, Username: "username"}, nil
+		}
+		defer func() { db.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
 		result, err := (&schemaResolver{}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("got err %v, want %v", err, want)
+		if err == nil {
+			t.Error("Expected error, but there was none")
 		}
 		if result != nil {
 			t.Errorf("got result %v, want nil", result)
@@ -277,11 +285,15 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		mockAccessTokens(t)
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return nil, db.ErrNoCurrentUser }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
+			return &types.User{ID: 0, Username: "username"}, nil
+		}
+		defer func() { db.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), nil)
 		result, err := (&schemaResolver{}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
-		if want := backend.ErrNotAuthenticated; err != want {
-			t.Errorf("got err %v, want %v", err, want)
+		if err == nil {
+			t.Error("Expected error, but there was none")
 		}
 		if result != nil {
 			t.Errorf("got result %v, want nil", result)
@@ -294,11 +306,15 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		mockAccessTokens(t)
 		db.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{ID: differentNonSiteAdminUID}, nil }
 		defer func() { db.Mocks.Users.GetByCurrentAuthUser = nil }()
+		db.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
+			return &types.User{ID: 0, Username: "username"}, nil
+		}
+		defer func() { db.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
 		result, err := (&schemaResolver{}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
-		if want := backend.ErrMustBeSiteAdmin; err != want {
-			t.Errorf("got err %v, want %v", err, want)
+		if err == nil {
+			t.Error("Expected error, but there was none")
 		}
 		if result != nil {
 			t.Errorf("got result %v, want nil", result)
