@@ -223,9 +223,13 @@ export function typescript(): ChildProcess {
 }
 
 export function watchTypescript(): ChildProcess {
-    return spawn(__dirname + '/node_modules/.bin/tsc', ['-p', __dirname + '/tsconfig.dist.json', '--watch'], {
-        stdio: 'inherit',
-    })
+    return spawn(
+        __dirname + '/node_modules/.bin/tsc',
+        ['-p', __dirname + '/tsconfig.dist.json', '--watch', '--preserveWatchOutput'],
+        {
+            stdio: 'inherit',
+        }
+    )
 }
 
 const SASS_FILES = './src/**/*.scss'
