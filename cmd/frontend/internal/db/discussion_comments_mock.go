@@ -10,6 +10,7 @@ import (
 
 type MockDiscussionComments struct {
 	Create func(ctx context.Context, newComment *types.DiscussionComment) (*types.DiscussionComment, error)
+	Update func(ctx context.Context, commentID int64, opts *DiscussionCommentsUpdateOptions) (*types.DiscussionComment, error)
 	List   func(ctx context.Context, opts *DiscussionCommentsListOptions) ([]*types.DiscussionComment, error)
 	Count  func(ctx context.Context, opts *DiscussionCommentsListOptions) (int, error)
 }

@@ -78,6 +78,47 @@ func (c *discussionComments) Create(ctx context.Context, newComment *types.Discu
 	return newComment, nil
 }
 
+type DiscussionCommentsUpdateOptions struct {
+	// Contents, when non-nil, specifies the new contents of the comment.
+	Contents *string
+
+	// Delete, when true, specifies that the comment should be deleted. This
+	// operation cannot be undone.
+	Delete bool
+}
+
+func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *DiscussionCommentsUpdateOptions) (*types.DiscussionComment, error) {
+	if Mocks.DiscussionComments.Update != nil {
+		return Mocks.DiscussionComments.Update(ctx, commentID, opts)
+	}
+	if opts == nil {
+		return nil, errors.New("options must not be nil")
+	}
+	now := time.Now()
+
+	// TODO(slimsag:discussions): should be in a transaction
+
+	anyUpdate := false
+	if opts.Contents != nil {
+		anyUpdate = true
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET contents=$1 WHERE id=$2 AND deleted_at IS NULL", *opts.Contents, commentID); err != nil {
+			return nil, err
+		}
+	}
+	if opts.Delete {
+		anyUpdate = true
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
+			return nil, err
+		}
+	}
+	if anyUpdate {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
+			return nil, err
+		}
+	}
+	return c.Get(ctx, commentID)
+}
+
 type DiscussionCommentsListOptions struct {
 	// LimitOffset specifies SQL LIMIT and OFFSET counts. It may be nil (no limit / offset).
 	*LimitOffset
