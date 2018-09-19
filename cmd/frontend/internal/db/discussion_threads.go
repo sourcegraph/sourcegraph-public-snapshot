@@ -125,10 +125,9 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 }
 
 func (t *discussionThreads) Get(ctx context.Context, threadID int64) (*types.DiscussionThread, error) {
-	if Mocks.DiscussionThreads.Get != nil {
-		return Mocks.DiscussionThreads.Get(ctx, threadID)
-	}
-	threads, err := t.getBySQL(ctx, "WHERE (id=$1 AND deleted_at IS NULL) LIMIT 1", threadID)
+	threads, err := t.List(ctx, &DiscussionThreadsListOptions{
+		ThreadIDs: []int64{threadID},
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,6 @@ import (
 
 type MockDiscussionThreads struct {
 	Create func(ctx context.Context, newThread *types.DiscussionThread) (*types.DiscussionThread, error)
-	Get    func(ctx context.Context, threadID int64) (*types.DiscussionThread, error)
 	Update func(ctx context.Context, threadID int64, opts *DiscussionThreadsUpdateOptions) (*types.DiscussionThread, error)
 	List   func(ctx context.Context, opt *DiscussionThreadsListOptions) ([]*types.DiscussionThread, error)
 	Count  func(ctx context.Context, opt *DiscussionThreadsListOptions) (int, error)
@@ -22,15 +21,6 @@ func (s *MockDiscussionThreads) MockCreate_Return(t *testing.T, returns *types.D
 		return returns, returnsErr
 	}
 	return called, calledWith
-}
-
-func (s *MockDiscussionThreads) MockGet_Return(t *testing.T, returns *types.DiscussionThread, returnsErr error) (called *bool) {
-	called = new(bool)
-	s.Get = func(ctx context.Context, threadID int64) (*types.DiscussionThread, error) {
-		*called = true
-		return returns, returnsErr
-	}
-	return called
 }
 
 func (s *MockDiscussionThreads) MockUpdate_Return(t *testing.T, returns *types.DiscussionThread, returnsErr error) (called *bool) {
