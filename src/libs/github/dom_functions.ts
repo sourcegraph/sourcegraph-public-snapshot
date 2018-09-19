@@ -120,9 +120,9 @@ export const diffDomFunctions: DOMFunctions = {
 /**
  * Implementations of the DOM functions for GitHub blob code views
  */
-export const blobDOMFunctions: DOMFunctions = {
+export const singleFileDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: getCodeCellFromTarget,
-    getCodeElementFromLineNumber: (codeView, line, part) => {
+    getCodeElementFromLineNumber: (codeView, line) => {
         const lineNumberCell = codeView.querySelector(`td[data-line-number="${line}"]`)
         if (!lineNumberCell) {
             return null
@@ -154,7 +154,6 @@ export const searchCodeSnippetDOMFunctions: DOMFunctions = {
 
         const codeCell = lineNumberCell.nextElementSibling as HTMLTableCellElement
         // In blob views, the `<td>` is the code element
-        console.log(codeCell)
         return codeCell
     },
     getLineNumberFromCodeElement: (codeElement: HTMLElement): number => {

@@ -292,7 +292,6 @@ export function getPhabricatorState(
                             })
                         })
                         .catch(err => {
-                            console.log('uhoh', err)
                             reject(err)
                         })
                 })

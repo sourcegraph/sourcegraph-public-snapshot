@@ -2,7 +2,7 @@ import { from, Observable, zip } from 'rxjs'
 import { catchError, filter, map, switchMap } from 'rxjs/operators'
 import { DifferentialState, DiffusionState, PhabricatorMode } from '.'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { FileInfo } from '../code_intelligence/inject'
+import { FileInfo } from '../code_intelligence'
 import { resolveDiffRev } from './backend'
 import { getFilepathFromFile, getPhabricatorState } from './util'
 

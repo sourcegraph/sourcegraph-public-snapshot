@@ -1,11 +1,12 @@
 import { AdjustmentDirection, DiffPart, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { map } from 'rxjs/operators'
 import { Position } from 'vscode-languageserver-types'
+import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
+import storage from '../../browser/storage'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
-import { CodeView } from '../code_intelligence/inject'
+import { CodeHost, CodeView } from '../code_intelligence'
 import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo } from './file_info'
-import { convertSpacesToTabs, spacesToTabsAdjustment } from './index'
 
 function createMount(
     findMountLocation: (file: HTMLElement, part?: DiffPart) => HTMLElement
@@ -29,8 +30,10 @@ function createMount(
     }
 }
 
-// Gets the actual text content we care about and returns the number of characters we have stripped
-// so that we can adjust accordingly.
+/**
+ * Gets the actual text content we care about and returns the number of characters we have stripped
+ * so that we can adjust accordingly.
+ */
 const getTextContent = (element: HTMLElement): { textContent: string; adjust: number } => {
     let textContent = element.textContent || ''
     let adjust = 0
@@ -126,3 +129,19 @@ export const phabCodeViews: CodeView[] = [
         toolbarButtonProps,
     },
 ]
+
+function checkIsPhabricator(): Promise<boolean> {
+    if (document.querySelector('.phabricator-wordmark')) {
+        return Promise.resolve(true)
+    }
+
+    return new Promise<boolean>(resolve =>
+        storage.getSync(items => resolve(!!items.enterpriseUrls.find(url => url === window.location.origin)))
+    )
+}
+
+export const phabricatorCodeHost: CodeHost = {
+    codeViews: phabCodeViews,
+    name: 'phabricator',
+    check: checkIsPhabricator,
+}

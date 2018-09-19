@@ -15,13 +15,54 @@ import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { toPrettyBlobURL } from '@sourcegraph/codeintellify/lib/url'
 import * as React from 'react'
 import { render } from 'react-dom'
-import { Observable, of, Subject, Subscription } from 'rxjs'
-import { filter, map, withLatestFrom } from 'rxjs/operators'
+import { animationFrameScheduler, Observable, of, Subject, Subscription } from 'rxjs'
+import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators'
 
 import { createJumpURLFetcher } from '../../shared/backend/lsp'
 import { lspViaAPIXlang } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { eventLogger, sourcegraphUrl } from '../../shared/util/context'
+import { githubCodeHost } from '../github/code_intelligence'
+import { phabricatorCodeHost } from '../phabricator/code_intelligence'
+import { findCodeViews } from './code_views'
+
+/**
+ * Defines a type of code view a given code host can have. It tells us how to
+ * look for the code view and how to do certain things when we find it.
+ */
+export interface CodeView {
+    /** A selector used by `document.querySelectorAll` to find the code view. */
+    selector: string
+    /** The DOMFunctions for the code view. */
+    dom: DOMFunctions
+    /**
+     * Finds or creates a DOM element where we should inject the
+     * `CodeViewToolbar`. This function is responsible for ensuring duplicate
+     * mounts aren't created.
+     */
+    getToolbarMount?: (codeView: HTMLElement, part?: DiffPart) => HTMLElement
+    /**
+     * Resolves the file info for a given code view. It returns an observable
+     * because some code hosts need to resolve this asynchronously. The
+     * observable should only emit once.
+     */
+    resolveFileInfo: (codeView: HTMLElement) => Observable<FileInfo>
+    /**
+     * In some situations, we need to be able to adjust the position going into
+     * and coming out of codeintellify. For example, Phabricator converts tabs
+     * to spaces in it's DOM.
+     */
+    adjustPosition?: PositionAdjuster
+    /** Props for styling the buttons in the `CodeViewToolbar`. */
+    toolbarButtonProps?: ButtonProps
+}
+
+export type CodeViewWithOutSelector = Pick<CodeView, Exclude<keyof CodeView, 'selector'>>
+
+export interface CodeViewResolver {
+    selector: string
+    resolveCodeView: (elem: HTMLElement) => CodeViewWithOutSelector
+}
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost {
@@ -29,10 +70,23 @@ export interface CodeHost {
      * The name of the code host. This will be added as a className to the overlay mount.
      */
     name: string
+
     /**
      * The list of types of code views to try to annotate.
      */
-    codeViews: CodeView[]
+    codeViews?: CodeView[]
+
+    /**
+     * Resolve `CodeView`s from the DOM. This is useful when each code view type
+     * doesn't have a distinct selector for
+     */
+    codeViewResolver?: CodeViewResolver
+
+    /**
+     * Checks to see if the current context the code is running in is within
+     * the given code host.
+     */
+    check: () => Promise<boolean> | boolean
 }
 
 export interface FileInfo {
@@ -55,7 +109,6 @@ export interface FileInfo {
      * The revision the code view is at. If a `baseRev` is provided, this value is treated as the head rev.
      */
     rev?: string
-
     /**
      * The repo bath for the BASE side of a diff. This is useful for Phabricator
      * staging areas since they are separate repos.
@@ -76,31 +129,6 @@ export interface FileInfo {
 
     headHasFileContents?: boolean
     baseHasFileContents?: boolean
-}
-
-/**
- * Defines a type of code view a given code host can have. It tells us how to
- * look for the code view and how to do certain things when we find it.
- */
-export interface CodeView {
-    /** A selector used by `document.querySelectorAll` to find the code view. */
-    selector: string
-    /** The DOMFunctions for the code view. */
-    dom: DOMFunctions
-    /** Finds or creates a DOM element where we should inject the `CodeViewToolbar`. */
-    getToolbarMount?: (codeView: HTMLElement, part?: DiffPart) => HTMLElement
-    /** Resolves the file info for a given code view. It returns an observable
-     * because some code hosts need to resolve this asynchronously. The
-     * observable should only emit once.
-     */
-    resolveFileInfo: (codeView: HTMLElement) => Observable<FileInfo>
-    /** In some situations, we need to be able to adjust the position going into
-     * and coming out of codeintellify. For example, Phabricator converts tabs
-     * to spaces in it's DOM.
-     */
-    adjustPosition?: PositionAdjuster
-    /** Props for styling the buttons in the `CodeViewToolbar`. */
-    toolbarButtonProps?: ButtonProps
 }
 
 /**
@@ -196,28 +224,26 @@ function initCodeIntelligence(codeHost: CodeHost): { hoverifier: Hoverifier } {
  * ResolvedCodeView attaches an actual code view DOM element that was found on
  * the page to the CodeView type being passed around by this file.
  */
-export interface ResolvedCodeView extends CodeView {
+export interface ResolvedCodeView extends CodeViewWithOutSelector {
     /** The code view DOM element. */
     codeView: HTMLElement
 }
 
-function findCodeViews(codeViewInfos: CodeView[]): Observable<ResolvedCodeView> {
-    return new Observable<ResolvedCodeView>(observer => {
-        for (const info of codeViewInfos) {
-            const elements = document.querySelectorAll<HTMLElement>(info.selector)
-            for (const codeView of elements) {
-                observer.next({ ...info, codeView })
-            }
-        }
-    })
-}
+function handleCodeHost(codeHost: CodeHost): Subscription {
+    const { hoverifier } = initCodeIntelligence(codeHost)
 
-export function injectCodeIntelligence(codeHostInfo: CodeHost): Subscription {
-    const { hoverifier } = initCodeIntelligence(codeHostInfo)
+    const subscriptions = new Subscription()
 
-    return findCodeViews(codeHostInfo.codeViews).subscribe(
-        ({ codeView, dom, resolveFileInfo, adjustPosition, getToolbarMount, toolbarButtonProps }) =>
-            resolveFileInfo(codeView).subscribe(info => {
+    subscriptions.add(
+        of(document.body)
+            .pipe(
+                findCodeViews(codeHost),
+                mergeMap(({ codeView, resolveFileInfo, ...rest }) =>
+                    resolveFileInfo(codeView).pipe(map(info => ({ info, codeView, ...rest })))
+                ),
+                observeOn(animationFrameScheduler)
+            )
+            .subscribe(({ codeView, info, dom, adjustPosition, getToolbarMount, toolbarButtonProps }) => {
                 const resolveContext: ContextResolver = ({ part }) => ({
                     repoPath: part === 'base' ? info.baseRepoPath || info.repoPath : info.repoPath,
                     commitID: part === 'base' ? info.baseCommitID! : info.commitID,
@@ -225,12 +251,16 @@ export function injectCodeIntelligence(codeHostInfo: CodeHost): Subscription {
                     rev: part === 'base' ? info.baseRev || info.baseCommitID! : info.rev || info.commitID,
                 })
 
-                hoverifier.hoverify({
-                    dom,
-                    positionEvents: of(codeView).pipe(findPositionsFromEvents(dom)),
-                    resolveContext,
-                    adjustPosition,
-                })
+                subscriptions.add(
+                    hoverifier.hoverify({
+                        dom,
+                        positionEvents: of(codeView).pipe(findPositionsFromEvents(dom)),
+                        resolveContext,
+                        adjustPosition,
+                    })
+                )
+
+                codeView.classList.add('sg-mounted')
 
                 if (!getToolbarMount) {
                     return
@@ -253,4 +283,32 @@ export function injectCodeIntelligence(codeHostInfo: CodeHost): Subscription {
                 )
             })
     )
+
+    return subscriptions
+}
+
+async function injectCodeIntelligenceToCodeHosts(codeHosts: CodeHost[]): Promise<Subscription> {
+    const subscriptions = new Subscription()
+
+    for (const codeHost of codeHosts) {
+        const isCodeHost = await Promise.resolve(codeHost.check())
+        if (isCodeHost) {
+            subscriptions.add(handleCodeHost(codeHost))
+        }
+    }
+
+    return subscriptions
+}
+
+/**
+ * Injects all code hosts into the page.
+ *
+ * @returns A promise with a subscription containing all subscriptions for code
+ * intelligence. Unsubscribing will clean up subscriptions for hoverify and any
+ * incomplete setup requests.
+ */
+export async function injectCodeIntelligence(): Promise<Subscription> {
+    const codeHosts: CodeHost[] = [githubCodeHost, phabricatorCodeHost]
+
+    return await injectCodeIntelligenceToCodeHosts(codeHosts)
 }

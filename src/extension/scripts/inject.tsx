@@ -17,6 +17,7 @@ import {
 import { featureFlags } from '../../shared/util/featureFlags'
 
 import { injectBitbucketServer } from '../../libs/bitbucket/inject'
+import { injectCodeIntelligence } from '../../libs/code_intelligence'
 import { injectGitHubApplication } from '../../libs/github/inject'
 import { injectPhabricatorApplication } from '../../libs/phabricator/app'
 import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
@@ -37,7 +38,7 @@ function injectApplication(): void {
 
     const href = window.location.href
 
-    const handleGetStorage = (items: StorageItems) => {
+    const handleGetStorage = async (items: StorageItems) => {
         if (items.disableExtension) {
             return
         }
@@ -99,6 +100,14 @@ function injectApplication(): void {
             setSourcegraphUrl(sourcegraphServerUrl)
             injectBitbucketServer()
         }
+
+        if (isGitHub || isPhabricator) {
+            if (await featureFlags.isEnabled('newInject')) {
+                const subscriptions = await injectCodeIntelligence()
+                window.addEventListener('unload', () => subscriptions.unsubscribe())
+            }
+        }
+
         setUseExtensions(items.useExtensions === undefined ? false : items.useExtensions)
     }
 

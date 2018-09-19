@@ -2,30 +2,23 @@ import '../../config/polyfill'
 
 import { setSourcegraphUrl } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
-import { injectCodeIntelligence } from '../code_intelligence/inject'
+import { injectCodeIntelligence } from '../code_intelligence'
 import { getPhabricatorCSS, getSourcegraphURLFromConduit } from './backend'
-import { phabCodeViews } from './code_views'
 import { injectPhabricatorBlobAnnotators } from './inject_old'
 import { expanderListen, metaClickOverride, setupPageLoadListener } from './util'
 
 // NOTE: injectModules is idempotent, so safe to call multiple times on the same page.
-function injectModules(): void {
+async function injectModules(): Promise<void> {
     const extensionMarker = document.createElement('div')
     extensionMarker.id = 'sourcegraph-app-background'
     extensionMarker.style.display = 'none'
     document.body.appendChild(extensionMarker)
 
-    featureFlags
-        .isEnabled('newTooltips')
-        .then(enabled => {
-            if (enabled) {
-                injectCodeIntelligence({ name: 'phabricator', codeViews: phabCodeViews })
-                return
-            }
-
-            injectPhabricatorBlobAnnotators().catch(e => console.error(e))
-        })
-        .catch(err => console.error('could not get feature flag', err))
+    if (await featureFlags.isEnabled('newInject')) {
+        await injectCodeIntelligence()
+    } else {
+        await injectPhabricatorBlobAnnotators()
+    }
 }
 
 export function init(): void {
@@ -38,7 +31,7 @@ export function init(): void {
             // passed the bundle url. Legacy Phabricator extensions inject CSS via the loader.js script
             // so we do not need to do this here.
             if (!window.SOURCEGRAPH_BUNDLE_URL && !window.localStorage.getItem('SOURCEGRAPH_BUNDLE_URL')) {
-                injectModules()
+                injectModules().catch(err => console.error('Unable to inject modules', err))
                 metaClickOverride()
                 expanderListen()
                 return
@@ -58,7 +51,7 @@ export function init(): void {
                             setSourcegraphUrl(sourcegraphUrl)
                             expanderListen()
                             metaClickOverride()
-                            injectModules()
+                            injectModules().catch(err => console.error('Unable to inject modules', err))
                         })
                         .catch(e => {
                             console.error(e)

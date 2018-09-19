@@ -57,6 +57,46 @@ export function createBlobAnnotatorMount(fileContainer: HTMLElement, isBase?: bo
     return mountEl
 }
 
+/**
+ * Creates the mount element for the CodeViewToolbar.
+ */
+export function createCodeViewToolbarMount(fileContainer: HTMLElement): HTMLElement {
+    const className = 'sourcegraph-app-annotator'
+    const existingMount = fileContainer.querySelector('.' + className) as HTMLElement
+    if (existingMount) {
+        return existingMount
+    }
+
+    const mountEl = document.createElement('div')
+    mountEl.style.display = 'inline-flex'
+    mountEl.style.verticalAlign = 'middle'
+    mountEl.style.alignItems = 'center'
+    mountEl.className = className
+
+    const fileActions = fileContainer.querySelector('.file-actions')
+    if (!fileActions) {
+        throw new Error(
+            "File actions not found. Make sure you aren't trying to create " +
+                "a toolbar mount for a code snippet that shouldn't have one"
+        )
+    }
+
+    const buttonGroup = fileActions.querySelector('.BtnGroup')
+    if (buttonGroup && buttonGroup.parentNode && !fileContainer.querySelector('.show-file-notes')) {
+        // blob view
+        buttonGroup.parentNode.insertBefore(mountEl, buttonGroup)
+    } else {
+        // commit & pull request view
+        const note = fileContainer.querySelector('.show-file-notes')
+        if (!note || !note.parentNode) {
+            throw new Error('cannot find toolbar mount location')
+        }
+        note.parentNode.insertBefore(mountEl, note.nextSibling)
+    }
+
+    return mountEl
+}
+
 export function isInlineCommentContainer(file: HTMLElement): boolean {
     return file.classList.contains('inline-review-comment')
 }

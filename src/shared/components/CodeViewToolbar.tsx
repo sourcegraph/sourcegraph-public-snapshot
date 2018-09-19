@@ -10,7 +10,7 @@ import {
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
-import { FileInfo } from '../../libs/code_intelligence/inject'
+import { FileInfo } from '../../libs/code_intelligence'
 import { SimpleProviderFns } from '../backend/lsp'
 import { fetchCurrentUser, fetchSite } from '../backend/server'
 import { CodeIntelStatusIndicator } from './CodeIntelStatusIndicator'

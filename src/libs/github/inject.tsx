@@ -16,14 +16,14 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
 import { isErrorLike } from '@sourcegraph/extensions-client-common/lib/errors'
-import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
-import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import {
     ConfigurationCascadeOrError,
     ConfiguredSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import { identity } from 'lodash'
+import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
+import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
+
 import mermaid from 'mermaid'
 import * as React from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
@@ -31,7 +31,7 @@ import { combineLatest, forkJoin, from, of, Subject } from 'rxjs'
 import { filter, map, take, withLatestFrom } from 'rxjs/operators'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { Disposable } from 'vscode-languageserver'
-import { findElementWithOffset, getTargetLineAndOffset, GitHubBlobUrl } from '.'
+import { GitHubBlobUrl } from '.'
 import storage from '../../browser/storage'
 import { createExtensionsContextController } from '../../shared/backend/extensions'
 import { applyDecoration, createMessageTransports } from '../../shared/backend/extensions'
@@ -44,16 +44,15 @@ import {
     toTextDocumentIdentifier,
 } from '../../shared/backend/lsp'
 import { Alerts } from '../../shared/components/Alerts'
-import { BlobAnnotator } from '../../shared/components/BlobAnnotator'
 import { ConfigureSourcegraphButton } from '../../shared/components/ConfigureSourcegraphButton'
 import { ContextualSourcegraphButton } from '../../shared/components/ContextualSourcegraphButton'
 import { CodeViewToolbar } from '../../shared/components/LegacyCodeViewToolbar'
 import { ServerAuthButton } from '../../shared/components/ServerAuthButton'
 import { SymbolsDropdownContainer } from '../../shared/components/SymbolsDropdownContainer'
 import { WithResolvedRev } from '../../shared/components/WithResolvedRev'
-import { AbsoluteRepoFile, CodeCell, DiffResolvedRevSpec } from '../../shared/repo'
+import { AbsoluteRepoFile, DiffResolvedRevSpec } from '../../shared/repo'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
-import { getTableDataCell, hideTooltip } from '../../shared/repo/tooltips'
+import { hideTooltip } from '../../shared/repo/tooltips'
 import { RepoRevSidebar } from '../../shared/tree/RepoRevSidebar'
 import {
     eventLogger,
@@ -65,11 +64,10 @@ import {
     useExtensions,
 } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
-import { blobDOMFunctions, diffDomFunctions, searchCodeSnippetDOMFunctions } from './dom_functions'
+import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { initSearch } from './search'
 import {
     createBlobAnnotatorMount,
-    getCodeCells,
     getCodeCommentContainers,
     getDeltaFileName,
     getDiffRepoRev,
@@ -77,11 +75,8 @@ import {
     getFileContainers,
     getGitHubState,
     getRepoCodeSearchContainers,
-    isDomSplitDiff,
     parseURL,
 } from './util'
-
-const defaultFilterTarget = () => true
 
 const buttonProps = {
     className: 'btn btn-sm tooltipped tooltipped-n',
@@ -268,7 +263,7 @@ function injectCodeIntelligence(): void {
 
     injectBlobAnnotators(hoverifier, files, lspViaAPIXlang, extensionsContextController, extensionsController)
 
-    injectCodeSnippetAnnotator(hoverifier, getCodeCommentContainers(), '.border.rounded-1.my-2', blobDOMFunctions)
+    injectCodeSnippetAnnotator(hoverifier, getCodeCommentContainers(), '.border.rounded-1.my-2', singleFileDOMFunctions)
     injectCodeSnippetAnnotator(
         hoverifier,
         getRepoCodeSearchContainers(),
@@ -279,15 +274,10 @@ function injectCodeIntelligence(): void {
 
 function inject(): void {
     featureFlags
-        .isEnabled('newTooltips')
+        .isEnabled('newInject')
         .then(isEnabled => {
-            if (isEnabled) {
+            if (!isEnabled) {
                 injectCodeIntelligence()
-            } else {
-                injectBlobAnnotatorsOld()
-
-                injectCodeSnippetAnnotatorOld(getCodeCommentContainers(), '.border.rounded-1.my-2', false)
-                injectCodeSnippetAnnotatorOld(getRepoCodeSearchContainers(), '.d-inline-block', true)
             }
         })
         .catch(err => console.error('could not get feature flag', err))
@@ -397,87 +387,6 @@ function injectFileTree(): void {
     specChanges.next({ repoPath, commitID: gitHubState.rev || '' })
 }
 
-const findTokenCell = (td: HTMLElement, target: HTMLElement) => {
-    let curr = target
-    while (
-        curr.parentElement &&
-        (curr.parentElement === td || curr.parentElement.classList.contains('blob-code-inner'))
-    ) {
-        curr = curr.parentElement
-    }
-    return curr
-}
-
-/**
- * injectCodeSnippetAnnotator annotates the given containers and adds a view file button.
- * @param containers The blob containers that holds the code snippet to be annotated.
- * @param selector The selector of the element to append a "View File" button.
- */
-function injectCodeSnippetAnnotatorOld(
-    containers: HTMLCollectionOf<HTMLElement>,
-    selector: string,
-    isRepoSearch: boolean
-): void {
-    for (const file of Array.from(containers)) {
-        const filePathContainer = file.querySelector(selector)
-        if (!filePathContainer) {
-            continue
-        }
-        const anchors = file.getElementsByTagName('a')
-        let gitHubState: GitHubBlobUrl | undefined
-        for (const anchor of Array.from(anchors)) {
-            const anchorState = getGitHubState(anchor.href) as GitHubBlobUrl
-            if (anchorState) {
-                gitHubState = anchorState
-                break
-            }
-        }
-
-        if (!gitHubState || !gitHubState.owner || !gitHubState.repoName || !gitHubState.rev || !gitHubState.filePath) {
-            continue
-        }
-        const mountEl = document.createElement('div')
-        mountEl.style.display = 'none'
-        mountEl.className = 'sourcegraph-app-annotator'
-        filePathContainer.appendChild(mountEl)
-
-        const getTableElement = () => file.querySelector('table')
-
-        const getCodeCellsCb = () => {
-            const opt = { isDelta: false }
-            const table = getTableElement()
-            const cells: CodeCell[] = []
-            if (!table) {
-                return cells
-            }
-            return getCodeCells(table, opt)
-        }
-
-        render(
-            <WithResolvedRev
-                component={BlobAnnotator}
-                getTableElement={getTableElement}
-                getCodeCells={getCodeCellsCb}
-                getTargetLineAndOffset={getTargetLineAndOffset}
-                findElementWithOffset={findElementWithOffset}
-                findTokenCell={findTokenCell}
-                filterTarget={defaultFilterTarget}
-                getNodeToConvert={identity}
-                fileElement={file}
-                repoPath={`${window.location.host}/${gitHubState.owner}/${gitHubState.repoName}`}
-                rev={gitHubState.rev}
-                filePath={gitHubState.filePath}
-                isPullRequest={false}
-                isSplitDiff={false}
-                isCommit={!isRepoSearch}
-                isBase={false}
-                buttonProps={buttonProps}
-            />,
-            mountEl
-        )
-    }
-}
-
 /**
  * injectCodeSnippetAnnotator annotates the given containers and adds a view file button.
  * @param containers The blob containers that holds the code snippet to be annotated.
@@ -513,7 +422,7 @@ function injectCodeSnippetAnnotator(
         const repoPath = `${window.location.host}/${owner}/${repoName}`
 
         const mount = document.createElement('div')
-        mount.style.display = 'none'
+        // mount.style.display = 'none'
         mount.className = 'sourcegraph-app-annotator'
         filePathContainer.appendChild(mount)
 
@@ -755,8 +664,8 @@ function injectBlobAnnotators(
                 .subscribe(
                     commitID => {
                         hoverifier.hoverify({
-                            dom: blobDOMFunctions,
-                            positionEvents: of(file).pipe(findPositionsFromEvents(blobDOMFunctions)),
+                            dom: singleFileDOMFunctions,
+                            positionEvents: of(file).pipe(findPositionsFromEvents(singleFileDOMFunctions)),
                             resolveContext: () => ({
                                 repoPath,
                                 filePath: filePath!,
@@ -854,256 +763,6 @@ function injectBlobAnnotators(
                                 if ((file as any).isIntersecting && !file.target.classList.contains('annotated')) {
                                     file.target.classList.add('annotated')
                                     addBlobAnnotator(file.target as HTMLElement, hoverifier, simpleProviderFns)
-                                }
-                            }
-                        },
-                        {
-                            rootMargin: '200px',
-                            threshold: 0,
-                        }
-                    )
-                    intersectionObserver.observe(node)
-                }
-            }
-        }
-    })
-    const filebucket = document.getElementById('files')
-    if (!filebucket) {
-        return
-    }
-
-    mutationObserver.observe(filebucket, {
-        childList: true,
-        subtree: true,
-        attributes: false,
-        characterData: false,
-    })
-}
-
-function injectBlobAnnotatorsOld(): void {
-    const { repoPath, isDelta, isPullRequest, rev, isCommit, filePath, position } = parseURL()
-    if (!filePath && !isDelta) {
-        return
-    }
-
-    function addBlobAnnotator(file: HTMLElement): void {
-        const getTableElement = () => file.querySelector('table')
-        const diffLoader = file.querySelector('.js-diff-load-container')
-        if (diffLoader) {
-            const observer = new MutationObserver(() => {
-                const element = diffLoader.querySelector('.diff-table')
-                if (element) {
-                    addBlobAnnotator(file)
-                    observer.disconnect()
-                }
-            })
-            observer.observe(diffLoader, { childList: true })
-        }
-
-        if (!isDelta) {
-            const mount = createBlobAnnotatorMount(file)
-            if (!mount) {
-                return
-            }
-
-            const getCodeCellsCb = () => {
-                const opt = { isDelta: false }
-                const table = getTableElement()
-                const cells: CodeCell[] = []
-                if (!table) {
-                    return cells
-                }
-                return getCodeCells(table, opt)
-            }
-
-            render(
-                <WithResolvedRev
-                    component={BlobAnnotator}
-                    getTableElement={getTableElement}
-                    getCodeCells={getCodeCellsCb}
-                    getTargetLineAndOffset={getTargetLineAndOffset}
-                    findElementWithOffset={findElementWithOffset}
-                    findTokenCell={findTokenCell}
-                    filterTarget={defaultFilterTarget}
-                    getNodeToConvert={identity}
-                    fileElement={file}
-                    repoPath={repoPath}
-                    rev={rev}
-                    filePath={filePath}
-                    isPullRequest={false}
-                    isSplitDiff={false}
-                    isCommit={false}
-                    isBase={false}
-                    buttonProps={buttonProps}
-                    position={position}
-                />,
-                mount
-            )
-            return
-        }
-
-        const { headFilePath, baseFilePath } = getDeltaFileName(file)
-        if (!headFilePath) {
-            console.error('cannot determine file path')
-            return
-        }
-
-        const isSplitDiff = isDomSplitDiff()
-        let baseCommitID: string | undefined
-        let headCommitID: string | undefined
-        let baseRepoPath: string | undefined
-        const deltaRevs = getDiffResolvedRev()
-        if (!deltaRevs) {
-            console.error('cannot determine deltaRevs')
-            return
-        }
-
-        baseCommitID = deltaRevs.baseCommitID
-        headCommitID = deltaRevs.headCommitID
-
-        const deltaInfo = getDiffRepoRev()
-        if (!deltaInfo) {
-            console.error('cannot determine deltaInfo')
-            return
-        }
-
-        baseRepoPath = deltaInfo.baseRepoPath
-
-        const getCodeCellsDiff = (isBase: boolean) => () => {
-            const opt = { isDelta: true, isSplitDiff, isBase }
-            const table = getTableElement()
-            const cells: CodeCell[] = []
-            if (!table) {
-                return cells
-            }
-            return getCodeCells(table, opt)
-        }
-        const getCodeCellsBase = getCodeCellsDiff(true)
-        const getCodeCellsHead = getCodeCellsDiff(false)
-
-        const filterTarget = (isBase: boolean, isSplitDiff: boolean) => (target: HTMLElement) => {
-            const td = getTableDataCell(target)
-            if (!td) {
-                return false
-            }
-
-            if (isSplitDiff) {
-                if (td.classList.contains('empty-cell')) {
-                    return false
-                }
-                // Check the relative position of the <td> element to determine if it is
-                // on the left or right.
-                const previousEl = td.previousElementSibling
-                const isLeft = previousEl === td.parentElement!.firstElementChild
-                if (isBase) {
-                    return isLeft
-                } else {
-                    return !isLeft
-                }
-            }
-
-            if (td.classList.contains('blob-code-deletion') && !isBase) {
-                return false
-            }
-            if (td.classList.contains('blob-code-deletion') && isBase) {
-                return true
-            }
-            if (td.classList.contains('blob-code-addition') && isBase) {
-                return false
-            }
-            if (td.classList.contains('blob-code-addition') && !isBase) {
-                return true
-            }
-            if (isBase) {
-                return false
-            }
-            return true
-        }
-
-        const getNodeToConvert = (td: HTMLTableDataCellElement) => {
-            if (!td.classList.contains('blob-code-inner')) {
-                return td.querySelector('.blob-code-inner') as HTMLElement
-            }
-            return td
-        }
-
-        const mountHead = createBlobAnnotatorMount(file)
-        if (!mountHead) {
-            return
-        }
-
-        render(
-            <WithResolvedRev
-                component={BlobAnnotator}
-                getTableElement={getTableElement}
-                getCodeCells={getCodeCellsHead}
-                getTargetLineAndOffset={getTargetLineAndOffset}
-                findElementWithOffset={findElementWithOffset}
-                findTokenCell={findTokenCell}
-                filterTarget={filterTarget(false, isSplitDiff)}
-                getNodeToConvert={getNodeToConvert}
-                fileElement={file}
-                repoPath={baseRepoPath}
-                rev={headCommitID}
-                filePath={headFilePath}
-                isPullRequest={isPullRequest}
-                isDelta={isDelta}
-                isSplitDiff={isSplitDiff}
-                isCommit={isCommit}
-                isBase={false}
-                buttonProps={buttonProps}
-            />,
-            mountHead
-        )
-
-        const mountBase = createBlobAnnotatorMount(file, true)
-        if (!mountBase) {
-            return
-        }
-
-        render(
-            <WithResolvedRev
-                component={BlobAnnotator}
-                getTableElement={getTableElement}
-                getCodeCells={getCodeCellsBase}
-                getTargetLineAndOffset={getTargetLineAndOffset}
-                findElementWithOffset={findElementWithOffset}
-                findTokenCell={findTokenCell}
-                filterTarget={filterTarget(true, isSplitDiff)}
-                getNodeToConvert={getNodeToConvert}
-                fileElement={file}
-                repoPath={baseRepoPath}
-                rev={baseCommitID}
-                filePath={baseFilePath || headFilePath}
-                isPullRequest={isPullRequest}
-                isDelta={isDelta}
-                isSplitDiff={isSplitDiff}
-                isCommit={isCommit}
-                isBase={true}
-                buttonProps={buttonProps}
-            />,
-            mountBase
-        )
-    }
-
-    // Get first loaded files and annotate them.
-    const files = getFileContainers()
-    for (const file of Array.from(files)) {
-        addBlobAnnotator(file as HTMLElement)
-    }
-    const mutationObserver = new MutationObserver(mutations => {
-        for (const mutation of mutations) {
-            const nodes = Array.prototype.slice.call(mutation.addedNodes)
-            for (const node of nodes) {
-                if (node && node.classList && node.classList.contains('file') && node.classList.contains('js-file')) {
-                    const intersectionObserver = new IntersectionObserver(
-                        entries => {
-                            for (const file of entries) {
-                                // File is an IntersectionObserverEntry, which has `isIntersecting` as a prop, but TS
-                                // complains that it does not exist.
-                                if ((file as any).isIntersecting && !file.target.classList.contains('annotated')) {
-                                    file.target.classList.add('annotated')
-                                    addBlobAnnotator(file.target as HTMLElement)
                                 }
                             }
                         },
