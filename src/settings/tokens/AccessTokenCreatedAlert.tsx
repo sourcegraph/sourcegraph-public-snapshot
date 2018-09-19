@@ -1,4 +1,4 @@
-import CircleCheckmarkIcon from '@sourcegraph/icons/lib/CircleCheckmark'
+import CheckmarkCircleIcon from 'mdi-react/CheckCircleIcon'
 import * as React from 'react'
 import { AccessTokenScopes } from '../../auth/accessToken'
 import * as GQL from '../../backend/graphqlschema'
@@ -19,7 +19,7 @@ export class AccessTokenCreatedAlert extends React.PureComponent<AccessTokenCrea
         return (
             <div className={`access-token-created-alert ${this.props.className}`}>
                 <p>
-                    <CircleCheckmarkIcon className="icon-inline" /> Copy the new access token now. You won't be able to
+                    <CheckmarkCircleIcon className="icon-inline" /> Copy the new access token now. You won't be able to
                     see it again.
                 </p>
                 <CopyableText text={this.props.tokenSecret} size={48} />

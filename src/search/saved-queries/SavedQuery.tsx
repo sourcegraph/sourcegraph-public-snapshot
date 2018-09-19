@@ -1,6 +1,6 @@
-import PencilIcon from '@sourcegraph/icons/lib/Pencil'
 import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import PencilIcon from 'mdi-react/PencilIcon'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { startWith, switchMap, withLatestFrom } from 'rxjs/operators'

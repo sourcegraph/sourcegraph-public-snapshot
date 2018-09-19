@@ -1,4 +1,4 @@
-import ThumbTackIcon from '@sourcegraph/icons/lib/ThumbTack'
+import PinIcon from 'mdi-react/PinIcon'
 import * as React from 'react'
 import { SavedQueryRow } from './SavedQueryRow'
 
@@ -32,7 +32,7 @@ export const ExampleSearch = (props: Props) => {
             actions={
                 <div className="saved-query-row__actions">
                     <button className="btn btn-icon action" onClick={handleSave}>
-                        <ThumbTackIcon className="icon-inline" />
+                        <PinIcon className="icon-inline" />
                         Save
                     </button>
                 </div>

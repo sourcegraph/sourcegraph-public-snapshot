@@ -1,6 +1,6 @@
-import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
 import AddIcon from 'mdi-react/AddIcon'
+import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import {
@@ -93,7 +93,7 @@ export const UserAccountSidebar: React.SFC<UserAccountSidebarProps> = props => {
             )}
             {!siteAdminViewingOtherUser && (
                 <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
-                    <FeedIcon className="icon-inline" /> API console
+                    <ConsoleIcon className="icon-inline" /> API console
                 </Link>
             )}
             {!siteAdminViewingOtherUser && (

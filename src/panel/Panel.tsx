@@ -1,5 +1,5 @@
-import NoIcon from '@sourcegraph/icons/lib/No'
 import * as H from 'history'
+import CancelIcon from 'mdi-react/CancelIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { ReplaySubject, Subject, Subscription, Unsubscribable } from 'rxjs'
@@ -172,7 +172,7 @@ export class Panel extends React.PureComponent<Props, State> {
                     </TabsWithURLViewStatePersistence>
                 ) : (
                     <div className="panel__empty">
-                        <NoIcon className="icon-inline" /> Nothing to show here
+                        <CancelIcon className="icon-inline" /> Nothing to show here
                     </div>
                 )}
             </div>

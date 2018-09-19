@@ -1,5 +1,5 @@
-import { CircleCheckmark as CircleCheckmarkIcon } from '@sourcegraph/icons/lib/CircleCheckmark'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -69,7 +69,7 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
     let Icon: React.ComponentType<{ className?: string }>
     let iconClassName: string
     if (indexedRef.indexed && indexedRef.current) {
-        Icon = CircleCheckmarkIcon
+        Icon = CheckCircleIcon
         iconClassName = 'current'
     } else {
         Icon = LoaderIcon

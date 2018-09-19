@@ -1,11 +1,11 @@
 import CalculatorIcon from '@sourcegraph/icons/lib/Calculator'
 import DirectionalSign from '@sourcegraph/icons/lib/DirectionalSign'
-import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
+import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import * as GQL from '../../backend/graphqlschema'
 import { ServerBanner } from '../../marketing/ServerBanner'
@@ -80,7 +80,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                             data-tooltip={props.results.timedout.map(repo => repo.name).join('\n')}
                         >
                             <span>
-                                <HourglassIcon className="icon-inline" /> {props.results.timedout.length}{' '}
+                                <TimerSandIcon className="icon-inline" /> {props.results.timedout.length}{' '}
                                 {pluralize('repository', props.results.timedout.length, 'repositories')} timed out
                                 (reload to try again, or specify a longer "timeout:" in your query)
                             </span>

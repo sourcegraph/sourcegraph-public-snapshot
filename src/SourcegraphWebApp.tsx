@@ -8,8 +8,8 @@ import {
     ConfiguredSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import ServerIcon from '@sourcegraph/icons/lib/Server'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'

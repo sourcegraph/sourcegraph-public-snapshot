@@ -1,10 +1,10 @@
 import { ActionItem } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsContainer'
-import BookClosedIcon from '@sourcegraph/icons/lib/BookClosed'
-import StarIcon from '@sourcegraph/icons/lib/Star'
+import BookOpenIcon from 'mdi-react/BookOpenIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import LinkIcon from 'mdi-react/LinkIcon'
 import SquareEditOutlineIcon from 'mdi-react/SquareEditOutlineIcon'
+import StarIcon from 'mdi-react/StarIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { fromEvent, merge, Subscription } from 'rxjs'
@@ -70,7 +70,7 @@ export class HelpPopover extends React.Component<Props> {
                         href="https://about.sourcegraph.com/docs"
                         target="_blank"
                     >
-                        <BookClosedIcon className="icon-inline" /> Sourcegraph documentation
+                        <BookOpenIcon className="icon-inline" /> Sourcegraph documentation
                     </a>
                     <a
                         className="list-group-item list-group-item-action px-3 py-2"

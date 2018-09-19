@@ -1,4 +1,4 @@
-import FeedIcon from '@sourcegraph/icons/lib/Feed'
+import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -42,7 +42,7 @@ export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, 
         ))}
 
         <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
-            <FeedIcon className="icon-inline" />
+            <ConsoleIcon className="icon-inline" />
             API console
         </Link>
         <a href="/-/debug/" className={SIDEBAR_BUTTON_CLASS}>

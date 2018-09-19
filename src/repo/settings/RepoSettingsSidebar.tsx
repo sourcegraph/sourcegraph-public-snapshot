@@ -1,4 +1,4 @@
-import FeedIcon from '@sourcegraph/icons/lib/Feed'
+import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import * as GQL from '../../backend/graphqlschema'
@@ -46,7 +46,7 @@ export const RepoSettingsSidebar: React.SFC<Props> = (props: Props) =>
                 </div>
             </div>
             <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
-                <FeedIcon className="icon-inline" />
+                <ConsoleIcon className="icon-inline" />
                 API console
             </Link>
         </div>

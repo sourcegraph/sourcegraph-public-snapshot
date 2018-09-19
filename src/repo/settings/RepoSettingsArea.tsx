@@ -1,6 +1,6 @@
-import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -78,7 +78,7 @@ export class RepoSettingsArea extends React.Component<Props> {
         if (!this.state.repo.viewerCanAdminister) {
             return (
                 <HeroPage
-                    icon={NoEntryIcon}
+                    icon={DoNotDisturbIcon}
                     title="Forbidden"
                     subtitle="You are not authorized to view or change this repository's settings."
                 />

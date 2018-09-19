@@ -1,12 +1,11 @@
-import HourglassIcon from '@sourcegraph/icons/lib/Hourglass'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import RepoIcon from '@sourcegraph/icons/lib/Repo'
-import ReportIcon from '@sourcegraph/icons/lib/Report'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import FileIcon from 'mdi-react/FileIcon'
 import SearchIcon from 'mdi-react/SearchIcon'
+import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
@@ -310,7 +309,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                     {results.alert ? (
                                         <div className="alert alert-info">
                                             <h3>
-                                                <ReportIcon className="icon-inline" /> {results.alert.title}
+                                                <AlertCircleIcon className="icon-inline" /> {results.alert.title}
                                             </h3>
                                             <p>{results.alert.description}</p>
                                             {results.alert.proposedQueries && (
@@ -340,7 +339,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                             /* No results, but timeout hit */
                                             <div className="alert alert-warning">
                                                 <h3>
-                                                    <HourglassIcon className="icon-inline" /> Search timed out
+                                                    <TimerSandIcon className="icon-inline" /> Search timed out
                                                 </h3>
                                                 {this.renderRecommendations([
                                                     <>

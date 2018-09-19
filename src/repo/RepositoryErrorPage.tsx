@@ -1,8 +1,8 @@
-import CircleCheckmarkIcon from '@sourcegraph/icons/lib/CircleCheckmark'
 import Loader from '@sourcegraph/icons/lib/Loader'
-import NoEntryIcon from '@sourcegraph/icons/lib/NoEntry'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
@@ -217,7 +217,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
         let Icon: React.ComponentType
         if (this.props.error === 'disabled') {
             title = 'Repository disabled'
-            Icon = NoEntryIcon
+            Icon = DoNotDisturbIcon
         } else {
             title = 'Repository not found'
             Icon = MapSearchIcon
@@ -294,10 +294,10 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                             onClick={this.enableRepository}
                                             disabled={this.state.enabledOrError === 'loading'}
                                         >
-                                            {this.state.enabledOrError === 'loading' ? (
+                                            {this.state.enabledOrError !== 'loading' ? (
                                                 <Loader className="icon-inline" />
                                             ) : (
-                                                <CircleCheckmarkIcon className="icon-inline" />
+                                                <CheckCircleIcon className="icon-inline" />
                                             )}{' '}
                                             Enable repository
                                         </button>

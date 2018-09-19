@@ -1,8 +1,8 @@
-import InvitationIcon from '@sourcegraph/icons/lib/Invitation'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -303,7 +303,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                         {this.state.loading === 'inviteUserToOrganization' ? (
                                             <LoaderIcon className="icon-inline" />
                                         ) : (
-                                            <InvitationIcon className="icon-inline" />
+                                            <EmailOpenOutlineIcon className="icon-inline" />
                                         )}{' '}
                                         {emailInvitesEnabled
                                             ? this.viewerCanAddUserToOrganization
