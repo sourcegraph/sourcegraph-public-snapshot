@@ -1369,9 +1369,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e0140c0c868c6e0f01c0380865194592c011fe521d6e12d78bfd33e756fe018a"
+  digest = "1:c313aef534e493304f3666fbd24dca5932ebf776a82b7a40f961c9355794a1b1"
   name = "golang.org/x/sync"
-  packages = ["semaphore"]
+  packages = [
+    "errgroup",
+    "semaphore",
+  ]
   pruneopts = "NUT"
   revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
 
@@ -1904,6 +1907,7 @@
     "golang.org/x/net/html/charset",
     "golang.org/x/net/trace",
     "golang.org/x/oauth2",
+    "golang.org/x/sync/errgroup",
     "golang.org/x/sys/unix",
     "golang.org/x/time/rate",
     "golang.org/x/tools/cmd/stringer",

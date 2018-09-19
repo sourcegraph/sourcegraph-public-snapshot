@@ -7,10 +7,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
 	"time"
 
 	pkgerrors "github.com/pkg/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 // usingGoremanDev is whether we are running goreman in dev/launch.sh
@@ -43,34 +43,24 @@ func restartGoremanDev() error {
 	}
 
 	runCommand := func(command string, processes ...string) error {
-		var (
-			wg  sync.WaitGroup
-			mu  sync.Mutex
-			err error
-		)
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+		group, ctx := errgroup.WithContext(context.Background())
 		for _, proc := range processes {
-			wg.Add(1)
-			go func(proc string) {
-				defer wg.Done()
+			proc := proc
+			group.Go(func() error {
 				args := append(strings.Fields(goreman), "run", command, proc)
 				cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 				cmd.Stdout = os.Stderr
 				cmd.Stderr = os.Stderr
-				if runErr := cmd.Run(); err != nil {
-					if ctx.Err() != nil {
-						return
+				if runErr := cmd.Run(); runErr != nil {
+					if err := ctx.Err(); err != nil {
+						return err
 					}
-					mu.Lock()
-					defer mu.Unlock()
-					err = pkgerrors.Wrapf(err, "process %s: %s", proc, runErr)
-					cancel()
+					return pkgerrors.Wrap(runErr, "process "+proc)
 				}
-			}(proc)
+				return nil
+			})
 		}
-		wg.Wait()
-		if err != nil {
+		if err := group.Wait(); err != nil {
 			return fmt.Errorf("failed to run %q command on all processes: %s", command, err)
 		}
 		return nil
