@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
@@ -152,7 +153,7 @@ func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *
 	}
 	if opts.Report != nil {
 		anyUpdate = true
-		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET reports=append_array(reports,$1) WHERE id=$2 AND deleted_at IS NULL", *opts.Report, commentID); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET reports=ARRAY_APPEND(reports,$1) WHERE id=$2 AND deleted_at IS NULL", *opts.Report, commentID); err != nil {
 			return nil, err
 		}
 	}
@@ -166,6 +167,9 @@ func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *
 		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
 			return nil, err
 		}
+	}
+	if opts.Delete {
+		return nil, nil
 	}
 	return c.Get(ctx, commentID)
 }
@@ -237,7 +241,7 @@ func (*discussionComments) getListSQL(opts *DiscussionCommentsListOptions) (cond
 		conds = append(conds, sqlf.Sprintf("thread_id=%v", *opts.ThreadID))
 	}
 	if opts.CommentID != nil {
-		conds = append(conds, sqlf.Sprintf("comment_id=%v", *opts.CommentID))
+		conds = append(conds, sqlf.Sprintf("id=%v", *opts.CommentID))
 	}
 	if opts.Reported {
 		conds = append(conds, sqlf.Sprintf("array_length(reports,1) > 0"))
@@ -282,7 +286,7 @@ func (*discussionComments) getBySQL(ctx context.Context, query string, args ...i
 			&comment.Contents,
 			&comment.CreatedAt,
 			&comment.UpdatedAt,
-			&comment.Reports,
+			pq.Array(&comment.Reports),
 		)
 		if err != nil {
 			return nil, err

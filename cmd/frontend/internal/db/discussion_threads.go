@@ -194,6 +194,9 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 			return nil, err
 		}
 	}
+	if opts.Delete {
+		return nil, nil
+	}
 	return t.Get(ctx, threadID)
 }
 
