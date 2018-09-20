@@ -410,18 +410,18 @@ input DiscussionThreadUpdateInput {
 # Describes an update mutation to an existing comment in a thread.
 input DiscussionCommentUpdateInput {
     # The ID of the comment to update.
-    CommentID: ID!
+    commentID: ID!
 
     # When non-null, indicates that the thread should be deleted. Only admins
     # can perform this action.
-    Delete: Boolean
+    delete: Boolean
 
     # When non-null, reports the comment with the specified reason.
-    Report: String
+    report: String
 
     # When non-null, indicates that the reports on the thread should be
     # cleared. Only admins can perform this action.
-    ClearReports: Boolean
+    clearReports: Boolean
 }
 
 # Mutations for discussions.
