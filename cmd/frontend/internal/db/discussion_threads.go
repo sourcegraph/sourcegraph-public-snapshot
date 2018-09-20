@@ -140,6 +140,10 @@ func (t *discussionThreads) Get(ctx context.Context, threadID int64) (*types.Dis
 type DiscussionThreadsUpdateOptions struct {
 	// Archive, when non-nil, specifies whether the thread is archived or not.
 	Archive *bool
+
+	// Delete, when true, specifies that the comment should be deleted. This
+	// operation cannot be undone.
+	Delete bool
 }
 
 func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *DiscussionThreadsUpdateOptions) (*types.DiscussionThread, error) {
@@ -161,6 +165,12 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 			archivedAt = &now
 		}
 		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET archived_at=$1 WHERE id=$2 AND deleted_at IS NULL", archivedAt, threadID); err != nil {
+			return nil, err
+		}
+	}
+	if opts.Delete {
+		anyUpdate = true
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
 			return nil, err
 		}
 	}
@@ -428,21 +438,6 @@ func (t *discussionThreads) fuzzyFilterThreads(opts *DiscussionThreadsListOption
 		})
 	}
 	return threads
-}
-
-func (t *discussionThreads) Delete(ctx context.Context, threadID int64) error {
-	res, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", threadID)
-	if err != nil {
-		return err
-	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if rows == 0 {
-		return &ErrThreadNotFound{ThreadID: threadID}
-	}
-	return nil
 }
 
 func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds []*sqlf.Query) {

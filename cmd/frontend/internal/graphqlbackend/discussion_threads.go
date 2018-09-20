@@ -264,26 +264,25 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 		return nil, errors.New("no current user")
 	}
 
+	var delete bool
+	if args.Input.Delete != nil && *args.Input.Delete {
+		// 🚨 SECURITY: Only site admins can delete discussion threads.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
+		delete = *args.Input.Delete
+	}
+
 	threadID, err := unmarshalDiscussionID(args.Input.ThreadID)
 	if err != nil {
 		return nil, err
 	}
 	thread, err := db.DiscussionThreads.Update(ctx, threadID, &db.DiscussionThreadsUpdateOptions{
 		Archive: args.Input.Archive,
+		Delete:  delete,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.Update")
-	}
-
-	if args.Input.Delete != nil {
-		// 🚨 SECURITY: Only site admins can delete discussion threads.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-			return nil, err
-		}
-		if err := db.DiscussionThreads.Delete(ctx, threadID); err != nil {
-			return nil, errors.Wrap(err, "DiscussionThreads.Delete")
-		}
-		return nil, nil
 	}
 	return &discussionThreadResolver{t: thread}, nil
 }

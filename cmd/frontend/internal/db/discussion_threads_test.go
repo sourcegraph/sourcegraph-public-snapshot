@@ -173,7 +173,7 @@ func TestDiscussionThreads_Count(t *testing.T) {
 	}
 
 	// Delete the thread.
-	if err := DiscussionThreads.Delete(ctx, thread.ID); err != nil {
+	if err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionCommentsUpdateOptions{Delete: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -237,7 +237,7 @@ func TestDiscussionThreads_List(t *testing.T) {
 	}
 
 	// Delete the thread.
-	if err := DiscussionThreads.Delete(ctx, thread.ID); err != nil {
+	if err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionCommentsUpdateOptions{Delete: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -292,7 +292,7 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	}
 
 	// Delete thread.
-	if err := DiscussionThreads.Delete(ctx, thread.ID); err != nil {
+	if err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionCommentsUpdateOptions{Delete: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -312,7 +312,7 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	}
 
 	// Can't delete already-deleted thread.
-	err = DiscussionThreads.Delete(ctx, thread.ID)
+	err = DiscussionThreads.Update(ctx, thread.ID, &DiscussionCommentsUpdateOptions{Delete: true})
 	if _, ok := err.(*ErrThreadNotFound); !ok {
 		t.Errorf("got error %v, want thread not found", err)
 	}
