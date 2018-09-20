@@ -71,6 +71,13 @@ func (r *discussionCommentResolver) CreatedAt(ctx context.Context) string {
 func (r *discussionCommentResolver) UpdatedAt(ctx context.Context) string {
 	return r.c.UpdatedAt.Format(time.RFC3339)
 }
+func (r *discussionCommentResolver) Reports(ctx context.Context) []string {
+	// 🚨 SECURITY: Only site admins can read reports.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return []string{}
+	}
+	return r.c.Reports
+}
 
 func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
 	connectionArgs

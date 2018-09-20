@@ -2547,6 +2547,10 @@ type DiscussionComment {
 
     # The date when the discussion thread was last updated.
     updatedAt: String!
+
+    # Reports filed by users about this comment. Only admins will receive a non
+    # empty list of reports.
+    reports: [String!]!
 }
 
 # A list of discussion threads.
