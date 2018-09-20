@@ -207,7 +207,16 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 		}
 	}
 
-	comment, err := db.DiscussionComments.Update(ctx, commentID, &db.DiscussionCommentsUpdateOptions{
+	// Resolve the thread ID of the comment first so we can return the updated
+	// thread later. We must do this now because the comment may be deleted
+	// below (Update may return nil).
+	comment, err := db.DiscussionComments.Get(ctx, commentID)
+	if err != nil {
+		return nil, errors.Wrap(err, "DiscussionComments.Get")
+	}
+	threadID := comment.ThreadID
+
+	_, err = db.DiscussionComments.Update(ctx, commentID, &db.DiscussionCommentsUpdateOptions{
 		Contents:     args.Input.Contents,
 		Delete:       delete,
 		Report:       args.Input.Report,
@@ -216,7 +225,7 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionComments.Update")
 	}
-	thread, err := db.DiscussionThreads.Get(ctx, comment.ThreadID)
+	thread, err := db.DiscussionThreads.Get(ctx, threadID)
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.Get")
 	}
