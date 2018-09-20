@@ -430,7 +430,9 @@ type DiscussionsMutation {
     createThread(input: DiscussionThreadCreateInput!): DiscussionThread!
 
     # Updates an existing thread. Returns the updated thread.
-    updateThread(input: DiscussionThreadUpdateInput!): DiscussionThread!
+    #
+    # Returns null if the thread was deleted.
+    updateThread(input: DiscussionThreadUpdateInput!): DiscussionThread
 
     # Adds a new comment to a thread. Returns the updated thread.
     addCommentToThread(threadID: ID!, contents: String!): DiscussionThread!

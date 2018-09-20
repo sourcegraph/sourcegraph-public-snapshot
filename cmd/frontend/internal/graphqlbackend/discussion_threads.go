@@ -284,6 +284,10 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.Update")
 	}
+	if thread == nil {
+		// deleted
+		return nil, nil
+	}
 	return &discussionThreadResolver{t: thread}, nil
 }
 
