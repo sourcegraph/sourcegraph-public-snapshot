@@ -1,8 +1,13 @@
 import copy from 'copy-to-clipboard'
 import * as H from 'history'
+import CommentCheckIcon from 'mdi-react/CommentCheckIcon'
+import CommentRemoveIcon from 'mdi-react/CommentRemoveIcon'
+import FlagVariantIcon from 'mdi-react/FlagVariantIcon'
 import LinkIcon from 'mdi-react/LinkIcon'
+import SecurityLockIcon from 'mdi-react/SecurityLockIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
+import { Observable } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { Markdown } from '../components/Markdown'
 import { Timestamp } from '../components/time/Timestamp'
@@ -13,6 +18,29 @@ interface Props {
     comment: GQL.IDiscussionComment
     threadID: GQL.ID
     location: H.Location
+
+    /**
+     * Whether or not the user is a site administrator.
+     */
+    isSiteAdmin: boolean
+
+    /**
+     * When specified, a report icon will be displayed inline and this function
+     * will be called when a report has been submitted.
+     */
+    onReport?: (comment: GQL.IDiscussionComment, reason: string) => Observable<void>
+
+    /**
+     * When specified, this function is called to handle the
+     * "Clear reports / mark as read" button clicks.
+     */
+    onClearReports?: (comment: GQL.IDiscussionComment) => Observable<void>
+
+    /**
+     * When specified, this function is called to handle the "delete comment"
+     * button clicks.
+     */
+    onDelete?: (comment: GQL.IDiscussionComment) => Observable<void>
 }
 
 interface State {
@@ -33,7 +61,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element | null {
-        const { location, comment } = this.props
+        const { location, comment, isSiteAdmin, onReport, onClearReports, onDelete } = this.props
         const isTargeted = new URLSearchParams(location.hash).get('commentID') === comment.id
 
         // TODO(slimsag:discussions): ASAP: markdown links, headings, etc lead to #
@@ -71,6 +99,53 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                 {this.state.copiedLink ? 'Copied!' : <LinkIcon className="icon-inline" />}
                             </Link>
                         )}
+
+                        {onReport && (
+                            <a
+                                className="btn btn-link btn-sm discussions-comment__report"
+                                data-tooltip="Report this comment"
+                                href="#"
+                                onClick={this.onReportClick}
+                            >
+                                <FlagVariantIcon className="icon-inline" />
+                            </a>
+                        )}
+                        {isSiteAdmin && (
+                            <span className="discussions-comment__admin">
+                                <SecurityLockIcon className="icon-inline icon-sm" data-tooltip="Admin area" />
+                                {comment.reports.length > 0 && (
+                                    <>
+                                        <span
+                                            className="ml-1 mr-1 discussions-comment__reports"
+                                            data-tooltip={comment.reports.join('\n\n')}
+                                        >
+                                            {comment.reports.length} reports
+                                        </span>
+                                        {}
+                                        {onClearReports && (
+                                            <a
+                                                className="btn btn-link btn-sm discussions-comment__toolbar-btn"
+                                                data-tooltip="Clear reports / mark as good message"
+                                                href="#"
+                                                onClick={this.onClearReportsClick}
+                                            >
+                                                <CommentCheckIcon className="icon-inline" />
+                                            </a>
+                                        )}
+                                    </>
+                                )}
+                                {onDelete && (
+                                    <a
+                                        className="btn btn-link btn-sm discussions-comment__toolbar-btn"
+                                        data-tooltip="Delete comment forever"
+                                        href="#"
+                                        onClick={this.onDeleteClick}
+                                    >
+                                        <CommentRemoveIcon className="icon-inline" />
+                                    </a>
+                                )}
+                            </span>
+                        )}
                     </span>
                 </div>
                 <div className="discussions-comment__content">
@@ -91,6 +166,29 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         setTimeout(() => {
             this.setState({ copiedLink: false })
         }, 1000)
+    }
+
+    private onReportClick: React.MouseEventHandler<HTMLElement> = event => {
+        event.preventDefault()
+        eventLogger.log('ReportCommentButtonClicked')
+        const reason = prompt('Report reason:', 'spam, offensive material, etc')
+        if (!reason) {
+            return
+        }
+        this.props.onReport!(this.props.comment, reason).subscribe(
+            undefined,
+            error => (error ? alert(error) : undefined)
+        )
+    }
+
+    private onClearReportsClick: React.MouseEventHandler<HTMLElement> = event => {
+        event.preventDefault()
+        this.props.onClearReports!(this.props.comment).subscribe(undefined, error => (error ? alert(error) : undefined))
+    }
+
+    private onDeleteClick: React.MouseEventHandler<HTMLElement> = event => {
+        event.preventDefault()
+        this.props.onDelete!(this.props.comment).subscribe(undefined, error => (error ? alert(error) : undefined))
     }
 
     private setScrollToElement = (ref: HTMLElement | null) => {

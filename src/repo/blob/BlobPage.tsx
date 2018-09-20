@@ -90,6 +90,7 @@ interface Props
     history: H.History
     isLightTheme: boolean
     repoID: GQL.ID
+    user: GQL.IUser | null
 }
 
 interface State {

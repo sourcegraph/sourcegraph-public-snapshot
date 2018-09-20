@@ -50,12 +50,33 @@
         padding: 1rem;
     }
 
-    &__share {
+    &__share,
+    &__report {
         color: rgba(130, 150, 196, 0.5);
         margin-left: auto;
         display: flex;
         align-items: center;
         height: 2rem;
+    }
+
+    &__toolbar-btn,
+    &__share,
+    &__report {
+        padding: 0.425rem 0.175rem;
+    }
+
+    &__reports:hover {
+        text-decoration: underline;
+    }
+    &__admin {
+        background: $color-bg-5;
+        color: var(--link-color);
+        height: 100%;
+        display: flex;
+        align-items: center;
+        border-radius: 1rem;
+        padding-left: 0.5rem;
+        padding-right: 0.325rem;
     }
 }
 
@@ -99,6 +120,10 @@
 
         &__share {
             color: $color-light-text-3;
+        }
+
+        &__admin {
+            background: $color-light-bg-3;
         }
     }
 }

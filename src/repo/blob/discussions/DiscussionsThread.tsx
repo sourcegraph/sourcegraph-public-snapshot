@@ -6,7 +6,7 @@ import { Redirect } from 'react-router'
 import { combineLatest, Subject, Subscription, throwError } from 'rxjs'
 import { catchError, delay, distinctUntilChanged, map, repeatWhen, startWith, switchMap, tap } from 'rxjs/operators'
 import * as GQL from '../../../backend/graphqlschema'
-import { addCommentToThread, fetchDiscussionThreadAndComments } from '../../../discussions/backend'
+import { addCommentToThread, fetchDiscussionThreadAndComments, updateComment } from '../../../discussions/backend'
 import { DiscussionsComment } from '../../../discussions/DiscussionsComment'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { asError } from '../../../util/errors'
@@ -22,6 +22,7 @@ interface Props {
     filePath: string
     history: H.History
     location: H.Location
+    user: GQL.IUser | null
 }
 
 interface State {
@@ -80,7 +81,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         // TODO(slimsag:discussions): future: test error state + cleanup CSS
 
         const { error, loading, thread } = this.state
-        const { location, commentID } = this.props
+        const { location, commentID, user } = this.props
 
         // If the thread is loaded, ensure that the URL hash is updated to
         // reflect the line that the discussion was created on.
@@ -105,7 +106,15 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                 {thread && (
                     <div className="discussions-thread__comments">
                         {thread.comments.nodes.map(node => (
-                            <DiscussionsComment key={node.id} {...this.props} comment={node} />
+                            <DiscussionsComment
+                                key={node.id}
+                                {...this.props}
+                                comment={node}
+                                isSiteAdmin={!!user && user.siteAdmin}
+                                onReport={this.onCommentReport}
+                                onClearReports={this.onCommentClearReports}
+                                onDelete={this.onCommentDelete}
+                            />
                         ))}
                         <DiscussionsInput
                             key="input"
@@ -154,4 +163,25 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
             catchError(e => throwError('Error creating comment: ' + asError(e).message))
         )
     }
+
+    private onCommentReport = (comment: GQL.IDiscussionComment, reason: string) =>
+        updateComment({ commentID: comment.id, report: reason }).pipe(
+            tap(thread => this.setState({ thread })),
+            map(thread => void 0),
+            catchError(e => throwError('Error reporting comment: ' + asError(e).message))
+        )
+
+    private onCommentClearReports = (comment: GQL.IDiscussionComment) =>
+        updateComment({ commentID: comment.id, clearReports: true }).pipe(
+            tap(thread => this.setState({ thread })),
+            map(thread => void 0),
+            catchError(e => throwError('Error clearing comment reports: ' + asError(e).message))
+        )
+
+    private onCommentDelete = (comment: GQL.IDiscussionComment) =>
+        updateComment({ commentID: comment.id, delete: true }).pipe(
+            tap(thread => this.setState({ thread })),
+            map(thread => void 0),
+            catchError(e => throwError('Error deleting comment: ' + asError(e).message))
+        )
 }

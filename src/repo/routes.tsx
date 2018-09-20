@@ -115,6 +115,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     location={context.location}
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}
+                                    user={context.user}
                                 />
                             ) : (
                                 <TreePage
