@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -233,6 +234,10 @@ type DiscussionThreadsListOptions struct {
 	// Whether or not to return results in ascending (oldest first) order. When
 	// false, descending (latest first) order is used.
 	AscendingOrder bool
+
+	// Reported, when true, specifies that only threads with at least one
+	// reported comment should be returned.
+	Reported bool
 }
 
 // SetFromQuery sets the options based on the search query string.
@@ -290,6 +295,7 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 		return &t
 	}
 
+	var reported bool
 	operators := map[string]func(value string){
 		// syntax: `title:"some title"` or "title:sometitle"
 		// Primarily exists for the negation mode.
@@ -367,6 +373,10 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 			value = strings.ToLower(value)
 			opts.AscendingOrder = value == "oldest" || value == "oldest-first" || value == "asc" || value == "ascending"
 		},
+
+		"reported": func(value string) {
+			reported, _ = strconv.ParseBool(value)
+		},
 	}
 	remaining, operations := searchquery.Parse(query)
 	for _, operation := range operations {
@@ -380,6 +390,49 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 		remaining = strings.Join([]string{remaining, operation + ":" + value}, " ")
 	}
 	opts.TitleQuery = &remaining
+
+	if reported {
+		// Searching only for reported threads.
+		if len(opts.ThreadIDs) > 0 {
+			// Already have a list of threads we're interested in, e.g. from `involves:slimsag`.
+			// Narrow the list down.
+			var newThreads []int64
+			for _, threadID := range opts.ThreadIDs {
+				reportedComments, err := DiscussionComments.Count(ctx, &DiscussionCommentsListOptions{
+					ThreadID: &threadID,
+					Reported: true,
+				})
+				if err != nil {
+					continue
+				}
+				if reportedComments == 0 {
+					continue
+				}
+				newThreads = append(newThreads, threadID)
+			}
+			opts.ThreadIDs = newThreads
+			if len(opts.ThreadIDs) == 0 {
+				opts.ThreadIDs = []int64{-1}
+			}
+		} else {
+			// We don't have an existing list of threads we're interested in.
+			// Compile it now.
+			comments, _ := DiscussionComments.List(ctx, &DiscussionCommentsListOptions{
+				Reported: true,
+			})
+			set := map[int64]struct{}{}
+			for _, comment := range comments {
+				if _, ok := set[comment.ThreadID]; ok {
+					continue
+				}
+				set[comment.ThreadID] = struct{}{}
+				opts.ThreadIDs = append(opts.ThreadIDs, comment.ThreadID)
+			}
+			if len(opts.ThreadIDs) == 0 {
+				opts.ThreadIDs = []int64{-1}
+			}
+		}
+	}
 }
 
 func (t *discussionThreads) List(ctx context.Context, opts *DiscussionThreadsListOptions) ([]*types.DiscussionThread, error) {

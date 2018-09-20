@@ -86,6 +86,14 @@ type DiscussionCommentsUpdateOptions struct {
 	// operation cannot be undone.
 	Delete bool
 
+	// Report, when non-nil, specifies that the report message string should be
+	// added to the list of reports on this comment.
+	Report *string
+
+	// ClearReports, when true, specifies that the comments reports should be
+	// cleared (e.g. after review by an admin)
+	ClearReports bool
+
 	// noThreadDelete prevents calling DiscussionThreads.Delete when the comment
 	// being deleted is the first comment in the thread. This should ONLY be
 	// used by DiscussionThreads.Delete to avoid circular calls.
@@ -142,6 +150,18 @@ func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *
 			}
 		}
 	}
+	if opts.Report != nil {
+		anyUpdate = true
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET reports=append_array(reports,$1) WHERE id=$2 AND deleted_at IS NULL", *opts.Report, commentID); err != nil {
+			return nil, err
+		}
+	}
+	if opts.ClearReports {
+		anyUpdate = true
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET reports='{}' WHERE id=$1 AND deleted_at IS NULL", commentID); err != nil {
+			return nil, err
+		}
+	}
 	if anyUpdate {
 		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
 			return nil, err
@@ -165,6 +185,9 @@ type DiscussionCommentsListOptions struct {
 	// CommentID, when non-nil, specifies that only comments with this ID should
 	// be returned.
 	CommentID *int64
+
+	// Reported, when true, returns only threads that have at least one report.
+	Reported bool
 }
 
 func (c *discussionComments) List(ctx context.Context, opts *DiscussionCommentsListOptions) ([]*types.DiscussionComment, error) {
@@ -216,6 +239,9 @@ func (*discussionComments) getListSQL(opts *DiscussionCommentsListOptions) (cond
 	if opts.CommentID != nil {
 		conds = append(conds, sqlf.Sprintf("comment_id=%v", *opts.CommentID))
 	}
+	if opts.Reported {
+		conds = append(conds, sqlf.Sprintf("array_length(reports,1) > 0"))
+	}
 	return conds
 }
 
@@ -238,7 +264,8 @@ func (*discussionComments) getBySQL(ctx context.Context, query string, args ...i
 			c.author_user_id,
 			c.contents,
 			c.created_at,
-			c.updated_at
+			c.updated_at,
+			c.reports
 		FROM discussion_comments c `+query, args...)
 	if err != nil {
 		return nil, err
@@ -255,6 +282,7 @@ func (*discussionComments) getBySQL(ctx context.Context, query string, args ...i
 			&comment.Contents,
 			&comment.CreatedAt,
 			&comment.UpdatedAt,
+			&comment.Reports,
 		)
 		if err != nil {
 			return nil, err

@@ -54,4 +54,5 @@ type DiscussionComment struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	DeletedAt    *time.Time
+	Reports      []string
 }
