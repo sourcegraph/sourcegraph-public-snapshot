@@ -148,8 +148,8 @@ func doBuild(c *cli.Context) error {
 
 	for _, pkg := range install {
 		if strings.HasSuffix(pkg, "@edge") {
-			fmt.Fprintf(&dockerfile, `  RUN echo -e "http://dl-cdn.alpinelinux.org/alpine/edge/main\n" >> /etc/apk/repositories && \
-    echo -e "http://dl-cdn.alpinelinux.org/alpine/edge/community\n" >> /etc/apk/repositories
+			fmt.Fprintf(&dockerfile, `  RUN echo -e "@edge http://dl-cdn.alpinelinux.org/alpine/edge/main\n" >> /etc/apk/repositories && \
+    echo -e "@edge http://dl-cdn.alpinelinux.org/alpine/edge/community\n" >> /etc/apk/repositories
 `)
 			break
 		}
