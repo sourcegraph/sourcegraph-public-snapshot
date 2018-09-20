@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -143,9 +144,11 @@ func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, ar
 
 func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *struct {
 	Input *struct {
-		CommentID graphql.ID
-		Contents  *string
-		Delete    *bool
+		CommentID    graphql.ID
+		Contents     *string
+		Delete       *bool
+		Report       *string
+		ClearReports *bool
 	}
 }) (*discussionThreadResolver, error) {
 	commentID, err := unmarshalDiscussionID(args.Input.CommentID)
@@ -171,6 +174,20 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 		delete = *args.Input.Delete
 	}
 
+	var clearReports bool
+	if args.Input.ClearReports != nil && *args.Input.ClearReports {
+		// 🚨 SECURITY: Only site admins can clear reports.
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+			return nil, err
+		}
+		clearReports = *args.Input.ClearReports
+	}
+
+	if args.Input.Report != nil {
+		newReport := fmt.Sprintf("%s\n\nreported by @%s", *args.Input.Report, currentUser.user.Username)
+		args.Input.Report = &newReport
+	}
+
 	if args.Input.Contents != nil {
 		// 🚨 SECURITY: Only site admins and the comment author can update the contents.
 		comment, err := db.DiscussionComments.Get(ctx, commentID)
@@ -184,8 +201,10 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 	}
 
 	comment, err := db.DiscussionComments.Update(ctx, commentID, &db.DiscussionCommentsUpdateOptions{
-		Contents: args.Input.Contents,
-		Delete:   delete,
+		Contents:     args.Input.Contents,
+		Delete:       delete,
+		Report:       args.Input.Report,
+		ClearReports: clearReports,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionComments.Update")
