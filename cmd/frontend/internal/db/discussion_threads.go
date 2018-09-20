@@ -173,6 +173,20 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
 			return nil, err
 		}
+
+		// Mark all comments in the thread as deleted.
+		comments, err := DiscussionComments.List(ctx, &DiscussionCommentsListOptions{
+			ThreadID: &threadID,
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, comment := range comments {
+			_, err := DiscussionComments.Update(ctx, comment.ID, &DiscussionCommentsUpdateOptions{Delete: true})
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	if anyUpdate {
 		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
