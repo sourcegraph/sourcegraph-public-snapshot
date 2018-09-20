@@ -85,6 +85,11 @@ type DiscussionCommentsUpdateOptions struct {
 	// Delete, when true, specifies that the comment should be deleted. This
 	// operation cannot be undone.
 	Delete bool
+
+	// noThreadDelete prevents calling DiscussionThreads.Delete when the comment
+	// being deleted is the first comment in the thread. This should ONLY be
+	// used by DiscussionThreads.Delete to avoid circular calls.
+	noThreadDelete bool
 }
 
 func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *DiscussionCommentsUpdateOptions) (*types.DiscussionComment, error) {
@@ -106,9 +111,35 @@ func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *
 		}
 	}
 	if opts.Delete {
-		anyUpdate = true
-		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
-			return nil, err
+		// Deleting the first comment in a thread implicitly means deleting the thread itself.
+		var (
+			isFirstComment bool
+			threadID       int64
+		)
+		if !opts.noThreadDelete {
+			comment, err := c.Get(ctx, commentID)
+			if err != nil {
+				return nil, err
+			}
+			comments, err := c.List(ctx, &DiscussionCommentsListOptions{
+				ThreadID: &comment.ThreadID,
+			})
+			if err != nil {
+				return nil, err
+			}
+			isFirstComment = comment.ID == comments[0].ID
+			threadID = comment.ThreadID
+		}
+		if isFirstComment {
+			_, err := DiscussionThreads.Update(ctx, threadID, &DiscussionThreadsUpdateOptions{Delete: true})
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			anyUpdate = true
+			if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
+				return nil, err
+			}
 		}
 	}
 	if anyUpdate {

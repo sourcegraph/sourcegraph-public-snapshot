@@ -182,7 +182,7 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 			return nil, err
 		}
 		for _, comment := range comments {
-			_, err := DiscussionComments.Update(ctx, comment.ID, &DiscussionCommentsUpdateOptions{Delete: true})
+			_, err := DiscussionComments.Update(ctx, comment.ID, &DiscussionCommentsUpdateOptions{Delete: true, noThreadDelete: true})
 			if err != nil {
 				return nil, err
 			}
