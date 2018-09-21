@@ -23,7 +23,6 @@ before_install:
 
 install:
   - yarn --frozen-lockfile
-  - yarn cypress install
 
 jobs:
   include:
@@ -40,8 +39,11 @@ jobs:
       env:
         - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
       script:
+        - yarn cypress install
         - yarn run test:e2e
     - stage: release
+      env:
+        - CYPRESS_INSTALL_BINARY=0
       script: semantic-release
 
 stages:
