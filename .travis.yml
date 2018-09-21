@@ -41,8 +41,6 @@ jobs:
       script:
         - yarn run test:e2e
     - stage: release
-      env:
-        - CYPRESS_INSTALL_BINARY=0
       script: semantic-release
 
 stages:
