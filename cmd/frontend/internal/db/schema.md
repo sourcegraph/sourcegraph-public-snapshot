@@ -48,9 +48,11 @@ Indexes:
  created_at     | timestamp with time zone | not null default now()
  updated_at     | timestamp with time zone | not null default now()
  deleted_at     | timestamp with time zone | 
+ reports        | text[]                   | not null default '{}'::text[]
 Indexes:
     "discussion_comments_pkey" PRIMARY KEY, btree (id)
     "discussion_comments_author_user_id_idx" btree (author_user_id)
+    "discussion_comments_reports_array_length_idx" btree (array_length(reports, 1))
     "discussion_comments_thread_id_idx" btree (thread_id)
 Foreign-key constraints:
     "discussion_comments_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
