@@ -205,8 +205,14 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		TargetRepo *discussionThreadTargetRepoInput
 	}
 }) (*discussionThreadResolver, error) {
-	// 🚨 SECURITY: Only signed in users may create discussion threads.
-	currentUser, err := currentUser(ctx)
+	// 🚨 SECURITY: Only signed in users with a verified email may add comments
+	// to a discussion thread.
+	//
+	// The verified email requirement for public instances is a security
+	// measure to prevent spam. For private instances, it is a UX feature
+	// (because we would not be able to send the author of this comment email
+	// notifications anyway).
+	currentUser, err := checkSignedInAndEmailVerified(ctx)
 	if err != nil {
 		return nil, err
 	}

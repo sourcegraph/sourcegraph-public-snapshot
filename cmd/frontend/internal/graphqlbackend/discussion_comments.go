@@ -102,17 +102,42 @@ func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
 	return &discussionCommentsConnectionResolver{opt: opt}, nil
 }
 
-func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, args *struct {
-	ThreadID graphql.ID
-	Contents string
-}) (*discussionThreadResolver, error) {
-	// 🚨 SECURITY: Only signed in users may add comments to a discussion thread.
+// checkSignedInAndEmailVerified returns an error if there is not a user signed
+// in, or if that user does not have at least one verified email address.
+func checkSignedInAndEmailVerified(ctx context.Context) (*userResolver, error) {
 	currentUser, err := currentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if currentUser == nil {
 		return nil, errors.New("no current user")
+	}
+	emails, err := currentUser.Emails(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "Emails")
+	}
+	for _, email := range emails {
+		if email.Verified() {
+			return nil, nil
+		}
+	}
+	return nil, errors.New("account email must be verified to perform this action")
+}
+
+func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, args *struct {
+	ThreadID graphql.ID
+	Contents string
+}) (*discussionThreadResolver, error) {
+	// 🚨 SECURITY: Only signed in users with a verified email may add comments
+	// to a discussion thread.
+	//
+	// The verified email requirement for public instances is a security
+	// measure to prevent spam. For private instances, it is a UX feature
+	// (because we would not be able to send the author of this comment email
+	// notifications anyway).
+	currentUser, err := checkSignedInAndEmailVerified(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	if strings.TrimSpace(args.Contents) == "" {
