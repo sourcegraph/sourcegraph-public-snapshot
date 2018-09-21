@@ -472,11 +472,6 @@ func (c *serverProxyConn) lspInitialize(ctx context.Context) (*lsp.InitializeRes
 	// TODO: Revert timeout to old behavior (30s / 3 mins for php), but implement `window/progress` notifications in `lsp-adapter`
 	// to keep the connection alive: https://github.com/sourcegraph/sourcegraph/issues/11657
 	timeout := 3 * time.Minute
-	// The Haskell language server compiles the project before responding to `initialize`.
-	// See https://github.com/sourcegraph/issues/issues/147
-	if c.id.mode == "haskell" {
-		timeout = 1 * time.Hour
-	}
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
