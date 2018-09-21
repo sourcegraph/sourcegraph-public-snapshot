@@ -47,7 +47,6 @@
 
     &__share,
     &__report {
-        color: rgba(130, 150, 196, 0.5);
         margin-left: auto;
         display: flex;
         align-items: center;
@@ -111,10 +110,6 @@
             blockquote {
                 color: $color-light-text-2;
             }
-        }
-
-        &__share {
-            color: $color-light-text-3;
         }
 
         &__admin {
