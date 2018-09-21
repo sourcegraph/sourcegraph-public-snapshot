@@ -9,6 +9,8 @@ set -euf -o pipefail
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
+export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
+
 # Verify postgresql config.
 if ! psql -wc '\x' >/dev/null; then
     echo "FAIL: postgreSQL config invalid or missing OR postgreSQL is still starting up."
