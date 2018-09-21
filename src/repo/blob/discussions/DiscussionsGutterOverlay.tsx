@@ -1,9 +1,9 @@
 import * as H from 'history'
-import MessageIcon from 'mdi-react/MessageIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { RepoFile } from '../..'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { ChatIcon } from '../../../util/icons' // TODO: Switch to mdi icon
 import { LineOrPositionOrRange } from '../../../util/url'
 
 interface DiscussionsGutterOverlayProps extends RepoFile {
@@ -57,7 +57,7 @@ export const DiscussionsGutterOverlay: React.StatelessComponent<DiscussionsGutte
                 data-tooltip={onDiscussionsNew ? 'Close discussions' : 'Create a discussion for this selection'}
                 to={newURL}
             >
-                <MessageIcon className="icon-inline" />
+                <ChatIcon className="icon-inline" />
             </Link>
         </div>
     )

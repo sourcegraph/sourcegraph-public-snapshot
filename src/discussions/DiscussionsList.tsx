@@ -1,5 +1,4 @@
 import * as H from 'history'
-import MessageIcon from 'mdi-react/MessageIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
@@ -7,6 +6,7 @@ import * as GQL from '../backend/graphqlschema'
 import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/FilteredConnection'
 import { Timestamp } from '../components/time/Timestamp'
 import { UserAvatar } from '../user/UserAvatar'
+import { ChatIcon } from '../util/icons'
 import { openFromJS } from '../util/url'
 import { fetchDiscussionThreads } from './backend'
 
@@ -40,7 +40,7 @@ const DiscussionNode: React.SFC<DiscussionNodeProps> = ({ node, location }) => {
                     className="discussions-list__row-comments-count"
                     data-tooltip={node.comments.totalCount + ' comments'}
                 >
-                    <MessageIcon className="icon-inline" /> {node.comments.totalCount}
+                    <ChatIcon className="icon-inline" /> {node.comments.totalCount}
                 </span>
             </div>
             <div className="discussions-list__row-bottom-line">

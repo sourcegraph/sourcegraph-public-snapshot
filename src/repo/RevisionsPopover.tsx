@@ -1,4 +1,3 @@
-import CircleChevronLeft from '@sourcegraph/icons/lib/CircleChevronLeft'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -11,6 +10,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/F
 import { TabsWithLocalStorageViewStatePersistence } from '../components/Tabs'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
+import { CircleChevronLeftIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { memoizeObservable } from '../util/memoize'
 import { GitRefNode, queryGitRefs } from './GitRef'
 
@@ -85,7 +85,10 @@ const GitRefPopoverNode: React.SFC<GitRefPopoverNodeProps> = ({ node, defaultBra
             rootIsLink={true}
         >
             {isCurrent && (
-                <CircleChevronLeft className="icon-inline connection-popover__node-link-icon" data-tooltip="Current" />
+                <CircleChevronLeftIcon
+                    className="icon-inline connection-popover__node-link-icon"
+                    data-tooltip="Current"
+                />
             )}
         </GitRefNode>
     )
@@ -114,8 +117,8 @@ const GitCommitNode: React.SFC<GitCommitNodeProps> = ({ node, currentCommitID, l
                 </code>
                 <span className="revisions-popover-git-commit-node__message">{(node.subject || '').slice(0, 200)}</span>
                 {isCurrent && (
-                    <CircleChevronLeft
-                        className="icon-inline connection-popover__node-link-icon revisions-popover-git-commit-node__icon"
+                    <CircleChevronLeftIcon
+                        className="icon-inline connection-popover__node-link-icon"
                         data-tooltip="Current commit"
                     />
                 )}

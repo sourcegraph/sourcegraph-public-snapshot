@@ -1,4 +1,3 @@
-import PhabricatorIcon from '@sourcegraph/icons/lib/Phabricator'
 import { upperFirst } from 'lodash'
 import ExportIcon from 'mdi-react/ExportIcon'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
@@ -9,6 +8,7 @@ import { Position, Range } from 'vscode-languageserver-types'
 import * as GQL from '../../backend/graphqlschema'
 import { ActionItem } from '../../components/ActionItem'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
+import { PhabricatorIcon } from '../../util/icons' // TODO: Switch mdi icon
 import { fetchFileExternalLinks } from '../backend'
 
 interface Props {

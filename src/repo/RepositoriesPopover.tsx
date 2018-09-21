@@ -1,4 +1,3 @@
-import CircleChevronLeft from '@sourcegraph/icons/lib/CircleChevronLeft'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -10,6 +9,7 @@ import { FilteredConnection, FilteredConnectionQueryArgs } from '../components/F
 import { displayRepoPath } from '../components/RepoFileLink'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
+import { CircleChevronLeftIcon } from '../util/icons'
 
 function fetchRepositories(args: { first?: number; query?: string }): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(
@@ -53,7 +53,7 @@ const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node, currentRepo }) =
         >
             {displayRepoPath(node.name)}
             {node.id === currentRepo && (
-                <CircleChevronLeft className="icon-inline connection-popover__node-link-icon" />
+                <CircleChevronLeftIcon className="icon-inline connection-popover__node-link-icon" />
             )}
         </Link>
     </li>

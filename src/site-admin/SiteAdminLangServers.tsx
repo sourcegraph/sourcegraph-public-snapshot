@@ -1,8 +1,8 @@
-import DownloadSimpleIcon from '@sourcegraph/icons/lib/DownloadSimple'
 import LoaderIcon from '@sourcegraph/icons/lib/Loader'
 import { sortBy } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import BugIcon from 'mdi-react/BugIcon'
+import DownloadIcon from 'mdi-react/DownloadIcon'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import RefreshIcon from 'mdi-react/RefreshIcon'
 import WebIcon from 'mdi-react/WebIcon'
@@ -345,7 +345,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                         // tslint:disable-next-line:jsx-no-lambda
                         onClick={() => this.updateButtonClicks.next(langServer)}
                     >
-                        <DownloadSimpleIcon className="icon-inline" />
+                        <DownloadIcon className="icon-inline" />
                     </button>
                 )}
                 {langServer.state !== 'LANG_SERVER_STATE_DISABLED' &&
