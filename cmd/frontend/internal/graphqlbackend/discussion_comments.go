@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type discussionCommentResolver struct {
@@ -211,7 +212,10 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 	}
 
 	if args.Input.Report != nil {
-		newReport := fmt.Sprintf("%s\n\nreported by @%s", *args.Input.Report, currentUser.user.Username)
+		if dc := conf.Get().Discussions; dc != nil && !dc.AbuseProtection {
+			return nil, errors.New("cannot report comment; discussions.abuseProtection is disabled")
+		}
+		newReport := fmt.Sprintf(`"%s"\n\nreported by @%s`, *args.Input.Report, currentUser.user.Username)
 		args.Input.Report = &newReport
 	}
 
