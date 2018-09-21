@@ -1,0 +1,18 @@
+sudo: false
+language: go
+go:
+  - 1.8.x
+  - 1.9.x
+  - 1.10.x
+  - tip
+matrix:
+  allow_failures:
+    - go: tip
+  fast_finish: true
+script:
+  - if [ -n "$(go fmt ./...)" ]; then exit 1; fi
+  - ./test.sh
+  - ./benchmark.sh $TRAVIS_BRANCH https://github.com/$TRAVIS_REPO_SLUG.git
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

@@ -1,0 +1,10 @@
+language: go
+
+go: 
+ - 1.7.1
+ - tip
+
+go_import_path: github.com/sourcegraph/ctxvfs
+
+script:
+ - go test -race -v ./...
