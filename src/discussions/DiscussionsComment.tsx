@@ -13,6 +13,7 @@ import { Markdown } from '../components/Markdown'
 import { Timestamp } from '../components/time/Timestamp'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
+import { asError } from '../util/errors'
 
 interface Props {
     comment: GQL.IDiscussionComment
@@ -120,7 +121,6 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                                         >
                                             {comment.reports.length} reports
                                         </span>
-                                        {}
                                         {comment.canClearReports &&
                                             onClearReports && (
                                                 <button
@@ -175,16 +175,22 @@ export class DiscussionsComment extends React.PureComponent<Props> {
         }
         this.props.onReport!(this.props.comment, reason).subscribe(
             undefined,
-            error => (error ? alert(error) : undefined)
+            error => (error ? alert('Error reporting comment: ' + asError(error).message) : undefined)
         )
     }
 
     private onClearReportsClick: React.MouseEventHandler<HTMLElement> = event => {
-        this.props.onClearReports!(this.props.comment).subscribe(undefined, error => (error ? alert(error) : undefined))
+        this.props.onClearReports!(this.props.comment).subscribe(
+            undefined,
+            error => (error ? alert('Error clearing comment reports: ' + asError(error).message) : undefined)
+        )
     }
 
     private onDeleteClick: React.MouseEventHandler<HTMLElement> = event => {
-        this.props.onDelete!(this.props.comment).subscribe(undefined, error => (error ? alert(error) : undefined))
+        this.props.onDelete!(this.props.comment).subscribe(
+            undefined,
+            error => (error ? alert('Error deleting comment: ' + asError(error).message) : undefined)
+        )
     }
 
     private setScrollToElement = (ref: HTMLElement | null) => {
