@@ -43,7 +43,7 @@ It works as follows:
 - `src/extension/`
   - Entrypoint for browser extension builds. (Includes bundled assets, background scripts, options)
 - `src/browser`
-  - [A wrapper around the browser APIs.](./browser/README.md)
+  - [A wrapper around the browser APIs.](./src/browser/README.md)
 - `src/libs/`
   - Isolated pieces of the browser extension. This contains code that is specific to code hosts and separate "mini applications" included in the browser extension such as the `src` omnibar cli.
 - `src/libs/phabricator/`
