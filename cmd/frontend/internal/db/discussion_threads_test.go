@@ -173,7 +173,7 @@ func TestDiscussionThreads_Count(t *testing.T) {
 	}
 
 	// Delete the thread.
-	if err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionCommentsUpdateOptions{Delete: true}); err != nil {
+	if _, err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionThreadsUpdateOptions{Delete: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -237,7 +237,7 @@ func TestDiscussionThreads_List(t *testing.T) {
 	}
 
 	// Delete the thread.
-	if err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionCommentsUpdateOptions{Delete: true}); err != nil {
+	if _, err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionThreadsUpdateOptions{Delete: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -292,7 +292,7 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 	}
 
 	// Delete thread.
-	if err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionCommentsUpdateOptions{Delete: true}); err != nil {
+	if _, err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionThreadsUpdateOptions{Delete: true}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -311,10 +311,10 @@ func TestDiscussionThreads_Delete(t *testing.T) {
 		t.Fatalf("got %d threads, want 0", len(threads))
 	}
 
-	// Can't delete already-deleted thread.
-	err = DiscussionThreads.Update(ctx, thread.ID, &DiscussionCommentsUpdateOptions{Delete: true})
-	if _, ok := err.(*ErrThreadNotFound); !ok {
-		t.Errorf("got error %v, want thread not found", err)
+	// Deleting an already-deleted thread should be no-op.
+	updatedThread, err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionThreadsUpdateOptions{Delete: true})
+	if updatedThread != nil || err != nil {
+		t.Errorf("got updatedThread=%v err=%v, want nil thread nil error", updatedThread, err)
 	}
 }
 
