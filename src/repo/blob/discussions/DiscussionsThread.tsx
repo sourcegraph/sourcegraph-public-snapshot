@@ -159,7 +159,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         eventLogger.log('RepliedToDiscussion')
         return addCommentToThread(this.props.threadID, contents).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => void 0),
+            map(thread => undefined),
             catchError(e => throwError('Error creating comment: ' + asError(e).message))
         )
     }
@@ -167,21 +167,21 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
     private onCommentReport = (comment: GQL.IDiscussionComment, reason: string) =>
         updateComment({ commentID: comment.id, report: reason }).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => void 0),
+            map(thread => undefined),
             catchError(e => throwError('Error reporting comment: ' + asError(e).message))
         )
 
     private onCommentClearReports = (comment: GQL.IDiscussionComment) =>
         updateComment({ commentID: comment.id, clearReports: true }).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => void 0),
+            map(thread => undefined),
             catchError(e => throwError('Error clearing comment reports: ' + asError(e).message))
         )
 
     private onCommentDelete = (comment: GQL.IDiscussionComment) =>
         updateComment({ commentID: comment.id, delete: true }).pipe(
             tap(thread => this.setState({ thread })),
-            map(thread => void 0),
+            map(thread => undefined),
             catchError(e => throwError('Error deleting comment: ' + asError(e).message))
         )
 }

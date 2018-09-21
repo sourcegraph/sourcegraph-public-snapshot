@@ -103,7 +103,7 @@ export class DiscussionsCreate extends React.PureComponent<Props, State> {
                 // TODO(slimsag:discussions): ASAP: focus the new thread's range
                 this.props.history.push(location.pathname + location.search + '#' + hash.toString())
             }),
-            map(thread => void 0),
+            map(thread => undefined),
             catchError(e => throwError('Error creating thread: ' + asError(e).message))
         )
     }
