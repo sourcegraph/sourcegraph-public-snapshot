@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -34,12 +35,12 @@ func TestXLang(t *testing.T) {
 		}
 	}
 
-	orig := xlangNewClient
+	orig := httpapi.XLangNewClient
 	defer func() {
-		xlangNewClient = orig
+		httpapi.XLangNewClient = orig
 	}()
 	var xc xlangTestClient
-	xlangNewClient = func() (xlangClient, error) { return &xc, nil }
+	httpapi.XLangNewClient = func() (httpapi.XLangClient, error) { return &xc, nil }
 
 	postJSON := func(lspMethod string, h http.Header, reqBodyJSON string, respBody interface{}) error {
 		req, err := http.NewRequest("POST", "/xlang/"+lspMethod, strings.NewReader(reqBodyJSON))

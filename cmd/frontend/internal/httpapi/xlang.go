@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -20,11 +19,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
-	"github.com/sourcegraph/sourcegraph/xlang"
 	xlang_lspext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
@@ -45,20 +44,6 @@ var xlangRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 
 func init() {
 	prometheus.MustRegister(xlangRequestDuration)
-}
-
-var xlangNewClient = func() (xlangClient, error) {
-	c, err := xlang.UnsafeNewDefaultClient()
-	if err != nil {
-		return nil, err
-	}
-	return &xclient{Client: c}, nil
-}
-
-type xlangClient interface {
-	Call(ctx context.Context, method string, params, result interface{}, opt ...jsonrpc2.CallOption) error
-	Notify(ctx context.Context, method string, params interface{}, opt ...jsonrpc2.CallOption) error
-	Close() error
 }
 
 func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
@@ -214,7 +199,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	// Use a one-shot connection to the LSP proxy. This is cheap,
 	// since the LSP proxy will reuse an already running server for
 	// the given workspace if available.
-	c, err := xlangNewClient()
+	c, err := httpapi.XLangNewClient()
 	if err != nil {
 		return err
 	}
