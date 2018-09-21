@@ -42,10 +42,10 @@ func pkgs() []string {
 			return nil
 		}
 		switch path {
-		case ".git", "dev", "ui":
+		case ".git", "dev", "ui", ".github", "node_modules":
 			return filepath.SkipDir
 		}
-		if filepath.Base(path) == "vendor" {
+		if base := filepath.Base(path); base == "vendor" || strings.HasPrefix(base, ".") {
 			return filepath.SkipDir
 		}
 
@@ -210,10 +210,7 @@ func main() {
 
 	pipeline.AddStep(":docker:",
 		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
-
-	pipeline.AddStep(":go:",
-		bk.Cmd("dev/check/go-dep.sh"))
+		bk.Cmd("git ls-files | grep -v '^vendor/' | grep Dockerfile | xargs ./hadolint"))
 
 	pipeline.AddStep(":postgres:",
 		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
