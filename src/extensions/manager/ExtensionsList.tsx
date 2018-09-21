@@ -52,7 +52,6 @@ export const registryExtensionFragment = gql`
         remoteURL
         registryName
         isLocal
-        viewerCanAdminister
     }
 `
 
