@@ -39,6 +39,7 @@ jobs:
       env:
         - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
       script:
+        - yarn cypress install
         - yarn run test:e2e
     - stage: release
       script: semantic-release
