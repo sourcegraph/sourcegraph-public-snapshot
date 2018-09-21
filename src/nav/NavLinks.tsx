@@ -8,6 +8,7 @@ import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as GQL from '../backend/graphqlschema'
 import { HelpPopover } from '../components/HelpPopover'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
+import { discussionsExtensionID } from '../discussions'
 import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { eventLogger } from '../tracking/eventLogger'
@@ -22,6 +23,7 @@ interface Props extends ExtensionsProps, ExtensionsControllerProps {
     onThemeChange: () => void
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
+    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 /**
@@ -77,7 +79,7 @@ export class NavLinks extends React.PureComponent<Props> {
                         </Link>
                     </li>
                 )}
-                {window.context.discussionsEnabled && (
+                {this.props.isExtensionEnabled(discussionsExtensionID) && (
                     <li className="nav-item">
                         <Link to="/discussions" className="nav-link">
                             Discussions

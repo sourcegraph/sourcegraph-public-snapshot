@@ -19,6 +19,7 @@ interface Props extends ExtensionsProps, ExtensionsControllerProps {
     onNavbarQueryChange: (query: string) => void
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
+    isExtensionEnabled: (extensionID: string) => boolean
 
     /**
      * Whether to use the low-profile form of the navbar, which has no border or background. Used on the search

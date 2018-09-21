@@ -17,6 +17,7 @@ import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
+import { discussionsExtensionID } from '../../discussions'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -49,6 +50,7 @@ interface BlobProps
     className: string
     wrapCode: boolean
     renderMode: RenderMode
+    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 interface BlobState extends HoverState {
@@ -482,7 +484,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 />
                             )
                         })}
-                {window.context.discussionsEnabled &&
+                {this.props.isExtensionEnabled(discussionsExtensionID) &&
                     this.state.selectedPosition &&
                     this.state.selectedPosition.line !== undefined && (
                         <DiscussionsGutterOverlay

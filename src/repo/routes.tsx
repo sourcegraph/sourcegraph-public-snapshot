@@ -116,6 +116,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}
                                     user={context.user}
+                                    isExtensionEnabled={context.isExtensionEnabled}
                                 />
                             ) : (
                                 <TreePage
@@ -131,6 +132,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}
                                     onHelpPopoverToggle={context.onHelpPopoverToggle}
+                                    isExtensionEnabled={context.isExtensionEnabled}
                                 />
                             )}
                             <ResizablePanel {...context} />

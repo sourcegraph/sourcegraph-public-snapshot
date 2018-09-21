@@ -40,6 +40,7 @@ export interface RepoContainerProps
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     user: GQL.IUser | null
     onHelpPopoverToggle: () => void
+    isExtensionEnabled: (extensionID: string) => boolean
     isLightTheme: boolean
 }
 
@@ -193,6 +194,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
             onHelpPopoverToggle: this.props.onHelpPopoverToggle,
+            isExtensionEnabled: this.props.isExtensionEnabled,
             extensions: this.props.extensions,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             extensionsController: this.props.extensionsController,

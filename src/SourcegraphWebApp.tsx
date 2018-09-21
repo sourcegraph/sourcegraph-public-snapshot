@@ -1,6 +1,6 @@
 import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
 import { createController as createExtensionsController } from '@sourcegraph/extensions-client-common/lib/client/controller'
-import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
+import { ConfiguredExtension, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { ClientConnection, connectAsPage } from '@sourcegraph/extensions-client-common/lib/messaging'
 import {
     ConfigurationCascadeOrError,
@@ -264,6 +264,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}
                                 extensionsController={this.state.extensionsController}
                                 clientConnection={this.state.clientConnection}
+                                isExtensionEnabled={this.isExtensionEnabled}
                             />
                         )}
                     />
@@ -350,4 +351,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             () => this.state.extensionsController.setEnvironment(this.state.extensionsEnvironment)
         )
     }
+
+    /**
+     * Tells whether or not the extension with the given ID is enabled or not.
+     */
+    private isExtensionEnabled = (extensionID: string): boolean =>
+        isExtensionEnabled(this.state.configurationCascade.merged, extensionID)
 }

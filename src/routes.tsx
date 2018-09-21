@@ -120,8 +120,7 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/discussions',
-        render: props =>
-            window.context.discussionsEnabled ? <DiscussionsPage {...props} /> : <ErrorNotSupportedPage />,
+        render: props => <DiscussionsPage {...props} />,
         exact: true,
     },
     {

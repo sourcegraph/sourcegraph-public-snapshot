@@ -35,6 +35,7 @@ export interface RepoRevContainerContext
     isLightTheme: boolean
     routePrefix: string
     onHelpPopoverToggle: () => void
+    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 export interface RepoRevContainerRoute extends RouteDescriptor<RepoRevContainerContext> {}
@@ -51,6 +52,7 @@ interface RepoRevContainerProps
     user: GQL.IUser | null
     isLightTheme: boolean
     onHelpPopoverToggle: () => void
+    isExtensionEnabled: (extensionID: string) => boolean
     routePrefix: string
 
     /**
@@ -196,6 +198,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             rev: this.props.rev,
             routePrefix: this.props.routePrefix,
             user: this.props.user,
+            isExtensionEnabled: this.props.isExtensionEnabled,
         }
 
         return (

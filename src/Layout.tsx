@@ -61,6 +61,9 @@ export interface LayoutProps
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
 
+    /** A function to check whether or not an extension with the given ID is enabled. */
+    isExtensionEnabled: (extensionID: string) => boolean
+
     children?: never
 }
 

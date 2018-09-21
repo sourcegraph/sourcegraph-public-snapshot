@@ -10,6 +10,7 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { discussionsExtensionID } from '../../discussions'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -91,6 +92,7 @@ interface Props
     isLightTheme: boolean
     repoID: GQL.ID
     user: GQL.IUser | null
+    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 interface State {
@@ -210,7 +212,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
-                {window.context.discussionsEnabled && (
+                {this.props.isExtensionEnabled(discussionsExtensionID) && (
                     <RepoHeaderContributionPortal
                         position="right"
                         priority={20}
@@ -274,6 +276,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             renderMode={renderMode}
                             location={this.props.location}
                             history={this.props.history}
+                            isExtensionEnabled={this.props.isExtensionEnabled}
                         />
                     )}
                 {!this.state.blobOrError.richHTML &&
