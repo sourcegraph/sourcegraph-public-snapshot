@@ -79,16 +79,15 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                         <Link
                             to={`/users/${comment.author.username}`}
                             data-tooltip={comment.author.displayName}
-                            className="discussions-comment__author-name"
+                            className="discussions-comment__author-name mr-1"
                         >
                             {comment.author.username}
                         </Link>
-                        {' commented'}
+                        <span className="mr-1">commented</span>
+                        <Timestamp date={comment.createdAt} />
                     </span>
                     <span className="discussions-comment__spacer" />
                     <span className="discussions-comment__top-right-area">
-                        {/* TODO(slimsag:discussions): timestamp should not wrap around on small screen widths */}
-                        <Timestamp date={comment.createdAt} />
                         {this.props.comment.inlineURL && (
                             <Link
                                 className="btn btn-link btn-sm discussions-comment__share"
