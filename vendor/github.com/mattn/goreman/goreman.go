@@ -1,24 +1,27 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v2"
 )
 
-const version = "0.0.10"
+const version = "0.1.1"
 
 func usage() {
 	fmt.Fprint(os.Stderr, `Tasks:
@@ -45,14 +48,15 @@ Options:
 
 // -- process information structure.
 type procInfo struct {
-	proc    string
-	cmdline string
-	quit    bool
-	cmd     *exec.Cmd
-	port    uint
-	mu      sync.Mutex
-	cond    *sync.Cond
-	waitErr error
+	proc       string
+	cmdline    string
+	quit       bool
+	cmd        *exec.Cmd
+	port       uint
+	colorIndex int
+	mu         sync.Mutex
+	cond       *sync.Cond
+	waitErr    error
 }
 
 // process informations named with proc.
@@ -71,6 +75,8 @@ var basedir = flag.String("basedir", "", "base directory")
 var baseport = flag.Uint("b", 5000, "base number of port")
 
 var maxProcNameLength = 0
+
+var re = regexp.MustCompile(`\$([a-zA-Z]+[a-zA-Z0-9_]+)`)
 
 type config struct {
 	Procfile string `yaml:"procfile"`
@@ -103,12 +109,12 @@ func readConfig() *config {
 
 // read Procfile and parse it.
 func readProcfile(cfg *config) error {
-	procs = map[string]*procInfo{}
 	content, err := ioutil.ReadFile(cfg.Procfile)
 	if err != nil {
 		return err
 	}
-	re := regexp.MustCompile(`\$([a-zA-Z]+[a-zA-Z0-9_]+)`)
+	procs = map[string]*procInfo{}
+	index := 0
 	for _, line := range strings.Split(string(content), "\n") {
 		tokens := strings.SplitN(line, ":", 2)
 		if len(tokens) != 2 || tokens[0][0] == '#' {
@@ -120,12 +126,16 @@ func readProcfile(cfg *config) error {
 				return "%" + s[1:] + "%"
 			})
 		}
-		p := &procInfo{proc: k, cmdline: v, port: cfg.BasePort}
+		p := &procInfo{proc: k, cmdline: v, port: cfg.BasePort, colorIndex: index}
 		p.cond = sync.NewCond(&p.mu)
 		procs[k] = p
 		cfg.BasePort += 100
 		if len(k) > maxProcNameLength {
 			maxProcNameLength = len(k)
+		}
+		index++
+		if index >= len(colors) {
+			index = 0
 		}
 	}
 	if len(procs) == 0 {
@@ -135,16 +145,14 @@ func readProcfile(cfg *config) error {
 }
 
 func defaultServer(serverPort uint) string {
-	s := os.Getenv("GOREMAN_RPC_SERVER")
-	if s != "" {
+	if s, ok := os.LookupEnv("GOREMAN_RPC_SERVER"); ok {
 		return s
 	}
 	return fmt.Sprintf("127.0.0.1:%d", defaultPort())
 }
 
 func defaultAddr() string {
-	s := os.Getenv("GOREMAN_RPC_ADDR")
-	if s != "" {
+	if s, ok := os.LookupEnv("GOREMAN_RPC_ADDR"); ok {
 		return s
 	}
 	return "0.0.0.0"
@@ -180,29 +188,41 @@ func check(cfg *config) error {
 }
 
 // command: start. spawn procs.
-func start(cfg *config) error {
+func start(ctx context.Context, cfg *config) error {
 	err := readProcfile(cfg)
 	if err != nil {
 		return err
 	}
 	if len(cfg.Args) > 1 {
 		tmp := map[string]*procInfo{}
+		maxProcNameLength = 0
 		for _, v := range cfg.Args[1:] {
 			p, ok := procs[v]
 			if !ok {
 				return errors.New("unknown proc: " + v)
 			}
 			tmp[v] = p
+			if len(v) > maxProcNameLength {
+				maxProcNameLength = len(v)
+			}
 		}
 		procs = tmp
 	}
 	godotenv.Load()
-	go startServer(cfg.Port)
+	go startServer(ctx, cfg.Port)
 	return startProcs()
 }
 
 func main() {
 	var err error
+	ctx, cancel := context.WithCancel(context.Background())
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGTERM, os.Interrupt)
+	go func() {
+		sig := <-c
+		fmt.Printf("caught signal %s, shutting down...\n", sig)
+		cancel()
+	}()
 
 	cfg := readConfig()
 
@@ -239,7 +259,7 @@ func main() {
 		}
 		break
 	case "start":
-		err = start(cfg)
+		err = start(ctx, cfg)
 		break
 	case "version":
 		fmt.Println(version)

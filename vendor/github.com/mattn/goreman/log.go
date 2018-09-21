@@ -28,8 +28,6 @@ var colors = []ct.Color{
 	ct.Blue,
 	ct.Red,
 }
-var ci int
-
 var mutex = new(sync.Mutex)
 
 // write any stored buffers, plus the given line, then empty out
@@ -98,14 +96,10 @@ func (l *clogger) Write(p []byte) (int, error) {
 }
 
 // create logger instance.
-func createLogger(proc string) *clogger {
+func createLogger(proc string, colorIndex int) *clogger {
 	mutex.Lock()
 	defer mutex.Unlock()
-	l := &clogger{idx: ci, proc: proc, writes: make(chan []byte), done: make(chan struct{}), timeout: 2 * time.Millisecond}
+	l := &clogger{idx: colorIndex, proc: proc, writes: make(chan []byte), done: make(chan struct{}), timeout: 2 * time.Millisecond}
 	go l.writeLines()
-	ci++
-	if ci >= len(colors) {
-		ci = 0
-	}
 	return l
 }

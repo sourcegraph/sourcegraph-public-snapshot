@@ -39,7 +39,7 @@ func stopProc(proc string, quit bool, signal os.Signal) error {
 		p.mu.Lock()
 		defer p.mu.Unlock()
 		if p, ok := procs[proc]; ok && p.cmd != nil {
-			err = p.cmd.Process.Kill()
+			err = killProc(p.cmd.Process)
 		}
 	})
 	p.cond.Wait()

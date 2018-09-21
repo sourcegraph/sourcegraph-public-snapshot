@@ -7,37 +7,40 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 // spawn command that specified as proc.
 func spawnProc(proc string) bool {
-	logger := createLogger(proc)
+	procObj := procs[proc]
+	logger := createLogger(proc, procObj.colorIndex)
 
 	cs := []string{"/bin/sh", "-c", procs[proc].cmdline}
 	cmd := exec.Command(cs[0], cs[1:]...)
 	cmd.Stdin = nil
 	cmd.Stdout = logger
 	cmd.Stderr = logger
-	cmd.Env = append(os.Environ(), fmt.Sprintf("PORT=%d", procs[proc].port))
+	cmd.Env = append(os.Environ(), fmt.Sprintf("PORT=%d", procObj.port))
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
-	fmt.Fprintf(logger, "Starting %s on port %d\n", proc, procs[proc].port)
+	fmt.Fprintf(logger, "Starting %s on port %d\n", proc, procObj.port)
 	err := cmd.Start()
 	if err != nil {
 		fmt.Fprintf(logger, "Failed to start %s: %s\n", proc, err)
 		return true
 	}
-	procs[proc].cmd = cmd
-	procs[proc].quit = true
-	procs[proc].mu.Unlock()
+	procObj.cmd = cmd
+	procObj.quit = true
+	procObj.mu.Unlock()
 	err = cmd.Wait()
-	procs[proc].mu.Lock()
-	procs[proc].cond.Broadcast()
-	procs[proc].waitErr = err
-	procs[proc].cmd = nil
+	procObj.mu.Lock()
+	procObj.cond.Broadcast()
+	procObj.waitErr = err
+	procObj.cmd = nil
 	fmt.Fprintf(logger, "Terminating %s\n", proc)
 
-	return procs[proc].quit
+	return procObj.quit
 }
 
 func terminateProc(proc string, signal os.Signal) error {
@@ -62,4 +65,9 @@ func terminateProc(proc string, signal os.Signal) error {
 		return err
 	}
 	return target.Signal(signal)
+}
+
+// killProc kills the proc with pid pid, as well as its children.
+func killProc(process *os.Process) error {
+	return unix.Kill(-1*process.Pid, syscall.SIGKILL)
 }

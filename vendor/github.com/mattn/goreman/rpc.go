@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
 	"net/rpc"
+	"sync"
+	"time"
 )
 
 // Goreman is RPC server
@@ -149,18 +152,45 @@ func run(cmd string, args []string, serverPort uint) error {
 }
 
 // start rpc server.
-func startServer(listenPort uint) error {
+func startServer(ctx context.Context, listenPort uint) error {
 	gm := new(Goreman)
 	rpc.Register(gm)
 	server, err := net.Listen("tcp", fmt.Sprintf("%s:%d", defaultAddr(), listenPort))
 	if err != nil {
 		return err
 	}
-	for {
-		client, err := server.Accept()
-		if err != nil {
-			continue
+	var wg sync.WaitGroup
+	var acceptingConns = true
+	for acceptingConns {
+		conns := make(chan net.Conn, 1)
+		go func() {
+			conn, err := server.Accept()
+			if err != nil {
+				return
+			}
+			conns <- conn
+		}()
+		select {
+		case <-ctx.Done():
+			acceptingConns = false
+			break
+		case client := <-conns: // server is not canceled.
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				rpc.ServeConn(client)
+			}()
 		}
-		rpc.ServeConn(client)
+	}
+	done := make(chan struct{}, 1)
+	go func() {
+		wg.Wait()
+		done <- struct{}{}
+	}()
+	select {
+	case <-done:
+		return nil
+	case <-time.After(10 * time.Second):
+		return errors.New("RPC server did not shut down in 10 seconds, quitting")
 	}
 }

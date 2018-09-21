@@ -236,7 +236,7 @@ github.com/mailru/easyjson/buffer
 github.com/mattn/go-colorable
 # github.com/mattn/go-isatty v0.0.4
 github.com/mattn/go-isatty
-# github.com/mattn/goreman v0.0.0-20180619230042-8ddb825d3eb5
+# github.com/mattn/goreman v0.1.2-0.20180921040614-5797aa4d86e9
 github.com/mattn/goreman
 # github.com/matttproud/golang_protobuf_extensions v1.0.1
 github.com/matttproud/golang_protobuf_extensions/pbutil
