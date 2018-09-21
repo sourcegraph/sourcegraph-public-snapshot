@@ -1,7 +1,7 @@
 module github.com/sourcegraph/sourcegraph
 
 require (
-	dmitri.shuralyov.com/text/kebabcase v0.0.0-20180217051803-40e40b42552a // indirect
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/NYTimes/gziphandler v1.0.1
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
@@ -16,12 +16,17 @@ require (
 	github.com/crewjam/saml v0.0.0-20180831135026-ebc5f787b786
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/emersion/go-imap v1.0.0-beta.1
 	github.com/emersion/go-sasl v0.0.0-20161116183048-7e096a0a6197 // indirect
 	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
+	github.com/etdub/goparsetime v0.0.0-20160315173935-ea17b0ac3318 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
+	github.com/facebookgo/ensure v0.0.0-20160127193407-b4ab57deab51 // indirect
 	github.com/facebookgo/limitgroup v0.0.0-20150612190941-6abd8d71ec01 // indirect
 	github.com/facebookgo/muster v0.0.0-20150708232844-fd3d7953fd52 // indirect
+	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
+	github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870 // indirect
 	github.com/fatih/astrewrite v0.0.0-20180730114054-bef4001d457f
 	github.com/fatih/color v1.7.0
 	github.com/felixfbecker/stringscore v0.0.0-20170928081130-e71a9f1b0749
@@ -39,6 +44,9 @@ require (
 	github.com/gogo/protobuf v0.0.0-20170330071051-c0656edd0d9e // indirect
 	github.com/golang-migrate/migrate v0.0.0-20180905051849-93d53a5ae84d
 	github.com/golang/groupcache v0.0.0-20180513044358-24b0969c4cb7
+	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
+	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
+	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
 	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c // indirect
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
@@ -72,6 +80,7 @@ require (
 	github.com/kevinburke/differ v0.0.0-20180719214047-7596500234bb
 	github.com/kisielk/gotool v1.0.0 // indirect
 	github.com/kr/text v0.1.0
+	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/lightstep/lightstep-tracer-go v0.15.4
 	github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329 // indirect
@@ -87,7 +96,6 @@ require (
 	github.com/opentracing/basictracer-go v1.0.0
 	github.com/opentracing/opentracing-go v1.0.2
 	github.com/pelletier/go-toml v0.0.0-20180724185102-c2dbbc24a979
-	github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/peterhellberg/link v1.0.0
 	github.com/pkg/errors v0.8.0
@@ -103,10 +111,10 @@ require (
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20180602233135-8913699a52e3
 	github.com/shurcooL/go v0.0.0-20180423040247-9e1955d9fb6e // indirect
 	github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041
-	github.com/shurcooL/graphql v0.0.0-20180514000029-62c9ce094e75 // indirect
 	github.com/shurcooL/highlight_diff v0.0.0-20170515013008-09bb4053de1b // indirect
 	github.com/shurcooL/highlight_go v0.0.0-20170515013102-78fb10f4a5f8 // indirect
 	github.com/shurcooL/httpfs v0.0.0-20171119174359-809beceb2371
+	github.com/shurcooL/httpgzip v0.0.0-20180522190206-b1c53ac65af9 // indirect
 	github.com/shurcooL/octicon v0.0.0-20180602230221-c42b0e3b24d9 // indirect
 	github.com/shurcooL/sanitized_anchor_name v0.0.0-20170918181015-86672fcb3f95 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20180825020608-02ddb050ef6b
@@ -126,13 +134,16 @@ require (
 	github.com/spf13/pflag v1.0.2 // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/src-d/gcfg v1.3.0 // indirect
+	github.com/stvp/tempredis v0.0.0-20160122230306-83f7aae7ea49 // indirect
 	github.com/temoto/robotstxt-go v0.0.0-20180810133444-97ee4a9ee6ea
+	github.com/uber-go/atomic v1.3.2 // indirect
 	github.com/uber/jaeger-client-go v2.14.0+incompatible
 	github.com/uber/jaeger-lib v1.5.0
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v0.0.0-20180816142147-da425ebb7609
 	github.com/zenazn/goji v0.0.0-20160507202103-64eb34159fe5 // indirect
+	go.uber.org/atomic v1.3.2 // indirect
 	go4.org v0.0.0-20180809161055-417644f6feb5
 	golang.org/x/crypto v0.0.0-20180904163835-0709b304e793
 	golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
