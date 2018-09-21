@@ -76,12 +76,6 @@ func AccessTokensAllow() AccessTokAllow {
 	}
 }
 
-// DiscussionsEnabled returns whether code discussions are enabled.
-func DiscussionsEnabled() bool {
-	c := Get()
-	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.Discussions == "enabled"
-}
-
 // EmailVerificationRequired returns whether users must verify an email address before they
 // can perform most actions on this site.
 //

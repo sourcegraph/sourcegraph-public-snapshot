@@ -22,7 +22,7 @@ import (
 // It should be invoked in a separate goroutine.
 func StartWorker() {
 	conf.Watch(func() {
-		if !conf.DiscussionsEnabled() || !conf.CanReadEmail() {
+		if !conf.CanReadEmail() {
 			return
 		}
 

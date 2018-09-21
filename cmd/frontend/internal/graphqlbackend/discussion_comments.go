@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type discussionCommentResolver struct {
@@ -83,8 +82,8 @@ func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
 	connectionArgs
 	AuthorUserID *graphql.ID
 }) (*discussionCommentsConnectionResolver, error) {
-	if !conf.DiscussionsEnabled() {
-		return nil, errDiscussionsNotEnabled
+	if err := viewerCanUseDiscussions(ctx); err != nil {
+		return nil, err
 	}
 
 	// 🚨 SECURITY: No authentication is required to list the comments on a
@@ -107,10 +106,6 @@ func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, ar
 	ThreadID graphql.ID
 	Contents string
 }) (*discussionThreadResolver, error) {
-	if !conf.DiscussionsEnabled() {
-		return nil, errDiscussionsNotEnabled
-	}
-
 	// 🚨 SECURITY: Only signed in users may add comments to a discussion thread.
 	currentUser, err := currentUser(ctx)
 	if err != nil {

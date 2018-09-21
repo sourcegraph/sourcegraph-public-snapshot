@@ -64,8 +64,7 @@ type JSContext struct {
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
-	DiscussionsEnabled bool                `json:"discussionsEnabled"`
-	AccessTokensAllow  conf.AccessTokAllow `json:"accessTokensAllow"`
+	AccessTokensAllow conf.AccessTokAllow `json:"accessTokensAllow"`
 
 	AllowSignup bool `json:"allowSignup"`
 
@@ -149,8 +148,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 		// Experiments. We pass these through explicitly so we can
 		// do the default behavior only in Go land.
-		DiscussionsEnabled: conf.DiscussionsEnabled(),
-		AccessTokensAllow:  conf.AccessTokensAllow(),
+		AccessTokensAllow: conf.AccessTokensAllow(),
 
 		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
 

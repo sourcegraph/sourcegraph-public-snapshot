@@ -14,11 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var errDiscussionsNotEnabled = errors.New("discussions are not enabled on this site")
 
 // marshalDiscussionID marshals a discussion thread or comment ID into a
 // graphql.ID. These IDs are a lot like GitHub issue IDs: we want them to be
@@ -292,8 +291,8 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 }
 
 func (s *schemaResolver) Discussions(ctx context.Context) (*discussionsMutationResolver, error) {
-	if !conf.DiscussionsEnabled() {
-		return nil, errDiscussionsNotEnabled
+	if err := viewerCanUseDiscussions(ctx); err != nil {
+		return nil, err
 	}
 	return &discussionsMutationResolver{}, nil
 }
@@ -308,8 +307,8 @@ func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	TargetRepositoryGitCloneURL *string
 	TargetRepositoryPath        *string
 }) (*discussionThreadsConnectionResolver, error) {
-	if !conf.DiscussionsEnabled() {
-		return nil, errDiscussionsNotEnabled
+	if err := viewerCanUseDiscussions(ctx); err != nil {
+		return nil, err
 	}
 
 	// 🚨 SECURITY: No authentication is required to list discussions. They are
@@ -713,4 +712,26 @@ func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*pa
 		return nil, err
 	}
 	return &pageInfo{hasNextPage: r.opt.LimitOffset != nil && len(threads) > r.opt.Limit}, nil
+}
+
+// viewerCanUseDiscussions returns an error if the user in the context cannot
+// use code discussions, e.g. due to the extension not being installed or
+// enabled.
+func viewerCanUseDiscussions(ctx context.Context) error {
+	merged, err := viewerMergedConfiguration(ctx)
+	if err != nil {
+		return err
+	}
+	var settings schema.Settings
+	if err := jsonc.Unmarshal(merged.Contents(), &settings); err != nil {
+		return err
+	}
+	enabled, ok := settings.Extensions["sourcegraph/code-discussions"]
+	if !ok {
+		return errors.New("Sourcegraph Code Discussions extension must be added for the active user to use this API")
+	}
+	if !enabled {
+		return errors.New("Sourcegraph Code Discussions extension must be enabled for the active user to use this API")
+	}
+	return nil
 }
