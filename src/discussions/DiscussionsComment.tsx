@@ -79,7 +79,7 @@ export class DiscussionsComment extends React.PureComponent<Props> {
                         <Link
                             to={`/users/${comment.author.username}`}
                             data-tooltip={comment.author.displayName}
-                            className="discussions-comment__author-name mr-1"
+                            className="ml-1 mr-1"
                         >
                             {comment.author.username}
                         </Link>
