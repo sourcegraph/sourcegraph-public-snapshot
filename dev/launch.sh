@@ -3,6 +3,8 @@
 # set to true if unset so set -u won't break us
 : ${SOURCEGRAPH_COMBINE_CONFIG:=false}
 
+export GO111MODULE=on
+
 set -euf -o pipefail
 unset CDPATH
 cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
