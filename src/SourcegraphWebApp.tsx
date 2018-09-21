@@ -242,47 +242,30 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     <Route
                         path="/"
                         // tslint:disable-next-line:jsx-no-lambda RouteProps.render is an exception
-                        render={routeComponentProps => {
-                            let viewerSubject: LayoutProps['viewerSubject']
-                            if (this.state.user) {
-                                viewerSubject = this.state.user
-                            } else if (
-                                this.state.configurationCascade &&
-                                !isErrorLike(this.state.configurationCascade) &&
-                                this.state.configurationCascade.subjects &&
-                                !isErrorLike(this.state.configurationCascade.subjects) &&
-                                this.state.configurationCascade.subjects.length > 0
-                            ) {
-                                viewerSubject = this.state.configurationCascade.subjects[0].subject
-                            } else {
-                                viewerSubject = SITE_SUBJECT_NO_ADMIN
-                            }
-
-                            return (
-                                <Layout
-                                    {...props}
-                                    {...routeComponentProps}
-                                    user={user}
-                                    viewerSubject={viewerSubject}
-                                    configurationCascade={this.state.configurationCascade}
-                                    // Theme
-                                    isLightTheme={this.state.isLightTheme}
-                                    onThemeChange={this.onThemeChange}
-                                    // Search query
-                                    navbarSearchQuery={this.state.navbarSearchQuery}
-                                    onNavbarQueryChange={this.onNavbarQueryChange}
-                                    // Help popover
-                                    showHelpPopover={this.state.showHelpPopover}
-                                    onHelpPopoverToggle={this.onHelpPopoverToggle}
-                                    // Extensions
-                                    extensions={this.state.extensions}
-                                    extensionsEnvironment={this.state.extensionsEnvironment}
-                                    extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}
-                                    extensionsController={this.state.extensionsController}
-                                    clientConnection={this.state.clientConnection}
-                                />
-                            )
-                        }}
+                        render={routeComponentProps => (
+                            <Layout
+                                {...props}
+                                {...routeComponentProps}
+                                user={user}
+                                viewerSubject={this.state.viewerSubject}
+                                configurationCascade={this.state.configurationCascade}
+                                // Theme
+                                isLightTheme={this.state.isLightTheme}
+                                onThemeChange={this.onThemeChange}
+                                // Search query
+                                navbarSearchQuery={this.state.navbarSearchQuery}
+                                onNavbarQueryChange={this.onNavbarQueryChange}
+                                // Help popover
+                                showHelpPopover={this.state.showHelpPopover}
+                                onHelpPopoverToggle={this.onHelpPopoverToggle}
+                                // Extensions
+                                extensions={this.state.extensions}
+                                extensionsEnvironment={this.state.extensionsEnvironment}
+                                extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}
+                                extensionsController={this.state.extensionsController}
+                                clientConnection={this.state.clientConnection}
+                            />
+                        )}
                     />
                 </BrowserRouter>
                 <Tooltip key={1} />
