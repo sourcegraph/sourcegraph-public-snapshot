@@ -579,6 +579,25 @@ const SiteSchemaJSON = `{
         }
       }
     },
+    "discussions": {
+      "description": "Configures Sourcegraph code discussions.",
+      "type": "object",
+      "properties": {
+        "abuseProtection": {
+          "description":
+            "Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).",
+          "type": "boolean",
+          "default": false
+        },
+        "abuseEmails": {
+          "description":
+            "Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.",
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
     "settings": {
       "title": "SiteConfigSettings",
       "description":

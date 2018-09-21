@@ -97,6 +97,12 @@ type Contributions struct {
 	Configuration *jsonschema.Schema `json:"configuration,omitempty"`
 }
 
+// Discussions description: Configures Sourcegraph code discussions.
+type Discussions struct {
+	AbuseEmails     []string `json:"abuseEmails,omitempty"`
+	AbuseProtection bool     `json:"abuseProtection,omitempty"`
+}
+
 // ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type ExperimentalFeatures struct {
 	CanonicalURLRedirect  string `json:"canonicalURLRedirect,omitempty"`
@@ -302,6 +308,7 @@ type SiteConfiguration struct {
 	DisableBrowserExtension           bool                         `json:"disableBrowserExtension,omitempty"`
 	DisableBuiltInSearches            bool                         `json:"disableBuiltInSearches,omitempty"`
 	DisablePublicRepoRedirects        bool                         `json:"disablePublicRepoRedirects,omitempty"`
+	Discussions                       *Discussions                 `json:"discussions,omitempty"`
 	DontIncludeSymbolResultsByDefault bool                         `json:"dontIncludeSymbolResultsByDefault,omitempty"`
 	EmailAddress                      string                       `json:"email.address,omitempty"`
 	EmailImap                         *IMAPServerConfig            `json:"email.imap,omitempty"`

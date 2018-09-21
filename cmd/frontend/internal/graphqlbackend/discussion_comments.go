@@ -240,7 +240,7 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 	}
 	threadID := comment.ThreadID
 
-	_, err = db.DiscussionComments.Update(ctx, commentID, &db.DiscussionCommentsUpdateOptions{
+	updatedComment, err := db.DiscussionComments.Update(ctx, commentID, &db.DiscussionCommentsUpdateOptions{
 		Contents:     args.Input.Contents,
 		Delete:       delete,
 		Report:       args.Input.Report,
@@ -252,6 +252,13 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 	thread, err := db.DiscussionThreads.Get(ctx, threadID)
 	if err != nil {
 		return nil, errors.Wrap(err, "DiscussionThreads.Get")
+	}
+	if args.Input.Report != nil {
+		c := updatedComment
+		if c == nil {
+			c = comment
+		}
+		discussions.NotifyCommentReported(currentUser.user, thread, c)
 	}
 	return &discussionThreadResolver{t: thread}, nil
 }
