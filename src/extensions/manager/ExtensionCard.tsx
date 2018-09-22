@@ -6,14 +6,7 @@ import { ConfigurationCascadeProps, ConfigurationSubject, Settings } from '../..
 import { LinkOrSpan } from '../../ui/generic/LinkOrSpan'
 import { ConfiguredExtension, isExtensionAdded, isExtensionEnabled } from '../extension'
 import { ExtensionConfigurationState } from '../ExtensionConfigurationState'
-import {
-    ADDED_AND_CAN_ADMINISTER,
-    ALL_CAN_ADMINISTER,
-    ExtensionConfigureButton,
-    ExtensionConfiguredSubjectItemForAdd,
-    ExtensionConfiguredSubjectItemForRemove,
-} from '../ExtensionConfigureButton'
-import { ExtensionEnablementToggle } from '../ExtensionEnablementToggle'
+import { ExtensionPrimaryActionButton } from '../ExtensionPrimaryActionButton'
 
 interface Props<S extends ConfigurationSubject, C extends Settings>
     extends ConfigurationCascadeProps<S, C>,
@@ -73,57 +66,13 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
                             <li className="extension-card-spacer" />
                             {props.subject &&
                                 (props.subject.viewerCanAdminister ? (
-                                    <>
-                                        {isExtensionAdded(props.configurationCascade.merged, node.id) &&
-                                            !isExtensionEnabled(props.configurationCascade.merged, node.id) && (
-                                                <li className="nav-item">
-                                                    <ExtensionConfigureButton
-                                                        extension={node}
-                                                        onUpdate={props.onDidUpdate}
-                                                        header="Remove extension for..."
-                                                        itemFilter={ADDED_AND_CAN_ADMINISTER}
-                                                        itemComponent={ExtensionConfiguredSubjectItemForRemove}
-                                                        buttonClassName="btn-outline-link btn-sm py-0 mr-1"
-                                                        caret={false}
-                                                        configurationCascade={this.props.configurationCascade}
-                                                        extensions={this.props.extensions}
-                                                    >
-                                                        Remove
-                                                    </ExtensionConfigureButton>
-                                                </li>
-                                            )}
-                                        {isExtensionAdded(props.configurationCascade.merged, node.id) &&
-                                            props.subject.viewerCanAdminister && (
-                                                <li className="nav-item">
-                                                    <ExtensionEnablementToggle
-                                                        extension={node}
-                                                        subject={props.subject}
-                                                        onChange={props.onDidUpdate}
-                                                        tabIndex={-1}
-                                                        configurationCascade={this.props.configurationCascade}
-                                                        extensions={this.props.extensions}
-                                                    />
-                                                </li>
-                                            )}
-                                        {!isExtensionAdded(props.configurationCascade.merged, node.id) && (
-                                            <li className="nav-item">
-                                                <ExtensionConfigureButton
-                                                    extension={node}
-                                                    onUpdate={props.onDidUpdate}
-                                                    header="Add extension for..."
-                                                    itemFilter={ALL_CAN_ADMINISTER}
-                                                    itemComponent={ExtensionConfiguredSubjectItemForAdd}
-                                                    buttonClassName="btn-primary btn-sm"
-                                                    caret={false}
-                                                    configurationCascade={this.props.configurationCascade}
-                                                    extensions={this.props.extensions}
-                                                    confirm={this.confirmAdd}
-                                                >
-                                                    Add
-                                                </ExtensionConfigureButton>
-                                            </li>
-                                        )}
-                                    </>
+                                    <ExtensionPrimaryActionButton
+                                        extension={node}
+                                        configurationCascade={this.props.configurationCascade}
+                                        onUpdate={props.onDidUpdate}
+                                        className="btn-sm btn-secondary"
+                                        extensions={this.props.extensions}
+                                    />
                                 ) : (
                                     <li className="nav-item">
                                         <ExtensionConfigurationState
@@ -136,21 +85,6 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
                     </div>
                 </div>
             </div>
-        )
-    }
-
-    private confirmAdd = (): boolean => {
-        // Either `"title" (id)` (if there is a title in the manifest) or else just `id`. It is
-        // important to show the ID because it indicates who the publisher is and allows
-        // disambiguation from other similarly titled extensions.
-        let displayName: string
-        if (this.props.node.manifest && !isErrorLike(this.props.node.manifest) && this.props.node.manifest.title) {
-            displayName = `${JSON.stringify(this.props.node.manifest.title)} (${this.props.node.id})`
-        } else {
-            displayName = this.props.node.id
-        }
-        return confirm(
-            `Add Sourcegraph extension ${displayName}?\n\nIt can:\n- Read repositories and files you view using Sourcegraph\n- Read and change your Sourcegraph settings`
         )
     }
 }

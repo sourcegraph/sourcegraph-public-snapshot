@@ -53,7 +53,7 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
      * content.
      */
     readonly icons: Record<
-        'Loader' | 'Warning' | 'Menu' | 'CaretDown',
+        'Loader' | 'Warning' | 'Info' | 'Menu' | 'CaretDown' | 'Add' | 'Settings',
         React.ComponentType<{
             className: 'icon-inline' | string
             onClick?: () => void
