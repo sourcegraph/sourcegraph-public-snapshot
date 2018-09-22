@@ -820,9 +820,9 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/extensions-client-common@^8.5.0":
-  version "8.5.1"
-  resolved "https://registry.npmjs.org/@sourcegraph/extensions-client-common/-/extensions-client-common-8.5.1.tgz#f4c2a7b3b99eeb611f7aa661b20e9a5cd2d5214c"
+"@sourcegraph/extensions-client-common@^8.6.0":
+  version "8.6.0"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-8.6.0.tgz#4b9e5dfcd01cb4eea72e2a2b282ca31b0350a6ab"
   dependencies:
     bootstrap "^4.1.3"
     lodash-es "^4.17.10"

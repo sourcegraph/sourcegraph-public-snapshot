@@ -1,4 +1,5 @@
 import { isExtensionAdded, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
+import { ExtensionPrimaryActionButton } from '@sourcegraph/extensions-client-common/lib/extensions/ExtensionPrimaryActionButton'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
@@ -6,7 +7,6 @@ import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { isErrorLike } from '../../util/errors'
 import { ExtensionAreaRouteContext } from './ExtensionArea'
 import { ExtensionConfigurationState } from './ExtensionConfigurationState'
-import { RegistryExtensionDetailActionButton } from './RegistryExtensionDetailActionButton'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
     navItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
@@ -49,21 +49,20 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                             </div>
                         </div>
                         <div className="d-flex align-items-center mt-3 mb-2">
-                            <ExtensionConfigurationState
-                                isAdded={isExtensionAdded(props.configurationCascade.merged, props.extension.id)}
-                                isEnabled={isExtensionEnabled(props.configurationCascade.merged, props.extension.id)}
-                                enabledIconOnly={!!props.authenticatedUser}
-                                className="mr-2"
-                            />
                             {props.authenticatedUser && (
-                                <RegistryExtensionDetailActionButton
+                                <ExtensionPrimaryActionButton
                                     extension={props.extension}
-                                    onUpdate={props.onDidUpdateExtension}
-                                    nonButtonClassName="d-block"
                                     configurationCascade={props.configurationCascade}
+                                    onUpdate={props.onDidUpdateExtension}
+                                    className="mr-2"
+                                    addClassName="btn-primary"
                                     extensions={props.extensions}
                                 />
                             )}
+                            <ExtensionConfigurationState
+                                isAdded={isExtensionAdded(props.configurationCascade.merged, props.extension.id)}
+                                isEnabled={isExtensionEnabled(props.configurationCascade.merged, props.extension.id)}
+                            />
                         </div>
                         {!props.authenticatedUser && (
                             <div className="d-flex align-items-center mt-3 mb-2">

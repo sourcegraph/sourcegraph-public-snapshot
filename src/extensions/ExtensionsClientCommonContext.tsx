@@ -17,7 +17,10 @@ import {
 import Loader from '@sourcegraph/icons/lib/Loader'
 import Menu from '@sourcegraph/icons/lib/Menu'
 import { isEqual } from 'lodash'
+import AddIcon from 'mdi-react/AddIcon'
+import InfoIcon from 'mdi-react/InformationIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import { concat, from, Observable } from 'rxjs'
 import { distinctUntilChanged, map, mapTo, switchMap, take } from 'rxjs/operators'
@@ -60,8 +63,11 @@ export function createExtensionsContextController(
         icons: {
             Loader: Loader as React.ComponentType<{ className: string; onClick?: () => void }>,
             Warning: WarningIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
+            Info: InfoIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             CaretDown: MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             Menu: Menu as React.ComponentType<{ className: string; onClick?: () => void }>,
+            Add: AddIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
+            Settings: SettingsIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
         },
         forceUpdateTooltip: () => Tooltip.forceUpdate(),
     })
