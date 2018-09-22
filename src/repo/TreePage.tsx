@@ -21,9 +21,13 @@ import { FilteredConnection } from '../components/FilteredConnection'
 import { Form } from '../components/Form'
 import { PageTitle } from '../components/PageTitle'
 import { displayRepoPath } from '../components/RepoFileLink'
-import { discussionsExtensionID } from '../discussions'
+import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsList } from '../discussions/DiscussionsList'
-import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import {
+    ConfigurationCascadeProps,
+    ExtensionsControllerProps,
+    ExtensionsProps,
+} from '../extensions/ExtensionsClientCommonContext'
 import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
@@ -95,7 +99,7 @@ const fetchTreeCommits = memoizeObservable(
     args => `${args.repo}:${args.revspec}:${args.first}:${args.filePath}`
 )
 
-interface Props extends ExtensionsControllerProps, ExtensionsProps {
+interface Props extends ConfigurationCascadeProps, ExtensionsControllerProps, ExtensionsProps {
     repoPath: string
     repoID: GQL.ID
     repoDescription: string
@@ -108,7 +112,6 @@ interface Props extends ExtensionsControllerProps, ExtensionsProps {
 
     location: H.Location
     history: H.History
-    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 interface State {
@@ -262,7 +265,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                     <OpenHelpPopoverButton onHelpPopoverToggle={this.props.onHelpPopoverToggle} />
                                 </Form>
                             </section>
-                            {!this.props.isExtensionEnabled(discussionsExtensionID) &&
+                            {!isDiscussionsEnabled(this.props.configurationCascade) &&
                                 this.state.treeOrError.directories.length > 0 && (
                                     <section className="tree-page__section">
                                         <h3 className="tree-page__section-header">Directories</h3>
@@ -279,7 +282,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         </div>
                                     </section>
                                 )}
-                            {!this.props.isExtensionEnabled(discussionsExtensionID) &&
+                            {!isDiscussionsEnabled(this.props.configurationCascade) &&
                                 this.state.treeOrError.files.length > 0 && (
                                     <section className="tree-page__section">
                                         <h3 className="tree-page__section-header">Files</h3>
@@ -296,7 +299,7 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         </div>
                                     </section>
                                 )}
-                            {this.props.isExtensionEnabled(discussionsExtensionID) && (
+                            {isDiscussionsEnabled(this.props.configurationCascade) && (
                                 <div className="tree-page__section mt-2 tree-page__section--discussions">
                                     <h3 className="tree-page__section-header">Discussions</h3>
                                     <DiscussionsList

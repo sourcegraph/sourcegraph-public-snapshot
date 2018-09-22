@@ -17,9 +17,13 @@ import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
 import { LSPSelector, LSPTextDocumentPositionParams } from '../../backend/lsp'
-import { discussionsExtensionID } from '../../discussions'
+import { isDiscussionsEnabled } from '../../discussions'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import {
+    ConfigurationCascadeProps,
+    ExtensionsControllerProps,
+    ExtensionsProps,
+} from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
@@ -36,6 +40,7 @@ const toPortalID = (line: number) => `blame-portal-${line}`
 interface BlobProps
     extends AbsoluteRepoFile,
         ModeSpec,
+        ConfigurationCascadeProps,
         ExtensionsProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
@@ -50,7 +55,6 @@ interface BlobProps
     className: string
     wrapCode: boolean
     renderMode: RenderMode
-    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 interface BlobState extends HoverState {
@@ -484,7 +488,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                                 />
                             )
                         })}
-                {this.props.isExtensionEnabled(discussionsExtensionID) &&
+                {isDiscussionsEnabled(this.props.configurationCascade) &&
                     this.state.selectedPosition &&
                     this.state.selectedPosition.line !== undefined && (
                         <DiscussionsGutterOverlay

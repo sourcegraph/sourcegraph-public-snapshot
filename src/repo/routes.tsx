@@ -107,6 +107,7 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     repoHeaderContributionsLifecycleProps={
                                         context.repoHeaderContributionsLifecycleProps
                                     }
+                                    configurationCascade={context.configurationCascade}
                                     extensions={context.extensions}
                                     extensionsOnVisibleTextDocumentsChange={
                                         context.extensionsOnVisibleTextDocumentsChange
@@ -116,7 +117,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}
                                     user={context.user}
-                                    isExtensionEnabled={context.isExtensionEnabled}
                                 />
                             ) : (
                                 <TreePage
@@ -126,13 +126,13 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     commitID={context.resolvedRev.commitID}
                                     rev={context.rev}
                                     filePath={context.match.params.filePath || ''}
+                                    configurationCascade={context.configurationCascade}
                                     extensionsController={context.extensionsController}
                                     extensions={context.extensions}
                                     location={context.location}
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}
                                     onHelpPopoverToggle={context.onHelpPopoverToggle}
-                                    isExtensionEnabled={context.isExtensionEnabled}
                                 />
                             )}
                             <ResizablePanel {...context} />

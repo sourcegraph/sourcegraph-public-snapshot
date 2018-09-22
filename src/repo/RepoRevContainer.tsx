@@ -9,7 +9,11 @@ import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { PopoverButton } from '../components/PopoverButton'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import {
+    ConfigurationCascadeProps,
+    ExtensionsControllerProps,
+    ExtensionsProps,
+} from '../extensions/ExtensionsClientCommonContext'
 import { ChromeExtensionToast, FirefoxExtensionToast } from '../marketing/BrowserExtensionToast'
 import { SurveyToast } from '../marketing/SurveyToast'
 import { IS_CHROME, IS_FIREFOX } from '../marketing/util'
@@ -25,6 +29,7 @@ import { RevisionsPopover } from './RevisionsPopover'
 
 export interface RepoRevContainerContext
     extends RepoHeaderContributionsLifecycleProps,
+        ConfigurationCascadeProps,
         ExtensionsControllerProps,
         ExtensionsDocumentsProps,
         ExtensionsProps {
@@ -35,7 +40,6 @@ export interface RepoRevContainerContext
     isLightTheme: boolean
     routePrefix: string
     onHelpPopoverToggle: () => void
-    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 export interface RepoRevContainerRoute extends RouteDescriptor<RepoRevContainerContext> {}
@@ -43,6 +47,7 @@ export interface RepoRevContainerRoute extends RouteDescriptor<RepoRevContainerC
 interface RepoRevContainerProps
     extends RouteComponentProps<{}>,
         RepoHeaderContributionsLifecycleProps,
+        ConfigurationCascadeProps,
         ExtensionsProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
@@ -52,7 +57,6 @@ interface RepoRevContainerProps
     user: GQL.IUser | null
     isLightTheme: boolean
     onHelpPopoverToggle: () => void
-    isExtensionEnabled: (extensionID: string) => boolean
     routePrefix: string
 
     /**
@@ -198,7 +202,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             rev: this.props.rev,
             routePrefix: this.props.routePrefix,
             user: this.props.user,
-            isExtensionEnabled: this.props.isExtensionEnabled,
+            configurationCascade: this.props.configurationCascade,
         }
 
         return (

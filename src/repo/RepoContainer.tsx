@@ -9,7 +9,11 @@ import { ParsedRepoRev, parseRepoRev, redirectToExternalHost } from '.'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { ExtensionsDocumentsProps } from '../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../extensions/ExtensionsClientCommonContext'
+import {
+    ConfigurationCascadeProps,
+    ExtensionsControllerProps,
+    ExtensionsProps,
+} from '../extensions/ExtensionsClientCommonContext'
 import { searchQueryForRepoRev } from '../search'
 import { queryUpdates } from '../search/input/QueryInput'
 import { ErrorLike, isErrorLike } from '../util/errors'
@@ -33,6 +37,7 @@ const RepoPageNotFound: React.SFC = () => (
 
 export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
+        ConfigurationCascadeProps,
         ExtensionsProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
@@ -40,7 +45,6 @@ export interface RepoContainerProps
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     user: GQL.IUser | null
     onHelpPopoverToggle: () => void
-    isExtensionEnabled: (extensionID: string) => boolean
     isLightTheme: boolean
 }
 
@@ -194,7 +198,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
             onHelpPopoverToggle: this.props.onHelpPopoverToggle,
-            isExtensionEnabled: this.props.isExtensionEnabled,
+            configurationCascade: this.props.configurationCascade,
             extensions: this.props.extensions,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,
             extensionsController: this.props.extensionsController,

@@ -10,9 +10,13 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
-import { discussionsExtensionID } from '../../discussions'
+import { isDiscussionsEnabled } from '../../discussions'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
+import {
+    ConfigurationCascadeProps,
+    ExtensionsControllerProps,
+    ExtensionsProps,
+} from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
@@ -84,6 +88,7 @@ interface Props
     extends AbsoluteRepoFile,
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
+        ConfigurationCascadeProps,
         ExtensionsProps,
         ExtensionsDocumentsProps,
         ExtensionsControllerProps {
@@ -92,7 +97,6 @@ interface Props
     isLightTheme: boolean
     repoID: GQL.ID
     user: GQL.IUser | null
-    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 interface State {
@@ -212,7 +216,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                         repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                     />
                 )}
-                {this.props.isExtensionEnabled(discussionsExtensionID) && (
+                {isDiscussionsEnabled(this.props.configurationCascade) && (
                     <RepoHeaderContributionPortal
                         position="right"
                         priority={20}
@@ -269,6 +273,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             html={this.state.blobOrError.highlight.html}
                             rev={this.props.rev}
                             mode={this.props.mode}
+                            configurationCascade={this.props.configurationCascade}
                             extensions={this.props.extensions}
                             extensionsController={this.props.extensionsController}
                             extensionsOnVisibleTextDocumentsChange={this.props.extensionsOnVisibleTextDocumentsChange}
@@ -276,7 +281,6 @@ export class BlobPage extends React.PureComponent<Props, State> {
                             renderMode={renderMode}
                             location={this.props.location}
                             history={this.props.history}
-                            isExtensionEnabled={this.props.isExtensionEnabled}
                         />
                     )}
                 {!this.state.blobOrError.richHTML &&

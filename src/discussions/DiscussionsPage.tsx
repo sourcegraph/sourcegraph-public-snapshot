@@ -2,16 +2,16 @@ import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router-dom'
 import { Subscription } from 'rxjs'
-import { discussionsExtensionID } from '.'
+import { isDiscussionsEnabled } from '.'
 import { ErrorNotSupportedPage } from '../components/ErrorNotSupportedPage'
 import { PageTitle } from '../components/PageTitle'
 import { DiscussionsList } from '../discussions/DiscussionsList'
+import { ConfigurationCascadeProps } from '../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../tracking/eventLogger'
 
-interface Props extends RouteComponentProps<any> {
+interface Props extends ConfigurationCascadeProps, RouteComponentProps<any> {
     history: H.History
     location: H.Location
-    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 interface State {}
@@ -33,7 +33,7 @@ export class DiscussionsPage extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!this.props.isExtensionEnabled(discussionsExtensionID)) {
+        if (!isDiscussionsEnabled(this.props.configurationCascade)) {
             return <ErrorNotSupportedPage />
         }
 

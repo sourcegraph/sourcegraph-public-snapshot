@@ -33,8 +33,12 @@ import {
 } from '../../../backend/features'
 import * as GQL from '../../../backend/graphqlschema'
 import { fetchServerCapabilities, isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
-import { discussionsExtensionID } from '../../../discussions'
-import { ExtensionsControllerProps, ExtensionsProps } from '../../../extensions/ExtensionsClientCommonContext'
+import { isDiscussionsEnabled } from '../../../discussions'
+import {
+    ConfigurationCascadeProps,
+    ExtensionsControllerProps,
+    ExtensionsProps,
+} from '../../../extensions/ExtensionsClientCommonContext'
 import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
@@ -52,6 +56,7 @@ interface Props
         Partial<PositionSpec>,
         ModeSpec,
         RepoHeaderContributionsLifecycleProps,
+        ConfigurationCascadeProps,
         ExtensionsProps,
         ExtensionsControllerProps {
     location: H.Location
@@ -61,7 +66,6 @@ interface Props
     commitID: string
     isLightTheme: boolean
     user: GQL.IUser | null
-    isExtensionEnabled: (extensionID: string) => boolean
 }
 
 /** The subject (what the contextual information refers to). */
@@ -355,7 +359,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         />
                     }
                 />
-                {this.props.isExtensionEnabled(discussionsExtensionID) && (
+                {isDiscussionsEnabled(this.props.configurationCascade) && (
                     <PanelItemPortal
                         id="discussions"
                         label="File discussions"
