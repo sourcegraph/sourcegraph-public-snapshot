@@ -17,15 +17,14 @@ require (
 	github.com/russellhaering/gosaml2 v0.3.1
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/sergi/go-diff v1.0.0 // indirect
-	github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f // indirect
+	github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f
 	github.com/sourcegraph/go-langserver v0.0.0-20180917104716-6b103664e059
 	github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
-	github.com/sourcegraph/sourcegraph v0.0.0-20180925082351-c77b8b8c1f7c
-	github.com/src-d/gcfg v1.3.0 // indirect
+	github.com/sourcegraph/sourcegraph v0.0.0-20180919091521-d22ff26d47+incompatible
 	github.com/zenazn/goji v0.9.0 // indirect
-	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b
+	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b // indirect
 	golang.org/x/net v0.0.0-20180911220305-26e67e76b6c3
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	golang.org/x/sys v0.0.0-20180918153733-ee1b12c67af4 // indirect

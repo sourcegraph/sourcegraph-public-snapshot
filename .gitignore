@@ -11,3 +11,4 @@ puppeteer/
 src/backend/graphqlschema.ts
 yarn-error.log
 /ui/
+/.bin
