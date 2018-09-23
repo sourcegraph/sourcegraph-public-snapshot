@@ -315,7 +315,7 @@ export const fetchTreeEntries = memoizeObservable(
                     repository(name: $repoPath) {
                         commit(rev: $commitID, inputRevspec: $rev) {
                             tree(path: $filePath) {
-                                entries(first: $first, recursiveSingleChild: true) {
+                                entries(first: $first) {
                                     name
                                     path
                                     isDirectory
@@ -324,7 +324,6 @@ export const fetchTreeEntries = memoizeObservable(
                                         url
                                         commit
                                     }
-                                    isSingleChild
                                 }
                             }
                         }

@@ -5,14 +5,11 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"path/filepath"
 	"time"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -96,17 +93,6 @@ func cloneURLToURI(cloneURL string) (string, error) {
 
 func createFileInfo(path string, isDir bool) os.FileInfo {
 	return fileInfo{path: path, isDir: isDir}
-}
-
-func (r *gitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeEntryConnectionArgs) (bool, error) {
-	if !r.IsDirectory() {
-		return false, nil
-	}
-	entries, err := git.ReadDir(ctx, backend.CachedGitRepo(r.commit.repo.repo), api.CommitID(r.commit.oid), filepath.Dir(r.path), false)
-	if err != nil {
-		return false, err
-	}
-	return len(entries) == 1, nil
 }
 
 type fileInfo struct {

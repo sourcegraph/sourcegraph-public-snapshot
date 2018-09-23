@@ -108,7 +108,6 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                             rev={this.props.rev}
                             commitID={this.props.commitID}
                             history={this.props.history}
-                            location={this.props.location}
                             scrollRootSelector="#explorer"
                             activePath={this.props.filePath}
                             activePathIsDir={this.props.isDir}
