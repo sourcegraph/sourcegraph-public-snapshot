@@ -6,12 +6,11 @@ import { Subject } from 'rxjs'
 import { distinctUntilChanged, startWith } from 'rxjs/operators'
 import { AbsoluteRepo } from '../repo'
 import { dirname } from '../util/path'
-import { TreeRoot } from './TreeRoot'
+import { TreeLayer } from './TreeLayer'
 import { getDomElement, scrollIntoView } from './util'
 
 interface Props extends AbsoluteRepo {
     history: H.History
-    location: H.Location
     scrollRootSelector?: string
 
     /** The tree entry that is currently active, or '' if none (which means the root). */
@@ -220,7 +219,7 @@ export class Tree extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <div className="tree" tabIndex={1} onKeyDown={this.onKeyDown} ref={this.setTreeElement}>
-                <TreeRoot
+                <TreeLayer
                     ref={ref => {
                         if (ref) {
                             this.node = ref.node
@@ -228,12 +227,13 @@ export class Tree extends React.PureComponent<Props, State> {
                     }}
                     activeNode={this.state.activeNode}
                     activePath={this.props.activePath}
+                    activePathIsTree={this.props.activePathIsDir}
                     depth={0}
                     history={this.props.history}
-                    location={this.props.location}
                     repoPath={this.props.repoPath}
                     rev={this.props.rev}
                     commitID={this.props.commitID}
+                    isRoot={true}
                     index={0}
                     // The root is always expanded so it loads the top level
                     isExpanded={true}
@@ -246,6 +246,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     selectedNode={this.state.selectedNode}
                     setChildNodes={this.setChildNode}
                     setActiveNode={this.setActiveNode}
+                    isSingleChild={false}
                 />
             </div>
         )

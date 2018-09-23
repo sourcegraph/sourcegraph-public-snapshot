@@ -20,9 +20,6 @@ func (r *gitTreeEntryResolver) IsRoot() bool {
 type gitTreeEntryConnectionArgs struct {
 	connectionArgs
 	Recursive bool
-	// If recurseSingleChild is true, we will return a flat list of every
-	// directory and file in a single-child nest.
-	RecursiveSingleChild bool
 }
 
 func (r *gitTreeEntryResolver) Entries(ctx context.Context, args *gitTreeEntryConnectionArgs) ([]*gitTreeEntryResolver, error) {
@@ -68,15 +65,6 @@ func (r *gitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 			})
 		}
 	}
-
-	if !args.Recursive && args.RecursiveSingleChild && len(l) == 1 {
-		subEntries, err := l[0].entries(ctx, args, filter)
-		if err != nil {
-			return nil, err
-		}
-		l = append(l, subEntries...)
-	}
-
 	return l, nil
 }
 
