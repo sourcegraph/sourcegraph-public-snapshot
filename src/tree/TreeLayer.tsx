@@ -1,10 +1,5 @@
-import { Loader } from '@sourcegraph/icons/lib/Loader'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -21,25 +16,34 @@ import * as GQL from '../backend/graphqlschema'
 import { AbsoluteRepo } from '../repo'
 import { fetchTreeEntries } from '../repo/backend'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
+import { ChildTreeLayer } from './ChildTreeLayer'
+import { Directory } from './Directory'
+import { File } from './File'
 import { TreeNode } from './Tree'
+import {
+    hasSingleChild,
+    maxEntries,
+    singleChildEntriesToGitTree,
+    SingleChildGitTree,
+    TreeEntryInfo,
+    treePadding,
+} from './util'
 
-interface TreeLayerProps extends AbsoluteRepo {
+export interface TreeLayerProps extends AbsoluteRepo {
     history: H.History
+    location: H.Location
     activeNode: TreeNode
     activePath: string
-    activePathIsTree: boolean
     depth: number
     expandedTrees: string[]
     parent: TreeNode | null
     parentPath?: string
     index: number
     isExpanded: boolean
-    isRoot: boolean
-    entryInfo?: GQL.IGitBlob | GQL.IGitTree
+    /** EntryInfo is information we need to render this layer. */
+    entryInfo: TreeEntryInfo
     selectedNode: TreeNode
-    /** Whether this tree layer is the only child of the parent layer. */
-    isSingleChild: boolean
-    onHover?: (filePath: string) => void
+    onHover: (filePath: string) => void
     onSelect: (node: TreeNode) => void
     onToggleExpand: (path: string, expanded: boolean, node: TreeNode) => void
     setChildNodes: (node: TreeNode, index: number) => void
@@ -50,13 +54,6 @@ const LOADING: 'loading' = 'loading'
 interface TreeLayerState {
     treeOrError?: typeof LOADING | GQL.IGitTree | ErrorLike
 }
-
-const treePadding = (depth: number, isTree: boolean) => ({
-    paddingLeft: depth * 12 + (isTree ? 0 : 12) + 12 + 'px',
-    paddingRight: '16px',
-})
-
-const maxEntries = 2500
 
 export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     public node: TreeNode
@@ -116,16 +113,8 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                 .subscribe(treeOrError => this.setState({ treeOrError }), err => console.error(err))
         )
 
-        // If this layer is the only child, and it's a directory, expand it automatically. This
-        // ensures the user doesn't have to open every directory if they are deeply nested and have no contents
-        // other than another directory.
-        if (this.props.isSingleChild && this.props.entryInfo && this.props.entryInfo.isDirectory) {
-            this.props.onToggleExpand(this.props.entryInfo.path, true, this.node)
-        }
-
-        // When we're at the root tree layer or the tree is already expanded, fetch the tree contents on mount.
-        // For other layers, fetch on hover or on expand.
-        if (this.props.isRoot || this.props.isExpanded) {
+        // If the layer is already expanded, fetch contents.
+        if (this.props.isExpanded) {
             this.componentUpdates.next(this.props)
         }
 
@@ -134,6 +123,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             this.props.setActiveNode(this.node)
         }
 
+        // This handles pre-fetching when a user
+        // hovers over a directory. The `subscribe` is empty because
+        // we simply want to cache the network request.
         this.subscriptions.add(
             this.rowHovers
                 .pipe(
@@ -143,7 +135,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             repoPath: this.props.repoPath,
                             rev: this.props.rev,
                             commitID: this.props.commitID,
-                            filePath: path || '',
+                            filePath: path,
                             first: maxEntries,
                         }).pipe(catchError(err => [asError(err)]))
                     )
@@ -227,6 +219,8 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         if (this.node === this.props.selectedNode && isDir && this.props.onHover) {
             this.props.onHover(this.node.path)
         }
+
+        // Call onToggleExpand if activePath changes.
     }
 
     public componentWillUnmount(): void {
@@ -243,63 +237,19 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         ]
             .filter(c => !!c)
             .join(' ')
+        const { treeOrError } = this.state
 
-        // If isRoot or there's no entry info, we are at the root layer, so simply load all top-level entries.
-        if (this.props.isRoot || !entryInfo) {
-            return (
-                <table className="tree-layer" tabIndex={0}>
-                    <tbody>
-                        <tr>
-                            <td className="tree__cell">
-                                {this.state.treeOrError === LOADING ? (
-                                    <div className="tree__row-loader">
-                                        <Loader className="icon-inline tree-page__entries-loader" />Loading tree
-                                    </div>
-                                ) : isErrorLike(this.state.treeOrError) ? (
-                                    <div
-                                        className="tree__row tree__row-alert alert alert-danger"
-                                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                        style={treePadding(this.props.depth, true)}
-                                    >
-                                        Error loading tree: {this.state.treeOrError.message}
-                                    </div>
-                                ) : (
-                                    this.state.treeOrError &&
-                                    this.state.treeOrError.entries.map((item, i) => (
-                                        <TreeLayer
-                                            key={item.path}
-                                            activeNode={this.props.activeNode}
-                                            history={this.props.history}
-                                            activePath={this.props.activePath}
-                                            activePathIsTree={this.props.activePathIsTree}
-                                            depth={0}
-                                            index={i}
-                                            isExpanded={this.props.expandedTrees.includes(item.path)}
-                                            isRoot={false}
-                                            expandedTrees={this.props.expandedTrees}
-                                            repoPath={this.props.repoPath}
-                                            rev={this.props.rev}
-                                            commitID={this.props.commitID}
-                                            entryInfo={item}
-                                            parent={this.node}
-                                            parentPath={item.path}
-                                            onSelect={this.props.onSelect}
-                                            onToggleExpand={this.props.onToggleExpand}
-                                            onHover={this.fetchChildContents}
-                                            selectedNode={this.props.selectedNode}
-                                            setChildNodes={this.setChildNode}
-                                            setActiveNode={this.props.setActiveNode}
-                                            isSingleChild={
-                                                (this.state.treeOrError as GQL.IGitTree).entries.length === 1
-                                            }
-                                        />
-                                    ))
-                                )}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            )
+        // If this layer has a single child directory, we have to parse treeOrError.entries
+        // and convert it from a non-hierarchical flatlist to a singleChildGitTree so SingleChildTreeLayers know
+        // which entries to render, and which entries to pass to its children.
+        let singleChildTreeEntry = {} as SingleChildGitTree
+        if (
+            treeOrError &&
+            treeOrError !== LOADING &&
+            !isErrorLike(treeOrError) &&
+            hasSingleChild(treeOrError.entries)
+        ) {
+            singleChildTreeEntry = singleChildEntriesToGitTree(treeOrError.entries)
         }
 
         // Every other layer is a row in the file tree, and will fetch and render its children (if any) when expanded.
@@ -309,196 +259,57 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     <tbody>
                         {entryInfo.isDirectory ? (
                             <>
-                                <tr key={entryInfo.path} className={className} onClick={this.handleTreeClick}>
-                                    <td className="tree__cell">
-                                        <div
-                                            className="tree__row-contents tree__row-contents-new"
-                                            data-tree-is-directory="true"
-                                            data-tree-path={entryInfo.path}
-                                        >
-                                            <div className="tree__row-contents-text">
-                                                <a
-                                                    className="tree__row-icon"
-                                                    href={entryInfo.url}
-                                                    onClick={this.noopRowClick}
-                                                    // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                                    style={treePadding(this.props.depth, true)}
-                                                    tabIndex={-1}
-                                                >
-                                                    {this.props.isExpanded ? (
-                                                        <ChevronDownIcon className="icon-inline" />
-                                                    ) : (
-                                                        <ChevronRightIcon className="icon-inline" />
-                                                    )}
-                                                </a>
-                                                <Link
-                                                    to={entryInfo.url}
-                                                    onClick={this.linkRowClick}
-                                                    className="tree__row-label"
-                                                    draggable={false}
-                                                    title={entryInfo.path}
-                                                    tabIndex={-1}
-                                                >
-                                                    {entryInfo.name}
-                                                </Link>
-                                            </div>
-                                            {this.state.treeOrError === LOADING && (
-                                                <div className="tree__row-loader">
-                                                    <Loader className="icon-inline tree-page__entries-loader" />
-                                                </div>
-                                            )}
-                                        </div>
-                                        {this.props.index === maxEntries - 1 && (
-                                            <div
-                                                className="tree__row-alert alert alert-warning"
-                                                // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                                style={treePadding(this.props.depth, true)}
-                                            >
-                                                Too many entries. Use search to find a specific file.
-                                            </div>
-                                        )}
-                                    </td>
-                                </tr>
+                                <Directory
+                                    {...this.props}
+                                    className={className}
+                                    maxEntries={maxEntries}
+                                    handleTreeClick={this.handleTreeClick}
+                                    noopRowClick={this.noopRowClick}
+                                    linkRowClick={this.linkRowClick}
+                                />
                                 {this.props.isExpanded &&
-                                    this.state.treeOrError !== LOADING && (
+                                    treeOrError !== LOADING && (
                                         <tr>
                                             <td className="tree__cell">
-                                                {isErrorLike(this.state.treeOrError) ? (
+                                                {isErrorLike(treeOrError) ? (
                                                     <div
                                                         className="tree__row-alert alert alert-danger"
                                                         // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                                         style={treePadding(this.props.depth, true)}
                                                     >
-                                                        Error loading file tree: {this.state.treeOrError.message}
+                                                        Error loading file tree: {treeOrError.message}
                                                     </div>
                                                 ) : (
-                                                    this.state.treeOrError &&
-                                                    this.state.treeOrError.entries.map((item, i) => (
-                                                        <TreeLayer
-                                                            key={item.path}
-                                                            history={this.props.history}
-                                                            activePath={this.props.activePath}
-                                                            activePathIsTree={this.props.activePathIsTree}
-                                                            activeNode={this.props.activeNode}
-                                                            depth={this.props.depth + 1}
-                                                            expandedTrees={this.props.expandedTrees}
-                                                            index={i}
-                                                            isExpanded={this.props.expandedTrees.includes(item.path)}
-                                                            isRoot={false}
+                                                    treeOrError && (
+                                                        <ChildTreeLayer
+                                                            {...this.props}
                                                             parent={this.node}
-                                                            parentPath={item.path}
-                                                            repoPath={this.props.repoPath}
-                                                            rev={this.props.rev}
-                                                            commitID={this.props.commitID}
-                                                            entryInfo={item}
-                                                            onSelect={this.props.onSelect}
-                                                            onToggleExpand={this.props.onToggleExpand}
-                                                            onHover={this.props.onHover}
-                                                            selectedNode={this.props.selectedNode}
+                                                            key={singleChildTreeEntry.path}
+                                                            entries={treeOrError.entries}
+                                                            singleChildTreeEntry={singleChildTreeEntry}
+                                                            childrenEntries={singleChildTreeEntry.children}
                                                             setChildNodes={this.setChildNode}
-                                                            setActiveNode={this.props.setActiveNode}
-                                                            isSingleChild={
-                                                                (this.state.treeOrError as GQL.IGitTree).entries
-                                                                    .length === 1
-                                                            }
                                                         />
-                                                    ))
+                                                    )
                                                 )}
                                             </td>
                                         </tr>
                                     )}
                             </>
                         ) : (
-                            <tr key={entryInfo.path} className={className}>
-                                <td className="tree__cell">
-                                    {entryInfo.submodule ? (
-                                        entryInfo.url ? (
-                                            <Link
-                                                to={entryInfo.url}
-                                                onClick={this.linkRowClick}
-                                                draggable={false}
-                                                title={'Submodule: ' + entryInfo.submodule.url}
-                                                className="tree__row-contents"
-                                                data-tree-path={entryInfo.path}
-                                            >
-                                                <div className="tree__row-contents-text">
-                                                    <span
-                                                        className="tree__row-icon"
-                                                        onClick={this.noopRowClick}
-                                                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                                        style={treePadding(this.props.depth, true)}
-                                                        tabIndex={-1}
-                                                    >
-                                                        <RepoIcon className="icon-inline" />
-                                                    </span>
-                                                    <span className="tree__row-label">
-                                                        {entryInfo.name} @ {entryInfo.submodule.commit.substr(0, 7)}
-                                                    </span>
-                                                </div>
-                                            </Link>
-                                        ) : (
-                                            <div
-                                                className="tree__row-contents"
-                                                title={'Submodule: ' + entryInfo.submodule.url}
-                                            >
-                                                <div className="tree__row-contents-text">
-                                                    <span
-                                                        className="tree__row-icon"
-                                                        // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                                        style={treePadding(this.props.depth, true)}
-                                                    >
-                                                        <RepoIcon className="icon-inline" />
-                                                    </span>
-                                                    <span className="tree__row-label">
-                                                        {entryInfo.name} @ {entryInfo.submodule.commit.substr(0, 7)}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )
-                                    ) : (
-                                        <Link
-                                            className="tree__row-contents"
-                                            to={entryInfo.url}
-                                            onClick={this.linkRowClick}
-                                            data-tree-path={entryInfo.path}
-                                            draggable={false}
-                                            title={entryInfo.path}
-                                            // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                            style={treePadding(this.props.depth, false)}
-                                            tabIndex={-1}
-                                        >
-                                            {entryInfo.name}
-                                        </Link>
-                                    )}
-                                    {this.props.index === maxEntries - 1 && (
-                                        <div
-                                            className="tree__row-alert alert alert-warning"
-                                            // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
-                                            style={treePadding(this.props.depth, true)}
-                                        >
-                                            Too many entries. Use search to find a specific file.
-                                        </div>
-                                    )}
-                                </td>
-                            </tr>
+                            <File
+                                {...this.props}
+                                maxEntries={maxEntries}
+                                className={className}
+                                handleTreeClick={this.handleTreeClick}
+                                noopRowClick={this.noopRowClick}
+                                linkRowClick={this.linkRowClick}
+                            />
                         )}
                     </tbody>
                 </table>
             </div>
         )
-    }
-
-    /**
-     * Prefetches the children of hovered tree rows. Gets passed from the root tree layer to child tree layers
-     * through the onHover prop. This method only gets called on the root tree layer component so we can debounce
-     * the hover prefetch requests.
-     */
-    private fetchChildContents = (path: string): void => {
-        if (this.props.isRoot) {
-            this.rowHovers.next(path)
-        } else {
-            console.error('fetchChildContents should not be called from non-root tree layer components')
-        }
     }
 
     /**
@@ -527,9 +338,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
             e.preventDefault()
             e.stopPropagation()
         }
-        this.props.onSelect(this.node)
-        const path = this.props.entryInfo ? this.props.entryInfo.path : ''
-        this.props.onToggleExpand(path, !this.props.isExpanded, this.node)
+        this.handleTreeClick()
     }
 
     /**
