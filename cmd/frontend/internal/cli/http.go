@@ -9,6 +9,7 @@ import (
 	"github.com/NYTimes/gziphandler"
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
@@ -61,6 +62,9 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	h = auth.OverrideAuthMiddleware(h)
 	h = auth.ForbidAllRequestsMiddleware(h)
 	// 🚨 SECURITY: These all run before the auth handler, so the client is not yet authenticated.
+	if hooks.PreAuthMiddleware != nil {
+		h = hooks.PreAuthMiddleware(h)
+	}
 	h = healthCheckMiddleware(h)
 	h = tracepkg.Middleware(h)
 	h = middleware.SourcegraphComGoGetHandler(h)
