@@ -424,10 +424,14 @@ input DiscussionCommentUpdateInput {
     delete: Boolean
 
     # When non-null, reports the comment with the specified reason.
+    #
+    # An error will be returned if the comment's canReport field is false.
     report: String
 
     # When non-null, indicates that the reports on the thread should be
     # cleared. Only admins can perform this action.
+    #
+    # An error will be returned if the comment's canClearReports field is false.
     clearReports: Boolean
 }
 
@@ -2559,7 +2563,23 @@ type DiscussionComment {
 
     # Reports filed by users about this comment. Only admins will receive a non
     # empty list of reports.
+    #
+    # When discussions.abuseProtection in the site config is set to false, this
+    # will always be an empty list.
     reports: [String!]!
+
+    # Whether or not the comment can be reported.
+    #
+    # This is always false when discussions.abuseProtection in the site config is set to false.
+    canReport: Boolean!
+
+    # Whether or not the comment can be deleted.
+    canDelete: Boolean!
+
+    # Whether or not the comment can have its reports be cleared.
+    #
+    # This is always false when discussions.abuseProtection in the site config is set to false.
+    canClearReports: Boolean!
 }
 
 # A list of discussion threads.

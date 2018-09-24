@@ -76,7 +76,44 @@ func (r *discussionCommentResolver) Reports(ctx context.Context) []string {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return []string{}
 	}
+	if dc := conf.Get().Discussions; dc != nil && !dc.AbuseProtection {
+		return []string{}
+	}
 	return r.c.Reports
+}
+
+func (r *discussionCommentResolver) CanReport(ctx context.Context) bool {
+	if dc := conf.Get().Discussions; dc != nil && !dc.AbuseProtection {
+		return false
+	}
+	// Only signed in users may update/report a discussion comment.
+	currentUser, err := currentUser(ctx)
+	if err != nil {
+		return false
+	}
+	if currentUser == nil {
+		return false
+	}
+	return true
+}
+
+func (r *discussionCommentResolver) CanClearReports(ctx context.Context) bool {
+	if dc := conf.Get().Discussions; dc != nil && !dc.AbuseProtection {
+		return false
+	}
+	// Only site admins can clear reports.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return false
+	}
+	return true
+}
+
+func (r *discussionCommentResolver) CanDelete(ctx context.Context) bool {
+	// Only site admins can delete discussion comments.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return false
+	}
+	return true
 }
 
 func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
@@ -207,6 +244,9 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 		// 🚨 SECURITY: Only site admins can clear reports.
 		if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 			return nil, err
+		}
+		if dc := conf.Get().Discussions; dc != nil && !dc.AbuseProtection {
+			return nil, errors.New("cannot clear reports; discussions.abuseProtection is disabled")
 		}
 		clearReports = *args.Input.ClearReports
 	}

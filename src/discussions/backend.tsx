@@ -16,6 +16,9 @@ const discussionCommentFieldsFragment = gql`
         createdAt
         updatedAt
         reports
+        canReport
+        canDelete
+        canClearReports
     }
 `
 
