@@ -11,8 +11,8 @@ import (
 
 	oidc "github.com/coreos/go-oidc"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
 	"golang.org/x/oauth2"
@@ -87,7 +87,7 @@ func (p *provider) oauth2Config() *oauth2.Config {
 		// TODO(sqs): Update this to use authPrefix not auth.AuthURLPrefix (i.e.,
 		// "/.auth/openidconnect/callback" not "/.auth/callback"). We need to use the old value for
 		// BACKCOMPAT because clients typically have hardcoded redirect URIs (of the old value).
-		RedirectURL: globals.AppURL.ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).String(),
+		RedirectURL: globals.AppURL().ResolveReference(&url.URL{Path: path.Join(auth.AuthURLPrefix, "callback")}).String(),
 		Endpoint:    p.oidc.Endpoint(),
 		Scopes:      []string{oidc.ScopeOpenID, "profile", "email"},
 	}
