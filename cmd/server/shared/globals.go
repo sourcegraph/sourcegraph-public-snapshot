@@ -7,12 +7,15 @@ package shared
 //
 // If it is modified by an external package, it must be modified immediately on startup, before
 // `shared.Main` is called.
+//
+// This should be kept in sync with dev/src-prof-services.json.
 var SrcProfServices = []map[string]string{
-	{"Name": "frontend", "Host": "127.0.0.1:6060"},
+	{"Name": "frontend", "Host": "127.0.0.1:6063"},
 	{"Name": "gitserver", "Host": "127.0.0.1:6068"},
 	{"Name": "searcher", "Host": "127.0.0.1:6069"},
 	{"Name": "lsp-proxy", "Host": "127.0.0.1:6061"},
 	{"Name": "symbols", "Host": "127.0.0.1:6071"},
+	{"Name": "xlang-go", "Host": "127.0.0.1:6062"},
 	{"Name": "repo-updater", "Host": "127.0.0.1:6074"},
 	{"Name": "indexer", "Host": "127.0.0.1:6073"},
 	{"Name": "query-runner", "Host": "127.0.0.1:6067"},

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"log"
@@ -12,10 +13,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"golang.org/x/crypto/acme/autocert"
-
-	"context"
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -33,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/sysreq"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
+	"golang.org/x/crypto/acme/autocert"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
