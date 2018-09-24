@@ -1,19 +1,7 @@
 .extension-area-header {
     &__icon {
         display: block;
-        .icon {
-            width: 4rem;
-            height: 4rem;
-        }
-        padding: 0.78rem 0.63rem 0.65rem 1rem; // compensate for the puzzle icon not being centered
-        border-radius: 100%;
-    }
-    .theme-light & &__icon {
-        background-color: $color-light-bg-5;
-        color: $color-text-2;
-    }
-    .theme-dark & &__icon {
-        background-color: $color-bg-5;
-        color: $color-text-2;
+        width: 8rem;
+        height: 8rem;
     }
 }
