@@ -2693,10 +2693,8 @@ type Site implements ConfigurationSubject {
     # Whether the server sends emails to users to verify email addresses. If false, then site admins must manually
     # verify users' email addresses.
     sendsEmailVerificationEmails: Boolean!
-    # Information about this site's license to use Sourcegraph software. This is about the license
-    # for the use of Sourcegraph itself; it is not about repository licenses or open-source
-    # licenses.
-    sourcegraphLicense: SourcegraphLicense!
+    # Information about this site's Sourcegraph license (if any).
+    sourcegraphLicense: SourcegraphLicenseInfo!
     # The activity.
     activity(
         # Days of history.
@@ -3047,33 +3045,18 @@ type SurveyResponse {
     createdAt: String!
 }
 
-# Information about this site's license to use Sourcegraph software. This is about a license for the
-# use of Sourcegraph itself; it is not about a repository license or an open-source license.
-type SourcegraphLicense {
-    # An identifier for this Sourcegraph site, generated randomly upon initialization. This value
-    # can be overridden by the site admin.
-    siteID: String!
-    # An email address of the initial site admin.
-    primarySiteAdminEmail: String!
+# Information about this site's Sourcegraph license (if any). This is a license for the use of Sourcegraph itself;
+# it is not about a repository license or an open-source license.
+type SourcegraphLicenseInfo {
+    # The name of the pricing plan associated with the license (if any), or else a name indicating use of the
+    # free/open-source features.
+    plan: String!
     # The total number of users on this Sourcegraph site.
     userCount: Int!
-    # The Sourcegraph product name ("Sourcegraph Server" or "Sourcegraph Data Center" when running
-    # in production).
-    productName: String!
-    # A list of premium Sourcegraph features and associated information.
-    premiumFeatures: [SourcegraphFeature!]!
-}
-
-# A feature of Sourcegraph software and associated information.
-type SourcegraphFeature {
-    # The title of this feature.
-    title: String!
-    # A description of this feature.
-    description: String!
-    # Whether this feature is enabled on this Sourcegraph site.
-    enabled: Boolean!
-    # A URL with more information about this feature.
-    informationURL: String!
+    # The maximum number of users allowed by this license, or null if there is no limit.
+    maxUserCount: Int
+    # The date when this license expires, or null if there is no expiration.
+    expiresAt: String
 }
 
 # An extension registry.

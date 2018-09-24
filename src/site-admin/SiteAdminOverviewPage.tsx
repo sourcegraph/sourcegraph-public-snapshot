@@ -5,7 +5,6 @@ import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserIcon from 'mdi-react/UserIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -16,9 +15,10 @@ import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
 import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { pluralize } from '../util/strings'
-import { SourcegraphLicense } from './SourcegraphLicense'
 
-interface Props extends RouteComponentProps<any> {}
+interface Props {
+    overviewComponents: ReadonlyArray<React.ComponentType>
+}
 
 interface State {
     info?: OverviewInfo
@@ -47,6 +47,9 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
             <div className="site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
                 {!this.state.info && <LoadingSpinner className="icon-inline" />}
+                {this.props.overviewComponents.length > 0 && (
+                    <div className="mb-4">{this.props.overviewComponents.map((C, i) => <C key={i} />)}</div>
+                )}
                 <OverviewList>
                     {this.state.info && (
                         <OverviewItem
@@ -122,7 +125,6 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             </OverviewItem>
                         )}
                 </OverviewList>
-                <SourcegraphLicense className="mt-5" />
             </div>
         )
     }

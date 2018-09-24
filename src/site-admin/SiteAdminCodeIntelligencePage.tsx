@@ -77,7 +77,7 @@ export class SiteAdminCodeIntelligencePage extends React.PureComponent<{}, State
 
     private queryLanguageServerManagementStatus(): Observable<GQL.ILanguageServerManagementStatus> {
         return queryGraphQL(gql`
-            query SourcegraphLicense {
+            query LanguageServerManagementStatus {
                 site {
                     languageServerManagementStatus {
                         siteCanManage

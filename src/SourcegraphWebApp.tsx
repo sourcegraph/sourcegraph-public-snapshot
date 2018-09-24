@@ -54,6 +54,7 @@ export interface SourcegraphWebAppProps {
     extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
     siteAdminSideBarGroups: SiteAdminSideBarGroups
+    siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
     userAccountSideBarItems: UserAccountSidebarItems
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>

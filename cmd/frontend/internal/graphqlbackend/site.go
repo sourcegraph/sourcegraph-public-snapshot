@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend/sourcegraphlicense"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/useractivity"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -129,8 +128,8 @@ func (r *siteResolver) HasCodeIntelligence() bool {
 	return envvar.HasCodeIntelligence()
 }
 
-func (r *siteResolver) SourcegraphLicense() *sourcegraphlicense.SourcegraphLicense {
-	return sourcegraphlicense.Resolver()
+func (r *siteResolver) SourcegraphLicense(ctx context.Context) (*sourcegraphLicenseInfoResolver, error) {
+	return currentSourcegraphLicenseInfo(ctx)
 }
 
 func (r *siteResolver) Activity(ctx context.Context, args *struct {

@@ -15,6 +15,7 @@ import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHe
 import { extensionsAreaRoutes } from './extensions/routes'
 import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { repoRevContainerRoutes } from './repo/routes'
+import { siteAdminOverviewComponents } from './site-admin/overviewComponents'
 import { siteAdminAreaRoutes } from './site-admin/routes'
 import { siteAdminSidebarGroups } from './site-admin/sidebaritems'
 import { SourcegraphWebApp } from './SourcegraphWebApp'
@@ -30,6 +31,7 @@ window.addEventListener('DOMContentLoaded', () => {
             extensionsAreaHeaderActionButtons={extensionsAreaHeaderActionButtons}
             siteAdminAreaRoutes={siteAdminAreaRoutes}
             siteAdminSideBarGroups={siteAdminSidebarGroups}
+            siteAdminOverviewComponents={siteAdminOverviewComponents}
             userAccountSideBarItems={userAccountSideBarItems}
             userAccountAreaRoutes={userAccountAreaRoutes}
             repoRevContainerRoutes={repoRevContainerRoutes}

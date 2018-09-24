@@ -24,6 +24,9 @@ export interface SiteAdminAreaRouteContext extends ExtensionsProps {
     site: Pick<GQL.ISite, '__typename' | 'id'>
     user: GQL.IUser
     isLightTheme: boolean
+
+    /** This property is only used by {@link SiteAdminOverviewPage}. */
+    overviewComponents: ReadonlyArray<React.ComponentType>
 }
 
 export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteContext> {}
@@ -31,6 +34,7 @@ export interface SiteAdminAreaRoute extends RouteDescriptor<SiteAdminAreaRouteCo
 interface SiteAdminAreaProps extends RouteComponentProps<{}>, ExtensionsProps {
     routes: ReadonlyArray<SiteAdminAreaRoute>
     sideBarGroups: SiteAdminSideBarGroups
+    overviewComponents: ReadonlyArray<React.ComponentType>
     user: GQL.IUser | null
     isLightTheme: boolean
 }
@@ -59,6 +63,7 @@ export class SiteAdminArea extends React.Component<SiteAdminAreaProps> {
             extensions: this.props.extensions,
             isLightTheme: this.props.isLightTheme,
             site: { __typename: 'Site' as 'Site', id: window.context.siteGQLID },
+            overviewComponents: this.props.overviewComponents,
         }
 
         return (

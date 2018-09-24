@@ -336,6 +336,7 @@ type SiteConfiguration struct {
 	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
 	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
 	Langservers                       []*Langservers               `json:"langservers,omitempty"`
+	LicenseKey                        string                       `json:"licenseKey,omitempty"`
 	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
 	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
 	Log                               *Log                         `json:"log,omitempty"`
