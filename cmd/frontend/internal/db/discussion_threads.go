@@ -311,17 +311,13 @@ func (opts *DiscussionThreadsListOptions) SetFromQuery(ctx context.Context, quer
 
 		// syntax: "involves:slimsag" or "involves:@slimsag" or "involves:slimsag @jack"
 		"involves": func(value string) {
-			for _, threadID := range findInvolvedThreadIDs(value) {
-				opts.ThreadIDs = append(opts.ThreadIDs, threadID)
-			}
+			opts.ThreadIDs = append(opts.ThreadIDs, findInvolvedThreadIDs(value)...)
 			if len(opts.ThreadIDs) == 0 {
 				opts.ThreadIDs = []int64{-1}
 			}
 		},
 		"-involves": func(value string) {
-			for _, threadID := range findInvolvedThreadIDs(value) {
-				opts.NotThreadIDs = append(opts.NotThreadIDs, threadID)
-			}
+			opts.NotThreadIDs = append(opts.NotThreadIDs, findInvolvedThreadIDs(value)...)
 		},
 
 		// syntax: "author:slimsag" or "author:@slimsag" or `author:"slimsag @jack"`
