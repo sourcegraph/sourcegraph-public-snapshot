@@ -113,6 +113,12 @@ type ExperimentalFeatures struct {
 	UpdateScheduler       string `json:"updateScheduler,omitempty"`
 }
 
+// ExtensionRepository description: The location of the version control repository for this extension.
+type ExtensionRepository struct {
+	Type string `json:"type,omitempty"`
+	Url  string `json:"url"`
+}
+
 // Extensions description: Configures Sourcegraph extensions.
 type Extensions struct {
 	Disabled       *bool       `json:"disabled,omitempty"`
@@ -366,6 +372,7 @@ type SourcegraphExtensionManifest struct {
 	Contributes      *Contributions          `json:"contributes,omitempty"`
 	Description      string                  `json:"description,omitempty"`
 	Readme           string                  `json:"readme,omitempty"`
+	Repository       *ExtensionRepository    `json:"repository,omitempty"`
 	Title            string                  `json:"title,omitempty"`
 	Url              string                  `json:"url"`
 }

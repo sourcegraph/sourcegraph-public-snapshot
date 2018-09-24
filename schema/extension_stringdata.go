@@ -33,6 +33,9 @@ const ExtensionSchemaJSON = `{
       "type": "string",
       "format": "uri"
     },
+    "repository": {
+      "$ref": "#/definitions/ExtensionRepository"
+    },
     "activationEvents": {
       "description":
         "A list of events that cause this extension to be activated. '*' means that it will always be activated.",
@@ -67,6 +70,23 @@ const ExtensionSchemaJSON = `{
           "description":
             "The JSON Schema for the configuration settings used by this extension. This schema is merged with the Sourcegraph settings schema. The final schema for settings is the union of Sourcegraph settings and all added extensions' settings.",
           "$ref": "http://json-schema.org/draft-07/schema#"
+        }
+      }
+    },
+    "ExtensionRepository": {
+      "description": "The location of the version control repository for this extension.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "type": {
+          "description": "The version control system (e.g. git).",
+          "type": "string"
+        },
+        "url": {
+          "description": "A URL to the source code for this extension.",
+          "type": "string",
+          "format": "uri"
         }
       }
     }
