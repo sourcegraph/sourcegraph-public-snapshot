@@ -230,10 +230,10 @@ func main() {
 
 	pipeline.AddWait()
 
-	pipeline.AddStep(":codecov:",
-		bk.Cmd("buildkite-agent artifact download '*/coverage.txt' . || true"), // ignore error when no report exists
-		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t 89422d4b-0369-4d6c-bb5b-d709b5487a56"))
+	//pipeline.AddStep(":codecov:",
+	//	bk.Cmd("buildkite-agent artifact download '*/coverage.txt' . || true"), // ignore error when no report exists
+	//	bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
+	//	bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t TEMPORARILY_REDACTED"))
 
 	if branch == "master" {
 		// Publish @sourcegraph/webapp to npm
