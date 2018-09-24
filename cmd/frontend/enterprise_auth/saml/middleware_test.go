@@ -24,9 +24,9 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 
 	"github.com/crewjam/saml/samlidp"
 )
@@ -159,7 +159,7 @@ func TestMiddleware(t *testing.T) {
 	defer conf.Mock(nil)
 
 	config := withConfigDefaults(&schema.SAMLAuthProvider{
-		Type:                        "saml",
+		Type: "saml",
 		IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
 		ServiceProviderCertificate:  testSAMLSPCert,
 		ServiceProviderPrivateKey:   testSAMLSPKey,
@@ -167,8 +167,8 @@ func TestMiddleware(t *testing.T) {
 
 	mockGetProviderValue = &provider{config: *config}
 	defer func() { mockGetProviderValue = nil }()
-	auth.MockProviders = []auth.Provider{mockGetProviderValue}
-	defer func() { auth.MockProviders = nil }()
+	auth.SetMockProviders([]auth.Provider{mockGetProviderValue})
+	defer func() { auth.SetMockProviders(nil) }()
 
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
@@ -178,13 +178,13 @@ func TestMiddleware(t *testing.T) {
 	// Mock user
 	mockedExternalID := "testuser_id"
 	const mockedUserID = 123
-	auth.MockCreateOrUpdateUser = func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+	auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
 		if a.ServiceType == "saml" && a.ServiceID == idpServer.IDP.MetadataURL.String() && a.ClientID == "http://example.com/.auth/saml/metadata" && a.AccountID == mockedExternalID {
 			return mockedUserID, nil
 		}
 		return 0, fmt.Errorf("account %v not found in mock", a)
-	}
-	defer func() { auth.MockCreateOrUpdateUser = nil }()
+	})
+	defer func() { auth.SetMockCreateOrUpdateUser(nil) }()
 
 	// Set up the test handler.
 	authedHandler := http.NewServeMux()

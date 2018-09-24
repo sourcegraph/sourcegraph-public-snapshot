@@ -10,14 +10,14 @@ import (
 
 	saml2 "github.com/russellhaering/gosaml2"
 	dsig "github.com/russellhaering/goxmldsig"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/db"
 )
 
 func TestReadAuthnResponse(t *testing.T) {
 	p := &provider{
 		samlSP: &saml2.SAMLServiceProvider{
-			IdentityProviderSSOURL:      "http://localhost:3220/auth/realms/master",
-			IdentityProviderIssuer:      "http://localhost:3220/auth/realms/master",
+			IdentityProviderSSOURL: "http://localhost:3220/auth/realms/master",
+			IdentityProviderIssuer: "http://localhost:3220/auth/realms/master",
 			Clock:                       dsig.NewFakeClockAt(time.Date(2018, time.May, 20, 17, 12, 6, 0, time.UTC)),
 			IDPCertificateStore:         &dsig.MemoryX509CertificateStore{Roots: []*x509.Certificate{idpCert2}},
 			SPKeyStore:                  dsig.RandomKeyStoreForTest(),
