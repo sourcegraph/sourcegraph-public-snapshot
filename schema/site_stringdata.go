@@ -644,7 +644,8 @@ const SiteSchemaJSON = `{
         },
         "certificate": {
           "description": "TLS certificate of a GitHub Enterprise instance.",
-          "type": "string"
+          "type": "string",
+          "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
         "repos": {
           "description":
@@ -706,7 +707,8 @@ const SiteSchemaJSON = `{
         },
         "certificate": {
           "description": "TLS certificate of a GitLab instance.",
-          "type": "string"
+          "type": "string",
+          "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
         "projectQuery": {
           "description":
@@ -770,7 +772,8 @@ const SiteSchemaJSON = `{
         },
         "certificate": {
           "description": "TLS certificate of a Bitbucket Server instance.",
-          "type": "string"
+          "type": "string",
+          "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
         "repositoryPathPattern": {
           "description":
