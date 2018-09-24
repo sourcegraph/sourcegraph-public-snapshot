@@ -55,7 +55,7 @@ export WEBPACK_SERVE=1
 export SRC_HTTP_ADDR=":3081"
 
 # we want to keep config.json, but allow local config.
-export SOURCEGRAPH_CONFIG_FILE=./dev/config.json
+export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE:-./dev/config.json}
 
 confpath="./dev"
 
