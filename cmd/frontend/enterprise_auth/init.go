@@ -9,8 +9,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise_auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise_auth/saml"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/app"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

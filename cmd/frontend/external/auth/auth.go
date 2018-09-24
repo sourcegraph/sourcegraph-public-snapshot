@@ -20,6 +20,7 @@ var (
 	SetExternalAccountData = auth.SetExternalAccountData
 	NormalizeUsername      = auth.NormalizeUsername
 	CreateOrUpdateUser     = auth.CreateOrUpdateUser
+	RegisterMiddlewares    = auth.RegisterMiddlewares
 )
 
 const (
