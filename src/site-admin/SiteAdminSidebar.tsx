@@ -25,21 +25,24 @@ export interface SiteAdminSidebarProps {
  */
 export const SiteAdminSidebar: React.SFC<SiteAdminSidebarProps> = ({ className, groups }) => (
     <div className={`site-admin-sidebar ${className}`}>
-        {groups.map((group, i) => (
-            <SidebarGroup key={i}>
-                {group.header && <SidebarGroupHeader icon={group.header.icon} label={group.header.label} />}
-                <SidebarGroupItems>
-                    {group.items.map(
-                        ({ label, to, exact, condition = () => true }) =>
-                            condition({}) && (
-                                <SidebarNavItem to={to} exact={exact} key={label}>
-                                    {label}
-                                </SidebarNavItem>
-                            )
-                    )}
-                </SidebarGroupItems>
-            </SidebarGroup>
-        ))}
+        {groups.map(
+            ({ header, items, condition = () => true }, i) =>
+                condition({}) && (
+                    <SidebarGroup key={i}>
+                        {header && <SidebarGroupHeader icon={header.icon} label={header.label} />}
+                        <SidebarGroupItems>
+                            {items.map(
+                                ({ label, to, exact, condition = () => true }) =>
+                                    condition({}) && (
+                                        <SidebarNavItem to={to} exact={exact} key={label}>
+                                            {label}
+                                        </SidebarNavItem>
+                                    )
+                            )}
+                        </SidebarGroupItems>
+                    </SidebarGroup>
+                )
+        )}
 
         <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
             <ConsoleIcon className="icon-inline" />

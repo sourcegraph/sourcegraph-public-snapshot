@@ -278,6 +278,10 @@ type Mutation {
     submitSurvey(input: SurveySubmissionInput!): EmptyResponse
     # Manages the extension registry.
     extensionRegistry: ExtensionRegistryMutation!
+    # Mutations that are only used on Sourcegraph.com.
+    #
+    # FOR INTERNAL USE ONLY.
+    dotcom: DotcomMutation!
 }
 
 # Mutations for language servers.
@@ -3253,4 +3257,25 @@ type RegistryExtensionConnection {
     # In order to be able to return local extensions even when the remote registry is unreachable, errors are
     # recorded here instead of in the top-level GraphQL errors list.
     error: String
+}
+
+# Mutations that are only used on Sourcegraph.com.
+#
+# FOR INTERNAL USE ONLY.
+type DotcomMutation {
+    # Generates and returns a new Sourcegraph license key (signed with Sourcegraph.com's private key and verifiable
+    # with the corresponding public key).
+    #
+    # Only Sourcegraph.com site admins may perform this mutation.
+    #
+    # FOR INTERNAL USE ONLY.
+    generateSourcegraphLicenseKey(
+        # The name of the plan associated with the license.
+        plan: String!
+        # The maximum number of users for which this license is valid (or null if the license has no user limit).
+        maxUserCount: Int
+        # The expiration date of this license (when it is no longer valid), expressed as the number of seconds
+        # since the epoch.
+        expiresAt: Int
+    ): String!
 }

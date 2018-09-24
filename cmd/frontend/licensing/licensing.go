@@ -23,3 +23,16 @@ var GetConfiguredSourcegraphLicenseInfo = func(ctx context.Context) (*Sourcegrap
 	// Stub value for OSS builds (where the Sourcegraph license isn't used).
 	return &SourcegraphLicenseInfo{Plan: "OSS"}, nil
 }
+
+// GenerateSourcegraphLicenseKey is called to generate a signed Sourcegraph license key.
+//
+// It is only available in non-OSS builds.
+var GenerateSourcegraphLicenseKey func(ctx context.Context, args *GenerateSourcegraphLicenseKeyArgs) (string, error)
+
+// GenerateSourcegraphLicenseKeyArgs are the arguments to the GenerateSourcegraphLicenseKey
+// function.
+type GenerateSourcegraphLicenseKeyArgs struct {
+	Plan         string
+	MaxUserCount *int32
+	ExpiresAt    *int32
+}

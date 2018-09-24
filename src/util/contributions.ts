@@ -21,7 +21,7 @@ export interface RouteDescriptor<C extends object = {}> extends Conditional<C> {
     readonly render: ((props: C & RouteComponentProps<any>) => React.ReactNode)
 }
 
-export interface NavGroupDescriptor<C extends object = {}> {
+export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C> {
     readonly header?: {
         readonly label: string
         readonly icon: React.ComponentType<{ className?: string }>
