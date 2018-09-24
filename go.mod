@@ -6,17 +6,13 @@ require (
 	github.com/PuerkitoBio/purell v1.1.0 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible
-	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
 	github.com/certifi/gocertifi v0.0.0-20180118203423-deb3ae2ef261 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
-	github.com/coreos/go-oidc v0.0.0-20171002155002-a93f71fdfe73
 	github.com/coreos/go-semver v0.2.0
-	github.com/crewjam/saml v0.0.0-20180831135026-ebc5f787b786
 	github.com/davecgh/go-spew v1.1.1
 	github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/emersion/go-imap v1.0.0-beta.1
 	github.com/emersion/go-sasl v0.0.0-20161116183048-7e096a0a6197 // indirect
 	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
@@ -69,7 +65,6 @@ require (
 	github.com/howeyc/gopass v0.0.0-20170109162249-bf9dde6d0d2c // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/joho/godotenv v1.2.0
-	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v1.1.5 // indirect
 	github.com/jteeuwen/go-bindata v0.0.0-20180305030458-6025e8de665b
 	github.com/juju/ratelimit v1.0.1 // indirect
@@ -99,13 +94,10 @@ require (
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/peterhellberg/link v1.0.0
 	github.com/pkg/errors v0.8.0
-	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/prometheus/client_golang v0.8.0
 	github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5 // indirect
 	github.com/prometheus/common v0.0.0-20180801064454-c7de2306084e // indirect
 	github.com/prometheus/procfs v0.0.0-20180725123919-05ee40e3a273 // indirect
-	github.com/russellhaering/gosaml2 v0.3.1
-	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/russross/blackfriday v0.0.0-20180829180401-f1f45ab762c2 // indirect
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20180602233135-8913699a52e3
@@ -142,12 +134,10 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v0.0.0-20180816142147-da425ebb7609
-	github.com/zenazn/goji v0.0.0-20160507202103-64eb34159fe5 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go4.org v0.0.0-20180809161055-417644f6feb5
 	golang.org/x/crypto v0.0.0-20180904163835-0709b304e793
 	golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
-	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
 	golang.org/x/sys v0.0.0-20180906133057-8cf3aee42992
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
@@ -157,7 +147,6 @@ require (
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
 	gopkg.in/jpoehls/gophermail.v0 v0.0.0-20160410235621-62941eab772c
 	gopkg.in/redsync.v1 v1.0.1
-	gopkg.in/square/go-jose.v2 v2.1.8 // indirect
 	gopkg.in/src-d/go-git.v4 v4.6.0
 	gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

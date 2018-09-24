@@ -21,8 +21,6 @@ github.com/aws/aws-sdk-go-v2/private/protocol/rest
 github.com/aws/aws-sdk-go-v2/private/protocol/json/jsonutil
 github.com/aws/aws-sdk-go-v2/private/protocol/query/queryutil
 github.com/aws/aws-sdk-go-v2/private/protocol/xml/xmlutil
-# github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
-github.com/beevik/etree
 # github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
 github.com/beorn7/perks/quantile
 # github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
@@ -31,15 +29,8 @@ github.com/boj/redistore
 github.com/certifi/gocertifi
 # github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd
 github.com/codahale/hdrhistogram
-# github.com/coreos/go-oidc v0.0.0-20171002155002-a93f71fdfe73
-github.com/coreos/go-oidc
 # github.com/coreos/go-semver v0.2.0
 github.com/coreos/go-semver/semver
-# github.com/crewjam/saml v0.0.0-20180831135026-ebc5f787b786
-github.com/crewjam/saml
-github.com/crewjam/saml/samlidp
-github.com/crewjam/saml/logger
-github.com/crewjam/saml/xmlenc
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/daviddengcn/go-colortext v0.0.0-20171126034257-17e75f6184bc
@@ -195,8 +186,6 @@ github.com/imdario/mergo
 github.com/jmespath/go-jmespath
 # github.com/joho/godotenv v1.2.0
 github.com/joho/godotenv
-# github.com/jonboulle/clockwork v0.1.0
-github.com/jonboulle/clockwork
 # github.com/json-iterator/go v1.1.5
 github.com/json-iterator/go
 # github.com/jteeuwen/go-bindata v0.0.0-20180305030458-6025e8de665b
@@ -267,9 +256,6 @@ github.com/peterhellberg/link
 github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
-# github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35
-github.com/pquerna/cachecontrol
-github.com/pquerna/cachecontrol/cacheobject
 # github.com/prometheus/client_golang v0.8.0
 github.com/prometheus/client_golang/prometheus
 github.com/prometheus/client_golang/prometheus/promhttp
@@ -284,14 +270,6 @@ github.com/prometheus/procfs
 github.com/prometheus/procfs/nfs
 github.com/prometheus/procfs/xfs
 github.com/prometheus/procfs/internal/util
-# github.com/russellhaering/gosaml2 v0.3.1 => github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538
-github.com/russellhaering/gosaml2
-github.com/russellhaering/gosaml2/types
-github.com/russellhaering/gosaml2/uuid
-# github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
-github.com/russellhaering/goxmldsig
-github.com/russellhaering/goxmldsig/etreeutils
-github.com/russellhaering/goxmldsig/types
 # github.com/russross/blackfriday v0.0.0-20180829180401-f1f45ab762c2
 github.com/russross/blackfriday
 # github.com/sergi/go-diff v1.0.0
@@ -393,8 +371,6 @@ github.com/xeipuuv/gojsonpointer
 github.com/xeipuuv/gojsonreference
 # github.com/xeipuuv/gojsonschema v0.0.0-20180816142147-da425ebb7609
 github.com/xeipuuv/gojsonschema
-# github.com/zenazn/goji v0.0.0-20160507202103-64eb34159fe5
-github.com/zenazn/goji/web
 # go4.org v0.0.0-20180809161055-417644f6feb5
 go4.org/sort
 go4.org/reflectutil
@@ -403,11 +379,7 @@ golang.org/x/crypto/acme/autocert
 golang.org/x/crypto/bcrypt
 golang.org/x/crypto/acme
 golang.org/x/crypto/blowfish
-golang.org/x/crypto/ed25519
-golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/ssh/terminal
-golang.org/x/crypto/ed25519/internal/edwards25519
-golang.org/x/crypto/ripemd160
 # golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/html/charset
@@ -420,9 +392,6 @@ golang.org/x/net/internal/timeseries
 golang.org/x/net/http2
 golang.org/x/net/idna
 golang.org/x/net/http2/hpack
-# golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
-golang.org/x/oauth2
-golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
@@ -463,14 +432,6 @@ golang.org/x/tools/refactor/importgraph
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/internal/fastwalk
 golang.org/x/tools/go/internal/cgo
-# google.golang.org/appengine v1.1.0
-google.golang.org/appengine/urlfetch
-google.golang.org/appengine/internal
-google.golang.org/appengine/internal/urlfetch
-google.golang.org/appengine/internal/base
-google.golang.org/appengine/internal/datastore
-google.golang.org/appengine/internal/log
-google.golang.org/appengine/internal/remote_api
 # google.golang.org/genproto v0.0.0-20180722052100-02b4e9547331
 google.golang.org/genproto/googleapis/api/annotations
 google.golang.org/genproto/googleapis/rpc/status
@@ -511,10 +472,6 @@ gopkg.in/inf.v0
 gopkg.in/jpoehls/gophermail.v0
 # gopkg.in/redsync.v1 v1.0.1
 gopkg.in/redsync.v1
-# gopkg.in/square/go-jose.v2 v2.1.8
-gopkg.in/square/go-jose.v2
-gopkg.in/square/go-jose.v2/cipher
-gopkg.in/square/go-jose.v2/json
 # gopkg.in/src-d/go-git.v4 v4.6.0
 gopkg.in/src-d/go-git.v4/plumbing/format/config
 # gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8
