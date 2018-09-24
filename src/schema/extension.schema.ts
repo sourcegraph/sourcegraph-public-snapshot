@@ -15,6 +15,10 @@ export interface ExtensionManifest {
     description?: string
     readme?: string
     url: string
+    repository?: {
+        type?: string
+        url: string
+    }
     activationEvents: string[]
     args?: {
         [k: string]: any

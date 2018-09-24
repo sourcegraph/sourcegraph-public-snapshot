@@ -26,6 +26,9 @@
       "type": "string",
       "format": "uri"
     },
+    "repository": {
+      "$ref": "#/definitions/ExtensionRepository"
+    },
     "activationEvents": {
       "description": "A list of events that cause this extension to be activated. '*' means that it will always be activated.",
       "type": "array",
@@ -67,6 +70,23 @@
         },
         { "$ref": "./contribution.schema.json" }
       ]
+    },
+    "ExtensionRepository": {
+      "description": "The location of the version control repository for this extension.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "type": {
+          "description": "The version control system (e.g. git).",
+          "type": "string"
+        },
+        "url": {
+          "description": "A URL to the source code for this extension.",
+          "type": "string",
+          "format": "uri"
+        }
+      }
     }
   }
 }
