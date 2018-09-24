@@ -21,5 +21,8 @@
     }
   ],
   "update.channel": "release",
-  "corsOrigin": "https://github.com"
+  "corsOrigin": "https://github.com",
+  "auth.providers": [
+    { "type": "builtin", "allowSignup": true }
+  ]
 }
