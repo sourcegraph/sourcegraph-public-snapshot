@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
@@ -105,6 +106,9 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 			statusCode = http.StatusConflict
 		case db.IsEmailExists(err):
 			message = "Email address is already in use. Try signing into that account instead, or use a different email address."
+			statusCode = http.StatusConflict
+		case errcode.PresentationMessage(err) != "":
+			message = errcode.PresentationMessage(err)
 			statusCode = http.StatusConflict
 		default:
 			// Do not show non-whitelisted error messages to user, in case they contain sensitive or confusing

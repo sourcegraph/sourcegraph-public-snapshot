@@ -22,7 +22,11 @@ import (
 // users provides access to the `users` table.
 //
 // For a detailed overview of the schema, see schema.txt.
-type users struct{}
+type users struct {
+	// PreCreateUser (if set) is a hook called before creating a new user in the DB by any means
+	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	PreCreateUser func(context.Context) error
+}
 
 // userNotFoundErr is the error that is returned when a user is not found.
 type userNotFoundErr struct {
@@ -130,7 +134,7 @@ func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, 
 
 // create is like Create, except it uses the provided DB transaction. It must execute in a
 // transaction because the post-user-creation hooks must run atomically with the user creation.
-func (*users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *types.User, err error) {
+func (u *users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *types.User, err error) {
 	if Mocks.Users.Create != nil {
 		return Mocks.Users.Create(ctx, info)
 	}
@@ -173,6 +177,13 @@ func (*users) create(ctx context.Context, tx *sql.Tx, info NewUser) (newUser *ty
 	}
 	if alreadyInitialized && info.FailIfNotInitialUser {
 		return nil, errCannotCreateUser{"site_already_initialized"}
+	}
+
+	// Run PreCreateUser hook.
+	if u.PreCreateUser != nil {
+		if err := u.PreCreateUser(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	var siteAdmin bool
@@ -455,12 +466,15 @@ func (u *users) GetByCurrentAuthUser(ctx context.Context) (*types.User, error) {
 	return u.getOneBySQL(ctx, "WHERE id=$1 AND deleted_at IS NULL LIMIT 1", actor.UID)
 }
 
-func (u *users) Count(ctx context.Context, opt UsersListOptions) (int, error) {
+func (u *users) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
 	if Mocks.Users.Count != nil {
 		return Mocks.Users.Count(ctx, opt)
 	}
 
-	conds := u.listSQL(opt)
+	if opt == nil {
+		opt = &UsersListOptions{}
+	}
+	conds := u.listSQL(*opt)
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM users u WHERE %s", sqlf.Join(conds, "AND"))
 
 	var count int

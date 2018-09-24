@@ -17,7 +17,7 @@ func TestUsers(t *testing.T) {
 	db.Mocks.Users.List = func(ctx context.Context, opt *db.UsersListOptions) ([]*types.User, error) {
 		return []*types.User{{Username: "user1"}, {Username: "user2"}}, nil
 	}
-	db.Mocks.Users.Count = func(context.Context, db.UsersListOptions) (int, error) { return 2, nil }
+	db.Mocks.Users.Count = func(context.Context, *db.UsersListOptions) (int, error) { return 2, nil }
 	gqltesting.RunTests(t, []*gqltesting.Test{
 		{
 			Schema: GraphQLSchema,

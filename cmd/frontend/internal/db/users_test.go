@@ -225,7 +225,7 @@ func TestUsers_ListCount(t *testing.T) {
 	}
 	user.Tags = []string{}
 
-	if count, err := Users.Count(ctx, UsersListOptions{}); err != nil {
+	if count, err := Users.Count(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 1; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -236,7 +236,7 @@ func TestUsers_ListCount(t *testing.T) {
 		t.Errorf("got %+v, want %+v", users, want)
 	}
 
-	if count, err := Users.Count(ctx, UsersListOptions{UserIDs: []int32{}}); err != nil {
+	if count, err := Users.Count(ctx, &UsersListOptions{UserIDs: []int32{}}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)
@@ -257,7 +257,7 @@ func TestUsers_ListCount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if count, err := Users.Count(ctx, UsersListOptions{}); err != nil {
+	if count, err := Users.Count(ctx, &UsersListOptions{}); err != nil {
 		t.Fatal(err)
 	} else if want := 0; count != want {
 		t.Errorf("got %d, want %d", count, want)

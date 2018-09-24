@@ -83,7 +83,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 			r.err = err
 			return
 		}
-		r.totalCount, r.err = db.Users.Count(ctx, r.opt)
+		r.totalCount, r.err = db.Users.Count(ctx, &r.opt)
 	})
 	return r.users, r.totalCount, r.err
 }
@@ -115,7 +115,7 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 	if r.useCache() {
 		_, count, err = r.compute(ctx)
 	} else {
-		count, err = db.Users.Count(ctx, r.opt)
+		count, err = db.Users.Count(ctx, &r.opt)
 	}
 	return int32(count), err
 }

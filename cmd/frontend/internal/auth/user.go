@@ -72,6 +72,8 @@ func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, extern
 					}
 				}
 				safeErrMsg = fmt.Sprintf("The email address %q already exists and is associated with a different Sourcegraph user. A site admin can remove the email address from that Sourcegraph user to fix this problem.", newOrUpdatedUser.Email)
+			case errcode.PresentationMessage(err) != "":
+				safeErrMsg = errcode.PresentationMessage(err)
 			case err != nil:
 				safeErrMsg = "Unable to create a new user account due to a conflict or other unexpected error. Ask a site admin for help."
 			}

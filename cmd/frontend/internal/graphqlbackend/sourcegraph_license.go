@@ -29,7 +29,7 @@ func (r sourcegraphLicenseInfoResolver) Plan() string { return r.info.Plan }
 
 // UserCount implements the GraphQL type SourcegraphLicenseInfo.
 func (sourcegraphLicenseInfoResolver) UserCount(ctx context.Context) (int32, error) {
-	count, err := db.Users.Count(ctx, db.UsersListOptions{})
+	count, err := db.Users.Count(ctx, nil)
 	return int32(count), err
 }
 

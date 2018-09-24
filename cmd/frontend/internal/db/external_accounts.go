@@ -183,7 +183,7 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 		err = tx.Commit()
 	}()
 
-	createdUser, err := (&users{}).create(ctx, tx, newUser)
+	createdUser, err := Users.create(ctx, tx, newUser)
 	if err != nil {
 		return 0, err
 	}

@@ -9,3 +9,4 @@ type (
 )
 
 var Pkgs = db.Pkgs
+var Users = db.Users
