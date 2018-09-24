@@ -19,6 +19,7 @@ export interface ExtensionManifest {
         type?: string
         url: string
     }
+    icon?: string
     activationEvents: string[]
     args?: {
         [k: string]: any
