@@ -34,5 +34,6 @@ Vendored dependencies should be kept in sync with changes to `go.mod`. However, 
 ```bash
 GO111MODULE=on go mod edit -dropreplace github.com/sourcegraph/sourcegraph
 GO111MODULE=on go mod vendor
+GO111MODULE=on go mod tidy
 GO111MODULE=on go mod edit -replace github.com/sourcegraph/sourcegraph=../sourcegraph
 ```
