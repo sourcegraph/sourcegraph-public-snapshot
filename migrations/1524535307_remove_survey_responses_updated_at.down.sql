@@ -1,1 +1,0 @@
-ALTER TABLE survey_responses ADD COLUMN updated_at timestamp with time zone;

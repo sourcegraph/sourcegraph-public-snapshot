@@ -1,1 +1,0 @@
-ALTER TABLE survey_responses DROP COLUMN updated_at;

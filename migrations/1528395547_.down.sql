@@ -1,1 +1,0 @@
-DROP TABLE discussion_mail_reply_tokens;
