@@ -10,16 +10,20 @@ require (
 	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/keegancsmith/sqlf v1.1.0 // indirect
+	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 // indirect
 	github.com/opentracing/opentracing-go v1.0.2
 	github.com/pkg/errors v0.8.0
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/russellhaering/gosaml2 v0.3.1
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
+	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f // indirect
 	github.com/sourcegraph/go-langserver v0.0.0-20180917104716-6b103664e059
 	github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
+	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
 	github.com/sourcegraph/sourcegraph v0.0.0-20180925082351-c77b8b8c1f7c
+	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/zenazn/goji v0.9.0 // indirect
 	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b
 	golang.org/x/net v0.0.0-20180911220305-26e67e76b6c3
@@ -30,6 +34,7 @@ require (
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/src-d/go-git.v4 v4.7.0 // indirect
+	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
 replace (
