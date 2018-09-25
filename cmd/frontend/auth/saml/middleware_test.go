@@ -24,8 +24,8 @@ import (
 
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 
 	"github.com/crewjam/saml/samlidp"
@@ -159,7 +159,7 @@ func TestMiddleware(t *testing.T) {
 	defer conf.Mock(nil)
 
 	config := withConfigDefaults(&schema.SAMLAuthProvider{
-		Type: "saml",
+		Type:                        "saml",
 		IdentityProviderMetadataURL: idpServer.IDP.MetadataURL.String(),
 		ServiceProviderCertificate:  testSAMLSPCert,
 		ServiceProviderPrivateKey:   testSAMLSPKey,

@@ -6,9 +6,8 @@ import (
 	"html"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/licensing"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -85,7 +84,7 @@ h1 {
 // reached.
 func init() {
 	db.Users.PreCreateUser = func(ctx context.Context) error {
-		info, err := licensing.GetConfiguredSourcegraphLicenseInfo(ctx)
+		info, err := GetConfiguredSourcegraphLicenseInfo()
 		if err != nil {
 			return err
 		}

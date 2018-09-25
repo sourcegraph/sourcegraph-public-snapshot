@@ -4,11 +4,10 @@ import (
 	"context"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/licensing"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"golang.org/x/crypto/ssh"
@@ -75,15 +74,15 @@ func GetConfiguredSourcegraphLicenseInfo() (*license.Info, error) {
 // Make the Site.sourcegraphLicense GraphQL field return the actual info about the Sourcegraph
 // license (instead of the stub info from the OSS build).
 func init() {
-	licensing.GetConfiguredSourcegraphLicenseInfo = func(ctx context.Context) (*licensing.SourcegraphLicenseInfo, error) {
+	graphqlbackend.GetConfiguredSourcegraphLicenseInfo = func(ctx context.Context) (*graphqlbackend.SourcegraphLicenseInfo, error) {
 		info, err := GetConfiguredSourcegraphLicenseInfo()
 		if err != nil {
 			return nil, err
 		}
-		return &licensing.SourcegraphLicenseInfo{
-			Plan:         info.Plan,
-			MaxUserCount: info.MaxUserCount,
-			Expiry:       info.Expiry,
+		return &graphqlbackend.SourcegraphLicenseInfo{
+			PlanValue:         info.Plan,
+			MaxUserCountValue: info.MaxUserCount,
+			ExpiresAtValue:    info.Expiry,
 		}, nil
 	}
 }
@@ -93,31 +92,20 @@ func init() {
 // https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i.
 var envLicenseGenerationPrivateKey = env.Get("SOURCEGRAPH_LICENSE_GENERATION_KEY", "", "the PEM-encoded form of the private key used to sign Sourcegraph license keys (https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i)")
 
-// Implement the Mutation.dotcom.generateSourcegraphLicenseKey mutation.
-func init() {
-	licensing.GenerateSourcegraphLicenseKey = func(ctx context.Context, args *licensing.GenerateSourcegraphLicenseKeyArgs) (string, error) {
-		if envLicenseGenerationPrivateKey == "" {
-			return "", errors.New("no Sourcegraph license generation private key was configured")
-		}
-		privateKey, err := ssh.ParsePrivateKey([]byte(envLicenseGenerationPrivateKey))
-		if err != nil {
-			return "", errors.WithMessage(err, "parsing Sourcegraph license generation private key")
-		}
-
-		info := license.Info{Plan: args.Plan}
-		if args.MaxUserCount != nil {
-			n := uint(*args.MaxUserCount)
-			info.MaxUserCount = &n
-		}
-		if args.ExpiresAt != nil {
-			t := time.Unix(int64(*args.ExpiresAt), 0)
-			info.Expiry = &t
-		}
-
-		licenseKey, err := license.GenerateSignedKey(info, privateKey)
-		if err != nil {
-			return "", err
-		}
-		return licenseKey, nil
+// GenerateSourcegraphLicenseKey generates a Sourcegraph license key using the license generation
+// private key configured in site configuration.
+func GenerateSourcegraphLicenseKey(info license.Info) (string, error) {
+	if envLicenseGenerationPrivateKey == "" {
+		return "", errors.New("no Sourcegraph license generation private key was configured")
 	}
+	privateKey, err := ssh.ParsePrivateKey([]byte(envLicenseGenerationPrivateKey))
+	if err != nil {
+		return "", errors.WithMessage(err, "parsing Sourcegraph license generation private key")
+	}
+
+	licenseKey, err := license.GenerateSignedKey(info, privateKey)
+	if err != nil {
+		return "", err
+	}
+	return licenseKey, nil
 }
