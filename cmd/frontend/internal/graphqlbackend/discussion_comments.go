@@ -156,7 +156,7 @@ func checkSignedInAndEmailVerified(ctx context.Context) (*userResolver, error) {
 	}
 	for _, email := range emails {
 		if email.Verified() {
-			return nil, nil
+			return currentUser, nil
 		}
 	}
 	return nil, errors.New("account email must be verified to perform this action")
