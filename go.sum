@@ -12,7 +12,6 @@ github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdko
 github.com/Sirupsen/logrus v1.0.6 h1:HCAGQRk48dRVPA5Y+Yh0qdCSTzPOyU1tBJ7Q9YzotII=
 github.com/Sirupsen/logrus v1.0.6/go.mod h1:rmk17hk6i8ZSAJkSDa7nOxamrG+SP4P0mm+DAvExv4U=
 github.com/aws/aws-sdk-go v1.14.32/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=
-github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible h1:9qh7ItVskIwDsCiQnqISqy8icJS4cc2yenagOUvXbd4=
 github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible/go.mod h1:5DmdJpM48aUShwAgzBfZDXP+O5nH9IYDqzpovC7q9Y4=
 github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11 h1:C2jA9xWe9gk/WFMzvR6q0tT/TNNnIJUyeowUO1Y2/VQ=
 github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11/go.mod h1:r8Aw8JqVegEf0w2fDnATrX9VpkMcyFeM0FhwO62wh+A=
@@ -147,8 +146,6 @@ github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf h1:+RRA9JqSOZFfKrOeq
 github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf/go.mod h1:HP5RmnzzSNb993RKQDq4+1A4ia9nllfqcQFTQJedwGI=
 github.com/google/uuid v1.0.0 h1:b4Gk+7WdP/d3HZH8EJsZpvV7EtDOgaZLtnaNGIu1adA=
 github.com/google/uuid v1.0.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/google/zoekt v0.0.0-20180530125106-8e284ca7e964 h1:VK6ybufPG5M7YQLLdf4VgR+NE1zOZ/fZLFFrNWQmab0=
-github.com/google/zoekt v0.0.0-20180530125106-8e284ca7e964/go.mod h1:rq17mlD02KZEKl5IJj0kPYUrH5dBVi/J5Ipcgnxvm94=
 github.com/googleapis/gax-go v2.0.0+incompatible/go.mod h1:SFVmujtThgffbyetf+mdk2eWhX2bMyUtNHzFKcPA9HY=
 github.com/googleapis/gnostic v0.2.0 h1:l6N3VoaVzTncYYW+9yOz2LJJammFZGBO13sqgEhpy9g=
 github.com/googleapis/gnostic v0.2.0/go.mod h1:sJBsCZ4ayReDTBIg8b9dl28c5xFWyhBTVRp3pOg5EKY=
@@ -157,7 +154,6 @@ github.com/gorilla/context v1.1.1 h1:AWwleXJkX/nhcU9bZSnZoi3h/qGYqQAGhq6zZe/aQW8
 github.com/gorilla/context v1.1.1/go.mod h1:kBGZzfjB9CEq2AlWe17Uuf7NDRt0dE0s8S51q0aT7Yg=
 github.com/gorilla/csrf v1.5.1 h1:UASc2+EB0T51tvl6/2ls2ciA8/qC7KdTO7DsOEKbttQ=
 github.com/gorilla/csrf v1.5.1/go.mod h1:HTDW7xFOO1aHddQUmghe9/2zTvg7AYCnRCs7MxTGu/0=
-github.com/gorilla/handlers v1.4.0 h1:XulKRWSQK5uChr4pEgSE4Tc/OcmnU9GJuSwdog/tZsA=
 github.com/gorilla/handlers v1.4.0/go.mod h1:Qkdc/uu4tH4g6mTK6auzZ766c4CA0Ng8+o/OAirnOIQ=
 github.com/gorilla/mux v1.6.2 h1:Pgr17XVTNXAk3q/r4CpKzC5xBM/qW1uVLV+IhRZpIIk=
 github.com/gorilla/mux v1.6.2/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=
@@ -188,7 +184,6 @@ github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
 github.com/imdario/mergo v0.3.6 h1:xTNEAn+kxVO7dTZGu0CegyqKZmoWFI0rF8UxjlB2d28=
 github.com/imdario/mergo v0.3.6/go.mod h1:2EnlNZ0deacrJVfApfmtdGgDfMuh/nq6Ok1EcJh5FfA=
-github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 h1:12VvqtR6Aowv3l/EQUlocDHW2Cp4G9WJVH7uyH8QFJE=
 github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8/go.mod h1:Nht3zPeWKUH0NzdCt2Blrr5ys8VGpn0CEB0cQHVjt7k=
 github.com/joho/godotenv v1.2.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
@@ -255,11 +250,9 @@ github.com/opentracing/basictracer-go v1.0.0 h1:YyUAhaEfjoWXclZVJ9sGoNct7j4TVk7l
 github.com/opentracing/basictracer-go v1.0.0/go.mod h1:QfBfYuafItcjQuMwinw9GhYKwFXS9KnPs5lxoYwgW74=
 github.com/opentracing/opentracing-go v1.0.2 h1:3jA2P6O1F9UOrWVpwrIo17pu01KWvNWg4X946/Y5Zwg=
 github.com/opentracing/opentracing-go v1.0.2/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
-github.com/pelletier/go-toml v0.0.0-20180724185102-c2dbbc24a979 h1:Uh8pTMDzw+nuDTW7lyxcpmYqQJFE8SnO93F3lyY4XzY=
 github.com/pelletier/go-toml v0.0.0-20180724185102-c2dbbc24a979/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/peterbourgon/diskv v2.0.1+incompatible h1:UBdAOUP5p4RWqPBg048CAvpKN+vxiaj6gdUUzhl4XmI=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
-github.com/peterhellberg/link v1.0.0 h1:mUWkiegowUXEcmlb+ybF75Q/8D2Y0BjZtR8cxoKhaQo=
 github.com/peterhellberg/link v1.0.0/go.mod h1:gtSlOT4jmkY8P47hbTc8PTgiDDWpdPbFYl75keYyBB8=
 github.com/pkg/errors v0.8.0 h1:WdK/asTD0HN+q6hsWO3/vpuAkAr+tw6aNJNDFFf0+qw=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
@@ -275,8 +268,6 @@ github.com/prometheus/common v0.0.0-20180801064454-c7de2306084e h1:n/3MEhJQjQxrO
 github.com/prometheus/common v0.0.0-20180801064454-c7de2306084e/go.mod h1:daVV7qP5qjZbuso7PdcryaAu0sAZbrN9i7WWcTMWvro=
 github.com/prometheus/procfs v0.0.0-20180725123919-05ee40e3a273 h1:agujYaXJSxSo18YNX3jzl+4G6Bstwt+kqv47GS12uL0=
 github.com/prometheus/procfs v0.0.0-20180725123919-05ee40e3a273/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
-github.com/russellhaering/gosaml2 v0.3.1 h1:vfw9Kt7cdXsCImYmLBnMO/JxFVTa+x/Eoj7Jx+Th4vw=
-github.com/russellhaering/gosaml2 v0.3.1/go.mod h1:niieRtQaw+opTVp9jzZo1nAAoksI2eNpd+weDcjZ+Mk=
 github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7 h1:J4AOUcOh/t1XbQcJfkEqhzgvMJ2tDxdCVvmHxW5QXao=
 github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7/go.mod h1:Oz4y6ImuOQZxynhbSXk7btjEfNBtGlj2dcaOvXl2FSM=
 github.com/russross/blackfriday v0.0.0-20180829180401-f1f45ab762c2 h1:+j6TznrZgjKa2dkiLYJ51GduJiG/D4bAGxHmAFFzCMU=
@@ -306,7 +297,6 @@ github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f h1:kIuU4/Y7SabSYfM
 github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f/go.mod h1:TrYk7fJVaAttu97ZZKrO9UbRa8izdowaMIZcxYMbVaw=
 github.com/sirupsen/logrus v1.0.6 h1:hcP1GmhGigz/O7h1WVUM5KklBp1JoNS9FggWKdj/j3s=
 github.com/sirupsen/logrus v1.0.6/go.mod h1:pMByvHTf9Beacp5x1UXfOR9xyW/9antXMhjMPG0dEzc=
-github.com/slimsag/godocmd v0.0.0-20161025000126-a1005ad29fe3 h1:sAARUcYbwxnebBeWHzKX2MeyXtzy25TEglCTz9BhueY=
 github.com/slimsag/godocmd v0.0.0-20161025000126-a1005ad29fe3/go.mod h1:AIBPxLCkKUFc2ZkjCXzs/Kk9OUhQLw/Zicdd0Rhqz2U=
 github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 h1:kr3of2TY0avjMhryOvEOUExpDF5yYRs3PFUGpwsawUw=
 github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5/go.mod h1:rvsMTVl5yyd7liGH3cxu5eRjfNcC1WkSKe4HBSZ3ZA4=
@@ -335,8 +325,6 @@ github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd h1:NPk22RvonOjkN
 github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 h1:FX++QsC/k2sAidBLhZX0CZQwRwrRmz5KjKZPKcXGV74=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85/go.mod h1:v7Yudh8lfegZt52Qs5X9ktO0OMWEeUeoXO+4vJqn2Iw=
-github.com/sourcegraph/sourcegraph v0.0.0-20180925082351-c77b8b8c1f7c h1:xTaUTy/45LrRAJttC8P1C5i22fOtJwoVNJ09qcm6dvA=
-github.com/sourcegraph/sourcegraph v0.0.0-20180925082351-c77b8b8c1f7c/go.mod h1:qMe+tpseC6/3k4jenyEyILULKVmgIb1LsXj3VP5uaSk=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f/go.mod h1:I5NDweTUikWVakOqHBnCuqXGZOi0vJoeZRTFbHmhc1A=

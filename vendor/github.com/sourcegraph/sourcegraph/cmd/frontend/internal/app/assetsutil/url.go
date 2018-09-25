@@ -1,4 +1,4 @@
-package assets
+package assetsutil
 
 import (
 	"net/url"

@@ -4,8 +4,10 @@ package shared
 
 import (
 	"fmt"
+	"log"
 	"os"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
@@ -16,10 +18,18 @@ import (
 // main package implementations such as Sourcegraph Enterprise, which import
 // proprietary/private code.
 func Main() {
+	AssertRequired()
 	env.Lock()
 	err := cli.Main()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "fatal:", err)
 		os.Exit(1)
+	}
+}
+
+// AssertRequired fails if certain necessary variables have not been set.
+func AssertRequired() {
+	if assets.Assets == nil {
+		log.Fatal("github.com/sourcegraph/sourcegraph/cmd/frontend/assets.Assets must be non-nil.")
 	}
 }

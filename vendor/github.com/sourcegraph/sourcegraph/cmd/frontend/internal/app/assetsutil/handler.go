@@ -1,4 +1,4 @@
-package assets
+package assetsutil
 
 import (
 	"log"
@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sqs/httpgzip"
 )
@@ -15,7 +16,7 @@ import (
 func Mount(mux *http.ServeMux) {
 	const urlPathPrefix = "/.assets"
 
-	fs := httpgzip.FileServer(Assets, httpgzip.FileServerOptions{})
+	fs := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{})
 	mux.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Kludge to set proper MIME type. Automatic MIME detection somehow detects text/xml under
 		// circumstances that couldn't be reproduced
@@ -36,7 +37,7 @@ func Mount(mux *http.ServeMux) {
 		//
 		// Assets is backed by in-memory byte arrays, so this is a
 		// cheap operation.
-		f, err := Assets.Open(r.URL.Path)
+		f, err := assets.Assets.Open(r.URL.Path)
 		if f != nil {
 			defer f.Close()
 		}

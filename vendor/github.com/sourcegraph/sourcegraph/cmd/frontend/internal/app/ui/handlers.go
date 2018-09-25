@@ -23,7 +23,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
@@ -105,7 +105,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
 		Context:  jscontext.NewJSContextFromRequest(r),
-		AssetURL: assets.URL("").String(),
+		AssetURL: assetsutil.URL("").String(),
 		Title:    title,
 
 		InjectSourcegraphTracker: injectTelligentTracker,

@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
@@ -128,7 +128,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		XHRHeaders:          headers,
 		CSRFToken:           csrfToken,
 		UserAgentIsBot:      isBot(req.UserAgent()),
-		AssetsRoot:          assets.URL("").String(),
+		AssetsRoot:          assetsutil.URL("").String(),
 		Version:             env.Version,
 		IsAuthenticatedUser: actor.IsAuthenticated(),
 		SentryDSN:           sentryDSNFrontend,

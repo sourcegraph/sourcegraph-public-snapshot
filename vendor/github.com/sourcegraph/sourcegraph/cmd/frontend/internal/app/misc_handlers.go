@@ -8,7 +8,7 @@ import (
 
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
@@ -34,5 +34,5 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 }
 
 func favicon(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, assets.URL("/img/favicon.png").String(), http.StatusMovedPermanently)
+	http.Redirect(w, r, assetsutil.URL("/img/favicon.png").String(), http.StatusMovedPermanently)
 }

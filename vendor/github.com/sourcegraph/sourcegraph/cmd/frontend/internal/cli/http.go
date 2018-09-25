@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
@@ -51,7 +51,7 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", apiHandler)
 	sm.Handle("/", appHandler)
-	assets.Mount(sm)
+	assetsutil.Mount(sm)
 
 	var h http.Handler = sm
 

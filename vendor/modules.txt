@@ -282,7 +282,7 @@ github.com/sourcegraph/jsonx
 # github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85
 github.com/sourcegraph/rpc
 github.com/sourcegraph/rpc/internal/svc
-# github.com/sourcegraph/sourcegraph v0.0.0-20180925082351-c77b8b8c1f7c => ../sourcegraph
+# github.com/sourcegraph/sourcegraph v0.0.0-20180924091521-78f05fabed+incompatible => ../sourcegraph
 github.com/sourcegraph/sourcegraph/cmd/frontend/shared
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth
@@ -304,6 +304,7 @@ github.com/sourcegraph/sourcegraph/xlang/lspext
 github.com/sourcegraph/sourcegraph/cmd/frontend/hooks
 github.com/sourcegraph/sourcegraph/cmd/server/shared
 github.com/sourcegraph/sourcegraph/pkg/buildkite
+github.com/sourcegraph/sourcegraph/cmd/frontend/assets
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth
@@ -363,7 +364,7 @@ github.com/sourcegraph/sourcegraph/pkg/zoekt
 github.com/sourcegraph/sourcegraph/xlang/uri
 github.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver
 github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman
-github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets
+github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware
