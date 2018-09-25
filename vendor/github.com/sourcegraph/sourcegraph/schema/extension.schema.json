@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sourcegraph.com/v1/extension.schema.json#",
+  "title": "Sourcegraph extension manifest",
+  "description": "The Sourcegraph extension manifest describes the extension and the features it provides.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url", "activationEvents"],
+  "properties": {
+    "title": {
+      "description": "The title of the extension. If not specified, the extension ID is used.",
+      "type": "string"
+    },
+    "description": {
+      "description":
+        "The extension's description, which summarizes the extension's purpose and features. It should not exceed a few sentences.",
+      "type": "string",
+      "maxLength": 280
+    },
+    "readme": {
+      "description":
+        "The extension's README, which should describe (in detail) the extension's purpose, features, and usage instructions. Markdown formatting is supported.",
+      "type": "string",
+      "format": "markdown"
+    },
+    "url": {
+      "description": "A URL to a file containing the bundled JavaScript source code of this extension.",
+      "type": "string",
+      "format": "uri"
+    },
+    "repository": {
+      "$ref": "#/definitions/ExtensionRepository"
+    },
+    "activationEvents": {
+      "description":
+        "A list of events that cause this extension to be activated. '*' means that it will always be activated.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(\\*|onLanguage:\\w+)$",
+        "examples": ["onLanguage:javascript", "onLanguage:python", "*"]
+      }
+    },
+    "args": {
+      "description":
+        "Arguments provided to the extension upon initialization (in the `initialize` message's `initializationOptions` field).",
+      "type": "object",
+      "additionalProperties": true,
+      "!go": {
+        "pointer": true
+      }
+    },
+    "contributes": {
+      "$ref": "#/definitions/Contributions"
+    }
+  },
+  "definitions": {
+    "Contributions": {
+      "description":
+        "Features contributed by this extension. Extensions may also register certain types of contributions dynamically.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "configuration": {
+          "description":
+            "The JSON Schema for the configuration settings used by this extension. This schema is merged with the Sourcegraph settings schema. The final schema for settings is the union of Sourcegraph settings and all added extensions' settings.",
+          "$ref": "http://json-schema.org/draft-07/schema#"
+        }
+      }
+    },
+    "ExtensionRepository": {
+      "description": "The location of the version control repository for this extension.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "type": {
+          "description": "The version control system (e.g. git).",
+          "type": "string"
+        },
+        "url": {
+          "description": "A URL to the source code for this extension.",
+          "type": "string",
+          "format": "uri"
+        }
+      }
+    }
+  }
+}

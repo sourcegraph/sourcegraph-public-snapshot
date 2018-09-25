@@ -1,0 +1,8 @@
+@import '@sourcegraph/webapp/dist/components/Area';
+@import './RepositoryGraphDependenciesPage';
+@import './RepositoryGraphPackagesPage';
+@import './RepositoryGraphSidebar';
+
+.repository-graph-area {
+    overflow: auto;
+}

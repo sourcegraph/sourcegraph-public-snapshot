@@ -1,0 +1,36 @@
+.sourcegraph-license {
+    &__bg {
+        position: absolute;
+        user-select: none;
+        pointer-events: none;
+        z-index: 0;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-image: url(/.assets/img/sourcegraph-mark.svg);
+        background-repeat: repeat;
+        background-size: 5rem;
+    }
+
+    &__logo {
+        height: 7rem;
+    }
+}
+
+.theme-light {
+    .sourcegraph-license {
+        &__bg {
+            opacity: 0.025;
+        }
+    }
+}
+
+.theme-dark {
+    .sourcegraph-license {
+        &__bg {
+            opacity: 0.1;
+            filter: grayscale(100%);
+        }
+    }
+}

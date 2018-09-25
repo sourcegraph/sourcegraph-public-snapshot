@@ -1,0 +1,6 @@
+steps:
+  - command: './dev/ci/init-pipeline.sh'
+    label: ':pipeline:'
+    plugins:
+      gopath-checkout#v1.0.1:
+        import: github.com/sourcegraph/enterprise
