@@ -14,7 +14,7 @@ import {
     gqlToCascade,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import InfoIcon from 'mdi-react/InformationIcon'
@@ -61,7 +61,7 @@ export function createExtensionsContextController(
             ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry'>>>,
         queryLSP: requests => sendLSPHTTPRequests(requests),
         icons: {
-            Loader: Loader as React.ComponentType<{ className: string; onClick?: () => void }>,
+            Loader: LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>,
             Warning: WarningIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             Info: InfoIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             CaretDown: MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>,

@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
@@ -134,7 +134,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             alerts.push(
                 <div key="error" className="alert alert-primary site-admin-configuration-page__alert">
                     <p>
-                        <Loader className="icon-inline" /> Waiting for site to reload...
+                        <LoadingSpinner className="icon-inline" /> Waiting for site to reload...
                     </p>
                     {Date.now() - this.state.reloadStartedAt > EXPECTED_RELOAD_WAIT && (
                         <p>
@@ -250,7 +250,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     <a href="https://about.sourcegraph.com/docs/server/">documentation</a> for more information.
                 </p>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
-                {this.state.loading && <Loader className="icon-inline" />}
+                {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.site &&
                     this.state.site.configuration && (
                         <div>

@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import KeyIcon from 'mdi-react/KeyIcon'
 import * as React from 'react'
@@ -65,7 +65,7 @@ class ResetPasswordInitForm extends React.PureComponent<{}, ResetPasswordInitFor
                 >
                     Send reset password link
                 </button>
-                {this.state.submitOrError === 'loading' && <Loader className="icon-inline mt-2" />}
+                {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
                 {isErrorLike(this.state.submitOrError) && (
                     <div className="alert alert-danger mt-2">{upperFirst(this.state.submitOrError.message)}</div>
                 )}
@@ -161,7 +161,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
                 >
                     Reset password
                 </button>
-                {this.state.submitOrError === 'loading' && <Loader className="icon-inline mt-2" />}
+                {this.state.submitOrError === 'loading' && <LoadingSpinner className="icon-inline mt-2" />}
                 {isErrorLike(this.state.submitOrError) && (
                     <div className="alert alert-danger mt-2">{upperFirst(this.state.submitOrError.message)}</div>
                 )}

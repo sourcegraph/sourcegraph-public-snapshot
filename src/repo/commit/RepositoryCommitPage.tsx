@@ -6,7 +6,7 @@ import {
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { isEqual, upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -204,7 +204,7 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                 />
                 <div className="area__content">
                     {this.state.commitOrError === undefined ? (
-                        <LoaderIcon className="icon-inline mt-2" />
+                        <LoadingSpinner className="icon-inline mt-2" />
                     ) : isErrorLike(this.state.commitOrError) ? (
                         <div className="alert alert-danger mt-2">
                             Error: {upperFirst(this.state.commitOrError.message)}

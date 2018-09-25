@@ -1,5 +1,5 @@
 import { ExtensionStatusPopover } from '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus'
-import { Loader } from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
@@ -24,7 +24,7 @@ export const GlobalDebug: React.SFC<Props> = props =>
                 <li className="nav-item">
                     <ExtensionStatusPopover
                         location={props.location}
-                        loaderIcon={Loader as React.ComponentType<{ className: string; onClick?: () => void }>}
+                        loaderIcon={LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>}
                         caretIcon={MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>}
                         extensionsController={props.extensionsController}
                     />

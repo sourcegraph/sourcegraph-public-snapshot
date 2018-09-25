@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { truncate } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -108,7 +108,7 @@ export class SavedQueryRow extends React.PureComponent<Props, State> {
                                 )}
                             {this.state.loading ? (
                                 <div className="saved-query-row__results-items">
-                                    <Loader className="icon-inline" />
+                                    <LoadingSpinner className="icon-inline" />
                                 </div>
                             ) : (
                                 <div className="saved-query-row__results-items">

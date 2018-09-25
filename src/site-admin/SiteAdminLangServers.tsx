@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { sortBy } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import BugIcon from 'mdi-react/BugIcon'
@@ -206,7 +206,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
                 </div>
                 {!this.state.error &&
                     this.state.langServers.length === 0 && (
-                        <LoaderIcon className="site-admin-lang-servers__loading-icon" />
+                        <LoadingSpinner className="site-admin-lang-servers__loading-icon" />
                     )}
                 {this.state.error && (
                     <div className="site-admin-lang-servers__error">
@@ -257,7 +257,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
         if (this.state.pendingStateByLanguage.has(langServer.language)) {
             return (
                 <span className="site-admin-lang-servers__status site-admin-lang-servers__status--pending">
-                    <LoaderIcon className="icon-inline" />
+                    <LoadingSpinner className="icon-inline" />
                 </span>
             )
         }
@@ -303,7 +303,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
         if (langServer.pending) {
             return (
                 <span className="site-admin-lang-servers__status site-admin-lang-servers__status--pending">
-                    <LoaderIcon className="icon-inline" />
+                    <LoadingSpinner className="icon-inline" />
                 </span>
             )
         }

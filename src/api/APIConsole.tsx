@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as _graphiqlModule from 'graphiql' // type only
 import * as H from 'history'
 import { upperFirst } from 'lodash'
@@ -123,7 +123,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
             <div className="api-console">
                 {this.state.graphiqlOrError === undefined ? (
                     <span className="api-console__loader">
-                        <LoaderIcon className="icon-inline" /> Loading…
+                        <LoadingSpinner className="icon-inline" /> Loading…
                     </span>
                 ) : isErrorLike(this.state.graphiqlOrError) ? (
                     <div className="alert alert-danger">

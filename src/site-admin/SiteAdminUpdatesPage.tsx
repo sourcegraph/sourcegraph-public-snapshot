@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import formatDistance from 'date-fns/formatDistance'
 import { upperFirst } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -72,7 +72,7 @@ export class SiteAdminUpdatesPage extends React.Component<Props, State> {
                         <div>
                             {this.state.updateCheck.pending && (
                                 <div className="site-admin-updates-page__alert alert alert-primary">
-                                    <LoaderIcon className="icon-inline" /> Checking for updates... (reload in a few
+                                    <LoadingSpinner className="icon-inline" /> Checking for updates... (reload in a few
                                     seconds)
                                 </div>
                             )}

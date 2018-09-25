@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -143,7 +143,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
         if (this.state.locationsOrError === undefined) {
             return null
         } else if (this.state.loading && this.state.locationsOrError.length === 0) {
-            return <Loader className="icon-inline p-2" />
+            return <LoadingSpinner className="icon-inline p-2" />
         }
 
         // Locations grouped by repository.
@@ -198,7 +198,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                                     </span>
                                 </Link>
                             ))}
-                            {this.state.loading && <Loader className="icon-inline p-2" />}
+                            {this.state.loading && <LoadingSpinner className="icon-inline p-2" />}
                         </div>
                     }
                 />

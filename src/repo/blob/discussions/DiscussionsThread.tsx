@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
@@ -96,7 +96,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         return (
             <div className="discussions-thread">
                 <DiscussionsNavbar {...this.props} threadTitle={thread ? thread.title : undefined} />
-                {loading && <LoaderIcon className="icon-inline" />}
+                {loading && <LoadingSpinner className="icon-inline" />}
                 {error && (
                     <div className="discussions-thread__error alert alert-danger">
                         <AlertCircleIcon className="icon-inline discussions-thread__error-icon" />

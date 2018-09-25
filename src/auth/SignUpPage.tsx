@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import UserIcon from 'mdi-react/UserIcon'
@@ -89,7 +89,11 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
                 </div>
                 <div className="form-group">
                     <button className="btn btn-primary btn-block" type="submit" disabled={this.state.loading}>
-                        {this.state.loading ? <Loader className="icon-inline" /> : this.props.buttonLabel || 'Sign up'}
+                        {this.state.loading ? (
+                            <LoadingSpinner className="icon-inline" />
+                        ) : (
+                            this.props.buttonLabel || 'Sign up'
+                        )}
                     </button>
                 </div>
                 {signupTerms && (

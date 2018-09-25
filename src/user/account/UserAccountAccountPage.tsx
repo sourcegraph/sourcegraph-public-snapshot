@@ -1,4 +1,4 @@
-import { Loader } from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -125,7 +125,7 @@ export class UserAccountAccountPage extends React.Component<Props, State> {
                     </button>
                     {this.state.loading && (
                         <div className="icon-inline">
-                            <Loader className="icon-inline" />
+                            <LoadingSpinner className="icon-inline" />
                         </div>
                     )}
                 </Form>

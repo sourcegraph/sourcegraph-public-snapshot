@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AddIcon from 'mdi-react/AddIcon'
 import CityIcon from 'mdi-react/CityIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -46,7 +46,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
         return (
             <div className="site-admin-overview-page">
                 <PageTitle title="Overview - Admin" />
-                {!this.state.info && <Loader className="icon-inline" />}
+                {!this.state.info && <LoadingSpinner className="icon-inline" />}
                 <OverviewList>
                     {this.state.info && (
                         <OverviewItem

@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
@@ -132,7 +132,7 @@ export class NewOrganizationPage extends React.Component<Props, State> {
                     <button type="submit" className="btn btn-primary" disabled={this.state.loading}>
                         Create organization
                     </button>
-                    {this.state.loading && <LoaderIcon className="icon-inline" />}
+                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 </Form>
             </div>
         )

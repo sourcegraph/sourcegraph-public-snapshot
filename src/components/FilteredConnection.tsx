@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { uniq, upperFirst } from 'lodash'
 import * as React from 'react'
@@ -691,7 +691,7 @@ export class FilteredConnection<N, NP = {}, C extends Connection<N> = Connection
                             emptyElement={this.props.emptyElement}
                         />
                     )}
-                {this.state.loading && <Loader className="icon-inline filtered-connection__loader" />}
+                {this.state.loading && <LoadingSpinner className="icon-inline filtered-connection__loader" />}
             </div>
         )
     }

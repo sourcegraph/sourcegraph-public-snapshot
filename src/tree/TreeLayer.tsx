@@ -1,4 +1,4 @@
-import { Loader } from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -253,7 +253,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             <td className="tree__cell">
                                 {this.state.treeOrError === LOADING ? (
                                     <div className="tree__row-loader">
-                                        <Loader className="icon-inline tree-page__entries-loader" />Loading tree
+                                        <LoadingSpinner className="icon-inline tree-page__entries-loader" />Loading tree
                                     </div>
                                 ) : isErrorLike(this.state.treeOrError) ? (
                                     <div
@@ -344,7 +344,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                             </div>
                                             {this.state.treeOrError === LOADING && (
                                                 <div className="tree__row-loader">
-                                                    <Loader className="icon-inline tree-page__entries-loader" />
+                                                    <LoadingSpinner className="icon-inline tree-page__entries-loader" />
                                                 </div>
                                             )}
                                         </div>

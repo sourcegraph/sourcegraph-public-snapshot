@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
@@ -266,7 +266,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                         >
                                             {this.state.canAddOrError === undefined ||
                                             this.state.addedOrError === 'loading' ? (
-                                                <Loader className="icon-inline" />
+                                                <LoadingSpinner className="icon-inline" />
                                             ) : (
                                                 <AddIcon className="icon-inline" />
                                             )}{' '}
@@ -295,7 +295,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                             disabled={this.state.enabledOrError === 'loading'}
                                         >
                                             {this.state.enabledOrError !== 'loading' ? (
-                                                <Loader className="icon-inline" />
+                                                <LoadingSpinner className="icon-inline" />
                                             ) : (
                                                 <CheckCircleIcon className="icon-inline" />
                                             )}{' '}

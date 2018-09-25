@@ -1,4 +1,4 @@
-import { Loader } from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -68,7 +68,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                         )}
                         {this.props.node.mirrorInfo.cloneInProgress && (
                             <small className="ml-2 text-success">
-                                <Loader className="icon-inline" /> Cloning
+                                <LoadingSpinner className="icon-inline" /> Cloning
                             </small>
                         )}
                         {this.props.node.enabled &&

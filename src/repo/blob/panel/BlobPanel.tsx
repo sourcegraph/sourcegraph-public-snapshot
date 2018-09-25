@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
 import { castArray, isEqual } from 'lodash'
@@ -219,7 +219,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         let extraRendered: React.ReactFragment | undefined
         const { hoverOrError } = this.state
         if (hoverOrError === LOADING) {
-            titleRendered = <Loader className="icon-inline" />
+            titleRendered = <LoadingSpinner className="icon-inline" />
         } else if (hoverOrError === undefined) {
             // Don't show loading indicator yet (to reduce UI jitter).
             titleRendered = undefined

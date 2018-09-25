@@ -1,5 +1,5 @@
 import { Hoverifier } from '@sourcegraph/codeintellify'
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -142,7 +142,7 @@ export class RepositoryCompareOverviewPage extends React.PureComponent<Props, St
                 {this.state.rangeOrError === null ? (
                     <p>Enter two Git revspecs to compare.</p>
                 ) : this.state.rangeOrError === undefined ? (
-                    <Loader className="icon-inline" />
+                    <LoadingSpinner className="icon-inline" />
                 ) : isErrorLike(this.state.rangeOrError) ? (
                     <div className="alert alert-danger mt-2">Error: {upperFirst(this.state.rangeOrError.message)}</div>
                 ) : (

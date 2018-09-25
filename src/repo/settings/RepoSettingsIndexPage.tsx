@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import * as React from 'react'
@@ -72,7 +72,7 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
         Icon = CheckCircleIcon
         iconClassName = 'current'
     } else {
-        Icon = LoaderIcon
+        Icon = LoadingSpinner
         iconClassName = 'stale'
     }
 
@@ -155,7 +155,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
             <div className="repo-settings-index-page">
                 <PageTitle title="Index settings" />
                 <h2>Indexing</h2>
-                {this.state.loading && <LoaderIcon className="icon-inline" />}
+                {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.error && (
                     <div className="alert alert-danger">
                         Error getting repository index status:<br />

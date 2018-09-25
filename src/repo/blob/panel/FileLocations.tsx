@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -190,7 +190,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                         />
                     ))}
                 />
-                {this.state.loading && <Loader className="icon-inline p-2" />}
+                {this.state.loading && <LoadingSpinner className="icon-inline p-2" />}
             </div>
         )
     }

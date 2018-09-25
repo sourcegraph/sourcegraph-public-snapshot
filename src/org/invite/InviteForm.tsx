@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -278,7 +278,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                     data-tooltip="Add immediately without sending invitation (site admins only)"
                                 >
                                     {this.state.loading === 'addUserToOrganization' ? (
-                                        <LoaderIcon className="icon-inline" />
+                                        <LoadingSpinner className="icon-inline" />
                                     ) : (
                                         <AddIcon className="icon-inline" />
                                     )}{' '}
@@ -301,7 +301,7 @@ export class InviteForm extends React.PureComponent<Props, State> {
                                         onClick={viewerCanAddUserToOrganization ? this.onInviteClick : undefined}
                                     >
                                         {this.state.loading === 'inviteUserToOrganization' ? (
-                                            <LoaderIcon className="icon-inline" />
+                                            <LoadingSpinner className="icon-inline" />
                                         ) : (
                                             <EmailOpenOutlineIcon className="icon-inline" />
                                         )}{' '}

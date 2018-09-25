@@ -1,6 +1,6 @@
 import { ActionItem } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionItem'
 import { ActionsContainer } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsContainer'
-import { Loader } from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { escapeRegExp, upperFirst } from 'lodash'
 import FolderIcon from 'mdi-react/FolderIcon'
@@ -192,7 +192,8 @@ export class TreePage extends React.PureComponent<Props, State> {
                 <PageTitle title={this.getPageTitle()} />
                 {this.state.treeOrError === undefined && (
                     <div>
-                        <Loader className="icon-inline tree-page__entries-loader" /> Loading files and directories
+                        <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and
+                        directories
                     </div>
                 )}
                 {this.state.treeOrError !== undefined &&

@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link, Redirect } from 'react-router-dom'
@@ -161,7 +161,7 @@ export class OrgInvitationPage extends React.PureComponent<Props, State> {
                                     {upperFirst(this.state.submissionOrError.message)}
                                 </div>
                             )}
-                            {this.state.submissionOrError === 'loading' && <Loader className="icon-inline" />}
+                            {this.state.submissionOrError === 'loading' && <LoadingSpinner className="icon-inline" />}
                         </Form>
                     </ModalPage>
                 ) : (

@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -95,7 +95,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                 </div>
                 {this.state.loading && (
                     <div className="survey-form__loader">
-                        <Loader className="icon-inline" />
+                        <LoadingSpinner className="icon-inline" />
                     </div>
                 )}
                 <div>

@@ -1,4 +1,4 @@
-import { Loader } from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -253,7 +253,7 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                             </button>
                             {this.state.loading && (
                                 <div>
-                                    <Loader className="icon-inline" />
+                                    <LoadingSpinner className="icon-inline" />
                                 </div>
                             )}
                             {this.state.saved && (

@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import * as React from 'react'
@@ -181,7 +181,7 @@ export class UserAccountCreateAccessTokenPage extends React.PureComponent<Props,
                         className="btn btn-success"
                     >
                         {this.state.creationOrError === 'loading' ? (
-                            <LoaderIcon className="icon-inline" />
+                            <LoadingSpinner className="icon-inline" />
                         ) : (
                             <AddIcon className="icon-inline" />
                         )}{' '}

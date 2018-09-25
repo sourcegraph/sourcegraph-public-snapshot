@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
 import AutoFixIcon from 'mdi-react/AutoFixIcon'
@@ -106,7 +106,7 @@ export class SavedQueries extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         if (this.state.loading) {
-            return <Loader />
+            return <LoadingSpinner />
         }
 
         const isHomepage = this.props.location.pathname === '/search'

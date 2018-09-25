@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -108,7 +108,7 @@ export class OrgAccountProfilePage extends React.PureComponent<Props, State> {
                     >
                         Update
                     </button>
-                    {this.state.loading && <LoaderIcon className="icon-inline" />}
+                    {this.state.loading && <LoadingSpinner className="icon-inline" />}
                     <div
                         className={
                             'org-account-profile-page__updated-text' +

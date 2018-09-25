@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
@@ -22,7 +22,7 @@ const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
         <RepoLink repoPath={repo.name} to={repo.url} className="explore-page__item-path" />
         {repo.mirrorInfo.cloneInProgress && (
             <small className="ml-2 text-success">
-                <Loader className="icon-inline" /> Cloning
+                <LoadingSpinner className="icon-inline" /> Cloning
             </small>
         )}
     </li>

@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ServerCapabilities } from 'javascript-typescript-langserver/lib/request-type'
 import { isEqual, upperFirst } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
@@ -152,7 +152,7 @@ export class CodeIntelStatusIndicator extends React.Component<
                     <div className="card-body">
                         {this.state.langServerOrError === undefined ? (
                             <div className="text-center">
-                                <Loader className="icon-inline" />
+                                <LoadingSpinner className="icon-inline" />
                             </div>
                         ) : isErrorLike(this.state.langServerOrError) ? (
                             <span className="text-danger">{upperFirst(this.state.langServerOrError.message)}</span>

@@ -1,4 +1,4 @@
-import { Loader } from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import * as _monaco from 'monaco-editor' // type only
@@ -173,7 +173,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return this.state.monacoSettingsEditorOrError === undefined ? (
-            <Loader className="icon-inline" />
+            <LoadingSpinner className="icon-inline" />
         ) : isErrorLike(this.state.monacoSettingsEditorOrError) ? (
             <div className="alert alert-danger">
                 Error loading settings editor: {upperFirst(this.state.monacoSettingsEditorOrError.message)}

@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import CheckIcon from 'mdi-react/CheckIcon'
 import LockIcon from 'mdi-react/LockIcon'
@@ -74,7 +74,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                 'This repository is currently being cloned from its remote repository.'
             buttonLabel = (
                 <span>
-                    <LoaderIcon className="icon-inline" /> Cloning...
+                    <LoadingSpinner className="icon-inline" /> Cloning...
                 </span>
             )
             buttonDisabled = true
@@ -199,7 +199,7 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                         )}
                         {this.state.loading && (
                             <div className="alert alert-primary action-container__alert">
-                                <LoaderIcon className="icon-inline" /> Checking connection...
+                                <LoadingSpinner className="icon-inline" /> Checking connection...
                             </div>
                         )}
                         {this.state.result &&
@@ -282,7 +282,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<Props, State> {
             <div className="repo-settings-mirror-page">
                 <PageTitle title="Mirror settings" />
                 <h2>Mirroring and cloning</h2>
-                {this.state.loading && <LoaderIcon className="icon-inline" />}
+                {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 <div className="form-group">
                     <label>

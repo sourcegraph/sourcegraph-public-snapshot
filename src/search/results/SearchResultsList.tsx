@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -257,7 +257,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                     {this.props.resultsOrError === undefined ? (
                         <div className="text-center">
-                            <Loader className="icon-inline" /> Loading
+                            <LoadingSpinner className="icon-inline" /> Loading
                         </div>
                     ) : isErrorLike(this.props.resultsOrError) ? (
                         /* GraphQL, network, query syntax error */

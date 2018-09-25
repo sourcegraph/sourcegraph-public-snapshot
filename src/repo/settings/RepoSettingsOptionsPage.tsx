@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -65,7 +65,7 @@ export class RepoSettingsOptionsPage extends React.PureComponent<Props, State> {
             <div className="repo-settings-options-page">
                 <PageTitle title="Repository settings" />
                 <h2>Settings</h2>
-                {this.state.loading && <LoaderIcon className="icon-inline" />}
+                {this.state.loading && <LoadingSpinner className="icon-inline" />}
                 {this.state.error && <div className="alert alert-danger">{upperFirst(this.state.error)}</div>}
                 <Form>
                     <div className="form-group">

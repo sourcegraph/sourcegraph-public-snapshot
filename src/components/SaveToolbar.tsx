@@ -1,4 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
@@ -51,7 +51,7 @@ export const SaveToolbar: React.SFC<Props> = ({ dirty, disabled, saving, error, 
                 </button>
                 {saving && (
                     <span className="save-toolbar__item save-toolbar__message">
-                        <Loader className="icon-inline" /> Saving...
+                        <LoadingSpinner className="icon-inline" /> Saving...
                     </span>
                 )}
             </div>

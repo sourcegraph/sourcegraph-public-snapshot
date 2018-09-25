@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
@@ -114,7 +114,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
             <div className="repository-branches-page">
                 <PageTitle title="Branches" />
                 {this.state.dataOrError === undefined ? (
-                    <LoaderIcon className="icon-inline mt-2" />
+                    <LoadingSpinner className="icon-inline mt-2" />
                 ) : isErrorLike(this.state.dataOrError) ? (
                     <div className="alert alert-danger mt-2">Error: {upperFirst(this.state.dataOrError.message)}</div>
                 ) : (

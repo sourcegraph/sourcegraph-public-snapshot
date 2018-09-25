@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
@@ -267,7 +267,7 @@ export class DiscussionsInput extends React.PureComponent<Props, State> {
                         />
                     </div>
                     <div key="preview" className="discussions-input__preview">
-                        {previewLoading && <LoaderIcon className="icon-inline" />}
+                        {previewLoading && <LoadingSpinner className="icon-inline" />}
                         {!previewLoading && previewHTML && <Markdown dangerousInnerHTML={previewHTML} />}
                     </div>
                 </TabsWithLocalStorageViewStatePersistence>
