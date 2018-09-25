@@ -59,3 +59,7 @@ func (s *siteActivityPeriodResolver) RegisteredUserCount() int32 {
 func (s *siteActivityPeriodResolver) AnonymousUserCount() int32 {
 	return s.siteActivityPeriod.AnonymousUserCount
 }
+
+func (s *siteActivityPeriodResolver) IntegrationUserCount() int32 {
+	return s.siteActivityPeriod.IntegrationUserCount
+}

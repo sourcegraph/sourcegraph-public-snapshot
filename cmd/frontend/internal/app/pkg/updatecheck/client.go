@@ -69,9 +69,9 @@ var baseURL = &url.URL{
 func getSiteActivityJSON() ([]byte, error) {
 	days, weeks, months := 2, 1, 1
 	siteActivity, err := useractivity.GetSiteActivity(&useractivity.SiteActivityOptions{
-		Days:   &days,
-		Weeks:  &weeks,
-		Months: &months,
+		DayPeriods:   &days,
+		WeekPeriods:  &weeks,
+		MonthPeriods: &months,
 	})
 	if err != nil {
 		return nil, err

@@ -54,16 +54,16 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 		return nil, 0, errors.New("site analytics is not available on sourcegraph.com")
 	}
 	r.once.Do(func() {
-		var userIDs []string
+		var users *useractivity.ActiveUsers
 		var err error
 
 		switch *r.activePeriod {
 		case "TODAY":
-			_, userIDs, _, err = useractivity.ListUsersToday()
+			users, err = useractivity.ListUsersToday()
 		case "THIS_WEEK":
-			_, userIDs, _, err = useractivity.ListUsersThisWeek()
+			users, err = useractivity.ListUsersThisWeek()
 		case "THIS_MONTH":
-			_, userIDs, _, err = useractivity.ListUsersThisMonth()
+			users, err = useractivity.ListUsersThisMonth()
 		default:
 			err = fmt.Errorf("unknown user event %s", *r.activePeriod)
 		}
@@ -72,7 +72,7 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 			return
 		}
 
-		r.opt.UserIDs, err = sliceAtoi(userIDs)
+		r.opt.UserIDs, err = sliceAtoi(users.Registered)
 		if err != nil {
 			r.err = err
 			return

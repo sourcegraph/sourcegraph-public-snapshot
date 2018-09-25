@@ -31,8 +31,6 @@ const chartGeneratorOptions: ChartOptions = {
 
 const CHART_ID_KEY = 'latest-analytics-chart-id'
 
-const showExpandedAnalytics = localStorage.getItem('showExpandedAnalytics') !== null
-
 interface UserActivityHeaderFooterProps {
     nodes: GQL.IUser[]
 }
@@ -47,11 +45,7 @@ class UserActivityHeader extends React.PureComponent<UserActivityHeaderFooterPro
                     <th>Search queries</th>
                     <th>Code intelligence actions</th>
                     <th className="site-admin-analytics-page__date-column">Last active</th>
-                    {showExpandedAnalytics && (
-                        <th className="site-admin-analytics-page__date-column">
-                            Last active in code host or code review
-                        </th>
-                    )}
+                    <th className="site-admin-analytics-page__date-column">Last active in code host or code review</th>
                 </tr>
             </thead>
         )
@@ -73,7 +67,7 @@ class UserActivityFooter extends React.PureComponent<UserActivityHeaderFooterPro
                         )}
                     </td>
                     <td className="site-admin-analytics-page__date-column" />
-                    {showExpandedAnalytics && <td className="site-admin-analytics-page__date-column" />}
+                    <td className="site-admin-analytics-page__date-column" />
                 </tr>
             </tfoot>
         )
@@ -92,25 +86,23 @@ class UserActivityNode extends React.PureComponent<UserActivityNodeProps> {
         return (
             <tr>
                 <td>{this.props.node.username}</td>
-                <td>{this.props.node.activity ? this.props.node.activity.pageViews : '?'}</td>
-                <td>{this.props.node.activity ? this.props.node.activity.searchQueries : '?'}</td>
-                <td>{this.props.node.activity ? this.props.node.activity.codeIntelligenceActions : '?'}</td>
+                <td>{this.props.node.activity ? this.props.node.activity.pageViews : 'n/a'}</td>
+                <td>{this.props.node.activity ? this.props.node.activity.searchQueries : 'n/a'}</td>
+                <td>{this.props.node.activity ? this.props.node.activity.codeIntelligenceActions : 'n/a'}</td>
                 <td className="site-admin-analytics-page__date-column">
                     {this.props.node.activity && this.props.node.activity.lastActiveTime ? (
                         <Timestamp date={this.props.node.activity.lastActiveTime} />
                     ) : (
-                        '?'
+                        'n/a'
                     )}
                 </td>
-                {showExpandedAnalytics && (
-                    <td className="site-admin-analytics-page__date-column">
-                        {this.props.node.activity && this.props.node.activity.lastActiveCodeHostIntegrationTime ? (
-                            <Timestamp date={this.props.node.activity.lastActiveCodeHostIntegrationTime} />
-                        ) : (
-                            '?'
-                        )}
-                    </td>
-                )}
+                <td className="site-admin-analytics-page__date-column">
+                    {this.props.node.activity && this.props.node.activity.lastActiveCodeHostIntegrationTime ? (
+                        <Timestamp date={this.props.node.activity.lastActiveCodeHostIntegrationTime} />
+                    ) : (
+                        'n/a'
+                    )}
+                </td>
             </tr>
         )
     }

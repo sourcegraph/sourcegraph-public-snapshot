@@ -109,10 +109,11 @@ type SiteActivity struct {
 }
 
 type SiteActivityPeriod struct {
-	StartTime           time.Time
-	UserCount           int32
-	RegisteredUserCount int32
-	AnonymousUserCount  int32
+	StartTime            time.Time
+	UserCount            int32
+	RegisteredUserCount  int32
+	AnonymousUserCount   int32
+	IntegrationUserCount int32
 }
 
 type SurveyResponse struct {

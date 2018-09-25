@@ -2998,6 +2998,9 @@ type SiteActivityPeriod {
     registeredUserCount: Int!
     # The anonymous user count.
     anonymousUserCount: Int!
+    # The count of registered users that have been active on a code host integration.
+    # Excludes anonymous users.
+    integrationUserCount: Int!
 }
 
 # A deployment configuration.

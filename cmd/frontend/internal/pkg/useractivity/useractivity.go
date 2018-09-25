@@ -122,10 +122,27 @@ func GetByUserID(userID int32) (*types.UserActivity, error) {
 	return a, nil
 }
 
+// SiteActivityOptions contains options for the number of daily, weekly, and monthly periods in
+// which to calculate the number of unique users (i.e., how many days of Daily Active Users, or DAUs,
+// how many weeks of Weekly Active Users, or WAUs, and how many months of Monthly Active Users, or MAUs).
 type SiteActivityOptions struct {
-	Days   *int
-	Weeks  *int
-	Months *int
+	DayPeriods   *int
+	WeekPeriods  *int
+	MonthPeriods *int
+}
+
+// UsageDuration in aggregate represents a duration of time over which to calculate a set of unique users.
+type UsageDuration struct {
+	Days   int
+	Months int
+}
+
+// ActiveUsers contains sets of unique user IDs.
+type ActiveUsers struct {
+	All              []string
+	Registered       []string
+	Anonymous        []string
+	UsedIntegrations []string
 }
 
 func minIntOrZero(a, b int) int {
@@ -139,35 +156,35 @@ func minIntOrZero(a, b int) int {
 	return min
 }
 
-// GetSiteActivity returns the current site's SiteActivity
+// GetSiteActivity returns the current site's SiteActivity.
 func GetSiteActivity(opt *SiteActivityOptions) (*types.SiteActivity, error) {
 	var (
-		days   = defaultDays
-		weeks  = defaultWeeks
-		months = defaultMonths
+		dayPeriods   = defaultDays
+		weekPeriods  = defaultWeeks
+		monthPeriods = defaultMonths
 	)
 
 	if opt != nil {
-		if opt.Days != nil {
-			days = minIntOrZero(maxStorageDays, *opt.Days)
+		if opt.DayPeriods != nil {
+			dayPeriods = minIntOrZero(maxStorageDays, *opt.DayPeriods)
 		}
-		if opt.Weeks != nil {
-			weeks = minIntOrZero(maxStorageDays/7, *opt.Weeks)
+		if opt.WeekPeriods != nil {
+			weekPeriods = minIntOrZero(maxStorageDays/7, *opt.WeekPeriods)
 		}
-		if opt.Months != nil {
-			months = minIntOrZero(maxStorageDays/31, *opt.Months)
+		if opt.MonthPeriods != nil {
+			monthPeriods = minIntOrZero(maxStorageDays/31, *opt.MonthPeriods)
 		}
 	}
 
-	daus, err := DAUs(days)
+	daus, err := daus(dayPeriods)
 	if err != nil {
 		return nil, err
 	}
-	waus, err := WAUs(weeks)
+	waus, err := waus(weekPeriods)
 	if err != nil {
 		return nil, err
 	}
-	maus, err := MAUs(months)
+	maus, err := maus(monthPeriods)
 	if err != nil {
 		return nil, err
 	}
@@ -191,63 +208,102 @@ func GetUsersActiveTodayCount() (int, error) {
 }
 
 // uniques calculates the list of unique users starting at 00:00:00 on a given UTC date over a
-// period of time (years, months, and days).
-func uniques(dayStart time.Time, years int, months int, days int) ([]string, []string, []string, error) {
+// period of time.
+func uniques(dayStart time.Time, period *UsageDuration) (*ActiveUsers, error) {
 	c := pool.Get()
 	defer c.Close()
 
-	allUniqueUserIds := map[string]bool{}
-	registeredUserIds := map[string]bool{}
-	anonymousUserIds := map[string]bool{}
+	var (
+		allUniqueUserIDs   = map[string]bool{}
+		registeredUserIDs  = map[string]bool{}
+		anonymousUserIDs   = map[string]bool{}
+		integrationUserIDs = map[string]bool{}
+	)
 
 	dayStart = time.Date(dayStart.Year(), dayStart.Month(), dayStart.Day(), 0, 0, 0, 0, time.UTC)
-	d := dayStart.AddDate(years, months, days).AddDate(0, 0, -1)
+	dayEnd := dayStart.AddDate(0, period.Months, period.Days)
 
-	// Start at the end date, and loop backwards until reaching the start
+	// Start at 00:00:00 UTC of the last day, and loop backwards until reaching the start
+	d := dayEnd.AddDate(0, 0, -1)
 	for d.After(dayStart) || d.Equal(dayStart) {
 		values, err := redis.Values(c.Do("SMEMBERS", usersActiveKeyFromDate(d)))
 		if err != nil && err != redis.ErrNil {
-			return nil, nil, nil, err
+			return nil, err
 		}
 		for _, id := range values {
 			bid := id.([]byte)
 			sid := string(bid)
-			allUniqueUserIds[sid] = true
+			allUniqueUserIDs[sid] = true
 			if len(bid) != 36 { // id is a numerical Sourcegraph user id, not an anonymous user's UUID
-				registeredUserIds[sid] = true
+				registeredUserIDs[sid] = true
 			} else {
-				anonymousUserIds[sid] = true
+				anonymousUserIDs[sid] = true
 			}
 		}
 
 		d = d.AddDate(0, 0, -1)
 	}
 
-	return keys(allUniqueUserIds), keys(registeredUserIds), keys(anonymousUserIds), nil
+	// Loop through all id'd unique users, determine if they were active in a code host integration in the time period.
+	//
+	// Despite O(n) Redis requests (n == # of users in a given period), this performs acceptably well at large instances.
+	// On an instance with 25K users, average GraphQL requests for default site activity data (14 days of DAUs, 10 weeks
+	// of WAUs, and 3 months of MAUs) takes ~1.2s.
+	for uid := range allUniqueUserIDs {
+		userKey := keyPrefix + uid
+		err := c.Send("HGET", userKey, fLastActiveCodeHostIntegration)
+		if err != nil && err != redis.ErrNil {
+			return nil, err
+		}
+	}
+	c.Flush()
+	for uid := range allUniqueUserIDs {
+		lastActiveCodeHostStr, err := redis.String(c.Receive())
+		if err != nil && err != redis.ErrNil {
+			return nil, err
+		}
+		if lastActiveCodeHostStr != "" {
+			t, err := time.Parse(time.RFC3339, lastActiveCodeHostStr)
+			if err != nil {
+				return nil, err
+			}
+			if (t.After(dayStart) || t.Equal(dayStart)) && t.Before(dayEnd) {
+				integrationUserIDs[uid] = true
+			}
+		}
+	}
+
+	return &ActiveUsers{
+		All:              keys(allUniqueUserIDs),
+		Registered:       keys(registeredUserIDs),
+		Anonymous:        keys(anonymousUserIDs),
+		UsedIntegrations: keys(integrationUserIDs),
+	}, nil
 }
 
 // uniquesCount calculates the number of unique users starting at 00:00:00 on a given UTC date over a
 // period of time (years, months, and days).
-func uniquesCount(dayStart time.Time, years int, months int, days int) (*types.SiteActivityPeriod, error) {
-	allIds, regdIds, anonIds, err := uniques(dayStart, years, months, days)
+func uniquesCount(dayStart time.Time, period *UsageDuration) (*types.SiteActivityPeriod, error) {
+	userIDs, err := uniques(dayStart, period)
 	if err != nil {
 		return nil, err
 	}
 
 	return &types.SiteActivityPeriod{
-		StartTime:           time.Date(dayStart.Year(), dayStart.Month(), dayStart.Day(), 0, 0, 0, 0, time.UTC),
-		UserCount:           int32(len(allIds)),
-		RegisteredUserCount: int32(len(regdIds)),
-		AnonymousUserCount:  int32(len(anonIds)),
+		StartTime:            time.Date(dayStart.Year(), dayStart.Month(), dayStart.Day(), 0, 0, 0, 0, time.UTC),
+		UserCount:            int32(len(userIDs.All)),
+		RegisteredUserCount:  int32(len(userIDs.Registered)),
+		AnonymousUserCount:   int32(len(userIDs.Anonymous)),
+		IntegrationUserCount: int32(len(userIDs.UsedIntegrations)),
 	}, nil
 }
 
-// DAUs returns a count of daily active users for the last daysCount days (including the current, partial day).
-func DAUs(daysCount int) ([]*types.SiteActivityPeriod, error) {
+// daus returns a count of daily active users for the last daysCount days (including the current, partial day).
+func daus(dayPeriods int) ([]*types.SiteActivityPeriod, error) {
 	var daus []*types.SiteActivityPeriod
 	now := timeNow().UTC()
-	for daysAgo := 0; daysAgo < daysCount; daysAgo++ {
-		uniques, err := uniquesCount(now.AddDate(0, 0, -daysAgo), 0, 0, 1)
+	for daysAgo := 0; daysAgo < dayPeriods; daysAgo++ {
+		uniques, err := uniquesCount(now.AddDate(0, 0, -daysAgo), &UsageDuration{Days: 1})
 		if err != nil {
 			return nil, err
 		}
@@ -257,17 +313,17 @@ func DAUs(daysCount int) ([]*types.SiteActivityPeriod, error) {
 }
 
 // ListUsersToday returns a list of users active since today at 00:00 UTC.
-func ListUsersToday() ([]string, []string, []string, error) {
-	return uniques(timeNow().UTC(), 0, 0, 1)
+func ListUsersToday() (*ActiveUsers, error) {
+	return uniques(timeNow().UTC(), &UsageDuration{Days: 1})
 }
 
-// WAUs returns a count of daily active users for the last weeksCount calendar weeks (including the current, partial week).
-func WAUs(weeksCount int) ([]*types.SiteActivityPeriod, error) {
+// waus returns a count of daily active users for the last weeksCount calendar weeks (including the current, partial week).
+func waus(weekPeriods int) ([]*types.SiteActivityPeriod, error) {
 	var waus []*types.SiteActivityPeriod
 
-	for w := 0; w < weeksCount; w++ {
+	for w := 0; w < weekPeriods; w++ {
 		weekStartDate := startOfWeek(w)
-		uniques, err := uniquesCount(weekStartDate, 0, 0, 7)
+		uniques, err := uniquesCount(weekStartDate, &UsageDuration{Days: 7})
 		if err != nil {
 			return nil, err
 		}
@@ -277,18 +333,18 @@ func WAUs(weeksCount int) ([]*types.SiteActivityPeriod, error) {
 }
 
 // ListUsersThisWeek returns a list of users active since the latest Monday at 00:00 UTC.
-func ListUsersThisWeek() ([]string, []string, []string, error) {
+func ListUsersThisWeek() (*ActiveUsers, error) {
 	weekStartDate := startOfWeek(0)
-	return uniques(weekStartDate, 0, 0, 7)
+	return uniques(weekStartDate, &UsageDuration{Days: 7})
 }
 
-// MAUs returns a count of daily active users for the last monthsCount calendar months (including the current, partial month).
-func MAUs(monthsCount int) ([]*types.SiteActivityPeriod, error) {
+// maus returns a count of daily active users for the last monthsCount calendar months (including the current, partial month).
+func maus(monthPeriods int) ([]*types.SiteActivityPeriod, error) {
 	var maus []*types.SiteActivityPeriod
 
-	for m := 0; m < monthsCount; m++ {
+	for m := 0; m < monthPeriods; m++ {
 		monthStartDate := startOfMonth(m)
-		uniques, err := uniquesCount(monthStartDate, 0, 1, 0)
+		uniques, err := uniquesCount(monthStartDate, &UsageDuration{Months: 1})
 		if err != nil {
 			return nil, err
 		}
@@ -298,9 +354,9 @@ func MAUs(monthsCount int) ([]*types.SiteActivityPeriod, error) {
 }
 
 // ListUsersThisMonth returns a list of users active since the first day of the month at 00:00 UTC.
-func ListUsersThisMonth() ([]string, []string, []string, error) {
+func ListUsersThisMonth() (*ActiveUsers, error) {
 	monthStartDate := startOfMonth(0)
-	return uniques(monthStartDate, 0, 1, 0)
+	return uniques(monthStartDate, &UsageDuration{Months: 1})
 }
 
 // logPageView increments a user's pageview count.

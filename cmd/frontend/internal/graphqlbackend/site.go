@@ -147,15 +147,15 @@ func (r *siteResolver) Activity(ctx context.Context, args *struct {
 	opt := &useractivity.SiteActivityOptions{}
 	if args.Days != nil {
 		d := int(*args.Days)
-		opt.Days = &d
+		opt.DayPeriods = &d
 	}
 	if args.Weeks != nil {
 		w := int(*args.Weeks)
-		opt.Weeks = &w
+		opt.WeekPeriods = &w
 	}
 	if args.Months != nil {
 		m := int(*args.Months)
-		opt.Months = &m
+		opt.MonthPeriods = &m
 	}
 	activity, err := useractivity.GetSiteActivity(opt)
 	if err != nil {

@@ -1,7 +1,8 @@
 package useractivity
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -72,6 +73,47 @@ func TestUserActivity_LogSearchQuery(t *testing.T) {
 	}
 	if want := int32(1); a.SearchQueries != want {
 		t.Errorf("got %d, want %d", a.SearchQueries, want)
+	}
+}
+
+func TestUserActivity_LogCodeIntelAction(t *testing.T) {
+	setupForTest(t)
+
+	user := types.User{
+		ID: 1,
+	}
+	err := logCodeIntelAction(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	a, err := GetByUserID(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := int32(1); a.CodeIntelligenceActions != want {
+		t.Errorf("got %d, want %d", a.CodeIntelligenceActions, want)
+	}
+}
+
+func TestUserActivity_LogCodeHostIntegrationUsage(t *testing.T) {
+	setupForTest(t)
+
+	user := types.User{
+		ID: 1,
+	}
+	err := LogActivity(true, user.ID, "test-cookie-id", "CODEINTELINTEGRATION")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	a, err := GetByUserID(user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	diff := (*a.LastCodeHostIntegrationTime).Unix() - time.Now().Unix()
+	if wantMaxDiff := 10; diff > int64(wantMaxDiff) || diff < -int64(wantMaxDiff) {
+		t.Errorf("got %d seconds apart, wanted less than %d seconds apart", diff, wantMaxDiff)
 	}
 }
 
@@ -159,6 +201,11 @@ func TestUserActivity_DAUs_WAUs_MAUs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// This should not be visible, as code host integration usage is ONLY recorded for registered users.
+	err = LogActivity(false, 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "CODEINTELINTEGRATION")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// 2018/02/28 (2 users, 1 registered)
 	mockTimeNow(oneMonthThreeDaysAgo)
@@ -192,6 +239,10 @@ func TestUserActivity_DAUs_WAUs_MAUs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = LogActivity(true, user2.ID, "test-2", "CODEINTELINTEGRATION")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// 2018/03/26 (1 user, 1 registered)
 	mockTimeNow(fiveDaysAgo)
@@ -210,95 +261,83 @@ func TestUserActivity_DAUs_WAUs_MAUs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = LogActivity(true, user1.ID, "test-1", "CODEINTELINTEGRATION")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	wantMAUs := []*types.SiteActivityPeriod{
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 1, 0, 0, 0, 0, time.UTC),
-			UserCount:           4,
-			RegisteredUserCount: 2,
-			AnonymousUserCount:  2,
+			StartTime:            time.Date(2018, 3, 1, 0, 0, 0, 0, time.UTC),
+			UserCount:            4,
+			RegisteredUserCount:  2,
+			AnonymousUserCount:   2,
+			IntegrationUserCount: 2,
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 2, 1, 0, 0, 0, 0, time.UTC),
-			UserCount:           3,
-			RegisteredUserCount: 1,
-			AnonymousUserCount:  2,
+			StartTime:            time.Date(2018, 2, 1, 0, 0, 0, 0, time.UTC),
+			UserCount:            3,
+			RegisteredUserCount:  1,
+			AnonymousUserCount:   2,
+			IntegrationUserCount: 0,
 		},
 		&types.SiteActivityPeriod{
 			StartTime: time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC),
-			UserCount: 0,
 		},
 	}
 
 	wantWAUs := []*types.SiteActivityPeriod{
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 25, 0, 0, 0, 0, time.UTC),
-			UserCount:           2,
-			RegisteredUserCount: 2,
-			AnonymousUserCount:  0,
+			StartTime:            time.Date(2018, 3, 25, 0, 0, 0, 0, time.UTC),
+			UserCount:            2,
+			RegisteredUserCount:  2,
+			AnonymousUserCount:   0,
+			IntegrationUserCount: 1,
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 18, 0, 0, 0, 0, time.UTC),
-			UserCount:           0,
-			RegisteredUserCount: 0,
-			AnonymousUserCount:  0,
+			StartTime: time.Date(2018, 3, 18, 0, 0, 0, 0, time.UTC),
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 11, 0, 0, 0, 0, time.UTC),
-			UserCount:           3,
-			RegisteredUserCount: 1,
-			AnonymousUserCount:  2,
+			StartTime:            time.Date(2018, 3, 11, 0, 0, 0, 0, time.UTC),
+			UserCount:            3,
+			RegisteredUserCount:  1,
+			AnonymousUserCount:   2,
+			IntegrationUserCount: 1,
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 04, 0, 0, 0, 0, time.UTC),
-			UserCount:           0,
-			RegisteredUserCount: 0,
-			AnonymousUserCount:  0,
+			StartTime: time.Date(2018, 3, 04, 0, 0, 0, 0, time.UTC),
 		},
 	}
 
 	wantDAUs := []*types.SiteActivityPeriod{
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 31, 0, 0, 0, 0, time.UTC),
-			UserCount:           0,
-			RegisteredUserCount: 0,
-			AnonymousUserCount:  0,
+			StartTime: time.Date(2018, 3, 31, 0, 0, 0, 0, time.UTC),
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 30, 0, 0, 0, 0, time.UTC),
-			UserCount:           0,
-			RegisteredUserCount: 0,
-			AnonymousUserCount:  0,
+			StartTime: time.Date(2018, 3, 30, 0, 0, 0, 0, time.UTC),
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 29, 0, 0, 0, 0, time.UTC),
-			UserCount:           0,
-			RegisteredUserCount: 0,
-			AnonymousUserCount:  0,
+			StartTime: time.Date(2018, 3, 29, 0, 0, 0, 0, time.UTC),
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 28, 0, 0, 0, 0, time.UTC),
-			UserCount:           2,
-			RegisteredUserCount: 2,
-			AnonymousUserCount:  0,
+			StartTime:            time.Date(2018, 3, 28, 0, 0, 0, 0, time.UTC),
+			UserCount:            2,
+			RegisteredUserCount:  2,
+			AnonymousUserCount:   0,
+			IntegrationUserCount: 1,
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 27, 0, 0, 0, 0, time.UTC),
-			UserCount:           0,
-			RegisteredUserCount: 0,
-			AnonymousUserCount:  0,
+			StartTime: time.Date(2018, 3, 27, 0, 0, 0, 0, time.UTC),
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 26, 0, 0, 0, 0, time.UTC),
-			UserCount:           1,
-			RegisteredUserCount: 1,
-			AnonymousUserCount:  0,
+			StartTime:            time.Date(2018, 3, 26, 0, 0, 0, 0, time.UTC),
+			UserCount:            1,
+			RegisteredUserCount:  1,
+			AnonymousUserCount:   0,
+			IntegrationUserCount: 0,
 		},
 		&types.SiteActivityPeriod{
-			StartTime:           time.Date(2018, 3, 25, 0, 0, 0, 0, time.UTC),
-			UserCount:           0,
-			RegisteredUserCount: 0,
-			AnonymousUserCount:  0,
+			StartTime: time.Date(2018, 3, 25, 0, 0, 0, 0, time.UTC),
 		},
 	}
 
@@ -311,18 +350,17 @@ func TestUserActivity_DAUs_WAUs_MAUs(t *testing.T) {
 	mockTimeNow(now)
 	days, weeks, months := 7, 4, 3
 	siteActivity, err := GetSiteActivity(&SiteActivityOptions{
-		Days:   &days,
-		Weeks:  &weeks,
-		Months: &months,
+		DayPeriods:   &days,
+		WeekPeriods:  &weeks,
+		MonthPeriods: &months,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !siteActivityCompare(siteActivity, want) {
-		siteActivityJSON, _ := json.Marshal(siteActivity)
-		wantJSON, _ := json.Marshal(want)
-		t.Errorf("got %+v, want %+v", string(siteActivityJSON), string(wantJSON))
+	err = siteActivityCompare(siteActivity, want)
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -366,46 +404,49 @@ func mockTimeNow(t time.Time) {
 	}
 }
 
-func siteActivityCompare(a, b *types.SiteActivity) bool {
+func siteActivityCompare(a, b *types.SiteActivity) error {
 	if a == nil || b == nil {
-		return false
+		return errors.New("site activities can not be nil")
 	}
 	if a == b {
-		return true
+		return nil
 	}
 	if len(a.DAUs) != len(b.DAUs) || len(a.WAUs) != len(b.WAUs) || len(a.MAUs) != len(b.MAUs) {
-		return false
+		return fmt.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (MAUs)", len(a.DAUs), len(b.DAUs), len(a.WAUs), len(b.WAUs), len(a.MAUs), len(b.MAUs))
 	}
-	if !siteActivityPeriodSliceCompare(a.DAUs, b.DAUs) || !siteActivityPeriodSliceCompare(a.WAUs, b.WAUs) || !siteActivityPeriodSliceCompare(a.MAUs, b.MAUs) {
-		return false
+	if err := siteActivityPeriodSliceCompare("DAUs", a.DAUs, b.DAUs); err != nil {
+		return err
 	}
-	return true
+	if err := siteActivityPeriodSliceCompare("WAUs", a.WAUs, b.WAUs); err != nil {
+		return err
+	}
+	if err := siteActivityPeriodSliceCompare("MAUs", a.MAUs, b.MAUs); err != nil {
+		return err
+	}
+	return nil
 }
 
-func siteActivityPeriodSliceCompare(a, b []*types.SiteActivityPeriod) bool {
+func siteActivityPeriodSliceCompare(label string, a, b []*types.SiteActivityPeriod) error {
 	if a == nil || b == nil {
-		return false
-	}
-	if len(a) != len(b) {
-		return false
+		return fmt.Errorf("%v slices can not be nil", label)
 	}
 	for i, v := range a {
-		if !siteActivityPeriodCompare(v, b[i]) {
-			return false
+		if err := siteActivityPeriodCompare(label, v, b[i]); err != nil {
+			return err
 		}
 	}
-	return true
+	return nil
 }
 
-func siteActivityPeriodCompare(a, b *types.SiteActivityPeriod) bool {
+func siteActivityPeriodCompare(label string, a, b *types.SiteActivityPeriod) error {
 	if a == nil || b == nil {
-		return false
+		return errors.New("site activity periods can not be nil")
 	}
 	if a == b {
-		return true
+		return nil
 	}
-	if a.StartTime != b.StartTime || a.UserCount != b.UserCount || a.RegisteredUserCount != b.RegisteredUserCount || a.AnonymousUserCount != b.AnonymousUserCount {
-		return false
+	if a.StartTime != b.StartTime || a.UserCount != b.UserCount || a.RegisteredUserCount != b.RegisteredUserCount || a.AnonymousUserCount != b.AnonymousUserCount || a.IntegrationUserCount != b.IntegrationUserCount {
+		return fmt.Errorf("[%v] got %+v want %+v", label, a, b)
 	}
-	return true
+	return nil
 }
