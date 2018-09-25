@@ -1,5 +1,4 @@
 import { Loader } from '@sourcegraph/icons/lib/Loader'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
@@ -21,6 +20,7 @@ import * as GQL from '../backend/graphqlschema'
 import { AbsoluteRepo } from '../repo'
 import { fetchTreeEntries } from '../repo/backend'
 import { asError, ErrorLike, isErrorLike } from '../util/errors'
+import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { TreeNode } from './Tree'
 
 interface TreeLayerProps extends AbsoluteRepo {
@@ -429,7 +429,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                         style={treePadding(this.props.depth, true)}
                                                         tabIndex={-1}
                                                     >
-                                                        <RepoIcon className="icon-inline" />
+                                                        <RepositoryIcon className="icon-inline" />
                                                     </span>
                                                     <span className="tree__row-label">
                                                         {entryInfo.name} @ {entryInfo.submodule.commit.substr(0, 7)}
@@ -447,7 +447,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                         // tslint:disable-next-line:jsx-ban-props (needed because of dynamic styling)
                                                         style={treePadding(this.props.depth, true)}
                                                     >
-                                                        <RepoIcon className="icon-inline" />
+                                                        <RepositoryIcon className="icon-inline" />
                                                     </span>
                                                     <span className="tree__row-label">
                                                         {entryInfo.name} @ {entryInfo.submodule.commit.substr(0, 7)}

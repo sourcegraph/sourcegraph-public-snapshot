@@ -1,4 +1,4 @@
-import Icon from '@sourcegraph/icons/lib/Download'
+import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import * as React from 'react'
 import { DismissibleAlert } from '../components/DismissibleAlert'
 import { eventLogger } from '../tracking/eventLogger'
@@ -22,7 +22,7 @@ export const UpdateAvailableAlert: React.SFC<{
         partialStorageKey={`Update/${updateVersionAvailable}`}
         className={`alert-animated-bg alert-success update-available-alert ${className}`}
     >
-        <Icon className="icon-inline site-alert__link-icon mr-2" />An update is available:&nbsp;
+        <CloudDownloadIcon className="icon-inline site-alert__link-icon mr-2" />An update is available:&nbsp;
         <a className="site-alert__link" href="https://about.sourcegraph.com" target="_blank" onClick={onClickCTA}>
             <span className="underline">Sourcegraph {updateVersionAvailable}</span>
         </a>&nbsp;-&nbsp;

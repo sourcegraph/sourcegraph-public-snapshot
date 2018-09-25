@@ -1,5 +1,4 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
@@ -11,6 +10,7 @@ import { parseRepoURI } from '../..'
 import { Resizable } from '../../../components/Resizable'
 import { ErrorLike, isErrorLike } from '../../../util/errors'
 import { asError } from '../../../util/errors'
+import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
 import { RepoLink } from '../../RepoLink'
 import { FileLocations, FileLocationsError, FileLocationsNotFound } from './FileLocations'
 
@@ -188,7 +188,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                                     onClick={e => this.onSelectTree(e, repo)}
                                 >
                                     <span className="file-locations-tree__item-name" title={repo}>
-                                        <RepoIcon className="icon-inline file-locations-tree__item-icon" />
+                                        <RepositoryIcon className="icon-inline file-locations-tree__item-icon" />
                                         <span className="file-locations-tree__item-name-text">
                                             <RepoLink to={null} repoPath={repo} />
                                         </span>
@@ -215,7 +215,7 @@ export class FileLocationsTree extends React.PureComponent<Props, State> {
                     inputRepo={this.props.inputRepo}
                     inputRevision={this.props.inputRevision}
                     onSelect={this.props.onSelectLocation}
-                    icon={RepoIcon}
+                    icon={RepositoryIcon}
                     pluralNoun={this.props.pluralNoun}
                     isLightTheme={this.props.isLightTheme}
                 />

@@ -1,5 +1,4 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -15,6 +14,7 @@ import { ModalContainer } from '../../components/ModalContainer'
 import { OpenHelpPopoverButton } from '../../global/OpenHelpPopoverButton'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorLike, isErrorLike } from '../../util/errors'
+import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { SavedQueryCreateForm } from '../saved-queries/SavedQueryCreateForm'
 import { CommitSearchResult } from './CommitSearchResult'
 import { RepositorySearchResult } from './RepositorySearchResult'
@@ -212,7 +212,7 @@ export class SearchResultsListOld extends React.PureComponent<SearchResultsListP
                 return (
                     <FileMatch
                         key={'file:' + result.file.url}
-                        icon={result.lineMatches && result.lineMatches.length > 0 ? RepoIcon : FileIcon}
+                        icon={result.lineMatches && result.lineMatches.length > 0 ? RepositoryIcon : FileIcon}
                         result={result}
                         onSelect={this.logEvent}
                         expanded={false}

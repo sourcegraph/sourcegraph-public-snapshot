@@ -1,5 +1,4 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import { highlight } from 'highlight.js/lib/highlight'
 import * as H from 'history'
 import { castArray, isEqual } from 'lodash'
@@ -43,6 +42,7 @@ import { PanelItemPortal } from '../../../panel/PanelItemPortal'
 import { PanelTitlePortal } from '../../../panel/PanelTitlePortal'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../../util/errors'
+import { RepositoryIcon } from '../../../util/icons' // TODO: Switch to mdi icon
 import { parseHash } from '../../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
@@ -270,7 +270,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 inputRevision={this.props.rev}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 onSelect={() => this.onSelectLocation('def')}
-                                icon={RepoIcon}
+                                icon={RepositoryIcon}
                                 pluralNoun="definitions"
                                 isLightTheme={this.props.isLightTheme}
                             />
@@ -291,7 +291,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 inputRevision={this.props.rev}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 onSelect={() => this.onSelectLocation('references')}
-                                icon={RepoIcon}
+                                icon={RepositoryIcon}
                                 pluralNoun="local references"
                                 isLightTheme={this.props.isLightTheme}
                             />
@@ -310,7 +310,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 updates={this.locationsUpdates}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 onSelectLocation={() => this.onSelectLocation('references:external')}
-                                icon={RepoIcon}
+                                icon={RepositoryIcon}
                                 pluralNoun="external references"
                                 isLightTheme={this.props.isLightTheme}
                                 location={this.props.location}
@@ -337,7 +337,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 inputRevision={this.props.rev}
                                 // tslint:disable-next-line:jsx-no-lambda
                                 onSelect={() => this.onSelectLocation('impl')}
-                                icon={RepoIcon}
+                                icon={RepositoryIcon}
                                 pluralNoun="implementations"
                                 isLightTheme={this.props.isLightTheme}
                             />

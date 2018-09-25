@@ -1,9 +1,9 @@
-import { Cloud } from '@sourcegraph/icons/lib/Cloud'
 import { Loader } from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
+import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -78,7 +78,7 @@ class RepositoryNode extends React.PureComponent<RepositoryNodeProps, Repository
                                     className="ml-2 text-muted"
                                     data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                                 >
-                                    <Cloud className="icon-inline" /> Not yet cloned
+                                    <CloudOutlineIcon className="icon-inline" /> Not yet cloned
                                 </small>
                             )}
                     </div>

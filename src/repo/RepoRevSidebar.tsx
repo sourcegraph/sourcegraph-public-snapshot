@@ -1,4 +1,3 @@
-import ListIcon from '@sourcegraph/icons/lib/List'
 import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
@@ -11,6 +10,7 @@ import { Spacer, Tab, TabBorderClassName, TabsWithLocalStorageViewStatePersisten
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../tracking/eventLogger'
 import { Tree } from '../tree/Tree'
+import { FormatListBulletedIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { RepoRevSidebarSymbols } from './RepoRevSidebarSymbols'
 
 type SidebarTabID = 'files' | 'symbols' | 'history'
@@ -68,7 +68,7 @@ export class RepoRevSidebar extends React.PureComponent<Props, State> {
                     onClick={this.onSidebarToggle}
                     data-tooltip="Show sidebar (Alt+S/Opt+S)"
                 >
-                    <ListIcon />
+                    <FormatListBulletedIcon />
                 </button>
             )
         }

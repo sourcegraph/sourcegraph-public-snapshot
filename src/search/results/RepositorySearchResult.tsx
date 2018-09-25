@@ -1,9 +1,9 @@
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import * as React from 'react'
 import * as GQL from '../../backend/graphqlschema'
 import { ResultContainer } from '../../components/ResultContainer'
 import { RepoLink } from '../../repo/RepoLink'
 import { eventLogger } from '../../tracking/eventLogger'
+import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 
 interface Props {
     /**
@@ -22,7 +22,7 @@ const logClickOnText = () => eventLogger.log('RepositorySearchResultClicked')
 export const RepositorySearchResult: React.StatelessComponent<Props> = (props: Props) => (
     <ResultContainer
         titleClassName="repository-search-result__title"
-        icon={RepoIcon}
+        icon={RepositoryIcon}
         title={
             <>
                 <RepoLink

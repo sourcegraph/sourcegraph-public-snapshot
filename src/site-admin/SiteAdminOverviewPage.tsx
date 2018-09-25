@@ -1,5 +1,4 @@
 import Loader from '@sourcegraph/icons/lib/Loader'
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import AddIcon from 'mdi-react/AddIcon'
 import CityIcon from 'mdi-react/CityIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
@@ -15,6 +14,7 @@ import { OverviewItem, OverviewList } from '../components/Overview'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
+import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { pluralize } from '../util/strings'
 import { SourcegraphLicense } from './SourcegraphLicense'
 
@@ -51,7 +51,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                     {this.state.info && (
                         <OverviewItem
                             link="/site-admin/repositories"
-                            icon={RepoIcon}
+                            icon={RepositoryIcon}
                             actions={
                                 <>
                                     <Link to="/site-admin/configuration" className="btn btn-primary btn-sm">

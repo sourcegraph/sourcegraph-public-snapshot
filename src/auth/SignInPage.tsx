@@ -1,5 +1,5 @@
-import KeyIcon from '@sourcegraph/icons/lib/Key'
 import * as H from 'history'
+import KeyIcon from 'mdi-react/KeyIcon'
 import * as React from 'react'
 import { Redirect } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'

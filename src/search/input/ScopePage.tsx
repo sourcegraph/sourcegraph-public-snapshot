@@ -1,4 +1,3 @@
-import { Repo as RepositoryIcon } from '@sourcegraph/icons/lib/Repo'
 import marked from 'marked'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -15,6 +14,7 @@ import { RepoLink } from '../../repo/RepoLink'
 import { SearchScope } from '../../schema/settings.schema'
 import { currentConfiguration } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
+import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { fetchReposByQuery } from '../backend'
 import { submitSearch } from '../helpers'
 import { queryUpdates } from './QueryInput'

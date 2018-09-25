@@ -1,5 +1,3 @@
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
-import RepoQuestionIcon from '@sourcegraph/icons/lib/RepoQuestion'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import * as React from 'react'
@@ -8,6 +6,8 @@ import { catchError, delay, distinctUntilChanged, map, retryWhen, switchMap, tap
 import { HeroPage } from '../components/HeroPage'
 import { displayRepoPath } from '../components/RepoFileLink'
 import { ErrorLike, isErrorLike } from '../util/errors'
+import { RepoQuestionIcon } from '../util/icons'
+import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
 import { CloneInProgressError, ECLONEINPROGESS, EREVNOTFOUND, resolveRev } from './backend'
 import { DirectImportRepoAlert } from './DirectImportRepoAlert'
 
@@ -16,7 +16,7 @@ export const RepositoryCloningInProgressPage: React.SFC<{ repoName: string; prog
     progress,
 }) => (
     <HeroPage
-        icon={RepoIcon}
+        icon={RepositoryIcon}
         title={displayRepoPath(repoName)}
         className="repository-cloning-in-progress-page"
         subtitle="Cloning in progress"

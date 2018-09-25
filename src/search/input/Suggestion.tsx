@@ -1,8 +1,8 @@
-import RepoIcon from '@sourcegraph/icons/lib/Repo'
 import FolderIcon from 'mdi-react/FolderIcon'
 import * as React from 'react'
 import * as GQL from '../../backend/graphqlschema'
 import { SymbolIcon } from '../../symbols/SymbolIcon'
+import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
 import { basename, dirname } from '../../util/path'
 
 interface BaseSuggestion {
@@ -98,7 +98,7 @@ interface SuggestionIconProps {
 const SuggestionIcon: React.StatelessComponent<SuggestionIconProps> = ({ suggestion, ...passThru }) => {
     switch (suggestion.type) {
         case 'repo':
-            return <RepoIcon {...passThru} />
+            return <RepositoryIcon {...passThru} />
         case 'dir':
             return <FolderIcon />
         case 'file':

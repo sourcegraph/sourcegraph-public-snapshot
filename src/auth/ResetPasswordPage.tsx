@@ -1,6 +1,6 @@
-import KeyIcon from '@sourcegraph/icons/lib/Key'
 import Loader from '@sourcegraph/icons/lib/Loader'
 import { upperFirst } from 'lodash'
+import KeyIcon from 'mdi-react/KeyIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import * as GQL from '../backend/graphqlschema'

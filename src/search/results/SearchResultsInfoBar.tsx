@@ -1,10 +1,10 @@
-import CalculatorIcon from '@sourcegraph/icons/lib/Calculator'
-import DirectionalSign from '@sourcegraph/icons/lib/DirectionalSign'
 import ArrowCollapseVerticalIcon from 'mdi-react/ArrowCollapseVerticalIcon'
 import ArrowExpandVerticalIcon from 'mdi-react/ArrowExpandVerticalIcon'
+import CalculatorIcon from 'mdi-react/CalculatorIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
 import DownloadIcon from 'mdi-react/DownloadIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import * as React from 'react'
 import * as GQL from '../../backend/graphqlschema'
@@ -68,7 +68,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                             data-tooltip={props.results.missing.map(repo => repo.name).join('\n')}
                         >
                             <span>
-                                <DirectionalSign className="icon-inline" /> {props.results.missing.length}{' '}
+                                <MapSearchIcon className="icon-inline" /> {props.results.missing.length}{' '}
                                 {pluralize('repository', props.results.missing.length, 'repositories')} not found
                             </span>
                         </div>

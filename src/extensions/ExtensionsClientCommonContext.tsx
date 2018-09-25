@@ -15,11 +15,11 @@ import {
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import Loader from '@sourcegraph/icons/lib/Loader'
-import Menu from '@sourcegraph/icons/lib/Menu'
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import InfoIcon from 'mdi-react/InformationIcon'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
+import MenuIcon from 'mdi-react/MenuIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import { concat, from, Observable } from 'rxjs'
@@ -65,7 +65,7 @@ export function createExtensionsContextController(
             Warning: WarningIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             Info: InfoIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             CaretDown: MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
-            Menu: Menu as React.ComponentType<{ className: string; onClick?: () => void }>,
+            Menu: MenuIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             Add: AddIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             Settings: SettingsIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
         },

@@ -1,5 +1,5 @@
-import Copy from '@sourcegraph/icons/lib/Copy'
 import copy from 'copy-to-clipboard'
+import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 import * as React from 'react'
 
 interface Props {
@@ -40,7 +40,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
                     />
                     <div className="input-group-append">
                         <button className="btn btn-secondary" onClick={this.onClickButton} disabled={this.state.copied}>
-                            <Copy className="icon-inline" /> {this.state.copied ? 'Copied' : 'Copy'}
+                            <ContentCopyIcon className="icon-inline" /> {this.state.copied ? 'Copied' : 'Copy'}
                         </button>
                     </div>
                 </div>

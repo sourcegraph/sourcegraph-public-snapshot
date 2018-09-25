@@ -1,6 +1,6 @@
-import SignOutIcon from '@sourcegraph/icons/lib/SignOut'
 import AddIcon from 'mdi-react/AddIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
+import LogoutIcon from 'mdi-react/LogoutIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import {
@@ -110,7 +110,7 @@ export const UserAccountSidebar: React.SFC<UserAccountSidebarProps> = props => {
                 props.authenticatedUser.session &&
                 props.authenticatedUser.session.canSignOut && (
                     <a href="/-/sign-out" className={SIDEBAR_BUTTON_CLASS} onClick={logTelemetryOnSignOut}>
-                        <SignOutIcon className="icon-inline list-group-item-action-icon" /> Sign out
+                        <LogoutIcon className="icon-inline list-group-item-action-icon" /> Sign out
                     </a>
                 )}
         </div>
