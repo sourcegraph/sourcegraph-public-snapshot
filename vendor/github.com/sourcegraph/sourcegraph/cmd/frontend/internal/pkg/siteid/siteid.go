@@ -13,7 +13,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 

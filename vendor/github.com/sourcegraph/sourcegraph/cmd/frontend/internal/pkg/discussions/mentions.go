@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"

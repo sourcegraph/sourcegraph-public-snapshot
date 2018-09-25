@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 )
 

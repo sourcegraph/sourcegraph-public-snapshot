@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"github.com/keegancsmith/tmpfriend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply"

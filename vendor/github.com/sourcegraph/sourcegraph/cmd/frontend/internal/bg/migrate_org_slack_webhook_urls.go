@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"

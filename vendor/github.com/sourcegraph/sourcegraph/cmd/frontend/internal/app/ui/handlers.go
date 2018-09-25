@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"

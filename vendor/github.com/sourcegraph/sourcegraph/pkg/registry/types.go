@@ -5,7 +5,7 @@ import "time"
 // Extension describes an extension in the extension registry.
 //
 // It is the external form of
-// github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db.RegistryExtension (which is the
+// github.com/sourcegraph/sourcegraph/cmd/frontend/db.RegistryExtension (which is the
 // internal DB type). These types should generally be kept in sync, but registry.Extension updates
 // require backcompat.
 type Extension struct {

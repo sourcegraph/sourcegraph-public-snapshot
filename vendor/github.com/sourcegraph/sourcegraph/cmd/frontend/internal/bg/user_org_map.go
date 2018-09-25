@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

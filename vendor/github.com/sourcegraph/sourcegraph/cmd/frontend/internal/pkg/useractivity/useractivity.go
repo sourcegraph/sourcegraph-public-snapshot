@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	log15 "gopkg.in/inconshreveable/log15.v2"

@@ -324,6 +324,7 @@ github.com/sourcegraph/go-langserver v0.0.0-20180917104716-6b103664e059/go.mod h
 github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd h1:wxP7dU7tNtU03+Z4GIuYGV17AO1i3HfCBArGu0igaro=
 github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd/go.mod h1:Dl+4tLnKopzymgEhEZCi6/KSIZPFBe1rvoKMxCGh0Ms=
 github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
+github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538 h1:K+cXn79iIvSN1c6Sq2hxk7n8T3ax0lII+FkvuOwgmPc=
 github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538/go.mod h1:ZqB/uu1WtCDmlwK8c+TO8+QSfDkJsWx9LYjQBgGxxtk=
 github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10 h1:9XH6ZJgu6KrVimEwZVXfTOvkGU1CHAvdc7mbZrMwA/U=
 github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10/go.mod h1:G6fSBYyOm5huBpPQ4qhXejeVbKeehdP7WEmwb5Si7gM=
@@ -335,8 +336,11 @@ github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd h1:NPk22RvonOjkN
 github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 h1:FX++QsC/k2sAidBLhZX0CZQwRwrRmz5KjKZPKcXGV74=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85/go.mod h1:v7Yudh8lfegZt52Qs5X9ktO0OMWEeUeoXO+4vJqn2Iw=
+github.com/sourcegraph/sourcegraph v0.0.0-20180925082351-c77b8b8c1f7c h1:xTaUTy/45LrRAJttC8P1C5i22fOtJwoVNJ09qcm6dvA=
+github.com/sourcegraph/sourcegraph v0.0.0-20180925082351-c77b8b8c1f7c/go.mod h1:qMe+tpseC6/3k4jenyEyILULKVmgIb1LsXj3VP5uaSk=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
+github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f h1:u0IVxi0z+g2RENKCKITUsUW/up44ZqvVMOTNHHvTQL8=
 github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f/go.mod h1:I5NDweTUikWVakOqHBnCuqXGZOi0vJoeZRTFbHmhc1A=
 github.com/spf13/pflag v1.0.2 h1:Fy0orTDgHdbnzHcsOgfCN4LtHf0ec3wwtiwJqwvf3Gc=
 github.com/spf13/pflag v1.0.2/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnInEg4=

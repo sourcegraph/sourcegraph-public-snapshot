@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 )
 
