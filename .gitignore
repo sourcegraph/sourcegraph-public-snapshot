@@ -12,3 +12,5 @@ src/backend/graphqlschema.ts
 yarn-error.log
 /ui/
 /.bin
+*_vfsdata.go
+/vendor/.bin

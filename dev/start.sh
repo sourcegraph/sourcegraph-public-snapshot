@@ -27,4 +27,4 @@ export SOURCEGRAPH_LICENSE_KEY=eyJzaWciOnsiRm9ybWF0Ijoic3NoLXJzYSIsIkJsb2IiOiJRc
 export SAML_ONELOGIN_CERT=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.cert.pem)
 export SAML_ONELOGIN_KEY=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.key.pem)
 
-SOURCEGRAPH_CONFIG_FILE=$PWD/dev/config.json GOMOD_ROOT=$PWD ENTERPRISE_COMMANDS="frontend" PROCFILE=./dev/Procfile ./dev/launch.sh
+./dev/launch.sh

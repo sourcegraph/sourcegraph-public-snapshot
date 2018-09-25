@@ -12,4 +12,10 @@ fi
 pushd $GOPATH/src/github.com/sourcegraph/sourcegraph
 git fetch
 git checkout -f "${OSS_REPO_REVISION:-origin/master}"
+
+if [ ! -z "$BUILDKITE_BRANCH" ] && [ -z "$OSS_REPO_REVISION" ]; then
+    # Attempt to check out the branch of the same name in OSS
+    git checkout -f "origin/$BUILDKITE_BRANCH" || git checkout -f "${OSS_REPO_REVISION:-origin/master}"
+fi
+
 popd

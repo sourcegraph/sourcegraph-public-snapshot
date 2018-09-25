@@ -4,6 +4,8 @@
 # a list of every command we know about, to use by default
 all_commands=" gitserver indexer query-runner github-proxy xlang-go lsp-proxy searcher frontend repo-updater symbols "
 
+ENTERPRISE_COMMANDS="frontend"
+
 # GOMOD_ROOT is the directory from which `go install` commands are run. It should contain a go.mod
 # file. The go.mod file may be updated as a side effect of updating the dependencies before the `go
 # install`.

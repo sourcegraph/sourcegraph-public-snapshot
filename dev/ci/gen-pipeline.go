@@ -83,6 +83,9 @@ func main() {
 		panic("Expected OSS_WEBAPP_VERSION to be set")
 	}
 
+	pipeline.AddStep(":white_check_mark:",
+		bk.Cmd("./dev/check/all.sh"))
+
 	pipeline.AddStep(":lipstick:",
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run prettier"))
@@ -148,11 +151,6 @@ func main() {
 		preBuildScript := cmdDir + "/pre-build.sh"
 		if _, err := os.Stat(preBuildScript); err == nil {
 			cmds = append(cmds, bk.Cmd(preBuildScript))
-		}
-
-		ciPreBuildScript := cmdDir + "/ci-pre-build.sh"
-		if _, err := os.Stat(ciPreBuildScript); err == nil {
-			cmds = append(cmds, bk.Cmd(ciPreBuildScript))
 		}
 
 		image := "sourcegraph/" + appBase
@@ -267,6 +265,11 @@ func main() {
 		addDockerImageStep("enterprise:server", true)
 		pipeline.AddWait()
 		addDeploySteps()
+
+	case strings.HasPrefix(branch, "master-dry-run/"): // replicates `master` build but does not deploy
+		addDockerImageStep("enterprise:frontend", true)
+		addDockerImageStep("enterprise:server", true)
+		pipeline.AddWait()
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		version = version + "_patch"
