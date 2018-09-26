@@ -2,6 +2,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
 // SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
@@ -17,7 +19,7 @@ func (*users) SetTag(ctx context.Context, userID int32, tag string, present bool
 		query = `UPDATE users SET tags=array_remove(tags, $2) WHERE id=$1`
 	}
 
-	res, err := globalDB.ExecContext(ctx, query, userID, tag)
+	res, err := dbconn.Global.ExecContext(ctx, query, userID, tag)
 	if err != nil {
 		return err
 	}

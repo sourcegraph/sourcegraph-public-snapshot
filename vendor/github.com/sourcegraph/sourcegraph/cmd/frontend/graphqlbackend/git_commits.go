@@ -81,7 +81,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitRe
 	return resolvers, nil
 }
 
-func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
 	commits, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -89,7 +89,7 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, 
 
 	// If we have a limit, so we rely on having fetched +1 additional result in our limit to
 	// indicate whether or not a next page exists.
-	return &pageInfo{
+	return &PageInfo{
 		hasNextPage: r.first != nil && len(commits) > 0 && len(commits) > int(*r.first),
 	}, nil
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -94,7 +95,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo WHERE %s", sqlf.Join(conds, "AND"))
 
 	var count int
-	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -102,7 +103,7 @@ func (s *repos) Count(ctx context.Context, opt ReposListOptions) (int, error) {
 
 func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Repo, error) {
 	q := sqlf.Sprintf("SELECT id, uri, description, language, enabled, indexed_revision, created_at, updated_at, freeze_indexed_revision, external_id, external_service_type, external_service_id FROM repo %s", querySuffix)
-	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +257,7 @@ func (s *repos) List(ctx context.Context, opt ReposListOptions) (results []*type
 // read much less data into memory.
 func (s *repos) ListEnabledNames(ctx context.Context) ([]string, error) {
 	q := sqlf.Sprintf("SELECT uri FROM repo WHERE enabled = true")
-	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -515,13 +516,13 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 	}
 
 	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)
-	_, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
 
 func (s *repos) SetEnabled(ctx context.Context, id api.RepoID, enabled bool) error {
 	q := sqlf.Sprintf("UPDATE repo SET enabled=%t WHERE id=%d", enabled, id)
-	res, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}
@@ -536,17 +537,17 @@ func (s *repos) SetEnabled(ctx context.Context, id api.RepoID, enabled bool) err
 }
 
 func (s *repos) UpdateLanguage(ctx context.Context, repo api.RepoID, language string) error {
-	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET language=$1 WHERE id=$2", language, repo)
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET language=$1 WHERE id=$2", language, repo)
 	return err
 }
 
 func (s *repos) UpdateIndexedRevision(ctx context.Context, repo api.RepoID, commitID api.CommitID) error {
-	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET indexed_revision=$1 WHERE id=$2", commitID, repo)
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET indexed_revision=$1 WHERE id=$2", commitID, repo)
 	return err
 }
 
 func (s *repos) UpdateRepositoryMetadata(ctx context.Context, uri api.RepoURI, description string, fork bool, archived bool) error {
-	_, err := globalDB.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE uri=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, uri)
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE repo SET description=$1, fork=$2, archived=$3 WHERE uri=$4 	AND (description <> $1 OR fork <> $2 OR archived <> $3)", description, fork, archived, uri)
 	return err
 }
 
@@ -597,7 +598,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
-	_, err = globalDB.ExecContext(ctx, upsertSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived)
+	_, err = dbconn.Global.ExecContext(ctx, upsertSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived)
 	return err
 }
 
@@ -657,7 +658,7 @@ func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp)
 		return nil
 	}
 
-	tx, err := globalDB.Begin()
+	tx, err := dbconn.Global.Begin()
 	if err != nil {
 		return err
 	}

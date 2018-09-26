@@ -13,6 +13,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -24,7 +25,7 @@ import (
 type pkgs struct{}
 
 func (p *pkgs) UpdateIndexForLanguage(ctx context.Context, language string, repo *types.Repo, pks []lspext.PackageInformation) (err error) {
-	err = Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+	err = Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 		// Update the pkgs table.
 		err = p.update(ctx, tx, repo.ID, language, pks)
 		if err != nil {
@@ -165,7 +166,7 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pks []
 		WHERE ` + whereSQL + `
 		ORDER BY repo.created_at ASC NULLS LAST, pkgs.repo_id ASC
 		LIMIT ` + arg(op.Limit)
-	rows, err := globalDB.QueryContext(ctx, sql, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}
@@ -202,6 +203,6 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pks []
 }
 
 func (p *pkgs) Delete(ctx context.Context, repo api.RepoID) error {
-	_, err := globalDB.ExecContext(ctx, `DELETE FROM pkgs WHERE repo_id=$1`, repo)
+	_, err := dbconn.Global.ExecContext(ctx, `DELETE FROM pkgs WHERE repo_id=$1`, repo)
 	return err
 }

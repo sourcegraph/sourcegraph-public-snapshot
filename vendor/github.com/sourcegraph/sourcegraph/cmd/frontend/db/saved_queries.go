@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
 type savedQueries struct{}
@@ -24,7 +25,7 @@ func (s *savedQueries) Get(ctx context.Context, query string) (*SavedQueryInfo, 
 		Query: query,
 	}
 	var execDurationNs int64
-	err := globalDB.QueryRowContext(
+	err := dbconn.Global.QueryRowContext(
 		ctx,
 		"SELECT last_executed, latest_result, exec_duration_ns FROM saved_queries WHERE query=$1",
 		query,
@@ -44,7 +45,7 @@ func (s *savedQueries) Get(ctx context.Context, query string) (*SavedQueryInfo, 
 // It is not safe to call concurrently for the same info.Query, as it uses a
 // poor man's upsert implementation.
 func (s *savedQueries) Set(ctx context.Context, info *SavedQueryInfo) error {
-	res, err := globalDB.ExecContext(
+	res, err := dbconn.Global.ExecContext(
 		ctx,
 		"UPDATE saved_queries SET last_executed=$1, latest_result=$2, exec_duration_ns=$3 WHERE query=$4",
 		info.LastExecuted,
@@ -61,7 +62,7 @@ func (s *savedQueries) Set(ctx context.Context, info *SavedQueryInfo) error {
 	}
 	if updated == 0 {
 		// Didn't update any row, so insert a new one.
-		_, err := globalDB.ExecContext(
+		_, err := dbconn.Global.ExecContext(
 			ctx,
 			"INSERT INTO saved_queries(query, last_executed, latest_result, exec_duration_ns) VALUES($1, $2, $3, $4)",
 			info.Query,
@@ -77,7 +78,7 @@ func (s *savedQueries) Set(ctx context.Context, info *SavedQueryInfo) error {
 }
 
 func (s *savedQueries) Delete(ctx context.Context, query string) error {
-	_, err := globalDB.ExecContext(
+	_, err := dbconn.Global.ExecContext(
 		ctx,
 		"DELETE FROM saved_queries WHERE query=$1",
 		query,

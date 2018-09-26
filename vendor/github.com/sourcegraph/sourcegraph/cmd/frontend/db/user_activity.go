@@ -3,13 +3,14 @@ package db
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
 type userActivity struct{}
 
 func (*userActivity) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.UserActivity, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT id, page_views, search_queries FROM users "+query, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, page_views, search_queries FROM users "+query, args...)
 	if err != nil {
 		return nil, err
 	}

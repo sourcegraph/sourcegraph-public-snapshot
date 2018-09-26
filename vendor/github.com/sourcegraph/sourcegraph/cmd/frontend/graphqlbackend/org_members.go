@@ -28,8 +28,8 @@ func (r *organizationMembershipConnectionResolver) Nodes() []*organizationMember
 	return r.nodes
 }
 func (r *organizationMembershipConnectionResolver) TotalCount() int32 { return int32(len(r.nodes)) }
-func (r *organizationMembershipConnectionResolver) PageInfo() *pageInfo {
-	return &pageInfo{hasNextPage: false}
+func (r *organizationMembershipConnectionResolver) PageInfo() *PageInfo {
+	return &PageInfo{hasNextPage: false}
 }
 
 type organizationMembershipResolver struct {

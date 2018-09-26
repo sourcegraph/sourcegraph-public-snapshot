@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"os"
 	"sync"
 	"time"
 
-	"github.com/daviddengcn/go-colortext"
+	"github.com/mattn/go-colorable"
 )
 
 type clogger struct {
@@ -20,26 +19,28 @@ type clogger struct {
 	buffers net.Buffers   // partial lines awaiting printing
 }
 
-var colors = []ct.Color{
-	ct.Green,
-	ct.Cyan,
-	ct.Magenta,
-	ct.Yellow,
-	ct.Blue,
-	ct.Red,
+var colors = []int{
+	32, // green
+	36, // cyan
+	35, // magenta
+	33, // yellow
+	34, // blue
+	31, // red
 }
 var mutex = new(sync.Mutex)
+
+var out = colorable.NewColorableStdout()
 
 // write any stored buffers, plus the given line, then empty out
 // the buffers.
 func (l *clogger) writeBuffers(line []byte) {
 	now := time.Now().Format("15:04:05")
 	mutex.Lock()
-	ct.ChangeColor(colors[l.idx], false, ct.None, false)
-	fmt.Printf("%s %*s | ", now, maxProcNameLength, l.proc)
-	ct.ResetColor()
+	fmt.Fprintf(out, "\x1b[%dm", colors[l.idx])
+	fmt.Fprintf(out, "%s %*s | ", now, maxProcNameLength, l.proc)
+	fmt.Fprintf(out, "\x1b[m")
 	l.buffers = append(l.buffers, line)
-	l.buffers.WriteTo(os.Stdout)
+	l.buffers.WriteTo(out)
 	l.buffers = l.buffers[0:0]
 	mutex.Unlock()
 }

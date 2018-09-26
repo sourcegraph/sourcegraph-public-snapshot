@@ -11,6 +11,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
 // AccessToken describes an access token. The actual token (that a caller must supply to
@@ -64,7 +65,7 @@ func (s *accessTokens) Create(ctx context.Context, subjectUserID int32, scopes [
 		return 0, "", errors.New("access tokens without scopes are not supported")
 	}
 
-	if err := globalDB.QueryRowContext(ctx,
+	if err := dbconn.Global.QueryRowContext(ctx,
 		// Include users table query (with "FOR UPDATE") to ensure that subject/creator users have
 		// not been deleted. If they were deleted, the query will return an error.
 		`
@@ -108,7 +109,7 @@ func (s *accessTokens) Lookup(ctx context.Context, tokenHexEncoded string, requi
 		return 0, errors.Wrap(err, "AccessTokens.Lookup")
 	}
 
-	if err := globalDB.QueryRowContext(ctx,
+	if err := dbconn.Global.QueryRowContext(ctx,
 		// Ensure that subject and creator users still exist.
 		`
 UPDATE access_tokens t SET last_used_at=now()
@@ -182,7 +183,7 @@ created_at DESC
 		limitOffset.SQL(),
 	)
 
-	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +206,7 @@ created_at DESC
 func (s *accessTokens) Count(ctx context.Context, opt AccessTokensListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_tokens WHERE (%s)", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
-	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -235,7 +236,7 @@ func (s *accessTokens) delete(ctx context.Context, cond *sqlf.Query) error {
 	conds := []*sqlf.Query{cond, sqlf.Sprintf("deleted_at IS NULL")}
 	q := sqlf.Sprintf("UPDATE access_tokens SET deleted_at=now() WHERE (%s)", sqlf.Join(conds, ") AND ("))
 
-	res, err := globalDB.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	res, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return err
 	}

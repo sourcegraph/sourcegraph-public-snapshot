@@ -8,13 +8,15 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/randstring"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func (u *users) IsPassword(ctx context.Context, id int32, password string) (bool, error) {
 	var passwd sql.NullString
-	if err := globalDB.QueryRowContext(ctx, "SELECT passwd FROM users WHERE deleted_at IS NULL AND id=$1", id).Scan(&passwd); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, "SELECT passwd FROM users WHERE deleted_at IS NULL AND id=$1", id).Scan(&passwd); err != nil {
 		return false, err
 	}
 	if !passwd.Valid {
@@ -37,7 +39,7 @@ func (u *users) RenewPasswordResetCode(ctx context.Context, id int32) (string, e
 		return "", err
 	}
 	code := base64.StdEncoding.EncodeToString(b[:])
-	res, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=$1, passwd_reset_time=now() WHERE id=$2 AND (passwd_reset_time IS NULL OR passwd_reset_time + interval '"+passwordResetRateLimit+"' < now())", code, id)
+	res, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=$1, passwd_reset_time=now() WHERE id=$2 AND (passwd_reset_time IS NULL OR passwd_reset_time + interval '"+passwordResetRateLimit+"' < now())", code, id)
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +60,7 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, new
 		return false, errors.New("new password was empty")
 	}
 	// 🚨 SECURITY: check resetCode against what's in the DB and that it's not expired
-	r := globalDB.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND deleted_at IS NULL AND passwd_reset_code=$2 AND passwd_reset_time + interval '4 hours' > now()", id, resetCode)
+	r := dbconn.Global.QueryRowContext(ctx, "SELECT count(*) FROM users WHERE id=$1 AND deleted_at IS NULL AND passwd_reset_code=$2 AND passwd_reset_time + interval '4 hours' > now()", id, resetCode)
 	var ct int
 	if err := r.Scan(&ct); err != nil {
 		return false, err
@@ -74,7 +76,7 @@ func (u *users) SetPassword(ctx context.Context, id int32, resetCode string, new
 		return false, err
 	}
 	// 🚨 SECURITY: set the new password and clear the reset code and expiry so the same code can't be reused.
-	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
+	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -101,7 +103,7 @@ func (u *users) UpdatePassword(ctx context.Context, id int32, oldPassword, newPa
 		return err
 	}
 	// 🚨 SECURITY: Set the new password
-	if _, err := globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
+	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id); err != nil {
 		return err
 	}
 	return nil
@@ -121,18 +123,13 @@ func (u *users) RandomizePasswordAndClearPasswordResetRateLimit(ctx context.Cont
 	}
 	// 🚨 SECURITY: Set the new random password and clear the reset code/expiry, so the old code
 	// can't be reused, and so a new valid reset code can be generated afterward.
-	_, err = globalDB.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id)
+	_, err = dbconn.Global.ExecContext(ctx, "UPDATE users SET passwd_reset_code=NULL, passwd_reset_time=NULL, passwd=$1 WHERE id=$2", passwd, id)
 	return err
 }
 
-// mockHashPassword if non-nil is used instead of hashPassword. This is useful
-// when running tests since we can use a faster implementation.
-var mockHashPassword func(password string) (sql.NullString, error)
-var mockValidPassword func(hash, password string) bool
-
 func hashPassword(password string) (sql.NullString, error) {
-	if mockHashPassword != nil {
-		return mockHashPassword(password)
+	if dbtesting.MockHashPassword != nil {
+		return dbtesting.MockHashPassword(password)
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -142,8 +139,8 @@ func hashPassword(password string) (sql.NullString, error) {
 }
 
 func validPassword(hash, password string) bool {
-	if mockValidPassword != nil {
-		return mockValidPassword(hash, password)
+	if dbtesting.MockValidPassword != nil {
+		return dbtesting.MockValidPassword(hash, password)
 	}
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }

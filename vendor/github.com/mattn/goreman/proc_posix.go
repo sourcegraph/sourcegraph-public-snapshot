@@ -6,13 +6,17 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"syscall"
+	"os/signal"
 
 	"golang.org/x/sys/unix"
 )
 
+const sigint = unix.SIGINT
+const sigterm = unix.SIGTERM
+const sighup = unix.SIGHUP
+
 // spawn command that specified as proc.
-func spawnProc(proc string) bool {
+func spawnProc(proc string, errCh chan<- error) {
 	procObj := procs[proc]
 	logger := createLogger(proc, procObj.colorIndex)
 
@@ -22,25 +26,32 @@ func spawnProc(proc string) bool {
 	cmd.Stdout = logger
 	cmd.Stderr = logger
 	cmd.Env = append(os.Environ(), fmt.Sprintf("PORT=%d", procObj.port))
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = &unix.SysProcAttr{Setpgid: true}
 
 	fmt.Fprintf(logger, "Starting %s on port %d\n", proc, procObj.port)
-	err := cmd.Start()
-	if err != nil {
+	if err := cmd.Start(); err != nil {
+		select {
+		case errCh <- err:
+		default:
+		}
 		fmt.Fprintf(logger, "Failed to start %s: %s\n", proc, err)
-		return true
+		return
 	}
 	procObj.cmd = cmd
-	procObj.quit = true
+	procObj.stoppedBySupervisor = false
 	procObj.mu.Unlock()
-	err = cmd.Wait()
+	err := cmd.Wait()
 	procObj.mu.Lock()
 	procObj.cond.Broadcast()
+	if err != nil && procObj.stoppedBySupervisor == false {
+		select {
+		case errCh <- err:
+		default:
+		}
+	}
 	procObj.waitErr = err
 	procObj.cmd = nil
 	fmt.Fprintf(logger, "Terminating %s\n", proc)
-
-	return procObj.quit
 }
 
 func terminateProc(proc string, signal os.Signal) error {
@@ -49,7 +60,7 @@ func terminateProc(proc string, signal os.Signal) error {
 		return nil
 	}
 
-	pgid, err := syscall.Getpgid(p.Pid)
+	pgid, err := unix.Getpgid(p.Pid)
 	if err != nil {
 		return err
 	}
@@ -69,5 +80,11 @@ func terminateProc(proc string, signal os.Signal) error {
 
 // killProc kills the proc with pid pid, as well as its children.
 func killProc(process *os.Process) error {
-	return unix.Kill(-1*process.Pid, syscall.SIGKILL)
+	return unix.Kill(-1*process.Pid, unix.SIGKILL)
+}
+
+func notifyCh() <-chan os.Signal {
+	sc := make(chan os.Signal, 10)
+	signal.Notify(sc, sigterm, sigint, sighup)
+	return sc
 }

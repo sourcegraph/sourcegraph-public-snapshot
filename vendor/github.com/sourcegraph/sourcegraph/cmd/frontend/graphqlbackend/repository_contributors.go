@@ -86,10 +86,10 @@ func (r *repositoryContributorConnectionResolver) TotalCount(ctx context.Context
 	return int32(len(results)), nil
 }
 
-func (r *repositoryContributorConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+func (r *repositoryContributorConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
 	results, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &pageInfo{hasNextPage: r.first != nil && len(results) > int(*r.first)}, nil
+	return &PageInfo{hasNextPage: r.first != nil && len(results) > int(*r.first)}, nil
 }

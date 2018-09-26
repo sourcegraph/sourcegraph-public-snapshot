@@ -16,6 +16,7 @@ import (
 
 	"github.com/keegancsmith/tmpfriend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
@@ -135,7 +136,7 @@ func Main() error {
 
 	go debugserver.Start()
 
-	if err := db.ConnectToDB(""); err != nil {
+	if err := dbconn.ConnectToDB(""); err != nil {
 		log.Fatal(err)
 	}
 

@@ -8,14 +8,12 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"os/signal"
 	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 
 	"github.com/joho/godotenv"
 	"gopkg.in/yaml.v2"
@@ -50,13 +48,17 @@ Options:
 type procInfo struct {
 	proc       string
 	cmdline    string
-	quit       bool
 	cmd        *exec.Cmd
 	port       uint
 	colorIndex int
-	mu         sync.Mutex
-	cond       *sync.Cond
-	waitErr    error
+
+	// True if we called stopProc to kill the process, in which case an
+	// *os.ExitError is not the fault of the subprocess
+	stoppedBySupervisor bool
+
+	mu      sync.Mutex
+	cond    *sync.Cond
+	waitErr error
 }
 
 // process informations named with proc.
@@ -74,6 +76,9 @@ var basedir = flag.String("basedir", "", "base directory")
 // base of port numbers for app
 var baseport = flag.Uint("b", 5000, "base number of port")
 
+// true to exit the supervisor
+var exitOnError = flag.Bool("exit-on-error", false, "Exit goreman if a subprocess quits with a nonzero return code")
+
 var maxProcNameLength = 0
 
 var re = regexp.MustCompile(`\$([a-zA-Z]+[a-zA-Z0-9_]+)`)
@@ -84,6 +89,8 @@ type config struct {
 	BaseDir  string `yaml:"basedir"`
 	BasePort uint   `yaml:"baseport"`
 	Args     []string
+	// If true, exit the supervisor process if a subprocess exits with an error.
+	ExitOnError bool `yaml:"exit_on_error"`
 }
 
 func readConfig() *config {
@@ -98,6 +105,7 @@ func readConfig() *config {
 	cfg.Port = *port
 	cfg.BaseDir = *basedir
 	cfg.BasePort = *baseport
+	cfg.ExitOnError = *exitOnError
 	cfg.Args = flag.Args()
 
 	b, err := ioutil.ReadFile(".goreman")
@@ -188,7 +196,7 @@ func check(cfg *config) error {
 }
 
 // command: start. spawn procs.
-func start(ctx context.Context, cfg *config) error {
+func start(ctx context.Context, sig <-chan os.Signal, cfg *config) error {
 	err := readProcfile(cfg)
 	if err != nil {
 		return err
@@ -210,14 +218,13 @@ func start(ctx context.Context, cfg *config) error {
 	}
 	godotenv.Load()
 	go startServer(ctx, cfg.Port)
-	return startProcs()
+	return startProcs(sig, cfg.ExitOnError)
 }
 
 func main() {
 	var err error
 	ctx, cancel := context.WithCancel(context.Background())
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGTERM, os.Interrupt)
+	c := notifyCh()
 	go func() {
 		sig := <-c
 		fmt.Printf("caught signal %s, shutting down...\n", sig)
@@ -259,7 +266,7 @@ func main() {
 		}
 		break
 	case "start":
-		err = start(ctx, cfg)
+		err = start(ctx, c, cfg)
 		break
 	case "version":
 		fmt.Println(version)

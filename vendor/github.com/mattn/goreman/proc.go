@@ -3,19 +3,17 @@ package main
 import (
 	"errors"
 	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 )
 
 var wg sync.WaitGroup
 
-// stop specified proc.
-// if signal is nil, SIGTERM is used
-func stopProc(proc string, quit bool, signal os.Signal) error {
+// Stop the specified proc, issuing os.Kill if it does not terminate within 10
+// seconds. If signal is nil, os.Interrupt is used.
+func stopProc(proc string, signal os.Signal) error {
 	if signal == nil {
-		signal = syscall.SIGTERM
+		signal = os.Interrupt
 	}
 	p, ok := procs[proc]
 	if !ok || p == nil {
@@ -28,8 +26,8 @@ func stopProc(proc string, quit bool, signal os.Signal) error {
 	if p.cmd == nil {
 		return nil
 	}
+	p.stoppedBySupervisor = true
 
-	p.quit = quit
 	err := terminateProc(proc, signal)
 	if err != nil {
 		return err
@@ -48,7 +46,7 @@ func stopProc(proc string, quit bool, signal os.Signal) error {
 }
 
 // start specified proc. if proc is started already, return nil.
-func startProc(proc string) error {
+func startProc(proc string, errCh chan<- error) error {
 	p, ok := procs[proc]
 	if !ok || p == nil {
 		return errors.New("unknown proc: " + proc)
@@ -62,7 +60,7 @@ func startProc(proc string) error {
 
 	wg.Add(1)
 	go func() {
-		spawnProc(proc)
+		spawnProc(proc, errCh)
 		wg.Done()
 		p.mu.Unlock()
 	}()
@@ -76,24 +74,48 @@ func restartProc(proc string) error {
 		return errors.New("unknown proc: " + proc)
 	}
 
-	stopProc(proc, false, nil)
-	return startProc(proc)
+	stopProc(proc, nil)
+	return startProc(proc, nil)
+}
+
+// stopProcs attempts to stop every running process and returns any non-nil
+// error, if one exists. stopProcs will wait until all procs have had an
+// opportunity to stop.
+func stopProcs(sig os.Signal) error {
+	var err error
+	for proc := range procs {
+		stopErr := stopProc(proc, sig)
+		if stopErr != nil {
+			err = stopErr
+		}
+	}
+	return err
 }
 
 // spawn all procs.
-func startProcs() error {
+func startProcs(sc <-chan os.Signal, exitOnError bool) error {
+	errCh := make(chan error, 1)
 	for proc := range procs {
-		startProc(proc)
+		startProc(proc, errCh)
 	}
-	sc := make(chan os.Signal, 10)
+	allProcsDone := make(chan struct{}, 1)
 	go func() {
 		wg.Wait()
-		sc <- syscall.SIGINT
+		allProcsDone <- struct{}{}
 	}()
-	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
-	signal := <-sc
-	for proc := range procs {
-		stopProc(proc, true, signal)
+	for {
+		select {
+		case err := <-errCh:
+			if exitOnError {
+				stopProcs(os.Interrupt)
+				return err
+			}
+		// TODO: add more events here.
+		case <-allProcsDone:
+			return stopProcs(os.Interrupt)
+		case sig := <-sc:
+			return stopProcs(sig)
+		}
 	}
 	return nil
 }

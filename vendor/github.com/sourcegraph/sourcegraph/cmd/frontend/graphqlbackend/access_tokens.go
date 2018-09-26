@@ -131,7 +131,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 }
 
 func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
-	connectionArgs
+	ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all access tokens.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -139,12 +139,12 @@ func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 	}
 
 	var opt db.AccessTokensListOptions
-	args.connectionArgs.set(&opt.LimitOffset)
+	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &accessTokenConnectionResolver{opt: opt}, nil
 }
 
 func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
-	connectionArgs
+	ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's access tokens.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
@@ -152,7 +152,7 @@ func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
 	}
 
 	opt := db.AccessTokensListOptions{SubjectUserID: r.user.ID}
-	args.connectionArgs.set(&opt.LimitOffset)
+	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &accessTokenConnectionResolver{opt: opt}, nil
 }
 
@@ -201,10 +201,10 @@ func (r *accessTokenConnectionResolver) TotalCount(ctx context.Context) (int32, 
 	return int32(count), err
 }
 
-func (r *accessTokenConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+func (r *accessTokenConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
 	accessTokens, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &pageInfo{hasNextPage: r.opt.LimitOffset != nil && len(accessTokens) > r.opt.Limit}, nil
+	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(accessTokens) > r.opt.Limit}, nil
 }

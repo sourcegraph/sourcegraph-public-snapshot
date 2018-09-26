@@ -8,10 +8,10 @@ import (
 )
 
 func (r *extensionRegistryResolver) Publishers(ctx context.Context, args *struct {
-	connectionArgs
+	ConnectionArgs
 }) (*registryPublisherConnectionResolver, error) {
 	var opt db.RegistryPublishersListOptions
-	args.connectionArgs.set(&opt.LimitOffset)
+	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &registryPublisherConnectionResolver{opt: opt}, nil
 }
 
@@ -61,10 +61,10 @@ func (r *registryPublisherConnectionResolver) TotalCount(ctx context.Context) (i
 	return int32(count), err
 }
 
-func (r *registryPublisherConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+func (r *registryPublisherConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
 	publishers, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &pageInfo{hasNextPage: r.opt.LimitOffset != nil && len(publishers) > r.opt.Limit}, nil
+	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(publishers) > r.opt.Limit}, nil
 }

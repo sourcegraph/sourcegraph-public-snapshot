@@ -12,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
@@ -212,7 +213,7 @@ func (g *globalDeps) doTotalRefs(ctx context.Context, repo api.RepoID, lang stri
 	sql := `SELECT count(distinct(repo_id))
 			FROM global_dep
 			WHERE ` + whereSQL
-	rows, err := globalDB.QueryContext(ctx, sql, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return 0, errors.Wrap(err, "Query")
 	}
@@ -260,7 +261,7 @@ func (g *globalDeps) doListTotalRefs(ctx context.Context, repo api.RepoID, lang 
 	sql := `SELECT distinct(repo_id)
 			FROM global_dep
 			WHERE ` + whereSQL
-	rows, err := globalDB.QueryContext(ctx, sql, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "Query")
 	}
@@ -283,7 +284,7 @@ func (g *globalDeps) doTotalRefsGo(ctx context.Context, source string) (int, err
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
-	rows, err := globalDB.QueryContext(ctx, `SELECT COUNT(DISTINCT repo_id)
+	rows, err := dbconn.Global.QueryContext(ctx, `SELECT COUNT(DISTINCT repo_id)
 		FROM global_dep
 		WHERE language='go'
 		AND dep_data->>'depth' = '0'
@@ -314,7 +315,7 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]ap
 	// use a simple heuristic here by using `LIKE <repo>%`. This will work for
 	// GitHub package paths (e.g. `github.com/a/b%` matches `github.com/a/b/c`)
 	// but not custom import paths etc.
-	rows, err := globalDB.QueryContext(ctx, `SELECT DISTINCT repo_id
+	rows, err := dbconn.Global.QueryContext(ctx, `SELECT DISTINCT repo_id
 		FROM global_dep
 		WHERE language='go'
 		AND dep_data->>'depth' = '0'
@@ -337,7 +338,7 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]ap
 }
 
 func (g *globalDeps) UpdateIndexForLanguage(ctx context.Context, language string, repo *types.Repo, deps []lspext.DependencyReference) (err error) {
-	err = Transaction(ctx, globalDB, func(tx *sql.Tx) error {
+	err = Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 		// Update the table.
 		err = g.update(ctx, tx, language, deps, repo.ID)
 		if err != nil {
@@ -422,7 +423,7 @@ func (g *globalDeps) Dependencies(ctx context.Context, op DependenciesOptions) (
 	}
 	sql := fmt.Sprintf("%s %s %s %s", selectSQL, fromSQL, whereSQL, limitSQL)
 
-	rows, err := globalDB.QueryContext(ctx, sql, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, sql, args...)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}
@@ -540,6 +541,6 @@ func (g *globalDeps) update(ctx context.Context, tx *sql.Tx, language string, de
 }
 
 func (g *globalDeps) Delete(ctx context.Context, repo api.RepoID) error {
-	_, err := globalDB.ExecContext(ctx, `DELETE FROM global_dep WHERE repo_id=$1`, repo)
+	_, err := dbconn.Global.ExecContext(ctx, `DELETE FROM global_dep WHERE repo_id=$1`, repo)
 	return err
 }

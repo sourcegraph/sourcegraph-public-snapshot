@@ -12,10 +12,10 @@ type surveyResponseConnectionResolver struct {
 }
 
 func (r *schemaResolver) SurveyResponses(args *struct {
-	connectionArgs
+	ConnectionArgs
 }) *surveyResponseConnectionResolver {
 	var opt db.SurveyResponseListOptions
-	args.connectionArgs.set(&opt.LimitOffset)
+	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &surveyResponseConnectionResolver{opt: opt}
 }
 

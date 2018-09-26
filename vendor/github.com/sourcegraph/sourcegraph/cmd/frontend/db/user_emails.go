@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
 // UserEmail represents a row in the `user_emails` table.
@@ -43,7 +45,7 @@ func (*userEmails) GetInitialSiteAdminEmail(ctx context.Context) (email string, 
 	if init, err := siteInitialized(ctx); err != nil || !init {
 		return "", err
 	}
-	if err := globalDB.QueryRowContext(ctx, "SELECT email FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email); err != nil {
 		return "", errors.New("initial site admin email not found")
 	}
 	return email, nil
@@ -55,7 +57,7 @@ func (*userEmails) GetPrimaryEmail(ctx context.Context, id int32) (email string,
 		return Mocks.UserEmails.GetPrimaryEmail(ctx, id)
 	}
 
-	if err := globalDB.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY created_at ASC, email ASC LIMIT 1",
+	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 ORDER BY created_at ASC, email ASC LIMIT 1",
 		id,
 	).Scan(&email, &verified); err != nil {
 		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("id %d", id)}}
@@ -69,7 +71,7 @@ func (*userEmails) Get(ctx context.Context, userID int32, email string) (emailCa
 		return Mocks.UserEmails.Get(userID, email)
 	}
 
-	if err := globalDB.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
+	if err := dbconn.Global.QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
 		userID, email,
 	).Scan(&emailCanonicalCase, &verified); err != nil {
 		return "", false, userEmailNotFoundError{[]interface{}{fmt.Sprintf("userID %d email %q", userID, email)}}
@@ -79,13 +81,13 @@ func (*userEmails) Get(ctx context.Context, userID int32, email string) (emailCa
 
 // Add adds new user email. When added, it is always unverified.
 func (*userEmails) Add(ctx context.Context, userID int32, email string, verificationCode *string) error {
-	_, err := globalDB.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES($1, $2, $3)", userID, email, verificationCode)
+	_, err := dbconn.Global.ExecContext(ctx, "INSERT INTO user_emails(user_id, email, verification_code) VALUES($1, $2, $3)", userID, email, verificationCode)
 	return err
 }
 
 // Remove removes a user email. It returns an error if there is no such email associated with the user.
 func (*userEmails) Remove(ctx context.Context, userID int32, email string) error {
-	res, err := globalDB.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1 AND email=$2", userID, email)
+	res, err := dbconn.Global.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1 AND email=$2", userID, email)
 	if err != nil {
 		return err
 	}
@@ -104,7 +106,7 @@ func (*userEmails) Remove(ctx context.Context, userID int32, email string) error
 // returns false.
 func (*userEmails) Verify(ctx context.Context, userID int32, email, code string) (bool, error) {
 	var dbCode sql.NullString
-	if err := globalDB.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1 AND email=$2", userID, email).Scan(&dbCode); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1 AND email=$2", userID, email).Scan(&dbCode); err != nil {
 		return false, err
 	}
 	if !dbCode.Valid {
@@ -114,7 +116,7 @@ func (*userEmails) Verify(ctx context.Context, userID int32, email, code string)
 	if len(dbCode.String) != len(code) || subtle.ConstantTimeCompare([]byte(dbCode.String), []byte(code)) != 1 {
 		return false, nil
 	}
-	if _, err := globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email); err != nil {
+	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -127,10 +129,10 @@ func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, 
 	var err error
 	if verified {
 		// Mark as verified.
-		res, err = globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email)
+		res, err = dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email)
 	} else {
 		// Mark as unverified.
-		res, err = globalDB.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=null WHERE user_id=$1 AND email=$2", userID, email)
+		res, err = dbconn.Global.ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=null WHERE user_id=$1 AND email=$2", userID, email)
 	}
 	if err != nil {
 		return err
@@ -147,7 +149,7 @@ func (*userEmails) SetVerified(ctx context.Context, userID int32, email string, 
 
 // getBySQL returns user emails matching the SQL query, if any exist.
 func (*userEmails) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*UserEmail, error) {
-	rows, err := globalDB.QueryContext(ctx,
+	rows, err := dbconn.Global.QueryContext(ctx,
 		`SELECT user_emails.user_id, user_emails.email, user_emails.created_at, user_emails.verification_code,
 				user_emails.verified_at FROM user_emails `+query, args...)
 	if err != nil {
