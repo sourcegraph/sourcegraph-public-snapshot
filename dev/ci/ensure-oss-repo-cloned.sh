@@ -8,7 +8,7 @@ rm -rf $GOPATH/src/github.com/sourcegraph/sourcegraph
 OSS_BRANCH="${BUILDKITE_BRANCH:-master}"
 
 if [ ! -d "$GOPATH/src/github.com/sourcegraph/sourcegraph" ]; then
-    git clone -b "$OSS_BRANCH" --depth=10 git@github.com:sourcegraph/sourcegraph $GOPATH/src/github.com/sourcegraph/sourcegraph || git clone -b master --depth=10 git@github.com:sourcegraph/sourcegraph $GOPATH/src/github.com/sourcegraph/sourcegraph
+    git clone -b "$OSS_BRANCH" --depth=10 git@github.com:sourcegraph/sourcegraph $GOPATH/src/github.com/sourcegraph/sourcegraph || git clone --depth=10 git@github.com:sourcegraph/sourcegraph $GOPATH/src/github.com/sourcegraph/sourcegraph
 fi
 
 pushd $GOPATH/src/github.com/sourcegraph/sourcegraph
