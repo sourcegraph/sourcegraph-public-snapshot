@@ -14,3 +14,4 @@ src/backend/graphqlschema.ts
 src/schema/
 ts-node-*
 xlang/testdata
+cmd/xlang-go/internal/server/testdata/
