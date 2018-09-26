@@ -46,10 +46,10 @@ mkdir -p .bin
 export GOBIN=$PWD/.bin
 
 if ! go install \
-	github.com/sourcegraph/sourcegraph/vendor/github.com/mattn/goreman \
-	github.com/sourcegraph/sourcegraph/vendor/github.com/google/zoekt/cmd/zoekt-archive-index \
-	github.com/sourcegraph/sourcegraph/vendor/github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-	github.com/sourcegraph/sourcegraph/vendor/github.com/google/zoekt/cmd/zoekt-webserver; then
+	github.com/mattn/goreman \
+	github.com/google/zoekt/cmd/zoekt-archive-index \
+	github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
+	github.com/google/zoekt/cmd/zoekt-webserver; then
 	echo >&2 "failed to install prerequisites, aborting."
 	exit 1
 fi
