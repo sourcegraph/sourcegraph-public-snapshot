@@ -9,7 +9,7 @@ main() {
     export PATH=$GOBIN:$PATH
 
     go install github.com/sourcegraph/sourcegraph/vendor/github.com/kevinburke/differ
-    GO111MODULE=on go mod vendor && GO111MODULE=on differ go mod tidy
+    GO111MODULE=on differ bash -c 'go mod vendor && go mod tidy -v'
 }
 
 main "$@"
