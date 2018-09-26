@@ -5,7 +5,7 @@ package assets
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/assets"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
 )
 
 func init() {
