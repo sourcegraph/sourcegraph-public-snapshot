@@ -19,10 +19,7 @@ const registryGroup: SiteAdminSideBarGroup = {
  * Sidebar items that are only used on Sourcegraph.com.
  */
 const dotcomGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: 'Sourcegraph.com',
-        icon: () => null, // no icon because otherwise the header would wrap to 2 lines
-    },
+    header: { label: 'Sourcegraph.com' },
     items: [
         {
             label: 'Generate license',
