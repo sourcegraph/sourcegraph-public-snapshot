@@ -94,9 +94,9 @@ github.com/golang/groupcache/lru
 # github.com/golang/protobuf v1.2.0
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes/timestamp
-github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/protoc-gen-go/descriptor
 github.com/golang/protobuf/ptypes
+github.com/golang/protobuf/ptypes/any
 github.com/golang/protobuf/ptypes/duration
 # github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c
 github.com/google/btree
@@ -210,10 +210,14 @@ github.com/opentracing/basictracer-go/wire
 github.com/opentracing/opentracing-go
 github.com/opentracing/opentracing-go/ext
 github.com/opentracing/opentracing-go/log
+# github.com/pelletier/go-toml v1.2.0
+github.com/pelletier/go-toml
 # github.com/peterbourgon/diskv v2.0.1+incompatible
 github.com/peterbourgon/diskv
 # github.com/pkg/errors v0.8.0
 github.com/pkg/errors
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
 # github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35
 github.com/pquerna/cachecontrol
 github.com/pquerna/cachecontrol/cacheobject
@@ -258,6 +262,8 @@ github.com/shurcooL/octicon
 github.com/shurcooL/sanitized_anchor_name
 # github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f
 github.com/shurcooL/vfsgen
+# github.com/slimsag/godocmd v0.0.0-20161025000126-a1005ad29fe3
+github.com/slimsag/godocmd
 # github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5
 github.com/sloonz/go-qprintable
 # github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d
@@ -269,6 +275,17 @@ github.com/sourcegraph/go-jsonschema/jsonschema
 # github.com/sourcegraph/go-langserver v0.0.0-20180917104716-6b103664e059
 github.com/sourcegraph/go-langserver/pkg/lsp
 github.com/sourcegraph/go-langserver/pkg/lspext
+github.com/sourcegraph/go-langserver/langserver
+github.com/sourcegraph/go-langserver/langserver/util
+github.com/sourcegraph/go-langserver/pkg/tools
+github.com/sourcegraph/go-langserver/langserver/internal/gocode
+github.com/sourcegraph/go-langserver/langserver/internal/gocode/gbimporter
+github.com/sourcegraph/go-langserver/langserver/internal/godef
+github.com/sourcegraph/go-langserver/langserver/internal/refs
+github.com/sourcegraph/go-langserver/langserver/internal/gocode/suggest
+github.com/sourcegraph/go-langserver/langserver/internal/godef/go/parser
+github.com/sourcegraph/go-langserver/langserver/internal/godef/go/types
+github.com/sourcegraph/go-langserver/langserver/internal/gocode/lookdot
 # github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd
 github.com/sourcegraph/go-vcsurl
 # github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10
@@ -304,6 +321,13 @@ github.com/sourcegraph/sourcegraph/xlang
 github.com/sourcegraph/sourcegraph/xlang/lspext
 github.com/sourcegraph/sourcegraph/cmd/frontend/hooks
 github.com/sourcegraph/sourcegraph/cmd/server/shared
+github.com/sourcegraph/sourcegraph/pkg/debugserver
+github.com/sourcegraph/sourcegraph/pkg/tracer
+github.com/sourcegraph/sourcegraph/xlang/vfsutil
+github.com/sourcegraph/sourcegraph/pkg/gitserver
+github.com/sourcegraph/sourcegraph/pkg/gosrc
+github.com/sourcegraph/sourcegraph/pkg/vcs/git
+github.com/sourcegraph/sourcegraph/xlang/uri
 github.com/sourcegraph/sourcegraph/pkg/buildkite
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app
@@ -316,13 +340,11 @@ github.com/sourcegraph/sourcegraph/pkg/atomicvalue
 github.com/sourcegraph/sourcegraph/pkg/inventory
 github.com/sourcegraph/sourcegraph/pkg/randstring
 github.com/sourcegraph/sourcegraph/pkg/trace
-github.com/sourcegraph/sourcegraph/pkg/vcs/git
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/langservers
-github.com/sourcegraph/sourcegraph/pkg/gitserver
 github.com/sourcegraph/sourcegraph/pkg/httputil
 github.com/sourcegraph/sourcegraph/pkg/rcache
 github.com/sourcegraph/sourcegraph/pkg/registry
@@ -361,9 +383,10 @@ github.com/sourcegraph/sourcegraph/pkg/phabricator
 github.com/sourcegraph/sourcegraph/pkg/processrestart
 github.com/sourcegraph/sourcegraph/pkg/version
 github.com/sourcegraph/sourcegraph/pkg/zoekt
-github.com/sourcegraph/sourcegraph/xlang/uri
 github.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver
 github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman
+github.com/sourcegraph/sourcegraph/pkg/diskcache
+github.com/sourcegraph/sourcegraph/pkg/vcs/util
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/httpheader
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers
@@ -372,24 +395,18 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil
-github.com/sourcegraph/sourcegraph/pkg/debugserver
 github.com/sourcegraph/sourcegraph/pkg/sysreq
-github.com/sourcegraph/sourcegraph/pkg/tracer
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui
-github.com/sourcegraph/sourcegraph/pkg/gosrc
 github.com/sourcegraph/sourcegraph/pkg/repotrackutil
-github.com/sourcegraph/sourcegraph/pkg/vcs/util
 github.com/sourcegraph/sourcegraph/pkg/redispool
 github.com/sourcegraph/sourcegraph/pkg/routevar
-github.com/sourcegraph/sourcegraph/xlang/vfsutil
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking
 github.com/sourcegraph/sourcegraph/pkg/eventlogger
 github.com/sourcegraph/sourcegraph/pkg/hubspot
 github.com/sourcegraph/sourcegraph/pkg/honey
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates
-github.com/sourcegraph/sourcegraph/pkg/diskcache
 # github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e
 github.com/sourcegraph/syntaxhighlight
 # github.com/spf13/pflag v1.0.2
@@ -428,6 +445,9 @@ github.com/xeipuuv/gojsonreference
 github.com/xeipuuv/gojsonschema
 # github.com/zenazn/goji v0.9.0
 github.com/zenazn/goji/web
+# go4.org v0.0.0-20180809161055-417644f6feb5
+go4.org/sort
+go4.org/reflectutil
 # golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b
 golang.org/x/crypto/ssh
 golang.org/x/crypto/acme/autocert
@@ -449,9 +469,9 @@ golang.org/x/net/context
 golang.org/x/net/trace
 golang.org/x/net/html
 golang.org/x/net/html/atom
-golang.org/x/net/html/charset
 golang.org/x/net/internal/timeseries
 golang.org/x/net/http2
+golang.org/x/net/html/charset
 golang.org/x/net/http/httpguts
 golang.org/x/net/http2/hpack
 golang.org/x/net/idna
@@ -468,6 +488,9 @@ golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
 golang.org/x/text/transform
+golang.org/x/text/secure/bidirule
+golang.org/x/text/unicode/bidi
+golang.org/x/text/unicode/norm
 golang.org/x/text/encoding/internal/identifier
 golang.org/x/text/encoding/internal
 golang.org/x/text/encoding/japanese
@@ -476,9 +499,6 @@ golang.org/x/text/encoding/simplifiedchinese
 golang.org/x/text/encoding/traditionalchinese
 golang.org/x/text/encoding/unicode
 golang.org/x/text/language
-golang.org/x/text/secure/bidirule
-golang.org/x/text/unicode/bidi
-golang.org/x/text/unicode/norm
 golang.org/x/text/internal/utf8internal
 golang.org/x/text/runes
 golang.org/x/text/internal/tag
@@ -488,6 +508,14 @@ golang.org/x/time/rate
 # golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e
 golang.org/x/tools/godoc/vfs
 golang.org/x/tools/godoc/vfs/zipfs
+golang.org/x/tools/go/buildutil
+golang.org/x/tools/go/loader
+golang.org/x/tools/go/types/typeutil
+golang.org/x/tools/imports
+golang.org/x/tools/refactor/importgraph
+golang.org/x/tools/go/ast/astutil
+golang.org/x/tools/go/internal/cgo
+golang.org/x/tools/internal/fastwalk
 # google.golang.org/appengine v1.2.0
 google.golang.org/appengine/urlfetch
 google.golang.org/appengine/internal

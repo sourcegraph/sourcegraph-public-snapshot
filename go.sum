@@ -1,5 +1,6 @@
 cloud.google.com/go v0.23.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Microsoft/go-winio v0.4.9 h1:3RbgqgGVqmcpbOiwrjbVtDHLlJBGF6aE+yHmNtBNsFQ=
 github.com/Microsoft/go-winio v0.4.9/go.mod h1:VhR8bwka0BXejwEJY73c50VrPtXAaKcyvVC4A4RozmA=
@@ -254,8 +255,9 @@ github.com/opentracing/basictracer-go v1.0.0 h1:YyUAhaEfjoWXclZVJ9sGoNct7j4TVk7l
 github.com/opentracing/basictracer-go v1.0.0/go.mod h1:QfBfYuafItcjQuMwinw9GhYKwFXS9KnPs5lxoYwgW74=
 github.com/opentracing/opentracing-go v1.0.2 h1:3jA2P6O1F9UOrWVpwrIo17pu01KWvNWg4X946/Y5Zwg=
 github.com/opentracing/opentracing-go v1.0.2/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
-github.com/pelletier/go-toml v0.0.0-20180724185102-c2dbbc24a979 h1:Uh8pTMDzw+nuDTW7lyxcpmYqQJFE8SnO93F3lyY4XzY=
 github.com/pelletier/go-toml v0.0.0-20180724185102-c2dbbc24a979/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
+github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
+github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/peterbourgon/diskv v2.0.1+incompatible h1:UBdAOUP5p4RWqPBg048CAvpKN+vxiaj6gdUUzhl4XmI=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
 github.com/peterhellberg/link v1.0.0 h1:mUWkiegowUXEcmlb+ybF75Q/8D2Y0BjZtR8cxoKhaQo=
@@ -321,7 +323,6 @@ github.com/sourcegraph/go-langserver v0.0.0-20180917104716-6b103664e059/go.mod h
 github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd h1:wxP7dU7tNtU03+Z4GIuYGV17AO1i3HfCBArGu0igaro=
 github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd/go.mod h1:Dl+4tLnKopzymgEhEZCi6/KSIZPFBe1rvoKMxCGh0Ms=
 github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
-github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538 h1:K+cXn79iIvSN1c6Sq2hxk7n8T3ax0lII+FkvuOwgmPc=
 github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538/go.mod h1:ZqB/uu1WtCDmlwK8c+TO8+QSfDkJsWx9LYjQBgGxxtk=
 github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10 h1:9XH6ZJgu6KrVimEwZVXfTOvkGU1CHAvdc7mbZrMwA/U=
 github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10/go.mod h1:G6fSBYyOm5huBpPQ4qhXejeVbKeehdP7WEmwb5Si7gM=
@@ -337,7 +338,6 @@ github.com/sourcegraph/sourcegraph v0.0.0-20180926012248-635020a9ba62 h1:8Rlqxaq
 github.com/sourcegraph/sourcegraph v0.0.0-20180926012248-635020a9ba62/go.mod h1:U3of6lrtxS4njOhEWEw1UTeXsp2/tVp08hnBMoOzzyM=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
-github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f h1:u0IVxi0z+g2RENKCKITUsUW/up44ZqvVMOTNHHvTQL8=
 github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f/go.mod h1:I5NDweTUikWVakOqHBnCuqXGZOi0vJoeZRTFbHmhc1A=
 github.com/spf13/pflag v1.0.2 h1:Fy0orTDgHdbnzHcsOgfCN4LtHf0ec3wwtiwJqwvf3Gc=
 github.com/spf13/pflag v1.0.2/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnInEg4=
@@ -368,6 +368,7 @@ github.com/zenazn/goji v0.9.0/go.mod h1:7S9M489iMyHBNxwZnk9/EHS098H4/F6TATF2mIxt
 go.opencensus.io v0.14.0/go.mod h1:UffZAU+4sDEINUGP/B7UfBBkq4fqLu9zXAX7ke6CHW0=
 go.uber.org/atomic v1.3.2 h1:2Oa65PReHzfn29GpvgsYwloV9AVFHPDk8tYxt2c2tr4=
 go.uber.org/atomic v1.3.2/go.mod h1:gD2HeocX3+yG+ygLZcrzQJaqmWj9AIm7n08wl/qW/PE=
+go4.org v0.0.0-20180809161055-417644f6feb5 h1:+hE86LblG4AyDgwMCLTE6FOlM9+qjHSYS+rKqxUVdsM=
 go4.org v0.0.0-20180809161055-417644f6feb5/go.mod h1:MkTOUMDaeVYJUOUsaDXIhWPZYa1yOyC1qaOBpL57BhE=
 golang.org/x/crypto v0.0.0-20180723164146-c126467f60eb/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
