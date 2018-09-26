@@ -22,7 +22,7 @@ require (
 	github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
-	github.com/sourcegraph/sourcegraph v0.0.0-20180924091521-78f05fabed+incompatible
+	github.com/sourcegraph/sourcegraph v0.0.0-20180926012248-635020a9ba62
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/zenazn/goji v0.9.0 // indirect
 	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b
