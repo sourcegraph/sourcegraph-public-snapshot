@@ -14,6 +14,6 @@ fi
 pushd $GOPATH/src/github.com/sourcegraph/sourcegraph
 git fetch
 echo "Attempting to checkout ${OSS_REPO_REVISION:-origin/$OSS_BRANCH}"
-git checkout -f "${OSS_REPO_REVISION:-origin/$OSS_BRANCH}"
+git checkout -f "${OSS_REPO_REVISION:-origin/$OSS_BRANCH}" || echo "Falling back to default OSS repo branch"
 
 popd
