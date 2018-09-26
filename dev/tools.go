@@ -16,4 +16,3 @@ import (
 	_ "honnef.co/go/tools/cmd/staticcheck"
 	_ "honnef.co/go/tools/cmd/unused"
 )
-
