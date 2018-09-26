@@ -23,7 +23,7 @@ func init() {
 }
 
 func pkgs() []string {
-	pkgs := []string{}
+	pkgs := []string{"cmd/xlang-go/internal/server"} // put slow tests first
 	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			panic(err)
@@ -37,6 +37,10 @@ func pkgs() []string {
 		}
 		if filepath.Base(path) == "vendor" {
 			return filepath.SkipDir
+		}
+
+		if path == "xlang" {
+			return nil // already first entry
 		}
 
 		pkg, err := build.Import("github.com/sourcegraph/enterprise/"+path, "", 0)
@@ -253,6 +257,7 @@ func main() {
 		allDockerImages := []string{
 			"enterprise:frontend",
 			"enterprise:server",
+			"xlang-go",
 		}
 
 		for _, dockerImage := range allDockerImages {
