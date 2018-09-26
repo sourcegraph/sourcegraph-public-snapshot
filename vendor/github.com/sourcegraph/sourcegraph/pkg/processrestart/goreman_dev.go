@@ -35,6 +35,7 @@ func restartGoremanDev() error {
 		"symbols",
 		"github-proxy",
 		"lsp-proxy",
+		"xlang-go",
 		"syntect_server",
 		"zoekt-indexserver",
 		"zoekt-webserver",
