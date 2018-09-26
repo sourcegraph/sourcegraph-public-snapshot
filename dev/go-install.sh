@@ -44,6 +44,7 @@ $ok || exit 1
 
 mkdir -p .bin
 export GOBIN=$PWD/.bin
+export GO111MODULE=on
 
 if ! go install \
 	github.com/mattn/goreman \
