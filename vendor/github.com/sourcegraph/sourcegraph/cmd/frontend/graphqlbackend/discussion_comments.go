@@ -117,7 +117,7 @@ func (r *discussionCommentResolver) CanDelete(ctx context.Context) bool {
 }
 
 func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
-	ConnectionArgs
+	connectionArgs
 	AuthorUserID *graphql.ID
 }) (*discussionCommentsConnectionResolver, error) {
 	if err := viewerCanUseDiscussions(ctx); err != nil {
@@ -129,7 +129,7 @@ func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
 	// inherently, the GraphQL API) is private.
 
 	opt := &db.DiscussionCommentsListOptions{}
-	args.ConnectionArgs.Set(&opt.LimitOffset)
+	args.connectionArgs.set(&opt.LimitOffset)
 	if args.AuthorUserID != nil {
 		userID, err := unmarshalUserID(*args.AuthorUserID)
 		if err != nil {
@@ -350,10 +350,10 @@ func (r *discussionCommentsConnectionResolver) TotalCount(ctx context.Context) (
 	return int32(count), err
 }
 
-func (r *discussionCommentsConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *discussionCommentsConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
 	comments, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(comments) > r.opt.Limit}, nil
+	return &pageInfo{hasNextPage: r.opt.LimitOffset != nil && len(comments) > r.opt.Limit}, nil
 }

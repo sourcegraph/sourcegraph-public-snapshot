@@ -1,4 +1,4 @@
-package dbconn
+package db
 
 import (
 	"context"
@@ -28,9 +28,7 @@ import (
 )
 
 var (
-	// Global is the global DB connection.
-	Global *sql.DB
-
+	globalDB          *sql.DB
 	defaultDataSource = env.Get("PGDATASOURCE", "", "Default dataSource to pass to Postgres. See https://godoc.org/github.com/lib/pq for more information.")
 )
 
@@ -53,14 +51,14 @@ func ConnectToDB(dataSource string) error {
 	}
 
 	var err error
-	Global, err = openDBWithStartupWait(dataSource)
+	globalDB, err = openDBWithStartupWait(dataSource)
 	if err != nil {
 		return errors.Wrap(err, "DB not available")
 	}
-	registerPrometheusCollector(Global, "_app")
-	configureConnectionPool(Global)
+	registerPrometheusCollector(globalDB, "_app")
+	configureConnectionPool(globalDB)
 
-	if err := DoMigrateAndClose(NewMigrate(Global)); err != nil {
+	if err := doMigrateAndClose(newMigrate(globalDB)); err != nil {
 		return errors.Wrap(err, "Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance")
 	}
 
@@ -131,7 +129,7 @@ func Open(dataSource string) (*sql.DB, error) {
 
 // Ping attempts to contact the database and returns a non-nil error upon failure. It is intended to
 // be used by health checks.
-func Ping(ctx context.Context) error { return Global.PingContext(ctx) }
+func Ping(ctx context.Context) error { return globalDB.PingContext(ctx) }
 
 type hook struct{}
 
@@ -205,7 +203,7 @@ func configureConnectionPool(db *sql.DB) {
 	db.SetMaxIdleConns(maxOpen)
 }
 
-func NewMigrate(db *sql.DB) *migrate.Migrate {
+func newMigrate(db *sql.DB) *migrate.Migrate {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		log.Fatal(err)
@@ -225,7 +223,7 @@ func NewMigrate(db *sql.DB) *migrate.Migrate {
 	return m
 }
 
-func DoMigrateAndClose(m *migrate.Migrate) (err error) {
+func doMigrateAndClose(m *migrate.Migrate) (err error) {
 	defer func() {
 		srcErr, dbErr := m.Close()
 		if err == nil {
@@ -254,5 +252,27 @@ func DoMigrateAndClose(m *migrate.Migrate) (err error) {
 		log15.Warn("WARNING: Detected an old version of Sourcegraph. The database has migrated to a newer version. If you have applied a rollback, this is expected and you can ignore this warning. If not, please contact support@sourcegraph.com for further assistance.", "db_version", version)
 		return nil
 	}
+	return err
+}
+
+func truncateDB(d *sql.DB) error {
+	rows, err := d.Query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_type='BASE TABLE' AND table_name != 'schema_migrations'")
+	if err != nil {
+		return err
+	}
+	var tables []string
+	for rows.Next() {
+		var table string
+		rows.Scan(&table)
+		tables = append(tables, table)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	log.Printf("Truncating all %d tables", len(tables))
+	_, err = d.Exec("TRUNCATE " + strings.Join(tables, ", ") + " RESTART IDENTITY")
 	return err
 }

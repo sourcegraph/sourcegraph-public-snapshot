@@ -15,7 +15,7 @@ import (
 )
 
 type symbolsArgs struct {
-	ConnectionArgs
+	connectionArgs
 	Query *string
 }
 
@@ -129,8 +129,8 @@ func (r *symbolConnectionResolver) Nodes(ctx context.Context) ([]*symbolResolver
 	return symbols, nil
 }
 
-func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
-	return &PageInfo{hasNextPage: len(r.symbols) > limitOrDefault(r.first)}, nil
+func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+	return &pageInfo{hasNextPage: len(r.symbols) > limitOrDefault(r.first)}, nil
 }
 
 type symbolResolver struct {

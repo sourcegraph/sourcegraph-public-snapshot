@@ -21,7 +21,7 @@ import (
 )
 
 type packagesArgs struct {
-	ConnectionArgs
+	connectionArgs
 	Query *string
 }
 
@@ -102,12 +102,12 @@ func (r *packageConnectionResolver) TotalCount(ctx context.Context) (int32, erro
 	return int32(len(pkgs)), nil
 }
 
-func (r *packageConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *packageConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
 	pkgs, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.first != nil && int(*r.first) < len(pkgs)}, nil
+	return &pageInfo{hasNextPage: r.first != nil && int(*r.first) < len(pkgs)}, nil
 }
 
 type packageResolver struct {

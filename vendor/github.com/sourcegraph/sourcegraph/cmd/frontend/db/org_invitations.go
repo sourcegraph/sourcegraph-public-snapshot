@@ -9,7 +9,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
 // An OrgInvitation is an invitation for a user to join an organization as a member.
@@ -55,7 +54,7 @@ func (*orgInvitations) Create(ctx context.Context, orgID, senderUserID, recipien
 		SenderUserID:    senderUserID,
 		RecipientUserID: recipientUserID,
 	}
-	if err := dbconn.Global.QueryRowContext(
+	if err := globalDB.QueryRowContext(
 		ctx,
 		"INSERT INTO org_invitations(org_id, sender_user_id, recipient_user_id) VALUES($1, $2, $3) RETURNING id, created_at",
 		orgID, senderUserID, recipientUserID,
@@ -145,7 +144,7 @@ ORDER BY id ASC
 		limitOffset.SQL(),
 	)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +167,7 @@ ORDER BY id ASC
 func (s *orgInvitations) Count(ctx context.Context, opt OrgInvitationsListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM org_invitations WHERE (%s) AND deleted_at IS NULL", sqlf.Join(opt.sqlConditions(), ") AND ("))
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -177,7 +176,7 @@ func (s *orgInvitations) Count(ctx context.Context, opt OrgInvitationsListOption
 // UpdateEmailSentTimestamp updates the email-sent timestam[ for the org invitation to the current
 // time.
 func (*orgInvitations) UpdateEmailSentTimestamp(ctx context.Context, id int64) error {
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE org_invitations SET notified_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
+	res, err := globalDB.ExecContext(ctx, "UPDATE org_invitations SET notified_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -195,7 +194,7 @@ func (*orgInvitations) UpdateEmailSentTimestamp(ctx context.Context, id int64) e
 // which the recipient was invited. If the recipient user ID given is incorrect, an
 // OrgInvitationNotFoundError error is returned.
 func (*orgInvitations) Respond(ctx context.Context, id int64, recipientUserID int32, accept bool) (orgID int32, err error) {
-	if err := dbconn.Global.QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$3 WHERE id=$1 AND recipient_user_id=$2 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL RETURNING org_id", id, recipientUserID, accept).Scan(&orgID); err == sql.ErrNoRows {
+	if err := globalDB.QueryRowContext(ctx, "UPDATE org_invitations SET responded_at=now(), response_type=$3 WHERE id=$1 AND recipient_user_id=$2 AND responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL RETURNING org_id", id, recipientUserID, accept).Scan(&orgID); err == sql.ErrNoRows {
 		return 0, OrgInvitationNotFoundError{[]interface{}{fmt.Sprintf("id %d recipient %d", id, recipientUserID)}}
 	} else if err != nil {
 		return 0, err
@@ -210,7 +209,7 @@ func (*orgInvitations) Revoke(ctx context.Context, id int64) error {
 		return Mocks.OrgInvitations.Revoke(id)
 	}
 
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE org_invitations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
+	res, err := globalDB.ExecContext(ctx, "UPDATE org_invitations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}

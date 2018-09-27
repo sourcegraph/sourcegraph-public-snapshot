@@ -21,7 +21,7 @@ import (
 )
 
 type dependenciesArgs struct {
-	ConnectionArgs
+	connectionArgs
 	Query *string
 }
 
@@ -102,12 +102,12 @@ func (r *dependencyConnectionResolver) TotalCount(ctx context.Context) (int32, e
 	return int32(len(deps)), nil
 }
 
-func (r *dependencyConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *dependencyConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
 	deps, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.first != nil && int(*r.first) < len(deps)}, nil
+	return &pageInfo{hasNextPage: r.first != nil && int(*r.first) < len(deps)}, nil
 }
 
 type dependencyResolver struct {

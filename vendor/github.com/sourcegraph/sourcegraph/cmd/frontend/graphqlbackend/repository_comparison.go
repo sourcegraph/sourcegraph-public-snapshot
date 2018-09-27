@@ -215,11 +215,11 @@ func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, er
 	return nil, nil // total count is not available
 }
 
-func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
 	if _, err := r.compute(ctx); err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.hasNextPage}, nil
+	return &pageInfo{hasNextPage: r.hasNextPage}, nil
 }
 
 func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*diffStat, error) {

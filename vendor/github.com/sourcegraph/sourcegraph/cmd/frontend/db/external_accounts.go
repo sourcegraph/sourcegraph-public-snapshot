@@ -9,7 +9,6 @@ import (
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -76,7 +75,7 @@ func (s *userExternalAccounts) LookupUserAndSave(ctx context.Context, spec Exter
 		return Mocks.ExternalAccounts.LookupUserAndSave(spec, data)
 	}
 
-	err = dbconn.Global.QueryRowContext(ctx, `
+	err = globalDB.QueryRowContext(ctx, `
 UPDATE user_external_accounts SET auth_data=$5, account_data=$6, updated_at=now()
 WHERE service_type=$1 AND service_id=$2 AND client_id=$3 AND account_id=$4 AND deleted_at IS NULL
 RETURNING user_id
@@ -102,7 +101,7 @@ func (s *userExternalAccounts) AssociateUserAndSave(ctx context.Context, userID 
 
 	// This "upsert" may cause us to return an ephemeral failure due to a race condition, but it
 	// won't result in inconsistent data.  Wrap in transaction.
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := globalDB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -169,7 +168,7 @@ func (s *userExternalAccounts) CreateUserAndSave(ctx context.Context, newUser Ne
 	}
 
 	// Wrap in transaction.
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := globalDB.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -207,7 +206,7 @@ func (*userExternalAccounts) Delete(ctx context.Context, id int32) error {
 		return Mocks.ExternalAccounts.Delete(id)
 	}
 
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := globalDB.ExecContext(ctx, "UPDATE user_external_accounts SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}
@@ -245,7 +244,7 @@ func (s *userExternalAccounts) Count(ctx context.Context, opt ExternalAccountsLi
 	conds := s.listSQL(opt)
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM user_external_accounts WHERE %s", sqlf.Join(conds, "AND"))
 	var count int
-	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count)
+	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count)
 	return count, err
 }
 
@@ -266,7 +265,7 @@ func (*userExternalAccounts) TmpMigrate(ctx context.Context, serviceType string)
 	// once ever, and we are guaranteed that the DB migration has run by the time we arrive here, so
 	// this is safe and not racy.
 	var needsMigration bool
-	if err := dbconn.Global.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM user_external_accounts WHERE service_type=$1 AND deleted_at IS NULL)`, needsMigrationSentinel).Scan(&needsMigration); err != nil && err != sql.ErrNoRows {
+	if err := globalDB.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM user_external_accounts WHERE service_type=$1 AND deleted_at IS NULL)`, needsMigrationSentinel).Scan(&needsMigration); err != nil && err != sql.ErrNoRows {
 		return err
 	}
 	if !needsMigration {
@@ -275,18 +274,18 @@ func (*userExternalAccounts) TmpMigrate(ctx context.Context, serviceType string)
 
 	var err error
 	if serviceType == "" {
-		_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now(), service_type='not_configured_at_migration_time' WHERE service_type=$1`, needsMigrationSentinel)
+		_, err = globalDB.ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now(), service_type='not_configured_at_migration_time' WHERE service_type=$1`, needsMigrationSentinel)
 	} else {
-		_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET service_type=$2, account_id=SUBSTR(account_id, CHAR_LENGTH(service_id)+2) WHERE service_type=$1 AND service_id!='override'`, needsMigrationSentinel, serviceType)
+		_, err = globalDB.ExecContext(ctx, `UPDATE user_external_accounts SET service_type=$2, account_id=SUBSTR(account_id, CHAR_LENGTH(service_id)+2) WHERE service_type=$1 AND service_id!='override'`, needsMigrationSentinel, serviceType)
 		if err == nil {
-			_, err = dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET service_type='override', service_id='' WHERE service_type=$1 AND service_id='override'`, needsMigrationSentinel)
+			_, err = globalDB.ExecContext(ctx, `UPDATE user_external_accounts SET service_type='override', service_id='' WHERE service_type=$1 AND service_id='override'`, needsMigrationSentinel)
 		}
 	}
 	return err
 }
 
 func (userExternalAccounts) deleteForDeletedUsers(ctx context.Context) error {
-	_, err := dbconn.Global.ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now() FROM users WHERE user_external_accounts.user_id=users.id AND users.deleted_at IS NOT NULL AND user_external_accounts.deleted_at IS NULL`)
+	_, err := globalDB.ExecContext(ctx, `UPDATE user_external_accounts SET deleted_at=now() FROM users WHERE user_external_accounts.user_id=users.id AND users.deleted_at IS NOT NULL AND user_external_accounts.deleted_at IS NULL`)
 	return err
 }
 
@@ -303,7 +302,7 @@ func (s *userExternalAccounts) getBySQL(ctx context.Context, querySuffix *sqlf.Q
 
 func (*userExternalAccounts) listBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*ExternalAccount, error) {
 	q := sqlf.Sprintf(`SELECT t.id, t.user_id, t.service_type, t.service_id, t.client_id, t.account_id, t.auth_data, t.account_data, t.created_at, t.updated_at FROM user_external_accounts t %s`, querySuffix)
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}

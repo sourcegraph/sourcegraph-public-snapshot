@@ -14,7 +14,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchquery"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -85,7 +84,7 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 	// First, create the thread itself. Initially it will have no target.
 	newThread.CreatedAt = time.Now()
 	newThread.UpdatedAt = newThread.CreatedAt
-	err := dbconn.Global.QueryRowContext(ctx, `INSERT INTO discussion_threads(
+	err := globalDB.QueryRowContext(ctx, `INSERT INTO discussion_threads(
 		author_user_id,
 		title,
 		created_at,
@@ -119,7 +118,7 @@ func (t *discussionThreads) Create(ctx context.Context, newThread *types.Discuss
 	}
 
 	// Update the thread to reference the target we just created.
-	_, err = dbconn.Global.ExecContext(ctx, `UPDATE discussion_threads SET `+targetName+`=$1 WHERE id=$2`, targetID, newThread.ID)
+	_, err = globalDB.ExecContext(ctx, `UPDATE discussion_threads SET `+targetName+`=$1 WHERE id=$2`, targetID, newThread.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "update thread target")
 	}
@@ -166,13 +165,13 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 		if *opts.Archive {
 			archivedAt = &now
 		}
-		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET archived_at=$1 WHERE id=$2 AND deleted_at IS NULL", archivedAt, threadID); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET archived_at=$1 WHERE id=$2 AND deleted_at IS NULL", archivedAt, threadID); err != nil {
 			return nil, err
 		}
 	}
 	if opts.Delete {
 		anyUpdate = true
-		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
 			return nil, err
 		}
 
@@ -191,7 +190,7 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 		}
 	}
 	if anyUpdate {
-		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_threads SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
+		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_threads SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, threadID); err != nil {
 			return nil, err
 		}
 	}
@@ -568,7 +567,7 @@ func (*discussionThreads) getListSQL(opts *DiscussionThreadsListOptions) (conds 
 
 func (*discussionThreads) getCountBySQL(ctx context.Context, query string, args ...interface{}) (int, error) {
 	var count int
-	rows := dbconn.Global.QueryRowContext(ctx, "SELECT count(id) FROM discussion_threads t "+query, args...)
+	rows := globalDB.QueryRowContext(ctx, "SELECT count(id) FROM discussion_threads t "+query, args...)
 	err := rows.Scan(&count)
 	if err == sql.ErrNoRows {
 		return 0, nil
@@ -610,7 +609,7 @@ func (t *discussionThreads) createTargetRepo(ctx context.Context, tr *types.Disc
 	//fmt.Println(q.Query(sqlf.PostgresBindVar))
 	//fmt.Println(q.Args())
 
-	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&tr.ID)
+	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&tr.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -619,7 +618,7 @@ func (t *discussionThreads) createTargetRepo(ctx context.Context, tr *types.Disc
 
 // getBySQL returns threads matching the SQL query, if any exist.
 func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.DiscussionThread, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, `
+	rows, err := globalDB.QueryContext(ctx, `
 		SELECT
 			t.id,
 			t.author_user_id,
@@ -669,7 +668,7 @@ func (t *discussionThreads) getBySQL(ctx context.Context, query string, args ...
 func (t *discussionThreads) getTargetRepo(ctx context.Context, targetRepoID int64) (*types.DiscussionThreadTargetRepo, error) {
 	tr := &types.DiscussionThreadTargetRepo{}
 	var linesBefore, lines, linesAfter *string
-	err := dbconn.Global.QueryRowContext(ctx, `
+	err := globalDB.QueryRowContext(ctx, `
 		SELECT
 			t.id,
 			t.thread_id,

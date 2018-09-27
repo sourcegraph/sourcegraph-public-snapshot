@@ -14,7 +14,7 @@ import (
 )
 
 func (r *schemaResolver) Users(args *struct {
-	ConnectionArgs
+	connectionArgs
 	Query        *string
 	Tag          *string
 	ActivePeriod *string
@@ -26,7 +26,7 @@ func (r *schemaResolver) Users(args *struct {
 	if args.Tag != nil {
 		opt.Tag = *args.Tag
 	}
-	args.ConnectionArgs.Set(&opt.LimitOffset)
+	args.connectionArgs.set(&opt.LimitOffset)
 	return &userConnectionResolver{opt: opt, activePeriod: args.ActivePeriod}
 }
 

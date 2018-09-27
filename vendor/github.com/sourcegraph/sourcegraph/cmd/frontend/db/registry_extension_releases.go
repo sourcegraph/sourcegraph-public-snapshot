@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
 // RegistryExtensionRelease describes a release of an extension in the extension registry.
@@ -45,7 +44,7 @@ func (s *registryExtensionReleases) Create(ctx context.Context, release *Registr
 		return Mocks.RegistryExtensionReleases.Create(release)
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx,
+	if err := globalDB.QueryRowContext(ctx,
 		`
 INSERT INTO registry_extension_releases(registry_extension_id, creator_user_id, release_version, release_tag, manifest, bundle, source_map)
 VALUES($1, $2, $3, $4, $5, $6, $7)
@@ -73,7 +72,7 @@ WHERE registry_extension_id=%d AND release_tag=%s AND deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT 1`, includeArtifacts, includeArtifacts, registryExtensionID, releaseTag)
 	var r RegistryExtensionRelease
-	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&r.ID, &r.RegistryExtensionID, &r.CreatorUserID, &r.ReleaseVersion, &r.ReleaseTag, &r.Manifest, &r.Bundle, &r.SourceMap, &r.CreatedAt)
+	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&r.ID, &r.RegistryExtensionID, &r.CreatorUserID, &r.ReleaseVersion, &r.ReleaseTag, &r.Manifest, &r.Bundle, &r.SourceMap, &r.CreatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, RegistryExtensionReleaseNotFoundError{[]interface{}{fmt.Sprintf("latest for registry extension ID %d tag %q", registryExtensionID, releaseTag)}}
@@ -90,7 +89,7 @@ func (s *registryExtensionReleases) GetArtifacts(ctx context.Context, id int64) 
 SELECT bundle, source_map
 FROM registry_extension_releases
 WHERE id=%d AND deleted_at IS NULL`, id)
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&bundle, &sourcemap); err != nil {
+	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&bundle, &sourcemap); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil, RegistryExtensionReleaseNotFoundError{[]interface{}{fmt.Sprintf("registry extension release %d", id)}}
 		}

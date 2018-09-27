@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
@@ -22,7 +21,7 @@ func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 	if err == nil {
 		return configuration, nil
 	}
-	err = o.tryInsertNew(ctx, dbconn.Global)
+	err = o.tryInsertNew(ctx, globalDB)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +29,7 @@ func (o *siteConfig) Get(ctx context.Context) (*types.SiteConfig, error) {
 }
 
 func siteInitialized(ctx context.Context) (alreadyInitialized bool, err error) {
-	if err := dbconn.Global.QueryRowContext(ctx, `SELECT initialized FROM site_config LIMIT 1`).Scan(&alreadyInitialized); err != nil {
+	if err := globalDB.QueryRowContext(ctx, `SELECT initialized FROM site_config LIMIT 1`).Scan(&alreadyInitialized); err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
 		}
@@ -72,7 +71,7 @@ func (o *siteConfig) ensureInitialized(ctx context.Context, dbh interface {
 
 func (o *siteConfig) getConfiguration(ctx context.Context) (*types.SiteConfig, error) {
 	configuration := &types.SiteConfig{}
-	err := dbconn.Global.QueryRowContext(ctx, "SELECT site_id, initialized FROM site_config LIMIT 1").Scan(
+	err := globalDB.QueryRowContext(ctx, "SELECT site_id, initialized FROM site_config LIMIT 1").Scan(
 		&configuration.SiteID,
 		&configuration.Initialized,
 	)

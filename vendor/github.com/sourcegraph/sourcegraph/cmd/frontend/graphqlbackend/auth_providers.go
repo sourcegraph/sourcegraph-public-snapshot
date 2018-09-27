@@ -45,4 +45,4 @@ func (r *authProviderConnectionResolver) Nodes(ctx context.Context) ([]*authProv
 }
 
 func (r *authProviderConnectionResolver) TotalCount() int32   { return int32(len(r.authProviders)) }
-func (r *authProviderConnectionResolver) PageInfo() *PageInfo { return &PageInfo{hasNextPage: false} }
+func (r *authProviderConnectionResolver) PageInfo() *pageInfo { return &pageInfo{hasNextPage: false} }

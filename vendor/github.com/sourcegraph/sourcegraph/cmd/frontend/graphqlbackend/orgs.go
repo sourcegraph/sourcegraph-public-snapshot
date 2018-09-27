@@ -8,14 +8,14 @@ import (
 )
 
 func (r *schemaResolver) Organizations(args *struct {
-	ConnectionArgs
+	connectionArgs
 	Query *string
 }) *orgConnectionResolver {
 	var opt db.OrgsListOptions
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
-	args.ConnectionArgs.Set(&opt.LimitOffset)
+	args.connectionArgs.set(&opt.LimitOffset)
 	return &orgConnectionResolver{opt: opt}
 }
 
@@ -59,4 +59,4 @@ type orgConnectionStaticResolver struct {
 
 func (r *orgConnectionStaticResolver) Nodes() []*orgResolver { return r.nodes }
 func (r *orgConnectionStaticResolver) TotalCount() int32     { return int32(len(r.nodes)) }
-func (r *orgConnectionStaticResolver) PageInfo() *PageInfo   { return &PageInfo{hasNextPage: false} }
+func (r *orgConnectionStaticResolver) PageInfo() *pageInfo   { return &pageInfo{hasNextPage: false} }

@@ -10,7 +10,7 @@ import (
 )
 
 func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
-	ConnectionArgs
+	connectionArgs
 	User        *graphql.ID
 	ServiceType *string
 	ServiceID   *string
@@ -38,12 +38,12 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 			return nil, err
 		}
 	}
-	args.ConnectionArgs.Set(&opt.LimitOffset)
+	args.connectionArgs.set(&opt.LimitOffset)
 	return &externalAccountConnectionResolver{opt: opt}, nil
 }
 
 func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
-	ConnectionArgs
+	connectionArgs
 }) (*externalAccountConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's external accounts.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
@@ -53,7 +53,7 @@ func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
 	opt := db.ExternalAccountsListOptions{
 		UserID: r.user.ID,
 	}
-	args.ConnectionArgs.Set(&opt.LimitOffset)
+	args.connectionArgs.set(&opt.LimitOffset)
 	return &externalAccountConnectionResolver{opt: opt}, nil
 }
 
@@ -102,12 +102,12 @@ func (r *externalAccountConnectionResolver) TotalCount(ctx context.Context) (int
 	return int32(count), err
 }
 
-func (r *externalAccountConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *externalAccountConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
 	externalAccounts, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(externalAccounts) > r.opt.Limit}, nil
+	return &pageInfo{hasNextPage: r.opt.LimitOffset != nil && len(externalAccounts) > r.opt.Limit}, nil
 }
 
 func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct {

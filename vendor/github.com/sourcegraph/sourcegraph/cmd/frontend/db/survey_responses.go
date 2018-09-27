@@ -8,7 +8,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
@@ -21,7 +20,7 @@ type surveyResponses struct{}
 
 // Create creates a survey response.
 func (s *surveyResponses) Create(ctx context.Context, userID *int32, email *string, score int, reason *string, better *string) (id int64, err error) {
-	err = dbconn.Global.QueryRowContext(ctx,
+	err = globalDB.QueryRowContext(ctx,
 		"INSERT INTO survey_responses(user_id, email, score, reason, better) VALUES($1, $2, $3, $4, $5) RETURNING id",
 		userID, email, score, reason, better,
 	).Scan(&id)
@@ -29,7 +28,7 @@ func (s *surveyResponses) Create(ctx context.Context, userID *int32, email *stri
 }
 
 func (*surveyResponses) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.SurveyResponse, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, created_at FROM survey_responses "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT id, user_id, email, score, reason, better, created_at FROM survey_responses "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +63,7 @@ func (s *surveyResponses) Count(ctx context.Context) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses")
 
 	var count int
-	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count)
+	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count)
 	return count, err
 }
 
@@ -73,7 +72,7 @@ func (s *surveyResponses) Last30DaysAverageScore(ctx context.Context) (float64, 
 	q := sqlf.Sprintf("SELECT AVG(score) FROM survey_responses WHERE created_at>%s", thirtyDaysAgo())
 
 	var avg sql.NullFloat64
-	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&avg)
+	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&avg)
 	return avg.Float64, err
 }
 
@@ -92,11 +91,11 @@ func (s *surveyResponses) Last30DaysNetPromoterScore(ctx context.Context) (int, 
 
 	var promoters int
 	var detractors int
-	err = dbconn.Global.QueryRowContext(ctx, promotersQ.Query(sqlf.PostgresBindVar), promotersQ.Args()...).Scan(&promoters)
+	err = globalDB.QueryRowContext(ctx, promotersQ.Query(sqlf.PostgresBindVar), promotersQ.Args()...).Scan(&promoters)
 	if err != nil {
 		return 0, err
 	}
-	err = dbconn.Global.QueryRowContext(ctx, detractorsQ.Query(sqlf.PostgresBindVar), detractorsQ.Args()...).Scan(&detractors)
+	err = globalDB.QueryRowContext(ctx, detractorsQ.Query(sqlf.PostgresBindVar), detractorsQ.Args()...).Scan(&detractors)
 	promoterPercent := math.Round(float64(promoters) / float64(count) * 100.0)
 	detractorPercent := math.Round(float64(detractors) / float64(count) * 100.0)
 
@@ -108,7 +107,7 @@ func (s *surveyResponses) Last30DaysCount(ctx context.Context) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM survey_responses WHERE created_at>%s", thirtyDaysAgo())
 
 	var count int
-	err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count)
+	err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count)
 	return count, err
 }
 

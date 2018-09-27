@@ -18,7 +18,7 @@ func (r *gitTreeEntryResolver) IsRoot() bool {
 }
 
 type gitTreeEntryConnectionArgs struct {
-	ConnectionArgs
+	connectionArgs
 	Recursive bool
 }
 

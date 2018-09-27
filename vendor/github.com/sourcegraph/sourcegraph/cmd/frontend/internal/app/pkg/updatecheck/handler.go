@@ -55,7 +55,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	initialAdminEmail := q.Get("initAdmin")
 	hasCodeIntelligence := q.Get("codeintel")
 	if clientVersionString == "" {
-		log15.Error("updatecheck: no version specified")
 		http.Error(w, "no version specified", http.StatusBadRequest)
 		return
 	}
@@ -67,12 +66,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	clientVersionString = strings.TrimPrefix(clientVersionString, "v")
 	clientVersion, err := semver.NewVersion(clientVersionString)
 	if err != nil {
-		log15.Error("updatecheck: encountered bad version string", "version", clientVersionString, "error", err)
 		http.Error(w, clientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 	if clientSiteID == "" {
-		log15.Error("updatecheck: no site ID specified")
 		http.Error(w, "no site ID specified", http.StatusBadRequest)
 		return
 	}
@@ -134,7 +131,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/json; charset=utf-8")
 	body, err := json.Marshal(latestReleaseBuild)
 	if err != nil {
-		log15.Error("updatecheck: error preparing update check response", "error", err)
+		log15.Error("error preparing update check response", "err", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}

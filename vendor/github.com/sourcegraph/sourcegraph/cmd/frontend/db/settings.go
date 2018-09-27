@@ -8,7 +8,6 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
@@ -31,7 +30,7 @@ func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.Configurati
 		Contents:     contents,
 	}
 
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := globalDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +70,7 @@ func (o *settings) GetLatest(ctx context.Context, subject api.ConfigurationSubje
 		return Mocks.Settings.GetLatest(ctx, subject)
 	}
 
-	return o.getLatest(ctx, dbconn.Global, subject)
+	return o.getLatest(ctx, globalDB, subject)
 }
 
 // ListAll lists ALL settings (across all users, orgs, etc).
@@ -92,7 +91,7 @@ func (o *settings) ListAll(ctx context.Context) (_ []*api.Settings, err error) {
 			FROM settings
 			ORDER BY org_id, user_id, author_user_id, id DESC
 	`)
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}

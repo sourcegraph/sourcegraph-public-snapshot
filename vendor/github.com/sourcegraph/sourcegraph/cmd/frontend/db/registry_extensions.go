@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 )
 
 // RegistryExtension describes an extension in the extension registry.
@@ -74,7 +73,7 @@ func (s *registryExtensions) Create(ctx context.Context, publisherUserID, publis
 		return 0, err
 	}
 
-	if err := dbconn.Global.QueryRowContext(ctx,
+	if err := globalDB.QueryRowContext(ctx,
 		// Include users/orgs table query (with "FOR UPDATE") to ensure that the publisher user/org
 		// not been deleted. If it was deleted, the query will return an error.
 		`
@@ -236,7 +235,7 @@ ORDER BY %s, x.id ASC
 		limitOffset.SQL(),
 	)
 
-	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	rows, err := globalDB.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +261,7 @@ ORDER BY %s, x.id ASC
 func (s *registryExtensions) Count(ctx context.Context, opt RegistryExtensionsListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) %s", s.listCountSQL(opt.sqlConditions()))
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -274,7 +273,7 @@ func (*registryExtensions) Update(ctx context.Context, id int32, name *string) e
 		return Mocks.RegistryExtensions.Update(id, name)
 	}
 
-	res, err := dbconn.Global.ExecContext(ctx,
+	res, err := globalDB.ExecContext(ctx,
 		"UPDATE registry_extensions SET name=COALESCE($2, name),  updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
 		id, name,
 	)
@@ -297,7 +296,7 @@ func (*registryExtensions) Delete(ctx context.Context, id int32) error {
 		return Mocks.RegistryExtensions.Delete(id)
 	}
 
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := globalDB.ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}

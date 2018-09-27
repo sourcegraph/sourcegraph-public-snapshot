@@ -13,7 +13,6 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -115,7 +114,7 @@ type NewUser struct {
 // order to avoid a race condition where multiple initial site admins could be created or zero site
 // admins could be created.
 func (u *users) Create(ctx context.Context, info NewUser) (newUser *types.User, err error) {
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := globalDB.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +290,7 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 		return Mocks.Users.Update(id, update)
 	}
 
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := globalDB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -349,7 +348,7 @@ func (u *users) Update(ctx context.Context, id int32, update UserUpdate) error {
 
 func (u *users) Delete(ctx context.Context, id int32) error {
 	// Wrap in transaction because we delete from multiple tables.
-	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	tx, err := globalDB.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -404,7 +403,7 @@ func (u *users) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) 
 	if Mocks.Users.SetIsSiteAdmin != nil {
 		return Mocks.Users.SetIsSiteAdmin(id, isSiteAdmin)
 	}
-	_, err := dbconn.Global.ExecContext(ctx, "UPDATE users SET site_admin=$1 WHERE id=$2", isSiteAdmin, id)
+	_, err := globalDB.ExecContext(ctx, "UPDATE users SET site_admin=$1 WHERE id=$2", isSiteAdmin, id)
 	return err
 }
 
@@ -419,7 +418,7 @@ func (u *users) CheckAndDecrementInviteQuota(ctx context.Context, userID int32) 
 	UPDATE users SET invite_quota=(invite_quota - 1)
 	WHERE users.id=$1 AND invite_quota>0 AND deleted_at IS NULL
 	RETURNING invite_quota`
-	row := dbconn.Global.QueryRowContext(ctx, sqlQuery, userID)
+	row := globalDB.QueryRowContext(ctx, sqlQuery, userID)
 	if err := row.Scan(&quotaRemaining); err == sql.ErrNoRows {
 		// It's possible that some other problem occurred, such as the user being deleted,
 		// but treat that as a quota exceeded error, too.
@@ -479,7 +478,7 @@ func (u *users) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM users u WHERE %s", sqlf.Join(conds, "AND"))
 
 	var count int
-	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -555,7 +554,7 @@ func (u *users) getOneBySQL(ctx context.Context, query string, args ...interface
 
 // getBySQL returns users matching the SQL query, if any exist.
 func (*users) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.User, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.tags FROM users u "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT u.id, u.username, u.display_name, u.avatar_url, u.created_at, u.updated_at, u.site_admin, u.tags FROM users u "+query, args...)
 	if err != nil {
 		return nil, err
 	}

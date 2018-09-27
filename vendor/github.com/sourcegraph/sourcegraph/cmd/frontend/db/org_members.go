@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 	"github.com/keegancsmith/sqlf"
@@ -21,7 +20,7 @@ func (*orgMembers) Create(ctx context.Context, orgID, userID int32) (*types.OrgM
 		OrgID:  orgID,
 		UserID: userID,
 	}
-	err := dbconn.Global.QueryRowContext(
+	err := globalDB.QueryRowContext(
 		ctx,
 		"INSERT INTO org_members(org_id, user_id) VALUES($1, $2) RETURNING id, created_at, updated_at",
 		m.OrgID, m.UserID).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
@@ -48,7 +47,7 @@ func (m *orgMembers) GetByOrgIDAndUserID(ctx context.Context, orgID, userID int3
 }
 
 func (*orgMembers) Remove(ctx context.Context, orgID, userID int32) error {
-	_, err := dbconn.Global.ExecContext(ctx, "DELETE FROM org_members WHERE (org_id=$1 AND user_id=$2)", orgID, userID)
+	_, err := globalDB.ExecContext(ctx, "DELETE FROM org_members WHERE (org_id=$1 AND user_id=$2)", orgID, userID)
 	return err
 }
 
@@ -85,7 +84,7 @@ func (m *orgMembers) getOneBySQL(ctx context.Context, query string, args ...inte
 }
 
 func (*orgMembers) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.OrgMembership, error) {
-	rows, err := dbconn.Global.QueryContext(ctx, "SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
+	rows, err := globalDB.QueryContext(ctx, "SELECT org_members.id, org_members.org_id, org_members.user_id, org_members.created_at, org_members.updated_at FROM org_members "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +134,7 @@ func (*orgMembers) CreateMembershipInOrgsForAllUsers(ctx context.Context, dbh in
 		sqlf.Join(orgNameVars, ","))
 
 	if dbh == nil {
-		dbh = dbconn.Global
+		dbh = globalDB
 	}
 	_, err := dbh.ExecContext(ctx, sqlQuery.Query(sqlf.PostgresBindVar), sqlQuery.Args()...)
 	return err

@@ -683,7 +683,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs search.Rep
 		return nil, err
 	}
 	entries, err := treeResolver.Entries(ctx, &gitTreeEntryConnectionArgs{
-		ConnectionArgs: ConnectionArgs{First: nil},
+		connectionArgs: connectionArgs{First: nil},
 		Recursive:      true,
 	})
 	if err != nil {
