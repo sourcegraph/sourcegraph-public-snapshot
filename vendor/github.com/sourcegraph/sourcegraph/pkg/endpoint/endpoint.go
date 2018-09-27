@@ -6,20 +6,14 @@ import (
 	"context"
 	"fmt"
 	"hash/crc32"
-	"io/ioutil"
 	"net/url"
-	"os"
 	"strings"
 	"sync"
 	"time"
 
-	"k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
-	"k8s.io/client-go/tools/clientcmd"
+	"github.com/ericchiang/k8s"
+	corev1 "github.com/ericchiang/k8s/apis/core/v1"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 
 	"github.com/pkg/errors"
 )
@@ -58,29 +52,27 @@ func New(rawurl string) *Map {
 			return nil, err
 		}
 
-		cl, err := client()
+		client, err := loadClient()
 		if err != nil {
 			return nil, err
 		}
 
-		if u.Namespace == "" {
-			u.Namespace = podNamespace()
-		}
-		if u.Namespace == "" {
-			return nil, errors.Errorf("%s does not specify namespace and could not detect pod namespace", rawurl)
-		}
-
-		endpoints, err := cl.CoreV1().Endpoints(u.Namespace).List(meta_v1.ListOptions{FieldSelector: "metadata.name=" + u.Service})
+		var endpoints corev1.Endpoints
+		err = client.Get(context.Background(), client.Namespace, u.Service, &endpoints)
 		if err != nil {
 			return nil, err
 		}
 		b := &urlMapBuilder{K8sURL: u}
-		for _, ep := range endpoints.Items {
-			b.Add(&ep)
-		}
+		b.Add(&endpoints)
 
 		// Kick off watcher in the background
-		go inform(cl, m, u)
+		go func() {
+			for {
+				err := inform(client, m, u)
+				log15.Debug("failed to watch kubernetes endpoint", "name", u.Service, "error", err)
+				time.Sleep(time.Second)
+			}
+		}()
 
 		return b.Build()
 	}
@@ -109,40 +101,23 @@ func (m *Map) Get(key string, exclude map[string]bool) (string, error) {
 	return urls.get(key, exclude), nil
 }
 
-func inform(cl *kubernetes.Clientset, m *Map, u *k8sURL) {
-	// We ignore the update events, and instead use them as a signal to
-	// re-read what is in the informer. A message available to read on
-	// updateC means we should recheck the informer.
-	updateC := make(chan struct{}, 1)
-	shouldCheckStore := func() {
-		select {
-		case updateC <- struct{}{}:
-		default:
-		}
+func inform(client *k8s.Client, m *Map, u *k8sURL) error {
+	watcher, err := client.Watch(context.Background(), client.Namespace, new(corev1.Endpoints), k8s.QueryParam("fieldSelector", "metadata.name="+u.Service))
+	if err != nil {
+		return err
 	}
-
-	lw := cache.NewListWatchFromClient(cl.CoreV1().RESTClient(), "endpoints", u.Namespace, fields.ParseSelectorOrDie("metadata.name="+u.Service))
-	inf := cache.NewSharedInformer(lw, &v1.Endpoints{}, 5*time.Minute)
-	inf.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(o interface{}) {
-			shouldCheckStore()
-		},
-		UpdateFunc: func(_, o interface{}) {
-			shouldCheckStore()
-		},
-		DeleteFunc: func(o interface{}) {
-			shouldCheckStore()
-		},
-	})
-
-	go inf.Run(context.Background().Done())
+	defer watcher.Close()
 
 	for {
-		<-updateC
+		var endpoints corev1.Endpoints
+		eventType, err := watcher.Next(&endpoints)
+		if err != nil {
+			return err
+		}
+
 		b := &urlMapBuilder{K8sURL: u}
-		store := inf.GetStore()
-		for _, o := range store.List() {
-			b.Add(o.(*v1.Endpoints))
+		if eventType == k8s.EventAdded || eventType == k8s.EventModified {
+			b.Add(&endpoints)
 		}
 		urls, err := b.Build()
 		m.mu.Lock()
@@ -157,13 +132,12 @@ type urlMapBuilder struct {
 }
 
 // Add adds all addresses associated with the endpoint for the Service.
-func (b *urlMapBuilder) Add(ep *v1.Endpoints) {
-	if ep.ObjectMeta.Name != b.K8sURL.Service {
-		return
-	}
+func (b *urlMapBuilder) Add(ep *corev1.Endpoints) {
 	for _, subset := range ep.Subsets {
 		for _, addr := range subset.Addresses {
-			b.urls = append(b.urls, b.K8sURL.endpointURL(addr.IP))
+			if addr.Ip != nil {
+				b.urls = append(b.urls, b.K8sURL.endpointURL(*addr.Ip))
+			}
 		}
 	}
 }
@@ -222,27 +196,23 @@ func newConsistentHashMap(keys []string) *hashMap {
 	return m
 }
 
-func client() (*kubernetes.Clientset, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		config, err = clientcmd.BuildConfigFromFlags("", os.Getenv("HOME")+"/.kube/config")
-		if err != nil {
-			return nil, err
-		}
-	}
-	return kubernetes.NewForConfig(config)
-}
-
-// podNamespace returns the namespace for a pod. It is based on
-// k8s.io/client-go/tools/clientcmd.inClusterClientConfig.Namespace
-func podNamespace() string {
-	if ns := os.Getenv("POD_NAMESPACE"); ns != "" {
-		return ns
-	}
-
-	if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil {
-		return strings.TrimSpace(string(data))
-	}
-
-	return ""
+func loadClient() (*k8s.Client, error) {
+	// Uncomment below to test against a real cluster. This is only important
+	// when you are changing how we interact with the k8s API and you want to
+	// test against the real thing. Remember to run a proxy to the API first
+	// (takes care of auth and endpoint details)
+	//
+	//   kubectl proxy --port 10810
+	//
+	// NewInClusterClient only works when running inside of a pod in a k8s
+	// cluster.
+	/*
+		return &k8s.Client{
+			Endpoint:  "http://127.0.0.1:10810",
+			Namespace: "prod",
+			Client:    http.DefaultClient,
+			//Client: &http.Client{Transport: &loghttp.Transport{}},
+		}, nil
+	*/
+	return k8s.NewInClusterClient()
 }
