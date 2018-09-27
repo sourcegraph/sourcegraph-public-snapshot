@@ -1,15 +1,15 @@
 import { ClientConnection } from '@sourcegraph/extensions-client-common/lib/messaging'
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { HeroPage } from '@sourcegraph/webapp/dist/components/HeroPage'
 import { ExtensionsAreaRouteContext } from '@sourcegraph/webapp/dist/extensions/ExtensionsArea'
 import { ExtensionsProps } from '@sourcegraph/webapp/dist/extensions/ExtensionsClientCommonContext'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
 
-const NotFoundPage = () => <HeroPage icon={DirectionalSignIcon} title="404: Not Found" />
+const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 interface Props extends RouteComponentProps<{}>, ExtensionsAreaRouteContext {}
 

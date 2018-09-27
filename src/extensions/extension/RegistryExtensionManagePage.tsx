@@ -1,4 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, mutateGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { Form } from '@sourcegraph/webapp/dist/components/Form'
@@ -191,7 +191,7 @@ export class RegistryExtensionManagePage extends React.PureComponent<Props, Stat
                         )}
                     <button type="submit" disabled={this.state.updateOrError === 'loading'} className="btn btn-primary">
                         {this.state.updateOrError === 'loading' ? (
-                            <LoaderIcon className="icon-inline" />
+                            <LoadingSpinner className="icon-inline" />
                         ) : (
                             'Update extension'
                         )}

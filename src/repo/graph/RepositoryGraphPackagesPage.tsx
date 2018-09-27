@@ -1,5 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
-import MoreIcon from '@sourcegraph/icons/lib/More'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, queryGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { FilteredConnection } from '@sourcegraph/webapp/dist/components/FilteredConnection'
@@ -9,6 +8,7 @@ import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import { pluralize } from '@sourcegraph/webapp/dist/util/strings'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -110,7 +110,7 @@ class PackageNode extends React.PureComponent<PackageNodeProps, PackageNodeState
                     {node.internalReferences ? (
                         <>
                             {this.state.internalReferenceCountOrError === undefined && (
-                                <Loader className="icon-inline" />
+                                <LoadingSpinner className="icon-inline" />
                             )}
                             {isErrorLike(this.state.internalReferenceCountOrError) ? (
                                 <span title={this.state.internalReferenceCountOrError.message}>
@@ -135,7 +135,7 @@ class PackageNode extends React.PureComponent<PackageNodeProps, PackageNodeState
                             )}
                         </>
                     ) : (
-                        <MoreIcon
+                        <DotsHorizontalIcon
                             className="icon-inline repository-graph-page__node-dotdotdot"
                             data-tooltip={`Reference search is not supported by the language server (${
                                 this.props.node.language
@@ -146,7 +146,7 @@ class PackageNode extends React.PureComponent<PackageNodeProps, PackageNodeState
                         <>
                             {this.state.externalReferenceCountOrError === undefined &&
                                 this.state.internalReferenceCountOrError !== undefined && (
-                                    <Loader className="icon-inline" />
+                                    <LoadingSpinner className="icon-inline" />
                                 )}
                             {isErrorLike(this.state.externalReferenceCountOrError) ? (
                                 !isErrorLike(this.state.internalReferenceCountOrError) && (
@@ -176,7 +176,7 @@ class PackageNode extends React.PureComponent<PackageNodeProps, PackageNodeState
                         </>
                     ) : (
                         !!node.internalReferences && (
-                            <MoreIcon
+                            <DotsHorizontalIcon
                                 className="icon-inline repository-graph-page__node-dotdotdot"
                                 data-tooltip={`External reference search is not supported by the language server (${
                                     this.props.node.language

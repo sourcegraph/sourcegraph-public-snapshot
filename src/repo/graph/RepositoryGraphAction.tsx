@@ -1,6 +1,6 @@
-import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import { ActionItem } from '@sourcegraph/webapp/dist/components/ActionItem'
 import { encodeRepoRev } from '@sourcegraph/webapp/dist/util/url'
+import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
 
 /**
@@ -16,7 +16,7 @@ export class RepositoryGraphAction extends React.PureComponent<{
                 to={`/${encodeRepoRev(this.props.repo, this.props.rev)}/-/graph`}
                 data-tooltip="Repository graph"
             >
-                <GlobeIcon className="icon-inline" /> <span className="d-none d-lg-inline">Graph</span>
+                <WebIcon className="icon-inline" /> <span className="d-none d-lg-inline">Graph</span>
             </ActionItem>
         )
     }

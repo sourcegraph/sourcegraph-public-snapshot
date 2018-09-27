@@ -1,6 +1,5 @@
 import { ClientConnection } from '@sourcegraph/extensions-client-common/lib/messaging'
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
-import PuzzleIcon from '@sourcegraph/icons/lib/Puzzle'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, mutateGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { Form } from '@sourcegraph/webapp/dist/components/Form'
@@ -12,6 +11,7 @@ import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import { upperFirst } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
+import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
@@ -204,7 +204,7 @@ export class RegistryNewExtensionPage extends React.PureComponent<Props, State> 
                             className="btn btn-primary"
                         >
                             {this.state.creationOrError === 'loading' ? (
-                                <LoaderIcon className="icon-inline" />
+                                <LoadingSpinner className="icon-inline" />
                             ) : (
                                 <AddIcon className="icon-inline" />
                             )}{' '}

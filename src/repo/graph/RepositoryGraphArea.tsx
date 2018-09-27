@@ -1,4 +1,3 @@
-import DirectionalSignIcon from '@sourcegraph/icons/lib/DirectionalSign'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { DismissibleAlert } from '@sourcegraph/webapp/dist/components/DismissibleAlert'
 import { HeroPage } from '@sourcegraph/webapp/dist/components/HeroPage'
@@ -7,6 +6,7 @@ import { RepoHeaderBreadcrumbNavItem } from '@sourcegraph/webapp/dist/repo/RepoH
 import { RepoHeaderContributionPortal } from '@sourcegraph/webapp/dist/repo/RepoHeaderContributionPortal'
 import { upperFirst } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subscription } from 'rxjs'
@@ -17,7 +17,7 @@ import { RepositoryGraphSidebar } from './RepositoryGraphSidebar'
 
 const NotFoundPage = () => (
     <HeroPage
-        icon={DirectionalSignIcon}
+        icon={MapSearchIcon}
         title="404: Not Found"
         subtitle="Sorry, the requested repository graph page was not found."
     />

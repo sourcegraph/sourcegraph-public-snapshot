@@ -1,5 +1,4 @@
-import Loader from '@sourcegraph/icons/lib/Loader'
-import MoreIcon from '@sourcegraph/icons/lib/More'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, queryGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { FilteredConnection } from '@sourcegraph/webapp/dist/components/FilteredConnection'
@@ -9,6 +8,7 @@ import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import { pluralize } from '@sourcegraph/webapp/dist/util/strings'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
+import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -86,7 +86,9 @@ class DependencyNode extends React.PureComponent<DependencyNodeProps, Dependency
                 <div className="repository-graph-page__node-actions">
                     {node.references ? (
                         <>
-                            {this.state.referenceCountOrError === undefined && <Loader className="icon-inline" />}
+                            {this.state.referenceCountOrError === undefined && (
+                                <LoadingSpinner className="icon-inline" />
+                            )}
                             {isErrorLike(this.state.referenceCountOrError) ? (
                                 <span title={this.state.referenceCountOrError.message}>
                                     <AlertCircleIcon className="icon-inline" />
@@ -110,7 +112,7 @@ class DependencyNode extends React.PureComponent<DependencyNodeProps, Dependency
                             )}
                         </>
                     ) : (
-                        <MoreIcon
+                        <DotsHorizontalIcon
                             className="icon-inline repository-graph-page__node-dotdotdot"
                             data-tooltip={`Reference search is not supported by the language server (${
                                 this.props.node.language

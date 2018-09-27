@@ -1,5 +1,4 @@
-import LoaderIcon from '@sourcegraph/icons/lib/Loader'
-import PackageIcon from '@sourcegraph/icons/lib/Package'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, queryGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { OverviewItem, OverviewList } from '@sourcegraph/webapp/dist/components/Overview'
@@ -9,6 +8,7 @@ import { createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webap
 import { pluralize } from '@sourcegraph/webapp/dist/util/strings'
 import { upperFirst } from 'lodash'
 import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
+import PackageIcon from 'mdi-react/PackageIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
@@ -98,7 +98,7 @@ export class RepositoryGraphOverviewPage extends React.PureComponent<Props, Stat
                             {this.state.overviewOrError === undefined ? (
                                 this.state.loading && (
                                     <>
-                                        <LoaderIcon className="icon-inline" /> Packages
+                                        <LoadingSpinner className="icon-inline" /> Packages
                                     </>
                                 )
                             ) : (
@@ -113,7 +113,7 @@ export class RepositoryGraphOverviewPage extends React.PureComponent<Props, Stat
                             {this.state.overviewOrError === undefined ? (
                                 this.state.loading && (
                                     <>
-                                        <LoaderIcon className="icon-inline" /> Dependencies
+                                        <LoadingSpinner className="icon-inline" /> Dependencies
                                     </>
                                 )
                             ) : (

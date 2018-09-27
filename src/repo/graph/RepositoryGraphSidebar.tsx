@@ -1,10 +1,10 @@
-import FeedIcon from '@sourcegraph/icons/lib/Feed'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import {
     SIDEBAR_BUTTON_CLASS,
     SIDEBAR_CARD_CLASS,
     SIDEBAR_LIST_GROUP_ITEM_ACTION_CLASS,
 } from '@sourcegraph/webapp/dist/components/Sidebar'
+import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
@@ -47,7 +47,7 @@ export const RepositoryGraphSidebar: React.SFC<Props> = (props: Props) =>
                 </div>
             </div>
             <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
-                <FeedIcon className="icon-inline" />
+                <ConsoleIcon className="icon-inline" />
                 API console
             </Link>
         </div>

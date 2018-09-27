@@ -1,7 +1,7 @@
-import CircleRemoveAlternateIcon from '@sourcegraph/icons/lib/CircleRemoveAlternate'
-import GlobeIcon from '@sourcegraph/icons/lib/Globe'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { LinkOrSpan } from '@sourcegraph/webapp/dist/components/LinkOrSpan'
+import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
+import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
 
 export const RegistryExtensionSourceBadge: React.SFC<{
@@ -23,9 +23,9 @@ export const RegistryExtensionSourceBadge: React.SFC<{
     >
         {showIcon &&
             (extension.isLocal ? (
-                <CircleRemoveAlternateIcon className="icon-inline mr-1" />
+                <DoNotDisturbIcon className="icon-inline mr-1" />
             ) : (
-                <GlobeIcon className="icon-inline mr-1" />
+                <WebIcon className="icon-inline mr-1" />
             ))}
         {showText && (extension.isLocal ? 'Local' : showRegistryName ? extension.registryName : 'External')}
     </LinkOrSpan>
