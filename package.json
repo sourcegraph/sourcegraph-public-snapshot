@@ -1,7 +1,7 @@
 {
   "private": true,
   "engines": {
-    "yarn": "1.9.4"
+    "yarn": ">1.10.0"
   },
   "scripts": {
     "commitmsg": "commitlint -E GIT_PARAMS",
