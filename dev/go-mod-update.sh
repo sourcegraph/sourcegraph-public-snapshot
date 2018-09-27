@@ -18,7 +18,6 @@ main() {
     go mod vendor
     go mod tidy -v
     go mod edit -replace github.com/sourcegraph/sourcegraph=../sourcegraph
-    go mod tidy # TODO(slimsag): I don't understand why this is needed, but it is.
 }
 
 main "$@"

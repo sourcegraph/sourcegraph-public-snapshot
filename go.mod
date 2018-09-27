@@ -1,7 +1,6 @@
 module github.com/sourcegraph/enterprise
 
 require (
-	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/beevik/etree v0.0.0-20180609182452-90dafc1e1f11
 	github.com/coreos/go-oidc v0.0.0-20171002155002-a93f71fdfe73
 	github.com/crewjam/saml v0.0.0-20180831135026-ebc5f787b786
@@ -28,7 +27,6 @@ require (
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f
-	github.com/slimsag/godocmd v0.0.0-20161025000126-a1005ad29fe3 // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
 	github.com/sourcegraph/go-langserver v0.0.0-20180917104716-6b103664e059
