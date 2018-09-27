@@ -191,6 +191,7 @@ func main() {
 	}
 
 	pipeline.AddStep(":go:", bk.Cmd("go install ./cmd/..."))
+	pipeline.AddStep(":go:", bk.Cmd("go install -tags dist ./cmd/..."))
 
 	if strings.HasPrefix(branch, "docker-images-patch-notest/") {
 		version = version + "_patch"
