@@ -581,6 +581,13 @@ const SiteSchemaJSON = `{
           "description":
             "The remote extension registry URL, or ` + "`" + `false` + "`" + ` to not use a remote extension registry. If not set, the default remote extension registry URL is used.",
           "oneOf": [{ "type": "string", "format": "uri" }, { "type": "boolean", "const": false }]
+        },
+        "remoteWhitelist": {
+          "description": "An array of extension IDs to allow from the remote registry (Enterprise only).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },

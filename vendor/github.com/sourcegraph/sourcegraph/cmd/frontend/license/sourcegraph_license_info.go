@@ -26,6 +26,9 @@ type SourcegraphLicenseInfo struct {
 	ExpiresAtValue    *time.Time
 }
 
+// Enterprise is the name of the Enterprise plan.
+const Enterprise = "Enterprise"
+
 // Plan implements the GraphQL type SourcegraphLicenseInfo.
 func (r SourcegraphLicenseInfo) Plan() string { return r.PlanValue }
 
@@ -51,4 +54,9 @@ func (r SourcegraphLicenseInfo) ExpiresAt() *string {
 	}
 	s := r.ExpiresAtValue.Format(time.RFC3339)
 	return &s
+}
+
+// IsExpired reports whether the license has expired.
+func (r SourcegraphLicenseInfo) IsExpired() bool {
+	return r.ExpiresAtValue != nil && r.ExpiresAtValue.Before(time.Now())
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/enterprise/pkg/license"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	frontendLicense "github.com/sourcegraph/sourcegraph/cmd/frontend/license"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"golang.org/x/crypto/ssh"
@@ -74,12 +74,12 @@ func GetConfiguredSourcegraphLicenseInfo() (*license.Info, error) {
 // Make the Site.sourcegraphLicense GraphQL field return the actual info about the Sourcegraph
 // license (instead of the stub info from the OSS build).
 func init() {
-	graphqlbackend.GetConfiguredSourcegraphLicenseInfo = func(ctx context.Context) (*graphqlbackend.SourcegraphLicenseInfo, error) {
+	frontendLicense.GetConfiguredSourcegraphLicenseInfo = func(ctx context.Context) (*frontendLicense.SourcegraphLicenseInfo, error) {
 		info, err := GetConfiguredSourcegraphLicenseInfo()
 		if err != nil {
 			return nil, err
 		}
-		return &graphqlbackend.SourcegraphLicenseInfo{
+		return &frontendLicense.SourcegraphLicenseInfo{
 			PlanValue:         info.Plan,
 			MaxUserCountValue: info.MaxUserCount,
 			ExpiresAtValue:    info.Expiry,

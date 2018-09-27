@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/gregjones/httpcache"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	features "github.com/sourcegraph/sourcegraph/cmd/frontend/features"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
@@ -206,6 +208,11 @@ func GetRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 	if x != nil {
 		x.RegistryURL = registryURL.String()
 	}
+
+	if features.CanWhitelistExtensions(ctx) && !registry.IsWhitelisted(x) {
+		return nil, errors.Errorf("extension %q is not whitelisted", x.ExtensionID)
+	}
+
 	return x, err
 }
 
