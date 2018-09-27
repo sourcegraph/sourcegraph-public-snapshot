@@ -8,8 +8,13 @@ main() {
     export GOBIN="$PWD/.bin"
     export PATH=$GOBIN:$PATH
 
-    go install github.com/sourcegraph/sourcegraph/vendor/github.com/kevinburke/differ
-    differ bash ./dev/go-mod-update.sh
+    ./dev/go-mod-update.sh
+    if ! git diff-index --quiet HEAD --; then
+        echo "FAIL: working directory has changed"
+        git diff
+        git status
+        exit 2
+    fi
 }
 
 main "$@"
