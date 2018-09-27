@@ -33,6 +33,9 @@ conf/ @sqs
 /cmd/xlang-python/ @beyang
 /enterprise/ @beyang
 /pkg/ @beyang
+/dev/start.sh @felixfbecker
+/dev/Procfile @felixfbecker
+/dev/ci/gen-pipeline.go @felixfbecker
 
 # Don't set any reviewers for these,
 # configure by package through Renovate config (see renovate.json)
