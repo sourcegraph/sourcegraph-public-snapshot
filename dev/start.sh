@@ -5,7 +5,7 @@ cd $(dirname "${BASH_SOURCE[0]}")/..
 
 export GO111MODULE=on
 go_version=$(go version)
-if [[ $go_version =~ "^go1.11" ]]; then
+if [[ ! $go_version =~ "go1.11" ]]; then
     echo "Go version 1.11.x must be used to build Sourcegraph; found: $(go version)"
     exit 1
 fi
