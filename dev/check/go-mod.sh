@@ -9,7 +9,7 @@ main() {
     export PATH=$GOBIN:$PATH
 
     ./dev/go-mod-update.sh
-    if ! git diff-index --quiet HEAD --; then
+    if [ ! -z "$(git status --porcelain)" ]; then
         echo "FAIL: working directory has changed"
         git diff
         git status
