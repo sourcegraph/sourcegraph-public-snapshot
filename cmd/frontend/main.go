@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	_ "github.com/sourcegraph/enterprise/cmd/frontend/auth"
+	_ "github.com/sourcegraph/enterprise/cmd/frontend/db"
 	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/assets"
 	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/httpapi"
 	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
