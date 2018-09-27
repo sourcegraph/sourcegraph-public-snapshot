@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -euf -o pipefail
 cd $(dirname "${BASH_SOURCE[0]}")/..
 
 export GO111MODULE=on
@@ -15,11 +15,12 @@ if [ ! -d ../sourcegraph ]; then
     exit 1
 fi
 
-echo "Installing web dependencies..."
+echo "Installing enterprise web dependencies..."
 yarn
-
-echo "Linking OSS webapp to node_modules"
 pushd ../sourcegraph
+echo "Installing OSS web dependencies..."
+yarn
+echo "Linking OSS webapp to node_modules"
 yarn link
 popd
 yarn link @sourcegraph/webapp
@@ -36,10 +37,6 @@ export SAML_ONELOGIN_KEY=$(cat dev/auth-provider/config/external/client-onelogin
 
 # set to true if unset so set -u won't break us
 : ${SOURCEGRAPH_COMBINE_CONFIG:=false}
-
-set -euf -o pipefail
-unset CDPATH
-cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
 
@@ -127,20 +124,10 @@ fi
 export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"
 
-# Make sure chokidar-cli is installed in the background
-printf >&2 "Concurrently installing Yarn and Go dependencies...\n\n"
-[ -n "${OFFLINE-}" ] || yarn &
-
 if ! ./dev/go-install.sh; then
-	# let Yarn finish, otherwise we get Yarn diagnostics AFTER the
-	# actual reason we're failing.
-	wait
 	echo >&2 "WARNING: go-install.sh failed, some builds may have failed."
 	exit 1
 fi
-
-# Wait for yarn if it is still running
-wait
 
 # Increase ulimit (not needed on Windows/WSL)
 type ulimit > /dev/null && ulimit -n 10000 || true
