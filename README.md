@@ -29,12 +29,8 @@ When developing locally, use `./dev/start.sh`. This will ensure you build agains
 
 ### Updating vendored dependencies
 
-Vendored dependencies should be kept in sync with changes to `go.mod`. However, before you run `go mod vendor`, you must first unlink the `github.com/sourcegraph/sourcegraph` dependency from its local source to ensure the vendored files exist in a revision in the remote OSS repository:
+Vendored dependencies should be kept in sync with changes to `go.mod`. However, before you run `go mod vendor`, you must first unlink the `github.com/sourcegraph/sourcegraph` dependency from its local source to ensure the vendored files exist in a revision in the remote OSS repository. We offer a script to do so:
 
 ```bash
-GO111MODULE=on go mod edit -dropreplace github.com/sourcegraph/sourcegraph
-GO111MODULE=on go mod vendor
-GO111MODULE=on go mod tidy
-GO111MODULE=on go mod edit -replace github.com/sourcegraph/sourcegraph=../sourcegraph
-./dev/check/all.sh
+./dev/go-mod-update.sh
 ```
