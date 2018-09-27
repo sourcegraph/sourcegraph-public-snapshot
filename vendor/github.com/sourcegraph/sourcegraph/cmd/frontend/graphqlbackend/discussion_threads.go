@@ -304,7 +304,7 @@ func (s *schemaResolver) Discussions(ctx context.Context) (*discussionsMutationR
 }
 
 func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
-	connectionArgs
+	ConnectionArgs
 	Query                       *string
 	ThreadID                    *graphql.ID
 	AuthorUserID                *graphql.ID
@@ -327,7 +327,7 @@ func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 	if args.Query != nil {
 		opt.SetFromQuery(ctx, *args.Query)
 	}
-	args.connectionArgs.set(&opt.LimitOffset)
+	args.ConnectionArgs.Set(&opt.LimitOffset)
 
 	if args.ThreadID != nil {
 		threadID, err := unmarshalDiscussionID(*args.ThreadID)
@@ -654,7 +654,7 @@ func (d *discussionThreadResolver) ArchivedAt(ctx context.Context) *string {
 }
 
 func (d *discussionThreadResolver) Comments(ctx context.Context, args *struct {
-	connectionArgs
+	ConnectionArgs
 }) *discussionCommentsConnectionResolver {
 	// 🚨 SECURITY: Anyone with access to the thread also has access to its
 	// comments. Hence, since we are only accessing the threads comments here
@@ -662,7 +662,7 @@ func (d *discussionThreadResolver) Comments(ctx context.Context, args *struct {
 	// implicitly.
 
 	opt := &db.DiscussionCommentsListOptions{ThreadID: &d.t.ID}
-	args.connectionArgs.set(&opt.LimitOffset)
+	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &discussionCommentsConnectionResolver{opt: opt}
 }
 
@@ -712,12 +712,12 @@ func (r *discussionThreadsConnectionResolver) TotalCount(ctx context.Context) (i
 	return int32(count), err
 }
 
-func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
 	threads, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &pageInfo{hasNextPage: r.opt.LimitOffset != nil && len(threads) > r.opt.Limit}, nil
+	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(threads) > r.opt.Limit}, nil
 }
 
 // viewerCanUseDiscussions returns an error if the user in the context cannot

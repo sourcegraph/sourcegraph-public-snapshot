@@ -15,7 +15,7 @@ import (
 )
 
 type registryExtensionConnectionArgs struct {
-	connectionArgs
+	ConnectionArgs
 	Query *string
 }
 
@@ -27,7 +27,7 @@ func (r *extensionRegistryResolver) Extensions(ctx context.Context, args *struct
 	PrioritizeExtensionIDs *[]string
 }) (*registryExtensionConnectionResolver, error) {
 	var opt db.RegistryExtensionsListOptions
-	args.connectionArgs.set(&opt.LimitOffset)
+	args.ConnectionArgs.Set(&opt.LimitOffset)
 
 	if args.Publisher != nil {
 		p, err := unmarshalRegistryPublisherID(*args.Publisher)
@@ -69,7 +69,7 @@ func (r *UserResolver) RegistryExtensions(ctx context.Context, args *struct {
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
-	args.connectionArgs.set(&opt.LimitOffset)
+	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &registryExtensionConnectionResolver{opt: opt, includeLocal: true}, nil
 }
 
@@ -84,7 +84,7 @@ func (r *orgResolver) RegistryExtensions(ctx context.Context, args *struct {
 	if args.Query != nil {
 		opt.Query = *args.Query
 	}
-	args.connectionArgs.set(&opt.LimitOffset)
+	args.ConnectionArgs.Set(&opt.LimitOffset)
 	return &registryExtensionConnectionResolver{opt: opt, includeLocal: true}, nil
 }
 
@@ -212,10 +212,10 @@ func (r *registryExtensionConnectionResolver) TotalCount(ctx context.Context) (i
 	return int32(total), nil
 }
 
-func (r *registryExtensionConnectionResolver) PageInfo(ctx context.Context) (*pageInfo, error) {
+func (r *registryExtensionConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
 	// See (*registryExtensionConnectionResolver).Error for why we ignore the error.
 	registryExtensions, _ := r.compute(ctx)
-	return &pageInfo{hasNextPage: r.opt.LimitOffset != nil && len(registryExtensions) > r.opt.Limit}, nil
+	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(registryExtensions) > r.opt.Limit}, nil
 }
 
 func (r *registryExtensionConnectionResolver) URL(ctx context.Context) (*string, error) {

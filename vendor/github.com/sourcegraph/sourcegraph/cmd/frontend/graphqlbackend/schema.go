@@ -1711,6 +1711,13 @@ interface TreeEntry {
     ): SymbolConnection!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
+    # Whether this tree entry is a single child
+    isSingleChild(
+        # Returns the first n files in the tree.
+        first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
+    ): Boolean!
 }
 
 # A Git tree in a repository.
@@ -1754,8 +1761,12 @@ type GitTree implements TreeEntry {
     entries(
         # Returns the first n files in the tree.
         first: Int
-        # Recurse into sub-trees.
+        # Recurse into sub-trees. If true, implies recursiveSingleChild.
         recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories. If true, we return a flat list of
+        # every directory that is a single child, and any directories or files that are
+        # nested in a single child.
+        recursiveSingleChild: Boolean = false
     ): [TreeEntry!]!
     # Symbols defined in this tree.
     symbols(
@@ -1764,6 +1775,13 @@ type GitTree implements TreeEntry {
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
+    # Whether this tree entry is a single child
+    isSingleChild(
+        # Returns the first n files in the tree.
+        first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
+    ): Boolean!
 }
 
 # A file.
@@ -1866,6 +1884,15 @@ type GitBlob implements TreeEntry & File2 {
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
+    # Always false, since a blob is a file, not directory.
+    isSingleChild(
+        # Returns the first n files in the tree.
+        first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
+    ): Boolean!
 }
 
 # A highlighted file.

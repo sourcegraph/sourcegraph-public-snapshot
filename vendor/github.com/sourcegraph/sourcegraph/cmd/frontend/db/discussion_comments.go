@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 )
 
@@ -60,7 +61,7 @@ func (c *discussionComments) Create(ctx context.Context, newComment *types.Discu
 	newComment.CreatedAt = time.Now()
 	newComment.UpdatedAt = newComment.CreatedAt
 
-	err := globalDB.QueryRowContext(ctx, `INSERT INTO discussion_comments(
+	err := dbconn.Global.QueryRowContext(ctx, `INSERT INTO discussion_comments(
 		thread_id,
 		author_user_id,
 		contents,
@@ -115,7 +116,7 @@ func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *
 	anyUpdate := false
 	if opts.Contents != nil {
 		anyUpdate = true
-		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET contents=$1 WHERE id=$2 AND deleted_at IS NULL", *opts.Contents, commentID); err != nil {
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_comments SET contents=$1 WHERE id=$2 AND deleted_at IS NULL", *opts.Contents, commentID); err != nil {
 			return nil, err
 		}
 	}
@@ -146,25 +147,25 @@ func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *
 			}
 		} else {
 			anyUpdate = true
-			if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
+			if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
 				return nil, err
 			}
 		}
 	}
 	if opts.Report != nil {
 		anyUpdate = true
-		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET reports=ARRAY_APPEND(reports,$1) WHERE id=$2 AND deleted_at IS NULL", *opts.Report, commentID); err != nil {
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_comments SET reports=ARRAY_APPEND(reports,$1) WHERE id=$2 AND deleted_at IS NULL", *opts.Report, commentID); err != nil {
 			return nil, err
 		}
 	}
 	if opts.ClearReports {
 		anyUpdate = true
-		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET reports='{}' WHERE id=$1 AND deleted_at IS NULL", commentID); err != nil {
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_comments SET reports='{}' WHERE id=$1 AND deleted_at IS NULL", commentID); err != nil {
 			return nil, err
 		}
 	}
 	if anyUpdate {
-		if _, err := globalDB.ExecContext(ctx, "UPDATE discussion_comments SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_comments SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
 			return nil, err
 		}
 	}
@@ -251,7 +252,7 @@ func (*discussionComments) getListSQL(opts *DiscussionCommentsListOptions) (cond
 
 func (*discussionComments) getCountBySQL(ctx context.Context, query string, args ...interface{}) (int, error) {
 	var count int
-	rows := globalDB.QueryRowContext(ctx, "SELECT count(id) FROM discussion_comments t "+query, args...)
+	rows := dbconn.Global.QueryRowContext(ctx, "SELECT count(id) FROM discussion_comments t "+query, args...)
 	err := rows.Scan(&count)
 	if err == sql.ErrNoRows {
 		return 0, nil
@@ -261,7 +262,7 @@ func (*discussionComments) getCountBySQL(ctx context.Context, query string, args
 
 // getBySQL returns comments matching the SQL query, if any exist.
 func (*discussionComments) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.DiscussionComment, error) {
-	rows, err := globalDB.QueryContext(ctx, `
+	rows, err := dbconn.Global.QueryContext(ctx, `
 		SELECT
 			c.id,
 			c.thread_id,

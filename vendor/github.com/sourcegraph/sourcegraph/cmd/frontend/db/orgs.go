@@ -7,6 +7,7 @@ import (
 	"time"
 
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 
 	"github.com/keegancsmith/sqlf"
@@ -29,7 +30,7 @@ type orgs struct{}
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
 func (*orgs) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
 	if err != nil {
 		return []*types.Org{}, err
 	}
@@ -89,7 +90,7 @@ func (o *orgs) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM orgs WHERE %s", sqlf.Join(conds, "AND"))
 
 	var count int
-	if err := globalDB.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -128,7 +129,7 @@ func (*orgs) listSQL(opt OrgsListOptions) (conds []*sqlf.Query) {
 }
 
 func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +152,7 @@ func (*orgs) getBySQL(ctx context.Context, query string, args ...interface{}) ([
 }
 
 func (*orgs) Create(ctx context.Context, name string, displayName *string) (*types.Org, error) {
-	tx, err := globalDB.BeginTx(ctx, nil)
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -215,12 +216,12 @@ func (o *orgs) Update(ctx context.Context, id int32, displayName *string) (*type
 
 	if displayName != nil {
 		org.DisplayName = displayName
-		if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2 AND deleted_at IS NULL", org.DisplayName, id); err != nil {
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE orgs SET display_name=$1 WHERE id=$2 AND deleted_at IS NULL", org.DisplayName, id); err != nil {
 			return nil, err
 		}
 	}
 	org.UpdatedAt = time.Now()
-	if _, err := globalDB.ExecContext(ctx, "UPDATE orgs SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", org.UpdatedAt, id); err != nil {
+	if _, err := dbconn.Global.ExecContext(ctx, "UPDATE orgs SET updated_at=$1 WHERE id=$2 AND deleted_at IS NULL", org.UpdatedAt, id); err != nil {
 		return nil, err
 	}
 
@@ -229,7 +230,7 @@ func (o *orgs) Update(ctx context.Context, id int32, displayName *string) (*type
 
 func (o *orgs) Delete(ctx context.Context, id int32) error {
 	// Wrap in transaction because we delete from multiple tables.
-	tx, err := globalDB.BeginTx(ctx, nil)
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
@@ -274,7 +275,7 @@ func (o *orgs) Delete(ctx context.Context, id int32) error {
 // TmpListAllOrgsWithSlackWebhookURL is a temporary method to support migrating
 // orgs.slack_webhook_url to the org's JSON settings. See bg.MigrateOrgSlackWebhookURLs.
 func (o *orgs) TmpListAllOrgsWithSlackWebhookURL(ctx context.Context) (orgIDsToWebhookURL map[int32]string, err error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT id, slack_webhook_url FROM orgs WHERE slack_webhook_url IS NOT NULL")
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, slack_webhook_url FROM orgs WHERE slack_webhook_url IS NOT NULL")
 	if err != nil {
 		return nil, err
 	}
@@ -298,6 +299,6 @@ func (o *orgs) TmpListAllOrgsWithSlackWebhookURL(ctx context.Context) (orgIDsToW
 // TmpRemoveOrgSlackWebhookURL is a temporary method to support migrating
 // orgs.slack_webhook_url to the org's JSON settings. See bg.MigrateOrgSlackWebhookURLs.
 func (o *orgs) TmpRemoveOrgSlackWebhookURL(ctx context.Context, orgID int32) error {
-	_, err := globalDB.ExecContext(ctx, "UPDATE orgs SET slack_webhook_url = null WHERE id=$1", orgID)
+	_, err := dbconn.Global.ExecContext(ctx, "UPDATE orgs SET slack_webhook_url = null WHERE id=$1", orgID)
 	return err
 }

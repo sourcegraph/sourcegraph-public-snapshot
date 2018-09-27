@@ -11,34 +11,34 @@ import (
 )
 
 func (r *repositoryResolver) Branches(ctx context.Context, args *struct {
-	connectionArgs
+	ConnectionArgs
 	Query   *string
 	OrderBy *string
 }) (*gitRefConnectionResolver, error) {
 	gitRefTypeBranch := gitRefTypeBranch
 	return r.GitRefs(ctx, &struct {
-		connectionArgs
+		ConnectionArgs
 		Query   *string
 		Type    *string
 		OrderBy *string
-	}{connectionArgs: args.connectionArgs, Query: args.Query, Type: &gitRefTypeBranch, OrderBy: args.OrderBy})
+	}{ConnectionArgs: args.ConnectionArgs, Query: args.Query, Type: &gitRefTypeBranch, OrderBy: args.OrderBy})
 }
 
 func (r *repositoryResolver) Tags(ctx context.Context, args *struct {
-	connectionArgs
+	ConnectionArgs
 	Query *string
 }) (*gitRefConnectionResolver, error) {
 	gitRefTypeTag := gitRefTypeTag
 	return r.GitRefs(ctx, &struct {
-		connectionArgs
+		ConnectionArgs
 		Query   *string
 		Type    *string
 		OrderBy *string
-	}{connectionArgs: args.connectionArgs, Query: args.Query, Type: &gitRefTypeTag})
+	}{ConnectionArgs: args.ConnectionArgs, Query: args.Query, Type: &gitRefTypeTag})
 }
 
 func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
-	connectionArgs
+	ConnectionArgs
 	Query   *string
 	Type    *string
 	OrderBy *string
@@ -152,6 +152,6 @@ func (r *gitRefConnectionResolver) TotalCount() int32 {
 	return int32(len(r.refs))
 }
 
-func (r *gitRefConnectionResolver) PageInfo() *pageInfo {
-	return &pageInfo{hasNextPage: r.first != nil && int(*r.first) < len(r.refs)}
+func (r *gitRefConnectionResolver) PageInfo() *PageInfo {
+	return &PageInfo{hasNextPage: r.first != nil && int(*r.first) < len(r.refs)}
 }

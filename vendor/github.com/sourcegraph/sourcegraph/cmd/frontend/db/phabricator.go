@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
@@ -49,7 +50,7 @@ func (*phabricator) Create(ctx context.Context, callsign string, uri api.RepoURI
 		URI:      uri,
 		URL:      phabURL,
 	}
-	err := globalDB.QueryRowContext(
+	err := dbconn.Global.QueryRowContext(
 		ctx,
 		"INSERT INTO phabricator_repos(callsign, uri, url) VALUES($1, $2, $3) RETURNING id",
 		r.Callsign, r.URI, r.URL).Scan(&r.ID)
@@ -65,7 +66,7 @@ func (p *phabricator) CreateOrUpdate(ctx context.Context, callsign string, uri a
 		URI:      uri,
 		URL:      phabURL,
 	}
-	err := globalDB.QueryRowContext(
+	err := dbconn.Global.QueryRowContext(
 		ctx,
 		"UPDATE phabricator_repos SET callsign=$1, url=$2, updated_at=now() WHERE uri=$3 RETURNING id",
 		r.Callsign, r.URL, r.URI).Scan(&r.ID)
@@ -90,7 +91,7 @@ func (p *phabricator) CreateIfNotExists(ctx context.Context, callsign string, ur
 }
 
 func (*phabricator) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.PhabricatorRepo, error) {
-	rows, err := globalDB.QueryContext(ctx, "SELECT id, callsign, uri, url FROM phabricator_repos "+query, args...)
+	rows, err := dbconn.Global.QueryContext(ctx, "SELECT id, callsign, uri, url FROM phabricator_repos "+query, args...)
 	if err != nil {
 		return nil, err
 	}

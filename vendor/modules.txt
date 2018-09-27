@@ -322,7 +322,7 @@ github.com/sourcegraph/jsonx
 # github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85
 github.com/sourcegraph/rpc
 github.com/sourcegraph/rpc/internal/svc
-# github.com/sourcegraph/sourcegraph v0.0.0-20180926012248-635020a9ba62
+# github.com/sourcegraph/sourcegraph v0.0.0-20180927004900-3d3760ea9090
 github.com/sourcegraph/sourcegraph/cmd/frontend/shared
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth
@@ -356,7 +356,8 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth
 github.com/sourcegraph/sourcegraph/pkg/jsonc
-github.com/sourcegraph/sourcegraph/cmd/frontend/db/migrations
+github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn
+github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchquery
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types
 github.com/sourcegraph/sourcegraph/pkg/atomicvalue
@@ -421,6 +422,7 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil
 github.com/sourcegraph/sourcegraph/pkg/sysreq
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui
+github.com/sourcegraph/sourcegraph/cmd/frontend/db/migrations
 github.com/sourcegraph/sourcegraph/pkg/repotrackutil
 github.com/sourcegraph/sourcegraph/pkg/redispool
 github.com/sourcegraph/sourcegraph/pkg/routevar

@@ -56,7 +56,7 @@ var defaultEnv = map[string]string{
 var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL") == "info"
 
 // Main is the main server command function which is shared between Sourcegraph
-// server's open source and enterprise variant.
+// server's open-source and enterprise variant.
 func Main() {
 	log.SetFlags(0)
 

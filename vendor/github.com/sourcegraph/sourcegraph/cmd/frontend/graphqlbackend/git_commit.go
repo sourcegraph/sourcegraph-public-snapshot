@@ -165,13 +165,13 @@ func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 }
 
 func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
-	connectionArgs
+	ConnectionArgs
 	Query *string
 	Path  *string
 }) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		revisionRange: string(r.oid),
-		first:         args.connectionArgs.First,
+		first:         args.ConnectionArgs.First,
 		query:         args.Query,
 		path:          args.Path,
 		repo:          r.repo,
