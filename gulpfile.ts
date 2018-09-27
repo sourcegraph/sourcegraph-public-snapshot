@@ -100,17 +100,6 @@ export async function webpackServe(): Promise<void> {
     )
 }
 
-// HACK: Copy files into the OSS repo at ../sourcegraph so the frontend serves it
-// TODO Make the frontend capable of reading them from here.
-export function copyAssets(): NodeJS.ReadWriteStream {
-    return gulp.src('./ui/assets/**/*').pipe(gulp.dest('../sourcegraph/ui/assets'))
-}
-export const watchAssets = gulp.series(copyAssets, async function watchAssets(): Promise<void> {
-    await new Promise<never>((_, reject) => {
-        gulp.watch('./ui/assets/**/*', copyAssets).on('error', reject)
-    })
-})
+export const build = gulp.series(gulp.parallel(phabricator, webpack))
 
-export const build = gulp.series(gulp.parallel(phabricator, webpack), copyAssets)
-
-export const watch = gulp.parallel(watchPhabricator, webpackServe, watchAssets)
+export const watch = gulp.parallel(watchPhabricator, webpackServe)
