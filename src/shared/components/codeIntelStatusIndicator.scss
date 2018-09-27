@@ -66,6 +66,34 @@
     &__icon {
         width: 1rem !important;
         height: 1rem !important;
-        vertical-align: middle;
+        vertical-align: middle !important;
+    }
+}
+
+.sg-toolbar-mount {
+    &-gitlab {
+        .composite-container__header-action {
+            padding: 0 8px !important;
+            height: auto;
+        }
+
+        & svg {
+            top: unset !important;
+        }
+
+        .btn {
+            padding: 0 10px;
+            font-size: 13px;
+            line-height: 28px;
+            display: inline-block;
+            float: none;
+        }
+
+        .btn svg {
+            height: 15px !important;
+            width: 15px !important;
+            position: relative;
+            top: 2px;
+        }
     }
 }

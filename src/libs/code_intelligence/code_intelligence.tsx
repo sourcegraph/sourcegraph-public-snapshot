@@ -23,8 +23,10 @@ import { lspViaAPIXlang } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { eventLogger, sourcegraphUrl } from '../../shared/util/context'
 import { githubCodeHost } from '../github/code_intelligence'
+import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { findCodeViews } from './code_views'
+import { initSearch, SearchFeature } from './search'
 
 /**
  * Defines a type of code view a given code host can have. It tells us how to
@@ -64,12 +66,23 @@ export interface CodeViewResolver {
     resolveCodeView: (elem: HTMLElement) => CodeViewWithOutSelector
 }
 
+interface OverlayPosition {
+    top: number
+    left: number
+}
+
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost {
     /**
      * The name of the code host. This will be added as a className to the overlay mount.
      */
     name: string
+
+    /**
+     * Checks to see if the current context the code is running in is within
+     * the given code host.
+     */
+    check: () => Promise<boolean> | boolean
 
     /**
      * The list of types of code views to try to annotate.
@@ -83,10 +96,16 @@ export interface CodeHost {
     codeViewResolver?: CodeViewResolver
 
     /**
-     * Checks to see if the current context the code is running in is within
-     * the given code host.
+     * Adjust the position of the hover overlay. Useful for fixed headers or other
+     * elements that throw off the position of the tooltip within the relative
+     * element.
      */
-    check: () => Promise<boolean> | boolean
+    adjustOverlayPosition?: (position: OverlayPosition) => OverlayPosition
+
+    /**
+     * Implementation of the search feature for a code host.
+     */
+    search?: SearchFeature
 }
 
 export interface FileInfo {
@@ -150,11 +169,19 @@ function initCodeIntelligence(codeHost: CodeHost): { hoverifier: Hoverifier } {
     const hoverOverlayElements = new Subject<HTMLElement | null>()
     const nextOverlayElement = (element: HTMLElement | null) => hoverOverlayElements.next(element)
 
-    const overlayMount = document.createElement('div')
-    overlayMount.style.height = '0px'
-    overlayMount.classList.add('hover-overlay-mount')
-    overlayMount.classList.add(`hover-overlay-mount__${codeHost.name}`)
-    document.body.appendChild(overlayMount)
+    const classNames = ['hover-overlay-mount', `hover-overlay-mount__${codeHost.name}`]
+
+    const createMount = () => {
+        const overlayMount = document.createElement('div')
+        overlayMount.style.height = '0px'
+        for (const className of classNames) {
+            overlayMount.classList.add(className)
+        }
+        document.body.appendChild(overlayMount)
+        return overlayMount
+    }
+
+    const overlayMount = document.querySelector(`.${classNames.join('.')}`) || createMount()
 
     const relativeElement = document.body
 
@@ -201,9 +228,10 @@ function initCodeIntelligence(codeHost: CodeHost): { hoverifier: Hoverifier } {
             containerComponentUpdates.next()
         }
         public render(): JSX.Element | null {
-            return this.state.hoverOverlayProps ? (
+            const hoverOverlayProps = this.getHoverOverlayProps()
+            return hoverOverlayProps ? (
                 <HoverOverlay
-                    {...this.state.hoverOverlayProps}
+                    {...hoverOverlayProps}
                     linkComponent={Link}
                     logTelemetryEvent={this.log}
                     hoverRef={nextOverlayElement}
@@ -213,6 +241,21 @@ function initCodeIntelligence(codeHost: CodeHost): { hoverifier: Hoverifier } {
             ) : null
         }
         private log = () => eventLogger.logCodeIntelligenceEvent()
+        private getHoverOverlayProps(): HoverState['hoverOverlayProps'] {
+            if (!this.state.hoverOverlayProps) {
+                return undefined
+            }
+
+            let { overlayPosition, ...rest } = this.state.hoverOverlayProps
+            if (overlayPosition && codeHost.adjustOverlayPosition) {
+                overlayPosition = codeHost.adjustOverlayPosition(overlayPosition)
+            }
+
+            return {
+                ...rest,
+                overlayPosition,
+            }
+        }
     }
 
     render(<HoverOverlayContainer />, overlayMount)
@@ -230,6 +273,10 @@ export interface ResolvedCodeView extends CodeViewWithOutSelector {
 }
 
 function handleCodeHost(codeHost: CodeHost): Subscription {
+    if (codeHost.search) {
+        initSearch(codeHost.search)
+    }
+
     const { hoverifier } = initCodeIntelligence(codeHost)
 
     const subscriptions = new Subscription()
@@ -247,7 +294,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                 const resolveContext: ContextResolver = ({ part }) => ({
                     repoPath: part === 'base' ? info.baseRepoPath || info.repoPath : info.repoPath,
                     commitID: part === 'base' ? info.baseCommitID! : info.commitID,
-                    filePath: part === 'base' ? info.baseFilePath! : info.filePath,
+                    filePath: part === 'base' ? info.baseFilePath || info.filePath : info.filePath,
                     rev: part === 'base' ? info.baseRev || info.baseCommitID! : info.rev || info.commitID,
                 })
 
@@ -308,7 +355,7 @@ async function injectCodeIntelligenceToCodeHosts(codeHosts: CodeHost[]): Promise
  * incomplete setup requests.
  */
 export async function injectCodeIntelligence(): Promise<Subscription> {
-    const codeHosts: CodeHost[] = [githubCodeHost, phabricatorCodeHost]
+    const codeHosts: CodeHost[] = [githubCodeHost, gitlabCodeHost, phabricatorCodeHost]
 
     return await injectCodeIntelligenceToCodeHosts(codeHosts)
 }

@@ -43,6 +43,7 @@
       {
         "matches": [
           "https://github.com/*",
+          "https://gitlab.com/*",
           "https://sourcegraph.com/*",
           "https://localhost:3443/*",
           "http://localhost:32773/*"
@@ -57,6 +58,7 @@
       "activeTab",
       "contextMenus",
       "https://github.com/*",
+      "https://gitlab.com/*",
       "https://localhost:3443/*",
       "https://sourcegraph.com/*",
       "http://localhost:32773/*"
@@ -66,7 +68,7 @@
   "prod": {
     "content_scripts": [
       {
-        "matches": ["https://github.com/*", "https://sourcegraph.com/*"],
+        "matches": ["https://github.com/*", "https://gitlab.com/*", "https://sourcegraph.com/*"],
         "run_at": "document_end",
         "js": ["js/inject.bundle.js"]
       }
@@ -77,6 +79,7 @@
       "storage",
       "contextMenus",
       "https://github.com/*",
+      "https://gitlab.com/*",
       "https://sourcegraph.com/*"
     ]
   }

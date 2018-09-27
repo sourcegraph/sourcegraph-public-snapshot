@@ -16,3 +16,8 @@
         }
     }
 }
+.hover-overlay-mount__gitlab {
+    .hover-overlay {
+        z-index: 1000;
+    }
+}
