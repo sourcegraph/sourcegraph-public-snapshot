@@ -24,21 +24,6 @@ export const watchPhabricator = gulp.series(phabricator, async function watchPha
     })
 })
 
-const WEBAPP_OSS_ASSETS = './node_modules/@sourcegraph/webapp/ui/assets/**'
-
-/**
- * Copies the assets from the OSS webapp over to enterprise ./ui/assets
- */
-export function assets(): NodeJS.ReadWriteStream {
-    return gulp.src(WEBAPP_OSS_ASSETS).pipe(gulp.dest('./ui/assets'))
-}
-
-export const watchAssets = gulp.series(assets, async function watchAssets(): Promise<void> {
-    await new Promise<never>((_, reject) => {
-        gulp.watch(WEBAPP_OSS_ASSETS, assets).on('error', reject)
-    })
-})
-
 const WEBPACK_STATS_OPTIONS = {
     all: false,
     timings: true,
@@ -115,6 +100,6 @@ export async function webpackServe(): Promise<void> {
     )
 }
 
-export const build = gulp.parallel(phabricator, assets, webpack)
+export const build = gulp.series(gulp.parallel(phabricator, webpack))
 
-export const watch = gulp.parallel(watchPhabricator, watchAssets, webpackServe)
+export const watch = gulp.parallel(watchPhabricator, webpackServe)
