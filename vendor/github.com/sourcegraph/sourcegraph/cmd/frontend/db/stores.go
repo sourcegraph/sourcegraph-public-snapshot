@@ -5,8 +5,6 @@ var (
 	DiscussionThreads         = &discussionThreads{}
 	DiscussionComments        = &discussionComments{}
 	DiscussionMailReplyTokens = &discussionMailReplyTokens{}
-	GlobalDeps                = &globalDeps{}
-	Pkgs                      = &pkgs{}
 	Repos                     = &repos{}
 	Phabricator               = &phabricator{}
 	UserActivity              = &userActivity{} // DEPRECATED: use package useractivity instead (based on persisted redis cache)
@@ -27,4 +25,10 @@ var (
 
 	RegistryExtensions        = &registryExtensions{}
 	RegistryExtensionReleases = &registryExtensionReleases{}
+
+	// GlobalDeps is a stub implementation of a global dependency index
+	GlobalDeps GlobalDepsProvider = &globalDeps{}
+
+	// Pkgs is a stub implementation of a global package metadata index
+	Pkgs PkgsProvider = &pkgs{}
 )

@@ -33,7 +33,7 @@ func (packages) RefreshIndex(ctx context.Context, repo *types.Repo, commitID api
 	for _, lang := range langs {
 		pkgs, err := (packages{}).listForLanguageInRepo(ctx, lang, repo, commitID, true)
 		if err == nil {
-			err = db.Pkgs.UpdateIndexForLanguage(ctx, lang, repo, pkgs)
+			err = db.Pkgs.UpdateIndexForLanguage(ctx, lang, repo.ID, pkgs)
 		}
 		if err != nil && !proxy.IsModeNotFound(err) {
 			log15.Error("Refreshing repository packages index failed.", "repo", repo.URI, "language", lang, "error", err)

@@ -34,7 +34,7 @@ func (dependencies) RefreshIndex(ctx context.Context, repo *types.Repo, commitID
 	for _, lang := range langs {
 		deps, err := (dependencies{}).listForLanguageInRepo(ctx, lang, repo, commitID, true)
 		if err == nil {
-			err = db.GlobalDeps.UpdateIndexForLanguage(ctx, lang, repo, deps)
+			err = db.GlobalDeps.UpdateIndexForLanguage(ctx, lang, repo.ID, deps)
 		}
 		if err != nil && !proxy.IsModeNotFound(err) {
 			log15.Error("Refreshing repository dependencies index failed.", "repo", repo.URI, "language", lang, "error", err)

@@ -285,7 +285,7 @@ github.com/sourcegraph/jsonx
 # github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85
 github.com/sourcegraph/rpc
 github.com/sourcegraph/rpc/internal/svc
-# github.com/sourcegraph/sourcegraph v0.0.0-20180927232742-34459e808790
+# github.com/sourcegraph/sourcegraph v0.0.0-20180928033711-612b71019986
 github.com/sourcegraph/sourcegraph/cmd/frontend/shared
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth
@@ -296,15 +296,18 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/external/session
 github.com/sourcegraph/sourcegraph/pkg/actor
 github.com/sourcegraph/sourcegraph/schema
 github.com/sourcegraph/sourcegraph/pkg/env
+github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn
+github.com/sourcegraph/sourcegraph/cmd/frontend/types
+github.com/sourcegraph/sourcegraph/pkg/api
+github.com/sourcegraph/sourcegraph/pkg/inventory
+github.com/sourcegraph/sourcegraph/xlang
+github.com/sourcegraph/sourcegraph/xlang/lspext
 github.com/sourcegraph/sourcegraph/cmd/frontend/assets
 github.com/sourcegraph/sourcegraph/cmd/frontend/backend
 github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
 github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi
-github.com/sourcegraph/sourcegraph/pkg/api
 github.com/sourcegraph/sourcegraph/pkg/errcode
 github.com/sourcegraph/sourcegraph/pkg/vcs
-github.com/sourcegraph/sourcegraph/xlang
-github.com/sourcegraph/sourcegraph/xlang/lspext
 github.com/sourcegraph/sourcegraph/cmd/frontend/hooks
 github.com/sourcegraph/sourcegraph/cmd/frontend/license
 github.com/sourcegraph/sourcegraph/cmd/server/shared
@@ -320,16 +323,18 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth
 github.com/sourcegraph/sourcegraph/pkg/jsonc
-github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn
 github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchquery
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types
 github.com/sourcegraph/sourcegraph/pkg/atomicvalue
-github.com/sourcegraph/sourcegraph/pkg/inventory
 github.com/sourcegraph/sourcegraph/pkg/randstring
 github.com/sourcegraph/sourcegraph/pkg/trace
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session
+github.com/sourcegraph/sourcegraph/cmd/frontend/db/migrations
+github.com/sourcegraph/sourcegraph/pkg/txemail
+github.com/sourcegraph/sourcegraph/pkg/inventory/filelang
+github.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver
 github.com/sourcegraph/sourcegraph/cmd/frontend/features
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router
@@ -341,7 +346,6 @@ github.com/sourcegraph/sourcegraph/pkg/repoupdater
 github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol
 github.com/sourcegraph/sourcegraph/pkg/symbols
 github.com/sourcegraph/sourcegraph/pkg/symbols/protocol
-github.com/sourcegraph/sourcegraph/pkg/txemail
 github.com/sourcegraph/sourcegraph/xlang/proxy
 github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck
@@ -366,13 +370,11 @@ github.com/sourcegraph/sourcegraph/pkg/endpoint
 github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol
 github.com/sourcegraph/sourcegraph/pkg/highlight
 github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil
-github.com/sourcegraph/sourcegraph/pkg/inventory/filelang
 github.com/sourcegraph/sourcegraph/pkg/pathmatch
 github.com/sourcegraph/sourcegraph/pkg/phabricator
 github.com/sourcegraph/sourcegraph/pkg/processrestart
 github.com/sourcegraph/sourcegraph/pkg/version
 github.com/sourcegraph/sourcegraph/pkg/zoekt
-github.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver
 github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman
 github.com/sourcegraph/sourcegraph/pkg/diskcache
 github.com/sourcegraph/sourcegraph/pkg/vcs/util
@@ -387,7 +389,6 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil
 github.com/sourcegraph/sourcegraph/pkg/sysreq
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui
-github.com/sourcegraph/sourcegraph/cmd/frontend/db/migrations
 github.com/sourcegraph/sourcegraph/pkg/repotrackutil
 github.com/sourcegraph/sourcegraph/pkg/redispool
 github.com/sourcegraph/sourcegraph/pkg/routevar

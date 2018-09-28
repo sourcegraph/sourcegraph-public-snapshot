@@ -18,6 +18,7 @@ require (
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/differ v0.0.0-20180719214047-7596500234bb
 	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 // indirect
+	github.com/lib/pq v1.0.0
 	github.com/mattn/goreman v0.1.2-0.20180926031137-83bee30f0a15
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/opentracing/opentracing-go v1.0.2
@@ -38,7 +39,7 @@ require (
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
-	github.com/sourcegraph/sourcegraph v0.0.0-20180927232742-34459e808790
+	github.com/sourcegraph/sourcegraph v0.0.0-20180928033711-612b71019986
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/zenazn/goji v0.9.0 // indirect
 	go4.org v0.0.0-20180809161055-417644f6feb5
