@@ -1,5 +1,11 @@
 import { CodeHost, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
-import { diffDOMFunctions, singleFileDOMFunctions } from './dom_functions'
+import {
+    diffDOMFunctions,
+    diffFileGetLineRanges,
+    singleFileDOMFunctions,
+    singleFileGetLineRanges,
+} from './dom_functions'
+import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
 import { getPageInfo, GitLabPageKind } from './scrape'
 import { search } from './search'
@@ -40,23 +46,29 @@ const createToolbarMount = (codeView: HTMLElement) => {
 
 const singleFileCodeView: CodeViewWithOutSelector = {
     dom: singleFileDOMFunctions,
+    isDiff: false,
     getToolbarMount: createToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
+    getLineRanges: singleFileGetLineRanges,
 }
 
 const mergeRequestCodeView: CodeViewWithOutSelector = {
     dom: diffDOMFunctions,
+    isDiff: true,
     getToolbarMount: createToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
+    getLineRanges: diffFileGetLineRanges,
 }
 
 const commitCodeView: CodeViewWithOutSelector = {
     dom: diffDOMFunctions,
+    isDiff: true,
     getToolbarMount: createToolbarMount,
     resolveFileInfo: resolveCommitFileInfo,
     toolbarButtonProps,
+    getLineRanges: diffFileGetLineRanges,
 }
 
 const resolveCodeView = (codeView: HTMLElement): CodeViewWithOutSelector => {
@@ -84,4 +96,5 @@ export const gitlabCodeHost: CodeHost = {
     codeViewResolver,
     adjustOverlayPosition,
     search,
+    getCommandPaletteMount,
 }

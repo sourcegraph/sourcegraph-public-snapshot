@@ -9,7 +9,6 @@ import {
 } from '@sourcegraph/codeintellify'
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
-import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
 import {
     Controller as ClientController,
     createController,
@@ -29,12 +28,11 @@ import * as React from 'react'
 import { render, unmountComponentAtNode } from 'react-dom'
 import { combineLatest, forkJoin, from, of, Subject } from 'rxjs'
 import { filter, map, take, withLatestFrom } from 'rxjs/operators'
-import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { Disposable } from 'vscode-languageserver'
 import { GitHubBlobUrl } from '.'
 import storage from '../../browser/storage'
-import { createExtensionsContextController } from '../../shared/backend/extensions'
 import { applyDecoration, createMessageTransports } from '../../shared/backend/extensions'
+import { createExtensionsContextController } from '../../shared/backend/extensions'
 import {
     createJumpURLFetcher,
     createLSPFromExtensions,
@@ -65,6 +63,7 @@ import {
 } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
+import { injectExtensionsGlobalComponents } from './extensions'
 import { initSearch } from './search'
 import {
     createBlobAnnotatorMount,
@@ -206,17 +205,17 @@ function injectCodeIntelligence(): void {
                             }
                         }
 
-                        from(constController.environment.environment)
+                        from(constController.environment)
                             .pipe(take(1))
                             .subscribe(previous => {
                                 constController.setEnvironment({
-                                    component: {
-                                        document: {
+                                    visibleTextDocuments: [
+                                        {
                                             uri: toURIWithPath({ repoPath, commitID, filePath }),
                                             languageId: getModeFromPath(filePath) || 'could not determine mode',
                                             text: gitHubCurrentFileContent,
                                         },
-                                    },
+                                    ],
                                     extensions: configuredExtensions,
                                     configuration: logThenDropConfigurationErrors(configurationCascade),
                                     context: previous.context,
@@ -299,35 +298,6 @@ function hideFileTree(): void {
         return
     }
     tree.parentNode.removeChild(tree)
-}
-
-function injectExtensionsGlobalComponents({
-    extensionsController,
-    extensionsContextController,
-}: {
-    extensionsController: ClientController<ConfigurationSubject, Settings>
-    extensionsContextController: Controller<ConfigurationSubject, Settings>
-}): void {
-    const headerElem = document.querySelector('div.HeaderMenu>div:last-child')
-    if (headerElem) {
-        const commandListClass = 'command-palette-button'
-
-        function createCommandList(): HTMLElement {
-            const commandListElem = document.createElement('div')
-            commandListElem.className = commandListClass
-            headerElem!.appendChild(commandListElem)
-            return commandListElem
-        }
-
-        render(
-            <CommandListPopoverButton
-                extensionsController={extensionsController}
-                menu={ContributableMenu.CommandPalette}
-                extensions={extensionsContextController}
-            />,
-            document.querySelector('.' + commandListClass) || createCommandList()
-        )
-    }
 }
 
 const specChanges = new Subject<{ repoPath: string; commitID: string }>()

@@ -1,4 +1,5 @@
 import { DOMFunctions } from '@sourcegraph/codeintellify'
+import { CodeView } from '../code_intelligence'
 
 const getLineNumberCell = (codeElement: HTMLElement) => {
     let elem: HTMLElement | null = codeElement
@@ -138,4 +139,8 @@ export const diffusionDOMFns: DOMFunctions = {
         return parseInt(lineNumberStr, 10)
     },
     isFirstCharacterDiffIndicator: () => false,
+}
+
+export const getLineRanges: CodeView['getLineRanges'] = () => {
+    throw new Error('TODO: implement')
 }

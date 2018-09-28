@@ -1,4 +1,5 @@
 import { DiffPart, DOMFunctions } from '@sourcegraph/codeintellify'
+import { CodeView } from '../code_intelligence'
 import { isDomSplitDiff } from './util'
 
 const getDiffCodePart = (codeElement: HTMLElement): DiffPart => {
@@ -161,4 +162,72 @@ export const searchCodeSnippetDOMFunctions: DOMFunctions = {
 
         return parseInt(cell.firstElementChild!.textContent!, 10)
     },
+}
+
+export const getLineRanges: CodeView['getLineRanges'] = codeView => {
+    const firstLine = codeView.querySelector<HTMLTableRowElement>('tr:first-of-type td.blob-code')
+    if (!firstLine) {
+        throw new Error('Unable to determine start line of code view')
+    }
+
+    const lastLine = codeView.querySelector<HTMLTableRowElement>('tr:last-of-type td.blob-code')
+    if (!lastLine) {
+        throw new Error('Unable to determine start line of code view')
+    }
+
+    const getLineNumber = (line: HTMLElement) => {
+        const codeElement = singleFileDOMFunctions.getCodeElementFromTarget(line)!
+
+        return singleFileDOMFunctions.getLineNumberFromCodeElement(codeElement)
+    }
+
+    return [
+        {
+            start: getLineNumber(firstLine),
+            end: getLineNumber(lastLine),
+        },
+    ]
+}
+
+export const getDiffLineRanges: CodeView['getLineRanges'] = (codeView, part) => {
+    const ranges: { start: number; end: number }[] = []
+
+    let start: number | null = null
+    let end: number | null = null
+
+    for (const row of codeView.querySelectorAll<HTMLTableRowElement>('tr')) {
+        const isCode =
+            !row.classList.contains('js-expandable-line') && !row.classList.contains('js-inline-comments-container')
+
+        if (isCode) {
+            const line = row.querySelector<HTMLElement>(
+                `td${isDomSplitDiff() ? `:nth-of-type(${part === 'base' ? 2 : 4})` : '.blob-code'}`
+            )!
+            if (
+                line.classList.contains('empty-cell') ||
+                line.classList.contains(part === 'base' ? 'blob-code-addition' : 'blob-code-deletion')
+            ) {
+                // Empty row
+                continue
+            }
+
+            const numCell = row.querySelector<HTMLElement>(`td:nth-of-type(${getLineNumberElementIndex(part!) + 1})`)!
+
+            const num = parseInt(numCell.dataset.lineNumber!, 10)
+            if (start === null) {
+                start = num
+            } else {
+                end = num
+            }
+        } else if (start && end) {
+            ranges.push({ start, end })
+        }
+
+        if (!isCode) {
+            start = null
+            end = null
+        }
+    }
+
+    return ranges
 }

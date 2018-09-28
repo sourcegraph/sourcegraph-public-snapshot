@@ -3,7 +3,14 @@ import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
-import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
+import {
+    diffDomFunctions,
+    getDiffLineRanges,
+    getLineRanges,
+    searchCodeSnippetDOMFunctions,
+    singleFileDOMFunctions,
+} from './dom_functions'
+import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
 import { createCodeViewToolbarMount, parseURL } from './util'
 
@@ -17,6 +24,8 @@ const diffCodeView: CodeViewWithOutSelector = {
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
     toolbarButtonProps,
+    getLineRanges: getDiffLineRanges,
+    isDiff: true,
 }
 
 const singleFileCodeView: CodeViewWithOutSelector = {
@@ -24,6 +33,8 @@ const singleFileCodeView: CodeViewWithOutSelector = {
     getToolbarMount: createCodeViewToolbarMount,
     resolveFileInfo,
     toolbarButtonProps,
+    getLineRanges,
+    isDiff: false,
 }
 
 /**
@@ -64,6 +75,8 @@ const searchResultCodeView: CodeView = {
     adjustPosition: adjustPositionForSnippet,
     resolveFileInfo: resolveSnippetFileInfo,
     toolbarButtonProps,
+    getLineRanges,
+    isDiff: false,
 }
 
 const commentSnippetCodeView: CodeView = {
@@ -72,6 +85,8 @@ const commentSnippetCodeView: CodeView = {
     resolveFileInfo: resolveSnippetFileInfo,
     adjustPosition: adjustPositionForSnippet,
     toolbarButtonProps,
+    getLineRanges,
+    isDiff: false,
 }
 
 const resolveCodeView = (elem: HTMLElement): CodeViewWithOutSelector => {
@@ -102,4 +117,5 @@ export const githubCodeHost: CodeHost = {
     codeViews: [searchResultCodeView, commentSnippetCodeView],
     codeViewResolver,
     check: checkIsGithub,
+    getCommandPaletteMount,
 }

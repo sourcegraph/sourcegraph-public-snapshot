@@ -15,9 +15,12 @@ import { applyEdits } from '@sqs/jsonc-parser'
 import * as JSONC from '@sqs/jsonc-parser'
 import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { isEqual } from 'lodash'
+import AddIcon from 'mdi-react/AddIcon'
 import Alert from 'mdi-react/AlertIcon'
+import InfoIcon from 'mdi-react/InformationIcon'
 import MenuDown from 'mdi-react/MenuDownIcon'
 import Menu from 'mdi-react/MenuIcon'
+import SettingsIcon from 'mdi-react/SettingsIcon'
 import { combineLatest, from, Observable, throwError } from 'rxjs'
 import { distinctUntilChanged, map, mergeMap, switchMap, take } from 'rxjs/operators'
 import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
@@ -264,6 +267,9 @@ export function createExtensionsContextController(
         queryLSP: requests => sendLSPHTTPRequests(requests),
         icons: {
             Loader: LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>,
+            Info: InfoIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
+            Add: AddIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
+            Settings: SettingsIcon as React.ComponentType<{ className: string; onClick?: () => void }>,
             Warning: Alert as React.ComponentType<{ className: string; onClick?: () => void }>,
             CaretDown: MenuDown as React.ComponentType<{ className: string; onClick?: () => void }>,
             Menu: Menu as React.ComponentType<{ className: string; onClick?: () => void }>,

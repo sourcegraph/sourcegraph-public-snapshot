@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs'
+import { EMPTY, Observable } from 'rxjs'
 import { shareReplay } from 'rxjs/operators'
 import SafariStorageArea, { SafariSettingsChangeMessage, stringifyStorageArea } from './safari/StorageArea'
 import { StorageChange, StorageItems } from './types'
@@ -82,6 +82,8 @@ const observe = (area: chrome.storage.StorageArea) => <T extends keyof StorageIt
         })
     }).pipe(shareReplay(1))
 
+const noopObserve = () => EMPTY
+
 const throwNoopErr = () => {
     throw new Error('do not call browser extension apis from an in page script')
 }
@@ -148,12 +150,12 @@ export default ((): Storage => {
         getSync: throwNoopErr,
         getSyncItem: throwNoopErr,
         setSync: throwNoopErr,
-        observeSync: throwNoopErr,
+        observeSync: noopObserve,
         onChanged: throwNoopErr,
         getLocal: throwNoopErr,
         getLocalItem: throwNoopErr,
         setLocal: throwNoopErr,
-        observeLocal: throwNoopErr,
+        observeLocal: noopObserve,
         addSyncMigration: throwNoopErr,
         addLocalMigration: throwNoopErr,
     }

@@ -5,7 +5,7 @@ import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import storage from '../../browser/storage'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, CodeView } from '../code_intelligence'
-import { diffDomFunctions, diffusionDOMFns } from './dom_functions'
+import { diffDomFunctions, diffusionDOMFns, getLineRanges } from './dom_functions'
 import { resolveDiffFileInfo, resolveDiffusionFileInfo } from './file_info'
 
 function createMount(
@@ -113,6 +113,8 @@ export const phabCodeViews: CodeView[] = [
             return actionLinks as HTMLElement
         }),
         toolbarButtonProps,
+        getLineRanges,
+        isDiff: true,
     },
     {
         selector: '.phabricator-source-code-container',
@@ -127,6 +129,8 @@ export const phabCodeViews: CodeView[] = [
             return actionLinks as HTMLElement
         }),
         toolbarButtonProps,
+        getLineRanges,
+        isDiff: false,
     },
 ]
 

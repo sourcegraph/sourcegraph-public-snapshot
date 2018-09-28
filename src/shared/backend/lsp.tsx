@@ -359,7 +359,9 @@ const toTextDocumentPositionParams = (pos: AbsoluteRepoFilePosition): TextDocume
     },
 })
 
-export const createLSPFromExtensions = (extensionsController: Controller<ConfigurationSubject, Settings>) => ({
+export const createLSPFromExtensions = (
+    extensionsController: Controller<ConfigurationSubject, Settings>
+): SimpleProviderFns => ({
     // Use from() to suppress rxjs type incompatibilities between different minor versions of rxjs in
     // node_modules/.
     fetchHover: pos =>

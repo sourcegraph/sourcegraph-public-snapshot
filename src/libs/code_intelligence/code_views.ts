@@ -1,7 +1,9 @@
+import { last, range } from 'lodash'
 import { from, merge, Observable, of, Subject } from 'rxjs'
 import { filter, map, mergeMap } from 'rxjs/operators'
 
-import { CodeHost, ResolvedCodeView } from './code_intelligence'
+import { DiffPart } from '@sourcegraph/codeintellify'
+import { CodeHost, CodeView, ResolvedCodeView } from './code_intelligence'
 
 /**
  * Emits a ResolvedCodeView when it's DOM element is on or about to be on the page.
@@ -120,4 +122,42 @@ export const findCodeViews = (codeHost: CodeHost, watchChildrenModifications = t
         emitWhenIntersecting(250),
         filter(({ codeView }) => !codeView.classList.contains('sg-mounted'))
     )
+}
+
+export interface CodeViewContent {
+    content: string
+    baseContent?: string
+}
+
+export const getContentOfCodeView = (
+    codeView: HTMLElement,
+    info: Pick<CodeView, 'dom' | 'isDiff' | 'getLineRanges'>
+): CodeViewContent => {
+    const getContent = (part?: DiffPart): string => {
+        const lines = new Map<number, string>()
+        let min = 1
+        let max = 1
+
+        for (const { start, end } of info.getLineRanges(codeView, part)) {
+            for (const line of range(start, end + 1)) {
+                min = Math.min(min, line)
+                max = Math.max(max, line)
+
+                const codeElement = info.dom.getCodeElementFromLineNumber(codeView, line, part)
+                if (codeElement) {
+                    lines.set(line, codeElement.textContent || '')
+                }
+            }
+        }
+
+        return range(min, max + 1)
+            .map(line => lines.get(line) || '\n')
+            .map(content => (last(content) === '\n' ? content : `${content}\n`))
+            .join('')
+    }
+
+    return {
+        content: getContent(info.isDiff ? 'head' : undefined),
+        baseContent: info.isDiff ? getContent('base') : undefined,
+    }
 }
