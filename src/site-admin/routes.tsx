@@ -2,7 +2,7 @@ import { siteAdminAreaRoutes } from '@sourcegraph/webapp/dist/site-admin/routes'
 import { SiteAdminAreaRoute } from '@sourcegraph/webapp/dist/site-admin/SiteAdminArea'
 import React from 'react'
 import { SiteAdminGenerateLicensePage } from './dotcom/SiteAdminGenerateLicensePage'
-import { SiteAdminLicensePage } from './license/SiteAdminLicensePage'
+import { SiteAdminProductSubscriptionPage } from './productSubscription/SiteAdminProductSubscriptionPage'
 import { SiteAdminAuthenticationProvidersPage } from './SiteAdminAuthenticationProvidersPage'
 import { SiteAdminExternalAccountsPage } from './SiteAdminExternalAccountsPage'
 import { SiteAdminRegistryExtensionsPage } from './SiteAdminRegistryExtensionsPage'
@@ -11,7 +11,7 @@ export const enterpriseSiteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = 
     ...siteAdminAreaRoutes,
     {
         path: '/license',
-        render: props => <SiteAdminLicensePage {...props} />,
+        render: props => <SiteAdminProductSubscriptionPage {...props} />,
         exact: true,
     },
     {

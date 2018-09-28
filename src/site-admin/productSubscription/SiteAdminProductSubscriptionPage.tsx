@@ -3,18 +3,18 @@ import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
-import { SourcegraphLicense } from './SourcegraphLicense'
+import { ProductSubscriptionStatus } from './ProductSubscriptionStatus'
 
 interface Props extends RouteComponentProps<{}> {}
 
 /**
- * Displays the Sourcegraph license information from the Sourcegraph license key in site configuration.
+ * Displays the product subscription information from the license key in site configuration.
  */
-export class SiteAdminLicensePage extends React.Component<Props> {
+export class SiteAdminProductSubscriptionPage extends React.Component<Props> {
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('SiteAdminLicense')
+        eventLogger.logViewEvent('SiteAdminProductSubscription')
     }
 
     public componentWillUnmount(): void {
@@ -23,9 +23,9 @@ export class SiteAdminLicensePage extends React.Component<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="site-admin-license-page">
-                <PageTitle title="License" />
-                <SourcegraphLicense />
+            <div className="site-admin-product-subscription-page">
+                <PageTitle title="Sourcegraph product subscription" />
+                <ProductSubscriptionStatus />
             </div>
         )
     }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/enterprise/pkg/license"
-	frontendLicense "github.com/sourcegraph/sourcegraph/cmd/frontend/license"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"golang.org/x/crypto/ssh"
@@ -31,6 +31,12 @@ var publicKey = func() ssh.PublicKey {
 	return publicKey
 }()
 
+// ParseProductLicenseKey parses and verifies the license key using the license verification
+// public key (publicKey in this package).
+func ParseProductLicenseKey(licenseKey string) (*license.Info, error) {
+	return license.ParseSignedKey(licenseKey, publicKey)
+}
+
 // Cache the parsing of the license key because public key crypto can be slow.
 var (
 	mu          sync.Mutex
@@ -38,9 +44,9 @@ var (
 	lastInfo    *license.Info
 )
 
-// GetConfiguredSourcegraphLicenseInfo returns information about the current Sourcegraph license key specified
+// GetConfiguredProductLicenseInfo returns information about the current Sourcegraph license key specified
 // in site configuration.
-func GetConfiguredSourcegraphLicenseInfo() (*license.Info, error) {
+func GetConfiguredProductLicenseInfo() (*license.Info, error) {
 	// Support reading the license key from the environment (intended for development, because
 	// we don't want to commit a valid license key to dev/config.json in the OSS repo).
 	keyText := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
@@ -57,7 +63,7 @@ func GetConfiguredSourcegraphLicenseInfo() (*license.Info, error) {
 			info = lastInfo
 		} else {
 			var err error
-			info, err = license.ParseSignedKey(keyText, publicKey)
+			info, err = ParseProductLicenseKey(keyText)
 			if err != nil {
 				return nil, err
 			}
@@ -71,18 +77,18 @@ func GetConfiguredSourcegraphLicenseInfo() (*license.Info, error) {
 	return &license.Info{Plan: "Free"}, nil
 }
 
-// Make the Site.sourcegraphLicense GraphQL field return the actual info about the Sourcegraph
+// Make the Site.productSubscription GraphQL field return the actual info about the Sourcegraph
 // license (instead of the stub info from the OSS build).
 func init() {
-	frontendLicense.GetConfiguredSourcegraphLicenseInfo = func(ctx context.Context) (*frontendLicense.SourcegraphLicenseInfo, error) {
-		info, err := GetConfiguredSourcegraphLicenseInfo()
+	graphqlbackend.GetConfiguredProductLicenseInfo = func(ctx context.Context) (*graphqlbackend.ProductLicenseInfo, error) {
+		info, err := GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return nil, err
 		}
-		return &frontendLicense.SourcegraphLicenseInfo{
-			PlanValue:         info.Plan,
-			MaxUserCountValue: info.MaxUserCount,
-			ExpiresAtValue:    info.Expiry,
+		return &graphqlbackend.ProductLicenseInfo{
+			PlanValue:      info.Plan,
+			UserCountValue: info.UserCount,
+			ExpiresAtValue: info.ExpiresAt,
 		}, nil
 	}
 }
@@ -92,9 +98,9 @@ func init() {
 // https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i.
 var envLicenseGenerationPrivateKey = env.Get("SOURCEGRAPH_LICENSE_GENERATION_KEY", "", "the PEM-encoded form of the private key used to sign Sourcegraph license keys (https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i)")
 
-// GenerateSourcegraphLicenseKey generates a Sourcegraph license key using the license generation
+// GenerateProductLicenseKey generates a Sourcegraph license key using the license generation
 // private key configured in site configuration.
-func GenerateSourcegraphLicenseKey(info license.Info) (string, error) {
+func GenerateProductLicenseKey(info license.Info) (string, error) {
 	if envLicenseGenerationPrivateKey == "" {
 		return "", errors.New("no Sourcegraph license generation private key was configured")
 	}

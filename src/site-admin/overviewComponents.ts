@@ -1,7 +1,7 @@
 import { siteAdminOverviewComponents } from '@sourcegraph/webapp/dist/site-admin/overviewComponents'
-import { SourcegraphLicense } from './license/SourcegraphLicense'
+import { ProductSubscriptionStatus } from './productSubscription/ProductSubscriptionStatus'
 
 export const enterpriseSiteAdminOverviewComponents: ReadonlyArray<React.ComponentType> = [
     ...siteAdminOverviewComponents,
-    SourcegraphLicense,
+    ProductSubscriptionStatus,
 ]

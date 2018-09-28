@@ -285,7 +285,7 @@ github.com/sourcegraph/jsonx
 # github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85
 github.com/sourcegraph/rpc
 github.com/sourcegraph/rpc/internal/svc
-# github.com/sourcegraph/sourcegraph v0.0.0-20180930015647-ce118fd331ee
+# github.com/sourcegraph/sourcegraph v0.0.0-20180930022108-61c6c522e617
 github.com/sourcegraph/sourcegraph/cmd/frontend/shared
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth
@@ -309,7 +309,6 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi
 github.com/sourcegraph/sourcegraph/pkg/errcode
 github.com/sourcegraph/sourcegraph/pkg/vcs
 github.com/sourcegraph/sourcegraph/cmd/frontend/hooks
-github.com/sourcegraph/sourcegraph/cmd/frontend/license
 github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil
 github.com/sourcegraph/sourcegraph/cmd/frontend/registry
 github.com/sourcegraph/sourcegraph/pkg/honey

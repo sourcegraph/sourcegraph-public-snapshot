@@ -1,4 +1,4 @@
-.sourcegraph-license {
+.product-subscription-status {
     &__bg {
         position: absolute;
         user-select: none;
@@ -19,7 +19,7 @@
 }
 
 .theme-light {
-    .sourcegraph-license {
+    .product-subscription-status {
         &__bg {
             opacity: 0.025;
         }
@@ -27,7 +27,7 @@
 }
 
 .theme-dark {
-    .sourcegraph-license {
+    .product-subscription-status {
         &__bg {
             opacity: 0.1;
             filter: grayscale(100%);

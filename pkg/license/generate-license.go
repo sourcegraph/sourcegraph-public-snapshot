@@ -15,7 +15,7 @@
 //
 // EXAMPLE
 //
-//   go run ./pkg/license/generate-license.go -private-key key.pem -plan=enterprise -max-user-count=100 -expiry=8784h
+//   go run ./pkg/license/generate-license.go -private-key key.pem -plan=enterprise -users=100 -expires=8784h
 package main
 
 import (
@@ -33,8 +33,8 @@ import (
 var (
 	privateKeyFile = flag.String("private-key", "", "file containing private key to sign license")
 	plan           = flag.String("plan", "", "plan that this license is valid for")
-	maxUserCount   = flag.Uint("max-user-count", 0, "maximum number of users allowed by this license (0 = no limit)")
-	expiry         = flag.Duration("expiry", 0, "time until license expires (0 = no expiration)")
+	users          = flag.Uint("users", 0, "maximum number of users allowed by this license (0 = no limit)")
+	expires        = flag.Duration("expires", 0, "time until license expires (0 = no expiration)")
 )
 
 func main() {
@@ -46,12 +46,12 @@ func main() {
 	}
 	log.Println("# License info (encoded and signed in license key)")
 	info := license.Info{Plan: *plan}
-	if *maxUserCount != 0 {
-		info.MaxUserCount = maxUserCount
+	if *users != 0 {
+		info.UserCount = users
 	}
-	if *expiry != 0 {
-		t := time.Now().Round(time.Second).Add(*expiry)
-		info.Expiry = &t
+	if *expires != 0 {
+		t := time.Now().Round(time.Second).Add(*expires)
+		info.ExpiresAt = &t
 	}
 	b, err := json.MarshalIndent(info, "", "  ")
 	if err != nil {

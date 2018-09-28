@@ -27,11 +27,11 @@ func (dotcomMutationResolver) GenerateSourcegraphLicenseKey(ctx context.Context,
 	info := license.Info{Plan: args.Plan}
 	if args.MaxUserCount != nil {
 		n := uint(*args.MaxUserCount)
-		info.MaxUserCount = &n
+		info.UserCount = &n
 	}
 	if args.ExpiresAt != nil {
 		t := time.Unix(int64(*args.ExpiresAt), 0)
-		info.Expiry = &t
+		info.ExpiresAt = &t
 	}
-	return licensing.GenerateSourcegraphLicenseKey(info)
+	return licensing.GenerateProductLicenseKey(info)
 }

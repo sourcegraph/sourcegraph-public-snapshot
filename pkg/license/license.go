@@ -28,14 +28,14 @@ import (
 // license. Increment (encodedInfo).Version and formatVersion when you make backward-incompatbile
 // changes.
 type Info struct {
-	Plan         string     `json:"p"`   // the plan that this license is valid for
-	MaxUserCount *uint      `json:"uc"`  // the maximum number of users that this license is valid for
-	Expiry       *time.Time `json:"exp"` // the date when this license expires
+	Plan      string     `json:"p"`   // the plan that this license is valid for
+	UserCount *uint      `json:"uc"`  // the number of users that this license is valid for
+	ExpiresAt *time.Time `json:"exp"` // the date when this license expires
 }
 
 // IsExpired reports whether the license has expired.
 func (l Info) IsExpired() bool {
-	return l.Expiry != nil && l.Expiry.Before(time.Now())
+	return l.ExpiresAt != nil && l.ExpiresAt.Before(time.Now())
 }
 
 type encodedInfo struct {

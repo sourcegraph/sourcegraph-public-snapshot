@@ -2718,8 +2718,8 @@ type Site implements ConfigurationSubject {
     # Whether the server sends emails to users to verify email addresses. If false, then site admins must manually
     # verify users' email addresses.
     sendsEmailVerificationEmails: Boolean!
-    # Information about this site's Sourcegraph license (if any).
-    sourcegraphLicense: SourcegraphLicenseInfo!
+    # Information about this site's product subscription status.
+    productSubscription: ProductSubscriptionStatus!
     # The activity.
     activity(
         # Days of history.
@@ -3070,16 +3070,20 @@ type SurveyResponse {
     createdAt: String!
 }
 
-# Information about this site's Sourcegraph license (if any). This is a license for the use of Sourcegraph itself;
-# it is not about a repository license or an open-source license.
-type SourcegraphLicenseInfo {
-    # The name of the pricing plan associated with the license (if any), or else a name indicating use of the
-    # free/open-source features.
+# Information about this site's product subscription (which enables access to and renewals of a product license).
+type ProductSubscriptionStatus {
+    # The actual total number of users on this Sourcegraph site.
+    actualUserCount: Int!
+    # The product license associated with this subscription, if any.
+    license: ProductLicenseInfo
+}
+
+# Information about this site's product license (which activates certain Sourcegraph features).
+type ProductLicenseInfo {
+    # The name of the product plan associated with the license.
     plan: String!
-    # The total number of users on this Sourcegraph site.
-    userCount: Int!
-    # The maximum number of users allowed by this license, or null if there is no limit.
-    maxUserCount: Int
+    # The number of users allowed by this license, or null if there is no limit.
+    userCount: Int
     # The date when this license expires, or null if there is no expiration.
     expiresAt: String
 }

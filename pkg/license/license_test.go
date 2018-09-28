@@ -62,7 +62,7 @@ func uintptr(n uint) *uint { return &n }
 
 var (
 	timeFixture = time.Date(2018, time.September, 22, 21, 33, 44, 0, time.UTC)
-	infoFixture = Info{Plan: "a", MaxUserCount: uintptr(123), Expiry: &timeFixture}
+	infoFixture = Info{Plan: "a", UserCount: uintptr(123), ExpiresAt: &timeFixture}
 )
 
 func TestInfo_EncodeDecode(t *testing.T) {
