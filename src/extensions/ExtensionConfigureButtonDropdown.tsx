@@ -162,10 +162,7 @@ export class ExtensionConfigureButtonDropdown<
                     {this.props.children}
                 </DropdownToggle>
                 <DropdownMenu>
-                    <DropdownItem header={true}>
-                        User settings ({subjectLabel(this.props.subject.subject)}
-                        ):
-                    </DropdownItem>
+                    <DropdownItem header={true}>{subjectLabel(this.props.subject.subject)} settings:</DropdownItem>
                     <ExtensionConfigureDropdownItem
                         extension={this.props.extension}
                         subject={this.props.subject}

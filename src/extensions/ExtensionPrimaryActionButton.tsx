@@ -43,11 +43,13 @@ export class ExtensionPrimaryActionButton<
             return null
         }
 
-        // Only operate on the current user's extension configuration, for simplicity.
-        const userSubject = this.props.configurationCascade.subjects.find(
-            ({ subject }) => subject.__typename === 'User'
-        )
-        if (!userSubject || !userSubject.subject.viewerCanAdminister) {
+        // Only operate on the highest precedence settings, for simplicity.
+        const subjects = this.props.configurationCascade.subjects
+        if (subjects.length === 0) {
+            return null
+        }
+        const highestPrecedenceSubject = subjects[subjects.length - 1]
+        if (!highestPrecedenceSubject || !highestPrecedenceSubject.subject.viewerCanAdminister) {
             return null
         }
 
@@ -57,7 +59,7 @@ export class ExtensionPrimaryActionButton<
             return (
                 <ExtensionAddButton
                     extension={this.props.extension}
-                    subject={userSubject}
+                    subject={highestPrecedenceSubject}
                     confirm={this.confirm}
                     onUpdate={this.props.onUpdate}
                     className={`btn ${this.props.className || ''} ${this.props.addClassName || ''}`}
@@ -71,7 +73,7 @@ export class ExtensionPrimaryActionButton<
             <div className="btn-group" role="group" aria-label="Extension configuration actions">
                 <ExtensionConfigureButtonDropdown
                     extension={this.props.extension}
-                    subject={userSubject}
+                    subject={highestPrecedenceSubject}
                     configurationCascade={this.props.configurationCascade}
                     confirm={this.confirm}
                     onUpdate={this.props.onUpdate}
