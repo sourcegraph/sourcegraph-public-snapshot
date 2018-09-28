@@ -20,7 +20,7 @@ import { filter, map, mergeMap, observeOn, withLatestFrom } from 'rxjs/operators
 
 import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
 import { Disposable } from 'vscode-jsonrpc'
-import { createJumpURLFetcher, createLSPFromExtensions } from '../../shared/backend/lsp'
+import { createJumpURLFetcher, createLSPFromExtensions, JumpURLLocation } from '../../shared/backend/lsp'
 import { lspViaAPIXlang, toTextDocumentIdentifier } from '../../shared/backend/lsp'
 import { ButtonProps, CodeViewToolbar } from '../../shared/components/CodeViewToolbar'
 import { AbsoluteRepoFile } from '../../shared/repo'
@@ -135,6 +135,9 @@ export interface CodeHost {
      * Get the DOM element where we'll mount the command palette for extensions.
      */
     getCommandPaletteMount?: MountGetter
+
+    /** Build the J2D url from the location. */
+    buildJumpURLLocation?: (def: JumpURLLocation) => string
 }
 
 export interface FileInfo {
@@ -226,7 +229,10 @@ function initCodeIntelligence(
 
     const relativeElement = document.body
 
-    const fetchJumpURL = createJumpURLFetcher(simpleProviderFns.fetchDefinition, toPrettyBlobURL)
+    const fetchJumpURL = createJumpURLFetcher(
+        simpleProviderFns.fetchDefinition,
+        codeHost.buildJumpURLLocation || toPrettyBlobURL
+    )
 
     const containerComponentUpdates = new Subject<void>()
 

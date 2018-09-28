@@ -1,6 +1,7 @@
 import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
 import { trimStart } from 'lodash'
 import { map } from 'rxjs/operators'
+import { JumpURLLocation } from '../../shared/backend/lsp'
 import { fetchBlobContentLines } from '../../shared/repo/backend'
 import { CodeHost, CodeView, CodeViewResolver, CodeViewWithOutSelector } from '../code_intelligence'
 import {
@@ -12,7 +13,7 @@ import {
 } from './dom_functions'
 import { getCommandPaletteMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
-import { createCodeViewToolbarMount, parseURL } from './util'
+import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
 
 const toolbarButtonProps = {
     className: 'btn btn-sm tooltipped tooltipped-n',
@@ -118,4 +119,31 @@ export const githubCodeHost: CodeHost = {
     codeViewResolver,
     check: checkIsGithub,
     getCommandPaletteMount,
+    buildJumpURLLocation: (def: JumpURLLocation) => {
+        const rev = def.rev
+        // If we're provided options, we can make the j2d URL more specific.
+        const { repoPath } = parseURL()
+
+        const sameRepo = repoPath === def.repoPath
+        // Stay on same page in PR if possible.
+        if (sameRepo && def.part) {
+            const containers = getFileContainers()
+            for (const container of containers) {
+                const header = container.querySelector('.file-header') as HTMLElement
+                const anchorPath = header.dataset.path
+                if (anchorPath === def.filePath) {
+                    const anchorUrl = header.dataset.anchor
+                    const url = `${window.location.origin}${window.location.pathname}#${anchorUrl}${
+                        def.part === 'base' ? 'L' : 'R'
+                    }${def.position.line}`
+
+                    return url
+                }
+            }
+        }
+
+        return `https://${def.repoPath}/blob/${rev}/${def.filePath}#L${def.position.line}${
+            def.position.character ? ':' + def.position.character : ''
+        }`
+    },
 }
