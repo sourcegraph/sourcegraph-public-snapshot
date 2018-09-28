@@ -1,24 +1,51 @@
-# Warning
-
-**this repository is not maintained. Questions or suggestions can be posted [here](https://github.com/jteeuwen/discussions/issues).**
-
 ## bindata
 
-This package converts any file into managable Go source code. Useful for
+*This fork is maintained by Kevin Burke. Don't expect many new features, though
+I will take a look at PR's. Changes made include:*
+
+- Atomic writes; generated file cannot be read while partially complete.
+
+- Generated file reports file sizes.
+
+- Generated code is run through go fmt.
+
+- SHA256 hashes are computed for all files and stored in the binary. You can
+use this to detect in-memory corruption and to provide easy cache-busting
+mechanisms.
+
+- Added AssetString and MustAssetString functions.
+
+- ByName is not public.
+
+- Some errors in file writes were unchecked, but are now checked.
+
+This package converts any file into manageable Go source code. Useful for
 embedding binary data into a go program. The file data is optionally gzip
 compressed before being converted to a raw byte slice.
 
-It comes with a command line tool in the `go-bindata` sub directory.
-This tool offers a set of command line options, used to customize the
-output being generated.
+It comes with a command line tool in the `go-bindata` subdirectory. This tool
+offers a set of command line options, used to customize the output being
+generated.
 
 
 ### Installation
 
-To install the library and command line program, use the following:
+On Macs, you can install the binary using [Homebrew](https://brew.sh):
 
-	go get -u github.com/jteeuwen/go-bindata/...
+```
+brew install go-bindata
+```
 
+Binary installs for every language are provided by `equinox.io`. Install
+go-bindata for your platform by following the instructions here:
+https://go.equinox.io/github.com/kevinburke/go-bindata/go-bindata
+
+Alternatively, you can download the source code, if you have a working Go
+installation:
+
+```
+go get -u github.com/kevinburke/go-bindata/...
+```
 
 ### Usage
 
@@ -31,13 +58,13 @@ working directory. It includes all assets from the `data` directory.
 
 	$ go-bindata data/
 
-To include all input sub-directories recursively, use the elipsis postfix
+To include all input sub-directories recursively, use the ellipsis postfix
 as defined for Go import paths. Otherwise it will only consider assets in the
 input directory itself.
 
 	$ go-bindata data/...
 
-To specify the name of the output file being generated, we use the following:
+To specify the name of the output file being generated, use the `-o` option:
 
 	$ go-bindata -o myfile.go data/
 
@@ -46,7 +73,7 @@ Multiple input directories can be specified if necessary.
 	$ go-bindata dir1/... /path/to/dir2/... dir3
 
 
-The following paragraphs detail some of the command line options which can be 
+The following paragraphs detail some of the command line options which can be
 supplied to `go-bindata`. Refer to the `testdata/out` directory for various
 output examples from the assets in `testdata/in`. Each example uses different
 command line options.
@@ -94,7 +121,7 @@ It will now embed the latest version of the assets.
 
 Using the `-nomemcopy` flag, will alter the way the output file is generated.
 It will employ a hack that allows us to read the file data directly from
-the compiled program's `.rodata` section. This ensures that when we call
+the compiled program's `.rodata` section. This ensures that when we
 call our generated function, we omit unnecessary memcopies.
 
 The downside of this, is that it requires dependencies on the `reflect` and
@@ -175,7 +202,6 @@ Running with the `-prefix` flag, we get:
 
 	_bindata["templates/foo.html"] = templates_foo_html
 
-
 ### Build tags
 
 With the optional `-tags` flag, you can specify any go build tags that
@@ -188,6 +214,5 @@ and must follow the build tags syntax specified by the go tool.
 
 ### Related projects
 
-[go-bindata-assetfs](https://github.com/elazarl/go-bindata-assetfs#readme) - 
+[go-bindata-assetfs](https://github.com/elazarl/go-bindata-assetfs#readme) -
 implements `http.FileSystem` interface. Allows you to serve assets with `net/http`.
-

@@ -172,8 +172,6 @@ github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/jonboulle/clockwork v0.1.0 h1:VKV+ZcuP6l3yW9doeqz6ziZGgcynBVQO+obU0+0hcPo=
 github.com/jonboulle/clockwork v0.1.0/go.mod h1:Ii8DK3G1RaLaWxj9trq07+26W01tbo22gdxWY5EU2bo=
-github.com/jteeuwen/go-bindata v0.0.0-20180305030458-6025e8de665b h1:owLjVVC422i2z+fP03yZ5erukr2OMqQy/gdW8J1qP9w=
-github.com/jteeuwen/go-bindata v0.0.0-20180305030458-6025e8de665b/go.mod h1:JVvhzYOiGBnFSYRyV00iY8q7/0PThjIYav1p9h5dmKs=
 github.com/jtolds/gls v4.2.1+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1/go.mod h1:1NbS8ALrpOvjt0rHPNLyCIeMtbizbir8U//inJ+zuB8=
 github.com/karrick/tparse v2.4.2+incompatible h1:+cW306qKAzrASC5XieHkgN7/vPaGKIuK62Q7nI7DIRc=
@@ -185,6 +183,7 @@ github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513 h1:xa9SZfAi
 github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513/go.mod h1:MhGoae1pr+JFXxDAYx3b0fMn1xtr1ly9dHa0+KHHon4=
 github.com/kevinburke/differ v0.0.0-20180719214047-7596500234bb h1:NUa+VvpwgOySm3XOxnvddh/Hp8PxHOIWVlVli6GrK3I=
 github.com/kevinburke/differ v0.0.0-20180719214047-7596500234bb/go.mod h1:I7eBHoOOU9N76qKli6iiqWZqh7iyxraK7SgR+kbDgW4=
+github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible h1:GxQXdxHr/j1qkRigV351ePJBbDkwHuDWJU7pJNmi7+k=
 github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible/go.mod h1:/pEEZ72flUW2p0yi30bslSp9YqD9pysLxunQDdb2CPM=
 github.com/kisielk/gotool v1.0.0 h1:AV2c/EiW3KqPNT9ZKl07ehoAGi4C5/01Cfbblndcapg=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=

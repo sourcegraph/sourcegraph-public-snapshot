@@ -13,10 +13,10 @@ require (
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
-	github.com/jteeuwen/go-bindata v0.0.0-20180305030458-6025e8de665b
 	github.com/keegancsmith/sqlf v1.1.0 // indirect
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/differ v0.0.0-20180719214047-7596500234bb
+	github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible
 	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mattn/goreman v0.1.2-0.20180926031137-83bee30f0a15
