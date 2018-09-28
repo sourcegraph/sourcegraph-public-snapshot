@@ -10,8 +10,7 @@ package-lock.json
 puppeteer/
 src/backend/graphqlschema.ts
 yarn-error.log
-/ui/*
-!/ui/assets
+/ui/assets/*
 !/ui/assets/img
 !/ui/assets/img/*
 /.bin
