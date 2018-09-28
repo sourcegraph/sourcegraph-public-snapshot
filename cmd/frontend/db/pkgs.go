@@ -15,7 +15,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
@@ -25,10 +24,10 @@ import (
 // For a detailed overview of the schema, see schema.txt.
 type pkgs struct{}
 
-func (p *pkgs) UpdateIndexForLanguage(ctx context.Context, language string, repo *types.Repo, pks []lspext.PackageInformation) (err error) {
+func (p *pkgs) UpdateIndexForLanguage(ctx context.Context, language string, repo api.RepoID, pks []lspext.PackageInformation) (err error) {
 	err = db.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 		// Update the pkgs table.
-		err = p.update(ctx, tx, repo.ID, language, pks)
+		err = p.update(ctx, tx, repo, language, pks)
 		if err != nil {
 			return errors.Wrap(err, "pkgs.update")
 		}
@@ -204,6 +203,10 @@ func (p *pkgs) ListPackages(ctx context.Context, op *api.ListPackagesOp) (pks []
 }
 
 func (p *pkgs) Delete(ctx context.Context, repo api.RepoID) error {
+	if db.Mocks.Pkgs.Delete != nil {
+		return db.Mocks.Pkgs.Delete(ctx, repo)
+	}
+
 	_, err := dbconn.Global.ExecContext(ctx, `DELETE FROM pkgs WHERE repo_id=$1`, repo)
 	return err
 }

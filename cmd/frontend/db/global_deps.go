@@ -338,10 +338,10 @@ func (g *globalDeps) doListTotalRefsGo(ctx context.Context, source string) ([]ap
 	return repos, nil
 }
 
-func (g *globalDeps) UpdateIndexForLanguage(ctx context.Context, language string, repo *types.Repo, deps []lspext.DependencyReference) (err error) {
+func (g *globalDeps) UpdateIndexForLanguage(ctx context.Context, language string, repo api.RepoID, deps []lspext.DependencyReference) (err error) {
 	err = db.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 		// Update the table.
-		err = g.update(ctx, tx, language, deps, repo.ID)
+		err = g.update(ctx, tx, language, deps, repo)
 		if err != nil {
 			return errors.Wrap(err, "update global_dep")
 		}

@@ -4,6 +4,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
 
+var (
+	Pkgs       = &pkgs{}
+	GlobalDeps = &globalDeps{}
+)
+
 func init() {
-	db.GlobalDeps = &globalDeps{}
+	db.Pkgs = Pkgs
+	db.GlobalDeps = GlobalDeps
 }

@@ -2,14 +2,13 @@ package db
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
@@ -80,10 +79,10 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	rp, err := Repos.GetByURI(ctx, "myrepo")
+	rp, err := db.Repos.GetByURI(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,9 +91,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	inputRefs := []lspext.DependencyReference{{
 		Attributes: map[string]interface{}{"name": "dep1", "vendor": true},
 	}}
-	if err := Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
-		return GlobalDeps.update(ctx, tx, "go", inputRefs, repo)
-	}); err != nil {
+	if err := GlobalDeps.UpdateIndexForLanguage(ctx, "go", repo, inputRefs); err != nil {
 		t.Fatal(err)
 	}
 
@@ -104,7 +101,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 		DepData:  map[string]interface{}{"name": "dep1", "vendor": true},
 		RepoID:   repo,
 	}}
-	gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
+	gotRefs, err := GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
 		Language: "go",
 		DepData:  map[string]interface{}{"name": "dep1"},
 		Limit:    20,
@@ -122,7 +119,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	if err := GlobalDeps.Delete(ctx, 345345345); err != nil {
 		t.Fatal(err)
 	}
-	gotRefs, err = GlobalDeps.Dependencies(ctx, DependenciesOptions{
+	gotRefs, err = GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
 		Language: "go",
 		DepData:  map[string]interface{}{"name": "dep1"},
 		Limit:    20,
@@ -140,7 +137,7 @@ func TestGlobalDeps_update_delete(t *testing.T) {
 	if err := GlobalDeps.Delete(ctx, repo); err != nil {
 		t.Fatal(err)
 	}
-	gotRefs, err = GlobalDeps.Dependencies(ctx, DependenciesOptions{
+	gotRefs, err = GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
 		Language: "go",
 		DepData:  map[string]interface{}{"name": "dep1"},
 		Limit:    20,
@@ -159,15 +156,15 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	repo, err := Repos.GetByURI(ctx, "myrepo")
+	repo, err := db.Repos.GetByURI(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := GlobalDeps.UpdateIndexForLanguage(ctx, "go", repo, []lspext.DependencyReference{{
+	if err := GlobalDeps.UpdateIndexForLanguage(ctx, "go", repo.ID, []lspext.DependencyReference{{
 		Attributes: map[string]interface{}{
 			"name":   "github.com/gorilla/dep",
 			"vendor": true,
@@ -181,7 +178,7 @@ func TestGlobalDeps_RefreshIndex(t *testing.T) {
 		DepData:  map[string]interface{}{"name": "github.com/gorilla/dep", "vendor": true},
 		RepoID:   repo.ID,
 	}}
-	gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
+	gotRefs, err := GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
 		Language: "go",
 		DepData:  map[string]interface{}{"name": "github.com/gorilla/dep"},
 		Limit:    20,
@@ -205,10 +202,10 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 	repos := make([]api.RepoID, 5)
 	for i := 0; i < 5; i++ {
 		uri := api.RepoURI(fmt.Sprintf("myrepo-%d", i))
-		if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: uri, Description: "", Fork: false, Enabled: true}); err != nil {
+		if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: uri, Description: "", Fork: false, Enabled: true}); err != nil {
 			t.Fatal(err)
 		}
-		rp, err := Repos.GetByURI(ctx, uri)
+		rp, err := db.Repos.GetByURI(ctx, uri)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -222,11 +219,9 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 		repos[3]: {{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
 		repos[4]: {{Attributes: map[string]interface{}{"name": "github.com/gorilla/dep4", "vendor": true}}},
 	}
-
-	for repo, inputRefs := range inputRefs {
-		if err := Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
-			return GlobalDeps.update(ctx, tx, "go", inputRefs, repo)
-		}); err != nil {
+	for rp, deps := range inputRefs {
+		err := GlobalDeps.UpdateIndexForLanguage(ctx, "go", rp, deps)
+		if err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -237,7 +232,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep2", "vendor": true},
 			RepoID:   repos[0],
 		}}
-		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
+		gotRefs, err := GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
 			Language: "go",
 			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep2"},
 			Limit:    20,
@@ -257,7 +252,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep3", "vendor": true},
 			RepoID:   repos[1],
 		}}
-		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
+		gotRefs, err := GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
 			Language: "go",
 			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep3"},
 			Limit:    20,
@@ -287,7 +282,7 @@ func TestGlobalDeps_Dependencies(t *testing.T) {
 				RepoID:   repos[4],
 			},
 		}
-		gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
+		gotRefs, err := GlobalDeps.Dependencies(ctx, db.DependenciesOptions{
 			Language: "go",
 			DepData:  map[string]interface{}{"name": "github.com/gorilla/dep4"},
 			Limit:    20,

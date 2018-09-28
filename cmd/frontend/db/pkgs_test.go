@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -23,10 +24,10 @@ func TestPkgs_update_delete(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	rp, err := Repos.GetByURI(ctx, "myrepo")
+	rp, err := db.Repos.GetByURI(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +40,7 @@ func TestPkgs_update_delete(t *testing.T) {
 	}}
 
 	t.Log("update")
-	if err := Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
+	if err := db.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 		if err := Pkgs.update(ctx, tx, rp.ID, "go", pks); err != nil {
 			return err
 		}
@@ -91,15 +92,15 @@ func TestPkgs_RefreshIndex(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+	if err := db.Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
-	rp, err := Repos.GetByURI(ctx, "myrepo")
+	rp, err := db.Repos.GetByURI(ctx, "myrepo")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := Pkgs.UpdateIndexForLanguage(ctx, "typescript", rp, []lspext.PackageInformation{
+	if err := Pkgs.UpdateIndexForLanguage(ctx, "typescript", rp.ID, []lspext.PackageInformation{
 		{
 			Package: map[string]interface{}{
 				"name":    "tspkg",
@@ -154,7 +155,7 @@ func TestPkgs_ListPackages(t *testing.T) {
 
 	createdAt := time.Now()
 	for repo, pks := range repoToPkgs {
-		if err := Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
+		if err := db.Transaction(ctx, dbconn.Global, func(tx *sql.Tx) error {
 			if _, err := tx.ExecContext(ctx, `INSERT INTO repo(id, uri, created_at) VALUES ($1, $2, $3)`, repo, strconv.Itoa(int(repo)), createdAt); err != nil {
 				return err
 			}
