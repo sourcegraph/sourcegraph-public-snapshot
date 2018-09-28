@@ -15,10 +15,10 @@ if [ ! -d ../sourcegraph ]; then
 fi
 
 echo "Installing enterprise web dependencies..."
-yarn
+yarn --check-files
 pushd ../sourcegraph
 echo "Installing OSS web dependencies..."
-yarn
+yarn --check-files
 echo "Linking OSS webapp to node_modules"
 yarn link
 popd
