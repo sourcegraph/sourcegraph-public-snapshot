@@ -46,9 +46,8 @@
   ],
   "dependencies": {
     "@sourcegraph/extensions-client-common": "^8.7.0",
-    "@sourcegraph/react-loading-spinner": "0.0.6",
-    "@sourcegraph/icons": "^1.15.0",
     "@sourcegraph/phabricator-extension": "^1.14.0",
+    "@sourcegraph/react-loading-spinner": "0.0.6",
     "@sourcegraph/webapp": "*",
     "date-fns": "^2.0.0-alpha.7",
     "lodash": "^4.17.11",
