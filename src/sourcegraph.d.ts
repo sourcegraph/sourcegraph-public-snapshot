@@ -410,7 +410,11 @@ declare module 'sourcegraph' {
      * it.
      */
     export interface TextDocumentDecoration {
-        /** The range that the decoration applies to. */
+        /**
+         * The range that the decoration applies to. Currently, decorations are
+         * only applied only on the start line, and the entire line. Multiline
+         * and intra-line ranges are not supported.
+         */
         range: Range
 
         /**
