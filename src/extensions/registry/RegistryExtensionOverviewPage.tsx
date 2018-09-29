@@ -6,6 +6,7 @@ import { ExtensionAreaRouteContext } from '@sourcegraph/webapp/dist/extensions/e
 import { ExtensionREADME } from '@sourcegraph/webapp/dist/extensions/extension/RegistryExtensionREADME'
 import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
 import { isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
+import { isObject } from 'lodash'
 import GithubCircleIcon from 'mdi-react/GithubCircleIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -20,6 +21,21 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element | null {
+        let repositoryURL: URL | undefined
+        try {
+            if (
+                this.props.extension.manifest &&
+                !isErrorLike(this.props.extension.manifest) &&
+                this.props.extension.manifest.repository &&
+                isObject(this.props.extension.manifest.repository) &&
+                typeof this.props.extension.manifest.repository.url === 'string'
+            ) {
+                repositoryURL = new URL(this.props.extension.manifest.repository.url)
+            }
+        } catch (e) {
+            // noop
+        }
+
         return (
             <div className="registry-extension-overview-page row">
                 <PageTitle title={this.props.extension.id} />
@@ -101,22 +117,21 @@ export class RegistryExtensionOverviewPage extends React.PureComponent<Props> {
                                             Source code (JavaScript)
                                         </a>
                                     )}
-                                {this.props.extension.manifest &&
-                                    !isErrorLike(this.props.extension.manifest) &&
-                                    this.props.extension.manifest.repository && (
-                                        <div className="d-flex">
-                                            {new URL(this.props.extension.manifest.repository.url).hostname ===
-                                                'github.com' && <GithubCircleIcon className="icon-inline" />}
-                                            <a
-                                                href={this.props.extension.manifest.repository.url}
-                                                rel="nofollow noreferrer noopener"
-                                                target="_blank"
-                                                className="d-block"
-                                            >
-                                                Repository
-                                            </a>
-                                        </div>
-                                    )}
+                                {repositoryURL && (
+                                    <div className="d-flex">
+                                        {repositoryURL.hostname === 'github.com' && (
+                                            <GithubCircleIcon className="icon-inline" />
+                                        )}
+                                        <a
+                                            href={repositoryURL.href}
+                                            rel="nofollow noreferrer noopener"
+                                            target="_blank"
+                                            className="d-block"
+                                        >
+                                            Repository
+                                        </a>
+                                    </div>
+                                )}
                             </dd>
                         </dl>
                     </small>
