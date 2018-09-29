@@ -7,18 +7,22 @@ require (
 	github.com/crewjam/saml v0.0.0-20180831135026-ebc5f787b786
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
+	github.com/google/uuid v1.0.0
 	github.com/google/zoekt v0.0.0-20180530125106-8e284ca7e964
 	github.com/gorilla/csrf v1.5.1
+	github.com/gorilla/mux v1.6.2
+	github.com/graph-gophers/graphql-go v0.0.0-20180806175703-94da0f0031f9
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
-	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
-	github.com/keegancsmith/sqlf v1.1.0 // indirect
+	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/differ v0.0.0-20180719214047-7596500234bb
 	github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible
 	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 // indirect
 	github.com/lib/pq v1.0.0
+	github.com/mattn/go-colorable v0.0.9 // indirect
+	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/mattn/goreman v0.1.2-0.20180926031137-83bee30f0a15
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/opentracing/opentracing-go v1.0.2
@@ -46,7 +50,6 @@ require (
 	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b
 	golang.org/x/net v0.0.0-20180911220305-26e67e76b6c3
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
-	golang.org/x/sys v0.0.0-20180918153733-ee1b12c67af4 // indirect
 	golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e
 	google.golang.org/appengine v1.2.0 // indirect
 	google.golang.org/grpc v1.15.0 // indirect
@@ -64,3 +67,5 @@ replace (
 )
 
 replace github.com/sourcegraph/sourcegraph => ../sourcegraph
+
+replace github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a

@@ -17,6 +17,7 @@ import (
 	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/assets"
 	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/httpapi"
 	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	_ "github.com/sourcegraph/enterprise/cmd/frontend/internal/registry"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 )
