@@ -16,10 +16,6 @@ func init() {
 	bk.Plugins["gopath-checkout#v1.0.1"] = map[string]string{
 		"import": "github.com/sourcegraph/enterprise",
 	}
-	if repoRev, ok := os.LookupEnv("OSS_REPO_REVISION"); ok {
-		bk.OnEveryStepOpts = append(bk.OnEveryStepOpts, bk.Env("OSS_REPO_REVISION", repoRev))
-	}
-	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts, bk.Cmd("./dev/ci/ensure-oss-repo-cloned.sh"))
 }
 
 func pkgs() []string {
