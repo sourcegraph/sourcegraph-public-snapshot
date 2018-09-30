@@ -217,7 +217,7 @@ func (s dbExtensions) List(ctx context.Context, opt dbExtensionsListOptions) ([]
 
 func (dbExtensions) listCountSQL(conds []*sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf(`
-FROM frontendregistryextensions x
+FROM registry_extensions x
 LEFT JOIN users ON users.id=publisher_user_id AND users.deleted_at IS NULL
 LEFT JOIN orgs ON orgs.id=publisher_org_id AND orgs.deleted_at IS NULL
 WHERE (%s) AND x.deleted_at IS NULL`,

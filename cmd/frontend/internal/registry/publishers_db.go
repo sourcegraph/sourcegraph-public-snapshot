@@ -58,9 +58,9 @@ func (s dbExtensions) ListPublishers(ctx context.Context, opt dbPublishersListOp
 
 func (dbExtensions) publishersSQLCTE() *sqlf.Query {
 	return sqlf.Sprintf(`WITH publishers AS (
-  (SELECT DISTINCT ON (publisher_user_id) publisher_user_id AS user_id, NULL AS org_id FROM frontendregistryextensions WHERE publisher_user_id IS NOT NULL AND deleted_at IS NULL)
+  (SELECT DISTINCT ON (publisher_user_id) publisher_user_id AS user_id, NULL AS org_id FROM registry_extensions WHERE publisher_user_id IS NOT NULL AND deleted_at IS NULL)
   UNION
-  (SELECT DISTINCT ON (publisher_org_id) NULL AS user_id, publisher_org_id AS org_id FROM frontendregistryextensions WHERE publisher_org_id IS NOT NULL AND deleted_at IS NULL)
+  (SELECT DISTINCT ON (publisher_org_id) NULL AS user_id, publisher_org_id AS org_id FROM registry_extensions WHERE publisher_org_id IS NOT NULL AND deleted_at IS NULL)
 ) `)
 }
 
