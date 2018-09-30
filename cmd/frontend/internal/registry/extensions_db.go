@@ -79,7 +79,7 @@ func (s dbExtensions) Create(ctx context.Context, publisherUserID, publisherOrgI
 		// Include users/orgs table query (with "FOR UPDATE") to ensure that the publisher user/org
 		// not been deleted. If it was deleted, the query will return an error.
 		`
-INSERT INTO frontendregistryextensions(uuid, publisher_user_id, publisher_org_id, name)
+INSERT INTO registry_extensions(uuid, publisher_user_id, publisher_org_id, name)
 VALUES(
   $1,
   (SELECT id FROM users WHERE id=$2 AND deleted_at IS NULL FOR UPDATE),
@@ -276,7 +276,7 @@ func (dbExtensions) Update(ctx context.Context, id int32, name *string) error {
 	}
 
 	res, err := dbconn.Global.ExecContext(ctx,
-		"UPDATE frontendregistryextensions SET name=COALESCE($2, name),  updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
+		"UPDATE registry_extensions SET name=COALESCE($2, name),  updated_at=now() WHERE id=$1 AND deleted_at IS NULL",
 		id, name,
 	)
 	if err != nil {
@@ -298,7 +298,7 @@ func (dbExtensions) Delete(ctx context.Context, id int32) error {
 		return mocks.extensions.Delete(id)
 	}
 
-	res, err := dbconn.Global.ExecContext(ctx, "UPDATE frontendregistryextensions SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
+	res, err := dbconn.Global.ExecContext(ctx, "UPDATE registry_extensions SET deleted_at=now() WHERE id=$1 AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
 	}

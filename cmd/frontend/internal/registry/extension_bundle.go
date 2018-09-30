@@ -59,7 +59,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// We want to cache forever because an extension release is immutable, except that if the
-	// database is reset and and the frontendregistryextension_releases.id sequence starts over, we don't
+	// database is reset and and the registry_extension_releases.id sequence starts over, we don't
 	// want stale data from pre-reset. So, assume that the presence of a query string means that it
 	// includes some identifier that changes when the database is reset.
 	if r.URL.RawQuery != "" {

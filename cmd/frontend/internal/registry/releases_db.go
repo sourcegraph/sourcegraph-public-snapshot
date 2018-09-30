@@ -47,7 +47,7 @@ func (dbReleases) Create(ctx context.Context, release *dbRelease) (id int64, err
 
 	if err := dbconn.Global.QueryRowContext(ctx,
 		`
-INSERT INTO frontendregistryextension_releases(frontendregistryextension_id, creator_user_id, release_version, release_tag, manifest, bundle, source_map)
+INSERT INTO registry_extension_releases(registry_extension_id, creator_user_id, release_version, release_tag, manifest, bundle, source_map)
 VALUES($1, $2, $3, $4, $5, $6, $7)
 RETURNING id
 `,
@@ -67,9 +67,9 @@ func (dbReleases) GetLatest(ctx context.Context, registryExtensionID int32, rele
 	}
 
 	q := sqlf.Sprintf(`
-SELECT id, frontendregistryextension_id, creator_user_id, release_version, release_tag, manifest, CASE WHEN %v::boolean THEN bundle ELSE null END AS bundle, CASE WHEN %v::boolean THEN source_map ELSE null END AS source_map, created_at
-FROM frontendregistryextension_releases
-WHERE frontendregistryextension_id=%d AND release_tag=%s AND deleted_at IS NULL
+SELECT id, registry_extension_id, creator_user_id, release_version, release_tag, manifest, CASE WHEN %v::boolean THEN bundle ELSE null END AS bundle, CASE WHEN %v::boolean THEN source_map ELSE null END AS source_map, created_at
+FROM registry_extension_releases
+WHERE registry_extension_id=%d AND release_tag=%s AND deleted_at IS NULL
 ORDER BY created_at DESC
 LIMIT 1`, includeArtifacts, includeArtifacts, registryExtensionID, releaseTag)
 	var r dbRelease
@@ -88,7 +88,7 @@ LIMIT 1`, includeArtifacts, includeArtifacts, registryExtensionID, releaseTag)
 func (dbReleases) GetArtifacts(ctx context.Context, id int64) (bundle, sourcemap []byte, err error) {
 	q := sqlf.Sprintf(`
 SELECT bundle, source_map
-FROM frontendregistryextension_releases
+FROM registry_extension_releases
 WHERE id=%d AND deleted_at IS NULL`, id)
 	if err := dbconn.Global.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&bundle, &sourcemap); err != nil {
 		if err == sql.ErrNoRows {

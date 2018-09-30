@@ -50,7 +50,7 @@ func TestRegistryExtensions_validUsernames(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
 			if _, err := (dbExtensions{}).Create(ctx, user.ID, 0, test.name); err != nil {
-				if e, ok := err.(*pq.Error); ok && (e.Constraint == "frontendregistryextensions_name_valid_chars" || e.Constraint == "frontendregistryextensions_name_length") {
+				if e, ok := err.(*pq.Error); ok && (e.Constraint == "registry_extensions_name_valid_chars" || e.Constraint == "registry_extensions_name_length") {
 					valid = false
 				} else {
 					t.Fatal(err)
