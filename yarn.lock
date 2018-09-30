@@ -902,22 +902,6 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/extensions-client-common@^8.5.0":
-  version "8.5.0"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-8.5.0.tgz#22be52a56069687c9b00129a856dbe0cee5719d1"
-  integrity sha512-lRmdOEG7KsTnAPnFHJ7xFR61Uv2UvQNQIAsFrMviU0/RyOTuEmkjDb2f230fj+SKKYxW+tsq5KS3mbqq2Y5BEw==
-  dependencies:
-    bootstrap "^4.1.3"
-    lodash-es "^4.17.10"
-    react "^16.4.2"
-    react-router "^4.3.1"
-    react-router-dom "^4.3.1"
-    reactstrap "^6.4.0"
-    rxjs "^6.3.2"
-    sourcegraph "^18.0.0"
-    string-score "^1.0.1"
-    ts-key-enum "^2.0.0"
-
 "@sourcegraph/extensions-client-common@^8.7.0":
   version "8.7.0"
   resolved "https://registry.npmjs.org/@sourcegraph/extensions-client-common/-/extensions-client-common-8.7.0.tgz#46d6a4632df263ce977f6f266cdbd9bf295c4638"
@@ -934,12 +918,23 @@
     string-score "^1.0.1"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/icons@^1.15.0":
-  version "1.15.0"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/icons/-/icons-1.15.0.tgz#8aa704a89ec779230362d9b18d4fbf26e8267087"
-  integrity sha512-H55pG6+h3JUpH87AXbqkheygg3jovcFwoy0fMnvGQ2rdJ+N10SFKZ560Y7a4q+q/EQTJN1abCUFNPocNoTqMGg==
+"@sourcegraph/extensions-client-common@^8.8.0":
+  version "8.9.0"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-8.9.0.tgz#36a8ade0ed2281e7801e08aafac669bac332f7d2"
+  integrity sha512-sLTskHYrUNupDbk+RJC9o4Rmdpc2pD4IQs6hvXx6GDjb1w/qXa1jrh+KygmDObabqDddzAPLbfGkSjkaYQJUDw==
+  dependencies:
+    bootstrap "^4.1.3"
+    lodash-es "^4.17.10"
+    react "^16.4.2"
+    react-router "^4.3.1"
+    react-router-dom "^4.3.1"
+    reactstrap "^6.4.0"
+    rxjs "^6.3.2"
+    sourcegraph "^18.0.0"
+    string-score "^1.0.1"
+    ts-key-enum "^2.0.0"
 
-"@sourcegraph/phabricator-extension@^1.12.2", "@sourcegraph/phabricator-extension@^1.14.0":
+"@sourcegraph/phabricator-extension@^1.14.0":
   version "1.14.0"
   resolved "https://registry.yarnpkg.com/@sourcegraph/phabricator-extension/-/phabricator-extension-1.14.0.tgz#ceb50ae77849a4c791206eac9d7d7ff4b0b8e9ab"
   integrity sha512-fkn48rx13wlaqcbkDpf2dGJTMRo1o2pA3qMdpG71bWBDRmsXifEZqoIRoPk0oGI4uStPb1l2eowNJPfyihOxJg==
@@ -977,18 +972,16 @@
     tslint-config-prettier "^1.6.0"
     tslint-react "^3.2.0"
 
-"@sourcegraph/webapp@*":
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.2.tgz#639617759a5952d0d3335ad45f87c4265d250299"
-  integrity sha512-6qUVrONwzzMWzfn681L2Ozgt4OCOwcI3XFBfx92fGliRUCL4lo2thZ8xa2Op8cTYAddYxHauNUoWPX+OeXaTaQ==
+"@sourcegraph/webapp@0.0.138":
+  version "0.0.138"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.138.tgz#43fdb7139289a28f4dc82b2d70f0a64994b74bc5"
+  integrity sha512-WEfHXehhkkulIWS7nUSua9GBkK5Od4wq36BUiaHd4UPBW/Jmwphlc1OX1zy3e33/Lhf0pwuHxOUdA7vkTBqk7w==
   dependencies:
     "@babel/core" "^7.0.0"
     "@babel/plugin-syntax-dynamic-import" "^7.0.0"
     "@babel/polyfill" "^7.0.0"
     "@sourcegraph/codeintellify" "^3.8.4"
-    "@sourcegraph/extensions-client-common" "^8.5.0"
-    "@sourcegraph/icons" "^1.15.0"
-    "@sourcegraph/phabricator-extension" "^1.12.2"
+    "@sourcegraph/extensions-client-common" "^8.8.0"
     "@sqs/jsonc-parser" "^1.0.3"
     "@types/react" "16.4.14"
     "@types/react-dom" "16.0.7"
@@ -1011,7 +1004,7 @@
     fbjs "^0.8.17"
     get-stream "^4.0.0"
     graphiql "^0.11.11"
-    graphql "^0.13.2"
+    graphql "0.13.0"
     graphql-schema-linter "^0.1.6"
     highlight.js "^9.12.0"
     javascript-typescript-langserver "^2.5.4"
@@ -1019,6 +1012,7 @@
     lodash "^4.17.10"
     marked "^0.5.0"
     mdi-react "^4.0.0"
+    mkdirp-promise "^5.0.1"
     monaco-editor "^0.14.0"
     open-color "^1.6.2"
     ora "^3.0.0"
@@ -5024,7 +5018,14 @@ graphql-schema-linter@^0.1.6:
     graphql "^0.13.0"
     lodash "^4.17.4"
 
-graphql@^0.13.0, graphql@^0.13.2:
+graphql@0.13.0:
+  version "0.13.0"
+  resolved "https://registry.yarnpkg.com/graphql/-/graphql-0.13.0.tgz#d1b44a282279a9ce0a6ec1037329332f4c1079b6"
+  integrity sha512-WlO+ZJT9aY3YrBT+H5Kk+eVb3OVVehB9iRD/xqeHdmrrn4AFl5FIcOpfHz/vnBr6Y6JthGMlnFqU8XRnDjSR7A==
+  dependencies:
+    iterall "1.1.x"
+
+graphql@^0.13.0:
   version "0.13.2"
   resolved "http://registry.npmjs.org/graphql/-/graphql-0.13.2.tgz#4c740ae3c222823e7004096f832e7b93b2108270"
   integrity sha512-QZ5BL8ZO/B20VA8APauGBg3GyEgZ19eduvpLWoq5x7gMmWnHoy8rlQWPLmWgFvo1yNgjSEFMesmS4R6pPr7xog==
@@ -6023,6 +6024,11 @@ istanbul-reports@^2.0.0:
   integrity sha512-d2YRSnAOHHb+6vMc5qjJEyPN4VapkgUMhKlMmr3BzKdMDWdJbyYGEi/7m5AjDjkvRRTjs68ttPRZ7W2jBZ31SQ==
   dependencies:
     handlebars "^4.0.11"
+
+iterall@1.1.x:
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/iterall/-/iterall-1.1.4.tgz#0db40d38fdcf53ae14dc8ec674e62ab190d52cfc"
+  integrity sha512-eaDsM/PY8D/X5mYQhecVc5/9xvSHED7yPON+ffQroBeTuqUVm7dfphMkK8NksXuImqZlVRoKtrNfMIVCYIqaUQ==
 
 iterall@^1.2.1:
   version "1.2.2"
@@ -7100,7 +7106,14 @@ mixin-object@^2.0.1:
     for-in "^0.1.3"
     is-extendable "^0.1.1"
 
-mkdirp@0.5.1, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0:
+mkdirp-promise@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/mkdirp-promise/-/mkdirp-promise-5.0.1.tgz#e9b8f68e552c68a9c1713b84883f7a1dd039b8a1"
+  integrity sha1-6bj2jlUsaKnBcTuEiD96HdA5uKE=
+  dependencies:
+    mkdirp "*"
+
+mkdirp@*, mkdirp@0.5.1, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdirp@~0.5.0:
   version "0.5.1"
   resolved "http://registry.npmjs.org/mkdirp/-/mkdirp-0.5.1.tgz#30057438eac6cf7f8c4767f38648d6697d75c903"
   integrity sha1-MAV0OOrGz3+MR2fzhkjWaX11yQM=

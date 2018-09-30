@@ -6,11 +6,12 @@ import (
 	"github.com/NYTimes/gziphandler"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
@@ -57,7 +58,7 @@ func NewHandler() http.Handler {
 	r.Get(router.ResetPasswordInit).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleResetPasswordInit)))
 	r.Get(router.ResetPasswordCode).Handler(trace.TraceRoute(http.HandlerFunc(userpasswd.HandleResetPasswordCode)))
 
-	r.Get(router.RegistryExtensionBundle).Handler(trace.TraceRoute(gziphandler.GzipHandler(http.HandlerFunc(serveRegistryExtensionBundle))))
+	r.Get(router.RegistryExtensionBundle).Handler(trace.TraceRoute(gziphandler.GzipHandler(http.HandlerFunc(registry.HandleRegistryExtensionBundle))))
 
 	r.Get(router.GDDORefs).Handler(trace.TraceRoute(errorutil.Handler(serveGDDORefs)))
 	r.Get(router.Editor).Handler(trace.TraceRoute(errorutil.Handler(serveEditor)))

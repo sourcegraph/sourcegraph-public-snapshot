@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 
@@ -165,7 +166,7 @@ func (r *gitCommitResolver) Languages(ctx context.Context) ([]string, error) {
 }
 
 func (r *gitCommitResolver) Ancestors(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Query *string
 	Path  *string
 }) *gitCommitConnectionResolver {

@@ -10,6 +10,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -23,7 +24,7 @@ type createAccessTokenInput struct {
 
 func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAccessTokenInput) (*createAccessTokenResult, error) {
 	// 🚨 SECURITY: Only site admins and the user can create an access token for a user.
-	userID, err := unmarshalUserID(args.User)
+	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +132,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 }
 
 func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all access tokens.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -144,7 +145,7 @@ func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 }
 
 func (r *UserResolver) AccessTokens(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's access tokens.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
@@ -201,10 +202,10 @@ func (r *accessTokenConnectionResolver) TotalCount(ctx context.Context) (int32, 
 	return int32(count), err
 }
 
-func (r *accessTokenConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *accessTokenConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	accessTokens, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(accessTokens) > r.opt.Limit}, nil
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(accessTokens) > r.opt.Limit), nil
 }

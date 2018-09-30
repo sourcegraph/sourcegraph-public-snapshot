@@ -2082,13 +2082,6 @@ type User implements Node & ConfigurationSubject {
     #
     # Only the user and site admins can access this field.
     surveyResponses: [SurveyResponse!]!
-    # A list of extensions published by this user in the extension registry.
-    registryExtensions(
-        # Returns the first n extensions from the list.
-        first: Int
-        # Returns only extensions matching the query.
-        query: String
-    ): RegistryExtensionConnection!
 }
 
 # An access token that grants to the holder the privileges of the user who created it.
@@ -2269,12 +2262,6 @@ type Org implements Node & ConfigurationSubject {
     # The URL to the organization's settings.
     settingsURL: String!
     # A list of extensions published by this organization in the extension registry.
-    registryExtensions(
-        # Returns the first n extensions from the list.
-        first: Int
-        # Returns only extensions matching the query.
-        query: String
-    ): RegistryExtensionConnection!
 }
 
 # The result of Mutation.inviteUserToOrganization.

@@ -59,7 +59,7 @@ func (r *configurationCascadeResolver) Subjects(ctx context.Context) ([]*configu
 		})
 		// Apply the user's orgs' configuration.
 		for _, org := range orgs {
-			subjects = append(subjects, &configurationSubject{org: &orgResolver{org}})
+			subjects = append(subjects, &configurationSubject{org: &OrgResolver{org}})
 		}
 		// Apply the user's own configuration last (it has highest priority).
 		subjects = append(subjects, r.subject)
@@ -180,7 +180,7 @@ func mergeConfigValues(dst map[string]interface{}, field string, value interface
 }
 
 func (schemaResolver) ViewerConfiguration(ctx context.Context) (*configurationCascadeResolver, error) {
-	user, err := currentUser(ctx)
+	user, err := CurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}

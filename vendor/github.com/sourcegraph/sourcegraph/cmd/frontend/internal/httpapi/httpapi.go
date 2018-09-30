@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -16,7 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // NewHandler returns a new API handler that uses the provided API
@@ -46,7 +46,7 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.GraphQL).Handler(trace.TraceRoute(handler(serveGraphQL)))
 
-	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(serveRegistry)))
+	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(registry.HandleRegistry)))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -69,7 +69,6 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.StrictSlash(true)
 
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
-	m.Get(apirouter.Registry).Handler(trace.TraceRoute(handler(serveRegistry)))
 	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
 	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))
 	m.Get(apirouter.ReposUpdateIndex).Handler(trace.TraceRoute(handler(serveReposUpdateIndex)))

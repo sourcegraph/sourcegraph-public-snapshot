@@ -55,7 +55,7 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *struct {
 	User  graphql.ID
 	Email string
 }) (*EmptyResponse, error) {
-	userID, err := unmarshalUserID(args.User)
+	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *struct {
 	User  graphql.ID
 	Email string
 }) (*EmptyResponse, error) {
-	userID, err := unmarshalUserID(args.User)
+	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 		return nil, err
 	}
 
-	userID, err := unmarshalUserID(args.User)
+	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}

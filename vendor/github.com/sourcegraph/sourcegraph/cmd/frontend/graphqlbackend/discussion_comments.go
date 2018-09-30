@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -87,7 +88,7 @@ func (r *discussionCommentResolver) CanReport(ctx context.Context) bool {
 		return false
 	}
 	// Only signed in users may update/report a discussion comment.
-	currentUser, err := currentUser(ctx)
+	currentUser, err := CurrentUser(ctx)
 	if err != nil {
 		return false
 	}
@@ -117,7 +118,7 @@ func (r *discussionCommentResolver) CanDelete(ctx context.Context) bool {
 }
 
 func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	AuthorUserID *graphql.ID
 }) (*discussionCommentsConnectionResolver, error) {
 	if err := viewerCanUseDiscussions(ctx); err != nil {
@@ -131,7 +132,7 @@ func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
 	opt := &db.DiscussionCommentsListOptions{}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
 	if args.AuthorUserID != nil {
-		userID, err := unmarshalUserID(*args.AuthorUserID)
+		userID, err := UnmarshalUserID(*args.AuthorUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -143,7 +144,7 @@ func (s *schemaResolver) DiscussionComments(ctx context.Context, args *struct {
 // checkSignedInAndEmailVerified returns an error if there is not a user signed
 // in, or if that user does not have at least one verified email address.
 func checkSignedInAndEmailVerified(ctx context.Context) (*UserResolver, error) {
-	currentUser, err := currentUser(ctx)
+	currentUser, err := CurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +223,7 @@ func (r *discussionsMutationResolver) UpdateComment(ctx context.Context, args *s
 	}
 
 	// 🚨 SECURITY: Only signed in users may update a discussion comment.
-	currentUser, err := currentUser(ctx)
+	currentUser, err := CurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -350,10 +351,10 @@ func (r *discussionCommentsConnectionResolver) TotalCount(ctx context.Context) (
 	return int32(count), err
 }
 
-func (r *discussionCommentsConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *discussionCommentsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	comments, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(comments) > r.opt.Limit}, nil
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(comments) > r.opt.Limit), nil
 }

@@ -11,6 +11,7 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -19,7 +20,7 @@ import (
 )
 
 func (r *schemaResolver) Repositories(args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Query           *string
 	Enabled         bool
 	Disabled        bool
@@ -230,12 +231,12 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *str
 	return i32ptr(int32(count)), err
 }
 
-func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	repos, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(repos) > r.opt.Limit}, nil
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(repos) > r.opt.Limit), nil
 }
 
 func (r *schemaResolver) AddRepository(ctx context.Context, args *struct {

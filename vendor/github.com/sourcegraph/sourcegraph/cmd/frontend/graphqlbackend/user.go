@@ -31,7 +31,7 @@ type UserResolver struct {
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
 // non-nil error.
 func UserByID(ctx context.Context, id graphql.ID) (*UserResolver, error) {
-	userID, err := unmarshalUserID(id)
+	userID, err := UnmarshalUserID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (r *UserResolver) ID() graphql.ID { return marshalUserID(r.user.ID) }
 
 func marshalUserID(id int32) graphql.ID { return relay.MarshalID("User", id) }
 
-func unmarshalUserID(id graphql.ID) (userID int32, err error) {
+func UnmarshalUserID(id graphql.ID) (userID int32, err error) {
 	err = relay.UnmarshalSpec(id, &userID)
 	return
 }
@@ -144,7 +144,7 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 	DisplayName *string
 	AvatarURL   *string
 }) (*EmptyResponse, error) {
-	userID, err := unmarshalUserID(args.User)
+	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
@@ -173,9 +173,9 @@ func (*schemaResolver) UpdateUser(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-// currentUser returns the authenticated user if any. If there is no authenticated user, it returns
+// CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
 // (nil, nil). If some other error occurs, then the error is returned.
-func currentUser(ctx context.Context) (*UserResolver, error) {
+func CurrentUser(ctx context.Context) (*UserResolver, error) {
 	user, err := db.Users.GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == db.ErrNoCurrentUser {
@@ -191,9 +191,9 @@ func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticR
 	if err != nil {
 		return nil, err
 	}
-	c := orgConnectionStaticResolver{nodes: make([]*orgResolver, len(orgs))}
+	c := orgConnectionStaticResolver{nodes: make([]*OrgResolver, len(orgs))}
 	for i, org := range orgs {
-		c.nodes[i] = &orgResolver{org}
+		c.nodes[i] = &OrgResolver{org}
 	}
 	return &c, nil
 }

@@ -23,9 +23,6 @@ var (
 
 	OrgInvitations = &orgInvitations{}
 
-	RegistryExtensions        = &registryExtensions{}
-	RegistryExtensionReleases = &registryExtensionReleases{}
-
 	// GlobalDeps is a stub implementation of a global dependency index
 	GlobalDeps GlobalDepsProvider = &globalDeps{}
 

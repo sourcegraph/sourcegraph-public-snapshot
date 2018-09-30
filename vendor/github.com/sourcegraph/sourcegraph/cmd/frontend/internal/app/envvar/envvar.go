@@ -3,7 +3,7 @@ package envvar
 import (
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"

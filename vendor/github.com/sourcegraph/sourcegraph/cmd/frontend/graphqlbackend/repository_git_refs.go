@@ -7,17 +7,18 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
 func (r *repositoryResolver) Branches(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Query   *string
 	OrderBy *string
 }) (*gitRefConnectionResolver, error) {
 	gitRefTypeBranch := gitRefTypeBranch
 	return r.GitRefs(ctx, &struct {
-		ConnectionArgs
+		graphqlutil.ConnectionArgs
 		Query   *string
 		Type    *string
 		OrderBy *string
@@ -25,12 +26,12 @@ func (r *repositoryResolver) Branches(ctx context.Context, args *struct {
 }
 
 func (r *repositoryResolver) Tags(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Query *string
 }) (*gitRefConnectionResolver, error) {
 	gitRefTypeTag := gitRefTypeTag
 	return r.GitRefs(ctx, &struct {
-		ConnectionArgs
+		graphqlutil.ConnectionArgs
 		Query   *string
 		Type    *string
 		OrderBy *string
@@ -38,7 +39,7 @@ func (r *repositoryResolver) Tags(ctx context.Context, args *struct {
 }
 
 func (r *repositoryResolver) GitRefs(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Query   *string
 	Type    *string
 	OrderBy *string
@@ -152,6 +153,6 @@ func (r *gitRefConnectionResolver) TotalCount() int32 {
 	return int32(len(r.refs))
 }
 
-func (r *gitRefConnectionResolver) PageInfo() *PageInfo {
-	return &PageInfo{hasNextPage: r.first != nil && int(*r.first) < len(r.refs)}
+func (r *gitRefConnectionResolver) PageInfo() *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(r.first != nil && int(*r.first) < len(r.refs))
 }

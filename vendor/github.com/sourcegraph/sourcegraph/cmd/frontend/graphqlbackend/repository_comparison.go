@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"sourcegraph.com/sourcegraph/go-diff/diff"
@@ -215,11 +216,11 @@ func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, er
 	return nil, nil // total count is not available
 }
 
-func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	if _, err := r.compute(ctx); err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.hasNextPage}, nil
+	return graphqlutil.HasNextPage(r.hasNextPage), nil
 }
 
 func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*diffStat, error) {

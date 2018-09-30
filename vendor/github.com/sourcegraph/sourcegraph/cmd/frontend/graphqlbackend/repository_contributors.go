@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -86,10 +87,10 @@ func (r *repositoryContributorConnectionResolver) TotalCount(ctx context.Context
 	return int32(len(results)), nil
 }
 
-func (r *repositoryContributorConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *repositoryContributorConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	results, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.first != nil && len(results) > int(*r.first)}, nil
+	return graphqlutil.HasNextPage(r.first != nil && len(results) > int(*r.first)), nil
 }

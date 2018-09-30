@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
@@ -15,7 +16,7 @@ import (
 )
 
 type symbolsArgs struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Query *string
 }
 
@@ -129,8 +130,8 @@ func (r *symbolConnectionResolver) Nodes(ctx context.Context) ([]*symbolResolver
 	return symbols, nil
 }
 
-func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
-	return &PageInfo{hasNextPage: len(r.symbols) > limitOrDefault(r.first)}, nil
+func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(len(r.symbols) > limitOrDefault(r.first)), nil
 }
 
 type symbolResolver struct {

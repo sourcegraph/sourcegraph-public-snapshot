@@ -6,8 +6,8 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 )
 
 type randomizeUserPasswordResult struct {
@@ -38,7 +38,7 @@ func (*schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	userID, err := unmarshalUserID(args.User)
+	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}

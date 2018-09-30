@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )

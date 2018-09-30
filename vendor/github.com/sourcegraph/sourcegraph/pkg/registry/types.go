@@ -5,7 +5,7 @@ import "time"
 // Extension describes an extension in the extension registry.
 //
 // It is the external form of
-// github.com/sourcegraph/sourcegraph/cmd/frontend/db.RegistryExtension (which is the
+// github.com/sourcegraph/sourcegraph/cmd/frontend/types.RegistryExtension (which is the
 // internal DB type). These types should generally be kept in sync, but registry.Extension updates
 // require backcompat.
 type Extension struct {
@@ -23,7 +23,7 @@ type Extension struct {
 	RegistryURL string `json:"-"`
 
 	// IsSynthesizedLocalExtension is true for extensions that were synthesized locally. For these
-	// extensions, it is easier to synthesize values of this type instead of db.RegistryExtension.
+	// extensions, it is easier to synthesize values of this type instead of types.RegistryExtension.
 	//
 	// BACKCOMPAT: This supports backcompat for known language servers registered in the site config
 	// "langservers" property.

@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -102,7 +102,7 @@ func (*schemaResolver) RespondToOrganizationInvitation(ctx context.Context, args
 	OrganizationInvitation graphql.ID
 	ResponseType           string
 }) (*EmptyResponse, error) {
-	currentUser, err := currentUser(ctx)
+	currentUser, err := CurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}

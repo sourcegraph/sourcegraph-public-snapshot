@@ -15,13 +15,14 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/xlang"
 )
 
 type dependenciesArgs struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Query *string
 }
 
@@ -102,12 +103,12 @@ func (r *dependencyConnectionResolver) TotalCount(ctx context.Context) (int32, e
 	return int32(len(deps)), nil
 }
 
-func (r *dependencyConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *dependencyConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	deps, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.first != nil && int(*r.first) < len(deps)}, nil
+	return graphqlutil.HasNextPage(r.first != nil && int(*r.first) < len(deps)), nil
 }
 
 type dependencyResolver struct {

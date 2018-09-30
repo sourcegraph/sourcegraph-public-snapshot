@@ -17,12 +17,12 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	userID, err := unmarshalUserID(args.User)
+	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}
 
-	currentUser, err := currentUser(ctx)
+	currentUser, err := CurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (*schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	orgID, err := unmarshalOrgID(args.Organization)
+	orgID, err := UnmarshalOrgID(args.Organization)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	user, err := currentUser(ctx)
+	user, err := CurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (*schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		return nil, errors.New("refusing to set current user site admin status")
 	}
 
-	userID, err := unmarshalUserID(args.UserID)
+	userID, err := UnmarshalUserID(args.UserID)
 	if err != nil {
 		return nil, err
 	}

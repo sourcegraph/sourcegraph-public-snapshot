@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 )
 
@@ -28,16 +29,16 @@ func (r *organizationMembershipConnectionResolver) Nodes() []*organizationMember
 	return r.nodes
 }
 func (r *organizationMembershipConnectionResolver) TotalCount() int32 { return int32(len(r.nodes)) }
-func (r *organizationMembershipConnectionResolver) PageInfo() *PageInfo {
-	return &PageInfo{hasNextPage: false}
+func (r *organizationMembershipConnectionResolver) PageInfo() *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(false)
 }
 
 type organizationMembershipResolver struct {
 	membership *types.OrgMembership
 }
 
-func (r *organizationMembershipResolver) Organization(ctx context.Context) (*orgResolver, error) {
-	return orgByIDInt32(ctx, r.membership.OrgID)
+func (r *organizationMembershipResolver) Organization(ctx context.Context) (*OrgResolver, error) {
+	return OrgByIDInt32(ctx, r.membership.OrgID)
 }
 
 func (r *organizationMembershipResolver) User(ctx context.Context) (*UserResolver, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 )
 
@@ -44,5 +45,7 @@ func (r *authProviderConnectionResolver) Nodes(ctx context.Context) ([]*authProv
 	return rs, nil
 }
 
-func (r *authProviderConnectionResolver) TotalCount() int32   { return int32(len(r.authProviders)) }
-func (r *authProviderConnectionResolver) PageInfo() *PageInfo { return &PageInfo{hasNextPage: false} }
+func (r *authProviderConnectionResolver) TotalCount() int32 { return int32(len(r.authProviders)) }
+func (r *authProviderConnectionResolver) PageInfo() *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(false)
+}

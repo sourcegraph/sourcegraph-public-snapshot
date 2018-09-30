@@ -5,10 +5,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 func (r *schemaResolver) Organizations(args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Query *string
 }) *orgConnectionResolver {
 	var opt db.OrgsListOptions
@@ -23,7 +24,7 @@ type orgConnectionResolver struct {
 	opt db.OrgsListOptions
 }
 
-func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*orgResolver, error) {
+func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, error) {
 	// 🚨 SECURITY: Only site admins can list orgs.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
@@ -34,9 +35,9 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*orgResolver, erro
 		return nil, err
 	}
 
-	var l []*orgResolver
+	var l []*OrgResolver
 	for _, org := range orgs {
-		l = append(l, &orgResolver{
+		l = append(l, &OrgResolver{
 			org: org,
 		})
 	}
@@ -54,9 +55,11 @@ func (r *orgConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
 }
 
 type orgConnectionStaticResolver struct {
-	nodes []*orgResolver
+	nodes []*OrgResolver
 }
 
-func (r *orgConnectionStaticResolver) Nodes() []*orgResolver { return r.nodes }
+func (r *orgConnectionStaticResolver) Nodes() []*OrgResolver { return r.nodes }
 func (r *orgConnectionStaticResolver) TotalCount() int32     { return int32(len(r.nodes)) }
-func (r *orgConnectionStaticResolver) PageInfo() *PageInfo   { return &PageInfo{hasNextPage: false} }
+func (r *orgConnectionStaticResolver) PageInfo() *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(false)
+}

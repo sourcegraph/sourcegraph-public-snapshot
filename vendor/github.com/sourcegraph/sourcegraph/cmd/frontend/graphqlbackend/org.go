@@ -17,70 +17,72 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*orgResolver, error) {
+func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
 	org, err := db.Orgs.GetByName(ctx, args.Name)
 	if err != nil {
 		return nil, err
 	}
-	return &orgResolver{org: org}, nil
+	return &OrgResolver{org: org}, nil
 }
 
 // Org is DEPRECATED (but still in use by sourcegraph/src). Use Node to look up an org by its
 // graphql.ID instead.
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
-}) (*orgResolver, error) {
+}) (*OrgResolver, error) {
 	return orgByID(ctx, args.ID)
 }
 
-func orgByID(ctx context.Context, id graphql.ID) (*orgResolver, error) {
-	orgID, err := unmarshalOrgID(id)
+func orgByID(ctx context.Context, id graphql.ID) (*OrgResolver, error) {
+	orgID, err := UnmarshalOrgID(id)
 	if err != nil {
 		return nil, err
 	}
-	return orgByIDInt32(ctx, orgID)
+	return OrgByIDInt32(ctx, orgID)
 }
 
-func orgByIDInt32(ctx context.Context, orgID int32) (*orgResolver, error) {
+func OrgByIDInt32(ctx context.Context, orgID int32) (*OrgResolver, error) {
 	org, err := db.Orgs.GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
-	return &orgResolver{org}, nil
+	return &OrgResolver{org}, nil
 }
 
-type orgResolver struct {
+type OrgResolver struct {
 	org *types.Org
 }
 
-func (o *orgResolver) ID() graphql.ID { return marshalOrgID(o.org.ID) }
+func NewOrg(org *types.Org) *OrgResolver { return &OrgResolver{org: org} }
+
+func (o *OrgResolver) ID() graphql.ID { return marshalOrgID(o.org.ID) }
 
 func marshalOrgID(id int32) graphql.ID { return relay.MarshalID("Org", id) }
 
-func unmarshalOrgID(id graphql.ID) (orgID int32, err error) {
+func UnmarshalOrgID(id graphql.ID) (orgID int32, err error) {
 	err = relay.UnmarshalSpec(id, &orgID)
 	return
 }
 
-func (o *orgResolver) OrgID() int32 {
+func (o *OrgResolver) OrgID() int32 {
 	return o.org.ID
 }
 
-func (o *orgResolver) Name() string {
+func (o *OrgResolver) Name() string {
 	return o.org.Name
 }
 
-func (o *orgResolver) DisplayName() *string {
+func (o *OrgResolver) DisplayName() *string {
 	return o.org.DisplayName
 }
 
-func (r *orgResolver) URL() string { return "/organizations/" + r.org.Name }
+func (r *OrgResolver) URL() string { return "/organizations/" + r.org.Name }
 
-func (r *orgResolver) SettingsURL() string { return r.URL() + "/settings" }
+func (r *OrgResolver) SettingsURL() string { return r.URL() + "/settings" }
 
-func (o *orgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
+func (o *OrgResolver) CreatedAt() string { return o.org.CreatedAt.Format(time.RFC3339) }
 
-func (o *orgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
+func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolver, error) {
 	// 🚨 SECURITY: Only org members can list the org members.
 	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
 		if err == backend.ErrNotAnOrgMember {
@@ -104,11 +106,11 @@ func (o *orgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 	return &staticUserConnectionResolver{users: users}, nil
 }
 
-func (o *orgResolver) configurationSubject() api.ConfigurationSubject {
+func (o *OrgResolver) configurationSubject() api.ConfigurationSubject {
 	return api.ConfigurationSubject{Org: &o.org.ID}
 }
 
-func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	// 🚨 SECURITY: Only organization members and site admins may access the settings, because they
 	// may contains secrets or other sensitive data.
 	if err := backend.CheckOrgAccess(ctx, o.org.ID); err != nil {
@@ -125,11 +127,11 @@ func (o *orgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	return &settingsResolver{&configurationSubject{org: o}, settings, nil}, nil
 }
 
-func (o *orgResolver) ConfigurationCascade() *configurationCascadeResolver {
+func (o *OrgResolver) ConfigurationCascade() *configurationCascadeResolver {
 	return &configurationCascadeResolver{subject: &configurationSubject{org: o}}
 }
 
-func (o *orgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
+func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
 		orgInvitation, err := db.OrgInvitations.GetPending(ctx, o.org.ID, actor.UID)
 		if errcode.IsNotFound(err) {
@@ -143,7 +145,7 @@ func (o *orgResolver) ViewerPendingInvitation(ctx context.Context) (*organizatio
 	return nil, nil
 }
 
-func (o *orgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (o *OrgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	if err := backend.CheckOrgAccess(ctx, o.org.ID); err == backend.ErrNotAuthenticated || err == backend.ErrNotAnOrgMember {
 		return false, nil
 	} else if err != nil {
@@ -152,7 +154,7 @@ func (o *orgResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (o *orgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
+func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	actor := actor.FromContext(ctx)
 	if !actor.IsAuthenticated() {
 		return false, nil
@@ -169,8 +171,8 @@ func (o *orgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
-}) (*orgResolver, error) {
-	currentUser, err := currentUser(ctx)
+}) (*OrgResolver, error) {
+	currentUser, err := CurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -192,13 +194,13 @@ func (*schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return &orgResolver{org: newOrg}, nil
+	return &OrgResolver{org: newOrg}, nil
 }
 
 func (*schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	ID          graphql.ID
 	DisplayName *string
-}) (*orgResolver, error) {
+}) (*OrgResolver, error) {
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.ID, &orgID); err != nil {
 		return nil, err
@@ -215,18 +217,18 @@ func (*schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	return &orgResolver{org: updatedOrg}, nil
+	return &OrgResolver{org: updatedOrg}, nil
 }
 
 func (*schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *struct {
 	User         graphql.ID
 	Organization graphql.ID
 }) (*EmptyResponse, error) {
-	orgID, err := unmarshalOrgID(args.Organization)
+	orgID, err := UnmarshalOrgID(args.Organization)
 	if err != nil {
 		return nil, err
 	}
-	userID, err := unmarshalUserID(args.User)
+	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
 	}

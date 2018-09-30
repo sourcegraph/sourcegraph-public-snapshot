@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -683,7 +684,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs search.Rep
 		return nil, err
 	}
 	entries, err := treeResolver.Entries(ctx, &gitTreeEntryConnectionArgs{
-		ConnectionArgs: ConnectionArgs{First: nil},
+		ConnectionArgs: graphqlutil.ConnectionArgs{First: nil},
 		Recursive:      true,
 	})
 	if err != nil {

@@ -7,10 +7,11 @@ import (
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	User        *graphql.ID
 	ServiceType *string
 	ServiceID   *string
@@ -33,7 +34,7 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 	}
 	if args.User != nil {
 		var err error
-		opt.UserID, err = unmarshalUserID(*args.User)
+		opt.UserID, err = UnmarshalUserID(*args.User)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +44,7 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 }
 
 func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 }) (*externalAccountConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's external accounts.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, r.user.ID); err != nil {
@@ -102,12 +103,12 @@ func (r *externalAccountConnectionResolver) TotalCount(ctx context.Context) (int
 	return int32(count), err
 }
 
-func (r *externalAccountConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *externalAccountConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	externalAccounts, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(externalAccounts) > r.opt.Limit}, nil
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(externalAccounts) > r.opt.Limit), nil
 }
 
 func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct {

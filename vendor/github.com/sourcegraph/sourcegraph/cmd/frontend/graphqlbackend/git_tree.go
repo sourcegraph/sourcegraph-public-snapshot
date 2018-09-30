@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -18,7 +19,7 @@ func (r *gitTreeEntryResolver) IsRoot() bool {
 }
 
 type gitTreeEntryConnectionArgs struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Recursive bool
 	// If recurseSingleChild is true, we will return a flat list of every
 	// directory and file in a single-child nest.

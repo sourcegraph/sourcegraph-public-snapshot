@@ -20,7 +20,7 @@ var errUnknownConfigurationSubject = errors.New("unknown configuration subject")
 type configurationSubject struct {
 	// Exactly 1 of these fields must be set.
 	site *siteResolver
-	org  *orgResolver
+	org  *OrgResolver
 	user *UserResolver
 }
 
@@ -43,7 +43,7 @@ func configurationSubjectByID(ctx context.Context, id graphql.ID) (*configuratio
 		}
 		return &configurationSubject{user: s}, nil
 
-	case *orgResolver:
+	case *OrgResolver:
 		// 🚨 SECURITY: Check that the current user is a member of the org.
 		if err := backend.CheckOrgAccess(ctx, s.org.ID); err != nil {
 			return nil, err
@@ -84,7 +84,7 @@ func (s *configurationSubject) ToSite() (*siteResolver, bool) {
 	return s.site, s.site != nil
 }
 
-func (s *configurationSubject) ToOrg() (*orgResolver, bool) { return s.org, s.org != nil }
+func (s *configurationSubject) ToOrg() (*OrgResolver, bool) { return s.org, s.org != nil }
 
 func (s *configurationSubject) ToUser() (*UserResolver, bool) { return s.user, s.user != nil }
 

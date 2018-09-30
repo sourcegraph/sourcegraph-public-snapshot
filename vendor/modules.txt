@@ -285,7 +285,7 @@ github.com/sourcegraph/jsonx
 # github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85
 github.com/sourcegraph/rpc
 github.com/sourcegraph/rpc/internal/svc
-# github.com/sourcegraph/sourcegraph v0.0.0-20180929213534-5ee568fbaa52
+# github.com/sourcegraph/sourcegraph v0.0.0-20180930015647-ce118fd331ee
 github.com/sourcegraph/sourcegraph/cmd/frontend/shared
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth
@@ -310,6 +310,8 @@ github.com/sourcegraph/sourcegraph/pkg/errcode
 github.com/sourcegraph/sourcegraph/pkg/vcs
 github.com/sourcegraph/sourcegraph/cmd/frontend/hooks
 github.com/sourcegraph/sourcegraph/cmd/frontend/license
+github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil
+github.com/sourcegraph/sourcegraph/cmd/frontend/registry
 github.com/sourcegraph/sourcegraph/pkg/honey
 github.com/sourcegraph/sourcegraph/pkg/jsonc
 github.com/sourcegraph/sourcegraph/pkg/registry
@@ -330,17 +332,14 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchq
 github.com/sourcegraph/sourcegraph/pkg/atomicvalue
 github.com/sourcegraph/sourcegraph/pkg/randstring
 github.com/sourcegraph/sourcegraph/pkg/trace
-github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals
+github.com/sourcegraph/sourcegraph/cmd/frontend/globals
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session
 github.com/sourcegraph/sourcegraph/cmd/frontend/db/migrations
 github.com/sourcegraph/sourcegraph/pkg/txemail
 github.com/sourcegraph/sourcegraph/pkg/inventory/filelang
 github.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver
-github.com/sourcegraph/sourcegraph/cmd/frontend/features
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router
-github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/langservers
-github.com/sourcegraph/sourcegraph/pkg/httputil
 github.com/sourcegraph/sourcegraph/pkg/rcache
 github.com/sourcegraph/sourcegraph/pkg/repoupdater
 github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol
@@ -349,13 +348,13 @@ github.com/sourcegraph/sourcegraph/pkg/symbols/protocol
 github.com/sourcegraph/sourcegraph/xlang/proxy
 github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck
-github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlfile
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions
+github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/langservers
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query
@@ -375,6 +374,9 @@ github.com/sourcegraph/sourcegraph/pkg/phabricator
 github.com/sourcegraph/sourcegraph/pkg/processrestart
 github.com/sourcegraph/sourcegraph/pkg/version
 github.com/sourcegraph/sourcegraph/pkg/zoekt
+github.com/sourcegraph/sourcegraph/cmd/frontend/features
+github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router
+github.com/sourcegraph/sourcegraph/pkg/httputil
 github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman
 github.com/sourcegraph/sourcegraph/pkg/diskcache
 github.com/sourcegraph/sourcegraph/pkg/vcs/util

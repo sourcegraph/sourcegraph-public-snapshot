@@ -104,8 +104,8 @@ func (r *nodeResolver) ToUser() (*UserResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToOrg() (*orgResolver, bool) {
-	n, ok := r.node.(*orgResolver)
+func (r *nodeResolver) ToOrg() (*OrgResolver, bool) {
+	n, ok := r.node.(*OrgResolver)
 	return n, ok
 }
 
@@ -124,17 +124,8 @@ func (r *nodeResolver) ToPackage() (*packageResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToRegistryExtension() (*registryExtensionMultiResolver, bool) {
-	switch n := r.node.(type) {
-	case *registryExtensionDBResolver:
-		return &registryExtensionMultiResolver{local: n}, true
-	case *registryExtensionRemoteResolver:
-		return &registryExtensionMultiResolver{remote: n}, true
-	case *registryExtensionMultiResolver:
-		return n, true
-	default:
-		return nil, false
-	}
+func (r *nodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
+	return NodeToRegistryExtension(r.node)
 }
 
 func (r *nodeResolver) ToSite() (*siteResolver, bool) {
@@ -180,7 +171,7 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	case "Package":
 		return packageByID(ctx, id)
 	case "RegistryExtension":
-		return registryExtensionByID(ctx, id)
+		return RegistryExtensionByID(ctx, id)
 	case "SavedQuery":
 		return savedQueryByID(ctx, id)
 	case "Site":
@@ -247,5 +238,5 @@ func refreshRepo(ctx context.Context, repo *types.Repo) error {
 }
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error) {
-	return currentUser(ctx)
+	return CurrentUser(ctx)
 }

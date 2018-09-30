@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
 
@@ -81,7 +82,7 @@ func (r *gitCommitConnectionResolver) Nodes(ctx context.Context) ([]*gitCommitRe
 	return resolvers, nil
 }
 
-func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	commits, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -89,7 +90,5 @@ func (r *gitCommitConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, 
 
 	// If we have a limit, so we rely on having fetched +1 additional result in our limit to
 	// indicate whether or not a next page exists.
-	return &PageInfo{
-		hasNextPage: r.first != nil && len(commits) > 0 && len(commits) > int(*r.first),
-	}, nil
+	return graphqlutil.HasNextPage(r.first != nil && len(commits) > 0 && len(commits) > int(*r.first)), nil
 }

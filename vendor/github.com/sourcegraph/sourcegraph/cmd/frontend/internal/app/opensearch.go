@@ -5,7 +5,7 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

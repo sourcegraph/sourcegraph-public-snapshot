@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -261,7 +262,7 @@ func (r *discussionsMutationResolver) UpdateThread(ctx context.Context, args *st
 	}
 }) (*discussionThreadResolver, error) {
 	// 🚨 SECURITY: Only signed in users may update a discussion thread.
-	currentUser, err := currentUser(ctx)
+	currentUser, err := CurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -304,7 +305,7 @@ func (s *schemaResolver) Discussions(ctx context.Context) (*discussionsMutationR
 }
 
 func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 	Query                       *string
 	ThreadID                    *graphql.ID
 	AuthorUserID                *graphql.ID
@@ -337,7 +338,7 @@ func (s *schemaResolver) DiscussionThreads(ctx context.Context, args *struct {
 		opt.ThreadIDs = []int64{threadID}
 	}
 	if args.AuthorUserID != nil {
-		authorUserID, err := unmarshalUserID(*args.AuthorUserID)
+		authorUserID, err := UnmarshalUserID(*args.AuthorUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -654,7 +655,7 @@ func (d *discussionThreadResolver) ArchivedAt(ctx context.Context) *string {
 }
 
 func (d *discussionThreadResolver) Comments(ctx context.Context, args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 }) *discussionCommentsConnectionResolver {
 	// 🚨 SECURITY: Anyone with access to the thread also has access to its
 	// comments. Hence, since we are only accessing the threads comments here
@@ -712,12 +713,12 @@ func (r *discussionThreadsConnectionResolver) TotalCount(ctx context.Context) (i
 	return int32(count), err
 }
 
-func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*PageInfo, error) {
+func (r *discussionThreadsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	threads, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &PageInfo{hasNextPage: r.opt.LimitOffset != nil && len(threads) > r.opt.Limit}, nil
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(threads) > r.opt.Limit), nil
 }
 
 // viewerCanUseDiscussions returns an error if the user in the context cannot

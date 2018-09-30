@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 )
 
 type surveyResponseConnectionResolver struct {
@@ -12,7 +13,7 @@ type surveyResponseConnectionResolver struct {
 }
 
 func (r *schemaResolver) SurveyResponses(args *struct {
-	ConnectionArgs
+	graphqlutil.ConnectionArgs
 }) *surveyResponseConnectionResolver {
 	var opt db.SurveyResponseListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
