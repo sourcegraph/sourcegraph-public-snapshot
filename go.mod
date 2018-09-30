@@ -43,7 +43,7 @@ require (
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
-	github.com/sourcegraph/sourcegraph v0.0.0-20180928035505-f538a1474809
+	github.com/sourcegraph/sourcegraph v0.0.0-20180929213534-5ee568fbaa52
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/zenazn/goji v0.9.0 // indirect
 	go4.org v0.0.0-20180809161055-417644f6feb5
@@ -66,6 +66,6 @@ replace (
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538
 )
 
-replace github.com/sourcegraph/sourcegraph => ../sourcegraph
-
 replace github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
+
+replace github.com/sourcegraph/sourcegraph => ../sourcegraph

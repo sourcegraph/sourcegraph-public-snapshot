@@ -118,10 +118,10 @@ github.com/gorilla/schema
 github.com/gorilla/securecookie
 # github.com/gorilla/sessions v1.1.2
 github.com/gorilla/sessions
-# github.com/graph-gophers/graphql-go v0.0.0-20180806175703-94da0f0031f9
+# github.com/graph-gophers/graphql-go v0.0.0-20180806175703-94da0f0031f9 => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
 github.com/graph-gophers/graphql-go
-github.com/graph-gophers/graphql-go/errors
 github.com/graph-gophers/graphql-go/relay
+github.com/graph-gophers/graphql-go/errors
 github.com/graph-gophers/graphql-go/trace
 github.com/graph-gophers/graphql-go/internal/common
 github.com/graph-gophers/graphql-go/internal/exec
@@ -285,7 +285,7 @@ github.com/sourcegraph/jsonx
 # github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85
 github.com/sourcegraph/rpc
 github.com/sourcegraph/rpc/internal/svc
-# github.com/sourcegraph/sourcegraph v0.0.0-20180928035505-f538a1474809
+# github.com/sourcegraph/sourcegraph v0.0.0-20180929213534-5ee568fbaa52
 github.com/sourcegraph/sourcegraph/cmd/frontend/shared
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth
@@ -310,6 +310,9 @@ github.com/sourcegraph/sourcegraph/pkg/errcode
 github.com/sourcegraph/sourcegraph/pkg/vcs
 github.com/sourcegraph/sourcegraph/cmd/frontend/hooks
 github.com/sourcegraph/sourcegraph/cmd/frontend/license
+github.com/sourcegraph/sourcegraph/pkg/honey
+github.com/sourcegraph/sourcegraph/pkg/jsonc
+github.com/sourcegraph/sourcegraph/pkg/registry
 github.com/sourcegraph/sourcegraph/cmd/server/shared
 github.com/sourcegraph/sourcegraph/pkg/debugserver
 github.com/sourcegraph/sourcegraph/pkg/tracer
@@ -322,10 +325,8 @@ github.com/sourcegraph/sourcegraph/pkg/buildkite
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth
-github.com/sourcegraph/sourcegraph/pkg/jsonc
 github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/searchquery
-github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types
 github.com/sourcegraph/sourcegraph/pkg/atomicvalue
 github.com/sourcegraph/sourcegraph/pkg/randstring
 github.com/sourcegraph/sourcegraph/pkg/trace
@@ -341,7 +342,6 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/langservers
 github.com/sourcegraph/sourcegraph/pkg/httputil
 github.com/sourcegraph/sourcegraph/pkg/rcache
-github.com/sourcegraph/sourcegraph/pkg/registry
 github.com/sourcegraph/sourcegraph/pkg/repoupdater
 github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol
 github.com/sourcegraph/sourcegraph/pkg/symbols
@@ -395,7 +395,6 @@ github.com/sourcegraph/sourcegraph/pkg/routevar
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking
 github.com/sourcegraph/sourcegraph/pkg/eventlogger
 github.com/sourcegraph/sourcegraph/pkg/hubspot
-github.com/sourcegraph/sourcegraph/pkg/honey
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext
 github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates
 # github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e
@@ -469,7 +468,7 @@ golang.org/x/oauth2/internal
 # golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.0.0-20180918153733-ee1b12c67af4
+# golang.org/x/sys v0.0.0-20180925112736-b09afc3d579e
 golang.org/x/sys/unix
 golang.org/x/sys/windows
 # golang.org/x/text v0.3.0

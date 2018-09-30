@@ -14,7 +14,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/types"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"

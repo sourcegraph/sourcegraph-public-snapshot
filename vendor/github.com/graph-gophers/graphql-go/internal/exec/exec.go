@@ -209,7 +209,8 @@ func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selectio
 	t, nonNull := unwrapNonNull(typ)
 	switch t := t.(type) {
 	case *schema.Object, *schema.Interface, *schema.Union:
-		if resolver.Kind() == reflect.Ptr && resolver.IsNil() {
+		// a reflect.Value of a nil interface will show up as an Invalid value
+		if resolver.Kind() == reflect.Invalid || ((resolver.Kind() == reflect.Ptr || resolver.Kind() == reflect.Interface) && resolver.IsNil()) {
 			if nonNull {
 				panic(errors.Errorf("got nil for non-null %q", t))
 			}
@@ -270,7 +271,7 @@ func (r *Request) execSelectionSet(ctx context.Context, sels []selected.Selectio
 		v := resolver.Interface()
 		data, err := json.Marshal(v)
 		if err != nil {
-			panic(errors.Errorf("could not marshal %v: %s", v, err))
+			panic(errors.Errorf("could not marshal %v", v))
 		}
 		out.Write(data)
 
