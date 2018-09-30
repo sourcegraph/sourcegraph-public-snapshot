@@ -314,6 +314,7 @@ github.com/sourcegraph/sourcegraph/cmd/frontend/registry
 github.com/sourcegraph/sourcegraph/pkg/honey
 github.com/sourcegraph/sourcegraph/pkg/jsonc
 github.com/sourcegraph/sourcegraph/pkg/registry
+github.com/sourcegraph/sourcegraph/cmd/server
 github.com/sourcegraph/sourcegraph/cmd/server/shared
 github.com/sourcegraph/sourcegraph/pkg/debugserver
 github.com/sourcegraph/sourcegraph/pkg/tracer
