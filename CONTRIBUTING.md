@@ -2,9 +2,13 @@
 
 ## What contributions are accepted?
 
-In short, we are open to all contibutions! We love feedback in all forms, issues, comments, PRs, etc!
+In short, we are open to nearly[1] all contributions! We love feedback in all forms, issues, comments, PRs, etc!
 
-If you have a very large change in mind, it may be better to first create an issue to discuss it with us to make sure it is being tackled with the right approach (otherwise you may waste your time implementing something we can't merge).
+Unless you feel confident your change will be accepted (trivial bug fixes, code cleanup, etc) you should first create an issue to discuss your change with us. In this way, we can help ensure that the approach taken is correct and that a minimal amount of your time will be wasted writing e.g. an incorrect implementation.
+
+> [1] Exception: We cannot accept contributions that add [paid Sourcegraph features](https://about.sourcegraph.com/pricing/).
+>
+> While we fully understand one's desire to do this, we simply cannot accept such contributions as it would prevent us from developing Sourcegraph further (and inherently bringing you better open-source code). We won't be offended if you try or fork our project, though. =)
 
 ## Code of Conduct
 
