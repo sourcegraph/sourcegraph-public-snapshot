@@ -84,11 +84,6 @@ func main() {
 		bk.Cmd("./dev/ci/ensure-go-mod.sh"),
 	)
 
-	ossWebappVersion := os.Getenv("OSS_WEBAPP_VERSION")
-	if ossWebappVersion == "" {
-		panic("Expected OSS_WEBAPP_VERSION to be set")
-	}
-
 	pipeline.AddStep(":white_check_mark:",
 		bk.Cmd("./dev/check/all.sh"))
 
@@ -112,7 +107,6 @@ func main() {
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn add @sourcegraph/webapp@"+ossWebappVersion),
 		bk.Cmd("yarn list --pattern @sourcegraph/webapp"),
 		bk.Cmd("yarn run browserslist"),
 		bk.Cmd("NODE_ENV=production yarn run build --color"),
@@ -123,7 +117,6 @@ func main() {
 	// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 	// 	bk.Env("FORCE_COLOR", "1"),
 	// 	bk.Cmd("yarn --frozen-lockfile"),
-	// 	bk.Cmd("yarn add @sourcegraph/webapp@"+ossWebappVersion),
 	//  bk.Cmd("yarn list --pattern @sourcegraph/webapp"),
 	// 	bk.Cmd("yarn run cover"),
 	// 	bk.Cmd("node_modules/.bin/nyc report -r json"),
@@ -149,7 +142,6 @@ func main() {
 			os.Exit(1)
 		}
 		cmds := []bk.StepOpt{
-			bk.Env("OSS_WEBAPP_VERSION", ossWebappVersion), // for pre-build.sh
 			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
 		}
 
@@ -243,7 +235,6 @@ func main() {
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
 			bk.Env("FORCE_COLOR", "1"),
 			bk.Cmd("yarn --frozen-lockfile"),
-			bk.Cmd("yarn add @sourcegraph/webapp@"+ossWebappVersion),
 			bk.Cmd("yarn list --pattern @sourcegraph/webapp"),
 			bk.Cmd("yarn run test-e2e --retries 5"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
