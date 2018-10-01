@@ -39,7 +39,7 @@ interface State {
     modalIntegrationsClosing: boolean
     /** Unique ID for keeping selected button state. */
     activeButton?: string
-    activeSection?: string
+    activesection?: string
     animateModalSearch: boolean
     animateModalIntelligence: boolean
     animateModalIntegrations: boolean
@@ -218,7 +218,7 @@ export class MainPage extends React.Component<Props, State> {
             modalIntegrationsOpen: false,
             modalIntegrationsClosing: false,
             manualClick: false,
-            activeSection: 'fadwsghjk',
+            activesection: 'fadwsghjk',
             animateModalSearch: false,
             animateModalIntelligence: false,
             animateModalIntegrations: false,
@@ -635,8 +635,8 @@ export class MainPage extends React.Component<Props, State> {
                             <div
                                 key={`search-sections-${i}`}
                                 className={`row copy-section modal-copy-row ${
-                                    this.state.activeSection === `${i}` || this.state.activeSection === '99'
-                                        ? 'activeSec'
+                                    this.state.activesection === `${i}` || this.state.activesection === '99'
+                                        ? 'activesec'
                                         : ''
                                 }`}
                             >
@@ -690,8 +690,8 @@ export class MainPage extends React.Component<Props, State> {
                                     <div
                                         key={`search-sections-${i}`}
                                         className={`row modal-copy-row ${
-                                            this.state.activeSection === `${i}` || this.state.activeSection === '99'
-                                                ? 'activeSec'
+                                            this.state.activesection === `${i}` || this.state.activesection === '99'
+                                                ? 'activesec'
                                                 : ''
                                         }`}
                                     >
@@ -748,8 +748,8 @@ export class MainPage extends React.Component<Props, State> {
                                     <div
                                         key={`search-sections-${i}`}
                                         className={`row copy-section modal-copy-row ${
-                                            this.state.activeSection === `${i}` || this.state.activeSection === '99'
-                                                ? 'activeSec'
+                                            this.state.activesection === `${i}` || this.state.activesection === '99'
+                                                ? 'activesec'
                                                 : ''
                                         }`}
                                     >
@@ -794,9 +794,9 @@ export class MainPage extends React.Component<Props, State> {
 
     private handleQueryChange = (activeButton: string, passedQ: string) => () => {
         if (passedQ === '') {
-            this.setState({ activeButton, manualClick: true, activeSection: '99' })
+            this.setState({ activeButton, manualClick: true, activesection: '99' })
         } else {
-            this.setState({ activeButton, userQuery: passedQ, manualClick: true, activeSection: '99' })
+            this.setState({ activeButton, userQuery: passedQ, manualClick: true, activesection: '99' })
         }
     }
 
@@ -809,11 +809,11 @@ export class MainPage extends React.Component<Props, State> {
         if (section === 'intelligence') {
             this.setState(state => ({ modalIntelligenceOpen: !state.modalIntelligenceOpen }))
             this.setState(state => ({ animateModalIntelligence: !state.animateModalIntelligence }))
-            this.setState(state => ({ activeSection: '99' }))
+            this.setState(state => ({ activesection: '99' }))
         } else if (section === 'integrations') {
             this.setState(state => ({ modalIntegrationsOpen: !state.modalIntegrationsOpen }))
             this.setState(state => ({ animateModalIntegrations: !state.animateModalIntegrations }))
-            this.setState(state => ({ activeSection: '99' }))
+            this.setState(state => ({ activesection: '99' }))
         } else if (section === 'search') {
             this.setState(state => ({ modalSearchOpen: !state.modalSearchOpen }))
             this.setState(state => ({ animateModalSearch: !state.modalSearchOpen }))
@@ -826,7 +826,7 @@ export class MainPage extends React.Component<Props, State> {
                 if (this.state.manualClick === false) {
                     this.setState(state => ({
                         activeButton: '0-1',
-                        activeSection: '0',
+                        activesection: '0',
                         userQuery: 'repogroup:goteam file:\\.go$',
                     }))
                 }
@@ -835,7 +835,7 @@ export class MainPage extends React.Component<Props, State> {
                 if (this.state.manualClick === false) {
                     this.setState(state => ({
                         activeButton: '1-0',
-                        activeSection: '1',
+                        activesection: '1',
 
                         userQuery: 'repo:^github\\.com/apple/swift$@master-next type:diff',
                     }))
@@ -845,7 +845,7 @@ export class MainPage extends React.Component<Props, State> {
                 if (this.state.manualClick === false) {
                     this.setState(state => ({
                         activeButton: '2-3',
-                        activeSection: '2',
+                        activesection: '2',
                         userQuery: 'repogroup:goteam file:\\.go$',
                     }))
                 }
@@ -854,7 +854,7 @@ export class MainPage extends React.Component<Props, State> {
                 if (this.state.manualClick === false) {
                     this.setState(state => ({
                         activeButton: '3-2',
-                        activeSection: '3',
+                        activesection: '3',
                         userQuery: 'repogroup:goteam file:\\.go$',
                     }))
                 }
@@ -863,7 +863,7 @@ export class MainPage extends React.Component<Props, State> {
                 if (this.state.manualClick === false) {
                     this.setState(state => ({
                         activeButton: '0-0',
-                        activeSection: '99',
+                        activesection: '99',
                         userQuery: 'repogroup:goteam file:\\.go$',
                     }))
                 }
