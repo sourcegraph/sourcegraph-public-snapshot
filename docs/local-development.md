@@ -281,7 +281,7 @@ If you ever need to wipe your local database, run the following command.
 
 ## How to Run Tests
 
-See [testing.md](/sourcegraph/sourcegraph/blob/master/docs/testing.md) for details.
+See [testing.md](testing.md) for details.
 
 ## CPU/RAM/bandwidth usage
 
