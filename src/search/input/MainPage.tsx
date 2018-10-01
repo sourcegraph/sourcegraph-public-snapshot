@@ -262,6 +262,7 @@ export class MainPage extends React.Component<Props, State> {
                                     containerClass={'code-intellify-container'}
                                     overlayPortal={this.overlayPortal}
                                     tooltipClass={'hero-tooltip'}
+                                    defaultHoverPosition={{ line: 244, character: 11 }}
                                 />
                             </div>
                         </div>
@@ -616,6 +617,7 @@ export class MainPage extends React.Component<Props, State> {
                                     containerClass={'code-intellify-container-modal'}
                                     overlayPortal={this.overlayPortal}
                                     tooltipClass={'modal-tooltip'}
+                                    defaultHoverPosition={{ line: 248, character: 11 }}
                                 />
                             </div>
                         </div>

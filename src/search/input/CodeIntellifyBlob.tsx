@@ -6,6 +6,7 @@ import {
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
+import { Position } from 'vscode-languageserver-types'
 import * as H from 'history'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
@@ -22,6 +23,7 @@ import { getModeFromPath } from '../../util'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { isDefined, propertyIsDefined } from '../../util/types'
+import { getTokenAtPosition } from '@sourcegraph/codeintellify/lib/token_position'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
@@ -85,6 +87,7 @@ interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
 
     overlayPortal?: HTMLElement
     tooltipClass: string
+    defaultHoverPosition: Position
 }
 
 interface State extends HoverState {
@@ -219,6 +222,16 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         )
 
         this.subscriptions.add(hoverifier.hoverStateUpdates.subscribe(update => this.setState(update)))
+
+        this.subscriptions.add(
+            this.codeViewElements
+                .pipe(
+                    filter(isDefined),
+                    map(codeView => getTokenAtPosition(codeView, props.defaultHoverPosition, domFunctions)),
+                    filter(isDefined)
+                )
+                .subscribe(token => token.click())
+        )
     }
 
     public componentDidMount(): void {
