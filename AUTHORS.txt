@@ -8,6 +8,7 @@ Chris Ramón <rchristian.ramon@gmail.com>
 Chris Wendt <chrismwendt@gmail.com>
 Dan Adler <dadlerj@users.noreply.github.com>
 Dmitri Shuralyov <shurcooL@gmail.com>
+Emil Davtyan <emil2k@gmail.com>
 Keegan Carruthers-Smith <keegan.csmith@gmail.com>
 Kevin Burke <kev@inburke.com>
 Nick Snyder <nick@sourcegraph.com>
