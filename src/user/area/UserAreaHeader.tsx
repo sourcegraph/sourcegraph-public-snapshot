@@ -5,26 +5,26 @@ import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { orgURL } from '../../org'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { UserAvatar } from '../UserAvatar'
-import { UserAreaPageProps } from './UserArea'
+import { UserAreaRouteContext } from './UserArea'
 
-interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
+interface UserAreaHeaderProps extends UserAreaRouteContext, RouteComponentProps<{}> {
     className: string
 }
 
 /**
  * Header for the user area.
  */
-export const UserHeader: React.SFC<Props> = (props: Props) => (
-    <div className={`user-header area-header ${props.className}`}>
+export const UserAreaHeader: React.SFC<UserAreaHeaderProps> = (props: UserAreaHeaderProps) => (
+    <div className={`user-area-header area-header ${props.className}`}>
         <div className={`${props.className}-inner`}>
             {props.user && (
                 <>
-                    <h2 className="user-header__title">
-                        {props.user.avatarURL && <UserAvatar className="user-header__avatar" user={props.user} />}
+                    <h2 className="user-area-header__title">
+                        {props.user.avatarURL && <UserAvatar className="user-area-header__avatar" user={props.user} />}
                         {props.user.displayName ? (
                             <>
                                 {props.user.displayName}{' '}
-                                <span className="user-header__title-subtitle">{props.user.username}</span>
+                                <span className="user-area-header__title-subtitle">{props.user.username}</span>
                             </>
                         ) : (
                             props.user.username

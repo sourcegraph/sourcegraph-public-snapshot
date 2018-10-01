@@ -14,7 +14,7 @@ import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { UserAccountArea, UserAccountAreaRoute } from '../account/UserAccountArea'
 import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
-import { UserHeader } from './UserHeader'
+import { UserAreaHeader } from './UserAreaHeader'
 import { UserOverviewPage } from './UserOverviewPage'
 
 export const enableUserArea = localStorage.getItem('userArea') !== null
@@ -85,7 +85,7 @@ interface UserAreaState {
 /**
  * Properties passed to all page components in the user area.
  */
-export interface UserAreaPageProps extends ExtensionsProps {
+export interface UserAreaRouteContext extends ExtensionsProps {
     /**
      * The user who is the subject of the page.
      */
@@ -162,7 +162,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             )
         }
 
-        const transferProps: UserAreaPageProps = {
+        const transferProps: UserAreaRouteContext = {
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
             authenticatedUser: this.props.user,
@@ -170,7 +170,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
         }
         return (
             <div className="user-area area--vertical">
-                <UserHeader className="area--vertical__header" {...this.props} {...transferProps} />
+                <UserAreaHeader className="area--vertical__header" {...this.props} {...transferProps} />
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
                         <Switch>

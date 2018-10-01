@@ -14,7 +14,7 @@ import { OrgAvatar } from '../../org/OrgAvatar'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../tracking/eventLogger'
 import { NavItemDescriptor } from '../../util/contributions'
-import { UserAreaPageProps } from '../area/UserArea'
+import { UserAreaRouteContext } from '../area/UserArea'
 
 export interface UserAccountSidebarItemConditionContext {
     /** True if the site admin is viewing another user's account */
@@ -27,7 +27,7 @@ export type UserAccountSidebarItems = Record<
     ReadonlyArray<NavItemDescriptor<UserAccountSidebarItemConditionContext>>
 >
 
-export interface UserAccountSidebarProps extends UserAreaPageProps, RouteComponentProps<{}> {
+export interface UserAccountSidebarProps extends UserAreaRouteContext, RouteComponentProps<{}> {
     items: UserAccountSidebarItems
     className?: string
     externalAuthEnabled: boolean
