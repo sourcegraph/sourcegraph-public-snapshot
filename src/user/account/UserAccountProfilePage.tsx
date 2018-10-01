@@ -2,7 +2,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -15,7 +14,7 @@ import {
     switchMap,
     tap,
 } from 'rxjs/operators'
-import { USER_DISPLAY_NAME_MAX_LENGTH, userURL } from '..'
+import { USER_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { refreshCurrentUser } from '../../auth'
 import { UsernameInput } from '../../auth/SignInSignUpCommon'
 import { gql, queryGraphQL } from '../../backend/graphql'
@@ -24,7 +23,7 @@ import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { enableUserArea, UserAreaRouteContext } from '../area/UserArea'
+import { UserAreaRouteContext } from '../area/UserArea'
 import { UserAvatar } from '../UserAvatar'
 import { updateUser } from './backend'
 
@@ -259,13 +258,6 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                             {this.state.saved && (
                                 <p className="alert alert-success user-settings-profile-page__alert">Profile saved!</p>
                             )}
-                            {enableUserArea &&
-                                !this.state.saved &&
-                                !this.state.loading && (
-                                    <Link to={userURL(this.props.user.username)} className="btn btn-link">
-                                        View public profile
-                                    </Link>
-                                )}
                             {window.context.sourcegraphDotComMode && (
                                 <p className="mt-4">
                                     <a href="https://about.sourcegraph.com/contact">Contact support</a> to delete your
