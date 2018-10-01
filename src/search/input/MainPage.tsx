@@ -424,7 +424,7 @@ export class MainPage extends React.Component<Props, State> {
                                 </p>
                                 <a
                                     className="btn btn-primary"
-                                    href="https://github.com/sourcegraph/about/blob/master/projects/sourcegraph-is-now-open-source.md"
+                                    href="https://about.sourcegraph.com/blog/sourcegraph-is-now-open-source/"
                                 >
                                     Release Announcement
                                 </a>
