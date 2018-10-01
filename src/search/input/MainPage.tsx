@@ -79,7 +79,7 @@ const searchSections = [
                 text: 'Go oAuth2 Diff',
             },
             {
-                query: 'r:^github.com/kubernetes/kubernetes$ type:diff statefulset',
+                query: 'repo:^github.com/kubernetes/kubernetes$ type:diff statefulset',
                 text: 'Kubernetes Statefulset Diff',
             },
         ],
@@ -106,11 +106,10 @@ const searchSections = [
             { query: 'repogroup:goteam type:symbol httpRouter', text: 'Go Code with httpRouter' },
             { query: 'repo:^github.com/apple/swift$ type:symbol main', text: "Calls to 'main' in Swift" },
             {
-                query: 'repogroup:ethereum file:\\.(txt|md)$ file:(test|spec) ',
-                text: 'Core Etherium Test Files',
-                onClick: 'buttonGoLang',
+                query: 'repo:golang/go$ type:symbol sprintF',
+                text: 'Golang sprintF',
             },
-            { query: 'repogroup:angular file:\\.JSON$', text: 'Angular JSON Files' },
+            { query: 'repo:golang/go$ type:symbol newDecoder', text: 'Golang newDecoder' },
         ],
     },
 ]
@@ -757,7 +756,7 @@ export class MainPage extends React.Component<Props, State> {
                                         <div className="col-12">
                                             <h3>{title}</h3>
                                             <p>{paragraph}</p>
-                                            {buttons.map(({ onClick, text, id }, j) => (
+                                            {buttons.map(({ text, id }, j) => (
                                                 <button
                                                     key={`integrations-buttons-${j}`}
                                                     className={`btn btn-secondary btn-integrations  ${id} ${
