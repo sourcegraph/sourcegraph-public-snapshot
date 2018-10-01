@@ -1,15 +1,19 @@
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import TuneVerticalIcon from 'mdi-react/TuneVerticalIcon'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 import { orgURL } from '../../org'
 import { OrgAvatar } from '../../org/OrgAvatar'
+import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { UserAvatar } from '../UserAvatar'
 import { UserAreaRouteContext } from './UserArea'
 
 interface UserAreaHeaderProps extends UserAreaRouteContext, RouteComponentProps<{}> {
+    navItems: ReadonlyArray<UserAreaHeaderNavItem>
     className: string
 }
+
+export type UserAreaHeaderContext = Pick<UserAreaHeaderProps, 'user'>
+
+export interface UserAreaHeaderNavItem extends NavItemWithIconDescriptor<UserAreaHeaderContext> {}
 
 /**
  * Header for the user area.
@@ -32,32 +36,19 @@ export const UserAreaHeader: React.SFC<UserAreaHeaderProps> = (props: UserAreaHe
                     </h2>
                     <div className="area-header__nav">
                         <div className="area-header__nav-links">
-                            <NavLink
-                                to={`${props.match.url}`}
-                                exact={true}
-                                className="btn area-header__nav-link"
-                                activeClassName="area-header__nav-link--active"
-                            >
-                                Overview
-                            </NavLink>
-                            {props.user.viewerCanAdminister && (
-                                <NavLink
-                                    to={`${props.match.url}/settings`}
-                                    exact={true}
-                                    className="btn area-header__nav-link"
-                                    activeClassName="area-header__nav-link--active"
-                                >
-                                    <SettingsIcon className="icon-inline" /> Settings
-                                </NavLink>
-                            )}
-                            {props.user.viewerCanAdminister && (
-                                <NavLink
-                                    to={`${props.match.url}/account`}
-                                    className="btn area-header__nav-link"
-                                    activeClassName="area-header__nav-link--active"
-                                >
-                                    <TuneVerticalIcon className="icon-inline" /> Account
-                                </NavLink>
+                            {props.navItems.map(
+                                ({ to, label, exact, icon: Icon, condition = () => true }) =>
+                                    condition(props) && (
+                                        <NavLink
+                                            key={label}
+                                            to={props.url + to}
+                                            className="btn area-header__nav-link"
+                                            activeClassName="area-header__nav-link--active"
+                                            exact={exact}
+                                        >
+                                            {Icon && <Icon className="icon-inline" />} {label}
+                                        </NavLink>
+                                    )
                             )}
                         </div>
                         {props.user.organizations.nodes.length > 0 && (
