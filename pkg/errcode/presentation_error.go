@@ -40,7 +40,13 @@ type presentationError struct {
 	msg   string
 }
 
-func (e *presentationError) Error() string             { return e.cause.Error() }
+func (e *presentationError) Error() string {
+	if e.cause != nil {
+		return e.cause.Error()
+	}
+	return e.msg
+}
+
 func (e *presentationError) PresentationError() string { return e.msg }
 
 // PresentationMessage returns the message, if any, suitable for presentation to the user for err or
