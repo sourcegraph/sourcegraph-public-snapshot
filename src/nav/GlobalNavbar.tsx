@@ -19,6 +19,7 @@ interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsCo
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
+    isMainPage: boolean
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     showHelpPopover: boolean
@@ -76,28 +77,22 @@ export class GlobalNavbar extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         const logo = <img className="global-navbar__logo" src="/.assets/img/sourcegraph-mark.svg" />
         return (
-            <div className={`global-navbar ${this.props.lowProfile ? '' : 'global-navbar--bg'}`}>
-                {this.props.lowProfile ? (
-                    <div />
+            <div className={`global-navbar global-navbar--bg`}>
+                {this.state.authRequired ? (
+                    <div className="global-navbar__logo-link">{logo}</div>
                 ) : (
-                    <>
-                        {this.state.authRequired ? (
-                            <div className="global-navbar__logo-link">{logo}</div>
-                        ) : (
-                            <Link to="/search" className="global-navbar__logo-link">
-                                {logo}
-                            </Link>
-                        )}
-                        {!this.state.authRequired && (
-                            <div className="global-navbar__search-box-container">
-                                <SearchNavbarItem
-                                    {...this.props}
-                                    navbarSearchQuery={this.props.navbarSearchQuery}
-                                    onChange={this.props.onNavbarQueryChange}
-                                />
-                            </div>
-                        )}
-                    </>
+                    <Link to="/search" className="global-navbar__logo-link">
+                        {logo}
+                    </Link>
+                )}
+                {!this.state.authRequired && (
+                    <div className="global-navbar__search-box-container">
+                        <SearchNavbarItem
+                            {...this.props}
+                            navbarSearchQuery={this.props.navbarSearchQuery}
+                            onChange={this.props.onNavbarQueryChange}
+                        />
+                    </div>
                 )}
                 {!this.state.authRequired && <NavLinks {...this.props} />}
             </div>
