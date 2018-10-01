@@ -1100,10 +1100,10 @@
     "@types/minimatch" "*"
     "@types/node" "*"
 
-"@types/graphql@14.0.0":
-  version "14.0.0"
-  resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-14.0.0.tgz#ecbe4d794c854a285411bea3dce83ab193397ad0"
-  integrity sha512-fQ61KKDKyEztu4AdZOKGBHz6h4UpDiuMJOhA8A+GsNF+mwBnTtBwVwoU/oDyRDrigB10v5gvZApNqEXyBKmYVg==
+"@types/graphql@14.0.1":
+  version "14.0.1"
+  resolved "https://registry.yarnpkg.com/@types/graphql/-/graphql-14.0.1.tgz#ff44c20fefdf0cf8c390f64b0dfbbc3c10dbaa87"
+  integrity sha512-JnkzkyIHAjK7+zJLEQieQg5iDwEqoX200BBFa0rfMU7jI9BQWBnM9BZh16gQecCyBjK0S149wZPb0SoTh2o34g==
 
 "@types/graphql@^0.8.6":
   version "0.8.6"
