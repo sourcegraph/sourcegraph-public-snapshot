@@ -41,4 +41,5 @@ Richard Musiol <mail@richard-musiol.de>
 Rohan Pai <rohan@sourcegraph.com>
 Samuel Lavery <sam@sourcegraph.com>
 Seebs <seebs@sourcegraph.com>
+Shantanu Gupta <shans95g@gmail.com>
 Sourcegraph <hi@sourcegraph.com>
