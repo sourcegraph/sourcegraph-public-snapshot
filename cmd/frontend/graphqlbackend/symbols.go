@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 	log15 "gopkg.in/inconshreveable/log15.v2"
