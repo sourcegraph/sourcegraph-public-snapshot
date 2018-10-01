@@ -17,8 +17,6 @@ import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
 import { UserAreaHeader } from './UserAreaHeader'
 import { UserOverviewPage } from './UserOverviewPage'
 
-export const enableUserArea = localStorage.getItem('userArea') !== null
-
 const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
     queryGraphQL(
         gql`
