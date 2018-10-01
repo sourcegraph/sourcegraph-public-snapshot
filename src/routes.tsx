@@ -20,7 +20,8 @@ import { SearchResults } from './search/results/SearchResults'
 import { SavedQueriesPage } from './search/saved-queries/SavedQueries'
 import { SiteAdminArea } from './site-admin/SiteAdminArea'
 import { SiteInitPage } from './site-admin/SiteInitPage'
-import { RedirectToUserAccount } from './user/account/RedirectToUserAccount'
+import { RedirectToUserPage } from './user/account/RedirectToUserPage'
+import { RedirectToUserSettings } from './user/account/RedirectToUserSettings'
 import { UserArea } from './user/area/UserArea'
 import { canListAllRepositories } from './util/features'
 
@@ -51,7 +52,7 @@ export const repoRevRoute: LayoutRouteProps = {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
-export const routes: LayoutRouteProps[] = [
+export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/search',
         render: (props: any) =>
@@ -84,7 +85,11 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/settings',
-        render: props => <RedirectToUserAccount {...props} />,
+        render: props => <RedirectToUserSettings {...props} />,
+    },
+    {
+        path: '/user',
+        render: props => <RedirectToUserPage {...props} />,
     },
     {
         path: '/organizations',
