@@ -21,6 +21,8 @@ import { siteAdminSidebarGroups } from './site-admin/sidebaritems'
 import { SourcegraphWebApp } from './SourcegraphWebApp'
 import { userAccountAreaRoutes } from './user/account/routes'
 import { userAccountSideBarItems } from './user/account/sidebaritems'
+import { userAreaHeaderNavItems } from './user/area/navitems'
+import { userAreaRoutes } from './user/area/routes'
 
 window.addEventListener('DOMContentLoaded', () => {
     render(
@@ -32,6 +34,8 @@ window.addEventListener('DOMContentLoaded', () => {
             siteAdminAreaRoutes={siteAdminAreaRoutes}
             siteAdminSideBarGroups={siteAdminSidebarGroups}
             siteAdminOverviewComponents={siteAdminOverviewComponents}
+            userAreaRoutes={userAreaRoutes}
+            userAreaHeaderNavItems={userAreaHeaderNavItems}
             userAccountSideBarItems={userAccountSideBarItems}
             userAccountAreaRoutes={userAccountAreaRoutes}
             repoRevContainerRoutes={repoRevContainerRoutes}
