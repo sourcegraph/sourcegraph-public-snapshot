@@ -15,6 +15,7 @@ Gabriel Aszalos <gabriel@sourcegraph.com>
 Geoffrey Gilmore <geoffrey@sourcegraph.com>
 Ildar Isaev <iisaev@codeminders.com>
 Isaac Snow <isaac@sourcegraph.com>
+James McGillicuddy <jamesmcgillicuddy@gmail.com>
 Keegan Carruthers-Smith <keegan.csmith@gmail.com>
 Kevin Burke <kev@inburke.com>
 Nick Snyder <nick@sourcegraph.com>
