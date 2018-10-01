@@ -68,8 +68,8 @@ h1 {
 				writeSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information.")
 				return
 			}
-			if info.IsExpired() {
-				writeSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph subscription expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph subscription (or downgrade to only using Sourcegraph Core features).")
+			if info != nil && info.IsExpiredWithGracePeriod() {
+				writeSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features).")
 				return
 			}
 
@@ -83,18 +83,16 @@ h1 {
 func init() {
 	db.Users.PreCreateUser = func(ctx context.Context) error {
 		info, err := GetConfiguredProductLicenseInfo()
-		if err != nil {
+		if info == nil || err != nil {
 			return err
 		}
 
-		if info.UserCount != nil {
-			userCount, err := db.Users.Count(ctx, nil)
-			if err != nil {
-				return err
-			}
-			if userCount >= int(*info.UserCount) {
-				return errcode.NewPresentationError("Unable to create user account: the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users.")
-			}
+		userCount, err := db.Users.Count(ctx, nil)
+		if err != nil {
+			return err
+		}
+		if userCount >= int(info.UserCount) {
+			return errcode.NewPresentationError("Unable to create user account: the Sourcegraph license's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users.")
 		}
 
 		return nil

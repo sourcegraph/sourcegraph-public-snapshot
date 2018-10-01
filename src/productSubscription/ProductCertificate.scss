@@ -1,4 +1,4 @@
-.product-subscription-status {
+.product-certificate {
     &__bg {
         position: absolute;
         user-select: none;
@@ -14,12 +14,12 @@
     }
 
     &__logo {
-        height: 7rem;
+        height: 5rem;
     }
 }
 
 .theme-light {
-    .product-subscription-status {
+    .product-certificate {
         &__bg {
             opacity: 0.025;
         }
@@ -27,7 +27,7 @@
 }
 
 .theme-dark {
-    .product-subscription-status {
+    .product-certificate {
         &__bg {
             opacity: 0.1;
             filter: grayscale(100%);

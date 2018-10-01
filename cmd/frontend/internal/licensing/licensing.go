@@ -1,7 +1,6 @@
 package licensing
 
 import (
-	"context"
 	"os"
 	"sync"
 
@@ -13,7 +12,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// publicKey is the public key used to verify Sourcegraph license keys.
+// publicKey is the public key used to verify product license keys.
 //
 // It is hardcoded here intentionally (we only have one private signing key, and we don't yet
 // support/need key rotation). The corresponding private key is at
@@ -31,8 +30,8 @@ var publicKey = func() ssh.PublicKey {
 	return publicKey
 }()
 
-// ParseProductLicenseKey parses and verifies the license key using the license verification
-// public key (publicKey in this package).
+// ParseProductLicenseKey parses and verifies the license key using the license verification public
+// key (publicKey in this package).
 func ParseProductLicenseKey(licenseKey string) (*license.Info, error) {
 	return license.ParseSignedKey(licenseKey, publicKey)
 }
@@ -44,11 +43,11 @@ var (
 	lastInfo    *license.Info
 )
 
-// GetConfiguredProductLicenseInfo returns information about the current Sourcegraph license key specified
-// in site configuration.
+// GetConfiguredProductLicenseInfo returns information about the current product license key
+// specified in site configuration.
 func GetConfiguredProductLicenseInfo() (*license.Info, error) {
-	// Support reading the license key from the environment (intended for development, because
-	// we don't want to commit a valid license key to dev/config.json in the OSS repo).
+	// Support reading the license key from the environment (intended for development, because we
+	// don't want to commit a valid license key to dev/config.json in the OSS repo).
 	keyText := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
 	if keyText == "" {
 		keyText = conf.Get().LicenseKey
@@ -74,19 +73,19 @@ func GetConfiguredProductLicenseInfo() (*license.Info, error) {
 	}
 
 	// No license key.
-	return &license.Info{Plan: "Free"}, nil
+	return nil, nil
 }
 
-// Make the Site.productSubscription GraphQL field return the actual info about the Sourcegraph
-// license (instead of the stub info from the OSS build).
+// Make the Site.productSubscription GraphQL field return the actual info about the product license,
+// if any.
 func init() {
-	graphqlbackend.GetConfiguredProductLicenseInfo = func(ctx context.Context) (*graphqlbackend.ProductLicenseInfo, error) {
+	graphqlbackend.GetConfiguredProductLicenseInfo = func() (*graphqlbackend.ProductLicenseInfo, error) {
 		info, err := GetConfiguredProductLicenseInfo()
-		if err != nil {
+		if info == nil || err != nil {
 			return nil, err
 		}
 		return &graphqlbackend.ProductLicenseInfo{
-			PlanValue:      info.Plan,
+			TagsValue:      info.Tags,
 			UserCountValue: info.UserCount,
 			ExpiresAtValue: info.ExpiresAt,
 		}, nil
@@ -94,19 +93,19 @@ func init() {
 }
 
 // envLicenseGenerationPrivateKey (the env var SOURCEGRAPH_LICENSE_GENERATION_KEY) is the
-// PEM-encoded form of the private key used to sign Sourcegraph license keys. It is stored at
+// PEM-encoded form of the private key used to sign product license keys. It is stored at
 // https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i.
-var envLicenseGenerationPrivateKey = env.Get("SOURCEGRAPH_LICENSE_GENERATION_KEY", "", "the PEM-encoded form of the private key used to sign Sourcegraph license keys (https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i)")
+var envLicenseGenerationPrivateKey = env.Get("SOURCEGRAPH_LICENSE_GENERATION_KEY", "", "the PEM-encoded form of the private key used to sign product license keys (https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i)")
 
-// GenerateProductLicenseKey generates a Sourcegraph license key using the license generation
-// private key configured in site configuration.
+// GenerateProductLicenseKey generates a product license key using the license generation private
+// key configured in site configuration.
 func GenerateProductLicenseKey(info license.Info) (string, error) {
 	if envLicenseGenerationPrivateKey == "" {
-		return "", errors.New("no Sourcegraph license generation private key was configured")
+		return "", errors.New("no product license generation private key was configured")
 	}
 	privateKey, err := ssh.ParsePrivateKey([]byte(envLicenseGenerationPrivateKey))
 	if err != nil {
-		return "", errors.WithMessage(err, "parsing Sourcegraph license generation private key")
+		return "", errors.WithMessage(err, "parsing product license generation private key")
 	}
 
 	licenseKey, err := license.GenerateSignedKey(info, privateKey)

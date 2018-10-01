@@ -1,6 +1,8 @@
 import { authGroup, otherGroup, siteAdminSidebarGroups } from '@sourcegraph/webapp/dist/site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '@sourcegraph/webapp/dist/site-admin/SiteAdminSidebar'
+import HeartIcon from 'mdi-react/HeartIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
+import { USE_DOTCOM_BUSINESS } from '../dotcom/productSubscriptions/features'
 
 const registryGroup: SiteAdminSideBarGroup = {
     header: {
@@ -19,14 +21,25 @@ const registryGroup: SiteAdminSideBarGroup = {
  * Sidebar items that are only used on Sourcegraph.com.
  */
 const dotcomGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Sourcegraph.com' },
+    header: { label: 'Business', icon: HeartIcon },
     items: [
         {
-            label: 'Generate license',
-            to: '/site-admin/dotcom/generate-license',
+            label: 'Customers',
+            to: '/site-admin/dotcom/customers',
+            condition: () => USE_DOTCOM_BUSINESS,
+        },
+        {
+            label: 'Subscriptions',
+            to: '/site-admin/dotcom/product/subscriptions',
+            condition: () => USE_DOTCOM_BUSINESS,
+        },
+        {
+            label: 'License key lookup',
+            to: '/site-admin/dotcom/product/licenses',
+            condition: () => USE_DOTCOM_BUSINESS,
         },
     ],
-    condition: () => (window as any).context.sourcegraphDotComMode,
+    condition: () => USE_DOTCOM_BUSINESS,
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdminSidebarGroups.reduce<

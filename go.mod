@@ -13,6 +13,7 @@ require (
 	github.com/gorilla/mux v1.6.2
 	github.com/graph-gophers/graphql-go v0.0.0-20180806175703-94da0f0031f9
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7
+	github.com/hashicorp/go-multierror v1.0.0
 	github.com/hashicorp/golang-lru v0.5.0 // indirect
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/keegancsmith/sqlf v1.1.0
@@ -45,6 +46,7 @@ require (
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
 	github.com/sourcegraph/sourcegraph v0.0.0-20181002174243-16d03a7c5641
 	github.com/src-d/gcfg v1.3.0 // indirect
+	github.com/stripe/stripe-go v0.0.0-20180924231549-97e2ddab8720
 	github.com/zenazn/goji v0.9.0 // indirect
 	go4.org v0.0.0-20180809161055-417644f6feb5
 	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b

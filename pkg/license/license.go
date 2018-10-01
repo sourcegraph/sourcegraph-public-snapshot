@@ -28,14 +28,50 @@ import (
 // license. Increment (encodedInfo).Version and formatVersion when you make backward-incompatbile
 // changes.
 type Info struct {
-	Plan      string     `json:"p"`   // the plan that this license is valid for
-	UserCount *uint      `json:"uc"`  // the number of users that this license is valid for
-	ExpiresAt *time.Time `json:"exp"` // the date when this license expires
+	Tags      []string  `json:"t"` // tags that denote features/restrictions (e.g., "starter" or "dev")
+	UserCount uint      `json:"u"` // the number of users that this license is valid for
+	ExpiresAt time.Time `json:"e"` // the date when this license expires
 }
 
 // IsExpired reports whether the license has expired.
 func (l Info) IsExpired() bool {
-	return l.ExpiresAt != nil && l.ExpiresAt.Before(time.Now())
+	return l.ExpiresAt.Before(time.Now())
+}
+
+// IsExpiredWithGracePeriod reports whether the license has expired, adding a grace period of 3 days
+// after the license's expiration.
+func (l Info) IsExpiredWithGracePeriod() bool {
+	return l.ExpiresAt.Add(3 * 24 * time.Hour).Before(time.Now())
+}
+
+// HasTag reports whether tag is in l's list of tags.
+func (l Info) HasTag(tag string) bool {
+	for _, t := range l.Tags {
+		if tag == t {
+			return true
+		}
+	}
+	return false
+}
+
+func (l *Info) String() string {
+	if l == nil {
+		return "nil license"
+	}
+	return fmt.Sprintf("license(tags=%v, userCount=%d, expiresAt=%s)", l.Tags, l.UserCount, l.ExpiresAt)
+}
+
+// ParseTagsInput parses a string of comma-separated tags. It removes whitespace around tags and
+// removes empty tags before returning the list of tags.
+func ParseTagsInput(tagsStr string) []string {
+	if tagsStr == "" {
+		return nil
+	}
+	tags := strings.Split(tagsStr, ",")
+	for i, tag := range tags {
+		tags[i] = strings.TrimSpace(tag)
+	}
+	return tags
 }
 
 type encodedInfo struct {

@@ -1,7 +1,11 @@
 import { siteAdminAreaRoutes } from '@sourcegraph/webapp/dist/site-admin/routes'
 import { SiteAdminAreaRoute } from '@sourcegraph/webapp/dist/site-admin/SiteAdminArea'
 import React from 'react'
-import { SiteAdminGenerateLicensePage } from './dotcom/SiteAdminGenerateLicensePage'
+import { SiteAdminProductCustomersPage } from './dotcom/customers/SiteAdminCustomersPage'
+import { SiteAdminCreateProductSubscriptionPage } from './dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage'
+import { SiteAdminProductLicensesPage } from './dotcom/productSubscriptions/SiteAdminProductLicensesPage'
+import { SiteAdminProductSubscriptionPage as SiteAdminDotcomProductSubscriptionPage } from './dotcom/productSubscriptions/SiteAdminProductSubscriptionPage'
+import { SiteAdminProductSubscriptionsPage } from './dotcom/productSubscriptions/SiteAdminProductSubscriptionsPage'
 import { SiteAdminProductSubscriptionPage } from './productSubscription/SiteAdminProductSubscriptionPage'
 import { SiteAdminAuthenticationProvidersPage } from './SiteAdminAuthenticationProvidersPage'
 import { SiteAdminExternalAccountsPage } from './SiteAdminExternalAccountsPage'
@@ -15,8 +19,28 @@ export const enterpriseSiteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = 
         exact: true,
     },
     {
-        path: '/dotcom/generate-license',
-        render: props => <SiteAdminGenerateLicensePage {...props} />,
+        path: '/dotcom/customers',
+        render: props => <SiteAdminProductCustomersPage {...props} />,
+        exact: true,
+    },
+    {
+        path: '/dotcom/product/subscriptions/new',
+        render: props => <SiteAdminCreateProductSubscriptionPage {...props} />,
+        exact: true,
+    },
+    {
+        path: '/dotcom/product/subscriptions/:subscriptionID',
+        render: props => <SiteAdminDotcomProductSubscriptionPage {...props} />,
+        exact: true,
+    },
+    {
+        path: '/dotcom/product/subscriptions',
+        render: props => <SiteAdminProductSubscriptionsPage {...props} />,
+        exact: true,
+    },
+    {
+        path: '/dotcom/product/licenses',
+        render: props => <SiteAdminProductLicensesPage {...props} />,
         exact: true,
     },
     {

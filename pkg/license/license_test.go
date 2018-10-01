@@ -8,6 +8,18 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+func TestParseTagsInput(t *testing.T) {
+	tests := map[string][]string{}
+	for input, want := range tests {
+		t.Run(input, func(t *testing.T) {
+			got := ParseTagsInput(input)
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("got %v, want %v", got, want)
+			}
+		})
+	}
+}
+
 var (
 	privateKey ssh.Signer
 	publicKey  ssh.PublicKey
@@ -58,15 +70,12 @@ mSXt7lUbEmiQep700eM7YlgrOxUVqHsjf1QMrNfq05Ajr8uDfHim
 	}
 }
 
-func uintptr(n uint) *uint { return &n }
-
 var (
 	timeFixture = time.Date(2018, time.September, 22, 21, 33, 44, 0, time.UTC)
-	infoFixture = Info{Plan: "a", UserCount: uintptr(123), ExpiresAt: &timeFixture}
+	infoFixture = Info{Tags: []string{"a"}, UserCount: 123, ExpiresAt: timeFixture}
 )
 
 func TestInfo_EncodeDecode(t *testing.T) {
-
 	t.Run("ok", func(t *testing.T) {
 		want := infoFixture
 		data, err := want.encode()

@@ -1,14 +1,13 @@
 import { gql, queryGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
-import format from 'date-fns/format'
-import formatDistanceStrict from 'date-fns/formatDistanceStrict'
-import isAfter from 'date-fns/isAfter'
-import { upperFirst } from 'lodash'
+import { numberWithCommas } from '@sourcegraph/webapp/dist/util/strings'
 import * as React from 'react'
 import { Observable, Subscription } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import { ProductLicenseInfoPlanDescription } from './ProductLicenseInfoPlanDescription'
+import { ExpirationDate } from '../../productSubscription/ExpirationDate'
+import { formatUserCount } from '../../productSubscription/helpers'
+import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 
 interface Props {
     className?: string
@@ -46,67 +45,40 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
         if (this.state.statusOrError === undefined) {
             return null
         }
-
-        return (
-            <>
-                <div className={`product-subscription-status card ${this.props.className || ''}`}>
-                    <div className="product-subscription-status__bg" />
-                    <div className="card-body d-flex">
-                        <img
-                            className="product-subscription-status__logo mr-1 p-2"
-                            src="/.assets/img/sourcegraph-mark.svg"
-                        />
-                        <div className="mt-2">
-                            {isErrorLike(this.state.statusOrError) ? (
-                                <div className="alert alert-danger">
-                                    Error querying for license information:{' '}
-                                    {upperFirst(this.state.statusOrError.message)}
-                                </div>
-                            ) : this.state.statusOrError.license ? (
-                                <>
-                                    <h2 className="font-weight-normal">Sourcegraph License</h2>
-                                    <h3 className="text-muted font-weight-bold">
-                                        <ProductLicenseInfoPlanDescription license={this.state.statusOrError.license} />
-                                    </h3>
-                                    {this.state.statusOrError.license.expiresAt !== null && (
-                                        <p className="text-muted">
-                                            Valid until{' '}
-                                            {format(this.state.statusOrError.license.expiresAt, 'MMMM dd, yyyy')}{' '}
-                                            {isAfter(this.state.statusOrError.license.expiresAt, new Date()) && (
-                                                <>
-                                                    (
-                                                    {formatDistanceStrict(
-                                                        this.state.statusOrError.license.expiresAt,
-                                                        new Date()
-                                                    )}{' '}
-                                                    remaining)
-                                                </>
-                                            )}
-                                        </p>
-                                    )}
-                                </>
-                            ) : (
-                                <h2 className="font-weight-normal">No Sourcegraph License</h2>
-                            )}
-                        </div>
-                    </div>
-                    {!isErrorLike(this.state.statusOrError) &&
-                        this.state.statusOrError.license &&
-                        this.state.statusOrError.license.userCount !== null && (
-                            <div className="card-footer d-flex align-items-center justify-content-between">
-                                <div>
-                                    <strong>User licenses:</strong> {this.state.statusOrError.actualUserCount} used /{' '}
-                                    {this.state.statusOrError.license.userCount -
-                                        this.state.statusOrError.actualUserCount}{' '}
-                                    remaining
-                                </div>
-                                <a href="https://about.sourcegraph.com/pricing" className="btn btn-primary btn-sm">
-                                    Upgrade license
-                                </a>
-                            </div>
-                        )}
+        if (isErrorLike(this.state.statusOrError)) {
+            return (
+                <div className="alert alert-danger">
+                    Error checking product license: {this.state.statusOrError.message}
                 </div>
-            </>
+            )
+        }
+        if (!this.state.statusOrError.license) {
+            return null
+        }
+
+        const { fullProductName, actualUserCount, license } = this.state.statusOrError
+        return (
+            <ProductCertificate
+                title={fullProductName}
+                detail={
+                    <>
+                        {formatUserCount(license.userCount, true)} license,{' '}
+                        <ExpirationDate date={license.expiresAt} showRelative={true} lowercase={true} />
+                    </>
+                }
+                footer={
+                    <div className="card-footer d-flex align-items-center justify-content-between">
+                        <div>
+                            <strong>User licenses:</strong> {numberWithCommas(actualUserCount)} used /{' '}
+                            {numberWithCommas(license.userCount - actualUserCount)} remaining
+                        </div>
+                        <a href="https://about.sourcegraph.com/pricing" className="btn btn-primary btn-sm">
+                            Upgrade
+                        </a>
+                    </div>
+                }
+                className={this.props.className}
+            />
         )
     }
 
@@ -115,9 +87,10 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             query ProductLicenseInfo {
                 site {
                     productSubscription {
+                        fullProductName
                         actualUserCount
                         license {
-                            plan
+                            tags
                             userCount
                             expiresAt
                         }
