@@ -8,7 +8,7 @@ main() {
     export GOBIN="$PWD/.bin"
     export PATH=$GOBIN:$PATH
 
-    ./dev/go-mod-update.sh
+    ./dev/go mod tidy
     if [ ! -z "$(git status --porcelain)" ]; then
         echo "FAIL: working directory has changed"
         git diff
