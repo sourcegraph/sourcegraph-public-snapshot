@@ -116,25 +116,15 @@ func workForever(ctx context.Context) {
 				continue // ignore empty replies
 			}
 
-			// TODO(slimsag:discussions): Unify this discussion thread creation code with the graphqlbackend?
-			newComment := &types.DiscussionComment{
+			_, err = discussions.InsecureAddCommentToThread(ctx, &types.DiscussionComment{
 				ThreadID:     threadID,
 				AuthorUserID: userID,
 				Contents:     contents,
-			}
-			_, err = db.DiscussionComments.Create(ctx, newComment)
+			})
 			if err != nil {
-				log15.Error("discussions: mailreply worker: error while creating comment", "error", err)
+				log15.Error("discussions: mailreply worker: error while adding comment to thread", "error", err)
 				continue
 			}
-
-			// Fetch and return the updated thread object.
-			updatedThread, err := db.DiscussionThreads.Get(ctx, threadID)
-			if err != nil {
-				log15.Error("discussions: mailreply worker: error while getting updated thread", "error", err)
-				continue
-			}
-			discussions.NotifyNewComment(updatedThread, newComment)
 
 			// Now that we're finished handling this message, mark it as seen
 			// and to be deleted.
