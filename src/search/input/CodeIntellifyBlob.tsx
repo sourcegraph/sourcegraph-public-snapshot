@@ -230,7 +230,15 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                     map(codeView => getTokenAtPosition(codeView, props.defaultHoverPosition, domFunctions)),
                     filter(isDefined)
                 )
-                .subscribe(token => token.click())
+                .subscribe(token => {
+                    const showOnHomepage =
+                        props.containerClass === 'code-intellify-container' && window.innerWidth >= 1393
+                    const showOnModal =
+                        props.containerClass === 'code-intellify-container-modal' && window.innerWidth >= 1275
+                    if (showOnHomepage || showOnModal) {
+                        token.click()
+                    }
+                })
         )
     }
 
