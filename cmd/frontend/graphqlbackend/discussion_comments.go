@@ -188,23 +188,15 @@ func (r *discussionsMutationResolver) AddCommentToThread(ctx context.Context, ar
 	if err != nil {
 		return nil, err
 	}
-	// TODO(slimsag:discussions): Unify this discussion thread creation code with the mailreply worker?
-	newComment := &types.DiscussionComment{
+
+	updatedThread, err := discussions.InsecureAddCommentToThread(ctx, &types.DiscussionComment{
 		ThreadID:     threadID,
 		AuthorUserID: currentUser.user.ID,
 		Contents:     args.Contents,
-	}
-	_, err = db.DiscussionComments.Create(ctx, newComment)
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "DiscussionComments.Create")
+		return nil, errors.Wrap(err, "AddCommentToThread")
 	}
-
-	// Fetch and return the updated thread object.
-	updatedThread, err := db.DiscussionThreads.Get(ctx, threadID)
-	if err != nil {
-		return nil, errors.Wrap(err, "DiscussionThreads.Get")
-	}
-	discussions.NotifyNewComment(updatedThread, newComment)
 	return &discussionThreadResolver{t: updatedThread}, nil
 }
 
