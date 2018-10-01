@@ -209,6 +209,11 @@ type DiscussionCommentsListOptions struct {
 
 	// Reported, when true, returns only threads that have at least one report.
 	Reported bool
+
+	// CreatedBefore, when non-nil, specifies that only comments that were
+	// created before this time should be returned.
+	CreatedBefore *time.Time
+	CreatedAfter  *time.Time
 }
 
 func (c *discussionComments) List(ctx context.Context, opts *DiscussionCommentsListOptions) ([]*types.DiscussionComment, error) {
@@ -262,6 +267,12 @@ func (*discussionComments) getListSQL(opts *DiscussionCommentsListOptions) (cond
 	}
 	if opts.Reported {
 		conds = append(conds, sqlf.Sprintf("array_length(reports,1) > 0"))
+	}
+	if opts.CreatedBefore != nil {
+		conds = append(conds, sqlf.Sprintf("created_at < %v", *opts.CreatedBefore))
+	}
+	if opts.CreatedAfter != nil {
+		conds = append(conds, sqlf.Sprintf("created_at > %v", *opts.CreatedAfter))
 	}
 	return conds
 }
