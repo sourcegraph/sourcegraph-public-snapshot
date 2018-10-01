@@ -48,7 +48,7 @@
     "@types/mermaid": "8.0.0",
     "@types/node": "8.0.44",
     "@types/react": "16.4.13",
-    "@types/react-dom": "16.0.7",
+    "@types/react-dom": "16.0.8",
     "@types/react-router": "4.0.30",
     "@types/react-router-dom": "4.3.0",
     "@types/reactstrap": "5.0.18",
