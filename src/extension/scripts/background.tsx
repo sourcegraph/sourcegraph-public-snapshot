@@ -191,8 +191,8 @@ storage.addSyncMigration((items, set, remove) => {
         set({ openFileOnSourcegraph: true })
     }
 
-    if (items.featureFlags && items.featureFlags.newTooltips) {
-        set({ featureFlags: { ...items.featureFlags, newTooltips: true } })
+    if (items.featureFlags && !items.featureFlags.newInject) {
+        set({ featureFlags: { ...items.featureFlags, newInject: true } })
     }
 
     if (!items.inlineSymbolSearchEnabled) {
