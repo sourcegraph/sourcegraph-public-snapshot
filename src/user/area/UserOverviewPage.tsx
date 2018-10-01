@@ -3,9 +3,9 @@ import { RouteComponentProps } from 'react-router'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
-import { UserAreaPageProps } from './UserArea'
+import { UserAreaRouteContext } from './UserArea'
 
-interface Props extends UserAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {}
 
 interface State {}
 

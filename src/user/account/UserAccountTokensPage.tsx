@@ -15,9 +15,9 @@ import {
 } from '../../settings/tokens/AccessTokenNode'
 import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError } from '../../util/errors'
-import { UserAreaPageProps } from '../area/UserArea'
+import { UserAreaRouteContext } from '../area/UserArea'
 
-interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
+interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     /**
      * The newly created token, if any. This component must call onDidPresentNewToken
      * when it is finished presenting the token secret to the user.

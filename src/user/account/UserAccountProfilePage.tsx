@@ -24,7 +24,7 @@ import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { enableUserArea, UserAreaPageProps } from '../area/UserArea'
+import { enableUserArea, UserAreaRouteContext } from '../area/UserArea'
 import { UserAvatar } from '../UserAvatar'
 import { updateUser } from './backend'
 
@@ -53,7 +53,7 @@ function queryUser(user: GQL.ID): Observable<GQL.IUser> {
     )
 }
 
-interface Props extends UserAreaPageProps, RouteComponentProps<{}> {}
+interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {}
 
 interface State {
     /** The user to edit, or an error, or undefined while loading. */
