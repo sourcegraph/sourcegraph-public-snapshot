@@ -5,6 +5,7 @@ Beyang Liu <beyang@sourcegraph.com>
 Caroline Frost <caroline@sourcegraph.com>
 Chelsea Otakan <chexee@gmail.com>
 Chris Ramón <rchristian.ramon@gmail.com>
+Chris Wendt <chrismwendt@gmail.com>
 Keegan Carruthers-Smith <keegan.csmith@gmail.com>
 Kevin Burke <kev@inburke.com>
 Nick Snyder <nick@sourcegraph.com>
