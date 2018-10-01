@@ -25,9 +25,6 @@ import (
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
 
-// BillingPublishableKey is the publishable (non-secret) API key for the billing system, if any.
-var BillingPublishableKey string
-
 type authProviderInfo struct {
 	IsBuiltin         bool   `json:"isBuiltin"`
 	DisplayName       string `json:"displayName"`
@@ -66,8 +63,6 @@ type JSContext struct {
 	IsRunningDataCenter bool                     `json:"isRunningDataCenter"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
-
-	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
 
 	AccessTokensAllow conf.AccessTokAllow `json:"accessTokensAllow"`
 
@@ -150,8 +145,6 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		IsRunningDataCenter: conf.IsDataCenter(conf.DeployType()),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-
-		BillingPublishableKey: BillingPublishableKey,
 
 		// Experiments. We pass these through explicitly so we can
 		// do the default behavior only in Go land.
