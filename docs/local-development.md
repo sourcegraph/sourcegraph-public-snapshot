@@ -47,7 +47,7 @@ You will need Git, Go (version 1.11), Docker, PostgreSQL (version 9), Node.js
 
 You have two options for installing:
 
-### Option A: Homebrew setup for macOS
+#### Option A: Homebrew setup for macOS
 
 This is a streamlined setup for Mac machines.
 
