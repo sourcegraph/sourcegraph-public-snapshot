@@ -32,6 +32,6 @@ Matt King <kingy895@gmail.com>
 Matt Sprague <matt@sourcegraph.com>
 Máté Kovács <mkovacs@users.noreply.github.com>
 Nick Snyder <nick@sourcegraph.com>
+Nico Tonozzi <dominic.tonozzi@gmail.com>
 Quinn Slack <sqs@sourcegraph.com>
 Sourcegraph <hi@sourcegraph.com>
-Nick Snyder <nick@sourcegraph.com>
