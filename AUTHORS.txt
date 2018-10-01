@@ -21,6 +21,7 @@ John Rothfels <john@sourcegraph.com>
 Jon Poler <jonathan.poler@gmail.com>
 Jonathan Poler <jon@sourcegraph.com>
 Josh Bleecher Snyder <josharian@gmail.com>
+Julien Chien <julien@sourcegraph.com>
 Keegan Carruthers-Smith <keegan.csmith@gmail.com>
 Kevin Burke <kev@inburke.com>
 Nick Snyder <nick@sourcegraph.com>
