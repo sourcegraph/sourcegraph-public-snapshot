@@ -49,9 +49,8 @@ interface State {
 const heroEyebrow = 'Sourcegraph'
 const heroTitle = 'Open. For business.'
 const heroCopyTop =
-    'Sourcegraph is a free, open-source, self-hosted code search and intelligence server that helps developers find, review, understand, and debug code. Use it with any Git code host for teams of any size. Try it out on then install the Sourcegraph docker image on your private code. Upgraded features start at $4/user/month.'
-const heroCopyBottom =
-    'Get started with powerful search, advanced code intelligence, and vast integrations into your code host and browser.'
+    'Sourcegraph is a free, open-source, self-hosted code search and intelligence server that helps developers find, review, understand, and debug code. Use it with any Git code host for teams of any size. Start using it now, then install the Sourcegraph docker image on your private code.'
+const heroCopyBottom = 'Upgraded features start at $4/user/month.'
 
 const searchSections = [
     {
@@ -59,12 +58,11 @@ const searchSections = [
         paragraph:
             'Sourcegraph code search performs full-text searches and supports both regular expression and exact queries. By default, Sourcegraph searches across all your repositories. Our search query syntax allows for advanced queries, such as searching over any branch or commit, narrowing searches by programming language or file pattern, and more.',
         buttons: [
-            { query: 'github.com', text: 'GitHub DEMO' },
+            { query: 'repo:^gitlab.com/ ', text: 'Code on GitLab' },
             { query: 'repogroup:goteam file:\\.go$', text: 'Go Code by Go Team' },
             {
                 query: 'repogroup:ethereum file:\\.(txt|md)$ file:(test|spec) ',
                 text: 'Core Etherium Test Files',
-                onClick: 'buttonGoLang',
             },
             { query: 'repogroup:angular file:\\.JSON$', text: 'Angular JSON Files' },
         ],
@@ -72,16 +70,18 @@ const searchSections = [
     {
         title: 'Commit Diff Search',
         paragraph:
-            'Search over commit diffs using type:diff to see how your codebase has changed over time. This is often used to find changes to particular functions, classes, or areas of the codebase when debugging.<br><br>You can also search within commit diffs on multiple branches by specifying the branches in a repo: field after the @ sign. After the @, separate Git refs with :, specify Git ref globs by prefixing them with *, and exclude commits reachable from a ref by prefixing it with ^.',
+            'Search over commit diffs using type:diff to see how your codebase has changed over time. This is often used to find changes to particular functions, classes, or areas of the codebase when debugging. You can also search within commit diffs on multiple branches by specifying the branches in a repo: field after the @ sign.',
         buttons: [
             { query: 'repo:^github\\.com/apple/swift$@master-next type:diff', text: 'Swift Diff on Master-Next' },
-            { query: 'repogroup:goteam file:\\.go$', text: 'ReactJS Test File Diff' },
+            { query: 'repo:^github.com/facebook/react$ file:(test|spec)  type:diff', text: 'ReactJS Test File Diff' },
             {
-                query: 'repogroup:ethereum file:\\.(txt|md)$ file:(test|spec) ',
-                text: 'Core Etherium Test Files',
-                onClick: 'buttonGoLang',
+                query: 'repo:^github.com/golang/oauth2$ type:diff',
+                text: 'Go oAuth2 Diff',
             },
-            { query: 'repogroup:angular file:\\.JSON$', text: 'Angular JSON Files' },
+            {
+                query: 'r:^github.com/kubernetes/kubernetes$ type:diff statefulset',
+                text: 'Kubernetes Statefulset Diff',
+            },
         ],
     },
     {
@@ -89,14 +89,13 @@ const searchSections = [
         paragraph:
             'Searching over commit messages is supported in Sourcegraph by adding type:commit to your search query. Separately, you can also use the message:"any string" token to filter type:diff searches for a given commit message.',
         buttons: [
-            { query: 'repogroup:goteam', text: 'Go Team Code' },
-            { query: 'repogroup:goteam file:\\.go$', text: 'Go Code by Go Team' },
+            { query: 'type:commit  repogroup:angular author:google.com>$ ', text: 'Angular Commits by Googlers' },
+            { query: 'repogroup:npm type:commit security', text: 'NPM Commits mentioning Security' },
             {
-                query: 'repogroup:ethereum file:\\.(txt|md)$ file:(test|spec) ',
-                text: 'Core Etherium Test Files',
-                onClick: 'buttonGoLang',
+                query: 'repogroup:ethereum type:commit money loss',
+                text: "Ethereum Commits mentioning 'Money Loss'",
             },
-            { query: 'repogroup:angular file:\\.JSON$', text: 'Angular JSON Files' },
+            { query: 'repo:^github.com/sourcegraph/sourcegraph type:commit', text: 'Sourcegraph Commits' },
         ],
     },
     {
@@ -104,8 +103,8 @@ const searchSections = [
         paragraph:
             'Searching for symbols makes it easier to find specific functions, variables and more. Use the type:symbol filter to search for symbol results. Symbol results also appear in typeahead suggestions, so you can jump directly to symbols by name.',
         buttons: [
-            { query: 'repogroup:goteam', text: 'Go Team Code' },
-            { query: 'repogroup:goteam file:\\.go$', text: 'Go Code by Go Team' },
+            { query: 'repogroup:goteam type:symbol httpRouter', text: 'Go Code with httpRouter' },
+            { query: 'repo:^github.com/apple/swift$ type:symbol main', text: "Calls to 'main' in Swift" },
             {
                 query: 'repogroup:ethereum file:\\.(txt|md)$ file:(test|spec) ',
                 text: 'Core Etherium Test Files',
@@ -119,7 +118,7 @@ const intelligenceSections = [
     {
         title: 'Code browsing',
         paragraph:
-            'View open source code, like gorilla/mux, on sourcegraph.com, or deploy your own instance to see public code alongside your private code. See how your codebase changes over time in functions, classes, or areas of the codebase when debugging.',
+            'View open source code, like gorilla/mux, on sourcegraph.com, or deploy your own instance to see public code alongside your private code. See how your codebase changes over time in by browsing through branches, commits, and diffs.',
     },
     {
         title: 'Advanced code intelligence',
@@ -155,13 +154,13 @@ const integrationsSections = [
     {
         title: 'Code host integrations',
         paragraph:
-            "Use the hovertooltip to discover and understand your code faster. Click on a token and then go to it's definition, other refrences, or implementations. Speed through reviews by understanding new code and changed code and what it affects.",
+            'The Sourcegraph browser extension will add go-to-definition, find-references, hover tooltips, and code search to all files and diffs on supported code hosts. The extension will also add code intelligence and code search to public repositories. ',
         buttons: [{ id: 'btn-gitlab', text: 'GitLab' }, { id: 'btn-github', text: 'GitHub' }],
     },
     {
         title: 'IDE extensions',
         paragraph:
-            'Code intelligence is powered by language servers based on the open-standard Language Server Protocol (published by Microsoft, with participation from Facebook, Google, Sourcegraph, GitHub, RedHat, Twitter, Salesforce, Eclipse, and others). Visit langserver.org to learn more about the Language Server Protocol, find the latest support for your favorite language, and get involved.',
+            'Our editor plugins let you quickly jump to files and search code on your Sourcegraph instance from your editor. Seamlessly jump for development to review without missing a step.',
         buttons: [
             { id: 'btn-atom', text: 'Atom' },
             { id: 'btn-intellij', text: 'IntelliJ' },
@@ -288,6 +287,7 @@ export class MainPage extends React.Component<Props, State> {
                                 <h2>{heroEyebrow}</h2>
                                 <h1>{heroTitle}</h1>
                                 <p>{heroCopyTop}</p>
+                                <p>{heroCopyBottom}</p>
                                 <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
                                     Deploy Sourcegraph
                                 </a>
@@ -330,7 +330,7 @@ export class MainPage extends React.Component<Props, State> {
                                         with no indexing delay.
                                     </p>
                                     <button
-                                        className="btn btn-secondary"
+                                        className="btn btn-secondary "
                                         id="sampleButton"
                                         onClick={this.activateModal('search')}
                                     >
@@ -434,14 +434,22 @@ export class MainPage extends React.Component<Props, State> {
                                 <h2>Open. For business.</h2>
                                 <h1>Sourcegraph is open source.</h1>
                                 <p>
-                                    The pace at which humans can write code is the only thing that stands between us and
-                                    flying cars, a habitat on Mars, and a cure for cancer. That's why developers can get
-                                    started and deploy Sourcegraph for free, and contribute to our code on GitHub.
+                                    We opened up Sourcegraph to bring code search and intelligence to more developers
+                                    and developer ecosystems—and to help us realize the{' '}
+                                    <a href="//about.sourcegraph.com/plan/">Sourcegraph master plan</a>. We're also
+                                    excited about what this means for Sourcegraph as a company. All of our customers,
+                                    many with hundreds or thousands of developers using Sourcegraph internally every
+                                    day, started out with a single developer spinning up a Sourcegraph instance and
+                                    sharing it with their team. Being open-source makes it even easier to use
+                                    Sourcegraph.
                                 </p>
-                                <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                                <a
+                                    className="btn btn-primary"
+                                    href="https://github.com/sourcegraph/about/blob/master/projects/sourcegraph-is-now-open-source.md"
+                                >
                                     Release Announcement
                                 </a>
-                                <a className="btn btn-secondary" href="//about.sourcegraph.com/pricing/">
+                                <a className="btn btn-secondary" href="https://github.com/sourcegraph/asourcegraph/">
                                     Sourcegraph GitHub
                                 </a>
                             </div>
@@ -501,16 +509,16 @@ export class MainPage extends React.Component<Props, State> {
                                 <input type="checkbox" />
                                 <ul>
                                     <li>
-                                        <a href="/plan">Master Plan</a>
+                                        <a href="//about.sourcegraph.com/plan">Master Plan</a>
                                     </li>
                                     <li>
-                                        <a href="/about">About</a>
+                                        <a href="//about.sourcegraph.com/about">About</a>
                                     </li>
                                     <li>
-                                        <a href="/contact">Contact</a>
+                                        <a href="//about.sourcegraph.com/contact">Contact</a>
                                     </li>
                                     <li>
-                                        <a href="/jobs">Careers</a>
+                                        <a href="//about.sourcegraph.com/jobs">Careers</a>
                                     </li>
                                 </ul>
                                 <div className="close--icon">
@@ -522,16 +530,16 @@ export class MainPage extends React.Component<Props, State> {
                                 <input type="checkbox" />
                                 <ul>
                                     <li>
-                                        <a href="/#search-datacenter">Code Search</a>
+                                        <a onClick={this.activateModal('search')}>Code Search</a>
                                     </li>
                                     <li>
-                                        <a href="/#intelligence-ntegrations">Code Intelligence</a>
+                                        <a onClick={this.activateModal('intelligence')}>Code Intelligence</a>
                                     </li>
                                     <li>
-                                        <a href="/#search-datacenter">Data Center</a>
+                                        <a onClick={this.activateModal('integrations')}>Integrations</a>
                                     </li>
                                     <li>
-                                        <a href="/#intelligence-integrations">Integrations</a>
+                                        <a href="//about.sourcegraph.com/pricing">Enterprise</a>
                                     </li>
                                 </ul>
                                 <div className="close--icon">
@@ -543,16 +551,16 @@ export class MainPage extends React.Component<Props, State> {
                                 <input type="checkbox" />
                                 <ul>
                                     <li>
-                                        <a href="/docs">Documentation</a>
+                                        <a href="//about.sourcegraph.com/docs">Documentation</a>
                                     </li>
                                     <li>
-                                        <a href="/changelog">Changelog</a>
+                                        <a href="//about.sourcegraph.com/changelog">Changelog</a>
                                     </li>
                                     <li>
-                                        <a href="/pricing">Pricing</a>
+                                        <a href="//about.sourcegraph.com/pricing">Pricing</a>
                                     </li>
                                     <li>
-                                        <a href="/security">Security</a>
+                                        <a href="//about.sourcegraph.com/security">Security</a>
                                     </li>
                                 </ul>
                                 <div className="close--icon">
@@ -582,8 +590,8 @@ export class MainPage extends React.Component<Props, State> {
                                     <p className="copyright">Copyright © 2018 Sourcegraph, Inc.</p>
                                 </span>
                                 <span className="terms">
-                                    <a href="/terms">Terms</a>
-                                    <a href="/privacy">Privacy</a>
+                                    <a href="//about.sourcegraph.com/terms">Terms</a>
+                                    <a href="//about.sourcegraph.com/privacy">Privacy</a>
                                 </span>
                             </div>
                         </div>
