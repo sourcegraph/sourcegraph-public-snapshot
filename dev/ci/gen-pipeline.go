@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"go/build"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -140,8 +141,7 @@ func main() {
 			cmdDir = "cmd/" + appBase
 			pkgPath = "github.com/sourcegraph/enterprise/cmd/" + appBase
 		} else {
-			cmdDir = "../sourcegraph/cmd/" + appBase
-			pkgPath = "github.com/sourcegraph/sourcegraph/cmd/" + appBase
+			log.Fatal("Only enterprise builds allowed")
 		}
 
 		if _, err := os.Stat(cmdDir); err != nil {
@@ -232,7 +232,7 @@ func main() {
 			bk.Env("VERSION", version),
 			bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
 			bk.Env("NAMESPACE", "default"),
-			bk.Cmd("../sourcegraph/dev/ci/deploy-dogfood.sh"))
+			bk.Cmd("./dev/ci/deploy-dogfood.sh"))
 		pipeline.AddWait()
 
 		// Run e2e tests against dogfood
@@ -252,7 +252,7 @@ func main() {
 		// Deploy to prod
 		pipeline.AddStep(":rocket:",
 			bk.Env("VERSION", version),
-			bk.Cmd("../sourcegraph/dev/ci/deploy-prod.sh"))
+			bk.Cmd("./dev/ci/deploy-prod.sh"))
 	}
 
 	switch {
