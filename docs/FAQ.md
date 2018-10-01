@@ -12,17 +12,10 @@ Sourcegraph is under the [Apache License v2.0](../LICENSE).
 
 ## Is all of Sourcegraph open source?
 
-Over 95% of it is.
+This repository is 100% open source and builds a product known as Sourcegraph OSS.
 
-The Docker images that we publish (i.e. the images users normally run) are built from our enterprise codebase. This enables our users to easily upgrade to [our paid offerings](https://about.sourcegraph.com/pricing/) without having to run a separate Docker image. These images include certain non open-source features like:
+Sourcegraph OSS omits certain trademarks, logos, and [paid enterprise features](https://about.sourcegraph.com/pricing/). Sourcegraph Core and Enterprise include these additions, which make them not open source.
 
-- SSO
-- Advanced Code Intelligence
-- Deploy via G Suite
-- Internal–Only Extensions
-- High-Availability Cluster
-- Backup and Recovery
-
-Aside from these few features that typically only larger companies desire, Sourcegraph is completely open-source.
+The Docker images that users normally run are Sourcegraph Core (including paid enterprise features behind a paywall) which enables a smooth upgrade process for our users. Sourcegraph Core is completely free, however.
 
 > Note: If you wish to build a 100% open-source image, you can do so via the `dev/dev-sourcegraph-server.sh` script! =)
