@@ -56,13 +56,12 @@ This is a streamlined setup for Mac machines.
     (You can stop them later by calling `stop` instead of `start` above.)
 
 6.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
-    Homebrew does not put it there by default. You may need to adjust the below
-    command for your Homebrew prefix ("/usr/local" below) and shell (bash vs zsh).
+    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql@9.6`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
-        ```
-        hash psql || { echo 'export PATH="/usr/local/opt/postgresql@9.6/bin:$PATH"' >> ~/.bash_profile }
-        source ~/.bash_profile
-        ```
+    ```bash
+    hash psql || { echo 'export PATH="/usr/local/opt/postgresql@9.6/bin:$PATH"' >> ~/.bash_profile }
+    source ~/.bash_profile
+    ```
 
 7.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
