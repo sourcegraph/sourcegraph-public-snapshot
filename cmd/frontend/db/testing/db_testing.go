@@ -42,6 +42,11 @@ func useFastPasswordMocks() {
 // BeforeTest functions are called before each test is run (by TestContext).
 var BeforeTest []func()
 
+// DBNameSuffix must be set by DB test packages at init time to a value that is unique among all
+// other such values used by other DB test packages. This is necessary to ensure the tests do not
+// concurrently use the same DB (which would cause test failures).
+var DBNameSuffix = "db"
+
 var (
 	connectOnce sync.Once
 	connectErr  error
@@ -49,6 +54,10 @@ var (
 
 // TestContext constructs a new context that holds a temporary test DB
 // handle and other test configuration.
+//
+// Callers (other than github.com/sourcegraph/sourcegraph/cmd/frontend/db) must set a name in this
+// package's DBNameSuffix var that is unique among all other test packages that call TestContext, so
+// that each package's tests run in separate DBs and do not conflict.
 func TestContext(t *testing.T) context.Context {
 	useFastPasswordMocks()
 
@@ -57,7 +66,7 @@ func TestContext(t *testing.T) context.Context {
 	}
 
 	connectOnce.Do(func() {
-		connectErr = initTest("db")
+		connectErr = initTest(DBNameSuffix)
 	})
 	if connectErr != nil {
 		// only ignore connection errors if not on CI

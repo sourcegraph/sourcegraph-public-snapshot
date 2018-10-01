@@ -7,28 +7,13 @@ reading the code at https://sourcegraph.com/github.com/sourcegraph/sourcegraph.
 
 The Sourcegraph server is actually a collection of smaller binaries, each of
 which performs one task. The core entrypoint for the Sourcegraph development
-server is `dev/launch.sh`, which will initialize the environment, and start a
-process manager that runs the following binaries:
-
-- gitserver
-- indexer
-- query-runner
-- repo-updater
-- searcher
-- symbols
-- github-proxy
-- lsp-proxy
-- frontend
-- web
-- syntect_server
-- zoekt-indexserver
-- zoekt-webserver
+server is [dev/launch.sh](../dev/launch.sh), which will initialize the environment, and start a
+process manager that runs all of the binaries.
 
 See [the Architecture doc](architecture.md) for a full description of what each
 of these services does.
 
-There are several dependencies that you will need to load to get `dev/launch.sh`
-to load properly, described below.
+The sections below describe the the dependencies that you need to have to be able to run `dev/launch.sh` properly.
 
 ## Step 1: Get the code
 
@@ -40,12 +25,21 @@ go get github.com/sourcegraph/sourcegraph
 
 This is your "Sourcegraph repository directory".
 
-### Step 2: Install Git, Go, Docker, Node.js, PostgreSQL, Redis
+## Step 2: Install dependencies
 
-You will need Git, Go (version 1.11), Docker, PostgreSQL (version 9), Node.js
-(version 8 or 10), and Redis installed to run `dev/launch.sh`.
+Sourcegraph has the following dependencies:
 
-You have two options for installing:
+- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [Go](https://golang.org/doc/install) (v1.11 or higher)
+- [Node JS](https://nodejs.org/en/download/) (version 8 or 10)
+- [make](https://www.gnu.org/software/make/)
+- [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
+  - For macOS we recommend using Docker for Mac instead of `docker-machine`
+- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.6.x)
+- [Redis](http://redis.io/) (v3.0.7 or higher)
+- [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
+
+You have two options for installing these dependencies.
 
 ### Option A: Homebrew setup for macOS
 
@@ -59,9 +53,7 @@ This is a streamlined setup for Mac machines.
     brew install go node redis postgresql@9.6 git gnu-sed
     ```
 
-4.  Set up your [Go Workspace](https://golang.org/doc/code.html#Workspaces)
-
-5.  Configure PostgreSQL and Redis to start automatically
+4.  Configure PostgreSQL and Redis to start automatically
 
     ```
     brew services start postgresql@9.6
@@ -70,32 +62,21 @@ This is a streamlined setup for Mac machines.
 
     (You can stop them later by calling `stop` instead of `start` above.)
 
-6.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
-    Homebrew does not put it there by default. You may need to adjust the below
-    command for your Homebrew prefix ("/usr/local" below) and shell (bash vs zsh).
+5.  Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
+    Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql@9.6`. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
-        ```
-        hash psql || { echo 'export PATH="/usr/local/opt/postgresql@9.6/bin:$PATH"' >> ~/.bash_profile }
-        source ~/.bash_profile
-        ```
+    ```bash
+    hash psql || { echo 'export PATH="/usr/local/opt/postgresql@9.6/bin:$PATH"' >> ~/.bash_profile }
+    source ~/.bash_profile
+    ```
 
-7.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
+6.  Open a new Terminal window to ensure `psql` is now on your `$PATH`.
 
-#### Option B: Linux / Manual Install
+### Option B: Linux / Manual Install
 
-For Linux users or if you don't want to use Homebrew on macOS, you'll need the
-following packages:
+For Linux users or if you don't want to use Homebrew on macOS, install the dependencies listed above using your preferred method.
 
-- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [Go](https://golang.org/doc/install) (v1.11 or higher)
-- [Node JS](https://nodejs.org/en/download/) (v8.0.0 or higher)
-- [make](https://www.gnu.org/software/make/)
-- [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
-  - if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
-- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 to v9.6.x)
-- [Redis](http://redis.io/) (v3.0.7 or higher)
-
-##### NodeJS on Ubuntu
+#### NodeJS on Ubuntu
 
 Ubuntu installs a fairly old NodeJS by default. To get a more recent version:
 
@@ -107,7 +88,7 @@ sudo apt-get install -y nodejs
 As of this writing, `setup_8.x` also works, but you may want to prefer the newer
 one.
 
-##### Redis on Linux
+#### Redis on Linux
 
 You can follow these [instructions to install Redis
 natively](http://redis.io/topics/quickstart). If you have Docker installed and
@@ -119,13 +100,13 @@ dockerd # if docker isn't already running
 docker run -p 6379:6379 -v $REDIS_DATA_DIR redis
 ```
 
-_ `$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data._
+_`$REDIS_DATA_DIR` should be an absolute path to a folder where you intend to store Redis data._
 
 You need to have the redis image running when you run the Sourcegraph
 `dev/launch.sh` script. If you do not have docker access without root, run these
 commands under `sudo`.
 
-### Step 3: Install Yarn
+## Step 3: Install Yarn
 
 Run the following command to install Yarn, a package manager for Node.js.
 
@@ -297,7 +278,7 @@ If you ever need to wipe your local database, run the following command.
 
 ## How to Run Tests
 
-See [testing.md](/sourcegraph/sourcegraph/blob/master/docs/testing.md) for details.
+See [testing.md](testing.md) for details.
 
 ## CPU/RAM/bandwidth usage
 

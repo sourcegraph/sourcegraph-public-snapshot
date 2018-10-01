@@ -72,9 +72,9 @@ type DiagnosticSeverity int
 
 const (
 	Error       DiagnosticSeverity = 1
-	Warning                        = 2
-	Information                    = 3
-	Hint                           = 4
+	Warning     DiagnosticSeverity = 2
+	Information DiagnosticSeverity = 3
+	Hint        DiagnosticSeverity = 4
 )
 
 type Command struct {

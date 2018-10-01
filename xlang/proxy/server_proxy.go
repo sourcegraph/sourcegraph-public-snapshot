@@ -20,11 +20,11 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	plspext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/lsp"
+	plspext "github.com/sourcegraph/sourcegraph/pkg/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 

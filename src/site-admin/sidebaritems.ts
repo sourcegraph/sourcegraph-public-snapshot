@@ -52,7 +52,7 @@ export const authGroup: SiteAdminSideBarGroup = {
     },
     items: [
         {
-            label: 'Access Tokens',
+            label: 'Access tokens',
             to: '/site-admin/tokens',
         },
     ],

@@ -1,5 +1,4 @@
 import * as H from 'history'
-import { throttle } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
@@ -25,7 +24,6 @@ interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
     onMainPage: (mainPage: boolean) => void
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
-    handleScroll: () => void
 }
 
 interface State {
@@ -247,30 +245,12 @@ export class MainPage extends React.Component<Props, State> {
 
         // communicate onMainPage to SourcegraphWebApp for dark theme look
         this.props.onMainPage(true)
-
-        window.addEventListener('scroll', throttle(this.handleScroll, 50))
     }
 
     public componentWillUnmount(): void {
         this.props.onMainPage(false)
     }
 
-    private handleScroll = (event: any): void => {
-        // const scrollPos = window.scrollY
-        // const sqrtPos = Math.sqrt(scrollPos) * 2
-        // let opacityChange = sqrtPos / 50
-        // if (opacityChange <= 0.5) {
-        //     opacityChange = 0.5
-        // } else if (opacityChange >= 1) {
-        //     opacityChange = 1
-        // } else if (isNaN(opacityChange)) {
-        //     opacityChange = 0.5
-        // }
-        // console.log(scrollPos)
-        // console.log(sqrtPos)
-        // console.log(opacityChange)
-        // this.setState({ bgScrollStyle })
-    }
     public render(): JSX.Element | null {
         return (
             <div className="main-page">
@@ -643,7 +623,7 @@ export class MainPage extends React.Component<Props, State> {
                                 <div className="col-12">
                                     <h3>{title}</h3>
                                     <p>{paragraph}</p>
-                                    {buttons.map(({ onClick, text, query }, j) => (
+                                    {buttons.map(({ text, query }, j) => (
                                         <button
                                             key={`search-buttons-${j}`}
                                             className={`btn btn-secondary ${

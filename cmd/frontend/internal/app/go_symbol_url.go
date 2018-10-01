@@ -8,12 +8,12 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
+	"github.com/sourcegraph/sourcegraph/pkg/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 

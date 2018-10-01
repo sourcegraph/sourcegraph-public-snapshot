@@ -14,7 +14,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { eventLogger } from '../../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { UserAreaPageProps } from '../area/UserArea'
+import { UserAreaRouteContext } from '../area/UserArea'
 
 function createAccessToken(user: GQL.ID, scopes: string[], note: string): Observable<GQL.ICreateAccessTokenResult> {
     return mutateGraphQL(
@@ -39,7 +39,7 @@ function createAccessToken(user: GQL.ID, scopes: string[], note: string): Observ
     )
 }
 
-interface Props extends UserAreaPageProps, RouteComponentProps<{}> {
+interface Props extends UserAreaRouteContext, RouteComponentProps<{}> {
     /** Called when a new access token is created and should be temporarily displayed to the user. */
     onDidCreateAccessToken: (result: GQL.ICreateAccessTokenResult) => void
 }

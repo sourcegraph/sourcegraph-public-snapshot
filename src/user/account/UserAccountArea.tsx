@@ -8,14 +8,14 @@ import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { siteFlags } from '../../site/backend'
 import { RouteDescriptor } from '../../util/contributions'
-import { UserAreaPageProps } from '../area/UserArea'
+import { UserAreaRouteContext } from '../area/UserArea'
 import { UserAccountSidebar, UserAccountSidebarItems } from './UserAccountSidebar'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 
 export interface UserAccountAreaRoute extends RouteDescriptor<UserAccountAreaRouteContext> {}
 
-export interface UserAccountAreaProps extends UserAreaPageProps, RouteComponentProps<{}> {
+export interface UserAccountAreaProps extends UserAreaRouteContext, RouteComponentProps<{}> {
     isLightTheme: boolean
     sideBarItems: UserAccountSidebarItems
     routes: ReadonlyArray<UserAccountAreaRoute>

@@ -2,7 +2,7 @@
 
 This is a high level overview of our architecture at Sourcegraph so you can understand how our services fit together.
 
-You should take a moment to browse our public documentation and marketing to see what our customers see:
+You should take a moment to browse our public documentation and marketing to see what our users see:
 https://about.sourcegraph.com/
 
 ## Diagram

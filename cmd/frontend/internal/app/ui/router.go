@@ -52,6 +52,7 @@ const (
 	routeSearchScope    = "scope"
 	routeUser           = "user"
 	routeUserSettings   = "user-settings"
+	routeUserRedirect   = "user-redirect"
 	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
 	aboutRedirectHost   = "about.sourcegraph.com"
@@ -124,6 +125,7 @@ func newRouter() *mux.Router {
 	r.Path("/search/scope/{scope}").Methods("GET").Name(routeSearchScope)
 	r.PathPrefix("/users/{username}/settings").Methods("GET").Name(routeUserSettings)
 	r.PathPrefix("/users/{username}").Methods("GET").Name(routeUser)
+	r.PathPrefix("/user").Methods("GET").Name(routeUserRedirect)
 	r.Path("/survey").Methods("GET").Name(routeSurvey)
 	r.Path("/survey/{score}").Methods("GET").Name(routeSurveyScore)
 	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
@@ -199,6 +201,7 @@ func initRouter() {
 	router.Get(routeExtensions).Handler(handler(serveBasicPageString("Extensions - Sourcegraph")))
 
 	router.Get(routeUserSettings).Handler(handler(serveBasicPageString("User settings - Sourcegraph")))
+	router.Get(routeUserRedirect).Handler(handler(serveBasicPageString("User - Sourcegraph")))
 	router.Get(routeUser).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		return mux.Vars(r)["username"] + " - Sourcegraph"
 	})))

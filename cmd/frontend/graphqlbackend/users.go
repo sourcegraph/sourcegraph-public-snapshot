@@ -121,6 +121,14 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 	return int32(count), err
 }
 
+func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	count, err := r.TotalCount(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && int(count) > r.opt.Limit), nil
+}
+
 func (r *userConnectionResolver) useCache() bool {
 	return r.activePeriod != nil && *r.activePeriod != "ALL_TIME"
 }
@@ -140,6 +148,10 @@ func (r *staticUserConnectionResolver) Nodes() []*UserResolver {
 }
 
 func (r *staticUserConnectionResolver) TotalCount() int32 { return int32(len(r.users)) }
+
+func (r *staticUserConnectionResolver) PageInfo() *graphqlutil.PageInfo {
+	return graphqlutil.HasNextPage(false) // not paginated
+}
 
 func sliceAtoi(sa []string) ([]int32, error) {
 	si := make([]int32, 0, len(sa))
