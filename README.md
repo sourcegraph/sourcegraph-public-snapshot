@@ -27,10 +27,14 @@ When developing locally, use `./dev/start.sh`. This will ensure you build agains
 - The Go binaries are built with `replace github.com/sourcegraph/sourcegraph => ../sourcegraph` (via
   Go modules).
 
-### Updating vendored dependencies
+### Updating dependencies
 
-Vendored dependencies should be kept in sync with changes to `go.mod`. However, before you run `go mod vendor`, you must first unlink the `github.com/sourcegraph/sourcegraph` dependency from its local source to ensure the vendored files exist in a revision in the remote OSS repository. We offer a script to do so:
-
-```bash
-./dev/go-mod-update.sh
-```
+- Use `dev/go-mod-update.sh` to update the `github.com/sourcegraph/sourcegraph` dependency to the latest `master` revision.
+- Use `dev/go $args` instead of `go $args` for other dependency update operations. That script will
+  wrap the `go` invocation by removing the `replace github.com/sourcegraph/sourcegraph` directive
+  from `go.mod` and calling `go mod tidy` afterward. For instance,
+  - `dev/go get -u $MODULE` to update `$MODULE` and all its transitive dependencies to their latest version.
+  - `dev/go mod edit -replace $MODULE@$VERSION` to update `$MODULE` to a specific version.
+  - `dev/go mod tidy` if updates to `go.mod` or `go.sum` have been made as a result of other build
+    invocations during development and you wish now to update `go.mod` and `go.sum` to be consistent
+    with how the build will run in CI.

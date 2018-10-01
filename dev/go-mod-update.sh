@@ -13,12 +13,8 @@ main() {
         echo "	insteadOf = https://github.com/sourcegraph/" >> ~/.gitconfig
     fi
 
-    export GO111MODULE=on
-    go mod edit -dropreplace github.com/sourcegraph/sourcegraph
-    go mod tidy -v
-    if [[ -z "$BUILDKITE" ]]; then
-        go mod edit -replace github.com/sourcegraph/sourcegraph=../sourcegraph
-    fi
+
+    dev/go mod edit -require github.com/sourcegraph/sourcegraph@master
 }
 
 main "$@"

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# Convenience script that wraps `go` invocations by ensuring the `replace
+# github.com/sourcegraph/sourcegraph` directive is removed and running `go mod tidy` afterward.
+
+export GO111MODULE=on
+go mod edit -dropreplace github.com/sourcegraph/sourcegraph
+go "$@"
+go mod tidy
+if [[ -z "$BUILDKITE" ]]; then
+    go mod edit -replace github.com/sourcegraph/sourcegraph=../sourcegraph
+fi
