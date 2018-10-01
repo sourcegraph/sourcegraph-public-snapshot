@@ -24,6 +24,7 @@ Josh Bleecher Snyder <josharian@gmail.com>
 Julien Chien <julien@sourcegraph.com>
 Keegan Carruthers-Smith <keegan.csmith@gmail.com>
 Kevin Burke <kev@inburke.com>
+Leo Succar-Ferré <leosuccarferre@gmail.com>
 Nick Snyder <nick@sourcegraph.com>
 Quinn Slack <sqs@sourcegraph.com>
 Sourcegraph <hi@sourcegraph.com>
