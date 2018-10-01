@@ -1,5 +1,4 @@
 import * as H from 'history'
-import { throttle } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
