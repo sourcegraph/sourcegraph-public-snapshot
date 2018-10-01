@@ -56,8 +56,3 @@ The `docs` folder has additional documentation for developing and understanding 
 - [Database setup](./docs/storage.md): database setup and best practices
 - [Style guide](./docs/style.md)
 - [GraphQL API](./docs/api.md): useful tips when modifying the GraphQL API
-
-## Code of Conduct
-
-All interactions with the Sourcegraph open source project are governed by the
-[Sourcegraph Code of Conduct](./docs/conduct.md).
