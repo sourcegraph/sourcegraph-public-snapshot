@@ -35,11 +35,14 @@ interface State {
     modalIntelligenceOpen: boolean
     modalSearchClosing: boolean
     modalIntelligenceClosing: boolean
+    modalIntegrationsOpen: boolean
+    modalIntegrationsClosing: boolean
     /** Unique ID for keeping selected button state. */
     activeButton?: string
     activeSection?: string
     animateModalSearch: boolean
     animateModalIntelligence: boolean
+    animateModalIntegrations: boolean
     manualClick?: boolean
     bgScrollStyle: string
 }
@@ -176,10 +179,13 @@ export class MainPage extends React.Component<Props, State> {
             modalSearchClosing: false,
             modalIntelligenceOpen: false,
             modalIntelligenceClosing: false,
+            modalIntegrationsOpen: false,
+            modalIntegrationsClosing: false,
             manualClick: false,
             activeSection: 'fadwsghjk',
             animateModalSearch: false,
             animateModalIntelligence: false,
+            animateModalIntegrations: false,
             bgScrollStyle: `
             .feature-card {
                 transform: translateY(-0px);
@@ -324,7 +330,13 @@ export class MainPage extends React.Component<Props, State> {
                                         Connect your Sourcegraph instance with your existing tools. Get code
                                         intelligence while browsing code on the web, and code search from your editor.
                                     </p>
-                                    <button className="btn btn-secondary">Explore Integrations</button>
+                                    <button
+                                        className="btn btn-secondary"
+                                        id="sampleButton"
+                                        onClick={this.activateModal('integrations')}
+                                    >
+                                        Explore Integrations
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -612,6 +624,43 @@ export class MainPage extends React.Component<Props, State> {
                         </button>
                     </div>
                 </div>
+                <div
+                    className={`modal-integrations ${this.state.modalIntegrationsOpen ? 'modal-open' : 'modal-close'} ${
+                        this.state.modalIntegrationsClosing ? 'modal-closing' : ''
+                    }`}
+                >
+                    <div className="container">
+                        <div className="row copy-section">
+                            <div className="col-12 modal-header">
+                                <h2>Integrations</h2>
+                                <h1>Get it. Together.</h1>
+                            </div>
+                        </div>
+                        <div className="row intelligence-row">
+                            <div className="col-6 modal-header copy-section">
+                                {intelligenceSections.map(({ title, paragraph }, i) => (
+                                    <div
+                                        key={`search-sections-${i}`}
+                                        className={`row modal-copy-row ${
+                                            this.state.activeSection === `${i}` || this.state.activeSection === '99'
+                                                ? 'activeSec'
+                                                : ''
+                                        }`}
+                                    >
+                                        <div className="col-12">
+                                            <h3>{title}</h3>
+                                            <p>{paragraph}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="col-6 modal-code-intellify" />
+                        </div>
+                        <button className="btn" onClick={this.closeModal('intelligence')}>
+                            Close
+                        </button>
+                    </div>
+                </div>
             </div>
         )
     }
@@ -633,6 +682,10 @@ export class MainPage extends React.Component<Props, State> {
         if (section === 'intelligence') {
             this.setState(state => ({ modalIntelligenceOpen: !state.modalIntelligenceOpen }))
             this.setState(state => ({ animateModalIntelligence: !state.animateModalIntelligence }))
+            this.setState(state => ({ activeSection: '99' }))
+        } else if (section === 'integrations') {
+            this.setState(state => ({ modalIntegrationsOpen: !state.modalIntegrationsOpen }))
+            this.setState(state => ({ animateModalIntegrations: !state.animateModalIntegrations }))
             this.setState(state => ({ activeSection: '99' }))
         } else if (section === 'search') {
             this.setState(state => ({ modalSearchOpen: !state.modalSearchOpen }))
