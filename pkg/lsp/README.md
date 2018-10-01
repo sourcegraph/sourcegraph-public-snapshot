@@ -7,5 +7,6 @@ See
 https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md
 for more information.
 
-The authoritive copy for these structs is in the
-[go-langserver](https://github.com/sourcegraph/go-langserver) repository.
+This was copied from the
+[go-langserver](https://github.com/sourcegraph/go-langserver) repository. The
+authoritive version of these structs is the LSP spec.
