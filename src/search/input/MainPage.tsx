@@ -427,6 +427,27 @@ export class MainPage extends React.Component<Props, State> {
                         </div>
                     </div>
                 </section>
+                <section className="up-next-section blog-callout">
+                    <div className="container">
+                        <div className="row">
+                            <div className="col-12">
+                                <h2>Open. For business.</h2>
+                                <h1>Sourcegraph is open source.</h1>
+                                <p>
+                                    The pace at which humans can write code is the only thing that stands between us and
+                                    flying cars, a habitat on Mars, and a cure for cancer. That's why developers can get
+                                    started and deploy Sourcegraph for free, and contribute to our code on GitHub.
+                                </p>
+                                <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                                    Release Announcement
+                                </a>
+                                <a className="btn btn-secondary" href="//about.sourcegraph.com/pricing/">
+                                    Sourcegraph GitHub
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
                 <section className="footer-section">
                     <div className="container">
                         <div className="row">
@@ -629,9 +650,9 @@ export class MainPage extends React.Component<Props, State> {
                                 </div>
                             </div>
                         ))}
-                        <button className="btn btn-dark" onClick={this.closeModal('search')}>
-                            Close
-                        </button>
+                        <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                            Deploy Sourcegraph
+                        </a>
                         <a
                             className="btn btn-secondary"
                             href="//about.sourcegraph.com/docs/search/query-syntax"
@@ -639,6 +660,9 @@ export class MainPage extends React.Component<Props, State> {
                         >
                             Search Documentation
                         </a>
+                        <button className="btn btn-dark" onClick={this.closeModal('search')}>
+                            Close
+                        </button>
                     </div>
                 </div>
                 <div
@@ -684,9 +708,9 @@ export class MainPage extends React.Component<Props, State> {
                                 />
                             </div>
                         </div>
-                        <button className="btn btn-dark" onClick={this.closeModal('intelligence')}>
-                            Close
-                        </button>
+                        <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                            Deploy Sourcegraph
+                        </a>
                         <a
                             className="btn btn-secondary"
                             href="//about.sourcegraph.com/docs/code-intelligence"
@@ -694,6 +718,9 @@ export class MainPage extends React.Component<Props, State> {
                         >
                             Code Intelligence Documentation
                         </a>
+                        <button className="btn btn-dark" onClick={this.closeModal('intelligence')}>
+                            Close
+                        </button>
                     </div>
                 </div>
                 <div
@@ -739,9 +766,9 @@ export class MainPage extends React.Component<Props, State> {
                             </div>
                             <div className="col-6 modal-code-intellify" />
                         </div>
-                        <button className="btn btn-dark" onClick={this.closeModal('integrations')}>
-                            Close
-                        </button>
+                        <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                            Deploy Sourcegraph
+                        </a>
                         <a
                             className="btn btn-secondary"
                             href="//about.sourcegraph.com/docs/integrations"
@@ -749,6 +776,9 @@ export class MainPage extends React.Component<Props, State> {
                         >
                             Integrations Documentation
                         </a>
+                        <button className="btn btn-dark" onClick={this.closeModal('integrations')}>
+                            Close
+                        </button>
                     </div>
                 </div>
             </div>

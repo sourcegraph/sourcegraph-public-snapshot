@@ -273,12 +273,47 @@ body.modal-open {
         z-index: 3;
         padding-top: 2rem;
         padding-bottom: 4rem;
-        background-color: #e6ebf3;
+        background: #e6ebf3;
         width: 100%;
         .row {
             padding-top: 12rem;
             padding-bottom: 8rem;
         }
+    }
+    .blog-callout {
+        h1,
+        h2,
+        p {
+            color: #fafcff;
+        }
+        .row {
+            padding-top: 1.5rem;
+            padding-bottom: 0.5rem;
+        }
+        background: rgb(249, 98, 22); /* Old browsers */
+        background: rgb(249, 98, 22); /* Old browsers */
+        background: -moz-radial-gradient(
+            center,
+            ellipse cover,
+            rgba(249, 98, 22, 1) 0%,
+            rgba(178, 0, 248, 1) 51%,
+            rgba(1, 159, 222, 1) 100%
+        ); /* FF3.6-15 */
+        background: -webkit-radial-gradient(
+            center,
+            ellipse cover,
+            rgba(249, 98, 22, 1) 0%,
+            rgba(178, 0, 248, 1) 51%,
+            rgba(1, 159, 222, 1) 100%
+        ); /* Chrome10-25,Safari5.1-6 */
+        background: radial-gradient(
+            ellipse at center,
+            rgba(249, 98, 22, 1) 0%,
+            rgba(178, 0, 248, 1) 51%,
+            rgba(1, 159, 222, 1) 100%
+        ); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+        background-size: 200% 800%;
+        background-position: calc(100vw * 1) calc(100vh * 1.15);
     }
     .modal-search,
     .modal-intelligence,
@@ -376,6 +411,7 @@ body.modal-open {
                 font-size: 1.25rem;
                 font-weight: 400;
                 letter-spacing: 0.05rem;
+                height: 48px;
             }
         }
         .form-control {
