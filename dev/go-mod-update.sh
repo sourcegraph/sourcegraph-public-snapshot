@@ -15,9 +15,10 @@ main() {
 
     export GO111MODULE=on
     go mod edit -dropreplace github.com/sourcegraph/sourcegraph
-    go mod vendor
     go mod tidy -v
-    go mod edit -replace github.com/sourcegraph/sourcegraph=../sourcegraph
+    if [[ -z "$BUILDKITE" ]]; then
+        go mod edit -replace github.com/sourcegraph/sourcegraph=../sourcegraph
+    fi
 }
 
 main "$@"

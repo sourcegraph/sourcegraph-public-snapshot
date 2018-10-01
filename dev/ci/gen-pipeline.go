@@ -78,6 +78,11 @@ func main() {
 		version = strings.TrimPrefix(version, "v")
 	}
 
+	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
+		bk.Env("GO111MODULE", "on"),
+		bk.Cmd("./dev/ci/ensure-go-mod.sh"),
+	)
+
 	ossWebappVersion := os.Getenv("OSS_WEBAPP_VERSION")
 	if ossWebappVersion == "" {
 		panic("Expected OSS_WEBAPP_VERSION to be set")
@@ -162,9 +167,8 @@ func main() {
 				bk.Cmd(buildScript),
 			)
 		} else {
-			// TODO(opensource): is this correct?
 			cmds = append(cmds,
-				bk.Cmd("go build github.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/godockerize"),
+				bk.Cmd("go build github.com/sourcegraph/godockerize"),
 				bk.Cmd(fmt.Sprintf("./godockerize build -t %s:%s --go-build-flags='-ldflags' --go-build-flags='-X github.com/sourcegraph/sourcegraph/pkg/version.version=%s' --env VERSION=%s %s", image, version, version, version, pkgPath)),
 			)
 		}
