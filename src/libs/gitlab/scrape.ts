@@ -1,4 +1,4 @@
-import { last } from 'lodash'
+import { last, take } from 'lodash'
 
 import { FileInfo } from '../code_intelligence'
 
@@ -18,11 +18,6 @@ export interface GitLabInfo {
     repoName: string
 
     repoPath: string
-
-    /**
-     * The parts of the URL following the repo name.
-     */
-    urlParts: string[]
 }
 
 /**
@@ -39,10 +34,17 @@ export interface GitLabFileInfo extends Pick<GitLabInfo, 'repoPath'> {
 export function getPageInfo(): GitLabInfo {
     const host = window.location.hostname
 
-    const parts = window.location.pathname.slice(1).split('/')
+    const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a')
+    if (!projectLink) {
+        throw new Error('Unable to determine project name')
+    }
 
-    const owner = parts[0]
-    const repoName = parts[1]
+    const projectName = new URL(projectLink.href).pathname.slice(1)
+
+    const parts = projectName.split('/')
+
+    const owner = take(parts, parts.length - 1).join('/')
+    const repoName = last(parts)!
 
     let pageKind: GitLabPageKind
     if (window.location.pathname.includes(`${owner}/${repoName}/commit`)) {
@@ -57,7 +59,6 @@ export function getPageInfo(): GitLabInfo {
         owner,
         repoName,
         repoPath: [host, owner, repoName].join('/'),
-        urlParts: parts.slice(2),
         pageKind,
     }
 }
@@ -66,12 +67,15 @@ export function getPageInfo(): GitLabInfo {
  * Gets information about a file view page.
  */
 export function getFilePageInfo(): GitLabFileInfo {
-    const { repoPath } = getPageInfo()
+    const { repoPath, owner, repoName } = getPageInfo()
 
-    const parts = window.location.pathname.slice(1).split('/')
+    const matches = window.location.pathname.match(new RegExp(`${owner}\/${repoName}\/blob\/(.*?)\/(.*)`))
+    if (!matches) {
+        throw new Error('Unable to determine revision or file path')
+    }
 
-    const rev = parts[3]
-    const filePath = parts.slice(4).join('/')
+    const rev = matches[1]
+    const filePath = matches[2]
 
     return {
         repoPath,
@@ -96,15 +100,20 @@ export interface GitLabDiffInfo extends Pick<GitLabFileInfo, 'repoPath'>, Pick<G
  * Scrapes the DOM for the repo path and revision information.
  */
 export function getDiffPageInfo(): GitLabDiffInfo {
-    const { repoPath, owner, repoName, urlParts } = getPageInfo()
+    const { repoPath, owner, repoName } = getPageInfo()
 
     const query = new URLSearchParams(window.location.search)
+
+    const matches = window.location.pathname.match(/merge_requests\/(.*?)\/diffs/)
+    if (!matches) {
+        throw new Error('Unable to determine merge request ID')
+    }
 
     return {
         repoPath,
         owner,
         repoName,
-        mergeRequestID: urlParts[1],
+        mergeRequestID: matches[1],
         diffID: query.get('diff_id') || undefined,
         baseCommitID: query.get('start_sha') || undefined,
     }
@@ -148,9 +157,12 @@ export function getHeadCommitIDFromCodeView(codeView: HTMLElement): FileInfo['co
     }
 
     const commitAnchor = commitSHA.closest('a')! as HTMLAnchorElement
-    const hrefParts = new URL(commitAnchor.href).pathname.slice(1).split('/')
+    const revMatch = new URL(commitAnchor.href).pathname.match(/blob\/(.*?)\//)
+    if (!revMatch) {
+        throw new Error('Unable to determine head revision from code view')
+    }
 
-    return hrefParts[3]
+    return revMatch[1]
 }
 
 interface GitLabCommitPageInfo extends Pick<GitLabFileInfo, 'repoPath'>, Pick<GitLabInfo, 'owner' | 'repoName'> {
