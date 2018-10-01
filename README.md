@@ -1,4 +1,4 @@
-# Sourcegraph
+# <a href="https://sourcegraph.com"><img alt="Sourcegraph" src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo.png" height="32px" /></a>
 
 [Sourcegraph](https://about.sourcegraph.com/) is a fast, full-featured code search and navigation engine.
 
