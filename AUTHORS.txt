@@ -43,4 +43,4 @@ Samuel Lavery <sam@sourcegraph.com>
 Seebs <seebs@sourcegraph.com>
 Shantanu Gupta <shans95g@gmail.com>
 Sourcegraph <hi@sourcegraph.com>
-Sourcegraph <hi@sourcegraph.com>
+Stephen Gutekanst <slimsag@users.noreply.github.com>
