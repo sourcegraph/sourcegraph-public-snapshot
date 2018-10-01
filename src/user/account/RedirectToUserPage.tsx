@@ -5,10 +5,10 @@ import { userURL } from '..'
 import * as GQL from '../../backend/graphqlschema'
 
 /**
- * Redirects from /settings to /user/$USERNAME/settings, where $USERNAME is the currently authenticated user's
- * username.
+ * Redirects from /user/$PATH to /user/$USERNAME/$PATH, where $USERNAME is the currently
+ * authenticated user's username.
  */
-export const RedirectToUserAccount: React.SFC<{
+export const RedirectToUserPage: React.SFC<{
     user: GQL.IUser | null
     location: H.Location
 }> = ({ user, location }) => {
@@ -21,5 +21,6 @@ export const RedirectToUserAccount: React.SFC<{
         return <Redirect to={{ pathname: newURL.pathname, search: newURL.search }} />
     }
 
-    return <Redirect to={{ pathname: `${userURL(user.username)}/settings`, search: location.search }} />
+    const path = location.pathname.replace(/^\/user\//, '') // trim leading '/user/'
+    return <Redirect to={{ pathname: `${userURL(user.username)}/${path}`, search: location.search }} />
 }
