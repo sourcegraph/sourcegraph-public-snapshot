@@ -129,6 +129,12 @@ body.modal-open {
                 border: none;
             }
         }
+        .hover-overlay__actions,
+        .hover-overlay__action {
+            .btn {
+                margin: 0;
+            }
+        }
     }
     .about-section {
         position: sticky;
@@ -286,6 +292,10 @@ body.modal-open {
         p {
             color: #fafcff;
         }
+        p a {
+            color: #fafcfe;
+            text-decoration: underline;
+        }
         .row {
             padding-top: 1.5rem;
             padding-bottom: 0.5rem;
@@ -435,7 +445,8 @@ body.modal-open {
             padding-top: 4rem;
         }
 
-        .hover-overlay__actions {
+        .hover-overlay__actions,
+        .hover-overlay__action {
             .btn {
                 margin: 0;
             }
