@@ -169,6 +169,6 @@ func main() {
 	cmd.Stderr = lines
 	err := cmd.Run()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("inotifywrapper exec failed (%v): %s", cmd.Args, err)
 	}
 }

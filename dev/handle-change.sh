@@ -9,7 +9,7 @@ failed=false
 
 for i; do
 	case $i in
-	"cmd/frontend/internal/graphqlbackend/schema.graphql")
+	"cmd/frontend/graphqlbackend/schema.graphql")
 		generate_graphql=true
 		;;
 	schema/*.json)
@@ -32,7 +32,7 @@ for i; do
 	esac
 done
 
-$generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/internal/graphqlbackend || failed=true; }
+$generate_graphql && { go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend || failed=true; }
 $generate_schema && { go generate github.com/sourcegraph/sourcegraph/schema || failed=true; }
 if $all_cmds; then
 	rebuilt=$(./dev/go-install.sh -v | tr '\012' ' ')
