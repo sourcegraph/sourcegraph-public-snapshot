@@ -46,3 +46,4 @@ Sourcegraph <hi@sourcegraph.com>
 Stephen Gutekanst <slimsag@users.noreply.github.com>
 Unknown <u@gogs.io>
 Vanesa Ortiz <vanesa@sourcegraph.com>
+ddhanks <dandhanks@gmail.com>
