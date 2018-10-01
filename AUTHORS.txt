@@ -17,6 +17,7 @@ Ildar Isaev <iisaev@codeminders.com>
 Isaac Snow <isaac@sourcegraph.com>
 James McGillicuddy <jamesmcgillicuddy@gmail.com>
 Jamie Wilson <jamie@sourcegraph.com>
+John Rothfels <john@sourcegraph.com>
 Keegan Carruthers-Smith <keegan.csmith@gmail.com>
 Kevin Burke <kev@inburke.com>
 Nick Snyder <nick@sourcegraph.com>
