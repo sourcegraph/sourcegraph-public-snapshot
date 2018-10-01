@@ -361,17 +361,20 @@ golang.org/x/text/runes
 golang.org/x/text/internal/tag
 # golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 golang.org/x/time/rate
-# golang.org/x/tools v0.0.0-20180917221912-90fa682c2a6e
+# golang.org/x/tools v0.0.0-20181001162950-8deeabbe2e53
+golang.org/x/tools/go/packages
 golang.org/x/tools/cmd/stringer
 golang.org/x/tools/imports
 golang.org/x/tools/godoc/vfs
 golang.org/x/tools/godoc/vfs/zipfs
+golang.org/x/tools/go/gcexportdata
+golang.org/x/tools/go/internal/cgo
 golang.org/x/tools/go/ast/astutil
 golang.org/x/tools/internal/fastwalk
+golang.org/x/tools/go/internal/gcimporter
 golang.org/x/tools/go/loader
 golang.org/x/tools/go/types/typeutil
 golang.org/x/tools/go/buildutil
-golang.org/x/tools/go/internal/cgo
 # google.golang.org/genproto v0.0.0-20180722052100-02b4e9547331
 google.golang.org/genproto/googleapis/api/annotations
 google.golang.org/genproto/googleapis/rpc/status
