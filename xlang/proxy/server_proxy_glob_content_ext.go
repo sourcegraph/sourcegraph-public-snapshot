@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	"github.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
