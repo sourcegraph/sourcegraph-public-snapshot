@@ -18,6 +18,7 @@ Isaac Snow <isaac@sourcegraph.com>
 James McGillicuddy <jamesmcgillicuddy@gmail.com>
 Jamie Wilson <jamie@sourcegraph.com>
 John Rothfels <john@sourcegraph.com>
+Jon Poler <jonathan.poler@gmail.com>
 Keegan Carruthers-Smith <keegan.csmith@gmail.com>
 Kevin Burke <kev@inburke.com>
 Nick Snyder <nick@sourcegraph.com>
