@@ -3,9 +3,9 @@ package backend
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/pkg/lspext"
-	"github.com/sourcegraph/sourcegraph/pkg/api"
 	symbolsclient "github.com/sourcegraph/sourcegraph/pkg/symbols"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/xlang"

@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/pkg/lspext"
-	"github.com/sourcegraph/jsonrpc2"
 )
 
 // handleTextDocumentContentExt handles textDocument/content requests
