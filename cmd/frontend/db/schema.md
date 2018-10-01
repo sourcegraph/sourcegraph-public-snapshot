@@ -287,6 +287,40 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.product_licenses"
+```
+         Column          |           Type           |       Modifiers        
+-------------------------+--------------------------+------------------------
+ id                      | uuid                     | not null
+ product_subscription_id | uuid                     | not null
+ license_key             | text                     | not null
+ created_at              | timestamp with time zone | not null default now()
+Indexes:
+    "product_licenses_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
+
+```
+
+# Table "public.product_subscriptions"
+```
+         Column          |           Type           |       Modifiers        
+-------------------------+--------------------------+------------------------
+ id                      | uuid                     | not null
+ user_id                 | integer                  | not null
+ billing_subscription_id | text                     | 
+ created_at              | timestamp with time zone | not null default now()
+ updated_at              | timestamp with time zone | not null default now()
+ archived_at             | timestamp with time zone | 
+Indexes:
+    "product_subscriptions_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
+Referenced by:
+    TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
+
+```
+
 # Table "public.registry_extension_releases"
 ```
         Column         |           Type           |                                Modifiers                                 
@@ -501,25 +535,27 @@ Foreign-key constraints:
 
 # Table "public.users"
 ```
-      Column       |           Type           |                     Modifiers                      
--------------------+--------------------------+----------------------------------------------------
- id                | integer                  | not null default nextval('users_id_seq'::regclass)
- username          | citext                   | not null
- display_name      | text                     | 
- avatar_url        | text                     | 
- created_at        | timestamp with time zone | not null default now()
- updated_at        | timestamp with time zone | not null default now()
- deleted_at        | timestamp with time zone | 
- invite_quota      | integer                  | not null default 15
- passwd            | text                     | 
- passwd_reset_code | text                     | 
- passwd_reset_time | timestamp with time zone | 
- site_admin        | boolean                  | not null default false
- page_views        | integer                  | not null default 0
- search_queries    | integer                  | not null default 0
- tags              | text[]                   | default '{}'::text[]
+       Column        |           Type           |                     Modifiers                      
+---------------------+--------------------------+----------------------------------------------------
+ id                  | integer                  | not null default nextval('users_id_seq'::regclass)
+ username            | citext                   | not null
+ display_name        | text                     | 
+ avatar_url          | text                     | 
+ created_at          | timestamp with time zone | not null default now()
+ updated_at          | timestamp with time zone | not null default now()
+ deleted_at          | timestamp with time zone | 
+ invite_quota        | integer                  | not null default 15
+ passwd              | text                     | 
+ passwd_reset_code   | text                     | 
+ passwd_reset_time   | timestamp with time zone | 
+ site_admin          | boolean                  | not null default false
+ page_views          | integer                  | not null default 0
+ search_queries      | integer                  | not null default 0
+ tags                | text[]                   | default '{}'::text[]
+ billing_customer_id | text                     | 
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
+    "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
     "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
 Check constraints:
     "users_display_name_max_length" CHECK (char_length(display_name) <= 255)
@@ -535,6 +571,7 @@ Referenced by:
     TABLE "org_invitations" CONSTRAINT "org_invitations_recipient_user_id_fkey" FOREIGN KEY (recipient_user_id) REFERENCES users(id)
     TABLE "org_invitations" CONSTRAINT "org_invitations_sender_user_id_fkey" FOREIGN KEY (sender_user_id) REFERENCES users(id)
     TABLE "org_members" CONSTRAINT "org_members_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "product_subscriptions" CONSTRAINT "product_subscriptions_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "registry_extension_releases" CONSTRAINT "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "registry_extensions" CONSTRAINT "registry_extensions_publisher_user_id_fkey" FOREIGN KEY (publisher_user_id) REFERENCES users(id)
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
