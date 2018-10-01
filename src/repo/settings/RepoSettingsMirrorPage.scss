@@ -1,0 +1,19 @@
+@import './components/ActionContainer';
+
+.repo-settings-mirror-page {
+    &__steps {
+        margin: 1rem 0 0.5rem 1.5rem;
+    }
+    &__step:not(:last-child) {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.check-mirror-repository-connection-action-container {
+    &__log {
+        white-space: pre-wrap;
+        margin-bottom: 0;
+        overflow: auto;
+        max-height: 20rem;
+    }
+}

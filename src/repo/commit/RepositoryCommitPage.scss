@@ -1,0 +1,13 @@
+@import '../../components/Area';
+
+.repository-commit-page {
+    overflow-y: auto;
+    position: relative; // For HoverOverlay positioning
+
+    .git-commit-node {
+        padding: 0;
+    }
+    &__card {
+        padding-top: 0;
+    }
+}

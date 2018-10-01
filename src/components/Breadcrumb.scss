@@ -1,0 +1,19 @@
+.breadcrumb {
+    display: flex;
+
+    .part-directory {
+        flex: 1 1 1em;
+        max-width: fit-content;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+    }
+
+    .part-last {
+        font-weight: bold;
+    }
+
+    &__separator {
+        padding: 0 0.125rem;
+    }
+}

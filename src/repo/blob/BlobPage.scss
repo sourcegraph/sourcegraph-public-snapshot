@@ -1,0 +1,21 @@
+@import './Blob';
+@import '../../panel/Panel';
+@import './RenderedFile';
+
+.blob-page {
+    display: flex;
+    flex-direction: column;
+
+    &__placeholder {
+        flex: 1 1 50%;
+    }
+
+    &__blob {
+        flex: 1;
+        position: relative;
+    }
+
+    &__aborted {
+        margin: 2rem;
+    }
+}

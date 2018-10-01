@@ -1,0 +1,22 @@
+
+ALTER TABLE "org_members"
+	ALTER COLUMN "created_at" DROP NOT NULL,
+	ALTER COLUMN "updated_at" DROP NOT NULL;
+
+ALTER TABLE "org_tags"
+	ALTER COLUMN "created_at" DROP NOT NULL,
+	ALTER COLUMN "updated_at" DROP NOT NULL;
+
+ALTER TABLE "orgs"
+	ALTER COLUMN "created_at" DROP NOT NULL,
+	ALTER COLUMN "updated_at" DROP NOT NULL;
+
+ALTER TABLE "user_tags"
+	ALTER COLUMN "created_at" DROP NOT NULL,
+	ALTER COLUMN "updated_at" DROP NOT NULL;
+
+ALTER TABLE "users"
+	ALTER COLUMN "created_at" DROP NOT NULL,
+	ALTER COLUMN "updated_at" DROP NOT NULL;
+
+ALTER TABLE "users" ALTER COLUMN deleted_at TYPE TIMESTAMP WITHOUT TIME ZONE;

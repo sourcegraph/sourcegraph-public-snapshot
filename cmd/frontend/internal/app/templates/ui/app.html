@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" class="base">
+
+<head>
+	{{.Injected.HeadTop}}
+	<meta charset="utf-8">
+	<meta http-equiv="x-ua-compatible" content="ie=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="google" content="notranslate">
+	<meta http-equiv="Content-Language" content="en">
+	{{with .Metadata}}
+		<meta name='description' content="{{.Description}}" />
+		<meta name='twitter:title' content="{{.Title}}" />
+		<meta name='twitter:card' content='summary' />
+		<meta name='twitter:description' content="{{.Description}}" />
+		<meta property="og:type" content="website" />
+		<meta property='og:title' content="{{.Title}}" />
+		<meta property='og:description' content="{{.Description}}" />
+	{{end}}
+	<title>{{.Title}}</title>
+	<link rel="stylesheet" href="{{.AssetURL}}/styles/style.bundle.css?{{version "styles/style.bundle.css"}}">
+	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
+	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
+	{{if .InjectSourcegraphTracker}}
+	<script ignore-csp>
+		; (function (t, r, a, c, k, e, d) { if (!t[k]) { t.GlobalTelligentNamespace = t.GlobalTelligentNamespace || []; t.GlobalTelligentNamespace.push(k); t[k] = function () { (t[k].q = t[k].q || []).push(arguments) }; t[k].q = t[k].q || []; e = r.createElement(a); d = r.getElementsByTagName(a)[0]; e.async = 1; e.src = c; d.parentNode.insertBefore(e, d) } }(window, document, "script", "https://storage.googleapis.com/telligent-artifacts/tracker/tel.js", "telligent"));
+	</script>
+	{{end}}
+	<script ignore-csp>
+		window.context = {{.Context}}
+		window.pageError = {{.Error}}
+	</script>
+	{{.Injected.HeadBottom}}
+</head>
+
+<body>
+	{{.Injected.BodyTop}}
+	<div id="root"></div>
+	<noscript>You need to enable JavaScript to run this app.</noscript>
+	<script src="{{.AssetURL}}/scripts/app.bundle.js?{{version "scripts/app.bundle.js"}}"></script>
+	{{.Injected.BodyBottom}}
+</body>
+
+</html>

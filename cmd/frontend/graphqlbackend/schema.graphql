@@ -1,0 +1,3299 @@
+#! Run this before committing changes to this file
+#! go generate github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
+#! This will happen automatically if you are running ./dev/launch.sh
+#!
+#! Lines that begin with #! are treated as internal comments. They are stripped
+#! from the schema before the documentation for each field is generated.
+#!
+#! See docs/api.md for guidance on schema evolution.
+#!
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+# Represents a null return value.
+type EmptyResponse {
+    # A dummy null value.
+    alwaysNil: String
+}
+
+# An object with an ID.
+interface Node {
+    # The ID of the node.
+    id: ID!
+}
+
+# A valid JSON value.
+scalar JSONValue
+
+# A mutation.
+type Mutation {
+    # Updates the user profile information for the user with the given ID.
+    #
+    # Only the user and site admins may perform this mutation.
+    updateUser(user: ID!, username: String, displayName: String, avatarURL: String): EmptyResponse!
+    # Creates an organization. The caller is added as a member of the newly created organization.
+    #
+    # Only authenticated users may perform this mutation.
+    createOrganization(name: String!, displayName: String): Org!
+    # Updates an organization.
+    #
+    # Only site admins and any member of the organization may perform this mutation.
+    updateOrganization(id: ID!, displayName: String): Org!
+    # Deletes an organization. Only site admins may perform this mutation.
+    deleteOrganization(organization: ID!): EmptyResponse
+    # Adds a repository on a code host that is already present in the site configuration. The name (which may
+    # consist of one or more path components) of the repository must be recognized by an already configured code
+    # host, or else Sourcegraph won't know how to clone it.
+    #
+    # The newly added repository is not enabled (unless the code host's configuration specifies that it should be
+    # enabled). The caller must explicitly enable it with setRepositoryEnabled.
+    #
+    # If the repository already exists, it is returned.
+    #
+    # To add arbitrary repositories (that don't need to reside on an already configured code host), use the site
+    # configuration "repos.list" property.
+    #
+    # As a special case, GitHub.com public repositories may be added by using a name of the form
+    # "github.com/owner/repo". If there is no GitHub personal access token for github.com configured, the site may
+    # experience problems with github.com repositories due to the low default github.com API rate limit (60
+    # requests per hour).
+    #
+    # Only site admins may perform this mutation.
+    addRepository(name: String!): Repository!
+    # Enables or disables a repository. A disabled repository is only
+    # accessible to site admins and never appears in search results.
+    #
+    # Only site admins may perform this mutation.
+    setRepositoryEnabled(repository: ID!, enabled: Boolean!): EmptyResponse
+    # Enables or disables all site repositories.
+    #
+    # Only site admins may perform this mutation.
+    setAllRepositoriesEnabled(enabled: Boolean!): EmptyResponse
+    # Tests the connection to a mirror repository's original source repository. This is an
+    # expensive and slow operation, so it should only be used for interactive diagnostics.
+    #
+    # Only site admins may perform this mutation.
+    checkMirrorRepositoryConnection(
+        # The ID of the existing repository whose mirror to check.
+        repository: ID
+        # The name of a repository whose mirror to check. If the name is provided, the repository need not be added
+        # to the site (but the site configuration must define a code host that knows how to handle the name).
+        name: String
+    ): CheckMirrorRepositoryConnectionResult!
+    # Schedule the mirror repository to be updated from its original source repository. Updating
+    # occurs automatically, so this should not normally be needed.
+    #
+    # Only site admins may perform this mutation.
+    updateMirrorRepository(
+        # The mirror repository to update.
+        repository: ID!
+    ): EmptyResponse!
+    # Schedules all repositories to be updated from their original source repositories. Updating
+    # occurs automatically, so this should not normally be needed.
+    #
+    # Only site admins may perform this mutation.
+    updateAllMirrorRepositories: EmptyResponse!
+    # Deletes a repository and all data associated with it, irreversibly.
+    #
+    # If the repository was added because it was present in the site configuration (directly,
+    # or because it originated from a configured code host), then it will be re-added during
+    # the next sync. If you intend to make the repository inaccessible to users and not searchable,
+    # use setRepositoryEnabled to disable the repository instead of deleteRepository.
+    #
+    # Only site admins may perform this mutation.
+    deleteRepository(repository: ID!): EmptyResponse
+    # Creates a new user account.
+    #
+    # Only site admins may perform this mutation.
+    createUser(
+        # The new user's username.
+        username: String!
+        # The new user's optional email address. If given, it is marked as verified.
+        email: String
+    ): CreateUserResult!
+    # Randomize a user's password so that they need to reset it before they can sign in again.
+    #
+    # Only site admins may perform this mutation.
+    randomizeUserPassword(user: ID!): RandomizeUserPasswordResult!
+    # Adds an email address to the user's account. The email address will be marked as unverified until the user
+    # has followed the email verification process.
+    #
+    # Only the user and site admins may perform this mutation.
+    addUserEmail(user: ID!, email: String!): EmptyResponse!
+    # Removes an email address from the user's account.
+    #
+    # Only the user and site admins may perform this mutation.
+    removeUserEmail(user: ID!, email: String!): EmptyResponse!
+    # Manually set the verification status of a user's email, without going through the normal verification process
+    # (of clicking on a link in the email with a verification code).
+    #
+    # Only site admins may perform this mutation.
+    setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
+    # Deletes a user account. Only site admins may perform this mutation.
+    deleteUser(user: ID!): EmptyResponse
+    # Updates the current user's password. The oldPassword arg must match the user's current password.
+    updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
+    # Creates an access token that grants the privileges of the specified user (referred to as the access token's
+    # "subject" user after token creation). The result is the access token value, which the caller is responsible
+    # for storing (it is not accessible by Sourcegraph after creation).
+    #
+    # The supported scopes are:
+    #
+    # - "user:all": Full control of all resources accessible to the user account.
+    # - "site-admin:sudo": Ability to perform any action as any other user. (Only site admins may create tokens
+    #   with this scope.)
+    #
+    # Only the user or site admins may perform this mutation.
+    createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
+    # Deletes and immediately revokes the specified access token, specified by either its ID or by the token
+    # itself.
+    #
+    # Only site admins or the user who owns the token may perform this mutation.
+    deleteAccessToken(byID: ID, byToken: String): EmptyResponse!
+    # Deletes the association between an external account and its Sourcegraph user. It does NOT delete the external
+    # account on the external service where it resides.
+    #
+    # Only site admins or the user who is associated with the external account may perform this mutation.
+    deleteExternalAccount(externalAccount: ID!): EmptyResponse!
+    # Invite the user with the given username to join the organization. The invited user account must already
+    # exist.
+    #
+    # Only site admins and any organization member may perform this mutation.
+    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
+    # Accept or reject an existing organization invitation.
+    #
+    # Only the recipient of the invitation may perform this mutation.
+    respondToOrganizationInvitation(
+        # The organization invitation.
+        organizationInvitation: ID!
+        # The response to the invitation.
+        responseType: OrganizationInvitationResponseType!
+    ): EmptyResponse!
+    # Resend the notification about an organization invitation to the recipient.
+    #
+    # Only site admins and any member of the organization may perform this mutation.
+    resendOrganizationInvitationNotification(
+        # The organization invitation.
+        organizationInvitation: ID!
+    ): EmptyResponse!
+    # Revoke an existing organization invitation.
+    #
+    # If the invitation has been accepted or rejected, it may no longer be revoked. After an
+    # invitation is revoked, the recipient may not accept or reject it. Both cases yield an error.
+    #
+    # Only site admins and any member of the organization may perform this mutation.
+    revokeOrganizationInvitation(
+        # The organization invitation.
+        organizationInvitation: ID!
+    ): EmptyResponse!
+    # Immediately add a user as a member to the organization, without sending an invitation email.
+    #
+    # Only site admins may perform this mutation. Organization members may use the inviteUserToOrganization
+    # mutation to invite users.
+    addUserToOrganization(organization: ID!, username: String!): EmptyResponse!
+    # Removes a user as a member from an organization.
+    #
+    # Only site admins and any member of the organization may perform this mutation.
+    removeUserFromOrganization(user: ID!, organization: ID!): EmptyResponse
+    # Adds or removes a tag on a user.
+    #
+    # Tags are used internally by Sourcegraph as feature flags for experimental features.
+    #
+    # Only site admins may perform this mutation.
+    setTag(
+        # The ID of the user whose tags to set.
+        #
+        # (This parameter is named "node" to make it easy to support tagging other types of nodes
+        # other than users in the future.)
+        node: ID!
+        # The tag to set.
+        tag: String!
+        # The desired state of the tag on the user (whether to add or remove): true to add, false to
+        # remove.
+        present: Boolean!
+    ): EmptyResponse!
+    # Adds a Phabricator repository to Sourcegraph.
+    addPhabricatorRepo(
+        # The callsign, for example "MUX".
+        callsign: String!
+        # The name, for example "github.com/gorilla/mux".
+        name: String
+        # An alias for name. DEPRECATED: use name instead.
+        uri: String
+        # The URL to the phabricator instance (e.g. http://phabricator.sgdev.org).
+        url: String!
+    ): EmptyResponse
+    # Resolves a revision for a given diff from Phabricator.
+    resolvePhabricatorDiff(
+        # The name of the repository that the diff is based on.
+        repoName: String!
+        # The ID of the diff on Phabricator.
+        diffID: ID!
+        # The base revision this diff is based on.
+        baseRev: String!
+        # The raw contents of the diff from Phabricator.
+        # Required if Sourcegraph doesn't have a Conduit API token.
+        patch: String
+        # The description of the diff. This will be used as the commit message.
+        description: String
+        # The name of author of the diff.
+        authorName: String
+        # The author's email.
+        authorEmail: String
+        # When the diff was created.
+        date: String
+    ): GitCommit
+    # Logs a user event.
+    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse
+    # Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
+    # types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
+    #
+    # Only subscribers to this saved search may perform this action.
+    sendSavedSearchTestNotification(
+        # ID of the saved search.
+        id: ID!
+    ): EmptyResponse
+    # All mutations that update configuration settings are under this field.
+    configurationMutation(input: ConfigurationMutationGroupInput!): ConfigurationMutation
+    # Updates the site configuration. Returns whether or not a restart is
+    # needed for the update to be applied.
+    updateSiteConfiguration(input: String!): Boolean!
+    # Manages language servers.
+    langServers: LangServersMutation
+    # Manages discussions.
+    discussions: DiscussionsMutation
+    # Sets whether the user with the specified user ID is a site admin.
+    #!
+    #! 🚨 SECURITY: Only trusted users should be given site admin permissions.
+    #! Site admins have full access to the site configuration and other
+    #! sensitive data, and they can perform destructive actions such as
+    #! restarting the site.
+    setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
+    # Reloads the site by restarting the server. This is not supported for all deployment
+    # types. This may cause downtime.
+    reloadSite: EmptyResponse
+    # Submits a user satisfaction (NPS) survey.
+    submitSurvey(input: SurveySubmissionInput!): EmptyResponse
+    # Manages the extension registry.
+    extensionRegistry: ExtensionRegistryMutation!
+    # Mutations that are only used on Sourcegraph.com.
+    #
+    # FOR INTERNAL USE ONLY.
+    dotcom: DotcomMutation!
+}
+
+# Mutations for language servers.
+type LangServersMutation {
+    # Enables the language server for the given language.
+    #
+    # Any user can perform this mutation, unless the language has been
+    # explicitly disabled.
+    enable(language: String!): EmptyResponse
+    # Disables the language server for the given language.
+    #
+    # Only admins can perform this action. After disabling, it is impossible
+    # for plain users to enable the language server for this language (until an
+    # admin re-enables it).
+    disable(language: String!): EmptyResponse
+    # Restarts the language server for the given language.
+    #
+    # Only admins can perform this action.
+    restart(language: String!): EmptyResponse
+    # Updates the language server for the given language.
+    #
+    # Only admins can perform this action.
+    update(language: String!): EmptyResponse
+}
+
+# A selection within a file.
+input DiscussionThreadTargetRepoSelectionInput {
+    # The line that the selection started on (zero-based, inclusive).
+    startLine: Int!
+
+    # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
+    startCharacter: Int!
+
+    # The line that the selection ends on (zero-based, exclusive).
+    endLine: Int!
+
+    # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
+    endCharacter: Int!
+
+    # The literal textual (UTF-8) lines before the line the selection started
+    # on.
+    #
+    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
+    #
+    # If null, this information will be gathered from the repository itself
+    # automatically. This will result in an error if the selection is invalid or
+    # the DiscussionThreadTargetRepoInput specified an invalid path or
+    # branch/revision.
+    linesBefore: [String!]
+
+    # The literal textual (UTF-8) lines of the selection. i.e. all lines
+    # startLine through endLine.
+    #
+    # If null, this information will be gathered from the repository itself
+    # automatically. This will result in an error if the selection is invalid or
+    # the DiscussionThreadTargetRepoInput specified an invalid path or
+    # branch/revision.
+    lines: [String!]
+
+    # The literal textual (UTF-8) lines after the line the selection ended on.
+    #
+    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
+    #
+    # If null, this information will be gathered from the repository itself
+    # automatically. This will result in an error if the selection is invalid or
+    # the DiscussionThreadTargetRepoInput specified an invalid path or
+    # branch/revision.
+    linesAfter: [String!]
+}
+
+# A discussion thread that is centered around:
+#
+# - A repository.
+# - A directory inside a repository.
+# - A file inside a repository.
+# - A selection inside a file inside a repository.
+#
+input DiscussionThreadTargetRepoInput {
+    # The repository in which the thread was created.
+    #
+    # One of 'repositoryID', 'repositoryGitCloneURL', or 'repositoryName' must be specified.
+    repositoryID: ID
+
+    # The repository in which the thread was created.
+    #
+    # One of 'repositoryID', 'repositoryGitCloneURL', or 'repositoryName' must be specified.
+    repositoryName: String
+
+    # The repository in which the thread was created.
+    #
+    # One of 'repositoryID', 'repositoryGitCloneURL', or 'repositoryName' must be specified.
+    repositoryGitCloneURL: String
+
+    # The path (relative to the repository root) of the file or directory that
+    # the thread is referencing, if any. If the path is null, the thread is not
+    # talking about a specific path but rather just the repository generally.
+    path: String
+
+    # The branch or other human-readable Git ref (e.g. "HEAD~2", but not exact
+    # Git revision), that the thread was referencing, if any.
+    branch: String
+
+    # The exact Git object ID (OID / 40-character SHA-1 hash) which the thread
+    # was referencing, if any.
+    revision: GitObjectID
+
+    # The selection that the thread was referencing, if any.
+    selection: DiscussionThreadTargetRepoSelectionInput
+}
+
+# Describes the creation of a new thread around some target (e.g. a file in a repo).
+input DiscussionThreadCreateInput {
+    # The title of the thread's first comment (i.e. the threads title).
+    title: String!
+
+    # The contents of the thread's first comment (i.e. the threads comment).
+    contents: String!
+
+    # The target repo of this discussion thread. This is nullable so that in
+    # the future more target types may be added.
+    targetRepo: DiscussionThreadTargetRepoInput
+}
+
+# Describes an update mutation to an existing thread.
+input DiscussionThreadUpdateInput {
+    # The ID of the thread to update.
+    ThreadID: ID!
+
+    # When non-null, indicates that the thread should be archived.
+    Archive: Boolean
+
+    # When non-null, indicates that the thread should be deleted. Only admins
+    # can perform this action.
+    Delete: Boolean
+}
+
+# Describes an update mutation to an existing comment in a thread.
+input DiscussionCommentUpdateInput {
+    # The ID of the comment to update.
+    commentID: ID!
+
+    # When non-null, indicates that the thread should be deleted. Only admins
+    # can perform this action.
+    delete: Boolean
+
+    # When non-null, reports the comment with the specified reason.
+    #
+    # An error will be returned if the comment's canReport field is false.
+    report: String
+
+    # When non-null, indicates that the reports on the thread should be
+    # cleared. Only admins can perform this action.
+    #
+    # An error will be returned if the comment's canClearReports field is false.
+    clearReports: Boolean
+}
+
+# Mutations for discussions.
+type DiscussionsMutation {
+    # Creates a new thread. Returns the new thread.
+    createThread(input: DiscussionThreadCreateInput!): DiscussionThread!
+
+    # Updates an existing thread. Returns the updated thread.
+    #
+    # Returns null if the thread was deleted.
+    updateThread(input: DiscussionThreadUpdateInput!): DiscussionThread
+
+    # Adds a new comment to a thread. Returns the updated thread.
+    addCommentToThread(threadID: ID!, contents: String!): DiscussionThread!
+
+    # Updates an existing comment. Returns the updated thread.
+    updateComment(input: DiscussionCommentUpdateInput!): DiscussionThread!
+}
+
+# Describes options for rendering Markdown.
+input MarkdownOptions {
+    # TODO(slimsag:discussions): add option for controlling relative links
+
+    # A dummy null value (empty input types are not allowed yet).
+    alwaysNil: String
+}
+
+# Input for Mutation.configuration, which contains fields that all configuration
+# mutations need.
+input ConfigurationMutationGroupInput {
+    # The subject whose configuration to mutate (organization, user, etc.).
+    subject: ID!
+    # The ID of the last-known configuration known to the client, or null if
+    # there is none. This field is used to prevent race conditions when there
+    # are concurrent editors.
+    lastID: Int
+}
+
+# Mutations that update configuration settings. These mutations are grouped
+# together because they:
+#
+# - are all versioned to avoid race conditions with concurrent editors
+# - all apply to a specific configuration subject
+#
+# Grouping them lets us extract those common parameters to the
+# Mutation.configuration field.
+type ConfigurationMutation {
+    # Edit a single property in the configuration object.
+    editConfiguration(
+        # The configuration edit to apply.
+        edit: ConfigurationEdit!
+    ): UpdateConfigurationPayload
+    # Overwrite the contents to the new contents provided.
+    overwriteConfiguration(contents: String): UpdateConfigurationPayload
+    # Create a saved query.
+    createSavedQuery(
+        description: String!
+        query: String!
+        showOnHomepage: Boolean = false
+        notify: Boolean = false
+        notifySlack: Boolean = false
+        disableSubscriptionNotifications: Boolean = false
+    ): SavedQuery!
+    # Update the saved query with the given ID in the configuration.
+    updateSavedQuery(
+        id: ID!
+        description: String
+        query: String
+        showOnHomepage: Boolean = false
+        notify: Boolean = false
+        notifySlack: Boolean = false
+    ): SavedQuery!
+    # Delete the saved query with the given ID in the configuration.
+    deleteSavedQuery(id: ID!, disableSubscriptionNotifications: Boolean = false): EmptyResponse
+}
+
+# An edit to a (nested) configuration property's value.
+input ConfigurationEdit {
+    # The key path of the property to update.
+    #
+    # Inserting into an existing array is not yet supported.
+    keyPath: [KeyPathSegment!]!
+    # The new JSON-encoded value to insert. If the field's value is not set, the property is removed. (This is
+    # different from the field's value being the JSON null value.)
+    #
+    # When the value is a non-primitive type, it must be specified using a GraphQL variable, not an inline literal,
+    # or else the GraphQL parser will return an error.
+    value: JSONValue
+    # Whether to treat the value as a JSONC-encoded string, which makes it possible to perform a configuration edit
+    # that preserves (or adds/removes) comments.
+    valueIsJSONCEncodedString: Boolean = false
+}
+
+# A segment of a key path that locates a nested JSON value in a root JSON value. Exactly one field in each
+# KeyPathSegment must be non-null.
+#
+# For example, in {"a": [0, {"b": 3}]}, the value 3 is located at the key path ["a", 1, "b"].
+input KeyPathSegment {
+    # The name of the property in the object at this location to descend into.
+    property: String
+    # The index of the array at this location to descend into.
+    index: Int
+}
+
+# The payload for ConfigurationMutation.updateConfiguration.
+type UpdateConfigurationPayload {
+    # An empty response.
+    empty: EmptyResponse
+}
+
+# The result for Mutation.createAccessToken.
+type CreateAccessTokenResult {
+    # The ID of the newly created access token.
+    id: ID!
+    # The secret token value that is used to authenticate API clients. The caller is responsible for storing this
+    # value.
+    token: String!
+}
+
+# The result for Mutation.checkMirrorRepositoryConnection.
+type CheckMirrorRepositoryConnectionResult {
+    # The error message encountered during the update operation, if any. If null, then
+    # the connection check succeeded.
+    error: String
+}
+
+# The result for Mutation.createUser.
+type CreateUserResult {
+    # The new user.
+    user: User!
+    # The reset password URL that the new user must visit to sign into their account. If the builtin
+    # username-password authentication provider is not enabled, this field's value is null.
+    resetPasswordURL: String
+}
+
+# The result for Mutation.randomizeUserPassword.
+type RandomizeUserPasswordResult {
+    # The reset password URL that the user must visit to sign into their account again. If the builtin
+    # username-password authentication provider is not enabled, this field's value is null.
+    resetPasswordURL: String
+}
+
+# Input for a user satisfaction (NPS) survey submission.
+input SurveySubmissionInput {
+    # User-provided email address, if there is no currently authenticated user. If there is, this value
+    # will not be used.
+    email: String
+    # User's likelihood of recommending Sourcegraph to a friend, from 0-10.
+    score: Int!
+    # The answer to "What is the most important reason for the score you gave".
+    reason: String
+    # The answer to "What can Sourcegraph do to provide a better product"
+    better: String
+}
+
+# A query.
+type Query {
+    # The root of the query.
+    root: Query! @deprecated(reason: "this will be removed.")
+    # Looks up a node by ID.
+    node(id: ID!): Node
+    # Looks up a repository by name.
+    repository(
+        # The name, for example "github.com/gorilla/mux".
+        name: String
+        # An alias for name. DEPRECATED: use name instead.
+        uri: String
+    ): Repository
+    # List all repositories.
+    repositories(
+        # Returns the first n repositories from the list.
+        first: Int
+        # Return repositories whose names match the query.
+        query: String
+        # Include enabled repositories.
+        enabled: Boolean = true
+        # Include disabled repositories.
+        disabled: Boolean = false
+        # Include cloned repositories.
+        cloned: Boolean = true
+        # Include repositories that are currently being cloned.
+        cloneInProgress: Boolean = true
+        # Include repositories that are not yet cloned and for which cloning is not in progress.
+        notCloned: Boolean = true
+        # Include repositories that have a text search index.
+        indexed: Boolean = true
+        # Include repositories that do not have a text search index.
+        notIndexed: Boolean = true
+        # Filter for repositories that have been indexed for cross-repository code intelligence.
+        ciIndexed: Boolean = false
+        # Filter for repositories that have not been indexed for cross-repository code intelligence.
+        notCIIndexed: Boolean = false
+        # Sort field.
+        orderBy: RepoOrderBy = REPO_URI
+        # Sort direction.
+        descending: Boolean = false
+    ): RepositoryConnection!
+    # Looks up a Phabricator repository by name.
+    phabricatorRepo(
+        # The name, for example "github.com/gorilla/mux".
+        name: String
+        # An alias for name. DEPRECATED: use name instead.
+        uri: String
+    ): PhabricatorRepo
+    # The current user.
+    currentUser: User
+    # Looks up a user by username.
+    user(username: String!): User
+    # List all users.
+    users(
+        # Returns the first n users from the list.
+        first: Int
+        # Return users whose usernames or display names match the query.
+        query: String
+        # Return only users with the given tag.
+        tag: String
+        # Returns users who have been active in a given period of time.
+        activePeriod: UserActivePeriod
+    ): UserConnection!
+    # Looks up an organization by name.
+    organization(name: String!): Org
+    # List all organizations.
+    organizations(
+        # Returns the first n organizations from the list.
+        first: Int
+        # Return organizations whose names or display names match the query.
+        query: String
+    ): OrgConnection!
+    # Lists discussion threads.
+    discussionThreads(
+        # Returns the first n threads from the list.
+        first: Int
+        # Return discussion threads matching the query.
+        query: String
+        # When present, lists only the thread with this ID.
+        threadID: ID
+        # When present, lists only the threads created by this author.
+        authorUserID: ID
+        # When present, lists only the threads whose target is a repository with this ID.
+        #
+        # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
+        targetRepositoryID: ID
+        # When present, lists only the threads whose target is a repository with this name.
+        #
+        # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
+        targetRepositoryName: String
+        # When present, lists only the threads whose target is a repository with this Git clone URL.
+        #
+        # Only one of 'targetRepositoryID', 'targetRepositoryName', or 'targetRepositoryGitCloneURL' may be specified.
+        targetRepositoryGitCloneURL: String
+        # When present, lists only the threads whose target is a repository with this file path.
+        #
+        # If the path ends with "/**", any path below that is matched.
+        targetRepositoryPath: String
+    ): DiscussionThreadConnection!
+    # Lists discussion comments.
+    discussionComments(
+        # Returns the first n comments from the list.
+        first: Int
+        # When present, lists only the comments created by this author.
+        authorUserID: ID
+    ): DiscussionCommentConnection!
+    # Renders Markdown to HTML. The returned HTML is already sanitized and
+    # escaped and thus is always safe to render.
+    renderMarkdown(markdown: String!, options: MarkdownOptions): String!
+    # Looks up an instance of a type that implements ConfigurationSubject.
+    configurationSubject(id: ID!): ConfigurationSubject
+    # The configuration for the viewer.
+    viewerConfiguration: ConfigurationCascade!
+    # The configuration for clients.
+    clientConfiguration: ClientConfigurationDetails!
+    # Runs a search.
+    search(
+        # The search query (such as "foo" or "repo:myrepo foo").
+        query: String = ""
+    ): Search
+    # The search scopes.
+    searchScopes: [SearchScope!]!
+    # All saved queries configured for the current user, merged from all configurations.
+    savedQueries: [SavedQuery!]!
+    # All repository groups for the current user, merged from all configurations.
+    repoGroups: [RepoGroup!]!
+    # The current site.
+    site: Site!
+    # Retrieve responses to surveys.
+    surveyResponses(
+        # Returns the first n survey responses from the list.
+        first: Int
+    ): SurveyResponseConnection!
+    # The extension registry.
+    extensionRegistry: ExtensionRegistry!
+}
+
+# Configuration details for the browser extension, editor extensions, etc.
+type ClientConfigurationDetails {
+    # The list of phabricator/gitlab/bitbucket/etc instance URLs that specifies which pages the content script will be injected into.
+    contentScriptUrls: [String!]!
+    # Returns details about the parent Sourcegraph instance.
+    parentSourcegraph: ParentSourcegraphDetails!
+}
+
+# Parent Sourcegraph instance
+type ParentSourcegraphDetails {
+    # Sourcegraph instance URL.
+    url: String!
+}
+
+# A search.
+type Search {
+    # The results.
+    results: SearchResults!
+    # The suggestions.
+    suggestions(first: Int): [SearchSuggestion!]!
+    # A subset of results (excluding actual search results) which are heavily
+    # cached and thus quicker to query. Useful for e.g. querying sparkline
+    # data.
+    stats: SearchResultsStats!
+}
+
+# A search result.
+union SearchResult = FileMatch | CommitSearchResult | Repository
+
+# Search results.
+type SearchResults {
+    # The results. Inside each SearchResult there may be multiple matches, e.g.
+    # a FileMatch may contain multiple line matches.
+    results: [SearchResult!]!
+    # The total number of results, taking into account the SearchResult type.
+    # This is different than the length of the results array in that e.g. the
+    # results array may contain two file matches and this resultCount would
+    # report 6 ("3 line matches per file").
+    #
+    # Typically, 'approximateResultCount', not this field, is shown to users.
+    resultCount: Int!
+    # The approximate number of results. This is like the length of the results
+    # array, except it can indicate the number of results regardless of whether
+    # or not the limit was hit. Currently, this is represented as e.g. "5+"
+    # results.
+    #
+    # This string is typically shown to users to indicate the true result count.
+    approximateResultCount: String!
+    # Whether or not the results limit was hit.
+    limitHit: Boolean!
+    # Integers representing the sparkline for the search results.
+    sparkline: [Int!]!
+    # Repositories that were eligible to be searched.
+    repositories: [Repository!]!
+    # Repositories that were actually searched. Excludes repositories that would have been searched but were not
+    # because a timeout or error occurred while performing the search, or because the result limit was already
+    # reached.
+    repositoriesSearched: [Repository!]!
+    # Indexed repositories searched. This is a subset of repositoriesSearched.
+    indexedRepositoriesSearched: [Repository!]!
+    # Repositories that are busy cloning onto gitserver.
+    cloning: [Repository!]!
+    # Repositories or commits that do not exist.
+    missing: [Repository!]!
+    # Repositories or commits which we did not manage to search in time. Trying
+    # again usually will work.
+    timedout: [Repository!]!
+    # True if indexed search is enabled but was not available during this search.
+    indexUnavailable: Boolean!
+    # An alert message that should be displayed before any results.
+    alert: SearchAlert
+    # The time it took to generate these results.
+    elapsedMilliseconds: Int!
+    # Dynamic filters generated by the search results
+    dynamicFilters: [SearchFilter!]!
+}
+
+# Statistics about search results.
+type SearchResultsStats {
+    # The approximate number of results returned.
+    approximateResultCount: String!
+    # The sparkline.
+    sparkline: [Int!]!
+}
+
+# A search filter.
+type SearchFilter {
+    # The value.
+    value: String!
+    # The string to be displayed in the UI.
+    label: String!
+    # Number of matches for a given filter.
+    count: Int!
+    # Whether the results returned are incomplete.
+    limitHit: Boolean!
+    # The kind of filter. Should be "file" or "repo".
+    kind: String!
+}
+
+# A search suggestion.
+union SearchSuggestion = Repository | File | Symbol
+
+# A search scope.
+type SearchScope {
+    # A unique identifier for the search scope.
+    # If set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value.
+    id: String
+    # The name.
+    name: String!
+    # The value.
+    value: String!
+    # A description for this search scope, which will appear on the scoped search page.
+    description: String
+}
+
+# A search-related alert message.
+type SearchAlert {
+    # The title.
+    title: String!
+    # The description.
+    description: String
+    # "Did you mean: ____" query proposals
+    proposedQueries: [SearchQueryDescription!]
+}
+
+# A saved search query, defined in configuration.
+type SavedQuery {
+    # The unique ID of the saved query.
+    id: ID!
+    # The subject whose configuration this saved query was defined in.
+    subject: ConfigurationSubject!
+    # The unique key of this saved query (unique only among all other saved
+    # queries of the same subject).
+    key: String
+    # The 0-indexed index of this saved query in the subject's configuration.
+    index: Int!
+    # The description.
+    description: String!
+    # The query.
+    query: String!
+    # Whether or not to show on the homepage.
+    showOnHomepage: Boolean!
+    # Whether or not to notify.
+    notify: Boolean!
+    # Whether or not to notify on Slack.
+    notifySlack: Boolean!
+}
+
+# A search query description.
+type SearchQueryDescription {
+    # The description.
+    description: String
+    # The query.
+    query: String!
+}
+
+# A group of repositories.
+type RepoGroup {
+    # The name.
+    name: String!
+    # The repositories.
+    repositories: [String!]!
+}
+
+# A diff between two diffable Git objects.
+type Diff {
+    # The diff's repository.
+    repository: Repository!
+    # The revision range of the diff.
+    range: GitRevisionRange!
+}
+
+# A search result that is a Git commit.
+type CommitSearchResult {
+    # The commit that matched the search query.
+    commit: GitCommit!
+    # The ref names of the commit.
+    refs: [GitRef!]!
+    # The refs by which this commit was reached.
+    sourceRefs: [GitRef!]!
+    # The matching portion of the commit message, if any.
+    messagePreview: HighlightedString
+    # The matching portion of the diff, if any.
+    diffPreview: HighlightedString
+}
+
+# A search result that is a diff between two diffable Git objects.
+type DiffSearchResult {
+    # The diff that matched the search query.
+    diff: Diff!
+    # The matching portion of the diff.
+    preview: HighlightedString!
+}
+
+# A string that has highlights (e.g, query matches).
+type HighlightedString {
+    # The full contents of the string.
+    value: String!
+    # Highlighted matches of the query in the preview string.
+    highlights: [Highlight!]!
+}
+
+# A highlighted region in a string (e.g., matched by a query).
+type Highlight {
+    # The 1-indexed line number.
+    line: Int!
+    # The 1-indexed character on the line.
+    character: Int!
+    # The length of the highlight, in characters (on the same line).
+    length: Int!
+}
+
+# Ref fields.
+type RefFields {
+    # The ref location.
+    refLocation: RefLocation
+    # The URI.
+    uri: URI
+}
+
+# A URI.
+type URI {
+    # The host.
+    host: String!
+    # The fragment.
+    fragment: String!
+    # The path.
+    path: String!
+    # The query.
+    query: String!
+    # The scheme.
+    scheme: String!
+}
+
+# A ref location.
+type RefLocation {
+    # The starting line number.
+    startLineNumber: Int!
+    # The starting column.
+    startColumn: Int!
+    # The ending line number.
+    endLineNumber: Int!
+    # The ending column.
+    endColumn: Int!
+}
+
+# A list of repositories.
+type RepositoryConnection {
+    # A list of repositories.
+    nodes: [Repository!]!
+    # The total count of repositories in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    #
+    # In some cases, the total count can't be computed quickly; if so, it is null. Pass
+    # precise: true to always compute total counts even if it takes a while.
+    totalCount(precise: Boolean = false): Int
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A repository is a Git source control repository that is mirrored from some origin code host.
+type Repository implements Node {
+    # The repository's unique ID.
+    id: ID!
+    # The repository's name, as a path with one or more components. It conventionally consists of
+    # the repository's hostname and path (joined by "/"), minus any suffixes (such as ".git").
+    #
+    # Examples:
+    #
+    # - github.com/foo/bar
+    # - my-code-host.example.com/myrepo
+    # - myrepo
+    name: String!
+    # An alias for name.
+    uri: String! @deprecated(reason: "use name instead")
+    # The repository's description.
+    description: String!
+    # The primary programming language in the repository.
+    language: String!
+    # Whether the repository is enabled. A disabled repository should only be accessible to site admins.
+    #
+    # NOTE: Disabling a repository does not provide any additional security. This field is merely a
+    # guideline to UI implementations.
+    enabled: Boolean!
+    # The date when this repository was created on Sourcegraph.
+    createdAt: String!
+    # The date when this repository's metadata was last updated on Sourcegraph.
+    updatedAt: String
+    # Returns information about the given commit in the repository, or null if no commit exists with the given rev.
+    commit(
+        # The Git revision specifier (revspec) for the commit.
+        rev: String!
+        # Optional input revspec used to construct non-canonical URLs and other "friendly" field values. Used by
+        # clients that must ensure consistency of revision resolution within a session/request (so they use full
+        # SHAs) but also preserve the user input rev (for user friendliness).
+        inputRevspec: String
+    ): GitCommit
+    # Information and status related to mirroring, if this repository is a mirror of another repository (e.g., on
+    # some code host). In this case, the remote source repository is external to Sourcegraph and the mirror is
+    # maintained by the Sourcegraph site (not the other way around).
+    mirrorInfo: MirrorRepositoryInfo!
+    # Information about this repository from the external service that it originates from (such as GitHub, GitLab,
+    # Phabricator, etc.).
+    externalRepository: ExternalRepository
+    # Whether the repository is currently being cloned.
+    cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
+    # The commit that was last indexed for cross-references, if any.
+    lastIndexedRevOrLatest: GitCommit
+    # Information about the text search index for this repository, or null if text search indexing
+    # is not enabled or supported for this repository.
+    textSearchIndex: RepositoryTextSearchIndex
+    # The URL to this repository.
+    url: String!
+    # The URLs to this repository on external services associated with it.
+    externalURLs: [ExternalLink!]!
+    # The repository's default Git branch (HEAD symbolic ref). If the repository is currently being cloned or is
+    # empty, this field will be null.
+    defaultBranch: GitRef
+    # The repository's Git refs.
+    gitRefs(
+        # Returns the first n Git refs from the list.
+        first: Int
+        # Return Git refs whose names match the query.
+        query: String
+        # Return only Git refs of the given type.
+        #
+        # Known issue: It is only supported to retrieve Git branch and tag refs, not
+        # other Git refs.
+        type: GitRefType
+        # Ordering for Git refs in the list.
+        orderBy: GitRefOrder
+    ): GitRefConnection!
+    # The repository's Git branches.
+    branches(
+        # Returns the first n Git branches from the list.
+        first: Int
+        # Return Git branches whose names match the query.
+        query: String
+        # Ordering for Git branches in the list.
+        orderBy: GitRefOrder
+    ): GitRefConnection!
+    # The repository's Git tags.
+    tags(
+        # Returns the first n Git tags from the list.
+        first: Int
+        # Return Git tags whose names match the query.
+        query: String
+    ): GitRefConnection!
+    # A Git comparison in this repository between a base and head commit.
+    comparison(
+        # The base of the diff ("old" or "left-hand side"), or "HEAD" if not specified.
+        base: String
+        # The head of the diff ("new" or "right-hand side"), or "HEAD" if not specified.
+        head: String
+    ): RepositoryComparison!
+    # The repository's contributors.
+    contributors(
+        # The Git revision range to compute contributors in.
+        revisionRange: String
+        # The date after which to count contributions.
+        after: String
+        # Return contributors to files in this path.
+        path: String
+        # Returns the first n contributors from the list.
+        first: Int
+    ): RepositoryContributorConnection!
+    # The repository's symbols (e.g., functions, variables, types, classes, etc.) on the default branch.
+    #
+    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
+    # yet been processed. Use Repository.commit.tree.symbols to retrieve symbols for a specific revision.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
+    # Packages defined in this repository, as returned by LSP workspace/xpackages requests to this repository's
+    # language servers (running against a recent commit on its default branch).
+    #
+    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
+    # yet been processed. Use Repository.commit.packages to retrieve packages for a specific revision.
+    packages(
+        # Returns the first n packages from the list.
+        first: Int
+        # Return packages matching the query.
+        query: String
+    ): PackageConnection!
+    # Dependencies of this repository, as returned by LSP workspace/xreferences requests to this repository's
+    # language servers (running against a recent commit on its default branch).
+    #
+    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
+    # yet been processed. Use Repository.commit.dependencies to retrieve dependencies for a specific revision.
+    dependencies(
+        # Returns the first n dependencies from the list.
+        first: Int
+        # Return dependencies matching the query.
+        query: String
+    ): DependencyConnection!
+    # The total ref list.
+    listTotalRefs: TotalRefList!
+    # Link to another Sourcegraph instance location where this repository is located.
+    redirectURL: String
+    # Whether the viewer has admin privileges on this repository.
+    viewerCanAdminister: Boolean!
+}
+
+# A URL to a resource on an external service, such as the URL to a repository on its external (origin) code host.
+type ExternalLink {
+    # The URL to the resource.
+    url: String!
+    # The type of external service, such as "github", or null if unknown/unrecognized. This is used solely for
+    # displaying an icon that represents the service.
+    serviceType: String
+}
+
+# Information and status about the mirroring of a repository. In this case, the remote source repository
+# is external to Sourcegraph and the mirror is maintained by the Sourcegraph site (not the other way
+# around).
+type MirrorRepositoryInfo {
+    # The URL of the remote source repository.
+    remoteURL: String!
+    # Whether the clone of the repository has begun but not yet completed.
+    cloneInProgress: Boolean!
+    # A single line of text that contains progress information for the running clone command.
+    # The format of the progress text is not specified.
+    # It is intended to be displayed directly to a user.
+    # e.g.
+    # "Receiving objects:  95% (2041/2148), 292.01 KiB | 515.00 KiB/s"
+    # "Resolving deltas:   9% (117/1263)"
+    cloneProgress: String
+    # Whether the repository has ever been successfully cloned.
+    cloned: Boolean!
+    # When the repository was last successfully updated from the remote source repository..
+    updatedAt: String
+}
+
+# A repository on an external service (such as GitHub, GitLab, Phabricator, etc.).
+type ExternalRepository {
+    # The repository's ID on the external service.
+    #
+    # Example: For GitHub, this is the GitHub GraphQL API's node ID for the repository.
+    id: String!
+    # The type of external service where this repository resides.
+    #
+    # Example: "github", "gitlab", etc.
+    serviceType: String!
+    # The particular instance of the external service where this repository resides. Its value is
+    # opaque but typically consists of the canonical base URL to the service.
+    #
+    # Example: For GitHub.com, this is "https://github.com/".
+    serviceID: String!
+}
+
+# Information about a repository's text search index.
+type RepositoryTextSearchIndex {
+    # The indexed repository.
+    repository: Repository!
+    # The status of the text search index, if available.
+    status: RepositoryTextSearchIndexStatus
+    # Git refs in the repository that are configured for text search indexing.
+    refs: [RepositoryTextSearchIndexedRef!]!
+}
+
+# The status of a repository's text search index.
+type RepositoryTextSearchIndexStatus {
+    # The date that the index was last updated.
+    updatedAt: String!
+    # The byte size of the original content.
+    contentByteSize: Int!
+    # The number of files in the original content.
+    contentFilesCount: Int!
+    # The byte size of the index.
+    indexByteSize: Int!
+    # The number of index shards.
+    indexShardsCount: Int!
+}
+
+# A Git ref (usually a branch) in a repository that is configured to be indexed for text search.
+type RepositoryTextSearchIndexedRef {
+    # The Git ref (usually a branch) that is configured to be indexed for text search. To find the specific commit
+    # SHA that was indexed, use RepositoryTextSearchIndexedRef.indexedCommit; this field's ref target resolves to
+    # the current target, not the target at the time of indexing.
+    ref: GitRef!
+    # Whether a text search index exists for this ref.
+    indexed: Boolean!
+    # Whether the text search index is of the current commit for the Git ref. If false, the index is stale.
+    current: Boolean!
+    # The indexed Git commit (which may differ from the ref's current target if the index is out of date). If
+    # indexed is false, this field's value is null.
+    indexedCommit: GitObject
+}
+
+# A list of Git refs.
+type GitRefConnection {
+    # A list of Git refs.
+    nodes: [GitRef!]!
+    # The total count of Git refs in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# The differences between two Git commits in a repository.
+type RepositoryComparison {
+    # The range that this comparison represents.
+    range: GitRevisionRange!
+    # The commits in the comparison range, excluding the base and including the head.
+    commits(
+        # Return the first n commits from the list.
+        first: Int
+    ): GitCommitConnection!
+    # The file diffs for each changed file.
+    fileDiffs(
+        # Return the first n file diffs from the list.
+        first: Int
+    ): FileDiffConnection!
+}
+
+# A list of file diffs.
+type FileDiffConnection {
+    # A list of file diffs.
+    nodes: [FileDiff!]!
+    # The total count of file diffs in the connection, if available. This total count may be larger than the number
+    # of nodes in this object when the result is paginated.
+    totalCount: Int
+    # Pagination information.
+    pageInfo: PageInfo!
+    # The diff stat for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    diffStat: DiffStat!
+    # The raw diff for the file diffs in this object, which may be a subset of the entire diff if the result is
+    # paginated.
+    rawDiff: String!
+}
+
+# A diff for a single file.
+type FileDiff {
+    # The old (original) path of the file, or null if the file was added.
+    oldPath: String
+    # The old file, or null if the file was created (oldFile.path == oldPath).
+    oldFile: File2
+    # The new (changed) path of the file, or null if the file was deleted.
+    newPath: String
+    # The new file, or null if the file was deleted (newFile.path == newPath).
+    newFile: File2
+    # The old file (if the file was deleted) and otherwise the new file. This file field is typically used by
+    # clients that want to show a "View" link to the file.
+    mostRelevantFile: File2!
+    # Hunks that were changed from old to new.
+    hunks: [FileDiffHunk!]!
+    # The diff stat for the whole file.
+    stat: DiffStat!
+    # FOR INTERNAL USE ONLY.
+    #
+    # An identifier for the file diff that is unique among all other file diffs in the list that
+    # contains it.
+    internalID: String!
+}
+
+# A changed region ("hunk") in a file diff.
+type FileDiffHunk {
+    # The range of the old file that the hunk applies to.
+    oldRange: FileDiffHunkRange!
+    # Whether the old file had a trailing newline.
+    oldNoNewlineAt: Boolean!
+    # The range of the new file that the hunk applies to.
+    newRange: FileDiffHunkRange!
+    # The diff hunk section heading, if any.
+    section: String
+    # The hunk body, with lines prefixed with '-', '+', or ' '.
+    body: String!
+}
+
+# A hunk range in one side (old/new) of a diff.
+type FileDiffHunkRange {
+    # The first line that the hunk applies to.
+    startLine: Int!
+    # The number of lines that the hunk applies to.
+    lines: Int!
+}
+
+# Statistics about a diff.
+type DiffStat {
+    # Number of additions.
+    added: Int!
+    # Number of changes.
+    changed: Int!
+    # Number of deletions.
+    deleted: Int!
+}
+
+# A list of contributors to a repository.
+type RepositoryContributorConnection {
+    # A list of contributors to a repository.
+    nodes: [RepositoryContributor!]!
+    # The total count of contributors in the connection, if available. This total count may be larger than the
+    # number of nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A contributor to a repository.
+type RepositoryContributor {
+    # The personal information for the contributor.
+    person: Person!
+    # The number of contributions made by this contributor.
+    count: Int!
+    # The repository in which the contributions occurred.
+    repository: Repository!
+    # Commits by the contributor.
+    commits(
+        # Return the first n commits.
+        first: Int
+    ): GitCommitConnection!
+}
+
+# A code symbol (e.g., a function, variable, type, class, etc.).
+#
+# It is derived from symbols as defined in the Language Server Protocol (see
+# https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+type Symbol {
+    # The name of the symbol.
+    name: String!
+    # The name of the symbol that contains this symbol, if any. This field's value is not guaranteed to be
+    # structured in such a way that callers can infer a hierarchy of symbols.
+    containerName: String
+    # The kind of the symbol.
+    kind: SymbolKind!
+    # The programming language of the symbol.
+    language: String!
+    # The location where this symbol is defined.
+    location: Location!
+    # The URL to this symbol (using the input revision specifier, which may not be immutable).
+    url: String!
+    # The canonical URL to this symbol (using an immutable revision specifier).
+    canonicalURL: String!
+}
+
+# A location inside a resource (in a repository at a specific commit).
+type Location {
+    # The file that this location refers to.
+    resource: GitBlob!
+    # The range inside the file that this location refers to.
+    range: Range
+    # The URL to this location (using the input revision specifier, which may not be immutable).
+    url: String!
+    # The canonical URL to this location (using an immutable revision specifier).
+    canonicalURL: String!
+}
+
+# A range inside a file. The start position is inclusive, and the end position is exclusive.
+type Range {
+    # The start position of the range (inclusive).
+    start: Position!
+    # The end position of the range (exclusive).
+    end: Position!
+}
+
+# A zero-based position inside a file.
+type Position {
+    # The line number (zero-based) of the position.
+    line: Int!
+    # The character offset (zero-based) in the line of the position.
+    character: Int!
+}
+
+# All possible kinds of symbols. This set matches that of the Language Server Protocol
+# (https://microsoft.github.io/language-server-protocol/specification#workspace_symbol).
+enum SymbolKind {
+    UNKNOWN
+    FILE
+    MODULE
+    NAMESPACE
+    PACKAGE
+    CLASS
+    METHOD
+    PROPERTY
+    FIELD
+    CONSTRUCTOR
+    ENUM
+    INTERFACE
+    FUNCTION
+    VARIABLE
+    CONSTANT
+    STRING
+    NUMBER
+    BOOLEAN
+    ARRAY
+    OBJECT
+    KEY
+    NULL
+    ENUMMEMBER
+    STRUCT
+    EVENT
+    OPERATOR
+    TYPEPARAMETER
+}
+
+# A list of symbols.
+type SymbolConnection {
+    # A list of symbols.
+    nodes: [Symbol!]!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A Git object ID (SHA-1 hash, 40 hexadecimal characters).
+scalar GitObjectID
+
+# A Git ref.
+type GitRef implements Node {
+    # The globally addressable ID for the Git ref.
+    id: ID!
+    # The full ref name (e.g., "refs/heads/mybranch" or "refs/tags/mytag").
+    name: String!
+    # An unambiguous short name for the ref.
+    abbrevName: String!
+    # The display name of the ref. For branches ("refs/heads/foo"), this is the branch
+    # name ("foo").
+    #
+    # As a special case, for GitHub pull request refs of the form refs/pull/NUMBER/head,
+    # this is "#NUMBER".
+    displayName: String!
+    # The prefix of the ref, either "", "refs/", "refs/heads/", "refs/pull/", or
+    # "refs/tags/". This prefix is always a prefix of the ref's name.
+    prefix: String!
+    # The type of this Git ref.
+    type: GitRefType!
+    # The object that the ref points to.
+    target: GitObject!
+    # The associated repository.
+    repository: Repository!
+    # The URL to this Git ref.
+    url: String!
+}
+
+# All possible types of Git refs.
+enum GitRefType {
+    # A Git branch (in refs/heads/).
+    GIT_BRANCH
+    # A Git tag (in refs/tags/).
+    GIT_TAG
+    # A Git ref that is neither a branch nor tag.
+    GIT_REF_OTHER
+}
+
+# Ordering options for Git refs.
+enum GitRefOrder {
+    # By the authored or committed at date, whichever is more recent.
+    AUTHORED_OR_COMMITTED_AT
+}
+
+# A Git object.
+type GitObject {
+    # This object's OID.
+    oid: GitObjectID!
+    # The abbreviated form of this object's OID.
+    abbreviatedOID: String!
+    # The commit object, if it is a commit and it exists; otherwise null.
+    commit: GitCommit
+    # The Git object's type.
+    type: GitObjectType!
+}
+
+# All possible types of Git objects.
+enum GitObjectType {
+    # A Git commit object.
+    GIT_COMMIT
+    # A Git tag object.
+    GIT_TAG
+    # A Git tree object.
+    GIT_TREE
+    # A Git blob object.
+    GIT_BLOB
+    # A Git object of unknown type.
+    GIT_UNKNOWN
+}
+
+# A Git revspec expression that (possibly) resolves to a Git revision.
+type GitRevSpecExpr {
+    # The original Git revspec expression.
+    expr: String!
+    # The Git object that the revspec resolves to, or null otherwise.
+    object: GitObject
+}
+
+# A Git revspec.
+union GitRevSpec = GitRef | GitRevSpecExpr | GitObject
+
+# A Git revision range of the form "base..head" or "base...head". Other revision
+# range formats are not supported.
+type GitRevisionRange {
+    # The Git revision range expression of the form "base..head" or "base...head".
+    expr: String!
+    # The base (left-hand side) of the range.
+    base: GitRevSpec!
+    # The base's revspec as an expression.
+    baseRevSpec: GitRevSpecExpr!
+    # The head (right-hand side) of the range.
+    head: GitRevSpec!
+    # The head's revspec as an expression.
+    headRevSpec: GitRevSpecExpr!
+    # The merge-base of the base and head revisions, if this is a "base...head"
+    # revision range. If this is a "base..head" revision range, then this field is null.
+    mergeBase: GitObject
+}
+
+# A Phabricator repository.
+type PhabricatorRepo {
+    # The canonical repo path (e.g. "github.com/gorilla/mux").
+    name: String!
+    # An alias for name.
+    uri: String! @deprecated(reason: "use name instead")
+    # The unique Phabricator identifier for the repo, like "MUX"
+    callsign: String!
+    # The URL to the phabricator instance (e.g. http://phabricator.sgdev.org)
+    url: String!
+}
+
+# A total ref list.
+type TotalRefList {
+    # The repositories.
+    repositories: [Repository!]!
+    # The total.
+    total: Int!
+}
+
+# Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
+type PageInfo {
+    # Whether there is a next page of nodes in the connection.
+    hasNextPage: Boolean!
+}
+
+# A list of Git commits.
+type GitCommitConnection {
+    # A list of Git commits.
+    nodes: [GitCommit!]!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A Git commit.
+type GitCommit implements Node {
+    # The globally addressable ID for this commit.
+    id: ID!
+    # The repository that contains this commit.
+    repository: Repository!
+    # This commit's Git object ID (OID), a 40-character SHA-1 hash.
+    oid: GitObjectID!
+    # The abbreviated form of this commit's OID.
+    abbreviatedOID: String!
+    # This commit's author.
+    author: Signature!
+    # This commit's committer, if any.
+    committer: Signature
+    # The full commit message.
+    message: String!
+    # The first line of the commit message.
+    subject: String!
+    # The contents of the commit message after the first line.
+    body: String
+    # Parent commits of this commit.
+    parents: [GitCommit!]!
+    # The URL to this commit (using the input revision specifier, which may not be immutable).
+    url: String!
+    # The canonical URL to this commit (using an immutable revision specifier).
+    canonicalURL: String!
+    # The URLs to this commit on its repository's external services.
+    externalURLs: [ExternalLink!]!
+    # The Git tree in this commit at the given path.
+    tree(
+        # The path of the tree.
+        path: String = ""
+        # Whether to recurse into sub-trees. If true, it overrides the value of the "recursive" parameter on all of
+        # GitTree's fields.
+        #
+        # DEPRECATED: Use the "recursive" parameter on GitTree's fields instead.
+        recursive: Boolean = false
+    ): GitTree
+    # The Git blob in this commit at the given path.
+    blob(path: String!): GitBlob
+    # The file at the given path for this commit.
+    #
+    # See "File" documentation for the difference between this field and the "blob" field.
+    file(path: String!): File2
+    # Lists the programming languages present in the tree at this commit.
+    languages: [String!]!
+    # The log of commits consisting of this commit and its ancestors.
+    ancestors(
+        # Returns the first n commits from the list.
+        first: Int
+        # Return commits that match the query.
+        query: String
+        # Return commits that affect the path.
+        path: String
+    ): GitCommitConnection!
+    # Returns the number of commits that this commit is behind and ahead of revspec.
+    behindAhead(revspec: String!): BehindAheadCounts!
+    # Symbols defined as of this commit. (All symbols, not just symbols that were newly defined in this commit.)
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
+    # Packages defined in this repository as of this commit, as returned by LSP workspace/xpackages
+    # requests to this repository's language servers.
+    packages(
+        # Returns the first n packages from the list.
+        first: Int
+        # Return packages matching the query.
+        query: String
+    ): PackageConnection!
+    # Dependencies of this repository as of this commit, as returned by LSP workspace/xreferences
+    # requests to this repository's language servers.
+    dependencies(
+        # Returns the first n dependencies from the list.
+        first: Int
+        # Return dependencies matching the query.
+        query: String
+    ): DependencyConnection!
+}
+
+# A set of Git behind/ahead counts for one commit relative to another.
+type BehindAheadCounts {
+    # The number of commits behind the other commit.
+    behind: Int!
+    # The number of commits ahead of the other commit.
+    ahead: Int!
+}
+
+# A signature.
+type Signature {
+    # The person.
+    person: Person!
+    # The date.
+    date: String!
+}
+
+# A person.
+type Person {
+    # The name.
+    name: String!
+    # The email.
+    email: String!
+    # The name if set; otherwise the email username.
+    displayName: String!
+    # The avatar URL.
+    avatarURL: String!
+    # The corresponding user account for this person, if one exists.
+    user: User
+}
+
+# A Git submodule
+type Submodule {
+    # The remote repository URL of the submodule.
+    url: String!
+    # The commit of the submodule.
+    commit: String!
+    # The path to which the submodule is checked out.
+    path: String!
+}
+
+# A file, directory, or other tree entry.
+interface TreeEntry {
+    # The full path (relative to the repository root) of this tree entry.
+    path: String!
+    # The base name (i.e., file name only) of this tree entry.
+    name: String!
+    # Whether this tree entry is a directory.
+    isDirectory: Boolean!
+    # The URL to this tree entry (using the input revision specifier, which may not be immutable).
+    url: String!
+    # The canonical URL to this tree entry (using an immutable revision specifier).
+    canonicalURL: String!
+    # The URLs to this tree entry on external services.
+    externalURLs: [ExternalLink!]!
+    # Symbols defined in this file or directory.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
+    # Submodule metadata if this tree points to a submodule
+    submodule: Submodule
+    # Whether this tree entry is a single child
+    isSingleChild(
+        # Returns the first n files in the tree.
+        first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
+    ): Boolean!
+}
+
+# A Git tree in a repository.
+type GitTree implements TreeEntry {
+    # The full path (relative to the root) of this tree.
+    path: String!
+    # Whether this tree is the root (top-level) tree.
+    isRoot: Boolean!
+    # The base name (i.e., last path component only) of this tree.
+    name: String!
+    # True because this is a directory. (The value differs for other TreeEntry interface implementations, such as
+    # File.)
+    isDirectory: Boolean!
+    # The Git commit containing this tree.
+    commit: GitCommit!
+    # The repository containing this tree.
+    repository: Repository!
+    # The URL to this tree (using the input revision specifier, which may not be immutable).
+    url: String!
+    # The canonical URL to this tree (using an immutable revision specifier).
+    canonicalURL: String!
+    # The URLs to this tree on external services.
+    externalURLs: [ExternalLink!]!
+    # Submodule metadata if this tree points to a submodule
+    submodule: Submodule
+    # A list of directories in this tree.
+    directories(
+        # Returns the first n files in the tree.
+        first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
+    ): [GitTree]!
+    # A list of files in this tree.
+    files(
+        # Returns the first n files in the tree.
+        first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
+    ): [File!]!
+    # A list of entries in this tree.
+    entries(
+        # Returns the first n files in the tree.
+        first: Int
+        # Recurse into sub-trees. If true, implies recursiveSingleChild.
+        recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories. If true, we return a flat list of
+        # every directory that is a single child, and any directories or files that are
+        # nested in a single child.
+        recursiveSingleChild: Boolean = false
+    ): [TreeEntry!]!
+    # Symbols defined in this tree.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
+    # Whether this tree entry is a single child
+    isSingleChild(
+        # Returns the first n files in the tree.
+        first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
+    ): Boolean!
+}
+
+# A file.
+#
+# In a future version of Sourcegraph, a repository's files may be distinct from a repository's blobs
+# (for example, to support searching/browsing generated files that aren't committed and don't exist
+# as Git blobs). Clients should generally use the GitBlob concrete type and GitCommit.blobs (not
+# GitCommit.files), unless they explicitly want to opt-in to different behavior in the future.
+#
+# INTERNAL: This is temporarily named File2 during a migration. Do not refer to the name File2 in
+# any API clients as the name will change soon.
+interface File2 {
+    # The full path (relative to the root) of this file.
+    path: String!
+    # The base name (i.e., file name only) of this file.
+    name: String!
+    # False because this is a file, not a directory.
+    isDirectory: Boolean!
+    # The content of this file.
+    content: String!
+    # Whether or not it is binary.
+    binary: Boolean!
+    # The file rendered as rich HTML, or an empty string if it is not a supported
+    # rich file type.
+    #
+    # This HTML string is already escaped and thus is always safe to render.
+    richHTML: String!
+    # The URL to this file (using the input revision specifier, which may not be immutable).
+    url: String!
+    # The canonical URL to this file (using an immutable revision specifier).
+    canonicalURL: String!
+    # The URLs to this file on external services.
+    externalURLs: [ExternalLink!]!
+    # Highlight the file.
+    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    # Returns dependency references for the file.
+    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
+    # Symbols defined in this file.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
+}
+
+# File is temporarily preserved for backcompat with browser extension search API client code.
+type File {
+    # The full path (relative to the repository root) of this file.
+    path: String!
+    # The base name (i.e., file name only) of this file's path.
+    name: String!
+    # Whether this is a directory.
+    isDirectory: Boolean!
+    # The URL to this file on Sourcegraph.
+    url: String!
+    # The repository that contains this file.
+    repository: Repository!
+}
+
+# A Git blob in a repository.
+type GitBlob implements TreeEntry & File2 {
+    # The full path (relative to the repository root) of this blob.
+    path: String!
+    # The base name (i.e., file name only) of this blob's path.
+    name: String!
+    # False because this is a blob (file), not a directory.
+    isDirectory: Boolean!
+    # The content of this blob.
+    content: String!
+    # Whether or not it is binary.
+    binary: Boolean!
+    # The blob contents rendered as rich HTML, or an empty string if it is not a supported
+    # rich file type.
+    #
+    # This HTML string is already escaped and thus is always safe to render.
+    richHTML: String!
+    # The Git commit containing this blob.
+    commit: GitCommit!
+    # The repository containing this Git blob.
+    repository: Repository!
+    # The URL to this blob (using the input revision specifier, which may not be immutable).
+    url: String!
+    # The canonical URL to this blob (using an immutable revision specifier).
+    canonicalURL: String!
+    # The URLs to this blob on its repository's external services.
+    externalURLs: [ExternalLink!]!
+    # Blame the blob.
+    blame(startLine: Int!, endLine: Int!): [Hunk!]!
+    # Highlight the blob contents.
+    highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
+    # Returns dependency references for the blob.
+    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
+    # Submodule metadata if this tree points to a submodule
+    submodule: Submodule
+    # Symbols defined in this blob.
+    symbols(
+        # Returns the first n symbols from the list.
+        first: Int
+        # Return symbols matching the query.
+        query: String
+    ): SymbolConnection!
+    # Always false, since a blob is a file, not directory.
+    isSingleChild(
+        # Returns the first n files in the tree.
+        first: Int
+        # Recurse into sub-trees.
+        recursive: Boolean = false
+        # Recurse into sub-trees of single-child directories
+        recursiveSingleChild: Boolean = false
+    ): Boolean!
+}
+
+# A highlighted file.
+type HighlightedFile {
+    # Whether or not it was aborted.
+    aborted: Boolean!
+    # The HTML.
+    html: String!
+}
+
+# A file match.
+type FileMatch {
+    # The file containing the match.
+    #
+    # KNOWN ISSUE: This file's "commit" field contains incomplete data.
+    #
+    # KNOWN ISSUE: This field's type should be File! not GitBlob!.
+    file: GitBlob!
+    # The repository containing the file match.
+    repository: Repository!
+    # The resource.
+    resource: String! @deprecated(reason: "use the file field instead")
+    # The symbols found in this file that match the query.
+    symbols: [Symbol!]!
+    # The line matches.
+    lineMatches: [LineMatch!]!
+    # Whether or not the limit was hit.
+    limitHit: Boolean!
+}
+
+# A line match.
+type LineMatch {
+    # The preview.
+    preview: String!
+    # The line number.
+    lineNumber: Int!
+    # Tuples of [offset, length] measured in characters (not bytes).
+    offsetAndLengths: [[Int!]!]!
+    # Whether or not the limit was hit.
+    limitHit: Boolean!
+}
+
+# Dependency references.
+type DependencyReferences {
+    # The dependency reference data.
+    dependencyReferenceData: DependencyReferencesData!
+    # The repository data.
+    repoData: RepoDataMap!
+}
+
+# A repository data map.
+type RepoDataMap {
+    # The repositories.
+    repos: [Repository!]!
+    # The repository IDs.
+    repoIds: [Int!]!
+}
+
+# Dependency references data.
+type DependencyReferencesData {
+    # The references.
+    references: [DependencyReference!]!
+    # The location.
+    location: DepLocation!
+}
+
+# A dependency reference.
+type DependencyReference {
+    # The dependency data.
+    dependencyData: String!
+    # The repository ID.
+    repoId: Int!
+    # The hints.
+    hints: String!
+}
+
+# A dependency location.
+type DepLocation {
+    # The location.
+    location: String!
+    # The symbol.
+    symbol: String!
+}
+
+# A hunk.
+type Hunk {
+    # The startLine.
+    startLine: Int!
+    # The endLine.
+    endLine: Int!
+    # The startByte.
+    startByte: Int!
+    # The endByte.
+    endByte: Int!
+    # The rev.
+    rev: String!
+    # The author.
+    author: Signature!
+    # The message.
+    message: String!
+    # The commit that contains the hunk.
+    commit: GitCommit!
+}
+
+# A list of users.
+type UserConnection {
+    # A list of users.
+    nodes: [User!]!
+    # The total count of users in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    totalCount: Int!
+}
+
+# A user.
+type User implements Node & ConfigurationSubject {
+    # The unique ID for the user.
+    id: ID!
+    # The user's username.
+    username: String!
+    # The unique numeric ID for the user.
+    sourcegraphID: Int! @deprecated(reason: "use id instead")
+    # The user's primary email address.
+    #
+    # Only the user and site admins can access this field.
+    email: String! @deprecated(reason: "use emails instead")
+    # The display name chosen by the user.
+    displayName: String
+    # The URL of the user's avatar image.
+    avatarURL: String
+    # The URL to the user's profile on Sourcegraph.
+    url: String!
+    # The URL to the user's settings.
+    settingsURL: String!
+    # The date when the user account was created on Sourcegraph.
+    createdAt: String!
+    # The date when the user account was last updated on Sourcegraph.
+    updatedAt: String
+    # Whether the user is a site admin.
+    #
+    # Only the user and site admins can access this field.
+    siteAdmin: Boolean!
+    # The latest settings for the user.
+    #
+    # Only the user and site admins can access this field.
+    latestSettings: Settings
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
+    configurationCascade: ConfigurationCascade!
+    # The organizations that this user is a member of.
+    organizations: OrgConnection!
+    # This user's organization memberships.
+    organizationMemberships: OrganizationMembershipConnection!
+    # Tags associated with the user. These are used for internal site management and feature selection.
+    #
+    # Only the user and site admins can access this field.
+    tags: [String!]!
+    # The user's usage activity on Sourcegraph.
+    #
+    # Only the user and site admins can access this field.
+    activity: UserActivity!
+    # The user's email addresses.
+    #
+    # Only the user and site admins can access this field.
+    emails: [UserEmail!]!
+    # The user's access tokens (which grant to the holder the privileges of the user). This consists
+    # of all access tokens whose subject is this user.
+    #
+    # Only the user and site admins can access this field.
+    accessTokens(
+        # Returns the first n access tokens from the list.
+        first: Int
+    ): AccessTokenConnection!
+    # A list of external accounts that are associated with the user.
+    externalAccounts(
+        # Returns the first n external accounts from the list.
+        first: Int
+    ): ExternalAccountConnection!
+    # The user's currently active session.
+    #
+    # Only the currently authenticated user can access this field. Site admins are not able to access sessions for
+    # other users.
+    session: Session!
+    # Whether the viewer has admin privileges on this user. The user has admin privileges on their own user, and
+    # site admins have admin privileges on all users.
+    viewerCanAdminister: Boolean!
+    # The user's survey responses.
+    #
+    # Only the user and site admins can access this field.
+    surveyResponses: [SurveyResponse!]!
+}
+
+# An access token that grants to the holder the privileges of the user who created it.
+type AccessToken implements Node {
+    # The unique ID for the access token.
+    id: ID!
+    # The user whose privileges the access token grants.
+    subject: User!
+    # The scopes that define the allowed set of operations that can be performed using this access token.
+    scopes: [String!]!
+    # A user-supplied descriptive note for the access token.
+    note: String!
+    # The user who created the access token. This is either the subject user (if the access token
+    # was created by the same user) or a site admin (who can create access tokens for any user).
+    creator: User!
+    # The date when the access token was created.
+    createdAt: String!
+    # The date when the access token was last used to authenticate a request.
+    lastUsedAt: String
+}
+
+# A list of access tokens.
+type AccessTokenConnection {
+    # A list of access tokens.
+    nodes: [AccessToken!]!
+    # The total count of access tokens in the connection. This total count may be larger than the number of nodes
+    # in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A list of authentication providers.
+type AuthProviderConnection {
+    # A list of authentication providers.
+    nodes: [AuthProvider!]!
+    # The total count of authentication providers in the connection. This total count may be larger than the number of nodes
+    # in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A provider of user authentication, such as an external single-sign-on service (e.g., using OpenID
+# Connect or SAML).
+type AuthProvider {
+    # The type of the auth provider.
+    serviceType: String!
+    # An identifier for the service that the auth provider represents.
+    serviceID: String!
+    # An identifier for the client of the service that the auth provider represents.
+    clientID: String!
+    # The human-readable name of the provider.
+    displayName: String!
+    # Whether this auth provider is the builtin username-password auth provider.
+    isBuiltin: Boolean!
+    # A URL that, when visited, initiates the authentication process for this auth provider.
+    authenticationURL: String
+}
+
+# A list of external accounts.
+type ExternalAccountConnection {
+    # A list of external accounts.
+    nodes: [ExternalAccount!]!
+    # The total count of external accounts in the connection. This total count may be larger than the number of nodes
+    # in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# An external account associated with a user.
+type ExternalAccount implements Node {
+    # The unique ID for the external account.
+    id: ID!
+    # The user on Sourcegraph.
+    user: User!
+    # The type of the external service where the external account resides.
+    serviceType: String!
+    # An identifier for the external service where the external account resides.
+    serviceID: String!
+    # An identifier for the client of the external service where the external account resides. This distinguishes
+    # among multiple authentication providers that access the same service with different parameters.
+    clientID: String!
+    # An identifier for the external account (typically equal to or derived from the ID on the external service).
+    accountID: String!
+    # The creation date of this external account on Sourcegraph.
+    createdAt: String!
+    # The last-updated date of this external account on Sourcegraph.
+    updatedAt: String!
+    # A URL that, when visited, re-initiates the authentication process.
+    refreshURL: String
+    # Provider-specific data about the external account.
+    #
+    # Only site admins may query this field.
+    accountData: JSONValue
+}
+
+# An active user session.
+type Session {
+    # Whether the user can sign out of this session on Sourcegraph.
+    canSignOut: Boolean!
+}
+
+# An organization membership.
+type OrganizationMembership {
+    # The organization.
+    organization: Org!
+    # The user.
+    user: User!
+    # The time when this was created.
+    createdAt: String!
+    # The time when this was updated.
+    updatedAt: String!
+}
+
+# A list of organization memberships.
+type OrganizationMembershipConnection {
+    # A list of organization memberships.
+    nodes: [OrganizationMembership!]!
+    # The total count of organization memberships in the connection. This total count may be larger than the number
+    # of nodes in this object when the result is paginated.
+    totalCount: Int!
+}
+
+# A user's email address.
+type UserEmail {
+    # The email address.
+    email: String!
+    # Whether the email address has been verified by the user.
+    verified: Boolean!
+    # Whether the email address is pending verification.
+    verificationPending: Boolean!
+    # The user associated with this email address.
+    user: User!
+    # Whether the viewer has privileges to manually mark this email address as verified (without the user going
+    # through the normal verification process). Only site admins have this privilege.
+    viewerCanManuallyVerify: Boolean!
+}
+
+# A list of organizations.
+type OrgConnection {
+    # A list of organizations.
+    nodes: [Org!]!
+    # The total count of organizations in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    totalCount: Int!
+}
+
+# An organization, which is a group of users.
+type Org implements Node & ConfigurationSubject {
+    # The unique ID for the organization.
+    id: ID!
+    # The organization's name. This is unique among all organizations on this Sourcegraph site.
+    name: String!
+    # The organization's chosen display name.
+    displayName: String
+    # The date when the organization was created, in RFC 3339 format.
+    createdAt: String!
+    # A list of users who are members of this organization.
+    members: UserConnection!
+    # The latest settings for the organization.
+    #
+    # Only organization members and site admins can access this field.
+    latestSettings: Settings
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
+    configurationCascade: ConfigurationCascade!
+    # A pending invitation for the viewer to join this organization, if any.
+    viewerPendingInvitation: OrganizationInvitation
+    # Whether the viewer has admin privileges on this organization. Currently, all of an organization's members
+    # have admin privileges on the organization.
+    viewerCanAdminister: Boolean!
+    # Whether the viewer is a member of this organization.
+    viewerIsMember: Boolean!
+    # The URL to the organization.
+    url: String!
+    # The URL to the organization's settings.
+    settingsURL: String!
+    # A list of extensions published by this organization in the extension registry.
+}
+
+# The result of Mutation.inviteUserToOrganization.
+type InviteUserToOrganizationResult {
+    # Whether an invitation email was sent. If emails are not enabled on this site or if the user has no verified
+    # email address, an email will not be sent.
+    sentInvitationEmail: Boolean!
+    # The URL that the invited user can visit to accept or reject the invitation.
+    invitationURL: String!
+}
+
+# An invitation to join an organization as a member.
+type OrganizationInvitation implements Node {
+    # The ID of the invitation.
+    id: ID!
+    # The organization that the invitation is for.
+    organization: Org!
+    # The user who sent the invitation.
+    sender: User!
+    # The user who received the invitation.
+    recipient: User!
+    # The date when this invitation was created.
+    createdAt: String!
+    # The most recent date when a notification was sent to the recipient about this invitation.
+    notifiedAt: String
+    # The date when this invitation was responded to by the recipient.
+    respondedAt: String
+    # The recipient's response to this invitation, or no response (null).
+    responseType: OrganizationInvitationResponseType
+    # The URL where the recipient can respond to the invitation when pending, or null if not pending.
+    respondURL: String
+    # The date when this invitation was revoked.
+    revokedAt: String
+}
+
+# The recipient's possible responses to an invitation to join an organization as a member.
+enum OrganizationInvitationResponseType {
+    # The invitation was accepted by the recipient.
+    ACCEPT
+    # The invitation was rejected by the recipient.
+    REJECT
+}
+
+# Status about management capabilities for language servers.
+type LanguageServerManagementStatus {
+    # Whether this site can manage (enable/disable/restart/update) language servers on its own.
+    #
+    # Even if this field's value is true, individual language servers may not be manageable. Clients must check the
+    # LangServer.canXyz fields.
+    #
+    # Always false on Data Center.
+    siteCanManage: Boolean!
+    # The reason why the site can't manage language servers, if siteCanManage == false.
+    reason: String
+}
+
+# The possible configuration states of a language server.
+enum LangServerState {
+    # The language server is neither enabled nor disabled. When a repo for this
+    # language is visited by any user, it will be enabled.
+    LANG_SERVER_STATE_NONE
+    # The language server was enabled by a plain user or admin user.
+    LANG_SERVER_STATE_ENABLED
+    # The language server was disabled by an admin user.
+    LANG_SERVER_STATE_DISABLED
+}
+
+# A language server.
+type LangServer {
+    # "go", "java", "typescript", etc.
+    language: String!
+    # "Go", "Java", "TypeScript", "PHP", etc.
+    displayName: String!
+    # Whether or not this language server should be considered experimental.
+    #
+    # Has no effect on behavior, only effects how the language server is presented e.g. in the UI.
+    experimental: Boolean!
+    # URL to the language server's homepage, if available.
+    homepageURL: String
+    # URL to the language server's open/known issues, if available.
+    issuesURL: String
+    # URL to the language server's documentation, if available.
+    docsURL: String
+    # Whether or not we are running in Data Center mode.
+    dataCenter: Boolean!
+    # Whether or not this is a custom language server (i.e. one that does not
+    # come built in with Sourcegraph).
+    custom: Boolean!
+    # The current configuration state of the language server.
+    #
+    # For custom language servers, this field is never LANG_SERVER_STATE_NONE.
+    state: LangServerState!
+    # Whether or not the language server is being downloaded, starting, restarting.
+    #
+    # Always false in Data Center and for custom language servers.
+    pending: Boolean!
+    # Whether or not the language server is being downloaded.
+    #
+    # Always false in Data Center and for custom language servers.
+    downloading: Boolean!
+    # Whether or not the current user can enable the language server or not.
+    #
+    # Always false in Data Center.
+    canEnable: Boolean!
+    # Whether or not the current user can disable the language server or not.
+    #
+    # Always false in Data Center.
+    canDisable: Boolean!
+    # Whether or not the current user can restart the language server or not.
+    #
+    # Always false in Data Center and for custom language servers.
+    canRestart: Boolean!
+    # Whether or not the current user can update the language server or not.
+    #
+    # Always false in Data Center and for custom language servers.
+    canUpdate: Boolean!
+    # Indicates whether or not the language server is healthy or
+    # unhealthy. Examples include:
+    #
+    #   Healthy:
+    #       - Server is running, experiencing no issues.
+    #       - Server is not running, currently being downloaded.
+    #       - Server is not running, currently starting or restarting.
+    #
+    #   Unhealthy:
+    #       - Server is running, experiencing restarts / OOMs often.
+    #       - Server is not running, an error is preventing startup.
+    #
+    # The value is true ("healthy") if the language server is not enabled.
+    #
+    # Always false in Data Center and for custom language servers.
+    healthy: Boolean!
+}
+
+# An object defining a selection range within e.g. a file.
+type DiscussionSelectionRange {
+    # The line that the selection started on (zero-based, inclusive).
+    startLine: Int!
+
+    # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
+    startCharacter: Int!
+
+    # The line that the selection ends on (zero-based, exclusive).
+    endLine: Int!
+
+    # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
+    endCharacter: Int!
+}
+
+# A selection within a file.
+type DiscussionThreadTargetRepoSelection {
+    # The line that the selection started on (zero-based, inclusive).
+    startLine: Int!
+
+    # The character (not byte) of the start line that the selection began on (zero-based, inclusive).
+    startCharacter: Int!
+
+    # The line that the selection ends on (zero-based, exclusive).
+    endLine: Int!
+
+    # The character (not byte) of the end line that the selection ended on (zero-based, exclusive).
+    endCharacter: Int!
+
+    # The literal textual (UTF-8) lines before the line the selection started
+    # on.
+    #
+    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
+    linesBefore: [String!]!
+
+    # The literal textual (UTF-8) lines of the selection. i.e. all lines
+    # startLine through endLine.
+    lines: [String!]!
+
+    # The literal textual (UTF-8) lines after the line the selection ended on.
+    #
+    # This is an arbitrary number of lines, and may be zero lines, but typically 3.
+    linesAfter: [String!]!
+}
+
+# A discussion thread that is centered around:
+#
+# - A repository.
+# - A directory inside a repository.
+# - A file inside a repository.
+# - A selection inside a file inside a repository.
+#
+type DiscussionThreadTargetRepo {
+    # The repository in which the thread was created.
+    repository: Repository!
+
+    # The path (relative to the repository root) of the file or directory that
+    # the thread is referencing, if any. If the path is null, the thread is not
+    # talking about a specific path but rather just the repository generally.
+    path: String
+
+    # The branch or other human-readable Git ref (e.g. "HEAD~2", but not exact
+    # Git revision), that the thread was referencing, if any.
+    #
+    # TODO(slimsag:discussions): Consider renaming this to e.g. "ref" or
+    # something else which properly communicates "this can be any Git
+    # branch/tag/abbreviated revision/ref *except* an absolute Git revision"
+    branch: GitRef
+
+    # The exact revision that the thread was referencing, if any.
+    revision: GitRef
+
+    # The selection that the thread was referencing, if any.
+    selection: DiscussionThreadTargetRepoSelection
+
+    # Where the path would be relative to the given Git revision specifier
+    # (branch/commit/etc). i.e., accounting for file renames, deletions, etc.
+    #
+    # null is returned if there is no path relative to the specified revision,
+    # e.g. if the file was deleted or the path field was null.
+    relativePath(rev: String!): String
+
+    # Where the selection would be relative to the given Git revision specifier
+    # (branch/commit/etc).
+    #
+    # The implementation relies on a hueristic which is generally good enough,
+    # but under certain circumstances may not be as accurate as e.g. determining
+    # this placement by walking through the Git history.
+    #
+    # If determining the relative placement is not possible (file was renamed
+    # or removed, the selection no longer exists in the file, or the hueristic
+    # failed) null is returned and it should be assumed the selection does not
+    # exist in this revision.
+    relativeSelection(rev: String!): DiscussionSelectionRange
+}
+
+# The target of a discussion thread. Today, the only possible target is a
+# repository. In the future, this may be extended to include other targets such
+# as user profiles, extensions, etc. Clients should ignore target types they
+# do not understand gracefully.
+union DiscussionThreadTarget = DiscussionThreadTargetRepo
+
+# A discussion thread around some target (e.g. a file in a repo).
+type DiscussionThread {
+    # The discussion thread ID (globally unique).
+    id: ID!
+
+    # The user who authored this discussion thread.
+    author: User!
+
+    # The title of the thread.
+    #
+    # Note: the contents of the thread (its 'body') is always the first comment
+    # in the thread. It is always present, even if the user e.g. input no content.
+    title: String!
+
+    # The target of this discussion thread.
+    target: DiscussionThreadTarget!
+
+    # The URL at which this thread can be viewed inline (i.e. in the file blob view).
+    #
+    # This will be null if the thread target is not DiscussionThreadTargetRepo
+    # OR if it was created without a path string.
+    inlineURL: String
+
+    # The date when the discussion thread was created.
+    createdAt: String!
+
+    # The date when the discussion thread was last updated.
+    updatedAt: String!
+
+    # The date when the discussion thread was archived (or null if it has not).
+    archivedAt: String
+
+    # The comments in the discussion thread.
+    comments(
+        # Returns the first n comments from the list.
+        first: Int
+    ): DiscussionCommentConnection!
+}
+
+# A comment made within a discussion thread.
+type DiscussionComment {
+    # The discussion comment ID (globally unique).
+    id: ID!
+
+    # The discussion thread the comment was made in.
+    thread: DiscussionThread!
+
+    # The user who authored this discussion thread.
+    author: User!
+
+    # The actual markdown contents of the comment.
+    #
+    # If the comment was created without any contents (after trimming whitespace)
+    # then the title of the thread will be returned.
+    contents: String!
+
+    # The markdown contents rendered as an HTML string. It is already sanitized
+    # and escaped and thus is always safe to render.
+    #
+    # If the comment was created without any contents (after trimming whitespace)
+    # then the title of the thread will be returned.
+    html(options: MarkdownOptions): String!
+
+    # The URL at which this thread can be viewed inline (i.e. in the file blob view).
+    #
+    # This will be null if the thread was created without a path string.
+    inlineURL: String
+
+    # The date when the discussion thread was created.
+    createdAt: String!
+
+    # The date when the discussion thread was last updated.
+    updatedAt: String!
+
+    # Reports filed by users about this comment. Only admins will receive a non
+    # empty list of reports.
+    #
+    # When discussions.abuseProtection in the site config is set to false, this
+    # will always be an empty list.
+    reports: [String!]!
+
+    # Whether or not the comment can be reported.
+    #
+    # This is always false when discussions.abuseProtection in the site config is set to false.
+    canReport: Boolean!
+
+    # Whether or not the comment can be deleted.
+    canDelete: Boolean!
+
+    # Whether or not the comment can have its reports be cleared.
+    #
+    # This is always false when discussions.abuseProtection in the site config is set to false.
+    canClearReports: Boolean!
+}
+
+# A list of discussion threads.
+type DiscussionThreadConnection {
+    # A list of discussion threads.
+    nodes: [DiscussionThread!]!
+
+    # The total count of discussion threads in the connection. This total
+    # count may be larger than the number of nodes in this object when the
+    # result is paginated.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A list of discussion comments.
+type DiscussionCommentConnection {
+    # A list of discussion comments.
+    nodes: [DiscussionComment!]!
+
+    # The total count of discussion comments in the connection. This total
+    # count may be larger than the number of nodes in this object when the
+    # result is paginated.
+    totalCount: Int!
+
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# RepoOrderBy enumerates the ways a repositories-list result set can
+# be ordered.
+enum RepoOrderBy {
+    REPO_URI
+    REPO_CREATED_AT
+}
+
+# A site is an installation of Sourcegraph that consists of one or more
+# servers that share the same configuration and database.
+#
+# The site is a singleton; the API only ever returns the single global site.
+type Site implements ConfigurationSubject {
+    # The site's opaque GraphQL ID. This is NOT the "site ID" as it is referred to elsewhere;
+    # use the siteID field for that. (GraphQL node types conventionally have an id field of type
+    # ID! that globally identifies the node.)
+    id: ID!
+    # The site ID.
+    siteID: String!
+    # The site's configuration. Only visible to site admins.
+    configuration: SiteConfiguration!
+    # The site's latest site-wide settings (which are the lowest-precedence
+    # in the configuration cascade for a user).
+    latestSettings: Settings
+    # Deprecated settings specified in the site configuration "settings" field. These are distinct from a site's
+    # latestSettings (which are stored in the DB) and are applied at the lowest level of precedence.
+    deprecatedSiteConfigurationSettings: String
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
+    configurationCascade: ConfigurationCascade!
+    # The URL to the site's settings.
+    settingsURL: String!
+    # Whether the viewer can reload the site (with the reloadSite mutation).
+    canReloadSite: Boolean!
+    # Whether the viewer can modify the subject's configuration.
+    viewerCanAdminister: Boolean!
+    # Lists all language servers.
+    langServers: [LangServer!]!
+    # The language server for a given language (if exists, otherwise null)
+    langServer(language: String!): LangServer
+    # The status of language server management capabilities.
+    #
+    # Only site admins may view this field.
+    languageServerManagementStatus: LanguageServerManagementStatus
+    # A list of all access tokens on this site.
+    accessTokens(
+        # Returns the first n access tokens from the list.
+        first: Int
+    ): AccessTokenConnection!
+    # A list of all authentication providers.
+    authProviders: AuthProviderConnection!
+    # A list of all user external accounts on this site.
+    externalAccounts(
+        # Returns the first n external accounts from the list.
+        first: Int
+        # Include only external accounts associated with this user.
+        user: ID
+        # Include only external accounts with this service type.
+        serviceType: String
+        # Include only external accounts with this service ID.
+        serviceID: String
+        # Include only external accounts with this client ID.
+        clientID: String
+    ): ExternalAccountConnection!
+    # The name of the Sourcegraph product that is used on this site ("Sourcegraph Server" or "Sourcegraph Data
+    # Center" when running in production).
+    productName: String!
+    # The build version of the Sourcegraph software that is running on this site (of the form
+    # NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
+    buildVersion: String!
+    # The product version of the Sourcegraph software that is running on this site.
+    productVersion: String!
+    # Information about software updates for the version of Sourcegraph that this site is running.
+    updateCheck: UpdateCheck!
+    # Whether the site needs to be configured to add repositories.
+    needsRepositoryConfiguration: Boolean!
+    # Whether the site has zero access-enabled repositories.
+    noRepositoriesEnabled: Boolean!
+    # Whether the site configuration has validation problems or deprecation notices.
+    configurationNotice: Boolean!
+    # Whether the site has code intelligence. This field will be expanded in the future to describe
+    # more about the code intelligence available (languages supported, etc.). It is subject to
+    # change without notice.
+    hasCodeIntelligence: Boolean!
+    # Whether the site is using an external authentication service such as OIDC or SAML.
+    externalAuthEnabled: Boolean!
+    # Whether we want to show built-in searches on the saved searches page
+    disableBuiltInSearches: Boolean!
+    # Whether the server sends emails to users to verify email addresses. If false, then site admins must manually
+    # verify users' email addresses.
+    sendsEmailVerificationEmails: Boolean!
+    # Information about this site's product subscription status.
+    productSubscription: ProductSubscriptionStatus!
+    # The activity.
+    activity(
+        # Days of history.
+        days: Int
+        # Weeks of history.
+        weeks: Int
+        # Months of history.
+        months: Int
+    ): SiteActivity!
+}
+
+# The configuration for a site.
+type SiteConfiguration {
+    # The effective configuration JSON. This will lag behind the pendingContents
+    # if the site configuration was updated but the server has not yet restarted.
+    effectiveContents: String!
+    # The pending configuration JSON, which will become effective after the next
+    # server restart. This is set if the site configuration has been updated since
+    # the server started.
+    pendingContents: String
+    # Messages describing validation problems or usage of deprecated configuration in the configuration JSON
+    # (pendingContents if it exists, otherwise effectiveContents). This includes both JSON Schema validation
+    # problems and other messages that perform more advanced checks on the configuration (that can't be expressed
+    # in the JSON Schema).
+    validationMessages: [String!]!
+    # Whether the viewer can update the site configuration (using the
+    # updateSiteConfiguration mutation).
+    canUpdate: Boolean!
+    # The source of the configuration as a human-readable description,
+    # referring to either the on-disk file path or the SOURCEGRAPH_CONFIG
+    # env var.
+    source: String!
+}
+
+# Information about software updates for Sourcegraph.
+type UpdateCheck {
+    # Whether an update check is currently in progress.
+    pending: Boolean!
+    # When the last update check was completed, or null if no update check has
+    # been completed (or performed) yet.
+    checkedAt: String
+    # If an error occurred during the last update check, this message describes
+    # the error.
+    errorMessage: String
+    # If an update is available, the version string of the updated version.
+    updateVersionAvailable: String
+}
+
+# ConfigurationSubject is something that can have configuration.
+interface ConfigurationSubject {
+    # The ID.
+    id: ID!
+    # The latest settings.
+    latestSettings: Settings
+    # The URL to the settings.
+    settingsURL: String!
+    # Whether the viewer can modify the subject's configuration.
+    viewerCanAdminister: Boolean!
+    # The configuration cascade including this subject and all applicable subjects whose configuration is lower
+    # precedence than this subject.
+    configurationCascade: ConfigurationCascade!
+}
+
+# The configurations for all of the relevant configuration subjects, plus the merged configuration.
+type ConfigurationCascade {
+    # The other configuration subjects that are applied with lower precedence than this subject to
+    # form the final configuration. For example, a user in 2 organizations would have the following
+    # configuration subjects: site (global settings), org 1, org 2, and the user.
+    subjects: [ConfigurationSubject!]!
+    # The effective configuration, merged from all of the subjects.
+    merged: Configuration!
+}
+
+# Settings is a version of a configuration settings file.
+type Settings {
+    # The ID.
+    id: Int!
+    # The configuration.
+    configuration: Configuration!
+    # The subject that these settings are for.
+    subject: ConfigurationSubject!
+    # The author.
+    author: User!
+    # The time when this was created.
+    createdAt: String!
+    # The contents.
+    contents: String! @deprecated(reason: "use configuration.contents instead")
+}
+
+# Configuration contains settings from (possibly) multiple settings files.
+type Configuration {
+    # The raw JSON contents, encoded as a string.
+    contents: String!
+    # Error and warning messages about the configuration.
+    messages: [String!]!
+}
+
+# A list of packages.
+type PackageConnection {
+    # A list of packages.
+    nodes: [Package!]!
+    # The total count of packages in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A package represents a grouping of code that is returned by a language server in response to a
+# workspace/xpackages request.
+#
+# See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+type Package implements Node {
+    # The ID of the package.
+    id: ID!
+    # The repository commit that defines the package.
+    definingCommit: GitCommit!
+    # The programming language used to define the package.
+    language: String!
+    # The package descriptor, as returned by the language server's workspace/xpackages LSP method. The attribute
+    # names and values are defined by each language server and should generally be considered opaque.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    data: [KeyValue!]!
+    # This package's dependencies, as returned by the language server's workspace/xpackages LSP method.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    dependencies: [Dependency!]!
+    # The list of references (from only this repository at the definingCommit) to definitions in this package.
+    #
+    # If this operation is not supported (by the language server), this field's value will be null.
+    internalReferences: ReferenceConnection
+    # The list of references (from other repositories' packages) to definitions in this package. Currently this
+    # lists packages that refer to this package, NOT individual call/reference sites within those referencing
+    # packages (unlike internalReferences, which does list individual call sites). If this operation is not
+    # supported (by the language server), this field's value will be null.
+    #
+    # EXPERIMENTAL: This field is experimental. It is subject to change. Please report any issues you see, and
+    # contact support for help.
+    externalReferences: ReferenceConnection
+}
+
+# A list of dependencies.
+type DependencyConnection {
+    # A list of dependencies.
+    nodes: [Dependency!]!
+    # The total count of dependencies in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# A dependency represents a dependency relationship between two units of code. It is derived from data returned by
+# a language server in response to a workspace/xreferences request.
+#
+# See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+type Dependency implements Node {
+    # The ID of the dependency.
+    id: ID!
+    # The repository commit that depends on the unit of code described by this resolver's other fields.
+    dependingCommit: GitCommit!
+    # The programming language of the dependency.
+    language: String!
+    # The dependency attributes, as returned by the language server's workspace/xdependencies LSP method. The
+    # attribute names and values are defined by each language server and should generally be considered opaque.
+    # They generally overlap with the package descriptor's fields in the Package type.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    data: [KeyValue!]!
+    # Hints that can be passed to workspace/xreferences to speed up retrieval of references to this dependency.
+    # These hints are returned by the language server's workspace/xdependencies LSP method. The attribute names and
+    # values are defined by each language server and should generally be considered opaque.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    hints: [KeyValue!]!
+    # The list of references (in the depending commit's code files) to definitions in this dependency.
+    #
+    # If this operation is not supported (by the language server), this field's value will be null.
+    #
+    # EXPERIMENTAL: This field is experimental. It is subject to change. Please report any issues you see, and
+    # contact support for help.
+    references: ReferenceConnection
+}
+
+# An opaque value of any type.
+scalar OpaqueValue
+
+# A key-value pair.
+type KeyValue {
+    # The key.
+    key: String!
+    # The value, which can be of any type.
+    value: OpaqueValue!
+}
+
+# A list of code references (e.g., function calls, variable references, package import statements, etc.), as
+# returned by language server(s) over LSP.
+#
+# NOTE: The actual references (which would be expected to be available in the "nodes" field) are not exposed. This
+# is because currently there are no API consumers that need them. In the future, they will be available here, but
+# in the meantime, consumers can provide the searchQuery to the Query.search GraphQL resolver to retrieve
+# references.
+type ReferenceConnection {
+    # The total count of references in this connection. If an exact count is not available, then this field's value
+    # will be null; consult the approximateCount field instead.
+    totalCount: Int
+    # The approximate count of references in this connection. If counting is not supported, then this field's value
+    # will be null.
+    approximateCount: ApproximateCount
+    # The search query (for Sourcegraph search) that matches references in this connection.
+    #
+    # The query string does not include any repo:REPO@REV tokens (even if this connection would seem to warrant
+    # the inclusion of such tokens). Therefore, clients must add those tokens if they wish to constrain the search
+    # to only certain repositories and revisions. (This is so that clients can use the nice revision instead of the
+    # 40-character Git commit SHA if desired.)
+    queryString: String!
+    # The symbol descriptor query to pass to language servers in the LSP workspace/xreferences request to retrieve
+    # all references in this connection. This is derived from the attributes data of this connection's subject
+    # (e.g., Package.data or Dependency.data). The attribute names and values are defined by each language server
+    # and should generally be considered opaque.
+    #
+    # The ordering is not meaningful.
+    #
+    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
+    symbolDescriptor: [KeyValue!]!
+}
+
+# An approximate count. To display this to the user, use ApproximateCount.label as the number and use
+# ApproximateCount.count to determine whether to pluralize the noun (if any) adjacent to the label.
+type ApproximateCount {
+    # The count, which may be inexact. This number is always the prefix of the label field.
+    count: Int!
+    # Whether the count finished and is exact.
+    exact: Boolean!
+    # A textual label that approximates the count (e.g., "99+" if the counting is cut off at 99).
+    label: String!
+}
+
+# UserActivity describes a user's activity on the site.
+type UserActivity {
+    # The number of search queries that the user has performed.
+    searchQueries: Int!
+    # The number of page views that the user has performed.
+    pageViews: Int!
+    # The number of code intelligence actions that the user has performed.
+    codeIntelligenceActions: Int!
+    # The last time the user was active (any action, any platform).
+    lastActiveTime: String
+    # The last time the user was active on a code host integration.
+    lastActiveCodeHostIntegrationTime: String
+}
+
+# A user event.
+enum UserEvent {
+    PAGEVIEW
+    SEARCHQUERY
+    CODEINTEL
+    CODEINTELINTEGRATION
+}
+
+# A period of time in which a set of users have been active.
+enum UserActivePeriod {
+    # Since today at 00:00 UTC.
+    TODAY
+    # Since the latest Monday at 00:00 UTC.
+    THIS_WEEK
+    # Since the first day of the current month at 00:00 UTC.
+    THIS_MONTH
+    # All time.
+    ALL_TIME
+}
+
+# SiteActivity describes a site's aggregate activity level.
+type SiteActivity {
+    # Recent daily active users.
+    daus: [SiteActivityPeriod!]!
+    # Recent weekly active users.
+    waus: [SiteActivityPeriod!]!
+    # Recent monthly active users.
+    maus: [SiteActivityPeriod!]!
+}
+
+# SiteActivityPeriod describes a site's activity level for a given timespan.
+type SiteActivityPeriod {
+    # The time when this started.
+    startTime: String!
+    # The user count.
+    userCount: Int!
+    # The registered user count.
+    registeredUserCount: Int!
+    # The anonymous user count.
+    anonymousUserCount: Int!
+    # The count of registered users that have been active on a code host integration.
+    # Excludes anonymous users.
+    integrationUserCount: Int!
+}
+
+# A deployment configuration.
+type DeploymentConfiguration {
+    # The email.
+    email: String
+    # The site ID.
+    siteID: String
+}
+
+# A list of survey responses
+type SurveyResponseConnection {
+    # A list of survey responses.
+    nodes: [SurveyResponse!]!
+    # The total count of survey responses in the connection. This total count may be larger
+    # than the number of nodes in this object when the result is paginated.
+    totalCount: Int!
+    # The count of survey responses submitted since 30 calendar days ago at 00:00 UTC.
+    last30DaysCount: Int!
+    # The average score of survey responses in the connection submitted since 30 calendar days ago at 00:00 UTC.
+    averageScore: Float!
+    # The net promoter score (NPS) of survey responses in the connection submitted since 30 calendar days ago at 00:00 UTC.
+    # Return value is a signed integer, scaled from -100 (all detractors) to +100 (all promoters).
+    #
+    # See https://en.wikipedia.org/wiki/Net_Promoter for explanation.
+    netPromoterScore: Int!
+}
+
+# An individual response to a user satisfaction (NPS) survey.
+type SurveyResponse {
+    # The unique ID of the survey response
+    id: ID!
+    # The user who submitted the survey (if they were authenticated at the time).
+    user: User
+    # The email that the user manually entered (if they were NOT authenticated at the time).
+    email: String
+    # User's likelihood of recommending Sourcegraph to a friend, from 0-10.
+    score: Int!
+    # The answer to "What is the most important reason for the score you gave".
+    reason: String
+    # The answer to "What can Sourcegraph do to provide a better product"
+    better: String
+    # The time when this response was created.
+    createdAt: String!
+}
+
+# Information about this site's product subscription (which enables access to and renewals of a product license).
+type ProductSubscriptionStatus {
+    # The actual total number of users on this Sourcegraph site.
+    actualUserCount: Int!
+    # The product license associated with this subscription, if any.
+    license: ProductLicenseInfo
+}
+
+# Information about this site's product license (which activates certain Sourcegraph features).
+type ProductLicenseInfo {
+    # The name of the product plan associated with the license.
+    plan: String!
+    # The number of users allowed by this license, or null if there is no limit.
+    userCount: Int
+    # The date when this license expires, or null if there is no expiration.
+    expiresAt: String
+}
+
+# An extension registry.
+type ExtensionRegistry {
+    # Find an extension by its extension ID (which is the concatenation of the publisher name, a slash ("/"), and the
+    # extension name).
+    #
+    # To find an extension by its GraphQL ID, use Query.node.
+    extension(extensionID: String!): RegistryExtension
+    # A list of extensions published in the extension registry.
+    extensions(
+        # Returns the first n extensions from the list.
+        first: Int
+        # Returns only extensions from this publisher.
+        publisher: ID
+        # Returns only extensions matching the query.
+        query: String
+        # Include extensions from the local registry.
+        local: Boolean = true
+        # Include extensions from remote registries.
+        remote: Boolean = true
+        # Sorts the list of extension results such that the extensions with these IDs are first in the result set.
+        #
+        # Typically, the client passes the list of added and enabled extension IDs in this parameter so that the
+        # results include those extensions first (which is typically what the user prefers).
+        prioritizeExtensionIDs: [String!]
+    ): RegistryExtensionConnection!
+    # A list of publishers with at least 1 extension in the registry.
+    publishers(
+        # Return the first n publishers from the list.
+        first: Int
+    ): RegistryPublisherConnection!
+    # A list of publishers that the viewer may publish extensions as.
+    viewerPublishers: [RegistryPublisher!]!
+    # The extension ID prefix for extensions that are published in the local extension registry. This is the
+    # hostname (and port, if non-default HTTP/HTTPS) of the Sourcegraph "appURL" site configuration property.
+    #
+    # It is null if extensions published on this Sourcegraph site do not have an extension ID prefix.
+    #
+    # Examples: "sourcegraph.example.com/", "sourcegraph.example.com:1234/"
+    localExtensionIDPrefix: String
+}
+
+# A publisher of a registry extension.
+union RegistryPublisher = User | Org
+
+# A list of publishers of extensions in the registry.
+type RegistryPublisherConnection {
+    # A list of publishers.
+    nodes: [RegistryPublisher!]!
+    # The total count of publishers in the connection. This total count may be larger than the number of
+    # nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+}
+
+# Mutations for the extension registry.
+type ExtensionRegistryMutation {
+    # Create a new extension in the extension registry.
+    createExtension(
+        # The ID of the extension's publisher (a user or organization).
+        publisher: ID!
+        # The name of the extension.
+        name: String!
+    ): ExtensionRegistryCreateExtensionResult!
+    # Update an extension in the extension registry.
+    #
+    # Only authorized extension publishers may perform this mutation.
+    updateExtension(
+        # The extension to update.
+        extension: ID!
+        # The new name for the extension, or null to leave unchanged.
+        name: String
+    ): ExtensionRegistryUpdateExtensionResult!
+    # Delete an extension from the extension registry.
+    #
+    # Only authorized extension publishers may perform this mutation.
+    deleteExtension(
+        # The ID of the extension to delete.
+        extension: ID!
+    ): EmptyResponse!
+    # Publish an extension in the extension registry, creating it (if it doesn't yet exist) or updating it (if it
+    # does).
+    #
+    # This is a helper that wraps multiple other GraphQL mutations to expose a single API for publishing an
+    # extension.
+    publishExtension(
+        # The extension ID of the extension to publish. If a host prefix (e.g., "sourcegraph.example.com/") is
+        # needed and it is not included, it is automatically prepended.
+        #
+        # Examples: "alice/myextension", "acmecorp/myextension"
+        extensionID: String!
+        # The extension manifest (as JSON).
+        manifest: String!
+        # The bundled JavaScript source of the extension.
+        bundle: String
+        # The source map of the extension's JavaScript bundle, if any.
+        #
+        # The JavaScript bundle's "//# sourceMappingURL=" directive, if any, is ignored. When the bundle is served,
+        # the source map provided here is referenced instead.
+        sourceMap: String
+        # Force publish even if there are warnings (such as invalid JSON warnings).
+        force: Boolean = false
+    ): ExtensionRegistryCreateExtensionResult!
+}
+
+# The result of Mutation.extensionRegistry.createExtension.
+type ExtensionRegistryCreateExtensionResult {
+    # The newly created extension.
+    extension: RegistryExtension!
+}
+
+# The result of Mutation.extensionRegistry.updateExtension.
+type ExtensionRegistryUpdateExtensionResult {
+    # The newly updated extension.
+    extension: RegistryExtension!
+}
+
+# The result of Mutation.extensionRegistry.publishExtension.
+type ExtensionRegistryPublishExtensionResult {
+    # The extension that was just published.
+    extension: RegistryExtension!
+}
+
+# An extension's listing in the extension registry.
+type RegistryExtension implements Node {
+    # The unique, opaque, permanent ID of the extension. Do not display this ID to the user; display
+    # RegistryExtension.extensionID instead (it is friendlier and still unique, but it can be renamed).
+    id: ID!
+    # The UUID of the extension. This identifies the extension externally (along with the origin). The UUID maps
+    # 1-to-1 to RegistryExtension.id.
+    uuid: String!
+    # The publisher of the extension. If this extension is from a remote registry, the publisher may be null.
+    publisher: RegistryPublisher
+    # The qualified, unique name that refers to this extension, consisting of the registry name (if non-default),
+    # publisher's name, and the extension's name, all joined by "/" (for example, "acme-corp/my-extension-name").
+    extensionID: String!
+    # The extension ID without the registry name.
+    extensionIDWithoutRegistry: String!
+    # The name of the extension (not including the publisher's name).
+    name: String!
+    # The extension manifest, or null if none is set.
+    manifest: ExtensionManifest
+    # The date when this extension was created on the registry.
+    createdAt: String
+    # The date when this extension was last updated on the registry.
+    updatedAt: String
+    # The URL to the extension on this Sourcegraph site.
+    url: String!
+    # The URL to the extension on the extension registry where it lives (if this is a remote
+    # extension). If this extension is local, then this field's value is null.
+    remoteURL: String
+    # The name of this extension's registry.
+    registryName: String!
+    # Whether the registry extension is published on this Sourcegraph site.
+    isLocal: Boolean!
+    # Whether the viewer has admin privileges on this registry extension.
+    viewerCanAdminister: Boolean!
+}
+
+# A description of the extension, how to run or access it, and when to activate it.
+type ExtensionManifest {
+    # The raw JSON contents of the manifest.
+    raw: String!
+    # The title specified in the manifest, if any.
+    title: String
+    # The description specified in the manifest, if any.
+    description: String
+    # The URL to the bundled JavaScript source code for the extension, if any.
+    bundleURL: String
+}
+
+# A list of registry extensions.
+type RegistryExtensionConnection {
+    # A list of registry extensions.
+    nodes: [RegistryExtension!]!
+    # The total count of registry extensions in the connection. This total count may be larger than the number of
+    # nodes in this object when the result is paginated.
+    totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
+    # The URL to this list, or null if none exists.
+    url: String
+    # Errors that occurred while communicating with remote registries to obtain the list of extensions.
+    #
+    # In order to be able to return local extensions even when the remote registry is unreachable, errors are
+    # recorded here instead of in the top-level GraphQL errors list.
+    error: String
+}
+
+# Mutations that are only used on Sourcegraph.com.
+#
+# FOR INTERNAL USE ONLY.
+type DotcomMutation {
+    # Generates and returns a new Sourcegraph license key (signed with Sourcegraph.com's private key and verifiable
+    # with the corresponding public key).
+    #
+    # Only Sourcegraph.com site admins may perform this mutation.
+    #
+    # FOR INTERNAL USE ONLY.
+    generateSourcegraphLicenseKey(
+        # The name of the plan associated with the license.
+        plan: String!
+        # The maximum number of users for which this license is valid (or null if the license has no user limit).
+        maxUserCount: Int
+        # The expiration date of this license (when it is no longer valid), expressed as the number of seconds
+        # since the epoch.
+        expiresAt: Int
+    ): String!
+}

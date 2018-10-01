@@ -1,0 +1,9 @@
+.repository {
+    &__blob-alert {
+        font-family: $font-family-base;
+        color: #93a9c8;
+        background-color: #1c2736;
+        display: flex;
+        padding: 0.5rem;
+    }
+}

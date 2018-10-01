@@ -1,0 +1,25 @@
+$dropdown-bg: var(--dropdown-bg);
+$dropdown-divider-bg: var(--border-color);
+$dropdown-link-color: var(--body-color);
+$dropdown-link-hover-color: var(--body-color);
+$dropdown-link-hover-bg: var(--dropdown-link-hover-bg);
+$dropdown-link-active-color: white;
+$dropdown-link-active-bg: var(--primary);
+$dropdown-link-disabled-color: var(--text-muted);
+$dropdown-header-color: var(--dropdown-header-color);
+
+@import 'bootstrap/scss/dropdown';
+
+.theme-dark {
+    --dropdown-bg: #{$color-bg-4};
+    --dropdown-border-color: #{$color-border};
+    --dropdown-link-hover-bg: #{$color-bg-2};
+    --dropdown-header-color: #{$color-text-1};
+}
+
+.theme-light {
+    --dropdown-bg: var(--body-bg);
+    --dropdown-border-color: #{$color-light-border};
+    --dropdown-link-hover-bg: #{$color-light-bg-2};
+    --dropdown-header-color: #{$color-light-text-2};
+}

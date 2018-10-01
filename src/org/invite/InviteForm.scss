@@ -1,0 +1,26 @@
+.invite-form {
+    &__container {
+        margin-bottom: 1rem;
+        width: fit-content;
+    }
+
+    &__status {
+        padding-top: 0.5rem;
+        overflow: hidden;
+    }
+
+    &__alert {
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+    }
+}
+
+.invited-notification {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+
+    &__message {
+        flex: 1;
+    }
+}

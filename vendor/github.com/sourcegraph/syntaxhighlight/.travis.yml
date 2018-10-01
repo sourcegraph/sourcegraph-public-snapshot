@@ -1,0 +1,14 @@
+language: go
+go_import_path: github.com/sourcegraph/syntaxhighlight
+go:
+  - 1.6.x
+  - 1.7.x
+  - 1.8.x
+  - master
+install:
+  - go get -t -v ./...
+script:
+  - diff -u <(echo -n) <(gofmt -d ./)
+  - go tool vet -composites=false ./*.go
+  - go tool vet -composites=false ./cmd/
+  - go test -v -race -bench=. -benchmem ./...

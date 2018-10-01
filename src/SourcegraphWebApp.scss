@@ -1,0 +1,277 @@
+/*
+This is the main entry point for all styles
+It should import all component stylesheets
+*/
+
+// Use duplicate selectors for the light-theme
+// stylelint-disable no-duplicate-selectors
+
+// Media breakpoints
+$media-sm: 576px;
+$media-md: 768px;
+$media-lg: 992px;
+$media-xl: 1200px;
+
+@import 'open-color/open-color.scss';
+@import './global-styles/colors';
+
+// Bootstrap configuration before Bootstrap is imported
+$border-radius: 2px;
+$border-radius-sm: 1px;
+$border-radius-lg: 4px;
+$font-size-base: 0.875rem;
+$line-height-base: (20/14);
+
+$grid-gutter-width: 1.5rem;
+$container-max-widths: (
+    xl: 74rem,
+);
+
+// Tell Bootstrap to use colors from OpenColor
+$blue: $oc-blue-7;
+$indigo: $oc-indigo-7;
+$purple: $oc-violet-7;
+$pink: $oc-pink-7;
+$red: $oc-red-7;
+$orange: $oc-orange-7;
+$yellow: $oc-yellow-7;
+$green: $oc-green-7;
+$teal: $oc-teal-7;
+$cyan: $oc-cyan-7;
+
+$primary: $blue;
+$secondary: #2b3750;
+$success: $green;
+$info: $cyan;
+$warning: $yellow;
+$danger: $red;
+$secondary-light: darken($gray-01, 5%);
+
+$theme-colors-light: (
+    'secondary': $secondary-light,
+);
+
+:root {
+    --primary: #{$primary};
+    --secondary: #{$secondary};
+    --success: #{$success};
+    --info: #{$info};
+    --warning: #{$warning};
+    --danger: #{$danger};
+}
+.theme-light {
+    --secondary: #{$secondary-light};
+}
+
+$body-color: var(--body-color);
+$body-bg: var(--body-bg);
+
+$text-muted: var(--text-muted);
+
+// Borders
+$border-color: var(--border-color);
+.theme-dark {
+    --border-color: #{$color-border};
+}
+.theme-light {
+    --border-color: #{$color-light-border};
+}
+
+// Links
+
+$link-color: var(--link-color);
+$link-hover-color: var(--link-hover-color);
+
+// Alerts
+
+$alert-bg-level: 5;
+$alert-border-level: -1;
+$alert-color-level: -10;
+
+$alert-bg-level-light: -10;
+$alert-border-level-light: -9;
+$alert-color-level-light: 6;
+
+// Forms
+
+$input-btn-focus-width: 2px;
+$input-focus-border-color: $primary;
+
+// Forms don't manipulate the colors at compile time,
+// which is why we can use CSS variables for theming here
+// That's nice because the forms theming CSS would otherwise
+// be way more complex than it is for other components
+$input-bg: var(--input-bg);
+$input-disabled-bg: var(--input-disabled-bg);
+$input-border-color: var(--input-border-color);
+$input-color: var(--input-color);
+$input-placeholder-color: var(--input-placeholder-color);
+$input-group-addon-color: var(--input-group-addon-color);
+$input-group-addon-bg: var(--input-group-addon-bg);
+$input-group-addon-border-color: var(--input-group-addon-border-color);
+
+// Tables
+
+$table-cell-padding: 0.625rem;
+$table-hover-bg: #0e121b;
+$table-border-color: #2b3750;
+
+$table-hover-bg-light: #f2f4f8;
+$table-border-color-light: #e4e9f1;
+
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/utilities';
+@import 'bootstrap/scss/grid';
+@import 'bootstrap/scss/tooltip';
+@import './global-styles/badge';
+@import './global-styles/breadcrumb';
+@import './global-styles/card';
+@import './global-styles/dropdown';
+@import './global-styles/nav';
+@import './global-styles/type';
+@import './global-styles/icons';
+@import './global-styles/list-group';
+@import './global-styles/tables';
+@import './global-styles/code';
+@import './global-styles/buttons';
+@import './global-styles/alert';
+@import './global-styles/forms';
+@import './global-styles/highlight';
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    // Base for layout rem values
+    font-size: 16px;
+}
+
+body {
+    height: 100vh;
+    display: flex;
+}
+
+// React root element
+// stylelint-disable-next-line selector-max-id
+#root {
+    display: flex;
+    width: 100%;
+}
+
+// Selection highlight is the background color for matched/highlighted tokens,
+// e.g. for search results, for identifying the token currently being hovered over,
+// or identifying the token the references panel is toggled for
+.selection-highlight {
+    background-color: rgba(217, 72, 15, 0.5);
+}
+// Same as above, but indicates highlighting for a fixed hover (vs. e.g.
+// an ephemeral mouseover on some token).
+.selection-highlight-sticky {
+    background-color: rgba(217, 72, 15, 0.5);
+}
+
+.theme-light {
+    .selection-highlight {
+        background-color: rgba(255, 192, 120, 0.5);
+    }
+
+    .selection-highlight-sticky {
+        background-color: rgba(255, 192, 120, 0.5);
+    }
+}
+
+.app {
+    &__error {
+        > hr {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            border-color: #93a9c8;
+        }
+
+        &-text {
+            margin-top: 1rem;
+            background-color: #233043;
+            padding: 1rem;
+        }
+    }
+}
+
+hr {
+    margin-top: 1.5rem;
+    margin-bottom: 1.5rem;
+    background-color: #93a9c8;
+    height: 0.0625rem;
+    border: none;
+}
+
+.form-control::placeholder {
+    opacity: 0.5;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+// Pages
+@import './Layout';
+@import './api/APIConsole';
+@import './explore/ExplorePage';
+@import './discussions/DiscussionsPage';
+@import './extensions/ExtensionsArea';
+@import './extensions/extension/ExtensionArea';
+@import './global/GlobalAlerts';
+@import './global/GlobalDebug';
+@import './search/input/ScopePage';
+@import './search/input/SearchPage';
+@import './search/results/SearchResults';
+@import './settings/SettingsFile';
+@import './site-admin/SiteInitPage';
+@import './site-admin/SiteAdmin';
+@import './site-admin/SiteAdminOverviewPage';
+@import './tree/Tree';
+@import './nav/GlobalNavbar';
+@import './nav/NavLinks';
+@import './auth/ResetPasswordPage';
+@import './auth/SignInPage';
+@import './auth/SignUpPage';
+@import './repo/GitRefTag';
+@import './repo/Repository';
+@import './repo/RepoContainer';
+@import './repo/settings/RepoSettingsArea';
+@import './components/CopyableText';
+@import './components/FilteredConnection';
+@import './components/SaveToolbar';
+@import './components/CodeExcerpt';
+@import './components/DecoratedTextLines';
+@import './components/HeroPage';
+@import './components/Markdown';
+@import './components/ModalPage';
+@import './components/MonacoEditor';
+@import './components/PopoverButton';
+@import './components/Overview';
+@import './components/RadioButtons';
+@import './components/tooltip/Tooltip';
+@import './components/HelpPopover';
+@import './global/OpenHelpPopoverButton';
+@import './user/account/UserAccountArea';
+@import './site-admin/SiteAdminAlert';
+@import './site/DockerForMacAlert';
+@import './user/area/UserArea';
+@import './org/OrgsArea';
+@import './open/OpenPage';
+@import './components/AnimatedAlert';
+@import './components/DismissibleAlert';
+@import './components/ThemeSwitcher';
+@import './extension/Link';
+@import './marketing/SurveyPage';
+@import './components/SingleValueCard';
+
+@import './extensions/extensions-client-common';

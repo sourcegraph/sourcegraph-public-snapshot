@@ -1,0 +1,84 @@
+@import '../search/input/SearchButton';
+@import '../search/input/QueryInput';
+
+.tree-page {
+    overflow-y: auto;
+    padding: 1rem 2rem;
+    flex: 1;
+
+    &__title {
+        display: flex;
+        align-items: center;
+        margin-left: -0.5rem; // icon flush with left
+    }
+
+    &__section {
+        margin-bottom: 1.75rem;
+
+        &-header {
+            margin-bottom: 0.125rem;
+        }
+
+        &-search {
+            width: 100%;
+            max-width: 48rem;
+            display: flex;
+            .search-help {
+                margin-left: 0.25rem;
+                // stylelint-disable-next-line declaration-property-unit-whitelist
+                margin-top: -2px;
+            }
+        }
+
+        &--commits,
+        &--discussions {
+            width: 100%;
+            max-width: 64rem;
+        }
+    }
+
+    &__entries {
+        display: grid;
+        width: 100%;
+        grid-column-gap: 2.25rem;
+
+        &-directories {
+            grid-template-columns: repeat(auto-fill, minmax(7rem, auto));
+        }
+        &-files {
+            grid-template-columns: repeat(auto-fill, minmax(13rem, auto));
+        }
+    }
+
+    .git-commit-node {
+        padding-left: 0;
+        padding-right: 0;
+        .git-commit-node__message-subject {
+            opacity: 0.9;
+        }
+        .btn {
+            opacity: 0.85;
+        }
+    }
+}
+
+.tree-entry {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    margin-left: -0.25rem;
+    padding: 0.125rem 0.25rem;
+    &:hover {
+        background-color: $color-bg-1;
+    }
+}
+
+.theme-light {
+    .tree-entry {
+        &:hover {
+            background-color: $color-light-bg-2;
+        }
+    }
+}

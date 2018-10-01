@@ -1,0 +1,15 @@
+.site-admin-survey-responses-summary {
+    &__container {
+        display: flex;
+    }
+
+    &__item {
+        flex: 1 1;
+    }
+}
+
+.site-admin-survey-responses-connection {
+    &__wide-border {
+        border-width: 3px !important;
+    }
+}

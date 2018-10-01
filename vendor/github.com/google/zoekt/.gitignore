@@ -1,0 +1,6 @@
+*~
+cmd/zoekt-index/zoekt-index
+cmd/zoekt-webserver/zoekt-webserver
+cmd/zoekt-mirror-github/zoekt-mirror-github
+cmd/zoekt-server/zoekt-server
+cmd/zoekt-git-index/zoekt-git-index

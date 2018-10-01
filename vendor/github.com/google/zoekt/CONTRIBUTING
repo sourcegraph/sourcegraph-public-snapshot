@@ -1,0 +1,36 @@
+
+Before sending a patch, please fill out a Google CLA,
+using the following form:
+
+  https://cla.developers.google.com/clas
+
+For submitting patches, please use gerrit:
+
+* Make sure all tests pass:
+
+    go test github.com/google/zoekt/...
+
+* Add the following to your .git/config:
+
+    [remote "gerrit"]
+            url = https://gerrit.googlesource.com/zoekt
+            fetch = +refs/heads/*:refs/remotes/origin/*
+
+* Create an account at https://gerrit-review.googlesource.com/
+  and follow `Settings -> HTTP Credentials -> Obtain password`
+
+* Add a Change ID to the bottom of your commit message: run the following,
+  and append its output to your commmit message
+
+    echo "Change-Id: I"$(head -c 20 /dev/urandom | sha1sum | awk '{print $1}')
+
+  Or install the hook:
+
+    curl -Lo .git/hooks/commit-msg https://gerrit-review.googlesource.com/tools/hooks/commit-msg
+    chmod +x .git/hooks/commit-msg
+
+* Upload to gerrit:
+
+    git push gerrit HEAD:refs/for/master
+
+* Add hanwen@google.com as a reviewer in the Web UI

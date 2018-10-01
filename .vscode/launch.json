@@ -1,0 +1,168 @@
+{
+  "version": "0.1.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Mocha Tests",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "args": ["--require", "ts-node/register", "--colors", "--no-timeouts", "src/**/*.test.ts?(x)"],
+      "env": {
+        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
+      },
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Mocha E2E Tests",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
+      "args": [
+        "--require",
+        "ts-node/register",
+        "--require",
+        "src/util/long-stack-traces.ts",
+        "--colors",
+        "--no-timeouts",
+        "src/**/*.test.e2e.ts?(x)",
+        "--bail"
+      ],
+      "internalConsoleOptions": "openOnSessionStart",
+      "env": {
+        // "SOURCEGRAPH_BASE_URL": "https://sourcegraph.com",
+        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
+      }
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Gulp",
+      "cwd": "${workspaceFolder}",
+      "program": "${workspaceFolder}/node_modules/gulp/bin/gulp.js",
+      "args": ["webpack"],
+      "env": {
+        "TS_NODE_COMPILER_OPTIONS": "{\"module\":\"commonjs\"}"
+      },
+      "internalConsoleOptions": "openOnSessionStart"
+    },
+    {
+      "name": "ui",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "webRoot": "${workspaceRoot}",
+      "url": "http://localhost:3080/*",
+      "sourceMaps": true
+    },
+    {
+      "name": "Attach to gitserver",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2345,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to indexer",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2346,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to query-runner",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2347,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to repo-updater",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2348,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to searcher",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2349,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to symbols",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2350,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to github-proxy",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2351,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to lsp-proxy",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2352,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    },
+    {
+      "name": "Attach to frontend",
+      "type": "go",
+      "request": "launch",
+      "mode": "remote",
+      "remotePath": "${workspaceRoot}",
+      "port": 2354,
+      "host": "127.0.0.1",
+      "program": "${workspaceRoot}",
+      "env": {},
+      "args": []
+    }
+  ]
+}

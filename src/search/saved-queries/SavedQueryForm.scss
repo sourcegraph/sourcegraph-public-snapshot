@@ -1,0 +1,37 @@
+.saved-query-form {
+    padding: 1rem;
+    border: 1px solid $color-border;
+
+    &__close {
+        float: right;
+    }
+
+    &__save-location-options {
+        padding-right: 1rem;
+    }
+
+    &__save-location-input {
+        margin-right: 0.25rem;
+    }
+}
+
+.modal-container {
+    .saved-query-form {
+        background: $color-bg-1;
+    }
+
+    // modal already has a close button
+    .saved-query-form__close {
+        display: none;
+    }
+}
+
+.theme-light {
+    .saved-query-form {
+        background: $color-light-bg-1;
+        border: 1px solid $color-light-border;
+        .form-control {
+            background: $color-light-bg-1;
+        }
+    }
+}

@@ -1,0 +1,119 @@
+@keyframes highlight {
+    0% {
+        background: #2a3a51;
+    }
+
+    100% {
+        background: var(--theme-bg-plain);
+    }
+}
+
+.discussions-comment {
+    &:first-of-type {
+        border-top: none;
+    }
+
+    &--targeted {
+        .discussions-comment__content {
+            animation: highlight 3s;
+        }
+    }
+
+    &__top-area {
+        display: flex;
+        line-height: 1rem;
+        border-bottom: 1px solid #2a3a51;
+        border-top: 1px solid #2a3a51;
+        padding: 0.125rem 0.5rem;
+        background: $color-bg-2;
+    }
+    &__top-right-area {
+        display: flex;
+        align-items: center;
+    }
+
+    &__author {
+        display: flex;
+        align-items: center;
+    }
+    &__spacer {
+        flex: 1;
+    }
+
+    &__content {
+        background: var(--theme-bg-plain);
+        padding: 1rem;
+    }
+
+    &__share,
+    &__report {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        height: 2rem;
+    }
+
+    &__toolbar-btn,
+    &__share,
+    &__report {
+        padding: 0.425rem 0.175rem;
+    }
+
+    &__reports:hover {
+        text-decoration: underline;
+    }
+    &__admin {
+        background: $color-bg-5;
+        color: var(--link-color);
+        height: 100%;
+        display: flex;
+        align-items: center;
+        border-radius: 1rem;
+        padding-left: 0.5rem;
+        padding-right: 0.325rem;
+    }
+}
+
+@keyframes highlight-light {
+    0% {
+        background: $color-light-bg-3;
+    }
+
+    100% {
+        background: var(--theme-bg-plain);
+    }
+}
+
+.theme-light {
+    .discussions-comment {
+        &:first-of-type {
+            border: none;
+        }
+
+        &--targeted {
+            .discussions-comment__content {
+                animation: highlight-light 3s;
+            }
+        }
+
+        &__top-area {
+            border-color: $color-light-border;
+            background: $color-light-bg-2;
+        }
+
+        &__content {
+            code,
+            pre {
+                background: $color-light-bg-4;
+            }
+
+            blockquote {
+                color: $color-light-text-2;
+            }
+        }
+
+        &__admin {
+            background: $color-light-bg-3;
+        }
+    }
+}

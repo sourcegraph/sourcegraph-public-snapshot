@@ -1,0 +1,38 @@
+// Global class for alerts with an animated background (typically displayed as global alerts).
+.alert-animated-bg {
+    // Higher visibility.
+    color: white;
+
+    border-radius: 0;
+    border-width: 0 0 1px 0;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(0, 0, 0, 0.06) 10px,
+        rgba(0, 0, 0, 0.06) 20px
+    ) !important;
+    animation: moving-stripes 0.7s linear infinite;
+
+    &__link {
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+        &:hover span.underline {
+            text-decoration: underline;
+        }
+
+        &-icon {
+            margin-right: 0.25rem;
+        }
+    }
+}
+
+@keyframes moving-stripes {
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 30px 0;
+    }
+}

@@ -1,0 +1,26 @@
+.global-alerts {
+    flex: none;
+    width: 100%;
+
+    &__alert {
+        width: 100%;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        margin-bottom: 0 !important;
+
+        border-radius: 0;
+        border-width: 0 0 1px 0;
+
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        font-size: 16px;
+    }
+
+    &__motd {
+        // The trailing after-paragraph/list margin looks unbalanced in MOTDs.
+        p:last-child,
+        ul:last-child,
+        ol:last-child {
+            margin-bottom: 0;
+        }
+    }
+}

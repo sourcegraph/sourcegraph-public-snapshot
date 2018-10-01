@@ -1,0 +1,23 @@
+.help-popover {
+    position: absolute;
+    top: 1.5rem;
+    right: 0.95rem;
+    z-index: 50; // Overlay any page contents
+    width: 18rem;
+    max-width: 90vw;
+    margin: 0 1rem;
+
+    box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    border-radius: 0.25rem;
+    border: solid 1px $color-border;
+
+    &__close {
+        margin-right: -0.25rem;
+    }
+}
+
+.theme-light {
+    .help-popover {
+        border-color: $color-light-border;
+    }
+}

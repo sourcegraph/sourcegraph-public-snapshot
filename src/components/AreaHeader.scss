@@ -1,0 +1,90 @@
+.simple-area-header {
+    background-color: $color-bg-4;
+}
+.theme-light {
+    .simple-area-header {
+        background-color: $color-light-bg-2;
+        border-top: solid 1px $color-light-border;
+    }
+}
+
+.area-header {
+    padding: 1.25rem 0.25rem 0 0.5rem;
+    border-top: solid 1px transparent;
+    border-bottom: solid 1px $color-border;
+
+    &__nav {
+        display: flex;
+        flex-wrap: wrap-reverse;
+        align-items: flex-start;
+
+        &-links {
+            flex: 1;
+            white-space: nowrap;
+            margin-top: 0.25rem;
+        }
+        &-link {
+            padding-top: 0.425rem;
+            margin-right: 0.25rem;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            margin-bottom: -1px; // obscure header border below active link
+
+            // Suppress focus ring.
+            outline: 0 !important;
+            box-shadow: none !important;
+
+            border-top: solid 3px transparent;
+            border-right: solid 1px transparent;
+            border-bottom: solid 1px transparent;
+            border-left: solid 1px transparent;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+
+            &--active,
+            &--active:hover {
+                background-color: $color-bg-1;
+                border-top-color: $primary;
+                border-right-color: $color-border;
+                border-left-color: $color-border;
+                color: $color-text;
+            }
+        }
+
+        &-actions {
+            flex: 0 auto;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            &-label {
+                opacity: 0.6;
+                margin-right: 0.25rem;
+            }
+        }
+        &-action {
+            display: inline-block;
+            margin: 0.25rem;
+        }
+    }
+}
+
+// stylelint-disable-next-line no-duplicate-selectors
+.theme-light {
+    .area-header {
+        background-color: $color-light-bg-2;
+        border-top-color: $color-light-border;
+        border-bottom-color: $color-light-border;
+
+        &__nav {
+            &-link {
+                &--active,
+                &--active:hover {
+                    background-color: $color-light-bg-1;
+                    border-top-color: $primary;
+                    border-right-color: $color-light-border;
+                    border-left-color: $color-light-border;
+                    color: $color-light-text-1;
+                }
+            }
+        }
+    }
+}

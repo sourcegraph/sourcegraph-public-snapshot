@@ -1,0 +1,22 @@
+.discussions-input-mention-overlay {
+    &__list-group {
+        display: inline-block;
+    }
+    &__list-group-item {
+        color: $color-text-2;
+        background-color: $color-bg-2;
+    }
+    &__text-muted {
+        /* Because the text-muted .list-group-item .active color is very inaccessible / has awful contrast */
+        color: $gray-06 !important;
+    }
+}
+
+.theme-light {
+    .discussions-input-mention-overlay {
+        &__list-group-item {
+            color: $color-light-text-2;
+            background-color: $color-light-bg-2;
+        }
+    }
+}

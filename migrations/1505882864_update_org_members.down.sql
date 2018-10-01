@@ -1,0 +1,1 @@
+ALTER TABLE org_members ALTER COLUMN display_name DROP NOT NULL;

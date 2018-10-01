@@ -1,0 +1,5 @@
+*.out
+*.[68]
+_obj
+_test
+_testmain.go

@@ -1,0 +1,9 @@
+.monaco-editor-container {
+    border: solid 1px #2b3750;
+}
+
+.theme-light {
+    .monaco-editor-container {
+        border-color: $color-light-border;
+    }
+}

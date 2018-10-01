@@ -1,0 +1,28 @@
+@import '../../components/AreaHeader';
+
+.user-header {
+    &__title {
+        display: flex;
+        align-items: center;
+
+        margin-bottom: 0.75rem;
+        font-weight: normal;
+
+        &-subtitle {
+            padding-left: 0.5rem;
+            opacity: 0.75;
+            font-size: 20px;
+        }
+    }
+
+    &__avatar {
+        width: 6rem;
+        margin-right: 1rem;
+        .avatar-icon {
+            // Scale proportionally.
+            width: 100%;
+            height: auto;
+            max-height: 10rem;
+        }
+    }
+}

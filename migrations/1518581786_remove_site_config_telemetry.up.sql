@@ -1,0 +1,1 @@
+ALTER TABLE site_config DROP COLUMN enable_telemetry;

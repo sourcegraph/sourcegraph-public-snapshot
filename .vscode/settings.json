@@ -1,0 +1,20 @@
+{
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "tslint.nodePath": "./node_modules",
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "dist": true,
+    "ui/assets": true
+  },
+  "files.associations": {
+    "**/dev/config.json": "jsonc"
+  },
+  "json.schemas": [
+    {
+      "fileMatch": ["dev/config.json"],
+      "url": "/schema/site.schema.json"
+    }
+  ],
+  "editor.formatOnSave": true
+}

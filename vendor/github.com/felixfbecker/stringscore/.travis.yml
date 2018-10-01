@@ -1,0 +1,27 @@
+language: go
+
+go:
+  - 1.8
+
+sudo: false
+
+install:
+  - # Skip
+
+script:
+  - go get -t -v ./...
+  - diff -u <(echo -n) <(gofmt -d .)
+  - go tool vet .
+  - |
+    set -e
+    echo "" > coverage.txt
+    for d in $(go list ./... | grep -v vendor); do
+      go test -race -coverprofile=profile.out -covermode=atomic $d
+      if [ -f profile.out ]; then
+        cat profile.out >> coverage.txt
+        rm profile.out
+      fi
+    done
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

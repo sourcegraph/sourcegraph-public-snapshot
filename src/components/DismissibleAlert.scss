@@ -1,0 +1,11 @@
+.dismissible-alert {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.75rem;
+    margin-bottom: 0;
+
+    &__content {
+        flex: 1 1 auto;
+        display: flex;
+    }
+}

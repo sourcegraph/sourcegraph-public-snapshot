@@ -1,0 +1,1 @@
+ALTER TABLE repo DROP COLUMN private;

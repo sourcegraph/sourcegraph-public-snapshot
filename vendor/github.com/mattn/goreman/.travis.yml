@@ -1,0 +1,21 @@
+language: go
+go_import_path: github.com/mattn/goreman
+
+os: linux
+dist: trusty
+sudo: false
+
+install:
+  - echo 'nothing to do'
+
+script:
+  - go test ./...
+
+go:
+  - 1.10.x
+  - 1.11.x
+  - master
+
+cache:
+  directories:
+    - $GOPATH/pkg

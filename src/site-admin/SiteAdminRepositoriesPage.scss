@@ -1,0 +1,65 @@
+.add-public-repository-form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    padding: 1.5rem;
+    border: 1px solid $color-border;
+
+    &__form {
+        display: flex;
+        flex: 1 1 auto;
+    }
+    &__title {
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    &__alert {
+        margin-top: 1rem;
+    }
+    &__input-scope {
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        background: #1c2736;
+        border: 1px solid $color-border;
+        border-right: 0;
+        border-radius: 0.25rem 0 0 0.25rem;
+        &-text {
+            opacity: 0.5;
+        }
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    &__input-container {
+        display: flex;
+        flex: 1 0 auto;
+        position: relative;
+
+        &-input-text {
+            width: 100%;
+        }
+    }
+    &__add-button {
+        margin-left: 0.5rem;
+        padding: 0 1rem;
+    }
+}
+
+.theme-light {
+    .add-public-repository-form {
+        border-color: $color-light-border;
+
+        &__input-scope {
+            background: $color-light-bg-2;
+            border-color: $color-light-border;
+        }
+    }
+}
+
+.repository-node {
+    &__actions {
+        flex: 0 0 auto;
+    }
+}

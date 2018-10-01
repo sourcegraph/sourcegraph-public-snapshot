@@ -1,0 +1,18 @@
+@import '../../components/Area';
+@import './RepoSettingsIndexPage';
+@import './RepoSettingsMirrorPage';
+@import './RepoSettingsOptionsPage';
+@import './RepoSettingsSidebar';
+
+.repo-settings-area {
+    overflow: auto;
+    &__header {
+        &-item {
+            padding-left: 0.25rem;
+            font-weight: bold;
+        }
+        &-btn {
+            display: inline-flex;
+        }
+    }
+}

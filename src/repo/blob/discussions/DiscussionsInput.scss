@@ -1,0 +1,42 @@
+@import './DiscussionsInputMentionOverlay.scss';
+
+.discussions-input {
+    padding: 1rem;
+    border-bottom: 1px solid #212c45;
+
+    &__text-box {
+        min-height: 7rem;
+    }
+    &__preview {
+        padding: 1rem;
+        min-height: 7rem;
+    }
+
+    &__title {
+        margin-bottom: 1rem;
+    }
+
+    &__row {
+        text-align: right;
+        margin-top: 1rem;
+    }
+
+    &__error {
+        margin-top: 0.5rem;
+        display: flex;
+    }
+
+    &__error-icon {
+        margin-right: 0.25rem;
+    }
+}
+
+.theme-light {
+    .discussions-input {
+        border-color: $color-light-border;
+
+        &__button {
+            color: $color-light-text-4;
+        }
+    }
+}

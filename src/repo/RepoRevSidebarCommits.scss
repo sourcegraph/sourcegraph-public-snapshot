@@ -1,0 +1,53 @@
+.repo-rev-sidebar-commits {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    &-node {
+        &__link {
+            display: block;
+            padding: 0.125rem 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: $secondary;
+            &--active,
+            &:hover {
+                background-color: $color-bg-2;
+            }
+        }
+
+        &__name {
+            color: $color-text-2;
+        }
+
+        &__message {
+            &::before {
+                content: ' – ';
+            }
+
+            .theme-dark & {
+                color: #566e9f;
+            }
+        }
+    }
+}
+
+.theme-light {
+    .repo-rev-sidebar-commits {
+        &-node {
+            &__link {
+                color: $color-light-text-2;
+                &--active,
+                &:hover {
+                    background-color: $color-light-bg-3;
+                }
+            }
+
+            &__name {
+                color: $color-light-text-1;
+            }
+        }
+    }
+}

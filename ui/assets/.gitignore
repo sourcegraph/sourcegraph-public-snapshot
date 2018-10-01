@@ -1,0 +1,7 @@
+*.js
+*.css
+*.svg
+!fonts/*.css
+*.map
+!img/**
+*.DS_Store

@@ -1,0 +1,1 @@
+DROP TABLE saved_queries;

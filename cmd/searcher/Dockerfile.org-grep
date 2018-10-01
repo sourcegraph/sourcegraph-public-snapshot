@@ -1,0 +1,12 @@
+# Dockerfile for running org-grep. This is to make it convenient to test searcher in
+# the same datacenter as a production environment.
+#
+# $ docker build -f Dockerfile.org-grep -t org-grep .
+# $ docker run --rm=true org-grep github.com/sourcegraph/go-langserver vscode
+FROM python:3-alpine
+
+RUN pip install requests==2.18.4
+
+COPY org-grep.py /org-grep.py
+
+ENTRYPOINT ["python", "/org-grep.py"]

@@ -1,0 +1,63 @@
+@import '../components/Breadcrumb';
+@import './actions/CopyLinkAction';
+@import './RepositoriesPopover';
+@import './RepoHeaderBreadcrumbNavItem';
+
+.repo-header {
+    flex: none;
+    padding-top: 0.125rem;
+    padding-bottom: 0.05rem;
+    border-style: solid;
+    border-width: 0 0 1px;
+
+    .navbar-nav {
+        white-space: nowrap;
+
+        // Less padding above, below, and between actions.
+        .nav-item .nav-link {
+            padding: 0.425rem 0.175rem;
+            user-select: none;
+        }
+    }
+
+    &__repo {
+        &-basename {
+            font-weight: bold;
+        }
+    }
+
+    &__alert {
+        margin: 0 0.25rem;
+        padding: 0.125rem 0.25rem;
+        cursor: default;
+        user-select: none;
+    }
+
+    &__icon-chevron {
+        opacity: 0.6;
+        margin: auto;
+    }
+
+    .copy-link-action {
+        opacity: 0;
+    }
+    &:hover .copy-link-action {
+        opacity: 1;
+    }
+
+    &__spacer {
+        flex: 1 1 0;
+    }
+}
+
+.theme-dark {
+    .repo-header {
+        border-color: #233043;
+    }
+}
+
+.theme-light {
+    .repo-header {
+        border-color: $color-light-border;
+    }
+}

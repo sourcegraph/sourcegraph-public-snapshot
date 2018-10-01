@@ -1,0 +1,18 @@
+@import '../../components/Area';
+@import '../account/OrgAccountArea';
+@import '../OrgAvatar';
+@import './OrgHeader';
+@import './OrgMembersPage';
+
+.org-area {
+    display: flex;
+    flex-direction: column;
+    &__content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        &-inner {
+            width: 100%;
+        }
+    }
+}

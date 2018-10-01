@@ -1,0 +1,47 @@
+.result-container {
+    margin-bottom: 0.5rem;
+    border-radius: 2px;
+
+    &__header {
+        padding: 0.25rem 0.5rem;
+        user-select: none;
+
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        $background-color: #1c2736;
+
+        background-color: $background-color;
+
+        &--collapsible {
+            cursor: pointer;
+        }
+
+        &-title {
+            flex: 1 1 auto;
+            margin: 0 0.25rem;
+            overflow: hidden;
+        }
+
+        &:hover {
+            background-color: darken($background-color, 0.05);
+        }
+    }
+
+    &__toggle-matches-container {
+        display: flex;
+    }
+}
+
+.theme-light {
+    .result-container {
+        border: 1px solid $color-light-border;
+        &__header {
+            background-color: $color-light-bg-2;
+
+            &:hover {
+                background-color: $color-light-bg-4;
+            }
+        }
+    }
+}

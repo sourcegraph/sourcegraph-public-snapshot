@@ -1,0 +1,2 @@
+-- No downmigration because we don't need to recreate the code comments tables. They have been
+-- unused for a while.

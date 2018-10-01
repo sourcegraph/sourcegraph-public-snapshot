@@ -1,0 +1,14 @@
+@import './branches/RepositoryBranchesPage';
+@import './commit/RepositoryCommitPage';
+@import './releases/RepositoryReleasesPage';
+@import './RepositoryErrorPage';
+@import './RepoHeader';
+@import './RepoRevContainer';
+@import './compare/RepositoryCompareArea';
+@import './stats/RepositoryStatsArea';
+
+.repo-container {
+    margin-left: auto;
+    margin-right: auto;
+    overflow: hidden;
+}

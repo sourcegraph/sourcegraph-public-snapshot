@@ -1,0 +1,38 @@
+.diff-stat {
+    display: flex;
+    align-items: center;
+
+    &__total {
+        padding-right: 0.125rem;
+        // stylelint-disable-next-line declaration-property-unit-whitelist
+        margin-bottom: -1px;
+    }
+
+    &__square {
+        display: block;
+        width: 0.5rem;
+        height: 0.5rem;
+        margin-left: 0.125rem;
+    }
+
+    &__added {
+        background-color: rgb(31, 160, 27);
+    }
+    &__changed {
+        background-color: rgb(192, 122, 10);
+    }
+    &__deleted {
+        background-color: rgb(201, 17, 17);
+    }
+    &__empty {
+        background-color: #aaa;
+    }
+}
+
+.theme-dark {
+    .diff-stat {
+        &__square {
+            opacity: 0.6;
+        }
+    }
+}

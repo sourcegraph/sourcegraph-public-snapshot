@@ -1,0 +1,102 @@
+.markdown {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        /**
+         * So that the border only goes under the text, but the heading still
+         * takes up full width.
+         */
+        display: table;
+        border-bottom: 1px solid #2b3750;
+        padding-bottom: 0.5rem;
+
+        a.anchor {
+            opacity: 0;
+            font-size: $font-size-base;
+            margin-left: -1rem;
+            padding: 0.125rem;
+            &::before {
+                content: '#';
+            }
+        }
+        &:hover a.anchor {
+            opacity: 1;
+        }
+    }
+
+    table,
+    th,
+    td {
+        border: 1px solid #2b3750;
+        padding: 0.5rem 1rem;
+    }
+
+    table {
+        margin-bottom: 1rem;
+    }
+
+    ol,
+    ul {
+        margin-left: 2rem;
+    }
+
+    code,
+    pre {
+        background: #141a2a;
+    }
+
+    pre {
+        padding: 0.5rem;
+    }
+
+    code {
+        display: inline-block;
+        padding: 0.25rem;
+    }
+
+    p > code {
+        white-space: nowrap;
+    }
+
+    blockquote {
+        padding: 0 1rem;
+        color: #93a9c8;
+        border-left: 4px solid #93a9c8;
+    }
+
+    img {
+        max-width: 100%;
+    }
+}
+
+.theme-light {
+    .markdown {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            border-bottom-color: #cad2e2;
+        }
+
+        table,
+        th,
+        td {
+            border-color: #cad2e2;
+        }
+
+        code,
+        pre {
+            background-color: #f2f4f8;
+        }
+
+        blockquote {
+            color: #6a737d;
+            border-left-color: #dfe2e5;
+        }
+    }
+}

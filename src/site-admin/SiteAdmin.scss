@@ -1,0 +1,18 @@
+@import '../components/Area';
+@import './SiteAdminAnalyticsPage';
+@import './SiteAdminConfigurationPage';
+@import './SiteAdminCreateUserPage';
+@import './SiteAdminLangServers';
+@import './SiteAdminRepositoriesPage';
+@import './SiteAdminSidebar';
+@import './SiteAdminUpdatesPage';
+@import './SiteAdminSurveyResponsesPage';
+
+.site-admin-area .area__content {
+    display: flex;
+    flex-direction: column;
+}
+
+.site-admin-area .settings-file {
+    flex: 1;
+}

@@ -1,0 +1,13 @@
+.open-page {
+    display: flex;
+    text-align: center;
+    flex-direction: column;
+    width: 100%;
+    justify-content: center;
+
+    &__iframe {
+        display: none;
+        width: 0;
+        height: 0;
+    }
+}

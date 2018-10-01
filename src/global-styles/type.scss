@@ -1,0 +1,93 @@
+@import 'bootstrap/scss/type';
+
+// Defined in https://www.figma.com/file/YVJp5yV7Bz8sueXekODPDEjd/styleguide-atoms?node-id=962%3A0
+
+$body-color-light: #2b3750;
+$body-color-dark: #f2f4f8;
+
+.theme-light {
+    --body-color: #{$body-color-light};
+    --body-bg: white;
+    --text-muted: #{$color-light-text-2};
+    --link-color: #566e9f;
+    --link-hover-color: #1d2535;
+}
+
+.theme-dark {
+    --body-color: #{$body-color-dark};
+    --body-bg: #151c28;
+    --text-muted: #{$color-text-1};
+    --link-color: #a2b0cd;
+    --link-hover-color: white;
+}
+
+h1 {
+    font-size: 32px;
+    line-height: 40px;
+    font-weight: 600;
+    margin: 0 0 1rem;
+}
+
+h2 {
+    font-size: 24px;
+    line-height: 32px;
+    font-weight: 600;
+}
+
+h3 {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 600;
+}
+
+h4 {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+}
+
+h5 {
+    font-size: 12px;
+    letter-spacing: 1px;
+    font-weight: 500;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+small {
+    font-size: 12px;
+}
+
+// Apply the same focus outline to links as to buttons
+a {
+    &:focus,
+    &.focus {
+        border-radius: $border-radius;
+        outline: 0;
+        box-shadow: $btn-focus-box-shadow;
+    }
+
+    // Disabled comes first so active can properly restyle
+    &.disabled,
+    &:disabled {
+        opacity: $btn-disabled-opacity;
+
+        @include box-shadow(none);
+    }
+
+    // Opinionated: add "hand" cursor to non-disabled .btn elements
+    &:not(:disabled):not(.disabled) {
+        cursor: pointer;
+    }
+
+    &:not(:disabled):not(.disabled):active,
+    &:not(:disabled):not(.disabled).active {
+        background-image: none;
+
+        @include box-shadow($btn-active-box-shadow);
+
+        &:focus {
+            @include box-shadow($btn-focus-box-shadow, $btn-active-box-shadow);
+        }
+    }
+}

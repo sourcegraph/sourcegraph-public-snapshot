@@ -1,0 +1,57 @@
+@import '../../nav/GlobalNavbar';
+@import './SearchFilterChips';
+@import './QueryInput';
+@import '../saved-queries/SavedQueries';
+
+.search-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    overflow: auto;
+
+    &__logo {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        width: 20rem;
+        margin-top: 6rem;
+        max-width: 90%;
+    }
+
+    &__container {
+        flex: 0 0 auto;
+        margin-top: 4rem;
+        width: 49rem;
+        max-width: 90%;
+        position: relative;
+    }
+
+    &__input-container {
+        width: 100%;
+        display: flex;
+    }
+
+    &__input-sub-container {
+        width: 100%;
+        display: block;
+        margin-top: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    &__query-container {
+        flex: 0 0 auto;
+        width: 49rem;
+        max-width: 90%;
+        position: relative;
+    }
+}
+
+.theme-light {
+    .search-page {
+        &__sign-in {
+            color: $color-light-text-4;
+        }
+    }
+}

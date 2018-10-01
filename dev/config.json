@@ -1,0 +1,26 @@
+// The Sourcegraph site configuration for development servers.
+{
+  "appURL": "http://localhost:3080",
+  "experimentalFeatures": {
+    "configVars": "enabled",
+    "canonicalURLRedirect": "enabled",
+    "multipleAuthProviders": "enabled",
+    "updateScheduler": "enabled",
+    "discussions": "enabled"
+  },
+  "disablePublicRepoRedirects": true,
+  "repoListUpdateInterval": 1,
+  "langservers": [
+    {
+      "address": "tcp://localhost:4389",
+      "language": "go"
+    },
+    {
+      "address": "tcp://localhost:2083",
+      "language": "python"
+    }
+  ],
+  "update.channel": "release",
+  "corsOrigin": "https://github.com",
+  "auth.providers": [{ "type": "builtin", "allowSignup": true }]
+}

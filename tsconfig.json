@@ -1,0 +1,25 @@
+{
+  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "lib": ["es2017", "es2017.object", "dom", "dom.iterable"],
+    "jsx": "react",
+    "sourceMap": true,
+    "noEmit": true,
+    "downlevelIteration": true,
+    "skipLibCheck": true,
+    "noErrorTruncation": true,
+    "importHelpers": true,
+    "plugins": [
+      {
+        "name": "tslint-language-service"
+      }
+    ]
+  },
+  "include": ["src/**/*", "./*.ts"]
+}

@@ -1,0 +1,44 @@
+@import './SearchResultsInfoBar';
+@import './SearchResultsList';
+@import '../FilterChip';
+
+.search-results {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    &__filters-bar {
+        display: flex;
+        flex: 0 0 auto;
+        padding-left: 1rem;
+        align-items: center;
+
+        color: #93a9c8;
+        background: $color-bg-1;
+        border-bottom: 1px solid $color-border;
+        .theme-light & {
+            color: $color-light-text-2;
+            background: $color-light-bg-1;
+            border-bottom: 1px solid $color-light-border;
+        }
+    }
+
+    &__filters {
+        margin-left: 0.5rem;
+        display: flex;
+        overflow-x: auto;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    // In narrow windows, make the results flush with the left/right sides,
+    // but we still need padding for the header and alerts.
+    @include media-breakpoint-down(lg) {
+        &__filters-bar {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+    }
+}

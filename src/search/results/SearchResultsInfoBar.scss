@@ -1,0 +1,29 @@
+.search-results-info-bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #93a9c8;
+    padding-bottom: 0.25rem;
+
+    &__row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+
+        &-left {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        &-right {
+            flex: 1 0 auto;
+            text-align: right;
+        }
+    }
+
+    &__notice {
+        display: flex;
+        align-items: center;
+        margin-right: 1rem;
+    }
+}

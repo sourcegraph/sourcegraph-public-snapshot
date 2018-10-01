@@ -1,0 +1,98 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "options": {
+    "cwd": "${workspaceFolder}"
+  },
+  "tasks": [
+    {
+      "label": "launch",
+      "command": "${workspaceRoot}/dev/launch.sh",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "tslint",
+      "command": "yarn",
+      "args": ["--prefix", "web", "run", "tslint"],
+      "problemMatcher": "$tslint5"
+    },
+    {
+      "label": "graphql",
+      "command": "yarn",
+      "args": ["--prefix", "web", "run", "graphql"],
+      "problemMatcher": "$tslint5"
+    },
+    {
+      "label": "stylelint",
+      "command": "yarn",
+      "args": ["--prefix", "web", "run", "stylelint-compact"],
+      "problemMatcher": {
+        "owner": "stylelint",
+        "applyTo": "closedDocuments",
+        "fileLocation": "absolute",
+        "pattern": [
+          {
+            "regexp": "^(.+): line (\\d+), col (\\d+), (\\w+) - (.*)$",
+            "file": 1,
+            "line": 2,
+            "column": 3,
+            "severity": 4,
+            "message": 5
+          }
+        ]
+      }
+    },
+    {
+      "label": "build",
+      "command": "yarn",
+      "args": ["--prefix", "web", "run", "build"],
+      "problemMatcher": {
+        "fileLocation": "relative",
+        "owner": "typescript",
+        "severity": "error",
+        "pattern": [
+          {
+            "regexp": "^ERROR in (.+)$",
+            "file": 1
+          },
+          {
+            "regexp": "^\\((\\d+),(\\d+)\\): error TS\\d+: (.+)$",
+            "line": 1,
+            "column": 2,
+            "message": 3
+          }
+        ]
+      }
+    },
+    {
+      "label": "watch",
+      "command": "yarn",
+      "args": ["--prefix", "web", "run", "watch"],
+      "isBackground": true,
+      "problemMatcher": {
+        "fileLocation": "relative",
+        "owner": "typescript",
+        "severity": "error",
+        "pattern": [
+          {
+            "regexp": "^ERROR in (.+)$",
+            "file": 1
+          },
+          {
+            "regexp": "^\\((\\d+),(\\d+)\\): error TS\\d+: (.+)$",
+            "line": 1,
+            "column": 2,
+            "message": 3
+          }
+        ],
+        "background": {
+          "activeOnStart": false,
+          "beginsPattern": "^Begin compile at .*$",
+          "endsPattern": "^Time: .*$"
+        }
+      }
+    }
+  ]
+}

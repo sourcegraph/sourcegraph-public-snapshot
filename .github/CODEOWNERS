@@ -1,0 +1,34 @@
+# Lines starting with '#' are comments.
+# Each line is a file pattern followed by one or more owners.
+# https://help.github.com/articles/about-codeowners/
+
+*git* @keegancsmith
+/migrations/ @keegancsmith
+monolith/ @keegancsmith
+search @keegancsmith
+/src/ @felixfbecker
+/xlang/ @keegancsmith @beyang
+/schema/ @sqs
+/src/site-admin/ @sqs
+/src/settings/ @sqs
+conf/ @sqs
+/cmd/frontend/internal/auth/ @sqs
+/dev/config.json @sqs
+/client/vscode/ @chrismwendt
+/cmd/frontend/internal/app/pkg/updatecheck/ @dadlerj
+/src/tracking/ @dadlerj
+/enterprise/ @beyang
+/cmd/frontend/ @beyang
+/cmd/gitserver/ @beyang
+/cmd/indexer/ @beyang
+/cmd/lsp-proxy/ @beyang
+/cmd/repo-updater/ @beyang
+/cmd/searcher/ @beyang
+/cmd/server/ @beyang
+/cmd/symbols/ @beyang
+/pkg/ @beyang
+
+# Don't set any reviewers for these,
+# configure by package through Renovate config (see renovate.json)
+**/package.json
+**/yarn.lock

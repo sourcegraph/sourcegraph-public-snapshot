@@ -1,0 +1,18 @@
+{
+  "extends": ["@sourcegraph/tslint-config"],
+  "rules": {
+    "rxjs-no-wholesale": false,
+    "rxjs-no-deep-operators": {
+      "severity": "error"
+    },
+    "await-promise": false,
+    "import-blacklist": [true, "highlight.js"],
+    "jsx-ban-elements": [
+      true,
+      [
+        "^form$",
+        "Use the Form component in src/components/Form.tsx instead of the native HTML form element to get proper form validation feedback"
+      ]
+    ]
+  }
+}

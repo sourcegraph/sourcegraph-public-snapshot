@@ -1,0 +1,16 @@
+version: 0.0.{build}
+clone_folder: c:\gopath\src\github.com\mattn\goreman
+environment:
+  GOPATH: c:\gopath
+install:
+  - set PATH=c:\go\bin;%GOPATH%\bin;%PATH%;C:\MinGW\bin
+  - rd c:\go /s /q
+  - appveyor DownloadFile https://storage.googleapis.com/golang/go1.11.windows-amd64.zip
+  - 7z x go1.11.windows-amd64.zip -oC:\ >nul
+  - go version
+  - go env
+build_script:
+  - go get -d
+  - go build
+test_script:
+  - go test -v -short ./...
