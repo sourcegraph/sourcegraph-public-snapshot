@@ -42,7 +42,6 @@ instructions](https://github.com/sourcegraph/sourcegraph/blob/master/docs/local-
 1.  [Initialize the PostgreSQL database](https://github.com/sourcegraph/sourcegraph/blob/master/docs/local-development.md#step-4-initialize-your-database)
 1.  Start the development server
 
-
 ```
 ./dev/launch.sh
 ```
