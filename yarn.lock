@@ -1300,10 +1300,20 @@
   dependencies:
     "@types/node" "*"
 
-"@types/webpack@*", "@types/webpack@4.4.11":
+"@types/webpack@*":
   version "4.4.11"
   resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.4.11.tgz#0ca832870d55c4e92498c01d22d00d02b0f62ae9"
   integrity sha512-NdESmbpvVEtJgs15kyZYKr5ouLYPMYt9DNG5JEgCekbG/ezFLPCzf4XcAv8caOb+b7x6ieAuSt0eoR0UkSI7RA==
+  dependencies:
+    "@types/node" "*"
+    "@types/tapable" "*"
+    "@types/uglify-js" "*"
+    source-map "^0.6.0"
+
+"@types/webpack@4.4.13":
+  version "4.4.13"
+  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.4.13.tgz#828d3a8f7743a12692aa0f65d083f30d25bf34eb"
+  integrity sha512-N6ge9VfI98kI467oXAxJiX4436Kg3GHWtcHxtjkpFBrajqAtBWnq+ardbUN/9+mX3dmEs+mVmsdua7YGTNd4vg==
   dependencies:
     "@types/node" "*"
     "@types/tapable" "*"
