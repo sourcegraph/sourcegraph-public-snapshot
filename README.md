@@ -23,6 +23,7 @@
 
 ### Prerequisites
 
+- Git
 - Go (1.11 or later)
 - Docker
 - PostgreSQL (version 9)
@@ -31,7 +32,7 @@
 - Yarn
 
 For a detailed guide to installing prerequisites, see [these
-instructions](https://github.com/sourcegraph/sourcegraph/blob/master/docs/local-development.md#step-2-install-git-go-docker-nodejs-postgresql-redis).
+instructions](docs/local-development.md#step-2-install-dependencies).
 
 ### Installation
 
