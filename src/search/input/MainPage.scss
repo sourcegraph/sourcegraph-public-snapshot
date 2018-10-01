@@ -265,6 +265,9 @@ body.modal-open {
         .btn {
             margin-right: 1rem;
         }
+        .col-md-12 {
+            padding-bottom: 2rem;
+        }
         position: sticky;
         position: -webkit-sticky;
         z-index: 3;
@@ -284,6 +287,7 @@ body.modal-open {
             h1 {
                 font-size: 4.6rem;
                 padding-top: 0;
+                line-height: 4.15rem;
             }
             h2 {
                 font-size: 2rem;
@@ -298,6 +302,27 @@ body.modal-open {
             p {
                 font-size: 1.125rem;
                 padding-right: 2em;
+            }
+            @media screen and (max-width: $media-lg) {
+                h1 {
+                    font-size: 3.25rem;
+                    padding-top: 0;
+                    line-height: 3rem;
+                }
+                h2 {
+                    font-size: 1.25rem;
+                    font-weight: 400;
+                    margin-bottom: 0.5rem;
+                }
+                h3 {
+                    font-size: 1.25rem;
+                    font-weight: 400;
+                    margin-bottom: 0.5rem;
+                }
+                p {
+                    font-size: 1rem;
+                    padding-right: 2em;
+                }
             }
         }
 
@@ -323,6 +348,7 @@ body.modal-open {
         .btn {
             margin-right: 2rem;
             transition: all 0.325s ease-in-out;
+            margin-bottom: 1rem;
         }
         .modal-copy-row {
             padding-bottom: 4rem;
@@ -693,6 +719,11 @@ body.modal-open {
         * {
             align-self: center;
         }
+    }
+}
+.small-hidden {
+    @media screen and (max-width: $media-lg) {
+        display: none !important;
     }
 }
 

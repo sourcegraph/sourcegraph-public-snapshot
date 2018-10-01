@@ -246,14 +246,14 @@ export class MainPage extends React.Component<Props, State> {
                     <div className="hero-section__bg" />
                     <div className=" container hero-container">
                         <div className="row">
-                            <div className="col-6">
+                            <div className="col-lg-6 col-md-12 col-sm-12">
                                 <h2>{heroEyebrow}</h2>
                                 <h1>{heroTitle}</h1>
                                 <p>{heroCopyTop}</p>
                                 <button className="btn btn-primary">Deploy Sourcegraph</button>
                                 <button className="btn btn-secondary">Sourcegraph GitHub</button>
                             </div>
-                            <div className="col-6">
+                            <div className="col-6 small-hidden">
                                 <CodeIntellifyBlob
                                     {...this.props}
                                     startLine={236}
@@ -590,7 +590,7 @@ export class MainPage extends React.Component<Props, State> {
                             </div>
                         </div>
                         <div className="row intelligence-row">
-                            <div className="col-6 modal-header copy-section">
+                            <div className="col-lg-6 col-md-12 col-sm-12 modal-header copy-section">
                                 {intelligenceSections.map(({ title, paragraph }, i) => (
                                     <div
                                         key={`search-sections-${i}`}
@@ -607,7 +607,7 @@ export class MainPage extends React.Component<Props, State> {
                                     </div>
                                 ))}
                             </div>
-                            <div className="col-6 modal-code-intellify">
+                            <div className="col-6 modal-code-intellify small-hidden">
                                 <CodeIntellifyBlob
                                     {...this.props}
                                     startLine={236}
