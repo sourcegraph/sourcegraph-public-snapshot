@@ -140,9 +140,7 @@ export const routes: LayoutRouteProps[] = [
     },
     {
         path: '/users/:username',
-        render: props => (
-            <UserArea {...props} sideBarItems={props.userAccountSideBarItems} routes={props.userAccountAreaRoutes} />
-        ),
+        render: props => <UserArea {...props} />,
     },
     {
         path: '/survey/:score?',
