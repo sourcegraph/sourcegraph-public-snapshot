@@ -1,6 +1,6 @@
 # <a href="https://sourcegraph.com"><img alt="Sourcegraph" src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo.png" height="32px" /></a>
 
-[Sourcegraph](https://about.sourcegraph.com/) is a fast, full-featured code search and navigation engine.
+[Sourcegraph](https://about.sourcegraph.com/) is a fast, open-source, fully-featured code search and navigation engine.
 
 ![Screenshot](https://user-images.githubusercontent.com/1646931/46309383-09ba9800-c571-11e8-8ee4-1a2ec32072f2.png)
 
