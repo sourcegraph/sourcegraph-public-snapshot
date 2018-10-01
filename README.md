@@ -40,9 +40,9 @@ instructions](docs/local-development.md#step-2-install-dependencies).
 1.  [Initialize the PostgreSQL database](https://github.com/sourcegraph/sourcegraph/blob/master/docs/local-development.md#step-4-initialize-your-database)
 1.  Start the development server
 
-```
-./dev/launch.sh
-```
+    ```
+    ./dev/launch.sh
+    ```
 
 Sourcegraph should now be running at http://localhost:3080.
 
