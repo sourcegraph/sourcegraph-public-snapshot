@@ -288,8 +288,16 @@ export class MainPage extends React.Component<Props, State> {
                                 <h2>{heroEyebrow}</h2>
                                 <h1>{heroTitle}</h1>
                                 <p>{heroCopyTop}</p>
-                                <button className="btn btn-primary">Deploy Sourcegraph</button>
-                                <button className="btn btn-secondary">Sourcegraph GitHub</button>
+                                <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                                    Deploy Sourcegraph
+                                </a>
+                                <a
+                                    className="btn btn-secondary"
+                                    href="//github.com/sourcegraph/sourcegraph/"
+                                    target="_blank"
+                                >
+                                    Sourcegraph GitHub
+                                </a>
                             </div>
                             <div className="col-6 small-hidden">
                                 <CodeIntellifyBlob
@@ -392,8 +400,16 @@ export class MainPage extends React.Component<Props, State> {
                                     flying cars, a habitat on Mars, and a cure for cancer. That's why developers can get
                                     started and deploy Sourcegraph for free, and contribute to our code on GitHub.
                                 </p>
-                                <button className="btn btn-primary">Deploy Sourcegraph</button>
-                                <button className="btn btn-secondary">Sourcegraph GitHub</button>
+                                <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                                    Deploy Sourcegraph
+                                </a>
+                                <a
+                                    className="btn btn-secondary"
+                                    href="//github.com/sourcegraph/sourcegraph/"
+                                    target="_blank"
+                                >
+                                    Sourcegraph GitHub
+                                </a>
                             </div>
                             <div className="col-lg-6 col-md-12">
                                 <h2>Sourcegraph Pricing</h2>
@@ -404,7 +420,9 @@ export class MainPage extends React.Component<Props, State> {
                                     and custom support agreements. Start with Sourcegraph core for free and scale with
                                     your deployment.
                                 </p>
-                                <button className="btn btn-secondary">Sourcegraph Pricing</button>
+                                <a className="btn btn-secondary" href="//about.sourcegraph.com/pricing/">
+                                    Sourcegraph Pricing
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -611,9 +629,16 @@ export class MainPage extends React.Component<Props, State> {
                                 </div>
                             </div>
                         ))}
-                        <button className="btn" onClick={this.closeModal('search')}>
+                        <button className="btn btn-dark" onClick={this.closeModal('search')}>
                             Close
                         </button>
+                        <a
+                            className="btn btn-secondary"
+                            href="//about.sourcegraph.com/docs/search/query-syntax"
+                            target="_blank"
+                        >
+                            Search Documentation
+                        </a>
                     </div>
                 </div>
                 <div
@@ -659,9 +684,16 @@ export class MainPage extends React.Component<Props, State> {
                                 />
                             </div>
                         </div>
-                        <button className="btn" onClick={this.closeModal('intelligence')}>
+                        <button className="btn btn-dark" onClick={this.closeModal('intelligence')}>
                             Close
                         </button>
+                        <a
+                            className="btn btn-secondary"
+                            href="//about.sourcegraph.com/docs/code-intelligence"
+                            target="_blank"
+                        >
+                            Code Intelligence Documentation
+                        </a>
                     </div>
                 </div>
                 <div
@@ -707,9 +739,16 @@ export class MainPage extends React.Component<Props, State> {
                             </div>
                             <div className="col-6 modal-code-intellify" />
                         </div>
-                        <button className="btn" onClick={this.closeModal('integrations')}>
+                        <button className="btn btn-dark" onClick={this.closeModal('integrations')}>
                             Close
                         </button>
+                        <a
+                            className="btn btn-secondary"
+                            href="//about.sourcegraph.com/docs/integrations"
+                            target="_blank"
+                        >
+                            Integrations Documentation
+                        </a>
                     </div>
                 </div>
             </div>
