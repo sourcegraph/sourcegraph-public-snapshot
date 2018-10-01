@@ -9,11 +9,13 @@ import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { HeroPage } from '../../components/HeroPage'
 import { ExtensionsProps } from '../../extensions/ExtensionsClientCommonContext'
-import { RouteDescriptor } from '../../util/contributions'
+import { SettingsArea } from '../../settings/SettingsArea'
+import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { UserAccountAreaRoute } from '../account/UserAccountArea'
+import { UserAccountArea, UserAccountAreaRoute } from '../account/UserAccountArea'
 import { UserAccountSidebarItems } from '../account/UserAccountSidebar'
-import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
+import { UserAreaHeader } from './UserAreaHeader'
+import { UserOverviewPage } from './UserOverviewPage'
 
 const fetchUser = (args: { username: string }): Observable<GQL.IUser | null> =>
     queryGraphQL(
@@ -58,13 +60,9 @@ const NotFoundPage = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="Sorry, the requested user was not found." />
 )
 
-export interface UserAreaRoute extends RouteDescriptor<UserAreaRouteContext> {}
-
 interface UserAreaProps extends RouteComponentProps<{ username: string }>, ExtensionsProps {
-    userAreaRoutes: ReadonlyArray<UserAreaRoute>
-    userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
+    sideBarItems: UserAccountSidebarItems
+    routes: ReadonlyArray<UserAccountAreaRoute>
 
     /**
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
@@ -86,9 +84,6 @@ interface UserAreaState {
  * Properties passed to all page components in the user area.
  */
 export interface UserAreaRouteContext extends ExtensionsProps {
-    /** The extension registry area main URL. */
-    url: string
-
     /**
      * The user who is the subject of the page.
      */
@@ -104,10 +99,6 @@ export interface UserAreaRouteContext extends ExtensionsProps {
      * user is Bob.
      */
     authenticatedUser: GQL.IUser | null
-
-    isLightTheme: boolean
-    userAccountSideBarItems: UserAccountSidebarItems
-    userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
 }
 
 /**
@@ -169,41 +160,67 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             )
         }
 
-        const context: UserAreaRouteContext = {
-            url: this.props.match.url,
+        const transferProps: UserAreaRouteContext = {
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
             authenticatedUser: this.props.user,
             extensions: this.props.extensions,
-            isLightTheme: this.props.isLightTheme,
-            userAccountAreaRoutes: this.props.userAccountAreaRoutes,
-            userAccountSideBarItems: this.props.userAccountSideBarItems,
         }
         return (
             <div className="user-area area--vertical">
-                <UserAreaHeader
-                    className="area--vertical__header"
-                    {...this.props}
-                    {...context}
-                    navItems={this.props.userAreaHeaderNavItems}
-                />
+                <UserAreaHeader className="area--vertical__header" {...this.props} {...transferProps} />
                 <div className="area--vertical__content">
                     <div className="area--vertical__content-inner">
                         <Switch>
-                            {this.props.userAreaRoutes.map(
-                                ({ path, exact, render, condition = () => true }) =>
-                                    condition(context) && (
-                                        <Route
-                                            path={this.props.match.url + path}
-                                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                            exact={exact}
-                                            // tslint:disable-next-line:jsx-no-lambda
-                                            render={routeComponentProps =>
-                                                render({ ...context, ...routeComponentProps })
-                                            }
-                                        />
-                                    )
-                            )}
+                            <Route
+                                path={`${this.props.match.url}`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <UserOverviewPage {...routeComponentProps} {...transferProps} />
+                                )}
+                            />
+                            <Route
+                                path={`${this.props.match.url}/settings`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                exact={true}
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <SettingsArea
+                                        {...routeComponentProps}
+                                        {...transferProps}
+                                        subject={transferProps.user}
+                                        isLightTheme={this.props.isLightTheme}
+                                        extraHeader={
+                                            <>
+                                                {transferProps.authenticatedUser &&
+                                                    transferProps.user.id !== transferProps.authenticatedUser.id && (
+                                                        <SiteAdminAlert className="sidebar__alert">
+                                                            Viewing settings for{' '}
+                                                            <strong>{transferProps.user.username}</strong>
+                                                        </SiteAdminAlert>
+                                                    )}
+                                                <p>User settings override global and organization settings.</p>
+                                            </>
+                                        }
+                                    />
+                                )}
+                            />
+                            <Route
+                                path={`${this.props.match.url}/account`}
+                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                // tslint:disable-next-line:jsx-no-lambda
+                                render={routeComponentProps => (
+                                    <UserAccountArea
+                                        {...routeComponentProps}
+                                        {...transferProps}
+                                        routes={this.props.routes}
+                                        sideBarItems={this.props.sideBarItems}
+                                        isLightTheme={this.props.isLightTheme}
+                                    />
+                                )}
+                            />
                             <Route key="hardcoded-key" component={NotFoundPage} />
                         </Switch>
                     </div>
