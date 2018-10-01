@@ -13,6 +13,7 @@ Farhan Attamimi <farhan@sourcegraph.com>
 Felix Becker <felix.b@outlook.com>
 Gabriel Aszalos <gabriel@sourcegraph.com>
 Geoffrey Gilmore <geoffrey@sourcegraph.com>
+Ildar Isaev <iisaev@codeminders.com>
 Keegan Carruthers-Smith <keegan.csmith@gmail.com>
 Kevin Burke <kev@inburke.com>
 Nick Snyder <nick@sourcegraph.com>
