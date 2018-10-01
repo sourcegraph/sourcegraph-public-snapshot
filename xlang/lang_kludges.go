@@ -3,7 +3,7 @@ package xlang
 import (
 	"go/ast"
 
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	"github.com/sourcegraph/sourcegraph/pkg/lspext"
 	xlangext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 

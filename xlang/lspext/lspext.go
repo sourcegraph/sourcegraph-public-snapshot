@@ -3,7 +3,7 @@
 // An overview of the different protocol variants:
 //
 // 	// vanilla LSP
-// 	github.com/sourcegraph/go-langserver/pkg/lsp
+// 	github.com/sourcegraph/sourcegraph/pkg/lsp
 //
 // 	// proxy (http gateway) server LSP extensions
 // 	github.com/sourcegraph/sourcegraph/xlang
@@ -17,7 +17,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 // DependencyReference represents a reference to a dependency. []DependencyReference

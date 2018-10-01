@@ -6,9 +6,9 @@ import (
 	"log"
 	"net"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph/pkg/lspext"
 )
 
 // DialProxy creates a new JSON-RPC 2.0 connection to the LSP proxy

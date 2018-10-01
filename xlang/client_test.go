@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/sourcegraph/pkg/lsp"
 )
 
 func TestRemoteOneShotClientRequest(t *testing.T) {
