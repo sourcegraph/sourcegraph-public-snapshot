@@ -138,6 +138,44 @@ const intelligenceSections = [
     },
 ]
 
+const integrationsSections = [
+    {
+        title: 'Connect across your development workflow.',
+        paragraph:
+            'Sourcegraph has powerful integrations for every step of development. From planning with code discussion, development with Sourcegraph and IDE extensions, to review in PRs and Issues. Use Sourcegraph integrations to get code intelligence at every step of your workflow.',
+        buttons: [],
+    },
+    {
+        title: 'Browser extensions',
+        paragraph:
+            'Code intelligence makes browsing code easier, with IDE-like hovers, go-to-definition, and find-references on your code, powered by language servers based on the open-source Language Server Protocol.',
+        buttons: [{ id: 'btn-chrome', text: 'Chrome' }, { id: 'btn-firefox', text: 'Firefox' }],
+    },
+
+    {
+        title: 'Code host integrations',
+        paragraph:
+            "Use the hovertooltip to discover and understand your code faster. Click on a token and then go to it's definition, other refrences, or implementations. Speed through reviews by understanding new code and changed code and what it affects.",
+        buttons: [{ id: 'btn-gitlab', text: 'GitLab' }, { id: 'btn-github', text: 'GitHub' }],
+    },
+    {
+        title: 'IDE extensions',
+        paragraph:
+            'Code intelligence is powered by language servers based on the open-standard Language Server Protocol (published by Microsoft, with participation from Facebook, Google, Sourcegraph, GitHub, RedHat, Twitter, Salesforce, Eclipse, and others). Visit langserver.org to learn more about the Language Server Protocol, find the latest support for your favorite language, and get involved.',
+        buttons: [
+            { id: 'btn-atom', text: 'Atom' },
+            { id: 'btn-intellij', text: 'IntelliJ' },
+            {
+                id: 'btn-sublime',
+                text: 'Sublime',
+                onClick: 'buttonGoLang',
+            },
+            { id: 'btn-vim', text: 'Vim' },
+            { id: 'btn-vscode', text: 'VS Code' },
+        ],
+    },
+]
+
 const inlineStyle = `
     .layout {
         display: block !important;
@@ -637,11 +675,11 @@ export class MainPage extends React.Component<Props, State> {
                             </div>
                         </div>
                         <div className="row intelligence-row">
-                            <div className="col-6 modal-header copy-section">
-                                {intelligenceSections.map(({ title, paragraph }, i) => (
+                            <div className="col-12 modal-header copy-section">
+                                {integrationsSections.map(({ title, paragraph, buttons }, i) => (
                                     <div
                                         key={`search-sections-${i}`}
-                                        className={`row modal-copy-row ${
+                                        className={`row copy-section modal-copy-row ${
                                             this.state.activeSection === `${i}` || this.state.activeSection === '99'
                                                 ? 'activeSec'
                                                 : ''
@@ -650,6 +688,17 @@ export class MainPage extends React.Component<Props, State> {
                                         <div className="col-12">
                                             <h3>{title}</h3>
                                             <p>{paragraph}</p>
+                                            {buttons.map(({ onClick, text, id }, j) => (
+                                                <button
+                                                    key={`integrations-buttons-${j}`}
+                                                    className={`btn btn-secondary btn-integrations  ${id} ${
+                                                        this.state.activeButton === `${i}-${j}` ? 'active' : ''
+                                                    }`}
+                                                >
+                                                    <span className="btn-icon" />
+                                                    {text}
+                                                </button>
+                                            ))}
                                         </div>
                                     </div>
                                 ))}
