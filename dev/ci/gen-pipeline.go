@@ -15,10 +15,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"go/build"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -30,47 +28,6 @@ func init() {
 	bk.Plugins["gopath-checkout#v1.0.1"] = map[string]string{
 		"import": "github.com/sourcegraph/sourcegraph",
 	}
-}
-
-func pkgs() []string {
-	pkgs := []string{"cmd/frontend/db"} // put slow tests first
-	err := filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			panic(err)
-		}
-		if path == "." || !info.IsDir() {
-			return nil
-		}
-		switch path {
-		case ".git", "dev", "ui", ".github", "node_modules":
-			return filepath.SkipDir
-		}
-		if base := filepath.Base(path); base == "vendor" || strings.HasPrefix(base, ".") {
-			return filepath.SkipDir
-		}
-
-		if path == "cmd/frontend/db" {
-			return nil // already first entry
-		}
-
-		pkg, err := build.Import("github.com/sourcegraph/sourcegraph/"+path, "", 0)
-		if err != nil {
-			if _, ok := err.(*build.NoGoError); ok {
-				return nil
-			}
-			panic(err)
-		}
-
-		if len(pkg.TestGoFiles) != 0 || len(pkg.XTestGoFiles) != 0 {
-			pkgs = append(pkgs, path)
-		}
-
-		return nil
-	})
-	if err != nil {
-		panic(err)
-	}
-	return pkgs
 }
 
 func main() {
@@ -215,21 +172,13 @@ func main() {
 	pipeline.AddStep(":postgres:",
 		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
 
-	for _, path := range pkgs() {
-		coverageFile := path + "/coverage.txt"
-		stepOpts := []bk.StepOpt{
-			bk.Cmd("go test ./" + path + " -v -race -i"),
-			bk.Cmd("go test ./" + path + " -v -race -coverprofile=" + coverageFile + " -covermode=atomic -coverpkg=github.com/sourcegraph/sourcegraph/..."),
-			bk.ArtifactPaths(coverageFile),
-		}
-		if path == "cmd/frontend/db" {
-			stepOpts = append([]bk.StepOpt{bk.Cmd("./dev/ci/reset-test-db.sh || true")}, stepOpts...)
-		}
-		pipeline.AddStep(":go:", stepOpts...)
-	}
+	pipeline.AddStep(":go:",
+		bk.Cmd("./dev/ci/reset-test-db.sh || true"),
+		bk.Cmd("go test -race ./..."))
 
 	pipeline.AddWait()
 
+	// TODO add back coverprofile to go
 	//pipeline.AddStep(":codecov:",
 	//	bk.Cmd("buildkite-agent artifact download '*/coverage.txt' . || true"), // ignore error when no report exists
 	//	bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),

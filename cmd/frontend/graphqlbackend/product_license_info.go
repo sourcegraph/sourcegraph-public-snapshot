@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"context"
 	"time"
 )
 
@@ -11,25 +12,34 @@ import (
 //
 // It is overridden in non-OSS builds to return information about the actual product subscription in
 // use.
-var GetConfiguredProductLicenseInfo = func() (*ProductLicenseInfo, error) {
+var GetConfiguredProductLicenseInfo = func(ctx context.Context) (*ProductLicenseInfo, error) {
 	return nil, nil // OSS builds have no license
 }
 
 // ProductLicenseInfo implements the GraphQL type ProductLicenseInfo.
 type ProductLicenseInfo struct {
-	TagsValue      []string
-	UserCountValue uint
-	ExpiresAtValue time.Time
+	PlanValue      string
+	UserCountValue *uint
+	ExpiresAtValue *time.Time
 }
 
-func (r ProductLicenseInfo) FullProductName() string { return GetFullProductName(true, r.TagsValue) }
+// Plan implements the GraphQL type ProductLicenseInfo.
+func (r ProductLicenseInfo) Plan() string { return r.PlanValue }
 
-func (r ProductLicenseInfo) Tags() []string { return r.TagsValue }
-
-func (r ProductLicenseInfo) UserCount() int32 {
-	return int32(r.UserCountValue)
+// UserCount implements the GraphQL type ProductLicenseInfo.
+func (r ProductLicenseInfo) UserCount(ctx context.Context) (*int32, error) {
+	if r.UserCountValue == nil {
+		return nil, nil
+	}
+	n2 := int32(*r.UserCountValue)
+	return &n2, nil
 }
 
-func (r ProductLicenseInfo) ExpiresAt() string {
-	return r.ExpiresAtValue.Format(time.RFC3339)
+// ExpiresAt implements the GraphQL type ProductLicenseInfo.
+func (r ProductLicenseInfo) ExpiresAt() *string {
+	if r.ExpiresAtValue == nil {
+		return nil
+	}
+	s := r.ExpiresAtValue.Format(time.RFC3339)
+	return &s
 }

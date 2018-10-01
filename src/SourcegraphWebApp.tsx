@@ -13,7 +13,8 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route } from 'react-router'
 import { BrowserRouter } from 'react-router-dom'
-import { combineLatest, from, Subscription } from 'rxjs'
+import { combineLatest, Subscription } from 'rxjs'
+import { from } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from 'sourcegraph/module/client/environment'
 import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
@@ -44,8 +45,6 @@ import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { eventLogger } from './tracking/eventLogger'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
-import { UserAreaRoute } from './user/area/UserArea'
-import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { isErrorLike } from './util/errors'
 
 export interface SourcegraphWebAppProps {
@@ -56,8 +55,6 @@ export interface SourcegraphWebAppProps {
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
-    userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
-    userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userAccountSideBarItems: UserAccountSidebarItems
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>

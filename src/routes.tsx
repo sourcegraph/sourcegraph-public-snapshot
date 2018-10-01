@@ -145,7 +145,9 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/users/:username',
-        render: props => <UserArea {...props} />,
+        render: props => (
+            <UserArea {...props} sideBarItems={props.userAccountSideBarItems} routes={props.userAccountAreaRoutes} />
+        ),
     },
     {
         path: '/survey/:score?',

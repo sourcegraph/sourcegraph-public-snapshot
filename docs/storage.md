@@ -41,7 +41,8 @@ with `timezone =` to the following:
 timezone = 'UTC'
 ```
 
-Finally, restart your database server (mac: `brew services restart postgresql@9.6`, recent linux, probably `service postgresql restart`)
+Finally, restart your database server (mac: `brew services restart postgresql`, recent linux
+probably `service postgresql restart`)
 
 # Configuring PostgreSQL
 

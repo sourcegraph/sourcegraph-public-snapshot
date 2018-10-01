@@ -3,19 +3,20 @@
 package templates
 
 import (
-	"go/build"
 	"log"
 	"net/http"
+	"path/filepath"
 
 	"github.com/shurcooL/httpfs/filter"
+	"golang.org/x/tools/go/packages"
 )
 
 func importPathToDir(importPath string) string {
-	p, err := build.Import(importPath, "", build.FindOnly)
-	if err != nil {
-		log.Fatalln(err)
+	pkgs, err := packages.Load(&packages.Config{Mode: packages.LoadFiles}, importPath)
+	if err != nil || len(pkgs) == 0 || len(pkgs[0].GoFiles) == 0 {
+		log.Fatal("Failed to find templates directory: ", err)
 	}
-	return p.Dir
+	return filepath.Dir(pkgs[0].GoFiles[0])
 }
 
 // Data is a virtual filesystem that contains template data used by Sourcegraph app.

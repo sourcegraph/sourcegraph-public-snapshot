@@ -84,16 +84,6 @@ func (r *nodeResolver) ToDependency() (*dependencyResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToProductLicense() (ProductLicense, bool) {
-	n, ok := r.node.(ProductLicense)
-	return n, ok
-}
-
-func (r *nodeResolver) ToProductSubscription() (ProductSubscription, bool) {
-	n, ok := r.node.(ProductSubscription)
-	return n, ok
-}
-
 func (r *nodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
 	n, ok := r.node.(*externalAccountResolver)
 	return n, ok
@@ -162,16 +152,6 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 	switch relay.UnmarshalKind(id) {
 	case "AccessToken":
 		return accessTokenByID(ctx, id)
-	case "ProductLicense":
-		if f := ProductLicenseByID; f != nil {
-			return f(ctx, id)
-		}
-		return nil, errors.New("not implemented")
-	case "ProductSubscription":
-		if f := ProductSubscriptionByID; f != nil {
-			return f(ctx, id)
-		}
-		return nil, errors.New("not implemented")
 	case "ExternalAccount":
 		return externalAccountByID(ctx, id)
 	case "GitRef":
