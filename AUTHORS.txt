@@ -36,4 +36,5 @@ Nico Tonozzi <dominic.tonozzi@gmail.com>
 Pararth Shah <pararth@sourcegraph.com>
 Quinn Slack <sqs@sourcegraph.com>
 Renfred Harper <renfredxh@gmail.com>
+Rich Taylor <rich@sourcegraph.com>
 Sourcegraph <hi@sourcegraph.com>
