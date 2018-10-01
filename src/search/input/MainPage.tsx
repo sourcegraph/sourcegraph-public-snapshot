@@ -656,7 +656,7 @@ export class MainPage extends React.Component<Props, State> {
                             </div>
                             <div className="col-6 modal-code-intellify" />
                         </div>
-                        <button className="btn" onClick={this.closeModal('intelligence')}>
+                        <button className="btn" onClick={this.closeModal('integrations')}>
                             Close
                         </button>
                     </div>
@@ -766,7 +766,13 @@ export class MainPage extends React.Component<Props, State> {
                 this.setState(state => ({ modalIntelligenceClosing: !state.modalIntelligenceClosing }))
             }, 400)
         } else if (modalName === 'integrations') {
-            // Add int code here
+            this.setState(state => ({ modalIntegrationsClosing: !state.modalIntegrationsClosing }))
+            this.setState(state => ({ animateModalIntegrations: false }))
+            // RESET DID CLOSE
+            setTimeout(() => {
+                this.setState(state => ({ modalIntegrationsOpen: !state.modalIntegrationsOpen }))
+                this.setState(state => ({ modalIntegrationsClosing: !state.modalIntegrationsClosing }))
+            }, 400)
         }
     }
 
