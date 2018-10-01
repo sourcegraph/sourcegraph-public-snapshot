@@ -26,7 +26,7 @@ this project's issue tracker][report-issue].
 
 **Want to contribute to this project?** [Learn how to set up a local dev
 environment, start the Sourcegraph server, and run
-tests](./docs/local-development).
+tests](./docs/local-development.md).
 
 ## Code of Conduct
 
