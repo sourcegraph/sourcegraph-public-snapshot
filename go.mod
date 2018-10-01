@@ -43,7 +43,7 @@ require (
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
-	github.com/sourcegraph/sourcegraph v0.0.0-20181001183037-9a18882b2bfb
+	github.com/sourcegraph/sourcegraph v0.0.0-20181001193520-f711792321e6
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/zenazn/goji v0.9.0 // indirect
 	go4.org v0.0.0-20180809161055-417644f6feb5
