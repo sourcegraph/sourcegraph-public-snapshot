@@ -1,7 +1,10 @@
 // Stylelint rules
-// stylelint-disable value-no-vendor-prefix color-named
+// stylelint-disable value-no-vendor-prefix
 // Webkit prefixes are needed
+// stylelint-disable color-named
 // RGBA is prefered in some CSS properties
+// stylelint-disable indentation
+// stylelint-disable color-hex-length
 
 @import '../../nav/GlobalNavbar';
 @import './SearchFilterChips';
@@ -87,6 +90,10 @@ body.modal-open {
             margin-right: auto;
             margin-left: auto;
             h1 {
+                font-size: 54px;
+                line-height: normal;
+                margin-top: -0.75rem;
+
                 background: radial-gradient(closest-side, #019fde, #b200f8, #f96216);
                 background-size: 600% 600%;
                 -webkit-background-clip: text;
@@ -108,19 +115,14 @@ body.modal-open {
             }
             padding-top: 8rem;
             padding-bottom: 10rem;
-            h1 {
-                font-size: 3.4rem;
-                line-height: normal;
-                margin-top: -0.75rem;
-            }
             h2 {
-                font-size: 1.4rem;
+                font-size: 22px;
                 font-weight: 400;
                 margin-bottom: 0;
             }
             p {
-                font-size: 1rem;
-                padding-right: 2em;
+                font-size: 16px;
+                padding-right: 2rem;
             }
             .btn {
                 margin-right: 1rem;
@@ -225,48 +227,50 @@ body.modal-open {
         }
 
         h1 {
-            font-size: 3.4rem;
+            font-size: 54px;
             padding-top: 0;
         }
         h2 {
-            font-size: 1.4rem;
+            font-size: 22px;
             font-weight: 400;
             margin-bottom: 0;
             padding-left: 0.25rem;
         }
         p {
-            font-size: 1rem;
-            padding-right: 2em;
+            font-size: 16px;
+            padding-right: 2rem;
         }
         .row {
             padding-top: 12rem;
             padding-bottom: 8rem;
         }
+        // stylelint-disable-next-line declaration-block-no-duplicate-properties
         position: sticky;
+        // stylelint-disable-next-line declaration-block-no-duplicate-properties
         position: -webkit-sticky;
         z-index: 2;
-        box-shadow: rgba(0, 0, 0, 0.35) 0px 4rem 8rem 12rem;
+        box-shadow: rgba(0, 0, 0, 0.35) 0 4rem 8rem 12rem;
         padding-top: 2rem;
         padding-bottom: 4rem;
-        background-color: black;
+        background-color: #000000;
         width: 100%;
     }
     .up-next-section {
         h1 {
-            font-size: 3.4rem;
-            padding-top: 0p;
+            font-size: 54px;
+            padding-top: 0;
             color: #1e232e;
         }
         h2 {
-            font-size: 1.4rem;
+            font-size: 22px;
             font-weight: 400;
             margin-bottom: 0;
-            color: black;
+            color: #000000;
         }
         p {
-            font-size: 1rem;
-            padding-right: 2em;
-            color: black;
+            font-size: 16px;
+            padding-right: 2rem;
+            color: #000000;
         }
         .btn {
             margin-right: 1rem;
@@ -300,28 +304,27 @@ body.modal-open {
             padding-top: 1.5rem;
             padding-bottom: 0.5rem;
         }
-        background: rgb(249, 98, 22); /* Old browsers */
-        background: rgb(249, 98, 22); /* Old browsers */
+        background: rgb(249, 98, 22);
         background: -moz-radial-gradient(
             center,
             ellipse cover,
             rgba(249, 98, 22, 1) 0%,
             rgba(178, 0, 248, 1) 51%,
             rgba(1, 159, 222, 1) 100%
-        ); /* FF3.6-15 */
+        );
         background: -webkit-radial-gradient(
             center,
             ellipse cover,
             rgba(249, 98, 22, 1) 0%,
             rgba(178, 0, 248, 1) 51%,
             rgba(1, 159, 222, 1) 100%
-        ); /* Chrome10-25,Safari5.1-6 */
+        );
         background: radial-gradient(
             ellipse at center,
             rgba(249, 98, 22, 1) 0%,
             rgba(178, 0, 248, 1) 51%,
             rgba(1, 159, 222, 1) 100%
-        ); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+        );
         background-size: 200% 800%;
         background-position: calc(100vw * 1) calc(100vh * 1.15);
     }
@@ -330,43 +333,43 @@ body.modal-open {
     .modal-integrations {
         .copy-section {
             h1 {
-                font-size: 4.6rem;
+                font-size: 74px;
                 padding-top: 0;
                 line-height: 4.15rem;
             }
             h2 {
-                font-size: 2rem;
+                font-size: 32px;
                 font-weight: 400;
                 margin-bottom: 1rem;
             }
             h3 {
-                font-size: 1.75rem;
+                font-size: 28px;
                 font-weight: 400;
                 margin-bottom: 1rem;
             }
             p {
-                font-size: 1.125rem;
-                padding-right: 2em;
+                font-size: 18px;
+                padding-right: 2rem;
             }
             @media screen and (max-width: $media-lg) {
                 h1 {
-                    font-size: 3.25rem;
+                    font-size: 52px;
                     padding-top: 0;
                     line-height: 3rem;
                 }
                 h2 {
-                    font-size: 1.25rem;
+                    font-size: 20px;
                     font-weight: 400;
                     margin-bottom: 0.5rem;
                 }
                 h3 {
-                    font-size: 1.25rem;
+                    font-size: 20px;
                     font-weight: 400;
                     margin-bottom: 0.5rem;
                 }
                 p {
-                    font-size: 1rem;
-                    padding-right: 2em;
+                    font-size: 16px;
+                    padding-right: 2rem;
                 }
             }
         }
@@ -402,7 +405,7 @@ body.modal-open {
                 color: #666;
             }
         }
-        .activeSec * {
+        .activesec * {
             transition: all 350ms ease;
 
             color: white;
@@ -410,7 +413,7 @@ body.modal-open {
         .main-page__container {
             width: 100%;
             max-width: 100%;
-            font-size: 1.25rem;
+            font-size: 20px;
             font-weight: 400;
             letter-spacing: 0.05rem;
             .search-button {
@@ -418,15 +421,15 @@ body.modal-open {
                 padding-left: 2rem;
                 padding-right: 2rem;
                 margin-right: 0;
-                font-size: 1.25rem;
+                font-size: 20px;
                 font-weight: 400;
                 letter-spacing: 0.05rem;
-                height: 48px;
+                height: 3rem;
             }
         }
         .form-control {
             height: 3rem;
-            font-size: 1.25rem;
+            font-size: 20px;
             font-weight: 400;
             letter-spacing: 0.05rem;
 
@@ -456,11 +459,11 @@ body.modal-open {
         .btn-integrations {
             display: inline-flex;
             align-items: center;
-            font-size: 1.25rem;
+            font-size: 20px;
             font-weight: 400;
             .btn-icon {
-                height: 24px;
-                width: 24px;
+                height: 1.5rem;
+                width: 1.5rem;
                 display: inline-block;
                 margin-right: 0.5rem;
                 background-size: contain;
@@ -545,7 +548,6 @@ body.modal-open {
             }
         }
         .search-row-animate {
-            opacity: 0;
             animation: display 350ms ease-in 400ms forwards;
             @keyframes display {
                 from {
@@ -609,7 +611,7 @@ body.modal-open {
             &__title,
             &__link {
                 font-family: SFMono-Regular, SF Mono, Consolas, Menlo, DejaVu Sans Mono, monospace;
-                font-size: 0.75rem;
+                font-size: 12px;
             }
             &__link {
                 float: right;
@@ -648,7 +650,7 @@ body.modal-open {
             }
             .footer__logo {
                 padding: 0 0 1.25rem 0;
-                margin: 0 0 0 -8px;
+                margin: 0 0 0 -0.5rem;
             }
             @media screen and (max-width: $media-md) {
                 padding-bottom: 0.2rem;
@@ -690,23 +692,23 @@ body.modal-open {
                 &:last-of-type {
                     border-bottom: solid 1px $light-2;
                 }
-                padding-top: 6px;
+                padding-top: 0.5rem;
                 border-top: solid 1px $light-2;
                 &.community,
                 &.company,
                 &.features,
                 &.resources {
                     .close--icon {
-                        height: 18px;
-                        width: 18px;
+                        height: 1.125rem;
+                        width: 1.125rem;
                         position: absolute;
                         top: calc(1rem - 10px);
                         right: 1rem;
                         transition: all 0.3s ease-in-out;
 
                         svg {
-                            height: 18px;
-                            width: 18px;
+                            height: 1.125rem;
+                            width: 1.125rem;
                             transition: transform 0.3s ease-in-out;
                             transform: rotate(-45deg);
                         }
@@ -725,6 +727,7 @@ body.modal-open {
                         opacity: 0;
                         cursor: pointer;
                         z-index: 9999;
+                        // stylelint-disable-next-line scss/selector-no-redundant-nesting-selector
                         & + ul {
                             display: hidden;
                             height: 0;
@@ -737,7 +740,7 @@ body.modal-open {
                         &:checked + ul li {
                             transition: all 0.3s ease-in-out;
                             display: block;
-                            top: 0px;
+                            top: 0;
                         }
                         &:checked ~ .close--icon {
                             svg {
@@ -811,7 +814,7 @@ body.modal-open {
                 @media screen and (max-width: $media-md) {
                     float: none;
                     a:first-of-type {
-                        margin-left: 0rem;
+                        margin-left: 0;
                     }
                 }
             }
