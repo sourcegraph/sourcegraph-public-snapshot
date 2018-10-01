@@ -29,13 +29,15 @@ This is your "Sourcegraph repository directory".
 
 Sourcegraph has the following dependencies:
 
-- Git
-- Go (1.11 or later)
-- Docker
-- PostgreSQL (version 9)
-- Node.js (version 8 or 10)
-- Redis
-- Yarn
+- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [Go](https://golang.org/doc/install) (v1.11 or higher)
+- [Node JS](https://nodejs.org/en/download/) (version 8 or 10)
+- [make](https://www.gnu.org/software/make/)
+- [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
+  - For macOS we recommend using Docker for Mac instead of `docker-machine`
+- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.6.x)
+- [Redis](http://redis.io/) (v3.0.7 or higher)
+- [Yarn](https://yarnpkg.com) (v1.10.1 or higher)
 
 You have two options for installing these dependencies.
 
@@ -72,17 +74,7 @@ This is a streamlined setup for Mac machines.
 
 ### Option B: Linux / Manual Install
 
-For Linux users or if you don't want to use Homebrew on macOS, you'll need the
-following packages:
-
-- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
-- [Go](https://golang.org/doc/install) (v1.11 or higher)
-- [Node JS](https://nodejs.org/en/download/) (v8.0.0 or higher)
-- [make](https://www.gnu.org/software/make/)
-- [Docker](https://docs.docker.com/engine/installation/) (v1.8 or higher)
-  - if using Mac OS, we recommend using Docker for Mac instead of `docker-machine`
-- [PostgreSQL](https://wiki.postgresql.org/wiki/Detailed_installation_guides) (v9.2 to v9.6.x)
-- [Redis](http://redis.io/) (v3.0.7 or higher)
+For Linux users or if you don't want to use Homebrew on macOS, install the dependencies listed above using your preferred method.
 
 #### NodeJS on Ubuntu
 
