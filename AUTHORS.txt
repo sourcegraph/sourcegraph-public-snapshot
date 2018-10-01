@@ -40,4 +40,5 @@ Rich Taylor <rich@sourcegraph.com>
 Richard Musiol <mail@richard-musiol.de>
 Rohan Pai <rohan@sourcegraph.com>
 Samuel Lavery <sam@sourcegraph.com>
+Seebs <seebs@sourcegraph.com>
 Sourcegraph <hi@sourcegraph.com>
