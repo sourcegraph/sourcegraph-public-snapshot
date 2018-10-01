@@ -29,7 +29,7 @@ fi
 addr=''
 secret_key=''
 if [[ "${INSECURE_DEV:-}" == '1' ]]; then
-    addr='-e ROCKET_ADDRESS=127.0.0.1'
+    addr='-e ROCKET_ADDRESS=0.0.0.0'
 fi
 exec docker run --name=syntect_server --rm -p9238:9238 -e QUIET='true' \
     -e ROCKET_LIMITS='{json=10485760}' \
