@@ -8,8 +8,8 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/sourcegraph/pkg/lsp"
-	"github.com/sourcegraph/sourcegraph/pkg/lspext"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"

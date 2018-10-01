@@ -3,10 +3,10 @@ package backend
 import (
 	"context"
 
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/lsp"
-	"github.com/sourcegraph/sourcegraph/pkg/lspext"
 )
 
 // LangServer contains backend methods for communicating with language and build servers over LSP (via xlang).

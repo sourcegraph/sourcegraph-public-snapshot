@@ -11,11 +11,11 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/lsp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 

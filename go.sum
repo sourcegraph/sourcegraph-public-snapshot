@@ -277,6 +277,8 @@ github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWif
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d h1:BAP431YeA7rgSoySjmVzBfFjXsLtnD93zZip5JIOWdk=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d/go.mod h1:6DfNy4BLIggAeittTJ8o9z/6d1ly+YujBTSnv03i7Bk=
+github.com/sourcegraph/go-langserver v0.0.0-20180817131207-7df19dc017ef h1:3fS/iN2AQkK7B/6689FC7a30DhGJ2zRg4gtcAd7tlk0=
+github.com/sourcegraph/go-langserver v0.0.0-20180817131207-7df19dc017ef/go.mod h1:bBMjfpzEHd6ijPRoQ7f+knFfw+e8R+W158/MsqAy77c=
 github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18 h1:Owk1nJ1CZIhtKyiVrG65ajT834xuNhtpJWmhnNF2x3A=
 github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
 github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d/go.mod h1:8HCyYaC38XwX0AOu0+fuY02Y5Z7CkITW0oVJavbna4Q=
