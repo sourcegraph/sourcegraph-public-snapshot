@@ -49,7 +49,7 @@
     "@types/node": "8.0.44",
     "@types/react": "16.4.13",
     "@types/react-dom": "16.0.8",
-    "@types/react-router": "4.0.30",
+    "@types/react-router": "4.0.31",
     "@types/react-router-dom": "4.3.1",
     "@types/reactstrap": "5.0.18",
     "@types/shelljs": "0.8.0",
