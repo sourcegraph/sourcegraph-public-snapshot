@@ -6,12 +6,13 @@ import {
     HoverOverlay,
     HoverState,
 } from '@sourcegraph/codeintellify'
-import { Position } from 'vscode-languageserver-types'
+import { getTokenAtPosition } from '@sourcegraph/codeintellify/lib/token_position'
 import * as H from 'history'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
+import { Position } from 'vscode-languageserver-types'
 import { getHover, getJumpURL } from '../../backend/features'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
@@ -23,7 +24,6 @@ import { getModeFromPath } from '../../util'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { isDefined, propertyIsDefined } from '../../util/types'
-import { getTokenAtPosition } from '@sourcegraph/codeintellify/lib/token_position'
 
 function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
