@@ -29,8 +29,13 @@ When developing locally, use `./dev/start.sh`. This will ensure you build agains
 
 ### Updating dependencies
 
-- Use `dev/go-mod-update.sh` to update the `github.com/sourcegraph/sourcegraph` dependency to the latest `master` revision.
-- Use `dev/go $args` instead of `go $args` for other dependency update operations. That script will
+Use `dev/update-oss-dep.sh` to update the webapp and backend `github.com/sourcegraph/sourcegraph`
+dependencies to their latest revisions. In general, `dev/update-oss-dep.sh` should only be run on
+the `master` branch and its changes pushed directly to `master`.
+
+- If you only want to update the backend `github.com/sourcegraph/sourcegraph` dependency, run `./dev/go-mod-update.sh`.
+- If you only want to update the webapp dependency, run `yarn upgrade @sourcegraph/webapp@latest`.
+- For other backend dependency updates, use `dev/go $args` instead of `go $args`. That script will
   wrap the `go` invocation by removing the `replace github.com/sourcegraph/sourcegraph` directive
   from `go.mod` and calling `go mod tidy` afterward. For instance,
   - `dev/go get -u $MODULE` to update `$MODULE` and all its transitive dependencies to their latest version.
