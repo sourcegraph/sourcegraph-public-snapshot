@@ -39,4 +39,5 @@ Renfred Harper <renfredxh@gmail.com>
 Rich Taylor <rich@sourcegraph.com>
 Richard Musiol <mail@richard-musiol.de>
 Rohan Pai <rohan@sourcegraph.com>
+Samuel Lavery <sam@sourcegraph.com>
 Sourcegraph <hi@sourcegraph.com>
