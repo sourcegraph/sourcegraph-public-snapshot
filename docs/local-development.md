@@ -7,28 +7,13 @@ reading the code at https://sourcegraph.com/github.com/sourcegraph/sourcegraph.
 
 The Sourcegraph server is actually a collection of smaller binaries, each of
 which performs one task. The core entrypoint for the Sourcegraph development
-server is `dev/launch.sh`, which will initialize the environment, and start a
-process manager that runs the following binaries:
-
-- gitserver
-- indexer
-- query-runner
-- repo-updater
-- searcher
-- symbols
-- github-proxy
-- lsp-proxy
-- frontend
-- web
-- syntect_server
-- zoekt-indexserver
-- zoekt-webserver
+server is [dev/launch.sh](../dev/launch.sh), which will initialize the environment, and start a
+process manager that runs all of the binaries.
 
 See [the Architecture doc](architecture.md) for a full description of what each
 of these services does.
 
-There are several dependencies that you will need to load to get `dev/launch.sh`
-to load properly, described below.
+The sections below describe the the dependencies that you need to have to be able to run `dev/launch.sh` properly.
 
 ## Step 1: Get the code
 
