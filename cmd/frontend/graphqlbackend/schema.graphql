@@ -2011,6 +2011,8 @@ type UserConnection {
     # The total count of users in the connection. This total count may be larger
     # than the number of nodes in this object when the result is paginated.
     totalCount: Int!
+    # Pagination information.
+    pageInfo: PageInfo!
 }
 
 # A user.
