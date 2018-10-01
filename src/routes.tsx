@@ -14,6 +14,7 @@ import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
 import { RepoContainer } from './repo/RepoContainer'
 import { parseSearchURLQuery } from './search'
+import { MainPage } from './search/input/MainPage'
 import { ScopePage } from './search/input/ScopePage'
 import { SearchPage } from './search/input/SearchPage'
 import { SearchResults } from './search/results/SearchResults'
@@ -55,7 +56,13 @@ export const routes: LayoutRouteProps[] = [
     {
         path: '/search',
         render: (props: any) =>
-            parseSearchURLQuery(props.location.search) ? <SearchResults {...props} /> : <SearchPage {...props} />,
+            parseSearchURLQuery(props.location.search) ? (
+                <SearchResults {...props} />
+            ) : props.user ? (
+                <SearchPage {...props} />
+            ) : (
+                <MainPage {...props} />
+            ),
         exact: true,
     },
     {

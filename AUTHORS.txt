@@ -11,6 +11,7 @@ Dmitri Shuralyov <shurcooL@gmail.com>
 Emil Davtyan <emil2k@gmail.com>
 Farhan Attamimi <farhan@sourcegraph.com>
 Felix Becker <felix.b@outlook.com>
+Francis Schmaltz <francis@sourcegraph.com>
 Gabriel Aszalos <gabriel@sourcegraph.com>
 Geoffrey Gilmore <geoffrey@sourcegraph.com>
 Ildar Isaev <iisaev@codeminders.com>
