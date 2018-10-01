@@ -35,5 +35,8 @@ func TestPresentationError(t *testing.T) {
 		if got, want := PresentationMessage(err), "m"; got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
+		if got, want := err.Error(), "m"; got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
 	})
 }
