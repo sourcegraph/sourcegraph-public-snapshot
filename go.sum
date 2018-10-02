@@ -305,8 +305,8 @@ github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd h1:NPk22RvonOjkN
 github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 h1:FX++QsC/k2sAidBLhZX0CZQwRwrRmz5KjKZPKcXGV74=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85/go.mod h1:v7Yudh8lfegZt52Qs5X9ktO0OMWEeUeoXO+4vJqn2Iw=
-github.com/sourcegraph/sourcegraph v0.0.0-20181002174243-16d03a7c5641 h1:t97UIEWF7PHB7T8Ygx4YV5xbBkeUoHYcqjiE7GIQL60=
-github.com/sourcegraph/sourcegraph v0.0.0-20181002174243-16d03a7c5641/go.mod h1:Ak9d1nxsWM3A0wu4I/4cAh7QczBWXV37XzCTCQcNNcU=
+github.com/sourcegraph/sourcegraph v0.0.0-20181002191020-bb062edd5d58 h1:7efhVbKJoixmCadpOdDAWAAvxJs4RciZp8jyT64sOvA=
+github.com/sourcegraph/sourcegraph v0.0.0-20181002191020-bb062edd5d58/go.mod h1:Ak9d1nxsWM3A0wu4I/4cAh7QczBWXV37XzCTCQcNNcU=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f/go.mod h1:I5NDweTUikWVakOqHBnCuqXGZOi0vJoeZRTFbHmhc1A=
