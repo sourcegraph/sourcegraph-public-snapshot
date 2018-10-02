@@ -78,7 +78,7 @@ export class AccessTokenNode extends React.PureComponent<AccessTokenNodeProps, A
                 .pipe(
                     filter(() =>
                         window.confirm(
-                            'Really delete and revoke this token? Any clients using it will no longer be able to access the Sourcegraph API.'
+                            'Delete and revoke this token? Any clients using it will no longer be able to access the Sourcegraph API.'
                         )
                     ),
                     switchMap(() =>
