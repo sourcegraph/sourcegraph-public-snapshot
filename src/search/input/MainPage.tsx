@@ -736,10 +736,8 @@ export class MainPage extends React.Component<Props, State> {
                                 {integrationsSections.map(({ title, paragraph, buttons }, i) => (
                                     <div
                                         key={`search-sections-${i}`}
-                                        className={`row copy-section modal-copy-row ${
-                                            this.state.activesection === `${i}` || this.state.activesection === '99'
-                                                ? 'activesec'
-                                                : ''
+                                        className={`row copy-section modal-copy-row activesec
+        
                                         }`}
                                     >
                                         <div className="col-12">
@@ -748,9 +746,7 @@ export class MainPage extends React.Component<Props, State> {
                                             {buttons.map(({ text, id }, j) => (
                                                 <button
                                                     key={`integrations-buttons-${j}`}
-                                                    className={`btn btn-secondary btn-integrations  ${id} ${
-                                                        this.state.activeButton === `${i}-${j}` ? 'active' : ''
-                                                    }`}
+                                                    className={`btn btn-secondary btn-integrations  ${id}`}
                                                 >
                                                     <span className="btn-icon" />
                                                     {text}
