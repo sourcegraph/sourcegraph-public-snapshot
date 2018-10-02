@@ -479,7 +479,12 @@ func start(language string) error {
 
 func startDebugArgs(language string) (args []string) {
 	if language == "go" {
-		args = append(args, []string{"-e", "SRC_GIT_SERVERS=localhost:3178"}...)
+		// The address where gitserver is accessible from the Go language server.
+		host := os.Getenv("GOLANGSERVER_SRC_GIT_SERVERS")
+		if host == "" {
+			host = "localhost:3178"
+		}
+		args = append(args, []string{"-e", fmt.Sprintf("SRC_GIT_SERVERS=%s", host)}...)
 	}
 
 	p := debugContainerPorts[language]
