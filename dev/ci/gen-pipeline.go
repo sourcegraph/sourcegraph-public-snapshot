@@ -16,7 +16,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -215,38 +214,6 @@ func main() {
 				bk.Cmd("./dev/ci/deploy-dogfood.sh"))
 			pipeline.AddWait()
 		}
-
-		// Precalculate the webapp version here because metadata cannot be
-		// forwarded in a trigger step, see https://github.com/buildkite/feedback/issues/403
-		// This is safe because the publish step has a concurrency group so no
-		// other publish can happen between now and its execution
-		out, err := exec.Command("bash", "-c", "npx --quiet semver --increment patch $(npm info @sourcegraph/webapp version)").Output()
-		if err != nil {
-			panic(err)
-		}
-		webappVersion := strings.TrimSpace(string(out))
-
-		// Trigger an enterprise repository master branch build.
-		pipeline.AddTrigger(":satellite_antenna:",
-			bk.Trigger("enterprise"),
-			bk.ConcurrencyGroup("trigger-enterprise"),
-			bk.Build(bk.BuildOptions{
-				Message: ":satellite_antenna: OSS commit " + os.Getenv("BUILDKITE_COMMIT")[0:7] + ": " + os.Getenv("BUILDKITE_MESSAGE"),
-				Env: map[string]string{
-					"OSS_REPO_REVISION":  os.Getenv("BUILDKITE_COMMIT"),
-					"OSS_WEBAPP_VERSION": webappVersion,
-					"OSS_BUILD_URL":      os.Getenv("BUILDKITE_BUILD_URL"),
-					"OSS_BUILD_NUMBER":   os.Getenv("BUILDKITE_BUILD_NUMBER"),
-				},
-				MetaData: map[string]interface{}{
-					"oss-repo-revision":  os.Getenv("BUILDKITE_COMMIT"),
-					"oss-webapp-version": webappVersion,
-					"oss-build-url":      os.Getenv("BUILDKITE_BUILD_URL"),
-					"oss-build-number":   os.Getenv("BUILDKITE_BUILD_NUMBER"),
-				},
-			}),
-		)
-		pipeline.AddWait()
 
 		if deploy {
 			// Deploy to prod

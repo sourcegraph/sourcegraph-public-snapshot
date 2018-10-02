@@ -103,7 +103,6 @@ export async function webpackServe(): Promise<void> {
 const GRAPHQL_SCHEMA_PATH = __dirname + '/cmd/frontend/graphqlbackend/schema.graphql'
 
 export async function watchGraphQLTypes(): Promise<void> {
-    await graphQLTypes()
     await new Promise<never>((resolve, reject) => {
         gulp.watch(GRAPHQL_SCHEMA_PATH, graphQLTypes).on('error', reject)
     })
@@ -173,7 +172,6 @@ export async function schema(): Promise<void> {
 }
 
 export async function watchSchema(): Promise<void> {
-    await schema()
     await new Promise<never>((resolve, reject) => {
         gulp.watch(__dirname + '/schema/*.schema.json', schema).on('error', reject)
     })
@@ -252,7 +250,11 @@ export const watchSass = gulp.series(sass, async function watchSass(): Promise<v
  * Builds only the dist/ folder.
  */
 export const dist = gulp.parallel(sass, gulp.series(gulp.parallel(schema, graphQLTypes), typescript))
-export const watchDist = gulp.parallel(watchSass, watchSchema, watchGraphQLTypes, watchTypescript)
+export const watchDist = gulp.series(
+    // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
+    gulp.parallel(schema, graphQLTypes),
+    gulp.parallel(watchSass, watchSchema, watchGraphQLTypes, watchTypescript)
+)
 
 /**
  * Builds everything.
@@ -265,7 +267,11 @@ export const build = gulp.parallel(
 /**
  * Watches everything and rebuilds on file changes.
  */
-export const watch = gulp.parallel(watchSass, watchSchema, watchGraphQLTypes, watchTypescript, webpackServe)
+export const watch = gulp.series(
+    // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
+    gulp.parallel(schema, graphQLTypes),
+    gulp.parallel(watchSass, watchSchema, watchGraphQLTypes, watchTypescript, webpackServe)
+)
 
 /**
  * Publishes a new version of @sourcegraph/webapp to npm.
