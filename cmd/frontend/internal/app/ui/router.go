@@ -177,7 +177,7 @@ func initRouter() {
 	// basic pages with static titles
 	router := newRouter()
 	uirouter.Router = router // make accessible to other packages
-	router.Get(routeHome).Handler(handler(serveBasicPageString("Sourcegraph")))
+	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeStart).Handler(handler(serveBasicPageString("Sourcegraph")))
 	router.Get(routeThreads).Handler(handler(serveBasicPageString("Threads - Sourcegraph")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveBasicPageString("Sign in - Sourcegraph")))
