@@ -79,7 +79,7 @@
     "@types/react-dom": "16.0.8",
     "@types/react-router": "4.0.31",
     "@types/react-router-dom": "4.3.1",
-    "@types/react-stripe-elements": "^1.1.7",
+    "@types/react-stripe-elements": "1.1.7",
     "@types/uglifyjs-webpack-plugin": "1.1.0",
     "@types/webpack": "4.4.11",
     "@types/webpack-serve": "2.0.0",
