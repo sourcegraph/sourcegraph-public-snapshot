@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -211,7 +212,6 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	if (r.Host == "sourcegraph.com" || r.Host == "www.sourcegraph.com") && !actor.FromContext(r.Context()).IsAuthenticated() {
 		// The user is not signed in and tried to access our main site at sourcegraph.com.
 		// Redirect to about.sourcegraph.com so they see general info.
-		u, err := url.Parse(aboutRedirectScheme + "://" + aboutRedirectHost)
 		if err != nil {
 			return err
 		}
