@@ -68,7 +68,9 @@ body.modal-open {
         width: 100%;
         position: sticky;
         position: -webkit-sticky;
-        top: 44px;
+        @media screen and (min-height: 650px) {
+            top: 44px;
+        }
         z-index: 1;
 
         &__bg {
@@ -89,6 +91,12 @@ body.modal-open {
             padding-left: 0.75rem;
             margin-right: auto;
             margin-left: auto;
+            padding-top: 8rem;
+            padding-bottom: 10rem;
+            @media screen and (max-width: $media-md) {
+                padding-top: 2rem;
+                padding-bottom: 4rem;
+            }
             h1 {
                 font-size: 54px;
                 line-height: normal;
@@ -113,8 +121,7 @@ body.modal-open {
                     }
                 }
             }
-            padding-top: 8rem;
-            padding-bottom: 10rem;
+
             h2 {
                 font-size: 22px;
                 font-weight: 400;
@@ -126,6 +133,7 @@ body.modal-open {
             }
             .btn {
                 margin-right: 1rem;
+                margin-bottom: 1rem;
             }
             .btn-primary {
                 border: none;
@@ -141,7 +149,10 @@ body.modal-open {
     .about-section {
         position: sticky;
         position: -webkit-sticky;
-        top: 0;
+
+        @media screen and (min-width: $media-md) {
+            top: 0;
+        }
         &:nth-of-type(1) {
             h1 {
                 padding-bottom: 1.5rem;
@@ -229,6 +240,9 @@ body.modal-open {
         h1 {
             font-size: 54px;
             padding-top: 0;
+            @media screen and (max-width: $media-md) {
+                line-height: normal;
+            }
         }
         h2 {
             font-size: 22px;
@@ -260,6 +274,9 @@ body.modal-open {
             font-size: 54px;
             padding-top: 0;
             color: #1e232e;
+            @media screen and (max-width: $media-md) {
+                line-height: normal;
+            }
         }
         h2 {
             font-size: 22px;
@@ -274,6 +291,7 @@ body.modal-open {
         }
         .btn {
             margin-right: 1rem;
+            margin-bottom: 1rem;
         }
         .col-md-12 {
             padding-bottom: 2rem;
@@ -334,6 +352,7 @@ body.modal-open {
         .btn-close-top {
             width: 2.5rem;
             height: 2.5rem;
+            margin-right: 1rem;
             border-radius: 50%;
             border: none;
             background-color: #222222;
@@ -350,7 +369,7 @@ body.modal-open {
             background-color: #333333;
             color: #fafafa;
             position: absolute;
-            right: calc(50% - 20px);
+            right: calc(50% - 53px);
             bottom: 3rem;
             cursor: pointer;
             z-index: 9999;
@@ -424,6 +443,11 @@ body.modal-open {
         .search-row {
             padding-bottom: 5rem;
             width: 100%;
+            @media screen and (max-width: $media-md) {
+                input {
+                    font-size: 16px;
+                }
+            }
         }
         .btn {
             margin-right: 2rem;
@@ -457,6 +481,11 @@ body.modal-open {
                 font-weight: 400;
                 letter-spacing: 0.05rem;
                 height: 3rem;
+                @media screen and (max-width: $media-md) {
+                    margin-left: 0.25rem;
+                    padding-left: 0.25rem;
+                    padding-right: 0.25rem;
+                }
             }
         }
         .form-control {
@@ -874,5 +903,10 @@ body.modal-open {
         &__sign-in {
             color: $color-light-text-4;
         }
+    }
+}
+.nav-links {
+    @media screen and (max-width: $media-md) {
+        display: none !important;
     }
 }
