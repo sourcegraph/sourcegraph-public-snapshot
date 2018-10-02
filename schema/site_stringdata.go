@@ -325,7 +325,7 @@ const SiteSchemaJSON = `{
     },
     "licenseKey": {
       "description":
-        "The Sourcegraph license key, which enables premium Sourcegraph features. To obtain this value, contact Sourcegraph to purchase a license.",
+        "The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription.",
       "type": "string"
     },
     "maxReposToSearch": {

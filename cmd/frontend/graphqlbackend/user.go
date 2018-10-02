@@ -232,6 +232,17 @@ func (r *UserResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
+// UserURLForSiteAdminBilling is called to obtain the GraphQL User.urlForSiteAdminBilling value. It
+// is only set if billing is implemented.
+var UserURLForSiteAdminBilling func(ctx context.Context, userID int32) (*string, error)
+
+func (r *UserResolver) URLForSiteAdminBilling(ctx context.Context) (*string, error) {
+	if UserURLForSiteAdminBilling == nil {
+		return nil, nil
+	}
+	return UserURLForSiteAdminBilling(ctx, r.user.ID)
+}
+
 func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	OldPassword string
 	NewPassword string
