@@ -190,7 +190,11 @@ export class BlobPage extends React.PureComponent<Props, State> {
 
         const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
         // renderAs is renderMode but with undefined mapped to the actual mode.
-        const renderAs = renderMode || (this.state.blobOrError && this.state.blobOrError.richHTML ? 'rendered' : 'code')
+        const renderAs =
+            renderMode ||
+            (this.state.blobOrError && this.state.blobOrError.richHTML && !this.props.location.hash
+                ? 'rendered'
+                : 'code')
 
         // Always render these to avoid UI jitter during loading when switching to a new file.
         const alwaysRender = (
