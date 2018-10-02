@@ -201,12 +201,6 @@ func serveBasicPage(title func(c *Common, r *http.Request) string) handlerFunc {
 	}
 }
 
-	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
-	r.URL.Path = "/search"
-	http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
-	return nil
-}
-
 func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, "", serveError)
