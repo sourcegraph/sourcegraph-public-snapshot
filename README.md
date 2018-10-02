@@ -10,12 +10,7 @@ This repository contains all of the Sourcegraph Enterprise code.
 
 - The main Sourcegraph codebase is open source, see [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
 - This codebase just wraps the open source codebase and links in some private code for enterprise features.
-- Only the enterprise codebase is published to e.g. Docker Hub. Enterprise features are behind paywalls (or good-faith). The open source codebase is not published on Docker Hub (this avoids confusion and keeps the upgrade/downgrade process from open source <-> enterprise easy).
-
-## Webapp
-
-The webapp code pulls in the latest OSS webapp in CI from the `@sourcegraph/webapp` npm package, which gets published on every commit to the OSS repo.
-This means the declared version in yarn.lock is expected to be outdated, and will be overridden on every build with the latest version.
+- Only the enterprise codebase is published to e.g. Docker Hub. Enterprise features are behind paywalls (or good-faith). The open-source codebase is not published on Docker Hub (this avoids confusion and keeps the upgrade/downgrade process from open source <-> enterprise easy).
 
 ## Dev
 
