@@ -215,7 +215,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
-		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "https://sourcegraph.com/start", http.StatusTemporaryRedirect)
 		return nil
 	}
 	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
