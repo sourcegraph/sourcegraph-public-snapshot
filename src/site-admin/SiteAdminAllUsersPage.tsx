@@ -161,8 +161,8 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
         if (
             !window.confirm(
                 siteAdmin
-                    ? `Really promote user ${this.props.node.username} to site admin?`
-                    : `Really revoke site admin status from user ${this.props.node.username}?`
+                    ? `Promote user ${this.props.node.username} to site admin?`
+                    : `Revoke site admin status from user ${this.props.node.username}?`
             )
         ) {
             return
@@ -189,7 +189,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     private randomizePassword = () => {
         if (
             !window.confirm(
-                `Really reset the password for ${
+                `Reset the password for ${
                     this.props.node.username
                 } to a random password? The user must reset their password to sign in again.`
             )
@@ -217,7 +217,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     }
 
     private deleteUser = () => {
-        if (!window.confirm(`Really delete the user ${this.props.node.username}?`)) {
+        if (!window.confirm(`Delete the user ${this.props.node.username}?`)) {
             return
         }
 

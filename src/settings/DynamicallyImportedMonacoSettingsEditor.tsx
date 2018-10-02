@@ -168,7 +168,7 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         if (
             this.state.value === undefined ||
             this.props.value === this.state.value ||
-            window.confirm('Really discard edits?')
+            window.confirm('Discard edits?')
         ) {
             this.setState({ value: undefined })
         }

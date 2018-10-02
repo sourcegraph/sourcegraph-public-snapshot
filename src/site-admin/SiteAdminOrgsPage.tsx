@@ -86,7 +86,7 @@ class OrgNode extends React.PureComponent<OrgNodeProps, OrgNodeState> {
     }
 
     private deleteOrg = () => {
-        if (!window.confirm(`Really delete the organization ${this.props.node.name}?`)) {
+        if (!window.confirm(`Delete the organization ${this.props.node.name}?`)) {
             return
         }
 
