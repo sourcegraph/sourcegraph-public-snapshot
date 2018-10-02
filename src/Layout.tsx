@@ -25,6 +25,8 @@ import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { UserAccountAreaRoute } from './user/account/UserAccountArea'
 import { UserAccountSidebarItems } from './user/account/UserAccountSidebar'
+import { UserAreaRoute } from './user/area/UserArea'
+import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 
 export interface LayoutProps
     extends RouteComponentProps<any>,
@@ -40,6 +42,8 @@ export interface LayoutProps
     siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute>
     siteAdminSideBarGroups: SiteAdminSideBarGroups
     siteAdminOverviewComponents: ReadonlyArray<React.ComponentType>
+    userAreaHeaderNavItems: ReadonlyArray<UserAreaHeaderNavItem>
+    userAreaRoutes: ReadonlyArray<UserAreaRoute>
     userAccountSideBarItems: UserAccountSidebarItems
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>

@@ -42,6 +42,12 @@ func (err userNotFoundErr) NotFound() bool {
 	return true
 }
 
+// NewUserNotFoundError returns a new error indicating that the user with the given user ID was not
+// found.
+func NewUserNotFoundError(userID int32) error {
+	return userNotFoundErr{args: []interface{}{"userID", userID}}
+}
+
 // errCannotCreateUser is the error that is returned when
 // a user cannot be added to the DB due to a constraint.
 type errCannotCreateUser struct {
