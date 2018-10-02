@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
+import { Redirect, RouteComponentProps } from 'react-router'
 import { APIConsole } from './api/APIConsole'
 import { ResetPasswordPage } from './auth/ResetPasswordPage'
 import { SignInPage } from './auth/SignInPage'
@@ -55,12 +55,27 @@ export const repoRevRoute: LayoutRouteProps = {
  */
 export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
+        path: '/',
+        render: (props: any) =>
+            window.context.sourcegraphDotComMode && !props.user ? (
+                <Redirect to={'/start'} />
+            ) : (
+                <Redirect to={'/search'} />
+            ),
+        exact: true,
+    },
+    {
+        path: '/start',
+        render: (props: any) => <MainPage {...props} />,
+        exact: true,
+    },
+    {
         path: '/search',
         render: (props: any) =>
             parseSearchURLQuery(props.location.search) ? (
                 <SearchResults {...props} />
             ) : window.context.sourcegraphDotComMode && !props.user ? (
-                <MainPage {...props} />
+                <Redirect to={'/start'} />
             ) : (
                 <SearchPage {...props} />
             ),
