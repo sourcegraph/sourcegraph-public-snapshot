@@ -70,7 +70,7 @@
     "@babel/plugin-syntax-dynamic-import": "^7.0.0",
     "@babel/polyfill": "^7.0.0",
     "@sourcegraph/codeintellify": "^3.9.0",
-    "@sourcegraph/extensions-client-common": "^8.8.0",
+    "@sourcegraph/extensions-client-common": "^8.9.0",
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/react": "16.4.14",
     "@types/react-dom": "16.0.7",

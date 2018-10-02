@@ -924,7 +924,7 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/extensions-client-common@^8.8.0":
+"@sourcegraph/extensions-client-common@^8.9.0":
   version "8.9.0"
   resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-8.9.0.tgz#36a8ade0ed2281e7801e08aafac669bac332f7d2"
   integrity sha512-sLTskHYrUNupDbk+RJC9o4Rmdpc2pD4IQs6hvXx6GDjb1w/qXa1jrh+KygmDObabqDddzAPLbfGkSjkaYQJUDw==
