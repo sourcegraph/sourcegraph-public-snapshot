@@ -477,7 +477,7 @@ func start(language string) error {
 	return err
 }
 
-// GoLangserverSrcGitServersHost is the address where gitserver is accessbile from the Go language server.
+// GoLangserverSrcGitServersHost is the address where gitserver is accessible from the Go language server.
 var GoLangserverSrcGitServersHost = "host.docker.internal"
 
 func startDebugArgs(language string) (args []string) {
