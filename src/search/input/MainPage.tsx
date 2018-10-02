@@ -736,9 +736,7 @@ export class MainPage extends React.Component<Props, State> {
                                 {integrationsSections.map(({ title, paragraph, buttons }, i) => (
                                     <div
                                         key={`search-sections-${i}`}
-                                        className={`row copy-section modal-copy-row activesec
-        
-                                        }`}
+                                        className={`row copy-section modal-copy-row activesec}`}
                                     >
                                         <div className="col-12">
                                             <h3>{title}</h3>
