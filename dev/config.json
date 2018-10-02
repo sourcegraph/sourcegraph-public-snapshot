@@ -12,5 +12,10 @@
   "repoListUpdateInterval": 1,
   "update.channel": "release",
   "corsOrigin": "https://github.com",
-  "auth.providers": [{ "type": "builtin", "allowSignup": true }]
+  "auth.providers": [
+    {
+      "type": "builtin",
+      "allowSignup": true
+    }
+  ]
 }
