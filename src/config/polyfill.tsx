@@ -14,7 +14,7 @@ import { URL, URLSearchParams } from 'whatwg-url'
 const GLOBAL = global as any
 GLOBAL.URL = URL
 GLOBAL.URLSearchParams = URLSearchParams
-if (createObjectURL) {
+if (!window.URL.createObjectURL && createObjectURL) {
     window.URL.createObjectURL = createObjectURL
 }
 
