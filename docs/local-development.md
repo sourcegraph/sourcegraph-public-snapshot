@@ -270,6 +270,13 @@ permanent for every shell session by adding the following line to your
 ulimit -n 10000
 ```
 
+On Linux, it may also be necessary to increase `sysctl -n fs.inotify.max_user_watches`, which can be
+done by running the following:
+
+```bash
+echo 524288 | sudo tee -a /proc/sys/fs/inotify/max_user_watches
+```
+
 If you ever need to wipe your local database, run the following command.
 
 ```
