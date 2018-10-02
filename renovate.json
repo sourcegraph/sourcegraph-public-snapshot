@@ -1,5 +1,12 @@
 {
   "$schema": "http://json.schemastore.org/renovate",
   "extends": ["github>sourcegraph/renovate-config"],
-  "semanticCommits": false
+  "semanticCommits": false,
+  "packageRules": [
+    {
+      "packageNames": ["github.com/sourcegraph/sourcegraph", "@sourcegraph/webapp"],
+      "groupName": "Sourcegraph OSS",
+      "schedule": []
+    }
+  ]
 }
