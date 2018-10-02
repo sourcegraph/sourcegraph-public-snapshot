@@ -27,7 +27,7 @@ import (
 
 const (
 	routeHome           = "home"
-	routeStart			= "start"
+	routeStart          = "start"
 	routeSearch         = "search"
 	routeSearchBadge    = "search-badge"
 	routeSearchSearches = "search-searches"

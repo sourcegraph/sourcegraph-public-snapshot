@@ -201,13 +201,13 @@ func serveBasicPage(title func(c *Common, r *http.Request) string) handlerFunc {
 }
 
 func serveHome(w http.ResponseWriter, r *http.Request) error {
-    common, err := newCommon(w, r, "Sourcegraph", serveError)
-    if err != nil {
-        return err
-    }
-    if common == nil {
-        return nil // request was handled
-    }
+	common, err := newCommon(w, r, "Sourcegraph", serveError)
+	if err != nil {
+		return err
+	}
+	if common == nil {
+		return nil // request was handled
+	}
 	if (r.Host == "sourcegraph.com" || r.Host == "www.sourcegraph.com") && !actor.FromContext(r.Context()).IsAuthenticated() {
 		// The user is not signed in and tried to access our main site at sourcegraph.com.
 		// Redirect to about.sourcegraph.com so they see general info.
@@ -218,11 +218,11 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 		http.Redirect(w, r, u.String(), http.StatusTemporaryRedirect)
 		return nil
 	}
-     // sourcegraph.com (not about) homepage. There is none, redirect them to /search.
-    r.URL.Path = "/search"
-    http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
-     return nil
- }
+	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
+	r.URL.Path = "/search"
+	http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+	return nil
+}
 
 func serveRepoOrBlob(routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
