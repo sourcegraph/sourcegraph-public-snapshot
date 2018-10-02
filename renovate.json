@@ -1,7 +1,6 @@
 {
   "$schema": "http://json.schemastore.org/renovate",
   "extends": ["github>sourcegraph/renovate-config"],
-  "prBanner": "[![search for \"{{{depName}}}\"](https://sourcegraph.com/search/badge?q=repo:%5Egithub%5C.com/{{{repository}}}%24+case:yes+-file:package%28-lock%29%3F%5C.json+{{{depName}}}&label=search+for+%22{{{depName}}}%22&suffix=matches)](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/{{{repository}}}%24+case:yes+-file:package%28-lock%29%3F%5C.json+{{{depName}}})",
   "semanticCommits": true,
   "semanticCommitType": "chore",
   "rangeStrategy": "replace",
