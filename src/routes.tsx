@@ -72,13 +72,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/search',
         render: (props: any) =>
-            parseSearchURLQuery(props.location.search) ? (
-                <SearchResults {...props} />
-            ) : window.context.sourcegraphDotComMode && !props.user ? (
-                <Redirect to={'/start'} />
-            ) : (
-                <SearchPage {...props} />
-            ),
+            parseSearchURLQuery(props.location.search) ? <SearchResults {...props} /> : <SearchPage {...props} />,
         exact: true,
     },
     {
