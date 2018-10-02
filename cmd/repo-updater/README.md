@@ -55,6 +55,6 @@ The code doing the iterative lookups should probably be a loop, or something, wi
 
 The caching code in `internal/externalservice/*` appears to be very similar, and should perhaps be factored out.
 
-We need better metrics on the backrgound fetching loop, and suitable controls to adjust its behavior.
+We need better metrics on the background fetching loop, and suitable controls to adjust its behavior.
 
 This file needs to get updated when those things happen.
