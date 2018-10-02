@@ -331,6 +331,38 @@ body.modal-open {
     .modal-search,
     .modal-intelligence,
     .modal-integrations {
+        .btn-close-top {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            border: none;
+            background-color: #222222;
+            color: #fafafa;
+            position: absolute;
+            right: 0;
+            cursor: pointer;
+            z-index: 9999;
+        }
+        .btn-close-bottom {
+            height: 2.5rem;
+            border-radius: 1.5rem;
+            border: none;
+            background-color: #333333;
+            color: #fafafa;
+            position: absolute;
+            right: calc(50% - 20px);
+            bottom: 3rem;
+            cursor: pointer;
+            z-index: 9999;
+            font-size: 16px;
+            padding-left: 1.4rem;
+            padding-right: 1rem;
+            padding-top: 0.25rem;
+            svg {
+                // stylelint-disable-next-line declaration-property-unit-whitelist
+                margin-top: -2px;
+            }
+        }
         .copy-section {
             h1 {
                 font-size: 74px;
@@ -598,7 +630,6 @@ body.modal-open {
     .code-intellify-container,
     .code-intellify-container-modal {
         background-color: #10111a;
-        overflow: scroll !important;
         .code-header {
             width: 100%;
             background-color: #232532;

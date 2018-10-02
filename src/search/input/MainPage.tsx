@@ -582,6 +582,9 @@ export class MainPage extends React.Component<Props, State> {
                     }`}
                 >
                     <div className="container">
+                        <button className="btn-close-top" onClick={this.closeModal('search')}>
+                            <CloseIcon className="material-icons" />
+                        </button>
                         <div className="row copy-section">
                             <div className="col-12 modal-header">
                                 <h2>Advanced Code Search</h2>
@@ -647,8 +650,8 @@ export class MainPage extends React.Component<Props, State> {
                         >
                             Search Documentation
                         </a>
-                        <button className="btn btn-dark" onClick={this.closeModal('search')}>
-                            Close
+                        <button className="btn-close-bottom" onClick={this.closeModal('search')}>
+                            Close <CloseIcon className="material-icons" />
                         </button>
                     </div>
                 </div>
@@ -658,6 +661,9 @@ export class MainPage extends React.Component<Props, State> {
                     }`}
                 >
                     <div className="container">
+                        <button className="btn-close-top" onClick={this.closeModal('intelligence')}>
+                            <CloseIcon className="material-icons" />
+                        </button>
                         <div className="row copy-section">
                             <div className="col-12 modal-header">
                                 <h2>Enhanced Code Browsing and Intelligence</h2>
@@ -705,8 +711,8 @@ export class MainPage extends React.Component<Props, State> {
                         >
                             Code Intelligence Documentation
                         </a>
-                        <button className="btn btn-dark" onClick={this.closeModal('intelligence')}>
-                            Close
+                        <button className="btn-close-bottom" onClick={this.closeModal('intelligence')}>
+                            Close <CloseIcon className="material-icons" />
                         </button>
                     </div>
                 </div>
@@ -716,6 +722,9 @@ export class MainPage extends React.Component<Props, State> {
                     }`}
                 >
                     <div className="container">
+                        <button className="btn-close-top" onClick={this.closeModal('integrations')}>
+                            <CloseIcon className="material-icons" />
+                        </button>
                         <div className="row copy-section">
                             <div className="col-12 modal-header">
                                 <h2>Integrations</h2>
@@ -763,8 +772,8 @@ export class MainPage extends React.Component<Props, State> {
                         >
                             Integrations Documentation
                         </a>
-                        <button className="btn btn-dark" onClick={this.closeModal('integrations')}>
-                            Close
+                        <button className="btn-close-bottom" onClick={this.closeModal('integrations')}>
+                            Close <CloseIcon className="material-icons" />
                         </button>
                     </div>
                 </div>
