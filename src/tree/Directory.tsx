@@ -1,3 +1,4 @@
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ChevronDownIcon } from 'mdi-react'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
@@ -8,6 +9,7 @@ import { treePadding } from './util'
 interface TreeChildProps extends TreeLayerProps {
     className: string
     maxEntries: number
+    loading: boolean
     handleTreeClick: () => void
     noopRowClick: (e: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (e: React.MouseEvent<HTMLAnchorElement>) => void
@@ -51,6 +53,11 @@ export const Directory: React.SFC<TreeChildProps> = (props: TreeChildProps): JSX
                         {props.entryInfo.name}
                     </Link>
                 </div>
+                {props.loading && (
+                    <div className="tree__row-loader">
+                        <LoadingSpinner className="icon-inline tree-page__entries-loader" />
+                    </div>
+                )}
             </div>
             {props.index === props.maxEntries - 1 && (
                 <div
