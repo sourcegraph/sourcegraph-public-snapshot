@@ -75,7 +75,7 @@ class UserEmailNode extends React.PureComponent<UserEmailNodeProps, UserEmailNod
     }
 
     private remove = () => {
-        if (!window.confirm(`Really remove the email address ${this.props.node.email}?`)) {
+        if (!window.confirm(`Remove the email address ${this.props.node.email}?`)) {
             return
         }
 

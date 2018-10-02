@@ -269,7 +269,10 @@ export class SettingsFile extends React.PureComponent<Props, State> {
     }
 
     private discard = () => {
-        if (this.getPropsSettingsContentsOrEmpty() === this.state.contents || window.confirm('Really discard edits?')) {
+        if (
+            this.getPropsSettingsContentsOrEmpty() === this.state.contents ||
+            window.confirm('Discard settings edits?')
+        ) {
             eventLogger.log('SettingsFileDiscard')
             this.setState({
                 contents: undefined,

@@ -52,9 +52,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                 .pipe(
                     filter(() =>
                         window.confirm(
-                            this.isSelf
-                                ? 'Really leave the organization?'
-                                : `Really remove the user ${this.props.node.username}?`
+                            this.isSelf ? 'Leave the organization?' : `Remove the user ${this.props.node.username}?`
                         )
                     ),
                     switchMap(() =>
