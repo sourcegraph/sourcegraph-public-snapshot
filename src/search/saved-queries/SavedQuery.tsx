@@ -168,7 +168,7 @@ export class SavedQuery extends React.PureComponent<Props, State> {
     private confirmDelete = (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation()
         e.preventDefault()
-        if (window.confirm('Really delete this saved query?')) {
+        if (window.confirm('Delete this saved query?')) {
             eventLogger.log('SavedQueryDeleted')
             this.deleteRequested.next()
         } else {
