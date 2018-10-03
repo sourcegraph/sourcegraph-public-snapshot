@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -161,24 +160,6 @@ type repoListStats struct {
 	loops         int     // number of times through main loop
 	errors        int     // errors encountered trying to do things
 	scale         float64 // the interval scale (repoList.intervalScale)
-}
-
-// Honey uses Honeycomb, if configured, to report the stats.
-func (s repoListStats) Honey() {
-	if !honey.Enabled() {
-		return
-	}
-	ev := honey.Event("repo-updater")
-	ev.AddField("source", "new-scheduler-stats")
-	ev.AddField("fetches", s.manualFetches+s.autoFetches)
-	ev.AddField("errors", s.errors)
-	ev.AddField("manual_fetches", s.manualFetches)
-	ev.AddField("auto_fetches", s.autoFetches)
-	ev.AddField("auto_queue", s.autoQueue)
-	ev.AddField("known_repos", s.knownRepos)
-	ev.AddField("loops", s.loops)
-	ev.AddField("scale", s.scale)
-	ev.Send()
 }
 
 // String allows log15 to display the stats in an intelligble format.
@@ -604,7 +585,6 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 			// Report some convenient stats.
 			r.stats.knownRepos = len(r.repos)
 			r.stats.scale = r.intervalScale
-			r.stats.Honey() // report also to Honeycomb
 			log15.Debug("update loop", "last", now.Sub(statTime), "stats", r.stats)
 			r.stats.manualFetches = 0
 			r.stats.autoFetches = 0
@@ -845,12 +825,6 @@ func startRepositorySyncWorker(ctx context.Context, shutdown chan struct{}) {
 				errors++
 				continue
 			}
-		}
-		if honey.Enabled() {
-			ev := honey.Event("repo-updater")
-			ev.AddField("source", "repo-sync-worker")
-			ev.AddField("fetches", fetches)
-			ev.AddField("errors", errors)
 		}
 		repoListUpdateTime.Set(float64(time.Now().Unix()))
 		select {
