@@ -121,9 +121,9 @@ type ExtensionRepository struct {
 
 // Extensions description: Configures Sourcegraph extensions.
 type Extensions struct {
-	Disabled        *bool       `json:"disabled,omitempty"`
-	RemoteRegistry  interface{} `json:"remoteRegistry,omitempty"`
-	RemoteWhitelist []string    `json:"remoteWhitelist,omitempty"`
+	AllowRemoteExtensions []string    `json:"allowRemoteExtensions,omitempty"`
+	Disabled              *bool       `json:"disabled,omitempty"`
+	RemoteRegistry        interface{} `json:"remoteRegistry,omitempty"`
 }
 type GitHubConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
