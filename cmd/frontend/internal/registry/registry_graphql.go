@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -35,6 +36,10 @@ func registryExtensionByIDInt32(ctx context.Context, id int32) (graphqlbackend.R
 }
 
 func extensionRegistryCreateExtension(ctx context.Context, args *graphqlbackend.ExtensionRegistryCreateExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
+	if err := licensing.CheckFeature(licensing.FeatureExtensionRegistry); err != nil {
+		return nil, err
+	}
+
 	publisher, err := unmarshalRegistryPublisherID(args.Publisher)
 	if err != nil {
 		return nil, err
@@ -98,6 +103,10 @@ func extensionRegistryDeleteExtension(ctx context.Context, args *graphqlbackend.
 }
 
 func extensionRegistryPublishExtension(ctx context.Context, args *graphqlbackend.ExtensionRegistryPublishExtensionArgs) (graphqlbackend.ExtensionRegistryMutationResult, error) {
+	if err := licensing.CheckFeature(licensing.FeatureExtensionRegistry); err != nil {
+		return nil, err
+	}
+
 	// Add the prefix if needed, for ease of use.
 	configuredPrefix := frontendregistry.GetLocalRegistryExtensionIDPrefix()
 	prefix, _, _, err := frontendregistry.SplitExtensionID(args.ExtensionID)
