@@ -35,7 +35,7 @@
     "@commitlint/config-conventional": "^7.0.1",
     "@semantic-release/exec": "^3.1.0",
     "@sourcegraph/prettierrc": "^2.2.0",
-    "@sourcegraph/stylelint-config": "^1.0.0",
+    "@sourcegraph/stylelint-config": "^1.0.1",
     "@sourcegraph/tslint-config": "^12.0.0",
     "@types/bluebird": "3.5.24",
     "@types/chalk": "2.2.0",
