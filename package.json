@@ -169,7 +169,7 @@
     "@types/textarea-caret": "3.0.0",
     "@types/uglifyjs-webpack-plugin": "1.1.0",
     "@types/uuid": "3.4.4",
-    "@types/webpack": "4.4.11",
+    "@types/webpack": "4.4.14",
     "@types/webpack-serve": "2.0.0",
     "autoprefixer": "^9.0.0",
     "babel-loader": "^8.0.0",
