@@ -22,6 +22,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Fixed
 
 - Files with the gitattribute `export-ignore` are no longer excluded for language analysis and search.
+- "Discard changes?" confirmation popup doesn't pop up every single time you try to navigate to a new page after editting something in the site settings page anymore.
 
 ### Removed
 
