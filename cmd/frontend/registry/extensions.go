@@ -163,13 +163,13 @@ func getRemoteRegistryURL() (*url.URL, error) {
 	return url.Parse(pc.RemoteRegistryURL)
 }
 
-var mockgetRemoteRegistryExtension func(field, value string) (*registry.Extension, error)
+var mockGetRemoteRegistryExtension func(field, value string) (*registry.Extension, error)
 
 // getRemoteRegistryExtension gets the remote registry extension and rewrites its fields to be from
 // the frame-of-reference of this site. The field is either "uuid" or "extensionID".
 func getRemoteRegistryExtension(ctx context.Context, field, value string) (*registry.Extension, error) {
-	if mockgetRemoteRegistryExtension != nil {
-		return mockgetRemoteRegistryExtension(field, value)
+	if mockGetRemoteRegistryExtension != nil {
+		return mockGetRemoteRegistryExtension(field, value)
 	}
 
 	// BACKCOMPAT: First, look up among extensions synthesized from known language servers.

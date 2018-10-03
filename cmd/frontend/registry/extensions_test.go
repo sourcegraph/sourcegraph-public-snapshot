@@ -136,7 +136,7 @@ func TestGetExtensionByExtensionID(t *testing.T) {
 		defer func() { mockLocalRegistryExtensionIDPrefix = nil }()
 
 		t.Run("2-part", func(t *testing.T) {
-			mockgetRemoteRegistryExtension = func(field, value string) (*registry.Extension, error) {
+			mockGetRemoteRegistryExtension = func(field, value string) (*registry.Extension, error) {
 				if want := "extensionID"; field != want {
 					t.Errorf("got field %q, want %q", field, want)
 				}
@@ -145,7 +145,7 @@ func TestGetExtensionByExtensionID(t *testing.T) {
 				}
 				return &registry.Extension{UUID: "u", ExtensionID: "a/b"}, nil
 			}
-			defer func() { mockgetRemoteRegistryExtension = nil }()
+			defer func() { mockGetRemoteRegistryExtension = nil }()
 			local, remote, err := GetExtensionByExtensionID(ctx, "a/b")
 			if err != nil {
 				t.Fatal(err)
