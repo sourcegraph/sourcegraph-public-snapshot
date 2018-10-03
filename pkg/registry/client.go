@@ -9,9 +9,6 @@ import (
 	"path"
 	"strings"
 
-	features "github.com/sourcegraph/sourcegraph/cmd/frontend/features"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context/ctxhttp"
@@ -37,39 +34,6 @@ const (
 	MediaType = "sourcegraph.v" + APIVersion + "; format=json"
 )
 
-// Whitelist filters the list of extensions to only ones that are present
-// in the whitelist.
-func Whitelist(extensions []*Extension) []*Extension {
-	if conf.Get().Extensions == nil || conf.Get().Extensions.RemoteWhitelist == nil {
-		return extensions
-	}
-	whitelistMap := make(map[string]interface{})
-	for _, id := range conf.Get().Extensions.RemoteWhitelist {
-		whitelistMap[id] = struct{}{}
-	}
-	var whitelistedXs []*Extension
-	for _, x := range extensions {
-		if _, ok := whitelistMap[x.ExtensionID]; ok {
-			whitelistedXs = append(whitelistedXs, x)
-		}
-	}
-	return whitelistedXs
-}
-
-// IsWhitelisted returns true if there is no whitelist or the extension is on
-// the whitelist.
-func IsWhitelisted(extension *Extension) bool {
-	if conf.Get().Extensions == nil || conf.Get().Extensions.RemoteWhitelist == nil {
-		return true
-	}
-	for _, whitelistedExtension := range conf.Get().Extensions.RemoteWhitelist {
-		if extension.ExtensionID == whitelistedExtension {
-			return true
-		}
-	}
-	return false
-}
-
 // List lists extensions on the remote registry matching the query (or all if the query is empty).
 func List(ctx context.Context, registry *url.URL, query string) ([]*Extension, error) {
 	var q url.Values
@@ -79,11 +43,6 @@ func List(ctx context.Context, registry *url.URL, query string) ([]*Extension, e
 
 	var xs []*Extension
 	err := httpGet(ctx, "registry.List", toURL(registry, "extensions", q), &xs)
-
-	if features.CanWhitelistExtensions(ctx) {
-		return Whitelist(xs), err
-	}
-
 	return xs, err
 }
 

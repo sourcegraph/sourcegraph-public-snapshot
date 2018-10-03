@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/gregjones/httpcache"
-	"github.com/pkg/errors"
-	features "github.com/sourcegraph/sourcegraph/cmd/frontend/features"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -163,6 +161,15 @@ func getRemoteRegistryURL() (*url.URL, error) {
 	return url.Parse(pc.RemoteRegistryURL)
 }
 
+// IsRemoteExtensionAllowed reports whether to allow usage of the remote extension with the given
+// extension ID.
+//
+// It can be overridden to use custom logic.
+var IsRemoteExtensionAllowed = func(extensionID string) bool {
+	// By default, all remote extensions are allowed.
+	return true
+}
+
 var mockGetRemoteRegistryExtension func(field, value string) (*registry.Extension, error)
 
 // getRemoteRegistryExtension gets the remote registry extension and rewrites its fields to be from
@@ -195,11 +202,20 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 		x.RegistryURL = registryURL.String()
 	}
 
-	if features.CanWhitelistExtensions(ctx) && !registry.IsWhitelisted(x) {
-		return nil, errors.Errorf("extension %q is not whitelisted", x.ExtensionID)
+	if !IsRemoteExtensionAllowed(x.ExtensionID) {
+		return nil, fmt.Errorf("extension is not allowed in site configuration: %q", x.ExtensionID)
 	}
 
 	return x, err
+}
+
+// FilterRemoteExtensions is called to filter the list of extensions retrieved from the remote
+// registry before the list is used by any other part of the application.
+//
+// It can be overridden to use custom logic.
+var FilterRemoteExtensions = func(extensions []*registry.Extension) []*registry.Extension {
+	// By default, all remote extensions are allowed.
+	return extensions
 }
 
 // listRemoteRegistryExtensions lists the remote registry extensions and rewrites their fields to be
@@ -214,6 +230,7 @@ func listRemoteRegistryExtensions(ctx context.Context, query string) ([]*registr
 	if err != nil {
 		return nil, err
 	}
+	xs = FilterRemoteExtensions(xs)
 	for _, x := range xs {
 		x.RegistryURL = registryURL.String()
 	}
