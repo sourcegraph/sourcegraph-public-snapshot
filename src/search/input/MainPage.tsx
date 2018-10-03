@@ -216,7 +216,7 @@ export class MainPage extends React.Component<Props, State> {
             modalIntegrationsOpen: false,
             modalIntegrationsClosing: false,
             manualClick: false,
-            activesection: 'fadwsghjk',
+            activesection: 'none',
             animateModalSearch: false,
             animateModalIntelligence: false,
             animateModalIntegrations: false,
