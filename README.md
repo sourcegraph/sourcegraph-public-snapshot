@@ -1,6 +1,7 @@
 # <a href="https://sourcegraph.com"><img alt="Sourcegraph" src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo.png" height="32px" /></a>
 
 [![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)
+[![apache license](https://img.shields.io/badge/license-Apache-blue.svg)](LICENSE)
 
 [Sourcegraph](https://about.sourcegraph.com/) is a fast, open-source, fully-featured code search and navigation engine.
 
