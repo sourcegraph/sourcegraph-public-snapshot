@@ -192,6 +192,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
         // renderAs is renderMode but with undefined mapped to the actual mode.
         const renderAs =
             renderMode ||
+            // render in richHTML if file contains richHTML and url does not include line number
             (this.state.blobOrError && this.state.blobOrError.richHTML && !this.props.location.hash
                 ? 'rendered'
                 : 'code')
