@@ -80,6 +80,10 @@ export class DynamicallyImportedMonacoSettingsEditor extends React.PureComponent
         )
     }
 
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
+    }
+
     private get effectiveValue(): string {
         return this.state.value === undefined ? this.props.value : this.state.value
     }
