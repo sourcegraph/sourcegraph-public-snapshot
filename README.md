@@ -1,4 +1,4 @@
-# <a href="https://sourcegraph.com"><img alt="Sourcegraph" src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo.png" height="32px" /></a>
+# <a href="https://sourcegraph.com"><img alt="Sourcegraph" src="https://storage.googleapis.com/sourcegraph-assets/sourcegraph-logo.png" height="32px" /></a> <a href="https://github.com/sourcegraph/sourcegraph/blob/master/LICENSE"><img align="right" alt="Apache license" src="https://img.shields.io/badge/license-Apache-blue.svg" /></a>  <a href="https://buildkite.com/sourcegraph/sourcegraph"><img align="right" src="https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master" /></a>
 
 [Sourcegraph](https://about.sourcegraph.com/) is a fast, open-source, fully-featured code search and navigation engine.
 
