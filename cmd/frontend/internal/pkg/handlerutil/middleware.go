@@ -12,7 +12,7 @@ import (
 func CSRFMiddleware(next http.Handler, secure bool) http.Handler {
 	return csrf.Protect(
 		[]byte("e953612ddddcdd5ec60d74e07d40218c"),
-		csrf.CookieName("csrf_token"),
+		csrf.CookieName("sg_csrf"),
 		csrf.Path("/"),
 		csrf.Secure(secure),
 	)(next)
