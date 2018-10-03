@@ -266,7 +266,6 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                 {
                     uri: `git://github.com/gorilla/mux?9e1f5955c0d22b55d9e20d6faa28589f83b2faca#mux.go`,
                     languageId: 'go',
-                    // TODO @Francis/@Farhan: Check with extensions team @Chris/@SQS if this is ok.
                     text: '',
                 },
             ])
