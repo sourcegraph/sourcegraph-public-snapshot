@@ -173,15 +173,15 @@ func main() {
 
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/reset-test-db.sh || true"),
-		bk.Cmd("go test -race ./..."))
+		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+		bk.ArtifactPaths("coverage.txt"))
 
 	pipeline.AddWait()
 
-	// TODO add back coverprofile to go
-	//pipeline.AddStep(":codecov:",
-	//	bk.Cmd("buildkite-agent artifact download '*/coverage.txt' . || true"), // ignore error when no report exists
-	//	bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-	//	bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t TEMPORARILY_REDACTED"))
+	pipeline.AddStep(":codecov:",
+		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
+		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
 
 	if branch == "master" {
 		// Publish @sourcegraph/webapp to npm
