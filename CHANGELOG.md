@@ -18,6 +18,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - A Bitbucket Server option to exclude personal repositories in the event that you decide to give an admin-level Bitbucket access token to Sourcegraph and do not want to create a bot account. See https://about.sourcegraph.com/docs/config/repositories/#excluding-personal-repositories for more information.
 - Site admins can now see when users of their Sourcegraph instance last used it via a code host integration (e.g. Sourcegraph browser extensions). Visit the site admin Analytics page (e.g. https://sourcegraph.example.com/site-admin/analytics) to view this information.
 - A new site config option `extensions.remoteWhitelist` allows you to whitelist extensions inherited from the remote registry (e.g. Sourcegraph.com).
+- The Sourcegraph Docker image is now built with indexed searched enabled.
 
 ### Fixed
 
