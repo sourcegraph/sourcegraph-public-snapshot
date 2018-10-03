@@ -68,10 +68,10 @@ func TestEnforcementPreCreateUser(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("license %s with %d active users", test.license, test.activeUserCount), func(t *testing.T) {
-			mockGetConfiguredProductLicenseInfo = func() (*license.Info, error) {
+			MockGetConfiguredProductLicenseInfo = func() (*license.Info, error) {
 				return test.license, nil
 			}
-			defer func() { mockGetConfiguredProductLicenseInfo = nil }()
+			defer func() { MockGetConfiguredProductLicenseInfo = nil }()
 			db.Mocks.Users.Count = func(context.Context, *db.UsersListOptions) (int, error) {
 				return int(test.activeUserCount), nil
 			}
