@@ -950,10 +950,10 @@
   resolved "https://registry.yarnpkg.com/@sourcegraph/react-loading-spinner/-/react-loading-spinner-0.0.6.tgz#9729c833cc250b788407194c2abacbbc3f68a6f4"
   integrity sha512-ouE4HeOvDiuBsQ04BAS0plhF1dn9Q5NEiWEpAlxj7uTXlFMiXCO4NL2hejsuSA9+N1ZIysPQL4HrKQZ835ny3w==
 
-"@sourcegraph/stylelint-config@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/stylelint-config/-/stylelint-config-1.0.0.tgz#8585f7e9edcd3fd52399f7ac9177b74ee2ff9063"
-  integrity sha512-9U7ytAsFqVykCLO/UNnRUlyLf9X+4TBzxVCIBCJrDVDRROKiFFK4AOZ77QgBoxBDPpNZRfxPnlosogPW5KWUAw==
+"@sourcegraph/stylelint-config@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/stylelint-config/-/stylelint-config-1.0.1.tgz#23681417146498a766c7bff22b8e2d2929f88ef4"
+  integrity sha512-4XHu2x+0+dlT+QIOHs89j0FBmNs/6oDmaKunwd7VECh0gIbEZ2Btfv3SCEs9ttS9eBpELfLe1/2r/XDlHg3Orw==
   dependencies:
     stylelint-config-prettier "^4.0.0"
     stylelint-config-standard "^18.2.0"
