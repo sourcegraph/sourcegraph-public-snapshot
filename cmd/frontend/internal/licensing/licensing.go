@@ -43,9 +43,15 @@ var (
 	lastInfo    *license.Info
 )
 
+var mockGetConfiguredProductLicenseInfo func() (*license.Info, error)
+
 // GetConfiguredProductLicenseInfo returns information about the current product license key
 // specified in site configuration.
 func GetConfiguredProductLicenseInfo() (*license.Info, error) {
+	if mockGetConfiguredProductLicenseInfo != nil {
+		return mockGetConfiguredProductLicenseInfo()
+	}
+
 	// Support reading the license key from the environment (intended for development, because we
 	// don't want to commit a valid license key to dev/config.json in the OSS repo).
 	keyText := os.Getenv("SOURCEGRAPH_LICENSE_KEY")

@@ -16,6 +16,10 @@ const (
 	// EnterpriseStarterTag is the license tag for Enterprise Starter (which includes only a subset
 	// of Enterprise features).
 	EnterpriseStarterTag = "starter"
+
+	// TrueUpUserCountTag is the license tag that indicates that the licensed user count can be
+	// exceeded and will be charged later.
+	TrueUpUserCountTag = "true-up"
 )
 
 var (
