@@ -4,7 +4,6 @@
     "yarn": ">1.10.0"
   },
   "scripts": {
-    "commitmsg": "commitlint -E GIT_PARAMS",
     "dev": "NODE_ENV=development ts-node scripts/dev",
     "dev:no-reload": "AUTO_RELOAD=false yarn run dev",
     "dev:firefox": "web-ext run --source-dir ./build/firefox",
@@ -17,6 +16,11 @@
     "cypress:open": "yarn run build && cypress open",
     "test:e2e": "yarn run build && cypress run --browser chrome",
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
   },
   "commitlint": {
     "extends": [
@@ -66,7 +70,7 @@
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "get-graphql-schema": "^2.1.1",
     "gql2ts": "^1.2.1",
-    "husky": "^0.14.3",
+    "husky": "^1.1.0",
     "node-sass": "^4.9.0",
     "postcss-loader": "^2.0.8",
     "prettier": "1.14.0",
