@@ -238,5 +238,5 @@ func (p *Proxy) getSavedMessages(id serverID) []json.RawMessage /* lsp.{Log,Show
 	defer c.mu.Unlock()
 
 	// return a shallow copy as the slice may be mutated by other goroutines
-	return c.messages[:]
+	return c.messages
 }

@@ -53,7 +53,7 @@ func TestMap(t *testing.T) {
 		},
 	}}
 
-	restoreOriginMap := originMaps.originMap[:]
+	restoreOriginMap := originMaps.originMap
 	defer func() {
 		originMaps.originMap = restoreOriginMap
 	}()

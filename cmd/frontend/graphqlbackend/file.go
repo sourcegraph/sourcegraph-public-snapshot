@@ -159,9 +159,9 @@ func (r *gitTreeEntryResolver) DependencyReferences(ctx context.Context, args *s
 		}
 
 		referenceResolver = append(referenceResolver, &dependencyReferenceResolver{
-			dependencyData: string(depData[:]),
+			dependencyData: string(depData),
 			repo:           ref.RepoID,
-			hints:          string(hints)[:],
+			hints:          string(hints),
 		})
 	}
 
@@ -179,8 +179,8 @@ func (r *gitTreeEntryResolver) DependencyReferences(ctx context.Context, args *s
 		dependencyReferenceData: &dependencyReferencesDataResolver{
 			references: referenceResolver,
 			location: &dependencyLocationResolver{
-				location: string(loc[:]),
-				symbol:   string(symbol[:]),
+				location: string(loc),
+				symbol:   string(symbol),
 			},
 		},
 		repoData: &repoDataMapResolver{
