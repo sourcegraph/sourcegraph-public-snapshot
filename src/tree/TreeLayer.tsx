@@ -263,6 +263,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                     {...this.props}
                                     className={className}
                                     maxEntries={maxEntries}
+                                    loading={treeOrError === LOADING}
                                     handleTreeClick={this.handleTreeClick}
                                     noopRowClick={this.noopRowClick}
                                     linkRowClick={this.linkRowClick}

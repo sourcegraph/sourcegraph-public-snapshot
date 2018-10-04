@@ -13,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -65,7 +64,6 @@ type repoCreateOrUpdateRequest struct {
 // a given source.
 func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan repoCreateOrUpdateRequest) {
 	enqueued := 0
-	dequeued := 0
 	errors := 0
 	newList := make(sourceRepoList)
 
@@ -117,14 +115,7 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 		do(repo)
 	}
 	if NewScheduler() {
-		enqueued, dequeued = repos.updateSource(source, newList)
-	}
-	if honey.Enabled() {
-		ev := honey.Event("repo-updater")
-		ev.AddField("source", "create-enable-update-repos")
-		ev.AddField("fetches", enqueued)
-		ev.AddField("dequeued", dequeued)
-		ev.AddField("errors", errors)
+		repos.updateSource(source, newList)
 	}
 }
 

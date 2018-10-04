@@ -37,8 +37,6 @@ func main() {
 
 	// Start up handler that frontend relies on
 	var repoupdater repoupdater.Server
-	// Log usage statistics
-	go repoupdater.RecordStats()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
 	host := ""
 	if insecureDev {

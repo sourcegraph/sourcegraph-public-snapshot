@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -25,25 +24,6 @@ type Server struct {
 	fetches int
 	errors  int
 	mu      sync.Mutex
-}
-
-// RecordStats logs activity data to Honeycomb if that's enabled.
-func (s *Server) RecordStats() {
-	if !honey.Enabled() {
-		return
-	}
-	tick := time.NewTicker(10 * time.Minute)
-	for range tick.C {
-		ev := honey.Event("repo-updater")
-		ev.AddField("source", "server")
-		s.mu.Lock()
-		ev.AddField("fetches", s.fetches)
-		ev.AddField("errors", s.errors)
-		s.fetches = 0
-		s.errors = 0
-		s.mu.Unlock()
-		ev.Send()
-	}
 }
 
 // Handler returns the http.Handler that should be used to serve requests.

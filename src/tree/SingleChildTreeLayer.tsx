@@ -126,6 +126,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             {...this.props}
                             className={className}
                             maxEntries={maxEntries}
+                            loading={false}
                             handleTreeClick={this.handleTreeClick}
                             noopRowClick={this.noopRowClick}
                             linkRowClick={this.linkRowClick}
