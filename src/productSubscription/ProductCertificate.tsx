@@ -5,13 +5,13 @@ interface Props {
     title: React.ReactFragment
 
     /** The subtitle of the certificate. */
-    subtitle?: React.ReactFragment
+    subtitle?: React.ReactFragment | null
 
     /** The detail text of the certificate. */
-    detail?: React.ReactFragment
+    detail?: React.ReactFragment | null
 
     /** Rendered after the certificate body (usually consists of a Bootstrap .card-footer). */
-    footer?: React.ReactFragment
+    footer?: React.ReactFragment | null
 
     className?: string
 }
