@@ -101,8 +101,9 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
 
     /** Emits whenever the ref callback for the demo file element is called */
-    private demoFileElements = new Subject<HTMLElement | null>()
-    private nextdemoFileElement = (element: HTMLElement | null) => this.demoFileElements.next(element)
+    private codeIntellifyBlobElements = new Subject<HTMLElement | null>()
+    private nextCodeIntellifyBlobElements = (element: HTMLElement | null) =>
+        this.codeIntellifyBlobElements.next(element)
 
     /** Emits when the go to definition button was clicked */
     private goToDefinitionClicks = new Subject<MouseEvent>()
@@ -114,7 +115,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
 
     private subscriptions = new Subscription()
 
-    private componentUpdates = new Subject<State>()
+    private componentUpdates = new Subject()
 
     private target: EventTarget | null = null
 
@@ -128,12 +129,15 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
             hoverOverlayElements: this.hoverOverlayElements,
             pushHistory: path => this.props.history.push(path),
             hoverOverlayRerenders: this.componentUpdates.pipe(
-                withLatestFrom(this.hoverOverlayElements, this.demoFileElements),
-                map(([, hoverOverlayElement, demoFileElement]) => ({ hoverOverlayElement, demoFileElement })),
-                filter(propertyIsDefined('demoFileElement')),
-                map(({ hoverOverlayElement, demoFileElement }) => ({
+                withLatestFrom(this.hoverOverlayElements, this.codeIntellifyBlobElements),
+                map(([, hoverOverlayElement, codeIntellifyBlobElement]) => ({
                     hoverOverlayElement,
-                    relativeElement: demoFileElement.closest(this.props.parentElement) as HTMLElement | null,
+                    codeIntellifyBlobElement,
+                })),
+                filter(propertyIsDefined('codeIntellifyBlobElement')),
+                map(({ hoverOverlayElement, codeIntellifyBlobElement }) => ({
+                    hoverOverlayElement,
+                    relativeElement: codeIntellifyBlobElement.closest(this.props.parentElement) as HTMLElement | null,
                 })),
                 // Can't reposition HoverOverlay or file weren't rendered
                 filter(propertyIsDefined('relativeElement')),
@@ -203,7 +207,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
             )
             .subscribe(blobOrError => this.setState({ blobOrError }), err => console.error(err))
 
-        this.componentUpdates.next(this.state)
+        this.componentUpdates.next()
 
         this.subscriptions.add(
             this.props.extensionsOnVisibleTextDocumentsChange([
@@ -217,7 +221,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     }
 
     public componentDidUpdate(): void {
-        this.componentUpdates.next(this.state)
+        this.componentUpdates.next()
     }
 
     private getLSPTextDocumentPositionParams(
@@ -242,7 +246,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         const hoverOverlayProps = this.adjustHoverOverlayPosition(this.target)
 
         return (
-            <div className={this.props.className} ref={this.nextdemoFileElement}>
+            <div className={this.props.className} ref={this.nextCodeIntellifyBlobElements}>
                 <div className="code-header">
                     <span className="code-header__title">github.com/gorilla/mux/mux.go</span>
                     <span className="code-header__link">
@@ -277,7 +281,12 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
             </div>
         )
     }
-
+    /**
+     * This function adjusts the position of the hoverOverlay so that it does not overflow on the right side
+     * of the viewport. If a hoverOverlay will exceed the viewport, this function will adjust the position
+     * so that it aligns the right side of the hover overlay with the right side of the target element.
+     *
+     */
     private adjustHoverOverlayPosition(target: EventTarget | null): HoverState['hoverOverlayProps'] {
         const viewPortEdge = window.innerWidth
         if (!this.state.hoverOverlayProps) {
@@ -290,18 +299,25 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
 
         const targetBounds = (target as HTMLElement).getBoundingClientRect()
         let newOverlayPosition: { top: number; left: number } = overlayPosition!
+
         if (overlayPosition && viewPortEdge < targetBounds.left + 512 && targetBounds.right - 512 >= 0) {
             const containerWidth = (document.querySelector(
                 this.props.parentElement
             ) as HTMLElement).parentElement!.getBoundingClientRect().width
+
             const parentWidth = (document.querySelector(
                 this.props.parentElement
             ) as HTMLElement).getBoundingClientRect().width
-            const halfMarginWidth = (viewPortEdge - containerWidth) / 2
 
+            // One side of the total horizontal margin.
+            const halfMarginWidth = (viewPortEdge - containerWidth) / 2
+            // The difference between the viewport width and parent width. We need to subtract this because
+            // `left` is relative to the parent, whereas targetBounds.right is relative to the viewport.
             const relativeElementDifference = viewPortEdge - parentWidth
+
             newOverlayPosition = {
                 top: overlayPosition.top,
+                // 512 is the width of a hoverOverlay.
                 left: targetBounds.right - 512 - relativeElementDifference + halfMarginWidth,
             }
         }
@@ -310,9 +326,10 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
 }
 
 /**
- * This function trims the HTML string of the file that will be code-intellfied on the homepage.
- * It makes some assumptions for this specific use case, such as the presence of a single table and tbody element in the html,
- * so be careful when changing.
+ * We can only fetch blobs as an entire file. For demo purposes, we only want to show part of the file.
+ * This function trims the HTML string of the file that will be code-intellfied on the homepage to only show
+ * the lines that we specify. It makes some assumptions for this specific use case, such as the presence
+ * of a single table and tbody element in the html, so be careful when changing.
  */
 function trimHTMLString(html: string, startLine: number, endLine: number): string {
     const domParser = new DOMParser()
@@ -322,9 +339,11 @@ function trimHTMLString(html: string, startLine: number, endLine: number): strin
 
     const elementsToRemove = [...startToRemove, ...endToRemove]
     const tableEl = doc.querySelector('tbody')! // assume a single tbody element will exist in blob HTML
-    elementsToRemove.map(el => {
+
+    for (const el of elementsToRemove) {
         tableEl.removeChild(el)
-    })
+    }
+
     const xmlSerializer = new XMLSerializer()
     const tbl = doc.querySelector('table')! // assume a single table element will exist in blob HTML
     const trimmedHTMLString = xmlSerializer.serializeToString(tbl)
