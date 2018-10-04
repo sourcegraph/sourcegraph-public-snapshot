@@ -388,7 +388,8 @@ input DiscussionThreadTargetRepoInput {
 # Describes the creation of a new thread around some target (e.g. a file in a repo).
 input DiscussionThreadCreateInput {
     # The title of the thread's first comment (i.e. the threads title).
-    title: String!
+    # If it is not provided, the title defaults to the first line of the contents.
+    title: String
 
     # The contents of the thread's first comment (i.e. the threads comment).
     contents: String!
