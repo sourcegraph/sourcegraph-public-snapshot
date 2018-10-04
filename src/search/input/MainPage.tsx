@@ -150,7 +150,14 @@ const integrationsSections = [
         title: 'Browser extensions',
         paragraph:
             'Code intelligence makes browsing code easier, with IDE-like hovers, go-to-definition, and find-references on your code, powered by language servers based on the open-source Language Server Protocol.',
-        buttons: [{ id: 'btn-chrome', text: 'Chrome' }, { id: 'btn-firefox', text: 'Firefox' }],
+        buttons: [
+            {
+                id: 'btn-chrome',
+                text: 'Chrome',
+                link: 'https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack',
+            },
+            { id: 'btn-firefox', text: 'Firefox', link: 'https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/' },
+        ],
     },
 
     {
@@ -158,9 +165,13 @@ const integrationsSections = [
         paragraph:
             'The Sourcegraph browser extension will add go-to-definition, find-references, hover tooltips, and code search to all files and diffs on supported code hosts. The extension will also add code intelligence and code search to public repositories. ',
         buttons: [
-            { id: 'btn-gitlab', text: 'GitLab' },
-            { id: 'btn-github', text: 'GitHub' },
-            { id: 'btn-phabricator', text: 'Phabricator' },
+            { id: 'btn-gitlab', text: 'GitLab', link: 'https://about.sourcegraph.com/docs/features/browser-extension' },
+            { id: 'btn-github', text: 'GitHub', link: 'https://about.sourcegraph.com/docs/features/browser-extension' },
+            {
+                id: 'btn-phabricator',
+                text: 'Phabricator',
+                link: 'https://about.sourcegraph.com/docs/features/browser-extension',
+            },
         ],
     },
     {
@@ -168,14 +179,18 @@ const integrationsSections = [
         paragraph:
             'Our editor plugins let you quickly jump to files and search code on your Sourcegraph instance from your editor. Seamlessly jump for development to review without missing a step.',
         buttons: [
-            { id: 'btn-atom', text: 'Atom' },
-            { id: 'btn-intellij', text: 'IntelliJ' },
+            { id: 'btn-atom', text: 'Atom', link: 'https://atom.io/packages/sourcegraph' },
+            { id: 'btn-intellij', text: 'IntelliJ', link: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph' },
             {
                 id: 'btn-sublime',
                 text: 'Sublime',
+                link: 'https://github.com/sourcegraph/sourcegraph-sublime',
             },
-            { id: 'btn-vim', text: 'Vim' },
-            { id: 'btn-vscode', text: 'VS Code' },
+            {
+                id: 'btn-vscode',
+                text: 'VS Code',
+                link: 'https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph',
+            },
         ],
     },
 ]
@@ -749,14 +764,15 @@ export class MainPage extends React.Component<Props, State> {
                                         <div className="col-12">
                                             <h3>{title}</h3>
                                             <p>{paragraph}</p>
-                                            {buttons.map(({ text, id }, j) => (
-                                                <button
+                                            {buttons.map(({ text, id, link }, j) => (
+                                                <a
                                                     key={`integrations-buttons-${j}`}
                                                     className={`btn btn-secondary btn-integrations  ${id}`}
+                                                    href={`${link}`}
                                                 >
                                                     <span className="logo-icon" />
                                                     {text}
-                                                </button>
+                                                </a>
                                             ))}
                                         </div>
                                     </div>

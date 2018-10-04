@@ -269,7 +269,6 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                 {this.state.hoverOverlayProps && (
                     <HoverOverlay
                         {...hoverOverlayProps}
-                        // logTelemetryEvent={logTelemetryEvent}
                         linkComponent={LinkComponent}
                         hoverRef={this.nextOverlayElement}
                         onGoToDefinitionClick={this.nextGoToDefinitionClick}
