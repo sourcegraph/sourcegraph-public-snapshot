@@ -24,13 +24,6 @@ yarn link
 popd
 yarn link @sourcegraph/webapp
 
-# Generated with:
-#
-#   go run ./pkg/license/generate-license.go -private-key key.pem -tags=dev -users=10 -expires=8784h
-#
-# See the docs in generate-license.go to obtain key.pem.
-export SOURCEGRAPH_LICENSE_KEY=eyJzaWciOnsiRm9ybWF0Ijoic3NoLXJzYSIsIkJsb2IiOiJKM1htVmcxZ1hObVpET3piODQ3YW12MWdEanRzZ3l6RXFkY25iR0tnZUxUV2FBMVNlWVRtSm5jWUNJTDJzTHpRSFFrdC9OSXV0QlVPYzgwTllWZ25pZDNGV3VCYUVIZ0xleG9WU0RCTS9XcFRERStZU3ZyWmJ4OTErUWk5RkRmK0tHWHFlaFFSR2JFclYyV3RIYzAra0cyMjFVQnRrREZwMkJ5Sk81Y3dCUGYyUDcreVRkZy9tYlhnSDlYSFcyYm4xckdBa2lMRUxuby9Ta2xpVnA1bHBuVEh3Rk54RDUzQ1pjMzNrQktxaVh5Q1lIY0ozMWo1ZEpOT1p4Q25FZlB2cjNWcE4xeWFXbVJIeUFueTkzWlVLbTlmWC9rT3JUZ0lqL2dPaUxtNFR0MnpyUHFqOTFBYmpjck9ZbHZSci96bmNUaG5UeDhvV0xYSGJsN2hCOG5oOHc9PSJ9LCJpbmZvIjoiZXlKMklqb3hMQ0p1SWpwYk1URXhMRFkyTERjekxEVTNMREU1T1N3eE9UY3NNVE0wTERFMU9WMHNJblFpT2xzaVpHVjJJbDBzSW5VaU9qRXdMQ0psSWpvaU1qQXhPUzB4TUMwd01WUXlNem8wTnpvMU5Gb2lmUT09In0
-
 # Stripe test API keys (https://dashboard.stripe.com/account/apikeys) and product ID. These do not
 # have any sensitive data associated with them and are NOT the ones used in production.
 export STRIPE_SECRET_KEY=sk_test_QHDBfU09USr4SVaJPZJEGruf
