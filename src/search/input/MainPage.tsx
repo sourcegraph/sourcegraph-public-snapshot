@@ -29,18 +29,23 @@ interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
 interface State {
     /** The query value entered by the user in the query input */
     userQuery: string
+    // modalXXopen sets a state that the modal is open before animations or closed after animation
+    // modalXXclosing sets a state that starts the closing process
     modalSearchOpen: boolean
     modalIntelligenceOpen: boolean
     modalSearchClosing: boolean
     modalIntelligenceClosing: boolean
     modalIntegrationsOpen: boolean
     modalIntegrationsClosing: boolean
-    /** Unique ID for keeping selected button state. */
+    // determine what button in modal is active
     activeButton?: string
+    // determine what section inside a modal is active
     activesection?: string
+    // animateModalXX starts the animation process after opening.
     animateModalSearch: boolean
     animateModalIntelligence: boolean
     animateModalIntegrations: boolean
+    // Manual click state is to determine if animation should be stopped
     manualClick?: boolean
     bgScrollStyle: string
 }
