@@ -173,15 +173,15 @@ func main() {
 
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/reset-test-db.sh || true"),
-		bk.Cmd("go test -race ./..."))
+		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+		bk.ArtifactPaths("coverage.txt"))
 
 	pipeline.AddWait()
 
-	// TODO add back coverprofile to go
-	//pipeline.AddStep(":codecov:",
-	//	bk.Cmd("buildkite-agent artifact download '*/coverage.txt' . || true"), // ignore error when no report exists
-	//	bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-	//	bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode -t TEMPORARILY_REDACTED"))
+	pipeline.AddStep(":codecov:",
+		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
+		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
 
 	if branch == "master" {
 		// Publish @sourcegraph/webapp to npm
@@ -200,27 +200,26 @@ func main() {
 		// Only deploy pure-OSS images dogfood/prod. Images that contain some
 		// private code (server/frontend) are already deployed by the
 		// enterprise CI above.
-		deploy := branch != "master"
 
-		if deploy {
-			// Deploy to dogfood
-			pipeline.AddStep(":dog:",
-				// Protect against concurrent/out-of-order deploys
-				bk.ConcurrencyGroup("deploy"),
-				bk.Concurrency(1),
-				bk.Env("VERSION", version),
-				bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
-				bk.Env("NAMESPACE", "default"),
-				bk.Cmd("./dev/ci/deploy-dogfood.sh"))
-			pipeline.AddWait()
+		if !strings.HasPrefix(branch, "docker-images/") {
+			return
 		}
 
-		if deploy {
-			// Deploy to prod
-			pipeline.AddStep(":rocket:",
-				bk.Env("VERSION", version),
-				bk.Cmd("./dev/ci/deploy-prod.sh"))
-		}
+		// Deploy to dogfood
+		pipeline.AddStep(":dog:",
+			// Protect against concurrent/out-of-order deploys
+			bk.ConcurrencyGroup("deploy"),
+			bk.Concurrency(1),
+			bk.Env("VERSION", version),
+			bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
+			bk.Env("NAMESPACE", "default"),
+			bk.Cmd("./dev/ci/deploy-dogfood.sh"))
+		pipeline.AddWait()
+
+		// Deploy to prod
+		pipeline.AddStep(":rocket:",
+			bk.Env("VERSION", version),
+			bk.Cmd("./dev/ci/deploy-prod.sh"))
 	}
 
 	switch {
@@ -241,9 +240,6 @@ func main() {
 			addDockerImageStep(dockerImage, latest)
 		}
 		pipeline.AddWait()
-
-	case branch == "master":
-		addDeploySteps()
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		version = version + "_patch"
