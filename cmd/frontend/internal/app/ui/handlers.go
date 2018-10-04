@@ -213,7 +213,7 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	if (r.Host == "sourcegraph.com" || r.Host == "www.sourcegraph.com") && !actor.FromContext(r.Context()).IsAuthenticated() {
 		// The user is not signed in and tried to access our main site at sourcegraph.com.
 		// Redirect to sourcegraph.com/start so they see general info.
-		http.Redirect(w, r, "https://sourcegraph.com/start", http.StatusTemporaryRedirect)
+		http.Redirect(w, r, "/start", http.StatusTemporaryRedirect)
 		return nil
 	}
 	// sourcegraph.com (not about) homepage. There is none, redirect them to /search.
