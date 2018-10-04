@@ -90,10 +90,10 @@
         },
         "multipleAuthProviders": {
           "description":
-            "Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users. (WARNING: Do not use this unless you know what you're doing.)",
+            "Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users.\n\nOnly applies to Sourcegraph Enterprise Starter and Sourcegraph Enterprise.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "discussions": {
           "description": "Enables the code discussions experiment.",

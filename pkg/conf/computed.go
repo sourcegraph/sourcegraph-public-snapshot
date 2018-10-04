@@ -40,8 +40,8 @@ func MultipleAuthProvidersEnabled() bool { return MultipleAuthProvidersEnabledFr
 // MultipleAuthProvidersEnabledFromConfig is like MultipleAuthProvidersEnabled, except it accepts a
 // site configuration input value instead of using the current global value.
 func MultipleAuthProvidersEnabledFromConfig(c *schema.SiteConfiguration) bool {
-	// default is disabled
-	return c.ExperimentalFeatures != nil && c.ExperimentalFeatures.MultipleAuthProviders == "enabled"
+	// default is enabled
+	return c.ExperimentalFeatures == nil || c.ExperimentalFeatures.MultipleAuthProviders != "disabled"
 }
 
 type AccessTokAllow string

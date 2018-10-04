@@ -31,8 +31,38 @@ func TestValidateCustom(t *testing.T) {
 			},
 			wantProblems: []string{"auth.providers takes precedence"},
 		},
-		"multiple auth providers without experimentalFeature.multipleAuthProviders": {
+		"multiple auth providers with experimentalFeatures == nil": {
 			input: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
+					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
+				},
+			},
+			wantProblems: nil,
+		},
+		"multiple auth providers with experimentalFeatures.multipleAuthProviders unset": {
+			input: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{},
+				AuthProviders: []schema.AuthProviders{
+					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
+					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
+				},
+			},
+			wantProblems: nil,
+		},
+		"multiple auth providers with experimentalFeatures.multipleAuthProviders == enabled": {
+			input: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{MultipleAuthProviders: "enabled"},
+				AuthProviders: []schema.AuthProviders{
+					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
+					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
+				},
+			},
+			wantProblems: nil,
+		},
+		"multiple auth providers with experimentalFeatures.multipleAuthProviders == disabled": {
+			input: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{MultipleAuthProviders: "disabled"},
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
