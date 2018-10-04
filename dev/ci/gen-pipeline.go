@@ -242,9 +242,6 @@ func main() {
 		}
 		pipeline.AddWait()
 
-	case branch == "master":
-		addDeploySteps()
-
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		version = version + "_patch"
 		addDockerImageStep(branch[20:], false)
