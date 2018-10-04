@@ -154,7 +154,7 @@
     "@types/highlight.js": "9.12.3",
     "@types/http-proxy-middleware": "0.17.5",
     "@types/jsdom": "11.0.6",
-    "@types/marked": "0.4.1",
+    "@types/marked": "0.4.2",
     "@types/mkdirp-promise": "5.0.0",
     "@types/mocha": "5.2.5",
     "@types/mz": "0.0.32",
