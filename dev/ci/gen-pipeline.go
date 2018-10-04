@@ -196,6 +196,10 @@ func main() {
 
 	pipeline.AddWait()
 
+	fetchClusterCredentials := func(name, zone, project string) bk.StepOpt {
+		return bk.Cmd(fmt.Sprintf("gcloud container clusters get-credentials %s --zone %s --project %s", name, zone, project))
+	}
+
 	addDeploySteps := func() {
 		// Only deploy pure-OSS images dogfood/prod. Images that contain some
 		// private code (server/frontend) are already deployed by the
@@ -213,6 +217,7 @@ func main() {
 			bk.Env("VERSION", version),
 			bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
 			bk.Env("NAMESPACE", "default"),
+			fetchClusterCredentials("dogfood-cluster-7", "us-central1-a", "sourcegraph-dev"),
 			bk.Cmd("./dev/ci/deploy-dogfood.sh"))
 		pipeline.AddWait()
 
