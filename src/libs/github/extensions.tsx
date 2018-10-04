@@ -2,10 +2,12 @@ import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/
 import { Controller as ClientController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { Controller } from '@sourcegraph/extensions-client-common/lib/controller'
 import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
+import * as H from 'history'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 
 import * as React from 'react'
 import { render } from 'react-dom'
+import { GlobalDebug } from '../../shared/components/GlobalDebug'
 
 export function getCommandPaletteMount(): HTMLElement {
     const headerElem = document.querySelector('div.HeaderMenu>div:last-child')
@@ -26,6 +28,20 @@ export function getCommandPaletteMount(): HTMLElement {
     return document.querySelector<HTMLElement>('.' + commandListClass) || createCommandList()
 }
 
+export function getGlobalDebugMount(): HTMLElement {
+    const globalDebugClass = 'global-debug'
+
+    const createGlobalDebugMount = (): HTMLElement => {
+        const globalDebugElem = document.createElement('div')
+        globalDebugElem.className = globalDebugClass
+        document.body.appendChild(globalDebugElem)
+
+        return globalDebugElem
+    }
+
+    return document.querySelector<HTMLElement>('.' + globalDebugClass) || createGlobalDebugMount()
+}
+
 // TODO: remove with old inject
 export function injectExtensionsGlobalComponents({
     extensionsController,
@@ -41,5 +57,11 @@ export function injectExtensionsGlobalComponents({
             extensions={extensionsContextController}
         />,
         getCommandPaletteMount()
+    )
+
+    const history = H.createBrowserHistory()
+    render(
+        <GlobalDebug extensionsController={extensionsController} location={history.location} />,
+        getGlobalDebugMount()
     )
 }

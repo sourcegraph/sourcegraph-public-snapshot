@@ -44,7 +44,7 @@ const createPlatformMessageTransports = (connectionInfo: ExtensionConnectionInfo
             if (response.error) {
                 reject(response.error)
             } else {
-                resolve(createPortMessageTransports(port, connectionInfo))
+                resolve(createPortMessageTransports(port))
             }
         })
     })

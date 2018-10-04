@@ -11,7 +11,7 @@ import {
     searchCodeSnippetDOMFunctions,
     singleFileDOMFunctions,
 } from './dom_functions'
-import { getCommandPaletteMount } from './extensions'
+import { getCommandPaletteMount, getGlobalDebugMount } from './extensions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './file_info'
 import { createCodeViewToolbarMount, getFileContainers, parseURL } from './util'
 
@@ -119,6 +119,7 @@ export const githubCodeHost: CodeHost = {
     codeViewResolver,
     check: checkIsGithub,
     getCommandPaletteMount,
+    getGlobalDebugMount,
     buildJumpURLLocation: (def: JumpURLLocation) => {
         const rev = def.rev
         // If we're provided options, we can make the j2d URL more specific.

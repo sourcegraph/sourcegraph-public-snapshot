@@ -21,9 +21,12 @@ import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import { Disposable } from 'vscode-languageserver'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
+import * as H from 'history'
 import { isErrorLike } from '../../shared/backend/errors'
 import { createExtensionsContextController, createMessageTransports } from '../../shared/backend/extensions'
+import { GlobalDebug } from '../../shared/components/GlobalDebug'
 import { sourcegraphUrl } from '../../shared/util/context'
+import { getGlobalDebugMount } from '../github/extensions'
 import { MountGetter } from './code_intelligence'
 
 // This is rather specific to extensions-client-common
@@ -114,6 +117,12 @@ export function initializeExtensions(
             extensions={extensionsContextController}
         />,
         getCommandPaletteMount()
+    )
+
+    const history = H.createBrowserHistory()
+    render(
+        <GlobalDebug extensionsController={extensionsController} location={history.location} />,
+        getGlobalDebugMount()
     )
 
     return { extensionsContextController, extensionsController }

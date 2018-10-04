@@ -7,21 +7,17 @@ import {
     MessageReader,
     MessageWriter,
 } from 'sourcegraph/module/protocol/jsonrpc2/transport'
-import { ExtensionConnectionInfo } from '../messaging'
 
 class PortMessageReader extends AbstractMessageReader implements MessageReader {
     private pending: Message[] = []
     private callback: DataCallback | null = null
 
-    constructor(private port: chrome.runtime.Port, private connectionInfo: ExtensionConnectionInfo) {
+    constructor(private port: chrome.runtime.Port) {
         super()
 
         port.onMessage.addListener((message: Message) => {
             try {
                 if (this.callback) {
-                    if (localStorage.getItem('traceExtensions') === 'true') {
-                        console.log(this.connectionInfo.extensionID, '->', message)
-                    }
                     this.callback(message)
                 } else {
                     this.pending.push(message)
@@ -55,15 +51,12 @@ class PortMessageReader extends AbstractMessageReader implements MessageReader {
 class PortMessageWriter extends AbstractMessageWriter implements MessageWriter {
     private errorCount = 0
 
-    constructor(private port: chrome.runtime.Port, private connectionInfo: ExtensionConnectionInfo) {
+    constructor(private port: chrome.runtime.Port) {
         super()
     }
 
     public write(message: Message): void {
         try {
-            if (localStorage.getItem('traceExtensions') === 'true') {
-                console.log(this.connectionInfo.extensionID, '<-', message)
-            }
             this.port.postMessage(message)
         } catch (error) {
             this.fireError(error, message, ++this.errorCount)
@@ -77,12 +70,9 @@ class PortMessageWriter extends AbstractMessageWriter implements MessageWriter {
 }
 
 /** Creates JSON-RPC2 message transports for the Web Worker message communication interface. */
-export function createPortMessageTransports(
-    port: chrome.runtime.Port,
-    connectionInfo: ExtensionConnectionInfo
-): MessageTransports {
+export function createPortMessageTransports(port: chrome.runtime.Port): MessageTransports {
     return {
-        reader: new PortMessageReader(port, connectionInfo),
-        writer: new PortMessageWriter(port, connectionInfo),
+        reader: new PortMessageReader(port),
+        writer: new PortMessageWriter(port),
     }
 }

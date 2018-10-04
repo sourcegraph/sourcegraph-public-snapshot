@@ -44,6 +44,13 @@ $body-color-dark: #f2f4f8;
     right: 0;
 }
 
+.global-debug {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    background-color: var(--body-bg);
+}
+
 .configured-extensions-list {
     h1 {
         font-size: 32px;

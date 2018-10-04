@@ -136,6 +136,11 @@ export interface CodeHost {
      */
     getCommandPaletteMount?: MountGetter
 
+    /**
+     * Get the DOM element where we'll mount the small global debug menu for extensions in the bottom right.
+     */
+    getGlobalDebugMount?: MountGetter
+
     /** Build the J2D url from the location. */
     buildJumpURLLocation?: (def: JumpURLLocation) => string
 }
