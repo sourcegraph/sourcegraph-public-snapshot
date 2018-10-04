@@ -21,6 +21,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
 import { memoizeObservable } from '../../util/memoize'
 import { lprToRange, parseHash } from '../../util/url'
+import { parseHash } from '../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleDiscussionsPanel } from './actions/ToggleDiscussions'
@@ -189,11 +190,12 @@ export class BlobPage extends React.PureComponent<Props, State> {
         }
 
         const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
-        // renderAs is renderMode but with undefined mapped to the actual mode.
-        // render in richHTML if file contains richHTML and url does not include line number
+        // If url explicitly asks for a certain renderMode, renderAs is set to that renderMode, else it checks:
+        // - If file contains richHTML and url does not include a line number: We render in richHTML.
+        // - If file does not contain richHTML or the url includes a line number: We render in code view.
         const renderAs =
             renderMode ||
-            (this.state.blobOrError && this.state.blobOrError.richHTML && !this.props.location.hash
+            (this.state.blobOrError && this.state.blobOrError.richHTML && !parseHash(this.props.location.hash).line
                 ? 'rendered'
                 : 'code')
 
