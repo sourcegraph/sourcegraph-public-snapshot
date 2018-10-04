@@ -109,7 +109,6 @@ export class IntegrationsToast extends React.Component<Props, State> {
 
     private onClickConfigure = (): void => {
         eventLogger.log('IntegrationsToastClicked')
-        this.props.history.push('/settings/integrations')
         this.dismissToast()
     }
 
