@@ -1,6 +1,5 @@
 import * as H from 'history'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 import { ExtensionConnection } from 'sourcegraph/module/client/controller'
@@ -20,6 +19,7 @@ interface Props<S extends ConfigurationSubject, C extends Settings> extends Cont
         className: 'icon-inline' | string
         onClick?: () => void
     }>
+    link: React.ComponentType<{ id: string }>
 }
 
 interface State {
@@ -79,7 +79,7 @@ export class ExtensionStatus<S extends ConfigurationSubject, C extends Settings>
                                     key={i}
                                     className="list-group-item py-2 d-flex align-items-center justify-content-between"
                                 >
-                                    <Link to={`/extensions/${key.id}`}>{key.id}</Link>
+                                    <this.props.link id={key.id} />
                                 </div>
                             ))}
                         </div>
