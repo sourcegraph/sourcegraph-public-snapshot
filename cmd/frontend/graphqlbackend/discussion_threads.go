@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -13,8 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/ratelimit"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -219,6 +222,11 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 	}
 	if currentUser == nil {
 		return nil, errors.New("no current user")
+	}
+	if dc := conf.Get().Discussions; dc != nil && dc.AbuseProtection {
+		if mustWait := ratelimit.TimeUntilUserCanCreateThread(ctx, currentUser.user.ID); mustWait != 0 {
+			return nil, fmt.Errorf("You are creating threads too quickly. You may create a new one after %v", mustWait.Round(time.Second))
+		}
 	}
 
 	if args.Input.Title == nil {
