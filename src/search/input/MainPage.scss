@@ -520,7 +520,7 @@ body.modal-open {
             align-items: center;
             font-size: 20px;
             font-weight: 400;
-            .btn-icon {
+            .logo-icon {
                 height: 1.5rem;
                 width: 1.5rem;
                 display: inline-block;
@@ -530,52 +530,52 @@ body.modal-open {
             }
         }
         .btn-github {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/github.png);
             }
         }
         .btn-gitlab {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/gitlab.svg);
             }
         }
         .btn-phabricator {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/phabricator.svg);
             }
         }
         .btn-chrome {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/chrome.svg);
             }
         }
         .btn-firefox {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/firefox.svg);
             }
         }
         .btn-atom {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/atom.svg);
             }
         }
         .btn-intellij {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/jetbrains.svg);
             }
         }
         .btn-vscode {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/vscode.svg);
             }
         }
         .btn-sublime {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/sublime.svg);
             }
         }
         .btn-vim {
-            .btn-icon {
+            .logo-icon {
                 background-image: url(https://about.sourcegraph.com/integrations/vim.svg);
             }
         }

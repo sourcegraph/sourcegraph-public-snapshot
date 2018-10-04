@@ -115,7 +115,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
 
     private subscriptions = new Subscription()
 
-    private componentUpdates = new Subject()
+    private componentUpdates = new Subject<void>()
 
     private target: EventTarget | null = null
 

@@ -754,7 +754,7 @@ export class MainPage extends React.Component<Props, State> {
                                                     key={`integrations-buttons-${j}`}
                                                     className={`btn btn-secondary btn-integrations  ${id}`}
                                                 >
-                                                    <span className="btn-icon" />
+                                                    <span className="logo-icon" />
                                                     {text}
                                                 </button>
                                             ))}
