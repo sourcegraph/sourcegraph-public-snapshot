@@ -52,7 +52,7 @@ graph LR
 
 Here are the services that compose Sourcegraph.
 
-### frontend ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/frontend))
+### frontend ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/frontend))
 
 The frontend serves our [web app](./web.md) and hosts our [GraphQL API](https://about.sourcegraph.com/docs/features/api/).
 
@@ -60,15 +60,15 @@ Application data is stored in our Postgresql database.
 
 Session data is stored in redis.
 
-### github-proxy ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/github-proxy))
+### github-proxy ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/github-proxy))
 
 Proxies all requests to github.com to keep track of rate limits and prevent triggering abuse mechanisms.
 
-### gitserver ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/gitserver))
+### gitserver ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/gitserver))
 
 Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git. Requests for fetch operations, however, should go through repo-updater.
 
-### indexer ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/indexer))
+### indexer ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/indexer))
 
 The indexer has a few responsibilities:
 
@@ -76,7 +76,7 @@ The indexer has a few responsibilities:
 - It makes sure the appropriate language servers are enabled (Sourcegraph Server only).
 - It is how the frontend enqueues repositories for updating when (e.g. a user visits a repository).
 
-### lsp-proxy ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/lsp-proxy))
+### lsp-proxy ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsp-proxy))
 
 [Language Server Protocol](https://microsoft.github.io/language-server-protocol/)
 
@@ -88,15 +88,15 @@ Language servers implement the [Language Server Protocol](https://microsoft.gith
 
 We have built some language servers ourself ([Go](https://github.com/sourcegraph/go-langserver), [Java](https://github.com/sourcegraph/java-langserver), [TypeScript/JavaScript](https://github.com/sourcegraph/javascript-typescript-langserver), [Python](https://github.com/sourcegraph/python-langserver), [PHP](https://github.com/felixfbecker/php-language-server)), and we can also integrate language servers built by the community by wrapping them with [lsp-adapter](https://github.com/sourcegraph/lsp-adapter).
 
-### query-runner ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/query-runner))
+### query-runner ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/query-runner))
 
 Periodically runs saved searches and sends notification emails.
 
-### repo-updater ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/repo-updater))
+### repo-updater ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/repo-updater))
 
 Repo-updater (which may get renamed since it does more than that) tracks the state of repos, and is responsible for automatically scheduling updates ("git fetch" runs) using gitserver. Other apps which desire updates or fetches should be telling repo-updater, rather than using gitserver directly, so repo-updater can take their changes into account.
 
-### searcher ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/searcher))
+### searcher ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/searcher))
 
 Provides on-demand search for repositories. It scans through a git archive fetched from gitserver to find results.
 
@@ -106,7 +106,7 @@ Provides search results for repositories that have been indexed. This is a paid 
 
 We forked https://github.com/google/zoekt.
 
-### symbols ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/sourcegraph/-/tree/cmd/symbols))
+### symbols ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/symbols))
 
 Indexes symbols in repositories using Ctags.
 
@@ -114,7 +114,7 @@ Indexes symbols in repositories using Ctags.
 
 Syntect is a Rust service that is responsible for syntax highlighting.
 
-### Browser extensions ([code](https://sourcegraph.sgdev.org/github.com/sourcegraph/browser-extensions) | [docs](https://about.sourcegraph.com/docs/features/browser-extensions/))
+### Browser extensions ([code](https://github.com/sourcegraph/browser-extensions) | [docs](https://about.sourcegraph.com/docs/features/browser-extensions/))
 
 We publish browser extensions for Chrome, Firefox, and Safari, that provide code intelligence (hover tooltips, jump to definition, find references) when browsing code on code hosts. By default it works for open-source code, but it also works for private code if your company has a Sourcegraph deployment.
 

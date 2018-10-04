@@ -26,7 +26,7 @@ import (
 const (
 	// maxFileSize is the limit on file size in bytes. Only files smaller
 	// than this are searched.
-	maxFileSize = 1 << 20 // 1MB; match https://sourcegraph.sgdev.org/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
+	maxFileSize = 1 << 20 // 1MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
 
 	// maxLineSize is the maximum length of a line in bytes.
 	// Lines larger than this are not scanned for results.
