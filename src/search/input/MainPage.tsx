@@ -152,7 +152,7 @@ const integrationsSections = [
         title: 'Code host integrations',
         paragraph:
             'The Sourcegraph browser extension will add go-to-definition, find-references, hover tooltips, and code search to all files and diffs on supported code hosts. The extension will also add code intelligence and code search to public repositories. ',
-        buttons: [{ id: 'btn-gitlab', text: 'GitLab' }, { id: 'btn-github', text: 'GitHub' }],
+        buttons: [{ id: 'btn-gitlab', text: 'GitLab' }, { id: 'btn-github', text: 'GitHub' } { id: 'btn-phabricator', text: 'Phabricator' }],
     },
     {
         title: 'IDE extensions',
@@ -164,7 +164,6 @@ const integrationsSections = [
             {
                 id: 'btn-sublime',
                 text: 'Sublime',
-                onClick: 'buttonGoLang',
             },
             { id: 'btn-vim', text: 'Vim' },
             { id: 'btn-vscode', text: 'VS Code' },
