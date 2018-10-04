@@ -19,9 +19,14 @@ The sections below describe the the dependencies that you need to have to be abl
 
 Run this command to get the Sourcegraph source code on your local machine:
 
+Using Go:
+
 ```
 go get github.com/sourcegraph/sourcegraph
 ```
+
+> Install [Go](https://golang.org/doc/install) (v1.11 or higher)
+
 
 This is your "Sourcegraph repository directory".
 
@@ -45,8 +50,15 @@ You have two options for installing these dependencies.
 
 This is a streamlined setup for Mac machines.
 
-1.  Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
-2.  Install [Homebrew](https://brew.sh).
+1.  Install [Homebrew](https://brew.sh).
+2.  Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
+    
+    optionally via `brew`
+    
+    ```
+    brew cask install docker
+    ```
+    
 3.  Install Go, Node, PostgreSQL 9, Redis, Git with the following command:
 
     ```
@@ -121,16 +133,11 @@ of that database.
 
 ### I. Create a database for the current Unix user
 
-If you are running on Linux, you may need to become the `postgres` user to
-administer Postgres.
-
-```bash
-# Linux only
-sudo su - postgres
-```
-
-After that, create the database - `createdb` with no arguments creates
+Create the database - `createdb` with no arguments creates
 a database with a name matching the current user.
+
+> If you are running on Linux, you may need to become the `postgres` user to
+  administer Postgres. Run `sudo su - postgres` first then continue.
 
 ```bash
 createdb
