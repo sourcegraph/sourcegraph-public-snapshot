@@ -1,7 +1,10 @@
 // Stylelint rules
 // stylelint-disable value-no-vendor-prefix
 // Webkit prefixes are needed
+// stylelint-disable color-named
 // RGBA is prefered in some CSS properties
+// stylelint-disable indentation
+// stylelint-disable color-hex-length
 
 @import '../../nav/GlobalNavbar';
 @import './SearchFilterChips';
@@ -72,9 +75,9 @@ body.modal-open {
 
         &__bg {
             background: rgb(8, 51, 95);
-            background: -moz-linear-gradient(20deg, rgb(8, 51, 95) 0%, black 65%);
-            background: -webkit-linear-gradient(20deg, rgb(8, 51, 95) 0%, black 65%);
-            background: linear-gradient(20deg, rgb(8, 51, 95) 0%, black 65%);
+            background: -moz-linear-gradient(20deg, rgb(8, 51, 95) 0%, rgba(0, 0, 0, 1) 65%);
+            background: -webkit-linear-gradient(20deg, rgb(8, 51, 95) 0%, rgba(0, 0, 0, 1) 65%);
+            background: linear-gradient(20deg, rgb(8, 51, 95) 0%, rgba(0, 0, 0, 1) 65%);
             position: fixed;
             z-index: -1;
             top: 0;
@@ -262,7 +265,7 @@ body.modal-open {
         box-shadow: rgba(0, 0, 0, 0.35) 0 4rem 8rem 12rem;
         padding-top: 2rem;
         padding-bottom: 4rem;
-        background-color: black;
+        background-color: #000000;
         width: 100%;
     }
     .up-next-section {
@@ -278,12 +281,12 @@ body.modal-open {
             font-size: 22px;
             font-weight: 400;
             margin-bottom: 0;
-            color: black;
+            color: #000000;
         }
         p {
             font-size: 16px;
             padding-right: 2rem;
-            color: black;
+            color: #000000;
         }
         .btn {
             margin-right: 1rem;
@@ -351,7 +354,7 @@ body.modal-open {
             margin-right: 1rem;
             border-radius: 50%;
             border: none;
-            background-color: #222;
+            background-color: #222222;
             color: #fafafa;
             position: absolute;
             right: 0;
@@ -362,7 +365,7 @@ body.modal-open {
             height: 2.5rem;
             border-radius: 1.5rem;
             border: none;
-            background-color: #333;
+            background-color: #333333;
             color: #fafafa;
             position: absolute;
             right: calc(50% - 53px);
@@ -427,7 +430,7 @@ body.modal-open {
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: black;
+        background-color: #000000;
         overflow-y: scroll !important;
 
         .container {
