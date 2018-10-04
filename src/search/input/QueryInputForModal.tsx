@@ -28,6 +28,10 @@ import { createSuggestion, Suggestion, SuggestionItem } from './Suggestion'
 /**
  * The query input field is clobbered and updated to contain this subject's values, as
  * they are received. This is used to trigger an update; the source of truth is still the URL.
+ *
+ * This file is mostly the same as Queryinput.tsx but differs for the use on the homepage on line
+ * 326-335. It also does not need onInputFocus function.
+ *
  */
 export const queryUpdates = new Subject<string>()
 
@@ -319,10 +323,11 @@ export class QueryInputForModal extends React.Component<Props, State> {
             </div>
         )
     }
+
+    // Handle the cursor changing in the input field and
+    // allow the user to type after the string changes.
+    // Used in modal on homepage.
     private changeCursor: React.FocusEventHandler<HTMLInputElement> = e => {
-        // const value = e.target.value
-        // e.target.value = ''
-        // e.target.value = value
         setTimeout(() => {
             this.inputFocuses.next()
             this.setState({ inputFocused: true })
