@@ -2,9 +2,8 @@
 // stylelint-disable value-no-vendor-prefix
 // Webkit prefixes are needed
 // stylelint-disable color-named
-// RGBA is prefered in some CSS properties
-// stylelint-disable indentation
 // stylelint-disable color-hex-length
+// RGBA is prefered in some CSS properties and hex length should be consistant.
 
 @import '../../nav/GlobalNavbar';
 @import './SearchFilterChips';
