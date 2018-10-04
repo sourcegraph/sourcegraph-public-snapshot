@@ -215,6 +215,10 @@ func main() {
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
 
+	fetchClusterCredentials := func(name, zone, project string) bk.StepOpt {
+		return bk.Cmd(fmt.Sprintf("gcloud container clusters get-credentials %s --zone %s --project %s", name, zone, project))
+	}
+
 	addDeploySteps := func() {
 		// Deploy to dogfood
 		pipeline.AddStep(":dog:",
@@ -224,6 +228,7 @@ func main() {
 			bk.Env("VERSION", version),
 			bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
 			bk.Env("NAMESPACE", "default"),
+			fetchClusterCredentials("dogfood-cluster-7", "us-central1-a", "sourcegraph-dev"),
 			bk.Cmd("./dev/ci/deploy-dogfood.sh"))
 		pipeline.AddWait()
 
