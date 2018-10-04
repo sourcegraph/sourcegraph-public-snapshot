@@ -1,9 +1,15 @@
 package langservers
 
 import (
+	"context"
 	"strings"
 
+	"github.com/pkg/errors"
+
+	"github.com/sourcegraph/sourcegraph/pkg/api"
+
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -47,14 +53,44 @@ func State(language string) (ConfigState, error) {
 	return StateNone, nil
 }
 
-// SetDisabled sets the state of the language server for the specified
-// language.
+func setDisabledInGlobalSettings(language string, disabled bool) error {
+	settings, err := db.Settings.GetLatest(context.Background(), api.ConfigurationSubject{Site: true})
+	if err != nil {
+		return err
+	}
+	if settings == nil {
+		return nil
+	}
+	edits, _, err := jsonx.ComputePropertyEdit(settings.Contents, jsonx.PropertyPath("extensions", "langserver/"+language), !disabled, nil, conf.FormatOptions)
+	if err != nil {
+		return err
+	}
+	newSettings, err := jsonx.ApplyEdits(settings.Contents, edits...)
+	if err != nil {
+		return err
+	}
+	_, err = db.Settings.CreateIfUpToDate(context.Background(), api.ConfigurationSubject{Site: true}, &settings.ID, settings.AuthorUserID, newSettings)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// SetDisabled sets the state of the language server for the specified language.
 //
 // This is done by updating the site configuration, and as such should never be
 // invoked in response to a conf.Watch callback, etc.
+//
+// This also enables/disables the corresponding Sourcegraph Extension in global
+// settings (not site configuration).
 func SetDisabled(language string, disabled bool) error {
 	// Check if the language specified is for a custom language server or not.
 	customLangserver := checkSupported(language) != nil
+
+	err := setDisabledInGlobalSettings(language, disabled)
+	if err != nil {
+		return errors.Wrap(err, "setDisabledInGlobalSettings")
+	}
 
 	return conf.Edit(func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error) {
 		// Copy the langservers slice, since we intend to edit it.
