@@ -195,7 +195,7 @@ const inlineStyle = `
     }
 `
 /**
- * The search page
+ * The main page
  */
 export class MainPage extends React.Component<Props, State> {
     private static HIDE_REPOGROUP_SAMPLE_STORAGE_KEY = 'MainPage/hideRepogroupSample'
@@ -284,7 +284,7 @@ export class MainPage extends React.Component<Props, State> {
                                     startLine={236}
                                     endLine={250}
                                     parentElement={'.hero-section'}
-                                    containerClass={'code-intellify-container'}
+                                    className={'code-intellify-container'}
                                     overlayPortal={this.overlayPortal}
                                     tooltipClass={'hero-tooltip'}
                                     defaultHoverPosition={{ line: 244, character: 11 }}
@@ -694,7 +694,7 @@ export class MainPage extends React.Component<Props, State> {
                                     startLine={236}
                                     endLine={288}
                                     parentElement={'.modal-code-intellify'}
-                                    containerClass={'code-intellify-container-modal'}
+                                    className={'code-intellify-container-modal'}
                                     overlayPortal={this.overlayPortal}
                                     tooltipClass={'modal-tooltip'}
                                     defaultHoverPosition={{ line: 248, character: 11 }}
@@ -860,28 +860,35 @@ export class MainPage extends React.Component<Props, State> {
             windowBody.classList.remove('modal-open')
         }
         if (modalName === 'search') {
-            this.setState(state => ({ modalSearchClosing: !state.modalSearchClosing }))
-            this.setState(state => ({ animateModalSearch: false }))
+            this.setState(state => ({ modalSearchClosing: !state.modalSearchClosing, animateModalSearch: false }))
             // RESET DID CLOSE
             setTimeout(() => {
                 this.setState(state => ({ modalSearchOpen: !state.modalSearchOpen }))
                 this.setState(state => ({ modalSearchClosing: !state.modalSearchClosing }))
             }, 400)
         } else if (modalName === 'intelligence') {
-            this.setState(state => ({ modalIntelligenceClosing: !state.modalIntelligenceClosing }))
-            this.setState(state => ({ animateModalIntelligence: false }))
+            this.setState(state => ({
+                modalIntelligenceClosing: !state.modalIntelligenceClosing,
+                animateModalIntelligence: false,
+            }))
             // RESET DID CLOSE
             setTimeout(() => {
-                this.setState(state => ({ modalIntelligenceOpen: !state.modalIntelligenceOpen }))
-                this.setState(state => ({ modalIntelligenceClosing: !state.modalIntelligenceClosing }))
+                this.setState(state => ({
+                    modalIntelligenceOpen: !state.modalIntelligenceOpen,
+                    modalIntelligenceClosing: !state.modalIntelligenceClosing,
+                }))
             }, 400)
         } else if (modalName === 'integrations') {
-            this.setState(state => ({ modalIntegrationsClosing: !state.modalIntegrationsClosing }))
-            this.setState(state => ({ animateModalIntegrations: false }))
+            this.setState(state => ({
+                modalIntegrationsClosing: !state.modalIntegrationsClosing,
+                animateModalIntegrations: false,
+            }))
             // RESET DID CLOSE
             setTimeout(() => {
-                this.setState(state => ({ modalIntegrationsOpen: !state.modalIntegrationsOpen }))
-                this.setState(state => ({ modalIntegrationsClosing: !state.modalIntegrationsClosing }))
+                this.setState(state => ({
+                    modalIntegrationsOpen: !state.modalIntegrationsOpen,
+                    modalIntegrationsClosing: !state.modalIntegrationsClosing,
+                }))
             }, 400)
         }
     }

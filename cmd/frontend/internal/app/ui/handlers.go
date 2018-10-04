@@ -209,12 +209,10 @@ func serveHome(w http.ResponseWriter, r *http.Request) error {
 	if common == nil {
 		return nil // request was handled
 	}
+
 	if (r.Host == "sourcegraph.com" || r.Host == "www.sourcegraph.com") && !actor.FromContext(r.Context()).IsAuthenticated() {
 		// The user is not signed in and tried to access our main site at sourcegraph.com.
-		// Redirect to about.sourcegraph.com so they see general info.
-		if err != nil {
-			return err
-		}
+		// Redirect to sourcegraph.com/start so they see general info.
 		http.Redirect(w, r, "https://sourcegraph.com/start", http.StatusTemporaryRedirect)
 		return nil
 	}

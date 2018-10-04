@@ -10,77 +10,22 @@ import { getTokenAtPosition } from '@sourcegraph/codeintellify/lib/token_positio
 import * as H from 'history'
 import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
-import { Observable, Subject, Subscription } from 'rxjs'
+import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, withLatestFrom } from 'rxjs/operators'
 import { Position } from 'vscode-languageserver-types'
 import { getHover, getJumpURL } from '../../backend/features'
-import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { LSPTextDocumentPositionParams } from '../../backend/lsp'
 import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps } from '../../extensions/ExtensionsClientCommonContext'
-import { makeRepoURI, ParsedRepoURI } from '../../repo'
+import { fetchBlob } from '../../repo/blob/BlobPage'
 import { getModeFromPath } from '../../util'
-import { createAggregateError, ErrorLike, isErrorLike } from '../../util/errors'
-import { memoizeObservable } from '../../util/memoize'
+import { ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
-
-function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
-    return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
-}
-
-const fetchBlob = memoizeObservable(
-    (args: {
-        repoPath: string
-        commitID: string
-        filePath: string
-        isLightTheme: boolean
-        disableTimeout: boolean
-    }): Observable<GQL.IGitBlob> =>
-        queryGraphQL(
-            gql`
-                query Blob(
-                    $repoPath: String!
-                    $commitID: String!
-                    $filePath: String!
-                    $isLightTheme: Boolean!
-                    $disableTimeout: Boolean!
-                ) {
-                    repository(name: $repoPath) {
-                        commit(rev: $commitID) {
-                            file(path: $filePath) {
-                                content
-                                richHTML
-                                highlight(disableTimeout: $disableTimeout, isLightTheme: $isLightTheme) {
-                                    aborted
-                                    html
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            args
-        ).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.file ||
-                    !data.repository.commit.file.highlight
-                ) {
-                    throw createAggregateError(errors)
-                }
-                return data.repository.commit.file
-            })
-        ),
-    fetchBlobCacheKey
-)
 
 interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
     history: H.History
-    containerClass: string
+    className: string
     startLine: number
     endLine: number
     parentElement: string
@@ -143,7 +88,7 @@ const domFunctions = {
 
 const REPO_PATH = 'github.com/gorilla/mux'
 const COMMIT_ID = '9e1f5955c0d22b55d9e20d6faa28589f83b2faca'
-const REV = ''
+const REV = undefined
 const FILE_PATH = 'mux.go'
 
 export class CodeIntellifyBlob extends React.Component<Props, State> {
@@ -155,7 +100,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
     private hoverOverlayElements = new Subject<HTMLElement | null>()
     private nextOverlayElement = (element: HTMLElement | null) => this.hoverOverlayElements.next(element)
 
-    /** Emits whenever the ref callback for the hover element is called */
+    /** Emits whenever the ref callback for the demo file element is called */
     private demoFileElements = new Subject<HTMLElement | null>()
     private nextdemoFileElement = (element: HTMLElement | null) => this.demoFileElements.next(element)
 
@@ -214,7 +159,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                 resolveContext: () => ({
                     repoPath: REPO_PATH,
                     commitID: COMMIT_ID,
-                    rev: REV,
+                    rev: REV || '',
                     filePath: FILE_PATH,
                 }),
                 dom: domFunctions,
@@ -231,10 +176,9 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                     filter(isDefined)
                 )
                 .subscribe(token => {
-                    const showOnHomepage =
-                        props.containerClass === 'code-intellify-container' && window.innerWidth >= 1393
+                    const showOnHomepage = props.className === 'code-intellify-container' && window.innerWidth >= 1393
                     const showOnModal =
-                        props.containerClass === 'code-intellify-container-modal' && window.innerWidth >= 1275
+                        props.className === 'code-intellify-container-modal' && window.innerWidth >= 1275
                     if (showOnHomepage || showOnModal) {
                         token.click()
                     }
@@ -298,7 +242,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
         const hoverOverlayProps = this.adjustHoverOverlayPosition(this.target)
 
         return (
-            <div className={this.props.containerClass} ref={this.nextdemoFileElement}>
+            <div className={this.props.className} ref={this.nextdemoFileElement}>
                 <div className="code-header">
                     <span className="code-header__title">github.com/gorilla/mux/mux.go</span>
                     <span className="code-header__link">
