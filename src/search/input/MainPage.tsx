@@ -306,7 +306,7 @@ export class MainPage extends React.Component<Props, State> {
                                 </a>
                                 <a
                                     className="btn btn-secondary"
-                                    href="//github.com/sourcegraph/sourcegraph/"
+                                    href="https://github.com/sourcegraph/sourcegraph/"
                                     target="_blank"
                                 >
                                     Sourcegraph GitHub
@@ -418,7 +418,7 @@ export class MainPage extends React.Component<Props, State> {
                                 </a>
                                 <a
                                     className="btn btn-secondary"
-                                    href="//github.com/sourcegraph/sourcegraph/"
+                                    href="https://github.com/sourcegraph/sourcegraph/"
                                     target="_blank"
                                 >
                                     Sourcegraph GitHub
@@ -462,7 +462,7 @@ export class MainPage extends React.Component<Props, State> {
                                 >
                                     Release Announcement
                                 </a>
-                                <a className="btn btn-secondary" href="https://github.com/sourcegraph/asourcegraph/">
+                                <a className="btn btn-secondary" href="https://github.com/sourcegraph/sourcegraph/">
                                     Sourcegraph GitHub
                                 </a>
                             </div>
