@@ -64,6 +64,7 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
                         SAML)
                     </li>
                     <li>Whether code intelligence is enabled</li>
+                    <li>Total count of existing user accounts</li>
                     <li>Aggregate counts of current daily, weekly, and monthly users</li>
                     <li>Aggregate counts of current users using code host integrations</li>
                 </ul>

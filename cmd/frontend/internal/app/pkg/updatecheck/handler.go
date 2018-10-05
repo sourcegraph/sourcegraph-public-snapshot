@@ -67,9 +67,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	clientVersionString = strings.TrimPrefix(clientVersionString, "v")
 	clientVersion, err := semver.NewVersion(clientVersionString)
 	if err != nil {
-		log15.Error("updatecheck: encountered bad version string", "version", clientVersionString, "error", err)
-
-		// Still log telemetry on malformed version strings.
+		// Still log pings on malformed version strings.
 		logPing(r, clientVersionString, false)
 
 		http.Error(w, clientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
@@ -106,6 +104,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	initialAdminEmail := q.Get("initAdmin")
 	hasCodeIntelligence := q.Get("codeintel")
 	deployType := q.Get("deployType")
+	totalUsers := q.Get("totalUsers")
 
 	// Log update check.
 	var clientAddr string
@@ -131,7 +130,8 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		"site_activity": %s,
 		"installer_email": "%s",
 		"auth_providers": "%s",
-		"deploy_type": "%s"
+		"deploy_type": "%s",
+		"total_user_accounts": "%s"
 	}`,
 		clientAddr,
 		clientVersionString,
@@ -143,6 +143,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 		initialAdminEmail,
 		authProviders,
 		deployType,
+		totalUsers,
 	)))
 
 	// Sync the initial administrator email in HubSpot.
