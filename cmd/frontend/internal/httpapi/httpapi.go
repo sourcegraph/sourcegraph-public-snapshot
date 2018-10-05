@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"

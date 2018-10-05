@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"

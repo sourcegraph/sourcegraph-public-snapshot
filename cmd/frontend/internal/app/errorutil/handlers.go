@@ -6,7 +6,7 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"

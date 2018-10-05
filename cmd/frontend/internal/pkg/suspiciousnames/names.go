@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 )
 
 // CheckNameAllowedForUserOrOrganization returns a non-nil error if the desired username or
