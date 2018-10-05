@@ -198,7 +198,7 @@
     "style-loader": "^0.23.0",
     "stylelint": "^9.4.0",
     "stylelint-formatter-compact": "^1.1.0",
-    "thread-loader": "^1.2.0",
+    "thread-loader": "sourcegraph/thread-loader#ddbb570ed8de6a44c94c248adc3486fdd3ef7a0c",
     "ts-loader": "^5.0.0",
     "ts-node": "^7.0.1",
     "ts-unused-exports": "^2.0.5",
