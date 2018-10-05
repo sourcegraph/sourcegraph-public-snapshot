@@ -50,7 +50,7 @@ func init() {
 			for _, c := range conf.Get().AwsCodeCommit {
 				conn, err := newAWSCodeCommitConnection(c)
 				if err != nil {
-					log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "accessKeyID", c.AccessKeyID, "error", err)
+					log15.Error("Error processing configured AWS CodeCommit connection. Skipping it.", "region", c.Region, "error", err)
 					continue
 				}
 				conns = append(conns, conn)
@@ -141,7 +141,7 @@ var awsCodeCommitRepositorySyncWorker = &worker{
 					if err == nil {
 						break
 					}
-					log15.Error("Unable to reach AWS CodeCommit API to determine AWS account ID.", "region", c.config.Region, "accessKeyID", c.config.AccessKeyID, "error", err, "retryInterval", retryInterval)
+					log15.Error("Unable to reach AWS CodeCommit API to determine AWS account ID.", "region", c.config.Region, "error", err, "retryInterval", retryInterval)
 					select {
 					case <-shutdown:
 						return
