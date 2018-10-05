@@ -1,18 +1,19 @@
 import * as H from 'history'
 import CloseIcon from 'mdi-react/CloseIcon'
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { parseSearchURLQuery } from '..'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
+import { HeroPage } from '../../components/HeroPage'
 import { PageTitle } from '../../components/PageTitle'
+import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
+import { ExtensionsControllerProps } from '../../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
-import { QueryInputForModal } from './QueryInputForModal'
-
-import { ExtensionsDocumentsProps } from '../../extensions/environment/ExtensionsEnvironment'
-import { ExtensionsControllerProps } from '../../extensions/ExtensionsClientCommonContext'
 import { CodeIntellifyBlob } from './CodeIntellifyBlob'
+import { QueryInputForModal } from './QueryInputForModal'
 import { SearchButton } from './SearchButton'
 
 interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
@@ -267,7 +268,9 @@ export class MainPage extends React.Component<Props, State> {
         this.overlayPortal = portal
 
         // communicate onMainPage to SourcegraphWebApp for dark theme look
-        this.props.onMainPage(true)
+        if (window.context.sourcegraphDotComMode) {
+            this.props.onMainPage(true)
+        }
     }
 
     public componentWillUnmount(): void {
@@ -275,6 +278,9 @@ export class MainPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        if (!window.context.sourcegraphDotComMode) {
+            return <HeroPage icon={MapSearchIcon} title="Page not found" />
+        }
         return (
             <div className="main-page">
                 <style>{inlineStyle}</style>

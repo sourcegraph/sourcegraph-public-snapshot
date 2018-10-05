@@ -178,7 +178,7 @@ func initRouter() {
 	router := newRouter()
 	uirouter.Router = router // make accessible to other packages
 	router.Get(routeHome).Handler(handler(serveHome))
-	router.Get(routeStart).Handler(handler(serveBasicPageString("Sourcegraph")))
+	router.Get(routeStart).Handler(handler(serveStart))
 	router.Get(routeThreads).Handler(handler(serveBasicPageString("Threads - Sourcegraph")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveBasicPageString("Sign in - Sourcegraph")))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))

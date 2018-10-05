@@ -25,7 +25,7 @@ interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsCo
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
-    isMainPage: boolean
+    isMainPage?: boolean
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
 }
