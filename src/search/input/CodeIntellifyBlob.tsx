@@ -250,7 +250,7 @@ export class CodeIntellifyBlob extends React.Component<Props, State> {
                 <div className="code-header">
                     <span className="code-header__title">github.com/gorilla/mux/mux.go</span>
                     <span className="code-header__link">
-                        <a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go">View Full File</a>
+                        <a href="https://sourcegraph.com/github.com/gorilla/mux/-/blob/mux.go">View full file</a>
                     </span>
                 </div>
                 {!isErrorLike(this.state.blobOrError) && (

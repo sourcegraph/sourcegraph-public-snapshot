@@ -306,10 +306,10 @@ export class MainPage extends React.Component<Props, State> {
                                 </a>
                                 <a
                                     className="btn btn-secondary"
-                                    href="//github.com/sourcegraph/sourcegraph/"
+                                    href="https://github.com/sourcegraph/sourcegraph/"
                                     target="_blank"
                                 >
-                                    Sourcegraph GitHub
+                                    Sourcegraph on GitHub
                                 </a>
                             </div>
                             <div className="col-6 small-hidden">
@@ -385,7 +385,7 @@ export class MainPage extends React.Component<Props, State> {
                             <div className="row">
                                 <div className="col-12">
                                     <h2>Integrations</h2>
-                                    <h1>Get it. Together</h1>
+                                    <h1>Get it. Together.</h1>
                                     <p>
                                         Connect your Sourcegraph instance with your existing tools. Get code
                                         intelligence while browsing code on the web, and code search from your editor.
@@ -418,10 +418,10 @@ export class MainPage extends React.Component<Props, State> {
                                 </a>
                                 <a
                                     className="btn btn-secondary"
-                                    href="//github.com/sourcegraph/sourcegraph/"
+                                    href="https://github.com/sourcegraph/sourcegraph/"
                                     target="_blank"
                                 >
-                                    Sourcegraph GitHub
+                                    Sourcegraph on GitHub
                                 </a>
                             </div>
                             <div className="col-lg-6 col-md-12">
@@ -462,8 +462,8 @@ export class MainPage extends React.Component<Props, State> {
                                 >
                                     Release Announcement
                                 </a>
-                                <a className="btn btn-secondary" href="https://github.com/sourcegraph/asourcegraph/">
-                                    Sourcegraph GitHub
+                                <a className="btn btn-secondary" href="https://github.com/sourcegraph/sourcegraph/">
+                                    Sourcegraph on GitHub
                                 </a>
                             </div>
                         </div>
