@@ -164,7 +164,7 @@
     "@types/plugin-error": "0.1.0",
     "@types/pretty-bytes": "5.1.0",
     "@types/puppeteer": "1.6.3",
-    "@types/reactstrap": "6.0.3",
+    "@types/reactstrap": "6.4.0",
     "@types/semver": "5.5.0",
     "@types/textarea-caret": "3.0.0",
     "@types/uglifyjs-webpack-plugin": "1.1.0",
