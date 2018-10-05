@@ -231,7 +231,7 @@ func serveStart(w http.ResponseWriter, r *http.Request) error {
 		return nil // request was handled
 	}
 
-	if envvar.SourcegraphDotComMode() && actor.FromContext(r.Context()).IsAuthenticated() {
+	if !envvar.SourcegraphDotComMode() {
 		// The user is signed in and tried to access sourcegraph.com/start,
 		// this page should be a 404 under that situation.
 		w.WriteHeader(http.StatusNotFound)
