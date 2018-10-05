@@ -814,7 +814,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string, op
 		tmpPath = filepath.Join(tmpPath, ".git")
 
 		cmd := exec.CommandContext(ctx, "git", "clone", "--mirror", "--progress", url, tmpPath)
-		log15.Info("cloning repo", "repo", repo, "url", url, "tmp", tmpPath, "dst", dstPath)
+		log15.Info("cloning repo", "repo", repo, "tmp", tmpPath, "dst", dstPath)
 
 		pr, pw := io.Pipe()
 		defer pw.Close()
@@ -1257,7 +1257,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) error {
 		var err error
 		url, err = repoRemoteURL(ctx, dir)
 		if err != nil || url == "" {
-			log15.Error("Failed to determine Git remote URL", "repo", repo, "error", err, "url", url)
+			log15.Error("Failed to determine Git remote URL", "repo", repo, "error", err)
 			return errors.Wrap(err, "failed to determine Git remote URL")
 		}
 		urlIsGitRemote = true
@@ -1273,13 +1273,13 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) error {
 		if current, _ := repoRemoteURL(ctx, dir); current == "" {
 			cmd = exec.Command("git", "remote", "add", "origin", url)
 		} else if current != url {
-			log15.Debug("repository remote URL changed", "repo", repo, "old", current, "new", url)
+			log15.Debug("repository remote URL changed", "repo", repo)
 			cmd = exec.Command("git", "remote", "set-url", "origin", "--", url)
 		}
 		if cmd != nil {
 			cmd.Dir = dir
 			if err, _ := runCommand(ctx, cmd); err != nil {
-				log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "url", url, "error", err)
+				log15.Error("Failed to update repository's Git remote URL.", "repo", repo, "error", err)
 			}
 		}
 	}
@@ -1310,7 +1310,7 @@ func (s *Server) doRepoUpdate2(repo api.RepoURI, url string) error {
 	cmd.Dir = path.Join(s.ReposDir, string(repo))
 	output, err := s.runWithRemoteOpts(ctx, cmd, nil)
 	if err != nil {
-		log15.Error("Failed to fetch remote info", "repo", repo, "url", url, "error", err, "output", string(output))
+		log15.Error("Failed to fetch remote info", "repo", repo, "error", err, "output", string(output))
 		return errors.Wrap(err, "failed to fetch remote info")
 	}
 	submatches := headBranchPattern.FindSubmatch(output)
