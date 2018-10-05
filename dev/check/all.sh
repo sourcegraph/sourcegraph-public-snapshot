@@ -8,7 +8,6 @@ go env
 ./gofmt.sh
 ./go-generate.sh
 ./go-lint.sh
-./go-mod.sh
 ./todo-security.sh
 ./no-localhost-guard.sh
 ./bash-syntax.sh
