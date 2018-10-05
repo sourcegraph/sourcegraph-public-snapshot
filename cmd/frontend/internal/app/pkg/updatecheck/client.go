@@ -95,6 +95,11 @@ func updateURL(ctx context.Context) string {
 		logFunc("useractivity.GetUsersActiveTodayCount failed", "error", err)
 	}
 	q.Set("u", strconv.Itoa(count))
+	totalUsers, err := db.Users.Count(ctx, &db.UsersListOptions{})
+	if err != nil {
+		logFunc("db.Users.Count failed", "error", err)
+	}
+	q.Set("totalUsers", strconv.Itoa(totalUsers))
 	if act, err := getSiteActivityJSON(); err != nil {
 		logFunc("getSiteActivityJSON failed", "error", err)
 	} else {
