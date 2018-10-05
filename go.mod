@@ -44,7 +44,7 @@ require (
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
-	github.com/sourcegraph/sourcegraph v0.0.0-20181005041231-9c44f477f24a
+	github.com/sourcegraph/sourcegraph v0.0.0-20181005081859-0fe4b8da3732
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stripe/stripe-go v0.0.0-20180924231549-97e2ddab8720
 	github.com/zenazn/goji v0.9.0 // indirect
