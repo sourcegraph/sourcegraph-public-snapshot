@@ -224,7 +224,7 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 
 	if args.Input.Title == nil {
 		// Title defaults to first line of contents.
-		title := strings.TrimSpace(strings.SplitN(args.Input.Contents, "\n", 2)[0])
+		title := strings.SplitN(strings.TrimSpace(args.Input.Contents), "\n", 2)[0]
 		args.Input.Title = &title
 	}
 
