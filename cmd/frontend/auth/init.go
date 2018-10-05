@@ -5,6 +5,7 @@ package auth
 import (
 	"net/http"
 
+	"github.com/sourcegraph/enterprise/cmd/frontend/auth/httpheader"
 	"github.com/sourcegraph/enterprise/cmd/frontend/auth/openidconnect"
 	"github.com/sourcegraph/enterprise/cmd/frontend/auth/saml"
 
@@ -19,6 +20,7 @@ func init() {
 	auth.RegisterMiddlewares(
 		openidconnect.Middleware,
 		saml.Middleware,
+		httpheader.Middleware,
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)
