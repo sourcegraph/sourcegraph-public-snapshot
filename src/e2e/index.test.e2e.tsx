@@ -10,15 +10,16 @@ const SCREENSHOT_DIRECTORY = path.resolve(__dirname, '..', '..', 'puppeteer')
 describe('e2e test suite', () => {
     let authenticate: (page: puppeteer.Page) => Promise<void>
     let baseURL: string
-    let overrideAuthSecret: string
+
+    const overrideAuthSecret = process.env.OVERRIDE_AUTH_SECRET
+    if (!overrideAuthSecret) {
+        throw new Error('Auth secret not set - unable to execute tests')
+    }
+
     if (process.env.SOURCEGRAPH_BASE_URL && process.env.SOURCEGRAPH_BASE_URL !== 'http://localhost:3080') {
         baseURL = process.env.SOURCEGRAPH_BASE_URL
-        // Assume that the dogfood (sourcegraph.sgdev.org) override token works.
-        overrideAuthSecret = '2qzNBYQmUigCFdVVjDGyFfp'
     } else {
         baseURL = 'http://localhost:3080'
-        // Use OVERRIDE_AUTH_SECRET env var from dev/launch.sh.
-        overrideAuthSecret = 'sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ'
     }
     console.log('Using base URL', baseURL)
     authenticate = page => page.setExtraHTTPHeaders({ 'X-Override-Auth-Secret': overrideAuthSecret })
