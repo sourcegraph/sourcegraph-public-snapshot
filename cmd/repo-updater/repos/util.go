@@ -101,7 +101,7 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 				errors++
 				return
 			}
-			log15.Debug("fetching repo", "repo", createdRepo.URI, "url", op.URL, "cloned", isCloned)
+			log15.Debug("fetching repo", "repo", createdRepo.URI, "cloned", isCloned)
 			err = gitserver.DefaultClient.EnqueueRepoUpdateDeprecated(ctx, gitserver.Repo{Name: createdRepo.URI, URL: op.URL})
 			enqueued++
 			if err != nil {

@@ -433,7 +433,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 					log15.Debug("github sync: ListViewerRepositories", "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
 					for _, r := range repos {
 						if c.githubDotCom && r.IsFork && r.ViewerPermission == "READ" {
-							log15.Debug("not syncing readonly fork", "url", r.URL)
+							log15.Debug("not syncing readonly fork", "repo", r.NameWithOwner)
 							continue
 						}
 						// log15.Debug("github sync: ListViewerRepositories: repo", "repo", r.NameWithOwner)
