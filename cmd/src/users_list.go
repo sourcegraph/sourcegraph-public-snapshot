@@ -48,16 +48,26 @@ Examples:
 		if err != nil {
 			return err
 		}
-
+		vars := map[string]interface{}{
+			"first": nullInt(*firstFlag),
+			"query": nullString(*queryFlag),
+			"tag":   nullString(*tagFlag),
+		}
+		queryTagVar := ""
+		queryTag := ""
+		if maybeTagVar, ok := vars["tag"].(*string); ok && maybeTagVar != nil {
+			queryTagVar = `$tag: String,`
+			queryTag = `tag: $tag,`
+		}
 		query := `query Users(
   $first: Int,
   $query: String,
-  $tag: String,
+` + queryTagVar + `
 ) {
   users(
     first: $first,
     query: $query,
-    tag: $tag,
+` + queryTag + `
   ) {
     nodes {
       ...UserFields
@@ -71,12 +81,8 @@ Examples:
 			}
 		}
 		return (&apiRequest{
-			query: query,
-			vars: map[string]interface{}{
-				"first": nullInt(*firstFlag),
-				"query": nullString(*queryFlag),
-				"tag":   nullString(*tagFlag),
-			},
+			query:  query,
+			vars:   vars,
 			result: &result,
 			done: func() error {
 				for _, user := range result.Users.Nodes {
