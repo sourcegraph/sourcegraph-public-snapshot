@@ -14,7 +14,7 @@
 - Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://about.sourcegraph.com/docs/features/browser-extension/)
 - Integration with third-party developer tools via the [Sourcegraph Extension API](https://github.com/sourcegraph/sourcegraph-extension-api)
 
-## Try it
+## Try it yourself
 
 - Try out the public instance on any open-source repository at [sourcegraph.com](https://sourcegraph.com/github.com/golang/go/-/blob/src/net/http/httptest/httptest.go#L41:6&tab=references).
 - Install the free and open-source [browser extension](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack?hl=en).
