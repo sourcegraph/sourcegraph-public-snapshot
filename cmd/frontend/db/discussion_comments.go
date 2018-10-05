@@ -88,6 +88,13 @@ type DiscussionCommentsUpdateOptions struct {
 	// operation cannot be undone.
 	Delete bool
 
+	// hardDelete, when true, indicates that the comment should be deleted
+	// entirely from the DB (not just marked as deleted / a soft delete).
+	//
+	// In general, this should only occur when e.g. deleting repositories. NOT
+	// when a user or admin requests to delete something.
+	hardDelete bool
+
 	// Report, when non-nil, specifies that the report message string should be
 	// added to the list of reports on this comment.
 	Report *string
@@ -120,11 +127,12 @@ func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *
 			return nil, err
 		}
 	}
-	if opts.Delete {
+	var deletingFirstComment bool
+	if opts.Delete || opts.hardDelete {
 		// Deleting the first comment in a thread implicitly means deleting the thread itself.
 		var (
-			isFirstComment bool
-			threadID       int64
+			deletingFirstComment bool
+			threadID             int64
 		)
 		if !opts.noThreadDelete {
 			comment, err := c.Get(ctx, commentID)
@@ -137,19 +145,27 @@ func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *
 			if err != nil {
 				return nil, err
 			}
-			isFirstComment = comment.ID == comments[0].ID
+			deletingFirstComment = comment.ID == comments[0].ID
 			threadID = comment.ThreadID
 		}
-		if isFirstComment {
+		if deletingFirstComment {
 			_, err := DiscussionThreads.Update(ctx, threadID, &DiscussionThreadsUpdateOptions{Delete: true})
 			if err != nil {
 				return nil, err
 			}
-		} else {
-			anyUpdate = true
-			if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
-				return nil, err
-			}
+		}
+	}
+	if !deletingFirstComment && opts.Delete {
+		anyUpdate = true
+		if _, err := dbconn.Global.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=$1 WHERE id=$2 AND deleted_at IS NULL", now, commentID); err != nil {
+			return nil, err
+		}
+	}
+	if !deletingFirstComment && opts.hardDelete {
+		// Intentionally not setting anyUpdate=true here, it would cause us to
+		// try to update updated_at below which would fail.
+		if _, err := dbconn.Global.ExecContext(ctx, "DELETE FROM discussion_comments WHERE id=$1", commentID); err != nil {
+			return nil, err
 		}
 	}
 	if opts.Report != nil {
@@ -169,7 +185,7 @@ func (c *discussionComments) Update(ctx context.Context, commentID int64, opts *
 			return nil, err
 		}
 	}
-	if opts.Delete {
+	if opts.Delete || opts.hardDelete {
 		return nil, nil
 	}
 	return c.Get(ctx, commentID)

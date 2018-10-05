@@ -515,8 +515,22 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 		return err
 	}
 
+	// Hard delete entries in the discussions tables that correspond to the repo.
+	threads, err := DiscussionThreads.List(ctx, &DiscussionThreadsListOptions{
+		TargetRepoID: &repo,
+	})
+	if err != nil {
+		return err
+	}
+	for _, thread := range threads {
+		_, err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionThreadsUpdateOptions{hardDelete: true})
+		if err != nil {
+			return err
+		}
+	}
+
 	q := sqlf.Sprintf("DELETE FROM REPO WHERE id=%d", repo)
-	_, err := dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err = dbconn.Global.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	return err
 }
 
