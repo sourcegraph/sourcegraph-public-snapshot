@@ -20,7 +20,7 @@
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require src/util/long-stack-traces.ts --timeout 10000 'src/**/*.test.ts?(x)'",
     "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register mocha --timeout 10000 './src/**/*.test.ts?(x)'",
-    "test-e2e": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require ./src/util/long-stack-traces.ts --timeout 60000 --slow 5000 --exit './src/**/*.test.e2e.ts?(x)'",
+    "test-e2e": "env OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require ./src/util/long-stack-traces.ts --timeout 60000 --slow 5000 --exit './src/**/*.test.e2e.ts?(x)'",
     "build": "NODE_OPTIONS=\"--max_old_space_size=4096\" gulp build",
     "watch": "NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watch",
     "watch-webpack": "NODE_OPTIONS=\"--max_old_space_size=4096\" gulp watchWebpack",
