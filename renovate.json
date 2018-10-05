@@ -8,5 +8,6 @@
       "groupName": "Sourcegraph OSS",
       "schedule": []
     }
-  ]
+  ],
+  "automerge": false
 }
