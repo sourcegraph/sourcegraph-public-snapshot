@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	"github.com/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -114,6 +116,11 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
+
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, error) {
+		return &license.Info{Tags: licensing.EnterpriseTags}, nil
+	}
+	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
 	tempdir, err := ioutil.TempDir("", "sourcegraph-oidc-test")
 	if err != nil {
@@ -289,6 +296,11 @@ func TestMiddleware(t *testing.T) {
 func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
+
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, error) {
+		return &license.Info{Tags: licensing.EnterpriseTags}, nil
+	}
+	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
 	tempdir, err := ioutil.TempDir("", "sourcegraph-oidc-test-no-open-redirect")
 	if err != nil {

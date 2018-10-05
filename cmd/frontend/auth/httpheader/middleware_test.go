@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	"github.com/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -17,6 +19,11 @@ import (
 // SEE ALSO FOR MANUAL TESTING: See the Middleware docstring for information about the testproxy
 // helper program, which helps with manual testing of the HTTP auth proxy behavior.
 func TestMiddleware(t *testing.T) {
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, error) {
+		return &license.Info{Tags: licensing.EnterpriseTags}, nil
+	}
+	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
+
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())
 		if actor.IsAuthenticated() {

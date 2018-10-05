@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/csrf"
+	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -70,6 +71,12 @@ func handleOpenIDConnectAuth(w http.ResponseWriter, r *http.Request, next http.H
 
 	// Delegate to the OpenID Connect auth handler.
 	if !isAPIRequest && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
+		// License check.
+		if !licensing.IsFeatureEnabledLenient(licensing.FeatureExternalAuthProvider) {
+			licensing.WriteSubscriptionErrorResponseForFeature(w, "OpenID Connect user authentication (SSO)")
+			return
+		}
+
 		authHandler(w, r)
 		return
 	}

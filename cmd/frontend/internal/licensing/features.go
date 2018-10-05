@@ -14,6 +14,10 @@ type Feature string
 // The list of features. For each feature, add a new const here and the checking logic in
 // isFeatureEnabled below.
 const (
+	// FeatureExternalAuthProvider is whether external user authentication providers (aka "SSO") may
+	// be used.
+	FeatureExternalAuthProvider Feature = "sso-external-user-auth-provider"
+
 	// FeatureExtensionRegistry is whether publishing extensions to this Sourcegraph instance is
 	// allowed. If not, then extensions must be published to Sourcegraph.com. All instances may use
 	// extensions published to Sourcegraph.com.
@@ -28,6 +32,10 @@ const (
 func isFeatureEnabled(info license.Info, feature Feature) bool {
 	// Add feature-specific logic here.
 	switch feature {
+	case FeatureExternalAuthProvider:
+		// Enterprise Starter and Enterprise both allow SSO. Core doesn't, but this func is only
+		// called when there is a valid license.
+		return true
 	case FeatureExtensionRegistry:
 		// Enterprise Starter does not support a local extension registry.
 		return !info.HasTag(EnterpriseStarterTag)
@@ -81,4 +89,14 @@ func IsFeatureNotActivated(err error) bool {
 		_, ok = err.(*featureNotActivatedError)
 	}
 	return ok
+}
+
+// IsFeatureEnabledLenient reports whether the current license enables the given feature. If there
+// is an error reading the license, it is lenient and returns true.
+//
+// This is useful for callers who don't want to handle errors (usually because the user would be
+// prevented from getting to this point if license verification had failed, so it's not necessary to
+// handle license verification errors here).
+func IsFeatureEnabledLenient(feature Feature) bool {
+	return !IsFeatureNotActivated(CheckFeature(feature))
 }

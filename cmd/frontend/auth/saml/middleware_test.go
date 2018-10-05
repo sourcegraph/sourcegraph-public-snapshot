@@ -18,15 +18,16 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/actor"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
-
 	"github.com/beevik/etree"
 	"github.com/crewjam/saml"
+	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	"github.com/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/crewjam/saml/samlidp"
 )
@@ -151,6 +152,11 @@ func newSAMLIDPServer(t *testing.T) (*httptest.Server, *samlidp.Server) {
 func TestMiddleware(t *testing.T) {
 	idpHTTPServer, idpServer := newSAMLIDPServer(t)
 	defer idpHTTPServer.Close()
+
+	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, error) {
+		return &license.Info{Tags: licensing.EnterpriseTags}, nil
+	}
+	defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
 	conf.Mock(&schema.SiteConfiguration{
 		AppURL:               "http://example.com",

@@ -11,6 +11,7 @@ import (
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
+	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -43,6 +44,12 @@ var Middleware = &auth.Middleware{
 func authHandler(w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
 	// Delegate to SAML ACS and metadata endpoint handlers.
 	if !isAPIRequest && strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/saml/") {
+		// License check.
+		if !licensing.IsFeatureEnabledLenient(licensing.FeatureExternalAuthProvider) {
+			licensing.WriteSubscriptionErrorResponseForFeature(w, "SAML user authentication (SSO)")
+			return
+		}
+
 		samlSPHandler(w, r)
 		return
 	}

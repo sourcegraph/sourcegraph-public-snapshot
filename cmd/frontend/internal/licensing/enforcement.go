@@ -15,13 +15,48 @@ import (
 // Enforce the use of a valid license key by preventing all HTTP requests if the license is invalid
 // (due to a error in parsing or verification, or because the license has expired).
 func init() {
-	writeSubscriptionErrorResponse := func(w http.ResponseWriter, statusCode int, title, message string) {
-		w.WriteHeader(statusCode)
-		w.Header().Set("Cache-Control", "no-cache")
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		// Inline all styles and resources because those requests will fail (our middleware
-		// intercepts all HTTP requests).
-		fmt.Fprintln(w, `
+	hooks.PreAuthMiddleware = func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			info, err := GetConfiguredProductLicenseInfo()
+			if err != nil {
+				log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
+				WriteSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information.")
+				return
+			}
+			if info != nil && info.IsExpiredWithGracePeriod() {
+				WriteSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features).")
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// WriteSubscriptionErrorResponseForFeature is a wrapper around WriteSubscriptionErrorResponse that
+// generates the error title and message indicating that the current license does not active the
+// given feature.
+func WriteSubscriptionErrorResponseForFeature(w http.ResponseWriter, featureNameHumanReadable string) {
+	WriteSubscriptionErrorResponse(
+		w, http.StatusForbidden,
+		fmt.Sprintf("License is not valid for %s", featureNameHumanReadable),
+		fmt.Sprintf("To use the %s feature, a site admin must upgrade the Sourcegraph license. (The site admin may also remove the site configuration that enables this feature to dismiss this message.", featureNameHumanReadable),
+	)
+}
+
+// WriteSubscriptionErrorResponse writes an HTTP response that displays a standalone error page to
+// the user.
+//
+// The title and message should be full sentences that describe the problem and how to fix it. Use
+// WriteSubscriptionErrorResponseForFeature to generate these for the common case of a failed
+// license feature check.
+func WriteSubscriptionErrorResponse(w http.ResponseWriter, statusCode int, title, message string) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// Inline all styles and resources because those requests will fail (our middleware
+	// intercepts all HTTP requests).
+	fmt.Fprintln(w, `
 <title>`+html.EscapeString(title)+` - Sourcegraph</title>
 <style>
 .bg {
@@ -58,24 +93,6 @@ h1 {
 <body>
 <div class=bg></div>
 <div class=msg><h1>`+html.EscapeString(title)+`</h1><p>`+html.EscapeString(message)+`</p><p>See <a href="https://about.sourcegraph.com/pricing">about.sourcegraph.com</a> for more information.</p></div>`)
-	}
-
-	hooks.PreAuthMiddleware = func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			info, err := GetConfiguredProductLicenseInfo()
-			if err != nil {
-				log15.Error("Error reading license key for Sourcegraph subscription.", "err", err)
-				writeSubscriptionErrorResponse(w, http.StatusInternalServerError, "Error reading Sourcegraph license key", "Site admins may check the logs for more information.")
-				return
-			}
-			if info != nil && info.IsExpiredWithGracePeriod() {
-				writeSubscriptionErrorResponse(w, http.StatusForbidden, "Sourcegraph license expired", "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Core features).")
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		})
-	}
 }
 
 // Enforce the license's max user count by preventing the creation of new users when the max is

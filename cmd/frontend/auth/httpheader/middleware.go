@@ -3,6 +3,7 @@ package httpheader
 import (
 	"net/http"
 
+	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
@@ -59,6 +60,12 @@ func middleware(next http.Handler) http.Handler {
 		// identity to assume.
 		if headerValue == "" || actor.FromContext(r.Context()).IsAuthenticated() {
 			next.ServeHTTP(w, r)
+			return
+		}
+
+		// License check.
+		if !licensing.IsFeatureEnabledLenient(licensing.FeatureExternalAuthProvider) {
+			licensing.WriteSubscriptionErrorResponseForFeature(w, "http-header user authentication (SSO)")
 			return
 		}
 
