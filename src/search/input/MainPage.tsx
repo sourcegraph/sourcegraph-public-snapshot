@@ -301,7 +301,7 @@ export class MainPage extends React.Component<Props, State> {
                                 <h1>{heroTitle}</h1>
                                 <p>{heroCopyTop}</p>
                                 <p>{heroCopyBottom}</p>
-                                <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                                <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
                                     Deploy Sourcegraph
                                 </a>
                                 <a
@@ -413,7 +413,7 @@ export class MainPage extends React.Component<Props, State> {
                                     flying cars, a habitat on Mars, and a cure for cancer. That's why developers can get
                                     started and deploy Sourcegraph for free, and contribute to our code on GitHub.
                                 </p>
-                                <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                                <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
                                     Deploy Sourcegraph
                                 </a>
                                 <a
@@ -674,7 +674,7 @@ export class MainPage extends React.Component<Props, State> {
                                 </div>
                             </div>
                         ))}
-                        <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                        <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
                             Deploy Sourcegraph
                         </a>
                         <a
@@ -735,7 +735,7 @@ export class MainPage extends React.Component<Props, State> {
                                 />
                             </div>
                         </div>
-                        <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                        <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
                             Deploy Sourcegraph
                         </a>
                         <a
@@ -791,7 +791,7 @@ export class MainPage extends React.Component<Props, State> {
                             </div>
                             <div className="col-6 modal-code-intellify" />
                         </div>
-                        <a className="btn btn-primary" href="//about.sourcegraph.com/product/server/">
+                        <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
                             Deploy Sourcegraph
                         </a>
                         <a
