@@ -456,18 +456,35 @@ body.modal-open {
             transition: all 0.325s ease-in-out;
             margin-bottom: 1rem;
         }
-        .modal-copy-row {
-            padding-bottom: 4rem;
-            * {
-                transition: all 350ms ease;
-                color: #666;
+        .search-modal-container {
+            .modal-copy-row {
+                h1,
+                h2,
+                h3,
+                h4,
+                h5,
+                p {
+                    transition: all 350ms ease;
+                    color: #666 !important;
+                }
+            }
+            .activesec {
+                h1,
+                h2,
+                h3,
+                h4,
+                h5,
+                p {
+                    transition: all 350ms ease;
+
+                    color: white !important;
+                }
             }
         }
-        .activesec * {
-            transition: all 350ms ease;
-
-            color: white;
+        .modal-copy-row {
+            padding-bottom: 4rem;
         }
+
         .main-page__container {
             width: 100%;
             max-width: 100%;

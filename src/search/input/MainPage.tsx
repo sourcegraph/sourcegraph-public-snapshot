@@ -616,7 +616,7 @@ export class MainPage extends React.Component<Props, State> {
                         this.state.modalSearchClosing ? 'modal-closing' : ''
                     }`}
                 >
-                    <div className="container">
+                    <div className="container search-modal-container">
                         <button className="btn-close-top" onClick={this.closeModal('search')}>
                             <CloseIcon className="material-icons" />
                         </button>
@@ -627,7 +627,7 @@ export class MainPage extends React.Component<Props, State> {
                             </div>
                         </div>
                         <div
-                            className={`search-row copy-section ${
+                            className={`search-row copy-section  ${
                                 this.state.animateModalSearch ? 'search-row-animate' : ''
                             }`}
                         >
