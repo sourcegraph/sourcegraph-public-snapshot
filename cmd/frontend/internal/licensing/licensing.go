@@ -1,11 +1,13 @@
 package licensing
 
 import (
+	"fmt"
 	"os"
 	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/enterprise/pkg/license"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -98,16 +100,28 @@ func init() {
 	}
 }
 
+// licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for
+// generating licenses.
+//
+// NOTE: If you change this, use text search to replace other instances of it (in source code
+// comments).
+const licenseGenerationPrivateKeyURL = "https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i"
+
 // envLicenseGenerationPrivateKey (the env var SOURCEGRAPH_LICENSE_GENERATION_KEY) is the
 // PEM-encoded form of the private key used to sign product license keys. It is stored at
 // https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i.
-var envLicenseGenerationPrivateKey = env.Get("SOURCEGRAPH_LICENSE_GENERATION_KEY", "", "the PEM-encoded form of the private key used to sign product license keys (https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i)")
+var envLicenseGenerationPrivateKey = env.Get("SOURCEGRAPH_LICENSE_GENERATION_KEY", "", "the PEM-encoded form of the private key used to sign product license keys ("+licenseGenerationPrivateKeyURL+")")
 
 // GenerateProductLicenseKey generates a product license key using the license generation private
 // key configured in site configuration.
 func GenerateProductLicenseKey(info license.Info) (string, error) {
 	if envLicenseGenerationPrivateKey == "" {
-		return "", errors.New("no product license generation private key was configured")
+		const msg = "no product license generation private key was configured"
+		if envvar.InsecureDevMode() {
+			// Show more helpful error message in local dev.
+			return "", fmt.Errorf("%s (for testing by Sourcegraph staff: set the SOURCEGRAPH_LICENSE_GENERATION_KEY env var to the key obtained at %s)", msg, licenseGenerationPrivateKeyURL)
+		}
+		return "", errors.New(msg)
 	}
 	privateKey, err := ssh.ParsePrivateKey([]byte(envLicenseGenerationPrivateKey))
 	if err != nil {
