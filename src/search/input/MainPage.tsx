@@ -218,6 +218,12 @@ const inlineStyle = `
         visbility: visbily !important;
     }
 `
+// Set the defauly hover token of the hero tooltip
+const defaultTooltipHeroPosition = { line: 244, character: 11 }
+
+// Set the defauly hover token of the hero tooltip
+const defaultTooltipModalPosition = { line: 248, character: 11 }
+
 /**
  * The main page
  */
@@ -276,7 +282,6 @@ export class MainPage extends React.Component<Props, State> {
     public componentWillUnmount(): void {
         this.props.onMainPage(false)
     }
-
     public render(): JSX.Element | null {
         if (!window.context.sourcegraphDotComMode) {
             return <HeroPage icon={MapSearchIcon} title="Page not found" />
@@ -316,7 +321,7 @@ export class MainPage extends React.Component<Props, State> {
                                     className={'code-intellify-container'}
                                     overlayPortal={this.overlayPortal}
                                     tooltipClass={'hero-tooltip'}
-                                    defaultHoverPosition={{ line: 244, character: 11 }}
+                                    defaultHoverPosition={defaultTooltipHeroPosition}
                                 />
                             </div>
                         </div>
@@ -726,7 +731,7 @@ export class MainPage extends React.Component<Props, State> {
                                     className={'code-intellify-container-modal'}
                                     overlayPortal={this.overlayPortal}
                                     tooltipClass={'modal-tooltip'}
-                                    defaultHoverPosition={{ line: 248, character: 11 }}
+                                    defaultHoverPosition={defaultTooltipModalPosition}
                                 />
                             </div>
                         </div>
