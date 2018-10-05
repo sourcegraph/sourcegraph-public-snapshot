@@ -10666,9 +10666,9 @@ thenify-all@^1.0.0:
   dependencies:
     any-promise "^1.0.0"
 
-thread-loader@sourcegraph/thread-loader#ddbb570ed8de6a44c94c248adc3486fdd3ef7a0c:
+thread-loader@sourcegraph/thread-loader#6321efbc3524f18cd823dd300c1a8a7fe82ca3a5:
   version "1.2.0"
-  resolved "https://codeload.github.com/sourcegraph/thread-loader/tar.gz/ddbb570ed8de6a44c94c248adc3486fdd3ef7a0c"
+  resolved "https://codeload.github.com/sourcegraph/thread-loader/tar.gz/6321efbc3524f18cd823dd300c1a8a7fe82ca3a5"
   dependencies:
     async "^2.3.0"
     loader-runner "^2.3.0"
