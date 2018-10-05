@@ -11,6 +11,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 - Reduced the size of in-memory data structured used for storing search results. This shdould reduce the backend memory usage of large result sets.
 - Code intelligence is now provided by [Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph-extension-api). The extension for each language in the site configuration `langservers` property is automatically enabled. TODO BEFORE RELEASE: Make the previous sentence true. See https://github.com/sourcegraph/sourcegraph/issues/13125.
+- Support for multiple authentication providers is now enabled by default. To disable it, set the `experimentalFeatures.multipleAuthProviders` site config option to `"disabled"`. This only applies to Sourcegraph Enterprise.
 
 ### Added
 

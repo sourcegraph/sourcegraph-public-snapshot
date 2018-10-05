@@ -90,10 +90,10 @@
         },
         "multipleAuthProviders": {
           "description":
-            "Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users. (WARNING: Do not use this unless you know what you're doing.)",
+            "Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users.\n\nOnly applies to Sourcegraph Enterprise Starter and Sourcegraph Enterprise.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "discussions": {
           "description": "Enables the code discussions experiment.",
@@ -372,7 +372,7 @@
     },
     "auth.providers": {
       "description":
-        "The authentication providers to use for identifying and signing in users.\n\nOnly one authentication provider is supported. If you set the deprecated field \"auth.provider\", then that value is used as the authentication provider, and you can't set another one here.",
+        "The authentication providers to use for identifying and signing in users.\n\nOnly one authentication provider is officially supported at the moment. Multiple providers can be specified, but the support is experimental. If you set the deprecated field \"auth.provider\", then that value is used as the authentication provider, and you can't set another one here.",
       "type": "array",
       "items": {
         "required": ["type"],
