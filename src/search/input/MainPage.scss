@@ -13,6 +13,7 @@
 
 body.modal-open {
     overflow: hidden !important;
+    max-height: 100%;
 }
 .main-page {
     // Colors to match about.sourcegraph.com
@@ -360,6 +361,7 @@ body.modal-open {
             right: 0;
             cursor: pointer;
             z-index: 9999;
+            padding: 0;
         }
         .btn-close-bottom {
             height: 2.5rem;
@@ -432,6 +434,7 @@ body.modal-open {
         height: 100%;
         background-color: #000000;
         overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch;
 
         .container {
             display: block;
