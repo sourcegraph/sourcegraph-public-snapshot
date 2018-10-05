@@ -10,12 +10,11 @@ main() {
 
     go install github.com/sourcegraph/sourcegraph/vendor/golang.org/x/tools/cmd/stringer
     go install github.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler
-    go install github.com/sourcegraph/sourcegraph/vendor/github.com/kevinburke/differ
 
     # Runs generate.sh and ensures no files changed. This relies on the go
     # generation that ran are idempotent.
-
-    differ ./dev/generate.sh
+    ./dev/generate.sh
+    git diff --exit-code -- . ':!go.sum'
 }
 
 main "$@"
