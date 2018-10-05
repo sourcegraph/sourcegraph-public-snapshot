@@ -45,7 +45,7 @@
     "not IE > 0"
   ],
   "dependencies": {
-    "@sourcegraph/extensions-client-common": "^9.0.0",
+    "@sourcegraph/extensions-client-common": "^10.0.0",
     "@sourcegraph/phabricator-extension": "^1.14.0",
     "@sourcegraph/react-loading-spinner": "0.0.6",
     "@sourcegraph/webapp": "^0.0.212",
