@@ -61,6 +61,8 @@ export interface LayoutProps
 
     isLightTheme: boolean
     onThemeChange: () => void
+    onMainPage: (mainPage: boolean) => void
+    isMainPage: boolean
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
     showHelpPopover: boolean

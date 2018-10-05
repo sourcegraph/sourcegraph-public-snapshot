@@ -27,6 +27,7 @@ import (
 
 const (
 	routeHome           = "home"
+	routeStart          = "start"
 	routeSearch         = "search"
 	routeSearchBadge    = "search-badge"
 	routeSearchSearches = "search-searches"
@@ -108,6 +109,7 @@ func newRouter() *mux.Router {
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
+	r.Path("/start").Methods("GET").Name(routeStart)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
 	r.Path("/search/searches").Methods("GET").Name(routeSearchSearches)
@@ -176,6 +178,7 @@ func initRouter() {
 	router := newRouter()
 	uirouter.Router = router // make accessible to other packages
 	router.Get(routeHome).Handler(handler(serveHome))
+	router.Get(routeStart).Handler(handler(serveStart))
 	router.Get(routeThreads).Handler(handler(serveBasicPageString("Threads - Sourcegraph")))
 	router.Get(uirouter.RouteSignIn).Handler(handler(serveBasicPageString("Sign in - Sourcegraph")))
 	router.Get(uirouter.RouteSignUp).Handler(handler(serveBasicPageString("Sign up - Sourcegraph")))

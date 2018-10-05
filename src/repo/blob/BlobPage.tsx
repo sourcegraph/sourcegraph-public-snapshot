@@ -31,11 +31,11 @@ import { Blob } from './Blob'
 import { BlobPanel } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
 
-function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
+export function fetchBlobCacheKey(parsed: ParsedRepoURI & { isLightTheme: boolean; disableTimeout: boolean }): string {
     return makeRepoURI(parsed) + parsed.isLightTheme + parsed.disableTimeout
 }
 
-const fetchBlob = memoizeObservable(
+export const fetchBlob = memoizeObservable(
     (args: {
         repoPath: string
         commitID: string

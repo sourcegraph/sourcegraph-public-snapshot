@@ -25,6 +25,7 @@ interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsCo
     user: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
+    isMainPage?: boolean
     showHelpPopover: boolean
     onHelpPopoverToggle: (visible?: boolean) => void
 }
@@ -138,9 +139,11 @@ export class NavLinks extends React.PureComponent<Props> {
                         extensions={this.props.extensions}
                     />
                 )}
-                <li className="nav-item">
-                    <ThemeSwitcher {...this.props} className="nav-link px-0" />
-                </li>
+                {!this.props.isMainPage && (
+                    <li className="nav-item">
+                        <ThemeSwitcher {...this.props} className="nav-link px-0" />
+                    </li>
+                )}
                 {showDotComMarketing && (
                     <li className="nav-item">
                         <a href="https://about.sourcegraph.com" className="nav-link">

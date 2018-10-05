@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
+import { Redirect, RouteComponentProps } from 'react-router'
 import { APIConsole } from './api/APIConsole'
 import { ResetPasswordPage } from './auth/ResetPasswordPage'
 import { SignInPage } from './auth/SignInPage'
@@ -14,6 +14,7 @@ import { OpenPage } from './open/OpenPage'
 import { OrgsArea } from './org/OrgsArea'
 import { RepoContainer } from './repo/RepoContainer'
 import { parseSearchURLQuery } from './search'
+import { MainPage } from './search/input/MainPage'
 import { ScopePage } from './search/input/ScopePage'
 import { SearchPage } from './search/input/SearchPage'
 import { SearchResults } from './search/results/SearchResults'
@@ -53,6 +54,17 @@ export const repoRevRoute: LayoutRouteProps = {
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
 export const routes: ReadonlyArray<LayoutRouteProps> = [
+    {
+        path: '/',
+        render: (props: any) =>
+            window.context.sourcegraphDotComMode && !props.user ? <Redirect to="/start" /> : <Redirect to="/search" />,
+        exact: true,
+    },
+    {
+        path: '/start',
+        render: (props: any) => <MainPage {...props} />,
+        exact: true,
+    },
     {
         path: '/search',
         render: (props: any) =>
