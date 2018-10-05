@@ -191,7 +191,7 @@
     "node-sass-import-once": "^1.2.0",
     "nyc": "^13.0.1",
     "plugin-error": "^1.0.1",
-    "prettier": "1.13.7",
+    "prettier": "1.14.3",
     "sass-loader": "^7.0.3",
     "semver": "^5.5.1",
     "source-map-support": "^0.5.6",
