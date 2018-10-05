@@ -121,6 +121,11 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
                 <PageTitle title="New product subscription" />
                 <BackToAllSubscriptionsLink user={this.props.user} />
                 <h2>New subscription</h2>
+                <div className="alert alert-warning">
+                    Subscriptions and license keys will be introduced in Sourcegraph 2.12 (to be released on Monday,
+                    October 8, 2018). Only use this payment form before then if you've been directed here by
+                    Sourcegraph.
+                </div>
                 <Form onSubmit={this.onSubmit}>
                     <div className="row">
                         <div className="col-md-6">
