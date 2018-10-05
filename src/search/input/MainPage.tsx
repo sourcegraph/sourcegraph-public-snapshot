@@ -131,7 +131,7 @@ const intelligenceSections = [
     {
         title: 'Hover tooltip',
         paragraph:
-            "Use the hovertooltip to discover and understand your code faster. Click on a token and then go to it's definition, other refrences, or implementations. Speed through reviews by understanding new code and changed code and what it affects.",
+            'Use the hover tooltip to discover and understand your code faster. Click on a token and then go to its definition, other references, or implementations. Speed through reviews by understanding new code, changed code, and what it affects.',
     },
     {
         title: '',
