@@ -20,85 +20,35 @@ interface Props {
     className?: string
 }
 
-interface State {
-    value: boolean | undefined
-}
-
 /** A toggle switch input component. */
-export class Toggle extends React.PureComponent<Props, State> {
-    public state: State = { value: undefined }
-
+export class Toggle extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
-        const value = this.state.value === undefined ? this.props.value : this.state.value
-        // console.log({ value, stateValue: this.state.value, propsValue: this.props.value })
+        const onClick = () => {
+            if (this.props.onToggle) {
+                this.props.onToggle(!this.props.value)
+            }
+        }
+
         return (
-            <input
-                className={`toggle toggle--${value ? 'on' : 'off'}`}
+            <button
+                className={`toggle ${this.props.disabled ? 'toggle__disabled' : ''}`}
                 id={this.props.id}
                 title={this.props.title}
-                type="range"
-                value={value ? 1 : 0}
-                onMouseDown={this.onMouseDown}
-                onInput={this.onChange} // fires in some cases where onChange doesn't
-                onChange={this.onChange}
-                onMouseUp={this.onMouseUp}
-                disabled={this.props.disabled}
+                value={this.props.value ? 1 : 0}
+                onClick={onClick}
                 tabIndex={this.props.tabIndex}
-                min={0}
-                max={1}
-                step={1}
-            />
+            >
+                <span
+                    className={`toggle__bar ${this.props.value ? 'toggle__bar--active' : ''} ${
+                        this.props.disabled ? 'toggle__bar--disabled' : ''
+                    }`}
+                />
+                <span
+                    className={`toggle__knob ${this.props.value ? 'toggle__knob--active' : ''} ${
+                        this.props.disabled ? 'toggle__knob--disabled' : ''
+                    }`}
+                />
+            </button>
         )
-    }
-
-    // Track mousedown state to avoid a click triggering both the change and click events (and toggling the value
-    // twice). Also track whether the value changed during mousedown so that clicking and releasing on one side
-    // will toggle it.
-    private mouseDown = false
-    private changedDuringMouseDown = false
-    private onMouseDown: React.MouseEventHandler<HTMLInputElement> = e => {
-        this.mouseDown = true
-        this.changedDuringMouseDown = false
-    }
-
-    private onChange: React.FormEventHandler<HTMLInputElement> = e => {
-        const value = e.currentTarget.valueAsNumber === 1
-        if (this.mouseDown) {
-            this.changedDuringMouseDown = true
-            this.setState({ value })
-        } else {
-            this.onToggle(value)
-        }
-    }
-
-    private onMouseUp: React.MouseEventHandler<HTMLInputElement> = e => {
-        if (!this.mouseDown) {
-            return
-        }
-        this.mouseDown = false
-
-        // Clicking and releasing entirely on one side will toggle the current value.
-        let value = e.currentTarget.valueAsNumber === 1
-        if (!this.changedDuringMouseDown) {
-            const rect = e.currentTarget.getBoundingClientRect()
-            const mouseOverElement =
-                rect.left <= e.pageX &&
-                rect.left + rect.width >= e.pageX &&
-                rect.top <= e.pageY &&
-                rect.top + rect.height >= e.pageY
-            if (!mouseOverElement) {
-                return
-            }
-            value = !value
-        }
-        this.setState({ value: undefined }, () => this.onToggle(value))
-    }
-
-    private onToggle(value: boolean): void {
-        if (value !== !!this.props.value) {
-            if (this.props.onToggle) {
-                this.props.onToggle(value)
-            }
-        }
     }
 }

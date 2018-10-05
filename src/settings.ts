@@ -44,7 +44,10 @@ export type ConfigurationSubject = Pick<GQL.IConfigurationSubject, 'id' | 'setti
  * @template S the configuration subject type
  * @template C the settings type
  */
-export interface ConfigurationCascade<S extends ConfigurationSubject, C extends Settings = Settings> {
+export interface ConfigurationCascade<
+    S extends ConfigurationSubject = ConfigurationSubject,
+    C extends Settings = Settings
+> {
     /**
      * The settings for each subject in the cascade, from lowest to highest precedence.
      */
@@ -151,6 +154,21 @@ export function gqlToCascade<S extends ConfigurationSubject, C extends Settings>
     }
 
     return cascade
+}
+
+/** Converts a ConfigurationCascadeOrError to a ConfigurationCascade, returning the first error it finds. */
+export function extractErrors(
+    c: ConfigurationCascadeOrError<ConfigurationSubject, Settings>
+): ConfigurationCascade | ErrorLike {
+    if (c.subjects === null || isErrorLike(c.subjects)) {
+        return new Error('Subjects was ' + c.subjects)
+    } else if (c.merged === null || isErrorLike(c.merged)) {
+        return new Error('Merged was ' + c.merged)
+    } else if (c.subjects.find(isErrorLike)) {
+        return new Error('One of the subjects was ' + c.subjects.find(isErrorLike))
+    } else {
+        return c as ConfigurationCascade
+    }
 }
 
 /**

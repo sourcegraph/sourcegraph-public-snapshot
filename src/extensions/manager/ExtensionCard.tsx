@@ -7,7 +7,7 @@ import { ConfigurationCascadeProps, ConfigurationSubject, Settings } from '../..
 import { LinkOrSpan } from '../../ui/generic/LinkOrSpan'
 import { ConfiguredExtension, isExtensionAdded, isExtensionEnabled } from '../extension'
 import { ExtensionConfigurationState } from '../ExtensionConfigurationState'
-import { ExtensionPrimaryActionButton } from '../ExtensionPrimaryActionButton'
+import { ExtensionToggle } from '../ExtensionToggle'
 
 interface Props<S extends ConfigurationSubject, C extends Settings>
     extends ConfigurationCascadeProps<S, C>,
@@ -88,7 +88,7 @@ export class ExtensionCard<S extends ConfigurationSubject, C extends Settings> e
                             <li className="extension-card-spacer" />
                             {props.subject &&
                                 (props.subject.viewerCanAdminister ? (
-                                    <ExtensionPrimaryActionButton
+                                    <ExtensionToggle
                                         extension={node}
                                         configurationCascade={this.props.configurationCascade}
                                         onUpdate={props.onDidUpdate}
