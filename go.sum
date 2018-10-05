@@ -206,6 +206,8 @@ github.com/mattn/go-sqlite3 v1.9.0 h1:pDRiWfl+++eC2FEFRy6jXmQlvp4Yh3z1MJKg4UeYM/
 github.com/mattn/go-sqlite3 v1.9.0/go.mod h1:FPy6KqzDD04eiIsT53CuJW3U88zkxoIYsOqkbpncsNc=
 github.com/mattn/goreman v0.1.2-0.20180926031137-83bee30f0a15 h1:nJIRDOjrktPDmCW+q/aeSY63x4Tc4k/XrpS5JdRJxlU=
 github.com/mattn/goreman v0.1.2-0.20180926031137-83bee30f0a15/go.mod h1:pMVM+Koudpt5fYZEz2bzvx0Spdm4izKf1fzrtl+groA=
+github.com/mattn/goreman v0.2.1-0.20180930133601-738cf1257bd3 h1:kJ7MEVIJxTZrlwdagOwz7ZUyLXtKpgv6LaOCYMwOnVs=
+github.com/mattn/goreman v0.2.1-0.20180930133601-738cf1257bd3/go.mod h1:pMVM+Koudpt5fYZEz2bzvx0Spdm4izKf1fzrtl+groA=
 github.com/matttproud/golang_protobuf_extensions v1.0.1 h1:4hp9jkHxhMHkqkrB3Ix0jegS5sx/RkqARlsWZ6pIwiU=
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/microcosm-cc/bluemonday v1.0.1 h1:SIYunPjnlXcW+gVfvm0IlSeR5U3WZUOLfVmqg85Go44=
