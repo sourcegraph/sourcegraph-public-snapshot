@@ -4,7 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
@@ -15,12 +14,6 @@ func init() {
 }
 
 func extensionRegistryPublishers(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.RegistryPublisherConnection, error) {
-	// The feature check here makes it so the any "New extension" form will show an error, so the
-	// user finds out before trying to submit the form that the feature is disabled.
-	if err := licensing.CheckFeature(licensing.FeatureExtensionRegistry); err != nil {
-		return nil, err
-	}
-
 	var opt dbPublishersListOptions
 	args.Set(&opt.LimitOffset)
 	return &registryPublisherConnection{opt: opt}, nil

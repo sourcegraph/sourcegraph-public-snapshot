@@ -7,6 +7,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -18,6 +19,12 @@ func init() {
 }
 
 func extensionRegistryViewerPublishers(ctx context.Context) ([]graphqlbackend.RegistryPublisher, error) {
+	// The feature check here makes it so the any "New extension" form will show an error, so the
+	// user finds out before trying to submit the form that the feature is disabled.
+	if err := licensing.CheckFeature(licensing.FeatureExtensionRegistry); err != nil {
+		return nil, err
+	}
+
 	var publishers []graphqlbackend.RegistryPublisher
 	user, err := graphqlbackend.CurrentUser(ctx)
 	if err != nil || user == nil {
