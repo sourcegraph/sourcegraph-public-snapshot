@@ -956,10 +956,10 @@
     tslint-config-prettier "^1.6.0"
     tslint-react "^3.2.0"
 
-"@sourcegraph/webapp@^0.0.212":
-  version "0.0.212"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.212.tgz#da2a309b5591de516db0a7f032edd0f9eb5c337e"
-  integrity sha512-V/Kwh/g/d3iEfW2YbHT3K3yUXLcfzNEPAq3P+cf5MB1jIuxIw+E7kt1cPrPBuln+TKmkbecDFow9lleyZfU9uQ==
+"@sourcegraph/webapp@^0.0.220":
+  version "0.0.220"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.220.tgz#5d85a62300a1435497c4d21b3410b240ac814014"
+  integrity sha512-SWcqUkhnxKgALCkq3UCVuvdyy0uAxrPwI/INd45+HQu+tScf7UlkurDkpPUJXkamQ7j7swhZkPoruu7O9KuX+g==
   dependencies:
     "@babel/core" "^7.0.0"
     "@babel/plugin-syntax-dynamic-import" "^7.0.0"
