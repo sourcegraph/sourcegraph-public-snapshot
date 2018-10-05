@@ -1,5 +1,5 @@
 import { isExtensionAdded, isExtensionEnabled } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { ExtensionPrimaryActionButton } from '@sourcegraph/extensions-client-common/lib/extensions/ExtensionPrimaryActionButton'
+import { ExtensionToggle } from '@sourcegraph/extensions-client-common/lib/extensions/ExtensionToggle'
 import { ExtensionManifest } from '@sourcegraph/extensions-client-common/lib/schema/extension.schema'
 import * as React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
@@ -58,7 +58,7 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                         </div>
                         <div className="d-flex align-items-center mt-3 mb-2">
                             {props.authenticatedUser && (
-                                <ExtensionPrimaryActionButton
+                                <ExtensionToggle
                                     extension={props.extension}
                                     configurationCascade={props.configurationCascade}
                                     onUpdate={props.onDidUpdateExtension}
