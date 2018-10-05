@@ -12,7 +12,8 @@ export const SingleValueCard: React.SFC<{
     className?: string
     valueClassName?: string
     valueTooltip?: string
-}> = ({ title, value, subTitle, link, className, valueClassName, valueTooltip }) => (
+    subText?: string
+}> = ({ title, value, subTitle, link, className, valueClassName, valueTooltip, subText }) => (
     <div className={`card m-2 single-value-card ${className || ''}`}>
         <div className="card-body text-center">
             <h4 className="card-title mb-0">{title}</h4>
@@ -23,6 +24,7 @@ export const SingleValueCard: React.SFC<{
             >
                 <LinkOrSpan to={link}>{value}</LinkOrSpan>
             </p>
+            {subText && <small>{subText}</small>}
         </div>
     </div>
 )
