@@ -287,7 +287,7 @@ If you ever need to wipe your local database, run the following command.
 
 See [testing.md](testing.md) for details.
 
-## CPU/RAM/bandwidth usage
+## CPU/RAM/bandwidth/battery usage
 
 On first install, the program will use quite a bit of bandwidth to concurrently
 download all of the Go and Node packages. After packages have been installed,
@@ -297,6 +297,14 @@ can take up to 5 minutes, and can be heavy on the CPU at times.
 After the initial install/compile is complete, the Docker for Mac binary uses
 about 1.5GB of RAM. The numerous different Go binaries don't use that much RAM
 or CPU each, about 5MB of RAM each.
+
+Some users report [heavy battery usage running `gulp watch`][battery-usage].
+[Double check that Spotlight is not indexing your Sourcegraph
+repository][spotlight], as this can lead to additional, unnecessary, poll
+events. We are investigating other causes of this issue.
+
+[battery-usage]: https://github.com/sourcegraph/sourcegraph/issues/247
+[spotlight]: https://www.macobserver.com/tips/how-to/stop-spotlight-indexing/
 
 ## How to debug live code
 
