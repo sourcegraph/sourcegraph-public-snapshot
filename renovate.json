@@ -6,7 +6,9 @@
     {
       "packageNames": ["github.com/sourcegraph/sourcegraph", "@sourcegraph/webapp"],
       "groupName": "Sourcegraph OSS",
-      "schedule": []
+      "schedule": [],
+      "assignees": [],
+      "automerge": true
     }
   ]
 }

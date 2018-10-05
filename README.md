@@ -24,9 +24,9 @@ When developing locally, use `./dev/start.sh`. This will ensure you build agains
 
 ### Updating dependencies
 
-Use `dev/update-oss-dep.sh` to update the webapp and backend `github.com/sourcegraph/sourcegraph`
-dependencies to their latest revisions. In general, `dev/update-oss-dep.sh` should only be run on
-the `master` branch and its changes pushed directly to `master`.
+Renovate will automatically open PRs to update the OSS webapp and backend dependencies.
+The PRs will be automatically merged if CI passes.
+If CI does not pass, investigate the failure locally and commit a fix to OSS/enterprise as needed.
 
 - If you only want to update the backend `github.com/sourcegraph/sourcegraph` dependency, run `./dev/go-mod-update.sh`.
 - If you only want to update the webapp dependency, run `yarn upgrade @sourcegraph/webapp@latest`.
