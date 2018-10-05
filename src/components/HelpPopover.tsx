@@ -6,7 +6,6 @@ import LinkIcon from 'mdi-react/LinkIcon'
 import SquareEditOutlineIcon from 'mdi-react/SquareEditOutlineIcon'
 import StarIcon from 'mdi-react/StarIcon'
 import * as React from 'react'
-import { Link } from 'react-router-dom'
 import { fromEvent, merge, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
@@ -91,17 +90,16 @@ export class HelpPopover extends React.Component<Props> {
                 <h4 className="card-header pl-3">File a public issue...</h4>
                 <div className="list-group list-group-flush">
                     {HelpPopover.LINKS.map(({ title, description, template }, i) => (
-                        <Link
+                        <a
                             className="list-group-item list-group-item-action px-3 py-2"
-                            key={i}
-                            to={`https://github.com/sourcegraph/issues/issues/new?template=${template}`}
+                            href={`https://github.com/sourcegraph/issues/issues/new?template=${template}`}
                             target="_blank"
                             rel="noreferrer"
                         >
                             <strong>{title} &raquo;</strong>
                             <br />
                             <small className="text-muted">{description}</small>
-                        </Link>
+                        </a>
                     ))}
                 </div>
                 <ActionsContainer
