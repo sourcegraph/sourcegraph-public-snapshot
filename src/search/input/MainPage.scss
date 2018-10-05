@@ -517,6 +517,20 @@ body.modal-open {
                 margin: 0;
             }
         }
+        .action-row {
+            justify-content: center;
+            font-size: 18px;
+            margin-top: 4rem;
+            .action-col {
+                padding-bottom: 2rem;
+                a {
+                    color: #1c7ed6;
+                }
+                p {
+                    margin-bottom: 0.5rem;
+                }
+            }
+        }
     }
     .modal-integrations {
         .btn-integrations {
@@ -930,5 +944,10 @@ body.modal-open {
 .query-input2-for-modal__suggestions {
     .query-input2__loading-notifier {
         top: 1rem;
+    }
+}
+.e2e-tooltip-content {
+    p {
+        font-size: 14px !important;
     }
 }

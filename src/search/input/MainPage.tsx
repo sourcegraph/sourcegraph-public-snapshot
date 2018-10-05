@@ -1,4 +1,5 @@
 import * as H from 'history'
+import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
@@ -674,16 +675,33 @@ export class MainPage extends React.Component<Props, State> {
                                 </div>
                             </div>
                         ))}
-                        <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
-                            Deploy Sourcegraph
-                        </a>
-                        <a
-                            className="btn btn-secondary"
-                            href="//about.sourcegraph.com/docs/search/query-syntax"
-                            target="_blank"
-                        >
-                            Search Documentation
-                        </a>
+                        <div className="row action-row">
+                            <div className="col-12 action-col">
+                                <p className="action-text">
+                                    Get started with Sourcegraph for free, and get get cross-repository code
+                                    intelligence, advanced code search, and extensive integrations.
+                                </p>
+
+                                <a className="action-link" href="https://about.sourcegraph.com/docs">
+                                    Deploy Sourcegraph
+                                    <ChevronRightIcon className="material-icons" />
+                                </a>
+                            </div>
+                            <div className="col-12 action-col">
+                                <p className="action-text">
+                                    Explore the power and extensibility of Sourcegraph's search query syntax, and learn
+                                    how to search across all of your public and private code.
+                                </p>
+                                <a
+                                    className="action-link"
+                                    href="//about.sourcegraph.com/docs/search/query-syntax"
+                                    target="_blank"
+                                >
+                                    Search Documentation
+                                    <ChevronRightIcon className="material-icons" />
+                                </a>
+                            </div>
+                        </div>
                         <button className="btn-close-bottom" onClick={this.closeModal('search')}>
                             Close <CloseIcon className="material-icons" />
                         </button>
@@ -726,7 +744,7 @@ export class MainPage extends React.Component<Props, State> {
                                 <CodeIntellifyBlob
                                     {...this.props}
                                     startLine={236}
-                                    endLine={288}
+                                    endLine={284}
                                     parentElement={'.modal-code-intellify'}
                                     className={'code-intellify-container-modal'}
                                     overlayPortal={this.overlayPortal}
@@ -735,16 +753,33 @@ export class MainPage extends React.Component<Props, State> {
                                 />
                             </div>
                         </div>
-                        <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
-                            Deploy Sourcegraph
-                        </a>
-                        <a
-                            className="btn btn-secondary"
-                            href="//about.sourcegraph.com/docs/code-intelligence"
-                            target="_blank"
-                        >
-                            Code Intelligence Documentation
-                        </a>
+                        <div className="row action-row">
+                            <div className="col-12 action-col">
+                                <p className="action-text">
+                                    Get started with Sourcegraph for free, and get get cross-repository code
+                                    intelligence, advanced code search, and extensive integrations.
+                                </p>
+
+                                <a className="action-link" href="https://about.sourcegraph.com/docs">
+                                    Deploy Sourcegraph
+                                    <ChevronRightIcon className="material-icons" />
+                                </a>
+                            </div>
+                            <div className="col-12 action-col">
+                                <p className="action-text">
+                                    Explore how Sourcegraph's code intelligence can augment and add to your workflow,
+                                    prepare you for code review, and speed through development.
+                                </p>
+                                <a
+                                    className="action-link"
+                                    href="//about.sourcegraph.com/docs/code-intelligence"
+                                    target="_blank"
+                                >
+                                    Code Intelligence Documentation
+                                    <ChevronRightIcon className="material-icons" />
+                                </a>
+                            </div>
+                        </div>
                         <button className="btn-close-bottom" onClick={this.closeModal('intelligence')}>
                             Close <CloseIcon className="material-icons" />
                         </button>
@@ -791,16 +826,34 @@ export class MainPage extends React.Component<Props, State> {
                             </div>
                             <div className="col-6 modal-code-intellify" />
                         </div>
-                        <a className="btn btn-primary" href="https://about.sourcegraph.com/docs">
-                            Deploy Sourcegraph
-                        </a>
-                        <a
-                            className="btn btn-secondary"
-                            href="//about.sourcegraph.com/docs/integrations"
-                            target="_blank"
-                        >
-                            Integrations Documentation
-                        </a>
+                        <div className="row action-row">
+                            <div className="col-12 action-col">
+                                <p className="action-text">
+                                    Get started with Sourcegraph for free, and get get cross-repository code
+                                    intelligence, advanced code search, and extensive integrations.
+                                </p>
+
+                                <a className="action-link" href="https://about.sourcegraph.com/docs">
+                                    Deploy Sourcegraph
+                                    <ChevronRightIcon className="material-icons" />
+                                </a>
+                            </div>
+                            <div className="col-12 action-col">
+                                <p className="action-text">
+                                    Explore all of Sourcegraph's integrations and see how you can get cross-repository
+                                    code intelligence on your favorite code host and editor.
+                                </p>
+                                <a
+                                    className="action-link"
+                                    href="//about.sourcegraph.com/docs/integrations"
+                                    target="_blank"
+                                >
+                                    Integrations Documentation
+                                    <ChevronRightIcon className="material-icons" />
+                                </a>
+                            </div>
+                        </div>
+
                         <button className="btn-close-bottom" onClick={this.closeModal('integrations')}>
                             Close <CloseIcon className="material-icons" />
                         </button>
