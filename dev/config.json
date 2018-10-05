@@ -4,6 +4,7 @@
   "experimentalFeatures": {
     "configVars": "enabled",
     "canonicalURLRedirect": "enabled",
+    "multipleAuthProviders": "enabled",
     "updateScheduler": "enabled",
     "discussions": "enabled"
   },
