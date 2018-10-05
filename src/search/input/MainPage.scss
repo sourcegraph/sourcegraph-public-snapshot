@@ -92,8 +92,9 @@ body.modal-open {
             padding-top: 8rem;
             padding-bottom: 10rem;
             @media screen and (max-width: $media-md) {
-                padding-top: 2rem;
+                padding-top: 4rem;
                 padding-bottom: 4rem;
+                min-height: calc(100vh - 8rem);
             }
             h1 {
                 font-size: 54px;
@@ -911,5 +912,20 @@ body.modal-open {
 .nav-links {
     @media screen and (max-width: $media-md) {
         display: none !important;
+    }
+}
+.query-input2__suggestions,
+.query-input2-for-modal__suggestions {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    ul {
+        li {
+            overflow: hidden !important;
+        }
+    }
+}
+.query-input2-for-modal__suggestions {
+    .query-input2__loading-notifier {
+        top: 1rem;
     }
 }
