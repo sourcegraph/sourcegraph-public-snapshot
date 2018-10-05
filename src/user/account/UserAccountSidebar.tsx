@@ -2,7 +2,7 @@ import AddIcon from 'mdi-react/AddIcon'
 import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import LogoutIcon from 'mdi-react/LogoutIcon'
 import * as React from 'react'
-import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
+import { Link, RouteComponentProps } from 'react-router-dom'
 import {
     SIDEBAR_BUTTON_CLASS,
     SidebarGroup,
@@ -95,11 +95,6 @@ export const UserAccountSidebar: React.SFC<UserAccountSidebarProps> = props => {
                 <Link to="/api/console" className={SIDEBAR_BUTTON_CLASS}>
                     <ConsoleIcon className="icon-inline" /> API console
                 </Link>
-            )}
-            {!siteAdminViewingOtherUser && (
-                <NavLink to={`${props.match.path}/integrations`} exact={true} className={SIDEBAR_BUTTON_CLASS}>
-                    Integrations
-                </NavLink>
             )}
             {props.authenticatedUser.siteAdmin && (
                 <Link to="/site-admin" className={SIDEBAR_BUTTON_CLASS}>
