@@ -1607,20 +1607,10 @@
     "@types/webpack-dev-middleware" "*"
     "@types/webpack-hot-client" "*"
 
-"@types/webpack@*":
+"@types/webpack@*", "@types/webpack@4.4.11":
   version "4.4.11"
   resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.4.11.tgz#0ca832870d55c4e92498c01d22d00d02b0f62ae9"
   integrity sha512-NdESmbpvVEtJgs15kyZYKr5ouLYPMYt9DNG5JEgCekbG/ezFLPCzf4XcAv8caOb+b7x6ieAuSt0eoR0UkSI7RA==
-  dependencies:
-    "@types/node" "*"
-    "@types/tapable" "*"
-    "@types/uglify-js" "*"
-    source-map "^0.6.0"
-
-"@types/webpack@4.4.14":
-  version "4.4.14"
-  resolved "https://registry.yarnpkg.com/@types/webpack/-/webpack-4.4.14.tgz#05b73c955c2216b2f3d8af67d99cb3d2ce003bf1"
-  integrity sha512-Fl1zzJF07Lzx4uE4+T/zRJk4mXQVQ5OuOUWzlruxnf/wmJG9tJzKHdKyE02sMagiHZ9918zaruV9udV7buIkCA==
   dependencies:
     "@types/node" "*"
     "@types/tapable" "*"
