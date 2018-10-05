@@ -523,7 +523,7 @@ func (s *repos) Delete(ctx context.Context, repo api.RepoID) error {
 		return err
 	}
 	for _, thread := range threads {
-		_, err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionThreadsUpdateOptions{HardDelete: true})
+		_, err := DiscussionThreads.Update(ctx, thread.ID, &DiscussionThreadsUpdateOptions{hardDelete: true})
 		if err != nil {
 			return err
 		}

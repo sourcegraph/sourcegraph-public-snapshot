@@ -147,13 +147,13 @@ type DiscussionThreadsUpdateOptions struct {
 	// operation cannot be undone.
 	Delete bool
 
-	// HardDelete, when true, indicates that the discussion thread should be
+	// hardDelete, when true, indicates that the discussion thread should be
 	// deleted entirely from the DB (not just marked as deleted / a soft
 	// delete).
 	//
 	// In general, this should only occur when e.g. deleting repositories. NOT
 	// when a user or admin requests to delete something.
-	HardDelete bool
+	hardDelete bool
 }
 
 func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *DiscussionThreadsUpdateOptions) (*types.DiscussionThread, error) {
@@ -198,7 +198,7 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 			}
 		}
 	}
-	if opts.HardDelete {
+	if opts.hardDelete {
 		// Intentionally not setting anyUpdate=true here, it would cause us to
 		// try to update updated_at below which would fail.
 
@@ -223,7 +223,7 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 			return nil, err
 		}
 		for _, comment := range comments {
-			_, err := DiscussionComments.Update(ctx, comment.ID, &DiscussionCommentsUpdateOptions{HardDelete: true, noThreadDelete: true})
+			_, err := DiscussionComments.Update(ctx, comment.ID, &DiscussionCommentsUpdateOptions{hardDelete: true, noThreadDelete: true})
 			if err != nil {
 				return nil, err
 			}
@@ -239,7 +239,7 @@ func (t *discussionThreads) Update(ctx context.Context, threadID int64, opts *Di
 			return nil, err
 		}
 	}
-	if opts.Delete || opts.HardDelete {
+	if opts.Delete || opts.hardDelete {
 		return nil, nil
 	}
 	return t.Get(ctx, threadID)
