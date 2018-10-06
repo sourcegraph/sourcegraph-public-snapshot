@@ -956,10 +956,10 @@
     tslint-config-prettier "^1.6.0"
     tslint-react "^3.2.0"
 
-"@sourcegraph/webapp@^0.0.223":
-  version "0.0.223"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.223.tgz#d97c324564f8b5bdb7f866481ef23df34bce11e6"
-  integrity sha512-bI4LdbYhBOd+zQbQPmZLDlPKrHczovnbaylPdmEjICtvTIFIS7bKf3LGDRiKLMG7emhPWkbe9wwCPoegod2jvA==
+"@sourcegraph/webapp@^0.0.228":
+  version "0.0.228"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.228.tgz#f6858c25bbf220b6741dd8045c4786a87790eb9b"
+  integrity sha512-BbA+f7RUoEzhjGeKuqITeMT2cQKYdkuBRTxyNYz84pE+LHrTXQVMUJbHG3Mbri0+RoIcpsjyCVUXxq3KvWbTdw==
   dependencies:
     "@babel/core" "^7.0.0"
     "@babel/plugin-syntax-dynamic-import" "^7.0.0"
@@ -968,9 +968,9 @@
     "@sourcegraph/extensions-client-common" "^10.0.0"
     "@sqs/jsonc-parser" "^1.0.3"
     "@types/react" "16.4.14"
-    "@types/react-dom" "16.0.7"
+    "@types/react-dom" "16.0.8"
     "@types/react-router" "4.0.30"
-    "@types/react-router-dom" "4.3.0"
+    "@types/react-router-dom" "4.3.1"
     babel-plugin-istanbul "^5.0.1"
     babelify "^10.0.0"
     bluebird "^3.5.1"
@@ -1235,14 +1235,6 @@
   resolved "https://registry.yarnpkg.com/@types/range-parser/-/range-parser-1.2.2.tgz#fa8e1ad1d474688a757140c91de6dace6f4abc8d"
   integrity sha512-HtKGu+qG1NPvYe1z7ezLsyIaXYyi8SoAVqWDZgDQ8dLrsZvSzUNCwZyfX33uhWxL/SU0ZDQZ3nwZ0nimt507Kw==
 
-"@types/react-dom@16.0.7":
-  version "16.0.7"
-  resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-16.0.7.tgz#54d0f867a76b90597e8432030d297982f25c20ba"
-  integrity sha512-vaq4vMaJOaNgFff1t3LnHYr6vRa09vRspMkmLdXtFZmO1fwDI2snP+dpOkwrtlU8UC8qsqemCu4RmVM2OLq/fA==
-  dependencies:
-    "@types/node" "*"
-    "@types/react" "*"
-
 "@types/react-dom@16.0.8":
   version "16.0.8"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-16.0.8.tgz#6e1366ed629cadf55860cbfcc25db533f5d2fa7d"
@@ -1250,15 +1242,6 @@
   dependencies:
     "@types/node" "*"
     "@types/react" "*"
-
-"@types/react-router-dom@4.3.0":
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/@types/react-router-dom/-/react-router-dom-4.3.0.tgz#c91796d02deb3a5b24bc1c5db4a255df0d18b8b5"
-  integrity sha512-vaq+nVUGyMnIhAl+svKHmfqhCoCNe5lf1UWmvVcsBlAcX0kznF25711DNFQ7B8/QZ+ZF1zzGq1dIi9bzxIu85w==
-  dependencies:
-    "@types/history" "*"
-    "@types/react" "*"
-    "@types/react-router" "*"
 
 "@types/react-router-dom@4.3.1":
   version "4.3.1"

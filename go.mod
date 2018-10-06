@@ -18,6 +18,7 @@ require (
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
+	github.com/kevinburke/differ v0.0.0-20180719214047-7596500234bb
 	github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible
 	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 // indirect
 	github.com/lib/pq v1.0.0
@@ -43,7 +44,7 @@ require (
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
-	github.com/sourcegraph/sourcegraph v0.0.0-20181005221823-19f915f0223e
+	github.com/sourcegraph/sourcegraph v0.0.0-20181006014844-74c5c57872f4
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stripe/stripe-go v0.0.0-20180924231549-97e2ddab8720
 	github.com/zenazn/goji v0.9.0 // indirect
