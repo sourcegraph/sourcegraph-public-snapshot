@@ -2,7 +2,7 @@ import { authGroup, otherGroup, siteAdminSidebarGroups } from '@sourcegraph/weba
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '@sourcegraph/webapp/dist/site-admin/SiteAdminSidebar'
 import HeartIcon from 'mdi-react/HeartIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
-import { USE_DOTCOM_BUSINESS } from '../dotcom/productSubscriptions/features'
+import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
 const registryGroup: SiteAdminSideBarGroup = {
     header: {
@@ -26,20 +26,20 @@ const dotcomGroup: SiteAdminSideBarGroup = {
         {
             label: 'Customers',
             to: '/site-admin/dotcom/customers',
-            condition: () => USE_DOTCOM_BUSINESS,
+            condition: () => SHOW_BUSINESS_FEATURES,
         },
         {
             label: 'Subscriptions',
             to: '/site-admin/dotcom/product/subscriptions',
-            condition: () => USE_DOTCOM_BUSINESS,
+            condition: () => SHOW_BUSINESS_FEATURES,
         },
         {
             label: 'License key lookup',
             to: '/site-admin/dotcom/product/licenses',
-            condition: () => USE_DOTCOM_BUSINESS,
+            condition: () => SHOW_BUSINESS_FEATURES,
         },
     ],
-    condition: () => USE_DOTCOM_BUSINESS,
+    condition: () => SHOW_BUSINESS_FEATURES,
 }
 
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = siteAdminSidebarGroups.reduce<
