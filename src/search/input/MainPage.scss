@@ -15,6 +15,36 @@ body.modal-open {
     overflow: hidden !important;
     max-height: 100%;
 }
+body.main-page {
+    .nav-links {
+        @media screen and (max-width: $media-md) {
+            display: none !important;
+        }
+        @media screen and (max-height: 420px) {
+            display: none !important;
+        }
+    }
+    .query-input2__suggestions,
+    .query-input2-for-modal__suggestions {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        ul {
+            li {
+                overflow: hidden !important;
+            }
+        }
+    }
+    .query-input2-for-modal__suggestions {
+        .query-input2__loading-notifier {
+            top: 1rem;
+        }
+    }
+    .e2e-tooltip-content {
+        p {
+            font-size: 14px !important;
+        }
+    }
+}
 .main-page {
     // Colors to match about.sourcegraph.com
     $light-2: #7a8fb8;
@@ -969,33 +999,5 @@ body.modal-open {
         &__sign-in {
             color: $color-light-text-4;
         }
-    }
-}
-.nav-links {
-    @media screen and (max-width: $media-md) {
-        display: none !important;
-    }
-    @media screen and (max-height: 420px) {
-        display: none !important;
-    }
-}
-.query-input2__suggestions,
-.query-input2-for-modal__suggestions {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    ul {
-        li {
-            overflow: hidden !important;
-        }
-    }
-}
-.query-input2-for-modal__suggestions {
-    .query-input2__loading-notifier {
-        top: 1rem;
-    }
-}
-.e2e-tooltip-content {
-    p {
-        font-size: 14px !important;
     }
 }

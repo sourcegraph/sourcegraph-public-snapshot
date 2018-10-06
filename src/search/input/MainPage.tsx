@@ -278,6 +278,12 @@ export class MainPage extends React.Component<Props, State> {
         if (window.context.sourcegraphDotComMode) {
             this.props.onMainPage(true)
         }
+
+        // Add class to body to prevent global element styles from affecting other pages
+        const windowBody = document.querySelector('body')
+        if (windowBody) {
+            windowBody.classList.add('main-page')
+        }
     }
 
     public componentWillUnmount(): void {
