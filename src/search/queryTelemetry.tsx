@@ -4,7 +4,6 @@ import { count } from '../util/strings'
 export function queryTelemetryData(opt: SearchOptions): { [key: string]: any } {
     return {
         // 🚨 PRIVACY: never provide any private data in { code_search: { query_data: { query } } }.
-        // This field is whitelisted for on-premises Server users.
         query: opt.query ? queryStringTelemetryData(opt.query) : undefined,
         combined: opt.query,
         empty: !opt.query,

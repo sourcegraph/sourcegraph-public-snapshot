@@ -287,7 +287,7 @@ type SiteConfigSearchScope struct {
 
 // SiteConfigSettings description: Site settings hard-coded in site configuration.
 //
-// DEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying the cluster in Sourcegraph Data Center.
+// DEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying for cluster deployments.
 type SiteConfigSettings struct {
 	SearchRepositoryGroups map[string][]string      `json:"search.repositoryGroups,omitempty"`
 	SearchScopes           []*SiteConfigSearchScope `json:"search.scopes,omitempty"`

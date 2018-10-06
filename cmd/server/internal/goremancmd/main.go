@@ -1,5 +1,5 @@
 // Command goremancmd exists for testing the internally vendored goreman that
-// Sourcegraph Server uses.
+// ./cmd/server uses.
 package main
 
 import (

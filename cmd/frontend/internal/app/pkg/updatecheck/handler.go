@@ -20,24 +20,23 @@ import (
 )
 
 var (
-	// latestReleaseServerBuild is only used by sourcegraph.com to tell existing
-	// Server installations what the latest version is. The version here _must_ be
+	// latestReleaseDockerServerImageBuild is only used by sourcegraph.com to tell existing
+	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseServerBuild = newBuild("2.11.0")
+	latestReleaseDockerServerImageBuild = newBuild("2.11.0")
 
-	// latestReleaseDataCenterBuild is only used by sourcegraph.com to tell existing
-	// Data Center installations what the latest version is. The version here _must_ be
-	// available at https://storage.googleapis.com/sourcegraph-assets/sourcegraph-server-gen/
-	// before landing in master.
-	latestReleaseDataCenterBuild = newBuild("2.10.0")
+	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
+	// cluster deployments what the latest version is. The version here _must_ be available in
+	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
+	latestReleaseKubernetesBuild = newBuild("2.10.0")
 )
 
 func getLatestRelease(deployType string) build {
-	if conf.IsDataCenter(deployType) {
-		return latestReleaseDataCenterBuild
+	if conf.IsDeployTypeKubernetesCluster(deployType) {
+		return latestReleaseKubernetesBuild
 	}
-	return latestReleaseServerBuild
+	return latestReleaseDockerServerImageBuild
 }
 
 // Handler is an HTTP handler that responds with information about software updates
@@ -115,7 +114,7 @@ func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
 	}
 
 	// Prevent nil activity data (i.e., "") from breaking json marshaling.
-	// This is an issue with all Server and Data Center instances at versions < 2.7.0.
+	// This is an issue with all instances at versions < 2.7.0.
 	if activity == "" {
 		activity = `{}`
 	}

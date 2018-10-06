@@ -884,9 +884,8 @@ var (
 // for some reason. Otherwise, nil is returned. The error message is suitable
 // for display directly to e.g. a site admin.
 //
-// The most common reasons for lacking this capability are that Data Center is
-// in use or the admin intentionally did not expose the Docker socket to the
-// Sourcegraph container (for security reasons).
+// The most common reasons for lacking this capability are being deployed to a cluster or the admin
+// intentionally not exposing the Docker socket to the Sourcegraph container (for security reasons).
 func CanManage() error {
 	return canManage
 }
@@ -901,7 +900,7 @@ func init() {
 	// Check if we have a docker socket or not. Situations where we may not
 	// have this include:
 	//
-	// 	- Data center (if there is a regression in conf.DeployType detection)
+	// 	- Cluster deployments (if there is a regression in conf.DeployType detection)
 	// 	- Users not trusting our Docker command ("wtf! I am not giving
 	// 	  Sourcegraph access to manage my Docker containers!") and removing
 	// 	  the Docker socket portion of our run command.

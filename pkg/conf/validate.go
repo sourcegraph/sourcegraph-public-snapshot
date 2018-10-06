@@ -10,12 +10,11 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
-// ignoreLegacyDataCenterFields is the set of field names for which validation errors
-// should be ignored. The validation errors occur only because Data Center config merged
-// site config and Data Center-specific config. This is deprecated. Until we have
-// transitioned fully, we suppress validation errors on these fields.
-var ignoreLegacyDataCenterFields = map[string]struct{}{
-	// To get a list of all keys: jq '.properties | keys' < datacenter.schema.json
+// ignoreLegacyKubernetesFields is the set of field names for which validation errors should be
+// ignored. The validation errors occur only because deploy-sourcegraph config merged site config
+// and Kubernetes cluster-specific config. This is deprecated. Until we have transitioned fully, we
+// suppress validation errors on these fields.
+var ignoreLegacyKubernetesFields = map[string]struct{}{
 	"alertmanagerConfig":    struct{}{},
 	"alertmanagerURL":       struct{}{},
 	"authProxyIP":           struct{}{},
@@ -61,7 +60,7 @@ func Validate(inputStr string) (problems []string, err error) {
 	}
 	problems = make([]string, 0, len(res.Errors()))
 	for _, e := range res.Errors() {
-		if _, ok := ignoreLegacyDataCenterFields[e.Field()]; ok {
+		if _, ok := ignoreLegacyKubernetesFields[e.Field()]; ok {
 			continue
 		}
 

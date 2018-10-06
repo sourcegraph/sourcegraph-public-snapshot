@@ -346,13 +346,13 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                                         Try narrowing your query, or specifying a longer "timeout:" in
                                                         your query.
                                                     </>,
-                                                    /* If running Sourcegraph Server, give some smart advice */
+                                                    /* If running on non-cluster, give some smart advice */
                                                     ...(!window.context.sourcegraphDotComMode &&
-                                                    !window.context.isRunningDataCenter
+                                                    !window.context.isClusterDeployment
                                                         ? [
                                                               <>
-                                                                  Upgrade to Sourcegraph Data Center for distributed
-                                                                  on-the-fly search and near-instant indexed search
+                                                                  Upgrade to Sourcegraph Enterprise for a highly
+                                                                  scalable Kubernetes cluster deployment option.
                                                               </>,
                                                               window.context.likelyDockerOnMac
                                                                   ? 'Use Docker Machine instead of Docker for Mac for better performance on macOS'

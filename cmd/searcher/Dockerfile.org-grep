@@ -1,5 +1,5 @@
 # Dockerfile for running org-grep. This is to make it convenient to test searcher in
-# the same datacenter as a production environment.
+# the same network as a production environment.
 #
 # $ docker build -f Dockerfile.org-grep -t org-grep .
 # $ docker run --rm=true org-grep github.com/sourcegraph/go-langserver vscode

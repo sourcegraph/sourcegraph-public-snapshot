@@ -63,7 +63,7 @@ type JSContext struct {
 	Site                schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac   bool                     `json:"likelyDockerOnMac"`
 	NeedServerRestart   bool                     `json:"needServerRestart"`
-	IsRunningDataCenter bool                     `json:"isRunningDataCenter"`
+	IsClusterDeployment bool                     `json:"isClusterDeployment"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 
@@ -147,7 +147,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Site:                publicSiteConfiguration(),
 		LikelyDockerOnMac:   likelyDockerOnMac(),
 		NeedServerRestart:   conf.NeedServerRestart(),
-		IsRunningDataCenter: conf.IsDataCenter(conf.DeployType()),
+		IsClusterDeployment: conf.IsDeployTypeKubernetesCluster(conf.DeployType()),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 

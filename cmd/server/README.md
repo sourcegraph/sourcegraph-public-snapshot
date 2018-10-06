@@ -1,4 +1,4 @@
-# Sourcegraph Server release process
+# `sourcegraph/server` release process
 
 The user-facing documentation lives in
 [sourcegraph/website](https://github.com/sourcegraph/website). Quick links:
@@ -83,7 +83,7 @@ If you are creating a patch release, you will want to push to `docker-images-pat
     - Search works.
     - Code intelligence works.
 
-#### (4) Release the Sourcegraph Server Docker image
+#### (4) Release the `sourcegraph/server` Docker image
 
 ```bash
 git fetch
@@ -106,13 +106,13 @@ git push --tags
 #### (6) Notify existing instances that an update is available
 
 1.  Checkout the `master` branch in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository.
-1.  Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseServerBuild` to the
+1.  Update ../cmd/frontend/internal/app/pkg/updatecheck/handler.go's `latestReleaseDockerServerImageBuild` to the
     semver version string of the new version.
 1.  Commit and `git push` this change directly to the `master` branch.
 
-Sourcegraph Server version `VERSION` has been released!
+`sourcegraph/server` version `VERSION` has been released!
 
-You should also [release Data Center](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#cutting-a-release).
+You should also [release the new version for Sourcegraph cluster deployment](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#cutting-a-release).
 
 ## Publishing new code intelligence images
 

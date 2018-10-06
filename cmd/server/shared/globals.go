@@ -21,7 +21,7 @@ var SrcProfServices = []map[string]string{
 }
 
 // ProcfileAdditions is a list of Procfile lines that should be added to the emitted Procfile that
-// defines the Sourcegraph Server services configuration.
+// defines the services configuration.
 //
 // If it is modified by an external package, it must be modified immediately on startup, before
 // `shared.Main` is called.

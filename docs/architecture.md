@@ -73,7 +73,7 @@ Mirrors repositories from their code host. All other Sourcegraph services talk t
 The indexer has a few responsibilities:
 
 - It keeps the cross-repo code intelligence indexes for repositories up to date.
-- It makes sure the appropriate language servers are enabled (Sourcegraph Server only).
+- It makes sure the appropriate language servers are enabled (when a Docker socket is available, such as when using `sourcegraph/server` with the default `docker run` command).
 - It is how the frontend enqueues repositories for updating when (e.g. a user visits a repository).
 
 ### lsp-proxy ([code](https://github.com/sourcegraph/sourcegraph/tree/master/cmd/lsp-proxy))

@@ -3,7 +3,7 @@ branches do not necessarily reflect the changes that have gone into that branch.
 
 # Changelog
 
-All notable changes to Sourcegraph Server and Data Center are documented in this file.
+All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased changes
 
@@ -20,7 +20,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - A Bitbucket Server option to exclude personal repositories in the event that you decide to give an admin-level Bitbucket access token to Sourcegraph and do not want to create a bot account. See https://about.sourcegraph.com/docs/config/repositories/#excluding-personal-repositories for more information.
 - Site admins can now see when users of their Sourcegraph instance last used it via a code host integration (e.g. Sourcegraph browser extensions). Visit the site admin Analytics page (e.g. https://sourcegraph.example.com/site-admin/analytics) to view this information.
 - A new site config option `extensions.allowRemoteExtensions` lets you explicitly specify the remote extensions (from, e.g., Sourcegraph.com) that are allowed.
-- Server pings now include a total count of user accounts.
+- Pings now include a total count of user accounts.
 
 ### Fixed
 
@@ -114,7 +114,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
-- Fixed an issue where Sourcegraph Server would not start code intelligence containers properly when the Sourcegraph Server container was shut down non-gracefully.
+- Fixed an issue where `sourcegraph/server` would not start code intelligence containers properly when the `sourcegraph/server` container was shut down non-gracefully.
 - Fixed an issue where the file tree would return an error when navigating between repositories.
 
 ## 2.9.4
@@ -188,7 +188,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
-- Configuring Bitbucket Server now correctly suppresses the the toast message "Configure repositories and code hosts to add to Sourcegraph Server."
+- Configuring Bitbucket Server now correctly suppresses the the toast message "Configure repositories and code hosts to add to Sourcegraph."
 - A bug where canonical import path comments would not be detected by the Go language server's heuristics under `cmd/` folders.
 - Fixed an issue where a repository would only be refreshed on demand by certain user actions (such as a page reload) and would otherwise not be updated when expected.
 - If a code host returned a repository-not-found or unauthorized error (to `repo-updater`) for a repository that previously was known to Sourcegraph, then in some cases a misleading "Empty repository" screen was shown. Now the repository is displayed as though it still existed, using cached data; site admins must explicitly delete repositories on Sourcegraph after they have been deleted on the code host.
@@ -217,7 +217,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Added
 
-- Sourcegraph Server now emits the most recent log message when redis terminates to make it easier to debug why redis stopped.
+- The `sourcegraph/server` container now emits the most recent log message when redis terminates to make it easier to debug why redis stopped.
 - Organization invites (which allow users to invite other users to join organizations) are significantly improved. A new accept-invitation page was added.
 - The new help popover allows users to easily file issues in the Sourcegraph public issue tracker and view documentation.
 - An issue where Java files would be highlighted incorrectly if they contained JavaDoc blocks with an uneven number of opening/closing `*`s.
@@ -279,7 +279,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 ### Added
 
 - The repository revisions popover now shows the target commit's last-committed/authored date for branches and tags.
-- Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the server (or the `sourcegraph-frontend` pod in Data Center) causes all SAML requests and responses to be logged, which helps with debugging SAML.
+- Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the server (or the `sourcegraph-frontend` pod in Kubernetes) causes all SAML requests and responses to be logged, which helps with debugging SAML.
 - Site admins can now view user satisfaction surveys grouped by user, in addition to chronological order, and aggregate summary values (including the average score and the net promoter score over the last 30 days) are now displayed.
 - The site admin overview page displays the site ID, the primary admin email, and premium feature usage information.
 - Added Haskell as an experimental language server on the code intelligence admin page.
@@ -292,7 +292,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - In the GraphQL API, `site.users` has been renamed to `users`, `site.orgs` has been renamed to `organizations`, and `site.repositories` has been renamed to `repositories`.
 - An authentication provider must be set in site configuration (see [authentication provider documentation](https://about.sourcegraph.com/docs/config/authentication). Previously the server defaulted to builtin auth if none was set.
 - If a process dies inside the Sourcegraph container the whole container will shut down. We suggest operators configure a [Docker Restart Policy](https://docs.docker.com/config/containers/start-containers-automatically/#restart-policy-details) or a [Kubernetes Restart Policy](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy). Previously the container would operate in a degraded mode if a process died.
-- Changes to the `auth.public` site config are applied immediately in Sourcegraph Server (no restart needed).
+- Changes to the `auth.public` site config are applied immediately in `sourcegraph/server` (no restart needed).
 - The new search timeout behavior is now enabled by default. Set `"experimentalFeatures": {"searchTimeoutParameter": "disabled"}` in site config to disable it.
 - Search includes files up to 1MB (previous limit was 512KB for unindexed search and 128KB for indexed search).
 - Usernames and email addresses reported by OpenID Connect and SAML auth providers are now trusted, and users will sign into existing Sourcegraph accounts that match on the auth provider's reported username or email.
@@ -310,7 +310,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Interpret `X-Forwarded-Proto` HTTP header when `httpToHttpsRedirect` is set to `load-balanced`.
 - Deleting a user account no longer prevents the creation of a new user account with the same username and/or association with authentication provider account (SAML/OpenID/etc.)
 - It is now possible for a user to verify an email address that was previously associated with now-deleted user account.
-- Diff searches over empty repositories no longer fail in Sourcegraph Server (this was not an issue in Sourcegraph Data Center).
+- Diff searches over empty repositories no longer fail (this was not an issue for Sourcegraph cluster deployments).
 - Stray `tmp_pack_*` files from interrupted fetches should now go away.
 - When multiple `repo:` tokens match the same repo, process @revspec requirements from all of them, not just the first one in the search.
 
@@ -353,7 +353,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Changed
 
-- In Sourcegraph Data Center, RBAC is now used by default. Most Kubernetes clusters require it. See the Data Center installation instructions for more information (including disabling if needed).
+- When deploying Sourcegraph to Kubernetes, RBAC is now used by default. Most Kubernetes clusters require it. See the Kubernetes installation instructions for more information (including disabling if needed).
 - Increased git ssh connection timeout to 30s from 7s.
 - Phabricator integration no longer requires staging areas though [it is still suggested](https://about.sourcegraph.com/docs/features/phabricator-extension#staging-areas).
 
@@ -364,8 +364,8 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - Fixed an issue where toggling a dynamic search scope would not also remove `@rev` (if specified)
 - Fixed an issue where where modes that can only be determined by the full filename (not just the file extension) of a path weren't supported (Dockerfiles are the first example of this).
 - Fixed an issue where the GraphiQL console failed when variables are specified.
-- In Sourcegraph Data Center, Indexed Search no longer maintains its own git clones. This significantly reduces disk size requirements for the indexed-search pod.
-- Fixed an issue where language server Docker containers would not be automatically restarted if they crashed (Sourcegraph Server only).
+- Indexed search no longer maintains its own git clones. For Kubernetes cluster deployments, this significantly reduces disk size requirements for the indexed-search pod.
+- Fixed an issue where language server Docker containers would not be automatically restarted if they crashed (`sourcegraph/server` only).
 - Fixed an issue where if the first user on a site authenticated via SSO, the site would remain stuck in uninitialized mode.
 
 ### Added
@@ -388,7 +388,7 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ### Fixed
 
-- In Sourcegraph Data Center, searches no longer block if the index is unavailable (e.g. after the index pod restarts). Instead, it respects the normal search timeout and reports the situation to the user if the index is not yet available.
+- Searches no longer block if the index is unavailable (e.g. after the index pod restarts). Instead, it respects the normal search timeout and reports the situation to the user if the index is not yet available.
 - Repository results are no longer returned for filters that are not supported (e.g. if `file:` is part of the search query)
 - Fixed an issue where file tree elements may be scrolled out of view on page load.
 - Fixed an issue that caused "Could not ensure repository updated" log messages when trying to update a large number of repositories from gitolite.
@@ -414,12 +414,12 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 - A new user settings tokens page was added that allows users to obtain a token that they can use to authenticate to the Sourcegraph API.
 - Code intelligence indexes are now built for all repositories in the background, regardless of whether or not they are visited directly by a user.
 - Language servers are now automatically enabled when visiting a repository. For example, visiting a Go repository will now automatically download and run the relevant Docker container for Go code intelligence.
-  - This change only affects Sourcegraph Server users, not Data Center users.
+  - This change only affects when Sourcegraph is deployed using the `sourcegraph/server` Docker image (not using Kubernetes).
   - You will need to use the new `docker run` command at https://about.sourcegraph.com/docs/server/ in order for this feature to be enabled. Otherwise, you will receive errors in the log about `/var/run/docker.sock` and things will work just as they did before. See https://about.sourcegraph.com/docs/code-intelligence/install for more information.
 - The site admin Analytics page will now display the number of "Code Intelligence" actions each user has made, including hovers, jump to definitions, and find references, on the Sourcegraph webapp or in a code host integration or extension.
 - An experimental cross repository jump to definition which consults the OSS index on Sourcegraph.com. This is disabled by default; use `"experimentalFeatures": { "jumpToDefOSSIndex": "enabled" }` in your site configuration to enable it.
 - Users can now view Git branches, tags, and commits, and compare Git branches and revisions on Sourcegraph. (The code host icon in the header takes you to the commit on the code host.)
-- A new admin panel allows you to view and manage language servers. For Server users, it allows you to enable/disable/update/restart language servers at the click of a button. For Data Center users, it shows the current status of language servers.
+- A new admin panel allows you to view and manage language servers. For Docker deployments, it allows you to enable/disable/update/restart language servers at the click of a button. For cluster deployments, it shows the current status of language servers.
 - Users can now tweet their feedback about Sourcegraph when clicking on the feedback smiley located in the navbar and filling out a Twitter feedback form.
 - A new button in the repository header toggles on/off the Git history panel for the current file.
 
@@ -526,13 +526,13 @@ All notable changes to Sourcegraph Server and Data Center are documented in this
 
 ## 2.5.16, 2.5.17
 
-- Version bump to keep Data Center and Server versions in sync.
+- Version bump to keep deployment variants in sync.
 
 ## 2.5.15
 
 ### Bug fixes
 
-- Fixed issue where Sourcegraph Data Center would incorrectly show "An update is available".
+- Fixed issue where a Sourcegraph cluster would incorrectly show "An update is available".
 - Fixed Phabricator links to repositories
 - Searches over a single repository are now less likely to immediately time out the first time they are searched.
 - Fixed a bug where `auth.provider == "http-header"` would incorrectly require builtin authentication / block site access when `auth.public == "false"`.
@@ -587,7 +587,7 @@ When using `auth.provider == "builtin"`, two new important changes mean that a S
 
 ### Changed
 
-- Server log messages are much quieter by default
+- Log messages are much quieter by default
 
 ## 2.3.11
 
