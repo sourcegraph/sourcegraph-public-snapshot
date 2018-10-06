@@ -280,14 +280,15 @@ export class MainPage extends React.Component<Props, State> {
         }
 
         // Add class to body to prevent global element styles from affecting other pages
-        const windowBody = document.querySelector('body')
-        if (windowBody) {
-            windowBody.classList.add('main-page')
-        }
+        const windowBody = document.body
+        windowBody.classList.add('main-page')
     }
 
     public componentWillUnmount(): void {
         this.props.onMainPage(false)
+        const windowBody = document.body
+        windowBody.classList.remove('main-page')
+        windowBody.classList.remove('modal-open')
     }
     public render(): JSX.Element | null {
         if (!window.context.sourcegraphDotComMode) {
@@ -878,10 +879,8 @@ export class MainPage extends React.Component<Props, State> {
     }
 
     private activateModal = (section: string) => () => {
-        const windowBody = document.querySelector('body')
-        if (windowBody) {
-            windowBody.classList.add('modal-open')
-        }
+        const windowBody = document.body
+        windowBody.classList.add('modal-open')
 
         if (section === 'intelligence') {
             this.setState(state => ({ modalIntelligenceOpen: !state.modalIntelligenceOpen }))
@@ -949,10 +948,9 @@ export class MainPage extends React.Component<Props, State> {
     }
 
     private closeModal = (modalName: string) => () => {
-        const windowBody = document.querySelector('body')
-        if (windowBody) {
-            windowBody.classList.remove('modal-open')
-        }
+        const windowBody = document.body
+        windowBody.classList.remove('modal-open')
+
         if (modalName === 'search') {
             this.setState(state => ({ modalSearchClosing: !state.modalSearchClosing, animateModalSearch: false }))
             // RESET DID CLOSE
