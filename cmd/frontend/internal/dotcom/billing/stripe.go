@@ -13,7 +13,6 @@ var (
 	stripeSecretKey      = env.Get("STRIPE_SECRET_KEY", "", "billing: Stripe API secret key")
 	stripePublishableKey = env.Get("STRIPE_PUBLISHABLE_KEY", "", "billing: Stripe API publishable key")
 	stripeWebhookSecret  = env.Get("STRIPE_WEBHOOK_SECRET", "", "billing: Stripe webhook secret")
-	stripeProductID      = env.Get("STRIPE_PRODUCT_ID", "", "billing: Stripe product ID for Sourcegraph Enterprise")
 )
 
 func init() {

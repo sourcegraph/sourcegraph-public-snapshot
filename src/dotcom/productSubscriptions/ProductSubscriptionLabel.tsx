@@ -7,15 +7,15 @@ import { formatUserCount } from '../../productSubscription/helpers'
  * subscription.
  */
 export const ProductSubscriptionLabel: React.SFC<{
-    productSubscription: { plan: Pick<GQL.IProductPlan, 'fullProductName' | 'title'> | null } & Pick<
+    productSubscription: { plan: Pick<GQL.IProductPlan, 'name' | 'nameWithBrand'> | null } & Pick<
         GQL.IProductSubscription,
         'userCount'
     >
 
-    planField?: 'fullProductName' | 'title'
+    planField?: 'name' | 'nameWithBrand'
 
     className?: string
-}> = ({ productSubscription, planField = 'fullProductName', className = '' }) => (
+}> = ({ productSubscription, planField = 'nameWithBrand', className = '' }) => (
     <span className={className}>
         {productSubscription.plan && productSubscription.userCount ? (
             <>

@@ -15,8 +15,7 @@ export const siteAdminProductSubscriptionFragment = gql`
             displayName
         }
         plan {
-            title
-            fullProductName
+            nameWithBrand
         }
         userCount
         expiresAt

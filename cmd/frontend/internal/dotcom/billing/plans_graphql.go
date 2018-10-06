@@ -12,21 +12,22 @@ import (
 
 // productPlan implements the GraphQL type ProductPlan.
 type productPlan struct {
-	billingID           string
+	billingPlanID       string
 	name                string
-	title               string
 	pricePerUserPerYear int32
 }
 
-func (r *productPlan) BillingID() string          { return r.billingID }
+func (r *productPlan) BillingPlanID() string      { return r.billingPlanID }
 func (r *productPlan) Name() string               { return r.name }
-func (r *productPlan) Title() string              { return r.title }
-func (r *productPlan) FullProductName() string    { return "Sourcegraph " + r.title }
+func (r *productPlan) NameWithBrand() string      { return "Sourcegraph " + r.name }
 func (r *productPlan) PricePerUserPerYear() int32 { return r.pricePerUserPerYear }
 
 // ToProductPlan returns a resolver for the GraphQL type ProductPlan from the given billing plan.
 func ToProductPlan(plan *stripe.Plan) (graphqlbackend.ProductPlan, error) {
 	// Sanity check.
+	if plan.Product.Name == "" {
+		return nil, fmt.Errorf("unexpected empty product name for plan %q", plan.ID)
+	}
 	if plan.BillingScheme != stripe.PlanBillingSchemePerUnit {
 		return nil, fmt.Errorf("unexpected billing scheme %q for plan %q", plan.BillingScheme, plan.ID)
 	}
@@ -42,28 +43,21 @@ func ToProductPlan(plan *stripe.Plan) (graphqlbackend.ProductPlan, error) {
 	if plan.IntervalCount != 1 {
 		return nil, fmt.Errorf("unexpected plan interval count %d for plan %q", plan.IntervalCount, plan.ID)
 	}
-
-	gqlPlan := &productPlan{
-		billingID:           plan.ID,
-		name:                plan.Nickname,
-		title:               plan.Metadata["title"],
+	return &productPlan{
+		billingPlanID:       plan.ID,
+		name:                plan.Product.Name,
 		pricePerUserPerYear: int32(plan.Amount),
-	}
-	var err error
-	gqlPlan.title, err = getProductPlanTitle(plan)
-	if err != nil {
-		return nil, err
-	}
-	return gqlPlan, nil
+	}, nil
 }
 
 // ProductPlans implements the GraphQL field Query.dotcom.productPlans.
 func (BillingResolver) ProductPlans(ctx context.Context) ([]graphqlbackend.ProductPlan, error) {
-	plans := plan.List(&stripe.PlanListParams{
+	params := &stripe.PlanListParams{
 		ListParams: stripe.ListParams{Context: ctx},
 		Active:     stripe.Bool(true),
-		Product:    stripe.String(stripeProductID),
-	})
+	}
+	params.AddExpand("data.product")
+	plans := plan.List(params)
 	var gqlPlans []graphqlbackend.ProductPlan
 	for plans.Next() {
 		gqlPlan, err := ToProductPlan(plans.Plan())
@@ -75,8 +69,11 @@ func (BillingResolver) ProductPlans(ctx context.Context) ([]graphqlbackend.Produ
 	if err := plans.Err(); err != nil {
 		return nil, err
 	}
+
+	// Sort cheapest first (a reasonable assumption).
 	sort.Slice(gqlPlans, func(i, j int) bool {
-		return gqlPlans[i].Name() < gqlPlans[j].Name()
+		return gqlPlans[i].PricePerUserPerYear() < gqlPlans[j].PricePerUserPerYear()
 	})
+
 	return gqlPlans, nil
 }

@@ -6,10 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
-// Make the Site.productSubscription.fullProductName GraphQL field (and other places) use the proper
-// product name.
+// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
+// proper product name.
 func init() {
-	graphqlbackend.GetFullProductName = fullProductName
+	graphqlbackend.GetProductNameWithBrand = productNameWithBrand
 }
 
 const (
@@ -31,9 +31,9 @@ var (
 	EnterpriseTags = []string{}
 )
 
-// fullProductName returns the full product name (e.g., "Sourcegraph Enterprise") based on the
-// license info.
-func fullProductName(hasLicense bool, licenseTags []string) string {
+// productNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
+// on the license info.
+func productNameWithBrand(hasLicense bool, licenseTags []string) string {
 	if !hasLicense {
 		return "Sourcegraph Core"
 	}

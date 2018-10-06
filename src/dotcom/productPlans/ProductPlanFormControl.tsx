@@ -100,14 +100,14 @@ export class ProductPlanFormControl extends React.Component<Props, State> {
                                                 name="product-plan-form-control__plan"
                                                 className="mr-2"
                                                 id={`product-plan-form-control__plan${i}`}
-                                                value={plan.billingID}
+                                                value={plan.billingPlanID}
                                                 onChange={this.onPlanChange}
                                                 required={true}
                                                 disabled={disableInputs}
                                                 checked={plan === this.state.plan}
                                             />
                                             <div>
-                                                <strong>{plan.title}</strong>
+                                                <strong>{plan.name}</strong>
                                                 <div className="text-muted">
                                                     <ProductPlanPrice pricePerUserPerYear={plan.pricePerUserPerYear} />
                                                 </div>
@@ -133,7 +133,7 @@ export class ProductPlanFormControl extends React.Component<Props, State> {
                 plan:
                     (prevState.plansOrError !== LOADING &&
                         !isErrorLike(prevState.plansOrError) &&
-                        prevState.plansOrError.find(plan => plan.billingID === value)) ||
+                        prevState.plansOrError.find(plan => plan.billingPlanID === value)) ||
                     null,
             }),
             () => this.props.onChange(this.state.plan)
@@ -147,9 +147,8 @@ function queryProductPlans(): Observable<GQL.IProductPlan[]> {
             query ProductPlans {
                 dotcom {
                     productPlans {
-                        billingID
+                        billingPlanID
                         name
-                        title
                         pricePerUserPerYear
                     }
                 }

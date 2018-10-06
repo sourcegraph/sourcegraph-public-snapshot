@@ -279,10 +279,9 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                                 }
                             }
                             plan {
-                                billingID
+                                billingPlanID
                                 name
-                                title
-                                fullProductName
+                                nameWithBrand
                                 pricePerUserPerYear
                             }
                             userCount

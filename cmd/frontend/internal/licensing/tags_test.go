@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestFullProductName(t *testing.T) {
+func TestProductNameWithBrand(t *testing.T) {
 	tests := []struct {
 		hasLicense  bool
 		licenseTags []string
@@ -25,7 +25,7 @@ func TestFullProductName(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("hasLicense=%v licenseTags=%v", test.hasLicense, test.licenseTags), func(t *testing.T) {
-			if got := fullProductName(test.hasLicense, test.licenseTags); got != test.want {
+			if got := productNameWithBrand(test.hasLicense, test.licenseTags); got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
 		})

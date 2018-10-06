@@ -11,7 +11,7 @@ export const ProductSubscriptionBilling: React.SFC<{
             <tr>
                 <th className="text-nowrap align-middle">Plan</th>
                 <td className="w-100 d-flex align-items-center justify-content-between">
-                    <ProductSubscriptionLabel productSubscription={productSubscription} planField="title" />
+                    <ProductSubscriptionLabel productSubscription={productSubscription} planField="name" />
                     <a
                         href={mailtoSales({
                             subject: `Change subscription ${productSubscription.name}`,

@@ -84,7 +84,7 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
                                 return createPaidProductSubscription({
                                     accountID: this.props.user.id,
                                     productSubscription: {
-                                        plan: this.state.plan.billingID,
+                                        billingPlanID: this.state.plan.billingPlanID,
                                         userCount: this.state.userCount,
                                         totalPriceNonAuthoritative:
                                             this.state.plan.pricePerUserPerYear * this.state.userCount,

@@ -26,7 +26,7 @@ export const siteAdminProductLicenseFragment = gql`
         }
         licenseKey
         info {
-            fullProductName
+            productNameWithBrand
             tags
             userCount
             expiresAt

@@ -18,8 +18,7 @@ export const productSubscriptionFragment = gql`
             }
         }
         plan {
-            title
-            fullProductName
+            nameWithBrand
         }
         userCount
         expiresAt

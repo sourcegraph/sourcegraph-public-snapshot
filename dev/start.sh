@@ -28,7 +28,6 @@ yarn link @sourcegraph/webapp
 # have any sensitive data associated with them and are NOT the ones used in production.
 export STRIPE_SECRET_KEY=sk_test_QHDBfU09USr4SVaJPZJEGruf
 export STRIPE_PUBLISHABLE_KEY=pk_test_Vo5BwrEkrXCM2ULouAd5ZBZz
-export STRIPE_PRODUCT_ID=prod_DgGZvDw5T66ZdX
 
 # This private key does not generate actually valid licenses, but it makes it possible to test and
 # develop the license generation code. To generate real license keys, use Sourcegraph.com or obtain

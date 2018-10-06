@@ -115,7 +115,7 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                                 this.state.productSubscriptionOrError.userCount &&
                                 this.state.productSubscriptionOrError.expiresAt && (
                                     <ProductCertificate
-                                        title={this.state.productSubscriptionOrError.plan.fullProductName}
+                                        title={this.state.productSubscriptionOrError.plan.nameWithBrand}
                                         subtitle={
                                             <>
                                                 {formatUserCount(this.state.productSubscriptionOrError.userCount, true)}{' '}
@@ -243,10 +243,9 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                         }
                     }
                     plan {
-                        billingID
+                        billingPlanID
                         name
-                        title
-                        fullProductName
+                        nameWithBrand
                         pricePerUserPerYear
                     }
                     userCount
@@ -261,7 +260,7 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                     activeLicense {
                         licenseKey
                         info {
-                            fullProductName
+                            productNameWithBrand
                             tags
                             userCount
                             expiresAt

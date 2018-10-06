@@ -88,7 +88,9 @@ func (r *productSubscription) getBillingSubscription(ctx context.Context) (*stri
 		return nil, nil
 	}
 	r.once.Do(func() {
-		r.billingSub, r.billingSubErr = sub.Get(*r.v.BillingSubscriptionID, &stripe.SubscriptionParams{Params: stripe.Params{Context: ctx}})
+		params := &stripe.SubscriptionParams{Params: stripe.Params{Context: ctx}}
+		params.AddExpand("plan.product")
+		r.billingSub, r.billingSubErr = sub.Get(*r.v.BillingSubscriptionID, params)
 	})
 	return r.billingSub, r.billingSubErr
 }
@@ -274,7 +276,7 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 	// Determine which license tags to use for the purchased plan. Do this early on because it's the
 	// most likely place for a stupid mistake to cause a bug, and doing it early means the user
 	// hasn't been charged if there is an error.
-	licenseTags, err := billing.LicenseTagsForProductPlan(ctx, args.ProductSubscription.Plan)
+	licenseTags, err := billing.LicenseTagsForProductPlan(ctx, args.ProductSubscription.BillingPlanID)
 	if err != nil {
 		return nil, err
 	}
@@ -307,7 +309,7 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 		Customer: stripe.String(cust.ID),
 		Items: []*stripe.SubscriptionItemsParams{
 			{
-				Plan:     stripe.String(args.ProductSubscription.Plan),
+				Plan:     stripe.String(args.ProductSubscription.BillingPlanID),
 				Quantity: stripe.Int64(int64(args.ProductSubscription.UserCount)),
 			},
 		},

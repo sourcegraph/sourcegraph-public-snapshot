@@ -10,6 +10,6 @@ export const ProductLicenseInfoDescription: React.SFC<{
         className={className}
         title={licenseInfo.tags.length > 0 ? `Tags: ${licenseInfo.tags.join(', ')}` : 'No tags'}
     >
-        {licenseInfo.fullProductName} ({formatUserCount(licenseInfo.userCount)})
+        {licenseInfo.productNameWithBrand} ({formatUserCount(licenseInfo.userCount)})
     </span>
 )

@@ -54,14 +54,14 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             )
         }
 
-        const { fullProductName, actualUserCount, license } = this.state.statusOrError
+        const { productNameWithBrand, actualUserCount, license } = this.state.statusOrError
 
         // No license means Sourcegraph Core. For that, show the user that they can use this for free
         // forever, and show them how to upgrade.
 
         return (
             <ProductCertificate
-                title={fullProductName}
+                title={productNameWithBrand}
                 detail={
                     license ? (
                         <>
@@ -117,7 +117,7 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
             query ProductLicenseInfo {
                 site {
                     productSubscription {
-                        fullProductName
+                        productNameWithBrand
                         actualUserCount
                         license {
                             tags
