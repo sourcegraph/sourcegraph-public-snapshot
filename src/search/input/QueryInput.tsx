@@ -329,7 +329,6 @@ export class QueryInput extends React.Component<Props, State> {
 
     private selectSuggestion = (suggestion: Suggestion): void => {
         // 🚨 PRIVACY: never provide any private data in { code_search: { suggestion: { type } } }.
-        // This field is whitelisted for on-premises Server users.
         eventLogger.log('SearchSuggestionSelected', {
             code_search: {
                 suggestion: {

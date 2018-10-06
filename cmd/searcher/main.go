@@ -73,7 +73,7 @@ func main() {
 	server := &http.Server{
 		Addr: addr,
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// For kubernetes liveness and readiness probes
+			// For cluster liveness and readiness probes
 			if r.URL.Path == "/healthz" {
 				w.WriteHeader(200)
 				w.Write([]byte("ok"))

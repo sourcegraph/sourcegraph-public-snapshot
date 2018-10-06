@@ -2324,7 +2324,7 @@ type LanguageServerManagementStatus {
     # Even if this field's value is true, individual language servers may not be manageable. Clients must check the
     # LangServer.canXyz fields.
     #
-    # Always false on Data Center.
+    # Always false for Sourcegraph cluster deployments.
     siteCanManage: Boolean!
     # The reason why the site can't manage language servers, if siteCanManage == false.
     reason: String
@@ -2357,8 +2357,8 @@ type LangServer {
     issuesURL: String
     # URL to the language server's documentation, if available.
     docsURL: String
-    # Whether or not we are running in Data Center mode.
-    dataCenter: Boolean!
+    # Whether or not the site is a cluster deployment of Sourcegraph (e.g., to Kubernetes).
+    isClusterDeployment: Boolean!
     # Whether or not this is a custom language server (i.e. one that does not
     # come built in with Sourcegraph).
     custom: Boolean!
@@ -2368,27 +2368,27 @@ type LangServer {
     state: LangServerState!
     # Whether or not the language server is being downloaded, starting, restarting.
     #
-    # Always false in Data Center and for custom language servers.
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
     pending: Boolean!
     # Whether or not the language server is being downloaded.
     #
-    # Always false in Data Center and for custom language servers.
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
     downloading: Boolean!
     # Whether or not the current user can enable the language server or not.
     #
-    # Always false in Data Center.
+    # Always false for Sourcegraph cluster deployments.
     canEnable: Boolean!
     # Whether or not the current user can disable the language server or not.
     #
-    # Always false in Data Center.
+    # Always false for Sourcegraph cluster deployments.
     canDisable: Boolean!
     # Whether or not the current user can restart the language server or not.
     #
-    # Always false in Data Center and for custom language servers.
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
     canRestart: Boolean!
     # Whether or not the current user can update the language server or not.
     #
-    # Always false in Data Center and for custom language servers.
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
     canUpdate: Boolean!
     # Indicates whether or not the language server is healthy or
     # unhealthy. Examples include:
@@ -2404,7 +2404,7 @@ type LangServer {
     #
     # The value is true ("healthy") if the language server is not enabled.
     #
-    # Always false in Data Center and for custom language servers.
+    # Always false for Sourcegraph cluster deployments and for custom language servers.
     healthy: Boolean!
 }
 
@@ -2696,9 +2696,6 @@ type Site implements ConfigurationSubject {
         # Include only external accounts with this client ID.
         clientID: String
     ): ExternalAccountConnection!
-    # The name of the Sourcegraph product that is used on this site ("Sourcegraph Server" or "Sourcegraph Data
-    # Center" when running in production).
-    productName: String!
     # The build version of the Sourcegraph software that is running on this site (of the form
     # NNNNN_YYYY-MM-DD_XXXXX, like 12345_2018-01-01_abcdef).
     buildVersion: String!

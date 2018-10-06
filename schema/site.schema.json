@@ -279,7 +279,7 @@
     },
     "useJaeger": {
       "description":
-        "Use local Jaeger instance for tracing. Data Center only.\n\nAfter enabling Jaeger and updating your Kubernetes cluster, `kubectl get pods`\nshould display pods prefixed with `jaeger-cassandra`,\n`jaeger-collector`, and `jaeger-query`. `jaeger-collector` will start\ncrashing until you initialize the Cassandra DB. To do so, do the\nfollowing:\n\n1. Install [`cqlsh`](https://pypi.python.org/pypi/cqlsh).\n1. `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042`\n1. `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh`\n1. `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686`\n1. Go to http://localhost:16686 to view the Jaeger dashboard.",
+        "Use local Jaeger instance for tracing. Kubernetes cluster deployments only.\n\nAfter enabling Jaeger and updating your Kubernetes cluster, `kubectl get pods`\nshould display pods prefixed with `jaeger-cassandra`,\n`jaeger-collector`, and `jaeger-query`. `jaeger-collector` will start\ncrashing until you initialize the Cassandra DB. To do so, do the\nfollowing:\n\n1. Install [`cqlsh`](https://pypi.python.org/pypi/cqlsh).\n1. `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042`\n1. `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh`\n1. `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686`\n1. Go to http://localhost:16686 to view the Jaeger dashboard.",
       "type": "boolean"
     },
     "noGoGetDomains": {
@@ -435,7 +435,7 @@
     "auth.sessionExpiry": {
       "type": "string",
       "description":
-        "The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.\n\nThe string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., \"720h\", \"43200m\", \"2592000s\" all indicate a timespan of 30 days.\n\nNote: changing this field does not affect the expiration of existing sessions. If you would like to enforce this limit for existing sessions, you must log out currently signed-in users. You can force this by removing all keys beginning with \"session_\" from the Redis store:\n\n* For Sourcegraph Server: `docker exec $CONTAINER_ID redis-cli --raw keys 'session_*' | xargs docker exec $CONTAINER_ID redis-cli del`\n* For Data Center: \n  ```\n  REDIS_POD=\"$(kubectl get pods -l app=redis-store -o jsonpath={.items[0].metadata.name})\";\n  kubectl exec \"$REDIS_POD\" -- redis-cli --raw keys 'session_*' | xargs kubectl exec \"$REDIS_POD\" -- redis-cli --raw del;\n  ```\n",
+        "The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.\n\nThe string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., \"720h\", \"43200m\", \"2592000s\" all indicate a timespan of 30 days.\n\nNote: changing this field does not affect the expiration of existing sessions. If you would like to enforce this limit for existing sessions, you must log out currently signed-in users. You can force this by removing all keys beginning with \"session_\" from the Redis store:\n\n* For deployments using `sourcegraph/server`: `docker exec $CONTAINER_ID redis-cli --raw keys 'session_*' | xargs docker exec $CONTAINER_ID redis-cli del`\n* For cluster deployments: \n  ```\n  REDIS_POD=\"$(kubectl get pods -l app=redis-store -o jsonpath={.items[0].metadata.name})\";\n  kubectl exec \"$REDIS_POD\" -- redis-cli --raw keys 'session_*' | xargs kubectl exec \"$REDIS_POD\" -- redis-cli --raw del;\n  ```\n",
       "default": "2160h"
     },
     "auth.userIdentityHTTPHeader": {
@@ -494,8 +494,7 @@
             ]
           },
           "address": {
-            "description":
-              "TCP address of the language server. Required for Sourcegraph Server; do not set for Sourcegraph Data Center.",
+            "description": "TCP address of the language server. Required (except for Sourcegraph cluster deployments).",
             "type": "string",
             "pattern": "^tcp://",
             "format": "uri"
@@ -609,7 +608,7 @@
     "settings": {
       "title": "SiteConfigSettings",
       "description":
-        "Site settings hard-coded in site configuration.\n\nDEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying the cluster in Sourcegraph Data Center.",
+        "Site settings hard-coded in site configuration.\n\nDEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying for cluster deployments.",
       "type": "object",
       "properties": {
         "search.scopes": { "$ref": "#/definitions/SiteConfigSearchScope" },

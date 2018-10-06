@@ -15,7 +15,7 @@ type langServerResolver struct {
 	language                                     string
 	displayName                                  string
 	homepageURL, issuesURL, docsURL              string
-	dataCenter                                   bool
+	isClusterDeployment                          bool
 	custom                                       bool
 	experimental                                 bool
 	state                                        langservers.ConfigState
@@ -33,8 +33,10 @@ func (c *langServerResolver) HomepageURL(ctx context.Context) *string {
 func (c *langServerResolver) IssuesURL(ctx context.Context) *string {
 	return nullString(c.issuesURL)
 }
-func (c *langServerResolver) DocsURL(ctx context.Context) *string   { return nullString(c.docsURL) }
-func (c *langServerResolver) DataCenter(ctx context.Context) bool   { return c.dataCenter }
+func (c *langServerResolver) DocsURL(ctx context.Context) *string { return nullString(c.docsURL) }
+func (c *langServerResolver) IsClusterDeployment(ctx context.Context) bool {
+	return c.isClusterDeployment
+}
 func (c *langServerResolver) Custom(ctx context.Context) bool       { return c.custom }
 func (c *langServerResolver) Experimental(ctx context.Context) bool { return c.experimental }
 func (c *langServerResolver) State(ctx context.Context) string {
@@ -92,22 +94,22 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 		}
 
 		results = append(results, &langServerResolver{
-			language:     language,
-			displayName:  langservers.StaticInfo[language].DisplayName,
-			homepageURL:  langservers.StaticInfo[language].HomepageURL,
-			issuesURL:    langservers.StaticInfo[language].IssuesURL,
-			docsURL:      langservers.StaticInfo[language].DocsURL,
-			dataCenter:   conf.IsDataCenter(conf.DeployType()),
-			custom:       false,
-			experimental: langservers.StaticInfo[language].Experimental,
-			state:        state,
-			pending:      canManage && infoErr == nil && (info.Pulling || info.Status == langservers.StatusStarting),
-			downloading:  canManage && infoErr == nil && info.Pulling,
-			canEnable:    canManage && infoErr == nil && (isSiteAdmin || state == langservers.StateNone),
-			canDisable:   canManage && infoErr == nil && isSiteAdmin,
-			canRestart:   canManage && infoErr == nil && isSiteAdmin && state == langservers.StateEnabled,
-			canUpdate:    canManage && infoErr == nil && isSiteAdmin,
-			healthy:      canManage && infoErr == nil && (info.Pulling || info.Running()),
+			language:            language,
+			displayName:         langservers.StaticInfo[language].DisplayName,
+			homepageURL:         langservers.StaticInfo[language].HomepageURL,
+			issuesURL:           langservers.StaticInfo[language].IssuesURL,
+			docsURL:             langservers.StaticInfo[language].DocsURL,
+			isClusterDeployment: conf.IsDeployTypeKubernetesCluster(conf.DeployType()),
+			custom:              false,
+			experimental:        langservers.StaticInfo[language].Experimental,
+			state:               state,
+			pending:             canManage && infoErr == nil && (info.Pulling || info.Status == langservers.StatusStarting),
+			downloading:         canManage && infoErr == nil && info.Pulling,
+			canEnable:           canManage && infoErr == nil && (isSiteAdmin || state == langservers.StateNone),
+			canDisable:          canManage && infoErr == nil && isSiteAdmin,
+			canRestart:          canManage && infoErr == nil && isSiteAdmin && state == langservers.StateEnabled,
+			canUpdate:           canManage && infoErr == nil && isSiteAdmin,
+			healthy:             canManage && infoErr == nil && (info.Pulling || info.Running()),
 		})
 	}
 
@@ -125,16 +127,16 @@ func (s *siteResolver) LangServers(ctx context.Context) ([]*langServerResolver, 
 		}
 
 		result := &langServerResolver{
-			language:    strings.ToLower(ls.Language),
-			displayName: strings.Title(ls.Language),
-			dataCenter:  conf.IsDataCenter(conf.DeployType()),
-			custom:      true,
-			state:       state,
-			canEnable:   isSiteAdmin,
-			canDisable:  isSiteAdmin,
-			canRestart:  false,
-			canUpdate:   false,
-			healthy:     false,
+			language:            strings.ToLower(ls.Language),
+			displayName:         strings.Title(ls.Language),
+			isClusterDeployment: conf.IsDeployTypeKubernetesCluster(conf.DeployType()),
+			custom:              true,
+			state:               state,
+			canEnable:           isSiteAdmin,
+			canDisable:          isSiteAdmin,
+			canRestart:          false,
+			canUpdate:           false,
+			healthy:             false,
 		}
 
 		if ls.Metadata != nil {
@@ -158,8 +160,8 @@ func (s *schemaResolver) LangServers(ctx context.Context) *langServersResolver {
 }
 
 func (c *langServersResolver) Enable(ctx context.Context, args *struct{ Language string }) (*EmptyResponse, error) {
-	if conf.IsDataCenter(conf.DeployType()) {
-		return nil, errors.New("cannot use this API (langServers.enable) in Data Center mode")
+	if conf.IsDeployTypeKubernetesCluster(conf.DeployType()) {
+		return nil, errors.New("cannot use this API (langServers.enable) on cluster deployments")
 	}
 
 	// For custom (non-builtin) language servers, Enable/Disable is just
@@ -221,8 +223,8 @@ func (c *langServersResolver) Enable(ctx context.Context, args *struct{ Language
 }
 
 func (c *langServersResolver) Disable(ctx context.Context, args *struct{ Language string }) (*EmptyResponse, error) {
-	if conf.IsDataCenter(conf.DeployType()) {
-		return nil, errors.New("cannot use this API (langServers.disable) in Data Center mode")
+	if conf.IsDeployTypeKubernetesCluster(conf.DeployType()) {
+		return nil, errors.New("cannot use this API (langServers.disable) on cluster deployments")
 	}
 
 	// Note: For custom language servers, we do not need to do anything special
@@ -242,8 +244,8 @@ func (c *langServersResolver) Disable(ctx context.Context, args *struct{ Languag
 }
 
 func (c *langServersResolver) Restart(ctx context.Context, args *struct{ Language string }) (*EmptyResponse, error) {
-	if conf.IsDataCenter(conf.DeployType()) {
-		return nil, errors.New("cannot use this API (langServers.restart) in Data Center mode")
+	if conf.IsDeployTypeKubernetesCluster(conf.DeployType()) {
+		return nil, errors.New("cannot use this API (langServers.restart) on cluster deployments")
 	}
 	_, builtin := langservers.StaticInfo[args.Language]
 	if !builtin {
@@ -263,8 +265,8 @@ func (c *langServersResolver) Restart(ctx context.Context, args *struct{ Languag
 }
 
 func (c *langServersResolver) Update(ctx context.Context, args *struct{ Language string }) (*EmptyResponse, error) {
-	if conf.IsDataCenter(conf.DeployType()) {
-		return nil, errors.New("cannot use this API (langServers.update) in Data Center mode")
+	if conf.IsDeployTypeKubernetesCluster(conf.DeployType()) {
+		return nil, errors.New("cannot use this API (langServers.update) on cluster deployments")
 	}
 	_, builtin := langservers.StaticInfo[args.Language]
 	if !builtin {

@@ -65,8 +65,8 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 
 // enableLangservers enables language servers for the given repo inventory.
 func (w *Worker) enableLangservers(inv *inventory.Inventory) {
-	if conf.IsDataCenter(conf.DeployType()) {
-		// Running in Data Center mode, do not auto-enable language servers.
+	if conf.IsDeployTypeKubernetesCluster(conf.DeployType()) {
+		// Deployed to a cluster, do not auto-enable language servers.
 		return
 	}
 	if conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker() {

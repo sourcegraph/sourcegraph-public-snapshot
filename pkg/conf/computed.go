@@ -147,41 +147,26 @@ func DeployType() string {
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
-	// Default to datacenter so that every Kubernetes deployment
-	// doesn't need to be configured with DEPLOY_TYPE.
-	return "datacenter"
+	// Default to Kubernetes (currently the only kind of cluster supported) so that every Kubernetes
+	// deployment doesn't need to be configured with DEPLOY_TYPE.
+	return "k8s"
 }
 
-// IsDataCenter tells if the given deployment type is "datacenter".
-func IsDataCenter(deployType string) bool {
-	return deployType == "datacenter"
+// IsDeployTypeKubernetesCluster tells if the given deployment type is a Kubernetes cluster (and
+// non-dev, non-single Docker image).
+func IsDeployTypeKubernetesCluster(deployType string) bool {
+	return deployType == "k8s"
 }
 
-// IsServer tells if the given deployment type is "server".
-func IsServer(deployType string) bool {
-	return deployType == "server"
+// IsDeployTypeDockerContainer tells if the given deployment type is Docker sourcegraph/server
+// single-container (non-Kubernetes, non-cluster, non-dev).
+func IsDeployTypeDockerContainer(deployType string) bool {
+	return deployType == "docker-container"
 }
 
 // IsDev tells if the given deployment type is "dev".
 func IsDev(deployType string) bool {
 	return deployType == "dev"
-}
-
-// ProductName reports the name of the Sourcegraph product that is currently running ("Sourcegraph
-// Server", "Sourcegraph Data Center", etc.).
-func ProductName() string {
-	deployType := DeployType()
-	switch {
-	case IsDataCenter(deployType):
-		return "Sourcegraph Data Center"
-	case IsServer(deployType):
-		return "Sourcegraph Server"
-	case IsDev(deployType):
-		return "Sourcegraph Dev"
-	default:
-		// Should not reach here, but return a reasonable value just in case.
-		return "Sourcegraph"
-	}
 }
 
 // DebugManageDocker tells if Docker language servers should be managed or not.
@@ -236,10 +221,10 @@ func UpdateChannel() string {
 // not. Otherwise the boolean is true and the reason is empty.
 func SupportsManagingLanguageServers() (reason string, ok bool) {
 	deployType := DeployType()
-	if IsDataCenter(deployType) {
-		// Do not run in Data Center, or else we would print log messages below
-		// about not finding the docker socket.
-		return "Managing language servers automatically is not supported in Sourcegraph Data Center. See https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/install.md#add-language-servers-for-code-intelligence for help.", false
+	if IsDeployTypeKubernetesCluster(deployType) {
+		// Do not run for clusters, or else we would print log messages below about not finding the
+		// docker socket.
+		return "Managing language servers automatically is not supported for Sourcegraph cluster deployments. See https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/install.md#add-language-servers-for-code-intelligence for help.", false
 	}
 	if IsDev(deployType) && !DebugManageDocker() {
 		// Running in dev mode with managed docker disabled.

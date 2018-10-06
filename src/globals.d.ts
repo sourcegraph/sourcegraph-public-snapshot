@@ -95,9 +95,10 @@ interface SourcegraphContext {
     needServerRestart: boolean
 
     /**
-     * Whether or not the server is running via datacenter deployment.
+     * Whether the site is a Sourcegraph cluster deployment (e.g., to Kubernetes, not just
+     * sourcegraph/server in a single Docker container).
      */
-    isRunningDataCenter: boolean
+    isClusterDeployment: boolean
 
     /** Whether signup is allowed on the site. */
     allowSignup: boolean

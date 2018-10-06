@@ -128,10 +128,10 @@ func registerServersFromEnv() error {
 
 func registerTCPServer(mode, addr, scope string) error {
 	if _, present := ServersByMode[mode]; present {
-		// TODO(john): at the moment it's possible for a datacenter to have services networked
-		// in a way that diverges from the site configuration (by setting `LANGSERVER_XYZ=foo' and
-		// also `"languages": [{ "language": "xyz", "address": "bar" }]` in the site config).
-		// We ignore subsequent registrations and currently prefer env variable addresses.
+		// TODO(john): at the moment it's possible to have services networked in a way that diverges
+		// from the site configuration (by setting `LANGSERVER_XYZ=foo' and also `"languages": [{
+		// "language": "xyz", "address": "bar" }]` in the site config).  We ignore subsequent
+		// registrations and currently prefer env variable addresses.
 		log15.Debug("A language server is already registered, skipping...", "mode", mode, "scope", scope)
 		return nil
 	}

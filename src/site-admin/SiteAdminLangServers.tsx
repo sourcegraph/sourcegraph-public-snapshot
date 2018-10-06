@@ -283,7 +283,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
             langServer.canUpdate ||
             langServer.healthy
 
-        // In data center (and in dev mode without DEBUG_MANAGE_DOCKER=t) the
+        // In cluster deployments (and in dev mode without DEBUG_MANAGE_DOCKER=t) the
         // docker socket is unavailable, which prevents the backend from running
         // `docker inspect` to determine if the language server is healthy.
         // Custom language servers are not managed by our infrastructure, so we
@@ -291,7 +291,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
         // connection or stdio handles to the process. This could be improved in
         // the future by checking that the TCP connection is still open or that
         // the process is still running.
-        if (langServer.dataCenter || langServer.custom || !couldDetermineHealth) {
+        if (langServer.isClusterDeployment || langServer.custom || !couldDetermineHealth) {
             return (
                 <span className="site-admin-lang-servers__status site-admin-lang-servers__status--running">
                     ● Enabled
@@ -299,7 +299,7 @@ export class SiteAdminLangServers extends React.PureComponent<Props, State> {
             )
         }
 
-        // Code past here uses fields that are not present in Data Center mode.
+        // Code past here uses fields that are not present for clusters
         if (langServer.pending) {
             return (
                 <span className="site-admin-lang-servers__status site-admin-lang-servers__status--pending">

@@ -167,10 +167,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                     <p>
                         <small>
                             To save and apply changes, manually update{' '}
-                            {formatEnvVar(this.state.site.configuration.source)} (in Sourcegraph Server) or{' '}
-                            <code>config.json</code> (in Sourcegraph Data Center) with the configuration below and
-                            restart the server. Online configuration editing is only supported for Sourcegraph Server
-                            and when the configuration lives in a writable file on disk.
+                            {formatEnvVar(this.state.site.configuration.source)} (or <code>values.yaml</code> for
+                            Kubernetes cluster deployments) with the configuration below and restart the server. Online
+                            configuration editing is only supported when deployed on Docker and when the configuration
+                            lives in a writable file on disk.
                         </small>
                     </p>
                 </div>
@@ -196,12 +196,10 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             )
         }
 
-        // Avoid user confusion on Data Center config.
-        //
-        // To get a list of all keys: jq '.properties | keys' < datacenter.schema.json
+        // Avoid user confusion with values.yaml properties mixed in with site config properties.
         const contents =
             this.state.site && this.state.site.configuration && this.state.site.configuration.effectiveContents
-        const dataCenterProps = [
+        const legacyKubernetesConfigProps = [
             'alertmanagerConfig',
             'alertmanagerURL',
             'authProxyIP',
@@ -229,12 +227,16 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
             'storageClass',
             'useAlertManager',
         ].filter(prop => contents && contents.includes(`"${prop}"`))
-        if (dataCenterProps.length > 0) {
+        if (legacyKubernetesConfigProps.length > 0) {
             alerts.push(
-                <div key="datacenter-props-present" className="alert alert-info site-admin-configuration-page__alert">
-                    The configuration contains properties that are valid only in Sourcegraph Data Center's{' '}
-                    <code>config.json</code> file: <code>{dataCenterProps.join(' ')}</code>. You can disregard the
-                    validation warnings for these properties reported by the configuration editor.
+                <div
+                    key="legacy-cluster-props-present"
+                    className="alert alert-info site-admin-configuration-page__alert"
+                >
+                    The configuration contains properties that are valid only in the
+                    <code>values.yaml</code> config file used for Kubernetes cluster deployments of Sourcegraph:{' '}
+                    <code>{legacyKubernetesConfigProps.join(' ')}</code>. You can disregard the validation warnings for
+                    these properties reported by the configuration editor.
                 </div>
             )
         }

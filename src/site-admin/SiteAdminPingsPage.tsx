@@ -53,7 +53,7 @@ export class SiteAdminPingsPage extends React.Component<{}, State> {
                 </p>
                 <ul>
                     <li>Sourcegraph version string</li>
-                    <li>Deployment type (Server or Data Center)</li>
+                    <li>Deployment type (Docker, Kubernetes, or dev build)</li>
                     <li>Randomly generated site identifier</li>
                     <li>
                         The email address of the initial site installer (or if deleted, the first active site admin), to
