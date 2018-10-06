@@ -96,6 +96,19 @@ body.modal-open {
                 padding-top: 4rem;
                 padding-bottom: 4rem;
                 min-height: calc(100vh - 8rem);
+                .row {
+                    // stylelint-disable-next-line declaration-property-unit-whitelist
+                    margin-top: calc(50vh - 60%);
+                }
+            }
+            @media screen and (max-width: 800px) and (max-height: 420px) {
+                padding-top: 4rem;
+                padding-bottom: 4rem;
+                min-height: calc(100vh - 8rem);
+                .row {
+                    // stylelint-disable-next-line declaration-property-unit-whitelist
+                    margin-top: calc(50vh - 60%);
+                }
             }
             h1 {
                 font-size: 54px;
@@ -149,8 +162,17 @@ body.modal-open {
     .about-section {
         position: sticky;
         position: -webkit-sticky;
-
-        @media screen and (min-width: $media-md) {
+        @media screen and (max-width: 800px) and (max-height: 420px) {
+            padding-top: 4rem;
+            padding-bottom: 4rem;
+            // stylelint-disable-next-line declaration-property-unit-whitelist
+            min-height: calc(100vh - 8rem);
+            .row {
+                // stylelint-disable-next-line declaration-property-unit-whitelist
+                margin-top: calc(50vh - 60%);
+            }
+        }
+        @media screen and (min-width: $media-md) and (min-height: 420px) {
             top: 0;
         }
         &:nth-of-type(1) {
@@ -295,6 +317,12 @@ body.modal-open {
         }
         .col-md-12 {
             padding-bottom: 2rem;
+            @media screen and (min-width: $media-md) {
+                padding-bottom: 6rem;
+            }
+            @media screen and (min-height: 420px) {
+                padding-bottom: 6rem;
+            }
         }
         position: sticky;
         position: -webkit-sticky;
@@ -945,6 +973,9 @@ body.modal-open {
 }
 .nav-links {
     @media screen and (max-width: $media-md) {
+        display: none !important;
+    }
+    @media screen and (max-height: 420px) {
         display: none !important;
     }
 }
