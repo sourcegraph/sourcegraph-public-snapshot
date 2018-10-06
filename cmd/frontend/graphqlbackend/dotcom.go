@@ -134,7 +134,7 @@ type ProductLicense interface {
 type ProductLicenseInput struct {
 	Tags      []string
 	UserCount int32
-	ExpiresAt int32
+	ExpiresAt string
 }
 
 type ProductLicensesArgs struct {

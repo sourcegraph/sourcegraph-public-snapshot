@@ -3463,8 +3463,8 @@ input ProductLicenseInput {
     tags: [String!]!
     # The number of users for which this product subscription is valid.
     userCount: Int!
-    # The expiration date of this product license, expressed as the number of seconds since the epoch.
-    expiresAt: Int!
+    # The expiration date of this product license, in RFC3339 date format.
+    expiresAt: String!
 }
 
 # A product license that was created on Sourcegraph.com.
