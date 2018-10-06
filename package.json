@@ -74,7 +74,7 @@
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/react": "16.4.14",
     "@types/react-dom": "16.0.8",
-    "@types/react-router": "4.0.30",
+    "@types/react-router": "4.0.31",
     "@types/react-router-dom": "4.3.1",
     "babel-plugin-istanbul": "^5.0.1",
     "babelify": "^10.0.0",
