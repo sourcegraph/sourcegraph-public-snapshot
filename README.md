@@ -19,6 +19,7 @@ When developing locally, use `./dev/start.sh`. This will ensure you build agains
 - The OSS web app is `npm link`ed into `node_modules`. It will run both the build of the enterprise
   webapp as well as the part of the build for the OSS repo that generates the distributed files for
   the npm package.
+  - `./dev/start` monitors the OSS repo and will print an error if the version checked out in the OSS repo is behind the version specified in package.json
 - The Go binaries are built with `replace github.com/sourcegraph/sourcegraph => ../sourcegraph` (via
   Go modules).
 
