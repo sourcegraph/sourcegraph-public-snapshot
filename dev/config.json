@@ -116,8 +116,6 @@
   "auth.providers": [
     // AUTHENTICATION
     //
-    // Only the first entry is used. Comment out the preceding entries to enable other auth providers.
-    //
     { "type": "builtin", "allowSignup": true },
     //
     //
