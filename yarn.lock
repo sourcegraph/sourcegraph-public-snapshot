@@ -1462,18 +1462,10 @@
     "@types/react" "*"
     "@types/react-router" "*"
 
-"@types/react-router@*":
+"@types/react-router@*", "@types/react-router@4.0.31":
   version "4.0.31"
   resolved "https://registry.yarnpkg.com/@types/react-router/-/react-router-4.0.31.tgz#416bac49d746800810886c7b8582a622ed9604fc"
   integrity sha512-57Tqu1EDMgDzHhmIEjjQZHrc/N7/+GGv6CtH1wRTLmMIy3UMxX69vQoeEz0AmK0/zkf5ecfEW1ZX8DLVQ6Gl7Q==
-  dependencies:
-    "@types/history" "*"
-    "@types/react" "*"
-
-"@types/react-router@4.0.30":
-  version "4.0.30"
-  resolved "https://registry.yarnpkg.com/@types/react-router/-/react-router-4.0.30.tgz#64bcd886befd1f932779b74d17954adbefb7a3a7"
-  integrity sha512-zWt5RpWy7x7semeBIHqLZ31A1Tle0jb3R/KD2wguZqO43DjP4n8kYsH7UIpve6I4hzlSObnoIieDcp5qfyKwaQ==
   dependencies:
     "@types/history" "*"
     "@types/react" "*"
