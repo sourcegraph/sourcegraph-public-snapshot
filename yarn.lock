@@ -13648,6 +13648,11 @@ web-ext@^2.5.0:
     yargs "6.6.0"
     zip-dir "1.0.2"
 
+webext-domain-permission-toggle@^0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/webext-domain-permission-toggle/-/webext-domain-permission-toggle-0.0.2.tgz#28003248699b869e5422b2ef60a7c2b03e1c3c15"
+  integrity sha512-obPAEocq/5uw0jaKc1N2bwux/HXDaYz9/8ltvxTRqr0iR6JaTh6/h56FL9uoAZYXcXxjFyE+PRrJicoQrJ8T6g==
+
 webidl-conversions@^4.0.1, webidl-conversions@^4.0.2:
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-4.0.2.tgz#a855980b1f0b6b359ba1d5d9fb39ae941faa63ad"

@@ -55,7 +55,6 @@ export interface StorageItems {
      * Overrides settings from Sourcegraph.
      */
     clientSettings: string
-    hasEnableDomainContextMenu: boolean
 }
 
 interface ClientConfigurationDetails {
@@ -94,7 +93,6 @@ export const defaultStorageItems: StorageItems = {
         },
     },
     clientSettings: '',
-    hasEnableDomainContextMenu: false,
 }
 
 export type StorageChange = { [key in keyof StorageItems]: chrome.storage.StorageChange }

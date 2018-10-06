@@ -5,9 +5,9 @@ import '../../config/polyfill'
 import { without } from 'lodash'
 import { ajax } from 'rxjs/ajax'
 import { InitData } from 'sourcegraph/module/extension/extensionHost'
+import DPT from 'webext-domain-permission-toggle'
 import ExtensionHostWorker from 'worker-loader?inline!./extensionHost.worker'
 import * as browserAction from '../../browser/browserAction'
-import * as contextMenus from '../../browser/contextMenu'
 import * as omnibox from '../../browser/omnibox'
 import * as permissions from '../../browser/permissions'
 import * as runtime from '../../browser/runtime'
@@ -162,11 +162,6 @@ permissions.onRemoved(permissions => {
 })
 
 storage.addSyncMigration((items, set, remove) => {
-    if (!items.hasEnableDomainContextMenu) {
-        createEnableDomainContextMenu(() => {
-            storage.setSync({ hasEnableDomainContextMenu: true })
-        })
-    }
     if (items.phabricatorURL) {
         remove('phabricatorURL')
 
@@ -272,30 +267,6 @@ runtime.onMessage((message, _, cb) => {
 
     return
 })
-
-const ENABLE_SOURCEGRAPH_CONTEXT_MENU = 'ENABLE_SOURCEGRAPH_CONTEXT_MENU'
-function createEnableDomainContextMenu(callback?: () => void): void {
-    contextMenus.create(
-        {
-            id: ENABLE_SOURCEGRAPH_CONTEXT_MENU,
-            title: 'Enable Sourcegraph on this domain',
-            contexts: ['browser_action'],
-            onclick: (_: chrome.contextMenus.OnClickData, tab: chrome.tabs.Tab): void => {
-                if (!tab.url) {
-                    console.error('Could not get tab url to request permissions.')
-                    return
-                }
-                try {
-                    const url = new URL(tab.url)
-                    permissions.request([url.origin]).catch(err => console.error('Permissions request denied', err))
-                } catch {
-                    console.error('Could not get tab url to request permissions')
-                }
-            },
-        },
-        callback
-    )
-}
 
 function requestPermissionsForEnterpriseUrls(urls: string[], cb: (res?: any) => void): void {
     storage.getSync(items => {
@@ -468,3 +439,6 @@ chrome.runtime.onConnect.addListener(port => {
         )
     })
 })
+
+// Add "Enable Sourcegraph on this domain" context menu item
+DPT.addContextMenu()

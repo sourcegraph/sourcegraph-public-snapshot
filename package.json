@@ -125,6 +125,7 @@
     "ts-key-enum": "^2.0.0",
     "uuid": "^3.3.2",
     "vscode-languageserver-types": "3.12.0",
+    "webext-domain-permission-toggle": "^0.0.2",
     "whatwg-url": "^6.2.1"
   }
 }
