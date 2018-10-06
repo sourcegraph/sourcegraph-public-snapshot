@@ -8,14 +8,17 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="google" content="notranslate">
 	<meta http-equiv="Content-Language" content="en">
+	{{ if .Context.SourcegraphDotComMode }}
+	<meta name='viewport' content='initial-scale=1, viewport-fit=cover'>
+	{{ end }}
 	{{with .Metadata}}
-		<meta name='description' content="{{.Description}}" />
-		<meta name='twitter:title' content="{{.Title}}" />
-		<meta name='twitter:card' content='summary' />
-		<meta name='twitter:description' content="{{.Description}}" />
-		<meta property="og:type" content="website" />
-		<meta property='og:title' content="{{.Title}}" />
-		<meta property='og:description' content="{{.Description}}" />
+	<meta name='description' content="{{.Description}}" />
+	<meta name='twitter:title' content="{{.Title}}" />
+	<meta name='twitter:card' content='summary' />
+	<meta name='twitter:description' content="{{.Description}}" />
+	<meta property="og:type" content="website" />
+	<meta property='og:title' content="{{.Title}}" />
+	<meta property='og:description' content="{{.Description}}" />
 	{{end}}
 	<title>{{.Title}}</title>
 	<link rel="stylesheet" href="{{.AssetURL}}/styles/style.bundle.css?{{version "styles/style.bundle.css"}}">
@@ -27,8 +30,8 @@
 	</script>
 	{{end}}
 	<script ignore-csp>
-		window.context = {{.Context}}
-		window.pageError = {{.Error}}
+		window.context = {{.Context }}
+		window.pageError = {{.Error }}
 	</script>
 	{{.Injected.HeadBottom}}
 </head>
@@ -40,5 +43,26 @@
 	<script src="{{.AssetURL}}/scripts/app.bundle.js?{{version "scripts/app.bundle.js"}}"></script>
 	{{.Injected.BodyBottom}}
 </body>
+
+{{ if .Context.SourcegraphDotComMode }}
+<style ignore-csp>
+	/* Support webkit inset devices */
+	@supports (padding: max(0px)) {
+
+		.global-navbar,
+		.main-page .row,
+		.search-row {
+			padding-left: max(12px, env(safe-area-inset-left));
+			padding-right: max(12px, env(safe-area-inset-right));
+		}
+
+		.modal-open .row .row {
+			padding-left: 0;
+			padding-right: 0;
+		}
+
+	}
+</style>
+{{ end }}
 
 </html>
