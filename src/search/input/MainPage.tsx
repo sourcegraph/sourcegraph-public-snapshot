@@ -288,6 +288,11 @@ export class MainPage extends React.Component<Props, State> {
 
     public componentWillUnmount(): void {
         this.props.onMainPage(false)
+        const windowBody = document.querySelector('body')
+        if (windowBody) {
+            windowBody.classList.remove('main-page')
+            windowBody.classList.remove('modal-open')
+        }
     }
     public render(): JSX.Element | null {
         if (!window.context.sourcegraphDotComMode) {
