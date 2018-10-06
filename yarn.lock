@@ -956,10 +956,10 @@
     tslint-config-prettier "^1.6.0"
     tslint-react "^3.2.0"
 
-"@sourcegraph/webapp@^0.0.228":
-  version "0.0.228"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.228.tgz#f6858c25bbf220b6741dd8045c4786a87790eb9b"
-  integrity sha512-BbA+f7RUoEzhjGeKuqITeMT2cQKYdkuBRTxyNYz84pE+LHrTXQVMUJbHG3Mbri0+RoIcpsjyCVUXxq3KvWbTdw==
+"@sourcegraph/webapp@^0.0.233":
+  version "0.0.233"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.233.tgz#a84496d6f0122da6952fb7bcca93a0b5f98c3bfe"
+  integrity sha512-6jkWWEZ8NU0UI5FdI8r1xMx4n9R7ErOcuJxvPNeXHYfX3DVoar3nodyeZcialo9o5uw8I/X6n2/OSIayMvHLwQ==
   dependencies:
     "@babel/core" "^7.0.0"
     "@babel/plugin-syntax-dynamic-import" "^7.0.0"
@@ -969,7 +969,7 @@
     "@sqs/jsonc-parser" "^1.0.3"
     "@types/react" "16.4.14"
     "@types/react-dom" "16.0.8"
-    "@types/react-router" "4.0.30"
+    "@types/react-router" "4.0.31"
     "@types/react-router-dom" "4.3.1"
     babel-plugin-istanbul "^5.0.1"
     babelify "^10.0.0"
@@ -1256,14 +1256,6 @@
   version "4.0.31"
   resolved "https://registry.yarnpkg.com/@types/react-router/-/react-router-4.0.31.tgz#416bac49d746800810886c7b8582a622ed9604fc"
   integrity sha512-57Tqu1EDMgDzHhmIEjjQZHrc/N7/+GGv6CtH1wRTLmMIy3UMxX69vQoeEz0AmK0/zkf5ecfEW1ZX8DLVQ6Gl7Q==
-  dependencies:
-    "@types/history" "*"
-    "@types/react" "*"
-
-"@types/react-router@4.0.30":
-  version "4.0.30"
-  resolved "https://registry.yarnpkg.com/@types/react-router/-/react-router-4.0.30.tgz#64bcd886befd1f932779b74d17954adbefb7a3a7"
-  integrity sha512-zWt5RpWy7x7semeBIHqLZ31A1Tle0jb3R/KD2wguZqO43DjP4n8kYsH7UIpve6I4hzlSObnoIieDcp5qfyKwaQ==
   dependencies:
     "@types/history" "*"
     "@types/react" "*"
