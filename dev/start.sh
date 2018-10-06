@@ -30,6 +30,12 @@ export STRIPE_SECRET_KEY=sk_test_QHDBfU09USr4SVaJPZJEGruf
 export STRIPE_PUBLISHABLE_KEY=pk_test_Vo5BwrEkrXCM2ULouAd5ZBZz
 export STRIPE_PRODUCT_ID=prod_DgGZvDw5T66ZdX
 
+# This private key does not generate actually valid licenses, but it makes it possible to test and
+# develop the license generation code. To generate real license keys, use Sourcegraph.com or obtain
+# the actual private key from
+# https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i.
+export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat dev/test-license-generation-key.pem)
+
 export SAML_ONELOGIN_CERT=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.cert.pem)
 export SAML_ONELOGIN_KEY=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.key.pem)
 

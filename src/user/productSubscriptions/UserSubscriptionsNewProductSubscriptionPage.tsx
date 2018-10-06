@@ -14,6 +14,7 @@ import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
 import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
 import { ProductSubscriptionUserCountFormControl } from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
+import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 
@@ -126,6 +127,7 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
                     October 8, 2018). Only use this payment form before then if you've been directed here by
                     Sourcegraph.
                 </div>
+                <LicenseGenerationKeyWarning />
                 <Form onSubmit={this.onSubmit}>
                     <div className="row">
                         <div className="col-md-6">

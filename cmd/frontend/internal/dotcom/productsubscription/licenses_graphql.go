@@ -74,7 +74,9 @@ func (r *productLicense) Subscription(ctx context.Context) (graphqlbackend.Produ
 }
 
 func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
-	info, err := licensing.ParseProductLicenseKey(r.v.LicenseKey)
+	// Call this instead of licensing.ParseProductLicenseKey so that license info can be read from
+	// license keys generated using the test license generation private key.
+	info, err := licensing.ParseProductLicenseKeyWithBuiltinOrGenerationKey(r.v.LicenseKey)
 	if err != nil {
 		return nil, err
 	}

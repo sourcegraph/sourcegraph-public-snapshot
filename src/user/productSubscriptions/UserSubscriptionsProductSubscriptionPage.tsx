@@ -15,6 +15,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
+import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionBilling } from './ProductSubscriptionBilling'
@@ -163,6 +164,7 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                                                                         configuration.
                                                                     </span>
                                                                 </small>
+                                                                <LicenseGenerationKeyWarning className="mb-0 mt-1" />
                                                             </>
                                                         ) : (
                                                             <div className="text-muted">

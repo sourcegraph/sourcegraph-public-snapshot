@@ -2,6 +2,7 @@ package licensing
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sync"
 
@@ -36,6 +37,22 @@ var publicKey = func() ssh.PublicKey {
 // key (publicKey in this package).
 func ParseProductLicenseKey(licenseKey string) (*license.Info, error) {
 	return license.ParseSignedKey(licenseKey, publicKey)
+}
+
+// ParseProductLicenseKeyWithBuiltinOrGenerationKey is like ParseProductLicenseKey, except it tries
+// parsing and verifying the license key with the license generation key (if set), instead of always
+// using the builtin license key.
+//
+// It is useful for local development when using a test license generation key (whose signatures
+// aren't considered valid when verified using the builtin public key).
+func ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey string) (*license.Info, error) {
+	var k ssh.PublicKey
+	if licenseGenerationPrivateKey != nil {
+		k = licenseGenerationPrivateKey.PublicKey()
+	} else {
+		k = publicKey
+	}
+	return license.ParseSignedKey(licenseKey, k)
 }
 
 // Cache the parsing of the license key because public key crypto can be slow.
@@ -112,6 +129,20 @@ const licenseGenerationPrivateKeyURL = "https://team-sourcegraph.1password.com/v
 // https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i.
 var envLicenseGenerationPrivateKey = env.Get("SOURCEGRAPH_LICENSE_GENERATION_KEY", "", "the PEM-encoded form of the private key used to sign product license keys ("+licenseGenerationPrivateKeyURL+")")
 
+// licenseGenerationPrivateKey is the private key used to generate license keys.
+var licenseGenerationPrivateKey = func() ssh.Signer {
+	if envLicenseGenerationPrivateKey == "" {
+		// Most Sourcegraph instances don't use/need this key. Generally only Sourcegraph.com and
+		// local dev will have this key set.
+		return nil
+	}
+	privateKey, err := ssh.ParsePrivateKey([]byte(envLicenseGenerationPrivateKey))
+	if err != nil {
+		log.Fatalf("Failed to parse private key in SOURCEGRAPH_LICENSE_GENERATION_KEY env var: %s.", err)
+	}
+	return privateKey
+}()
+
 // GenerateProductLicenseKey generates a product license key using the license generation private
 // key configured in site configuration.
 func GenerateProductLicenseKey(info license.Info) (string, error) {
@@ -123,12 +154,8 @@ func GenerateProductLicenseKey(info license.Info) (string, error) {
 		}
 		return "", errors.New(msg)
 	}
-	privateKey, err := ssh.ParsePrivateKey([]byte(envLicenseGenerationPrivateKey))
-	if err != nil {
-		return "", errors.WithMessage(err, "parsing product license generation private key")
-	}
 
-	licenseKey, err := license.GenerateSignedKey(info, privateKey)
+	licenseKey, err := license.GenerateSignedKey(info, licenseGenerationPrivateKey)
 	if err != nil {
 		return "", err
 	}

@@ -17,6 +17,7 @@ import { catchError, distinctUntilChanged, filter, map, mapTo, startWith, switch
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
+import { LicenseGenerationKeyWarning } from '../../../productSubscription/LicenseGenerationKeyWarning'
 import { ProductSubscriptionHistory } from '../../../user/productSubscriptions/ProductSubscriptionHistory'
 import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import {
@@ -208,7 +209,8 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                                 </tbody>
                             </table>
                         </div>
-                        <div className="card mt-3">
+                        <LicenseGenerationKeyWarning className="mt-3" />
+                        <div className="card mt-1">
                             <div className="card-header d-flex align-items-center justify-content-between">
                                 Licenses
                                 {this.state.showGenerate ? (
