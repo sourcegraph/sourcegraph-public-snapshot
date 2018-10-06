@@ -151,7 +151,7 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                                 className="form-control"
                                 id="site-admin-create-product-subscription-page__userCount"
                                 disabled={disableForm}
-                                value={this.state.userCount}
+                                value={this.state.userCount || ''}
                                 onChange={this.onUserCountChange}
                             />
                         </div>
