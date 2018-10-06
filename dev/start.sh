@@ -35,6 +35,7 @@ export STRIPE_PUBLISHABLE_KEY=pk_test_Vo5BwrEkrXCM2ULouAd5ZBZz
 # https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i.
 export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat dev/test-license-generation-key.pem)
 
+export SOURCEGRAPH_EXPAND_CONFIG_VARS=1 # experiment: interpolate ${var} and $var in site config JSON
 export SAML_ONELOGIN_CERT=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.cert.pem)
 export SAML_ONELOGIN_KEY=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.key.pem)
 
@@ -75,10 +76,6 @@ export SRC_PROF_HTTP=
 export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
-
-export SOURCEGRAPH_EXPAND_CONFIG_VARS=1 # experiment: interpolate ${var} and $var in site config JSON
-export SAML_ONELOGIN_CERT=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.cert.pem)
-export SAML_ONELOGIN_KEY=$(cat dev/auth-provider/config/external/client-onelogin-saml-dev-736334.key.pem)
 
 # webpack-serve is a proxy running on port 3080 that (1) serves assets, waiting to respond until
 # they are (re)built and (2) otherwise passes through to Sourcegraph running on port 3081. That is
