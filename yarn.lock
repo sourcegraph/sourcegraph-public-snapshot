@@ -1114,10 +1114,10 @@
     "@types/cp-file" "*"
     "@types/glob" "*"
 
-"@types/d3-axis@1.0.10":
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/@types/d3-axis/-/d3-axis-1.0.10.tgz#41d6b3ea9032f9531ec0d71d83bcf49294511210"
-  integrity sha512-5YF0wfdQMPKw01VAAupLIlg/T4pn5M3/vL9u0KZjiemnVnnKBEWE24na4X1iW+TfZiYJ8j+BgK2KFYnAAT54Ug==
+"@types/d3-axis@1.0.11":
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/@types/d3-axis/-/d3-axis-1.0.11.tgz#efd975f9fec14c2afd03828f3acec0ef97d37c3b"
+  integrity sha512-cuigApCyCwYJxaQPghj+BqaxzbdRdT/lpZBMtF7EuEIJ61NMQ8yvGnqFvHCIgJEmUu2Wb2wiZqy9kiHi3Ddftg==
   dependencies:
     "@types/d3-selection" "*"
 
