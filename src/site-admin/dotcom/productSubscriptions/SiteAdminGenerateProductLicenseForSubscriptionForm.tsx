@@ -22,8 +22,8 @@ interface State {
     tags: string
 
     userCount: number
-    validDays: number
-    expiresAt: number
+    validDays: number | null
+    expiresAt: number | null
 
     /**
      * The result of creating the product subscription, or null when not pending or complete, or loading, or an
@@ -43,7 +43,7 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
             tags: '',
             userCount: 1,
             validDays: 1,
-            expiresAt: addDaysAndRoundToEndOfDay(Date.now(), 1),
+            expiresAt: addDaysAndRoundToEndOfDay(1),
             creationOrError: null,
         }
     }
@@ -68,8 +68,11 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
         this.subscriptions.add(
             this.submits
                 .pipe(
-                    switchMap(() =>
-                        generateProductLicenseForSubscription({
+                    switchMap(() => {
+                        if (this.state.expiresAt === null) {
+                            throw new Error('invalid expiresAt')
+                        }
+                        return generateProductLicenseForSubscription({
                             productSubscriptionID: this.props.subscriptionID,
                             license: {
                                 tags: this.state.tags ? this.state.tags.split(',') : [],
@@ -82,7 +85,7 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                             startWith(LOADING),
                             map(c => ({ creationOrError: c }))
                         )
-                    )
+                    })
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
         )
@@ -166,10 +169,15 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                                 disabled={disableForm}
                                 value={this.state.validDays || ''}
                                 min={1}
+                                max={2000} // avoid overflowing int32
                                 onChange={this.onValidDaysChange}
                             />
                             <small className="form-text text-muted">
-                                <ExpirationDate date={this.state.expiresAt} showTime={true} showRelative={true} />
+                                {this.state.expiresAt !== null ? (
+                                    <ExpirationDate date={this.state.expiresAt} showTime={true} showRelative={true} />
+                                ) : (
+                                    <>&nbsp;</>
+                                )}
                             </small>
                             <small className="form-text text-muted d-block mt-1">
                                 Set to{' '}
@@ -214,17 +222,17 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
         this.setState({ userCount: e.currentTarget.valueAsNumber })
 
     private onValidDaysChange: React.ChangeEventHandler<HTMLInputElement> = e =>
-        this.setValidDays(e.currentTarget.valueAsNumber)
+        this.setValidDays(Number.isNaN(e.currentTarget.valueAsNumber) ? null : e.currentTarget.valueAsNumber)
 
     private onSubmit: React.FormEventHandler = e => {
         e.preventDefault()
         this.submits.next()
     }
 
-    private setValidDays(validDays: number): void {
+    private setValidDays(validDays: number | null): void {
         this.setState({
             validDays,
-            expiresAt: addDaysAndRoundToEndOfDay(Date.now(), validDays),
+            expiresAt: validDays !== null ? addDaysAndRoundToEndOfDay(validDays || 0) : null,
         })
     }
 
@@ -232,11 +240,11 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
 }
 
 /**
- * Adds 1 day to date, then rounds it up to midnight in the client's timezone. This is a generous interpretation of
- * "valid for N days" to avoid confusion over timezones or "will it expire at the beginning of the day or at the
- * end of the day?"
+ * Adds 1 day to the current date, then rounds it up to midnight in the client's timezone. This is a
+ * generous interpretation of "valid for N days" to avoid confusion over timezones or "will it
+ * expire at the beginning of the day or at the end of the day?"
  */
-function addDaysAndRoundToEndOfDay(date: number, amount: number): number {
+function addDaysAndRoundToEndOfDay(amount: number): number {
     return endOfDay(addDays(Date.now(), amount)).getTime()
 }
 
