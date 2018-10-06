@@ -87,7 +87,7 @@ type CreatePaidProductSubscriptionArgs struct {
 
 // ProductSubscriptionInput implements the GraphQL type ProductSubscriptionInput.
 type ProductSubscriptionInput struct {
-	Plan                       string
+	BillingPlanID              string
 	UserCount                  int32
 	TotalPriceNonAuthoritative int32
 }
@@ -152,10 +152,9 @@ type ProductLicenseConnection interface {
 
 // ProductPlan is the interface for the GraphQL type ProductPlan.
 type ProductPlan interface {
-	BillingID() string
+	BillingPlanID() string
 	Name() string
-	Title() string
-	FullProductName() string
+	NameWithBrand() string
 	PricePerUserPerYear() int32
 }
 

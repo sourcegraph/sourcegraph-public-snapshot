@@ -6,16 +6,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
 
-// GetFullProductName is called to obtain the full product name (e.g., "Sourcegraph OSS") from a
+// GetProductNameWithBrand is called to obtain the full product name (e.g., "Sourcegraph OSS") from a
 // product license.
-var GetFullProductName = func(hasLicense bool, licenseTags []string) string {
+var GetProductNameWithBrand = func(hasLicense bool, licenseTags []string) string {
 	return "Sourcegraph OSS"
 }
 
 // productSubscriptionStatus implements the GraphQL type ProductSubscriptionStatus.
 type productSubscriptionStatus struct{}
 
-func (productSubscriptionStatus) FullProductName() (string, error) {
+func (productSubscriptionStatus) ProductNameWithBrand() (string, error) {
 	info, err := GetConfiguredProductLicenseInfo()
 	if err != nil {
 		return "", err
@@ -25,7 +25,7 @@ func (productSubscriptionStatus) FullProductName() (string, error) {
 	if hasLicense {
 		licenseTags = info.Tags()
 	}
-	return GetFullProductName(hasLicense, licenseTags), nil
+	return GetProductNameWithBrand(hasLicense, licenseTags), nil
 }
 
 func (productSubscriptionStatus) ActualUserCount(ctx context.Context) (int32, error) {

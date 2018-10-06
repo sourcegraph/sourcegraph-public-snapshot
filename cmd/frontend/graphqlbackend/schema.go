@@ -3075,7 +3075,7 @@ type SurveyResponse {
 # Information about this site's product subscription (which enables access to and renewals of a product license).
 type ProductSubscriptionStatus {
     # The full name of the product in use, such as "Sourcegraph Enterprise".
-    fullProductName: String!
+    productNameWithBrand: String!
     # The actual total number of users on this Sourcegraph site.
     actualUserCount: Int!
     # The product license associated with this subscription, if any.
@@ -3085,9 +3085,9 @@ type ProductSubscriptionStatus {
 # Information about this site's product license (which activates certain Sourcegraph features).
 type ProductLicenseInfo {
     # The full name of the product that this license is for. To get the product name for the current
-    # Sourcegraph site, use ProductSubscriptionStatus.fullProductName instead (to handle cases where there is
+    # Sourcegraph site, use ProductSubscriptionStatus.productNameWithBrand instead (to handle cases where there is
     # no license).
-    fullProductName: String!
+    productNameWithBrand: String!
     # Tags indicating the product plan and features activated by this license.
     tags: [String!]!
     # The number of users allowed by this license.
@@ -3493,16 +3493,13 @@ type ProductLicenseConnection {
 #
 # FOR INTERNAL USE ONLY.
 type ProductPlan {
-    # The billing system's unique ID of this pricing plan.
-    billingID: String!
-    # The internal name of the pricing plan (e.g., "enterprise-starter"). This is not displayed on the page but may
-    # be shown in the URL.
+    # The billing system's unique ID for the plan.
+    billingPlanID: String!
+    # The name of the product plan (e.g., "Enterprise Starter"). This is displayed to the user and
+    # should be human-readable.
     name: String!
-    # The title of the pricing plan (e.g., "Enterprise Starter"). This is displayed to the user and should be
-    # human-readable.
-    title: String!
-    # The full product name of this plan's offering (e.g., "Sourcegraph Enterprise Starter").
-    fullProductName: String!
+    # The name with the brand (e.g., "Sourcegraph Enterprise Starter").
+    nameWithBrand: String!
     # The price (in USD cents) for one user for a year.
     pricePerUserPerYear: Int!
 }
@@ -3511,8 +3508,9 @@ type ProductPlan {
 #
 # FOR INTERNAL USE ONLY.
 input ProductSubscriptionInput {
-    # The name of the subscription's plan (ProductPlan.name).
-    plan: String!
+    # The billing plan ID for the subscription (ProductPlan.billingPlanID). This also specifies the
+    # billing product, because a plan is associated with its product in the billing system.
+    billingPlanID: String!
     # This subscription's user count.
     userCount: Int!
     # The non-authoritative price (in USD cents) that the client computed. The server MUST independently compute
