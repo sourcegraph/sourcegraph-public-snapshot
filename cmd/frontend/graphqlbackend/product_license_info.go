@@ -22,7 +22,9 @@ type ProductLicenseInfo struct {
 	ExpiresAtValue time.Time
 }
 
-func (r ProductLicenseInfo) FullProductName() string { return GetFullProductName(true, r.TagsValue) }
+func (r ProductLicenseInfo) ProductNameWithBrand() string {
+	return GetProductNameWithBrand(true, r.TagsValue)
+}
 
 func (r ProductLicenseInfo) Tags() []string { return r.TagsValue }
 
