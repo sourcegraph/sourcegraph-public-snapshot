@@ -1,25 +1,20 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, queryGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { CopyableText } from '@sourcegraph/webapp/dist/components/CopyableText'
 import { PageTitle } from '@sourcegraph/webapp/dist/components/PageTitle'
 import { SiteAdminAlert } from '@sourcegraph/webapp/dist/site-admin/SiteAdminAlert'
 import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
-import InformationIcon from 'mdi-react/InformationIcon'
-import KeyIcon from 'mdi-react/KeyIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
-import { ExpirationDate } from '../../productSubscription/ExpirationDate'
-import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
-import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
-import { ProductCertificate } from '../../productSubscription/ProductCertificate'
+import { mailtoSales } from '../../productSubscription/helpers'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
 import { ProductSubscriptionBilling } from './ProductSubscriptionBilling'
 import { ProductSubscriptionHistory } from './ProductSubscriptionHistory'
+import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
 interface Props extends RouteComponentProps<{ subscriptionID: string }> {
     user: GQL.IUser
@@ -28,8 +23,6 @@ interface Props extends RouteComponentProps<{ subscriptionID: string }> {
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    showLicenseKey: boolean
-
     /**
      * The product subscription, or loading, or an error.
      */
@@ -40,10 +33,7 @@ interface State {
  * Displays a product subscription in the user subscriptions area.
  */
 export class UserSubscriptionsProductSubscriptionPage extends React.Component<Props, State> {
-    public state: State = {
-        showLicenseKey: false,
-        productSubscriptionOrError: LOADING,
-    }
+    public state: State = { productSubscriptionOrError: LOADING }
 
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
@@ -111,99 +101,70 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                     <div className="row">
                         <div className="col-md-9">
                             <h2>Subscription {this.state.productSubscriptionOrError.name}</h2>
-                            {this.state.productSubscriptionOrError.plan &&
-                                this.state.productSubscriptionOrError.userCount &&
-                                this.state.productSubscriptionOrError.expiresAt && (
-                                    <ProductCertificate
-                                        title={this.state.productSubscriptionOrError.plan.nameWithBrand}
-                                        subtitle={
-                                            <>
-                                                {formatUserCount(this.state.productSubscriptionOrError.userCount, true)}{' '}
-                                                license,{' '}
-                                                <ExpirationDate
-                                                    date={this.state.productSubscriptionOrError.expiresAt}
-                                                    showRelative={true}
-                                                    lowercase={true}
-                                                />
-                                            </>
-                                        }
-                                        footer={
-                                            <>
-                                                <div className="card-footer d-flex align-items-center justify-content-between flex-wrap">
-                                                    <button
-                                                        type="button"
-                                                        className="btn btn-primary mr-4 my-1"
-                                                        onClick={this.toggleShowLicenseKey}
-                                                    >
-                                                        <KeyIcon className="icon-inline" />{' '}
-                                                        {this.state.showLicenseKey ? 'Hide' : 'Reveal'} license key
-                                                    </button>
-                                                    <div className="flex-fill" />
-                                                    <div className="my-1" />
-                                                </div>
-                                                {this.state.showLicenseKey && (
-                                                    <div className="card-footer">
-                                                        <h3>License key</h3>
-                                                        {this.state.productSubscriptionOrError.activeLicense ? (
-                                                            <>
-                                                                <CopyableText
-                                                                    text={
-                                                                        this.state.productSubscriptionOrError
-                                                                            .activeLicense.licenseKey
-                                                                    }
-                                                                    className="d-block"
-                                                                />
-                                                                <small className="mt-2 d-flex align-items-center">
-                                                                    <InformationIcon className="icon-inline mr-1" />{' '}
-                                                                    <span>
-                                                                        Use this license key as the{' '}
-                                                                        <code>
-                                                                            <strong>licenseKey</strong>
-                                                                        </code>{' '}
-                                                                        property value in Sourcegraph site
-                                                                        configuration.
-                                                                    </span>
-                                                                </small>
-                                                                <LicenseGenerationKeyWarning className="mb-0 mt-1" />
-                                                            </>
-                                                        ) : (
-                                                            <div className="text-muted">
-                                                                No license key found.{' '}
-                                                                <a
-                                                                    href={mailtoSales({
-                                                                        subject: `No license key for subscription ${
-                                                                            this.state.productSubscriptionOrError.name
-                                                                        }`,
-                                                                    })}
-                                                                >
-                                                                    Contact sales
-                                                                </a>{' '}
-                                                                for help.
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </>
-                                        }
-                                    />
-                                )}
+                            {(this.state.productSubscriptionOrError.plan ||
+                                (this.state.productSubscriptionOrError.activeLicense &&
+                                    this.state.productSubscriptionOrError.activeLicense.info)) && (
+                                <UserProductSubscriptionStatus
+                                    subscriptionName={this.state.productSubscriptionOrError.name}
+                                    productNameWithBrand={
+                                        this.state.productSubscriptionOrError.plan
+                                            ? this.state.productSubscriptionOrError.plan.nameWithBrand
+                                            : this.state.productSubscriptionOrError.activeLicense!.info!
+                                                  .productNameWithBrand
+                                    }
+                                    userCount={
+                                        this.state.productSubscriptionOrError.userCount !== null
+                                            ? this.state.productSubscriptionOrError.userCount
+                                            : this.state.productSubscriptionOrError.activeLicense!.info!.userCount
+                                    }
+                                    expiresAt={
+                                        this.state.productSubscriptionOrError.expiresAt !== null
+                                            ? this.state.productSubscriptionOrError.expiresAt
+                                            : this.state.productSubscriptionOrError.activeLicense!.info!.expiresAt
+                                    }
+                                    licenseKey={
+                                        this.state.productSubscriptionOrError.activeLicense &&
+                                        this.state.productSubscriptionOrError.activeLicense.licenseKey
+                                    }
+                                />
+                            )}
                             <div className="card mt-3">
                                 <div className="card-header">Billing</div>
-                                <ProductSubscriptionBilling
-                                    productSubscription={this.state.productSubscriptionOrError}
-                                />
-                                <div className="card-footer">
-                                    <a
-                                        href={mailtoSales({
-                                            subject: `No license key for subscription ${
-                                                this.state.productSubscriptionOrError.name
-                                            }`,
-                                        })}
-                                    >
-                                        Contact sales
-                                    </a>{' '}
-                                    to change your payment method.
-                                </div>
+                                {this.state.productSubscriptionOrError.invoiceItem ? (
+                                    <>
+                                        <ProductSubscriptionBilling
+                                            productSubscription={this.state.productSubscriptionOrError}
+                                        />
+                                        <div className="card-footer">
+                                            <a
+                                                href={mailtoSales({
+                                                    subject: `No license key for subscription ${
+                                                        this.state.productSubscriptionOrError.name
+                                                    }`,
+                                                })}
+                                            >
+                                                Contact sales
+                                            </a>{' '}
+                                            to change your payment method.
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="card-body">
+                                        <span className="text-muted ">
+                                            No billing information is associated with this subscription.{' '}
+                                            <a
+                                                href={mailtoSales({
+                                                    subject: `Billing for subscription ${
+                                                        this.state.productSubscriptionOrError.name
+                                                    }`,
+                                                })}
+                                            >
+                                                Contact sales
+                                            </a>{' '}
+                                            for help.
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                             <div className="card mt-3">
                                 <div className="card-header">History</div>
@@ -217,8 +178,6 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
             </div>
         )
     }
-
-    private toggleShowLicenseKey = () => this.setState(prevState => ({ showLicenseKey: !prevState.showLicenseKey }))
 
     private queryProductSubscription = (id: GQL.ID): Observable<GQL.IProductSubscription> =>
         queryGraphQL(
