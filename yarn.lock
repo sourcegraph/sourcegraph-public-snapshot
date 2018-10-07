@@ -9690,7 +9690,7 @@ markdown-table@^1.1.0:
   resolved "https://registry.yarnpkg.com/markdown-table/-/markdown-table-1.1.2.tgz#c78db948fa879903a41bce522e3b96f801c63786"
   integrity sha512-NcWuJFHDA8V3wkDgR/j4+gZx+YQwstPgfQDV8ndUeWWzta3dnDTBxpVzqS9lkmJAuV5YX35lmyojl6HO5JXAgw==
 
-marked-terminal@^3.0.0:
+marked-terminal@^3.0.0, marked-terminal@^3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/marked-terminal/-/marked-terminal-3.1.1.tgz#1e726816ddc4552a83393228ff0952b6cd4e5e04"
   integrity sha512-7UBFww1rdx0w9HehLMCVYa8/AxXaiDigDfMsJcj82/wgLQG9cj+oiMAVlJpeWD57VFJY2OYY+bKeEVIjIlxi+w==
@@ -13312,13 +13312,15 @@ semantic-release-chrome@^1.1.0:
     chrome-webstore-upload "^0.2.2"
     fs-extra "^7.0.0"
 
-semantic-release-firefox@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/semantic-release-firefox/-/semantic-release-firefox-1.1.1.tgz#7cb455def2c8e49731762fc4a7722bd07c876671"
-  integrity sha512-UlsIaOplrdHj+JCoKc9zVyHB7VSditby2dfX1dRa6LjSRzQpZxYW1t2Ao83tjXQg5FVZT9XWS8FmD2OIhTIAew==
+semantic-release-firefox@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/semantic-release-firefox/-/semantic-release-firefox-1.2.0.tgz#7c72fc28211354cdf355e29de07a97f7fe2bb146"
+  integrity sha512-rYhev/dvN9hUS+xJJsdPZJ2W8kTjVGmJ8JyjJmJ6d63CWwx6/0asvj18ji/2lJ+OmXcGorjpbBs8OixSslTRag==
   dependencies:
     aggregate-error "^1.0.0"
     archiver "^2.1.1"
+    marked "^0.5.0"
+    marked-terminal "^3.1.1"
     mz "^2.7.0"
     pretty-bytes "^5.1.0"
     puppeteer "^1.6.2"

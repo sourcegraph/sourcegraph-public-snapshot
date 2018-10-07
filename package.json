@@ -89,7 +89,7 @@
     "sass-loader": "^6.0.6",
     "semantic-release": "^15.9.9",
     "semantic-release-chrome": "^1.1.0",
-    "semantic-release-firefox": "^1.1.1",
+    "semantic-release-firefox": "^1.2.0",
     "shelljs": "^0.8.0",
     "signale": "^1.2.1",
     "socket.io": "^2.1.1",
