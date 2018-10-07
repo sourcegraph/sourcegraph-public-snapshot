@@ -733,8 +733,13 @@ describe('e2e test suite', () => {
                 const label: string = await page.evaluate(
                     () => document.querySelector('.e2e-search-results-stats')!.textContent
                 )
-                const match = /(\d+) results/.exec(label)
-                const numberOfResults = parseInt(match![1], 10)
+                const match = /(\d+) results?/.exec(label)
+                if (!match) {
+                    throw new Error(
+                        `.e2e-search-results-stats textContent did not match regex '(\d+) results': '${label}'`
+                    )
+                }
+                const numberOfResults = parseInt(match[1], 10)
                 assert.isAbove(numberOfResults, 0, 'Expected >0 search results')
             })
         })
