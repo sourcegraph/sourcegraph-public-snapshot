@@ -963,10 +963,10 @@
     tslint-config-prettier "^1.6.0"
     tslint-react "^3.2.0"
 
-"@sourcegraph/webapp@0.0.234":
-  version "0.0.234"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.234.tgz#31d637dcb6444c5f7cbb60d72be0a159b51ffd28"
-  integrity sha512-adDwYvAE2ZXZQ9/Io7T2myrIkqmMatms+7HYrjDfhrYNCxnnYJs0LvaID6tsWoIi7ZNnQMmIl6zao39pJImoWw==
+"@sourcegraph/webapp@0.0.237":
+  version "0.0.237"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.237.tgz#ff8a6a9ab5b022f89e0ce5e95dbdf7ee4bcde72a"
+  integrity sha512-0Od1LPdUok7iE6SVHCjK0cTN/lvvuzQXVv4fc5j4CnDvMn4PyJ723e0tAj1n5qtb1qEAVsmPT9Qq6gDQG8P8tw==
   dependencies:
     "@babel/core" "^7.0.0"
     "@babel/plugin-syntax-dynamic-import" "^7.0.0"
@@ -995,7 +995,7 @@
     fbjs "^0.8.17"
     get-stream "^4.0.0"
     graphiql "^0.11.11"
-    graphql "0.13.0"
+    graphql "14.0.2"
     graphql-schema-linter "^0.1.6"
     highlight.js "^9.12.0"
     javascript-typescript-langserver "^2.5.4"
@@ -1010,7 +1010,7 @@
     p-retry "^2.0.0"
     postcss-loader "^3.0.0"
     pretty-bytes "^5.0.0"
-    puppeteer "~1.8.0"
+    puppeteer "~1.9.0"
     react "^16.4.2"
     react-dom "^16.4.2"
     react-router "^4.3.1"
@@ -5090,12 +5090,12 @@ graphql-schema-linter@^0.1.6:
     graphql "^0.13.0"
     lodash "^4.17.4"
 
-graphql@0.13.0:
-  version "0.13.0"
-  resolved "https://registry.yarnpkg.com/graphql/-/graphql-0.13.0.tgz#d1b44a282279a9ce0a6ec1037329332f4c1079b6"
-  integrity sha512-WlO+ZJT9aY3YrBT+H5Kk+eVb3OVVehB9iRD/xqeHdmrrn4AFl5FIcOpfHz/vnBr6Y6JthGMlnFqU8XRnDjSR7A==
+graphql@14.0.2:
+  version "14.0.2"
+  resolved "https://registry.yarnpkg.com/graphql/-/graphql-14.0.2.tgz#7dded337a4c3fd2d075692323384034b357f5650"
+  integrity sha512-gUC4YYsaiSJT1h40krG3J+USGlwhzNTXSb4IOZljn9ag5Tj+RkoXrWp+Kh7WyE3t1NCfab5kzCuxBIvOMERMXw==
   dependencies:
-    iterall "1.1.x"
+    iterall "^1.2.2"
 
 graphql@^0.13.0:
   version "0.13.2"
@@ -6107,12 +6107,7 @@ istanbul-reports@^2.0.0:
   dependencies:
     handlebars "^4.0.11"
 
-iterall@1.1.x:
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/iterall/-/iterall-1.1.4.tgz#0db40d38fdcf53ae14dc8ec674e62ab190d52cfc"
-  integrity sha512-eaDsM/PY8D/X5mYQhecVc5/9xvSHED7yPON+ffQroBeTuqUVm7dfphMkK8NksXuImqZlVRoKtrNfMIVCYIqaUQ==
-
-iterall@^1.2.1:
+iterall@^1.2.1, iterall@^1.2.2:
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/iterall/-/iterall-1.2.2.tgz#92d70deb8028e0c39ff3164fdbf4d8b088130cd7"
   integrity sha512-yynBb1g+RFUPY64fTrFv7nsjRrENBQJaX2UL+2Szc9REFrSNm1rpSXHGzhmAy7a9uv3vlvgBlXnf9RqmPH1/DA==
@@ -8662,10 +8657,10 @@ punycode@^2.1.0:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
 
-puppeteer@~1.8.0:
-  version "1.8.0"
-  resolved "https://registry.yarnpkg.com/puppeteer/-/puppeteer-1.8.0.tgz#9e8bbd2f5448cc19cac220efc0512837104877ad"
-  integrity sha512-wJ7Fxs03l4dy/ZXQACUKBBobIuJaS4NHq44q7/QinpAXFMwJMJFEIPjzoksVzUhZxQe+RXnjXH69mg13yMh0BA==
+puppeteer@~1.9.0:
+  version "1.9.0"
+  resolved "https://registry.yarnpkg.com/puppeteer/-/puppeteer-1.9.0.tgz#56dba79e7ea4faac807877bee3b23d63291fc59e"
+  integrity sha512-GH4PmhJf9wBRAPvtJkEJLAvdNNOofZortmBZSj8cGWYni98GUFqsf66blOEfJbo5B8l0KG5HR2d/W2MejnUrzg==
   dependencies:
     debug "^3.1.0"
     extract-zip "^1.6.6"
