@@ -9,7 +9,7 @@ import { formatUserCount } from '../../productSubscription/helpers'
 export const ProductSubscriptionLabel: React.SFC<{
     productSubscription: { plan: Pick<GQL.IProductPlan, 'name' | 'nameWithBrand'> | null } & Pick<
         GQL.IProductSubscription,
-        'userCount'
+        'userCount' | 'activeLicense'
     >
 
     planField?: 'name' | 'nameWithBrand'
@@ -20,6 +20,11 @@ export const ProductSubscriptionLabel: React.SFC<{
         {productSubscription.plan && productSubscription.userCount ? (
             <>
                 {productSubscription.plan[planField]} ({formatUserCount(productSubscription.userCount)})
+            </>
+        ) : productSubscription.activeLicense && productSubscription.activeLicense.info ? (
+            <>
+                {productSubscription.activeLicense.info.productNameWithBrand} (
+                {formatUserCount(productSubscription.activeLicense.info.userCount)})
             </>
         ) : (
             <span className="text-muted font-italic">No plan selected</span>

@@ -22,6 +22,7 @@ export const siteAdminProductSubscriptionFragment = gql`
         activeLicense {
             id
             info {
+                productNameWithBrand
                 tags
                 userCount
                 expiresAt

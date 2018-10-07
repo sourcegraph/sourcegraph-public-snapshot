@@ -25,6 +25,7 @@ export const productSubscriptionFragment = gql`
         activeLicense {
             licenseKey
             info {
+                productNameWithBrand
                 tags
                 userCount
                 expiresAt
