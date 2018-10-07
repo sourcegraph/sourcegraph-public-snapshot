@@ -29,24 +29,26 @@ var (
 	lightstepProject             = conf.Get().LightstepProject
 	lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span logs to LightStep"))
 	useJaeger                    = conf.Get().UseJaeger
-	logColors                    = []color.Attribute{
-		color.FgRed,
-		color.FgRed,
-		color.FgYellow,
-		color.FgCyan,
-		color.Faint,
+	logColors                    = map[log15.Lvl]color.Attribute{
+		log15.LvlCrit:  color.FgRed,
+		log15.LvlError: color.FgRed,
+		log15.LvlWarn:  color.FgYellow,
+		log15.LvlInfo:  color.FgCyan,
+		log15.LvlDebug: color.Faint,
 	}
 	// We'd prefer these in caps, not lowercase, and don't need the 4-character alignment
-	logNames = []string{"CRIT", "ERROR", "WARN", "INFO", "DEBUG"}
+	logLabels = map[log15.Lvl]string{
+		log15.LvlCrit:  "CRITICAL",
+		log15.LvlError: "ERROR",
+		log15.LvlWarn:  "WARN",
+		log15.LvlInfo:  "INFO",
+		log15.LvlDebug: "DEBUG",
+	}
 )
 
 func condensedFormat(r *log15.Record) []byte {
-	var colorAttr color.Attribute
-	text := "NOTE"
-	if int(r.Lvl) >= 0 && int(r.Lvl) < len(logColors) {
-		colorAttr = logColors[int(r.Lvl)]
-		text = logNames[int(r.Lvl)]
-	}
+	colorAttr := logColors[r.Lvl]
+	text := logLabels[r.Lvl]
 	var msg bytes.Buffer
 	if colorAttr != 0 {
 		fmt.Print(color.New(colorAttr).Sprint(text) + " " + r.Msg)
