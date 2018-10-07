@@ -92,7 +92,7 @@
     "date-fns": "^2.0.0-alpha.7",
     "fbjs": "^0.8.17",
     "get-stream": "^4.0.0",
-    "graphiql": "^0.11.11",
+    "graphiql": "^0.12.0",
     "graphql": "14.0.2",
     "graphql-schema-linter": "^0.1.6",
     "highlight.js": "^9.12.0",
