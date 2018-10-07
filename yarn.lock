@@ -963,10 +963,10 @@
     tslint-config-prettier "^1.6.0"
     tslint-react "^3.2.0"
 
-"@sourcegraph/webapp@0.0.237":
-  version "0.0.237"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.237.tgz#ff8a6a9ab5b022f89e0ce5e95dbdf7ee4bcde72a"
-  integrity sha512-0Od1LPdUok7iE6SVHCjK0cTN/lvvuzQXVv4fc5j4CnDvMn4PyJ723e0tAj1n5qtb1qEAVsmPT9Qq6gDQG8P8tw==
+"@sourcegraph/webapp@0.0.238":
+  version "0.0.238"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.238.tgz#9c8a2d4b04abbf95fb9c67d07e7c3d6bb28a5fdd"
+  integrity sha512-3FEdGMv9AjvgNNbyMRCqctZf7MCW8fknFZnVEbxkOyAqL4MVBVB05j6Ic5+TIaU1gNBJRBv2VinFjKLkYCzqfw==
   dependencies:
     "@babel/core" "^7.0.0"
     "@babel/plugin-syntax-dynamic-import" "^7.0.0"
@@ -1010,7 +1010,7 @@
     p-retry "^2.0.0"
     postcss-loader "^3.0.0"
     pretty-bytes "^5.0.0"
-    puppeteer "~1.9.0"
+    puppeteer "~1.8.0"
     react "^16.4.2"
     react-dom "^16.4.2"
     react-router "^4.3.1"
@@ -8657,10 +8657,10 @@ punycode@^2.1.0:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.1.1.tgz#b58b010ac40c22c5657616c8d2c2c02c7bf479ec"
   integrity sha512-XRsRjdf+j5ml+y/6GKHPZbrF/8p2Yga0JPtdqTIY2Xe5ohJPD9saDJJLPvp9+NSBprVvevdXZybnj2cv8OEd0A==
 
-puppeteer@~1.9.0:
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/puppeteer/-/puppeteer-1.9.0.tgz#56dba79e7ea4faac807877bee3b23d63291fc59e"
-  integrity sha512-GH4PmhJf9wBRAPvtJkEJLAvdNNOofZortmBZSj8cGWYni98GUFqsf66blOEfJbo5B8l0KG5HR2d/W2MejnUrzg==
+puppeteer@~1.8.0:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/puppeteer/-/puppeteer-1.8.0.tgz#9e8bbd2f5448cc19cac220efc0512837104877ad"
+  integrity sha512-wJ7Fxs03l4dy/ZXQACUKBBobIuJaS4NHq44q7/QinpAXFMwJMJFEIPjzoksVzUhZxQe+RXnjXH69mg13yMh0BA==
   dependencies:
     debug "^3.1.0"
     extract-zip "^1.6.6"
