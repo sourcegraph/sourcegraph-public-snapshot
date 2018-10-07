@@ -14,7 +14,7 @@ import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 import { createAggregateError } from '../util/errors'
 import { RepositoryIcon } from '../util/icons' // TODO: Switch to mdi icon
-import { pluralize } from '../util/strings'
+import { numberWithCommas, pluralize } from '../util/strings'
 
 interface Props {
     overviewComponents: ReadonlyArray<React.ComponentType>
@@ -66,7 +66,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 </>
                             }
                         >
-                            {this.state.info.repositories}&nbsp;
+                            {numberWithCommas(this.state.info.repositories)}&nbsp;
                             {this.state.info.repositories !== null
                                 ? pluralize('repository', this.state.info.repositories, 'repositories')
                                 : '?'}
@@ -90,7 +90,7 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 </>
                             }
                         >
-                            {this.state.info.users}&nbsp;{pluralize('user', this.state.info.users)}
+                            {numberWithCommas(this.state.info.users)}&nbsp;{pluralize('user', this.state.info.users)}
                         </OverviewItem>
                     )}
                     {this.state.info && (
@@ -108,7 +108,10 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                                 </>
                             }
                         >
-                            {this.state.info.orgs}&nbsp;{pluralize('organization', this.state.info.orgs)}
+                            {numberWithCommas(this.state.info.orgs)}&nbsp;{pluralize(
+                                'organization',
+                                this.state.info.orgs
+                            )}
                         </OverviewItem>
                     )}
                     {this.state.info &&
