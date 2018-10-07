@@ -7592,10 +7592,10 @@ npm-bundled@^1.0.1:
   resolved "https://registry.yarnpkg.com/npm-bundled/-/npm-bundled-1.0.5.tgz#3c1732b7ba936b3a10325aef616467c0ccbcc979"
   integrity sha512-m/e6jgWu8/v5niCUKQi9qQl8QdeEduFA96xHDDzFGqly0OOjI7c+60KM/2sppfnUU9JJagf+zs+yGhqSOFj71g==
 
-npm-link-checker@^0.0.1:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/npm-link-checker/-/npm-link-checker-0.0.1.tgz#1dd3537f3de4f610b86e639d846872ebf9b4ec39"
-  integrity sha512-tR0vS/Jtn/2bvVKzXm/b79oq9zq6U5WRmOBpaZkRKrBU5apEhcLOjoX8y6lb/O7lTAL7LpbLPFFmoHcarpr7Bg==
+npm-link-checker@^0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/npm-link-checker/-/npm-link-checker-0.0.2.tgz#791e286debf60e0f91a4fd098a85997f3d8ca834"
+  integrity sha512-DhM0kaEi/m1Rs0qFmSVvJhfmYh3yMjZDKu2hiVmQpRtVDNtL8wYHnQBHdA1K8GeRkAAou387I8iC1qyCswiKYA==
   dependencies:
     chalk "^2.4.1"
     chokidar "^2.0.4"
@@ -7605,6 +7605,7 @@ npm-link-checker@^0.0.1:
     registry-auth-token "^3.3.2"
     semver "^5.5.1"
     signale "^1.3.0"
+    split2 "^3.0.0"
     yargs "^12.0.2"
 
 npm-packlist@^1.1.6:
@@ -8898,6 +8899,15 @@ read-pkg@^3.0.0:
     string_decoder "~1.1.1"
     util-deprecate "~1.0.1"
 
+readable-stream@^3.0.0:
+  version "3.0.6"
+  resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-3.0.6.tgz#351302e4c68b5abd6a2ed55376a7f9a25be3057a"
+  integrity sha512-9E1oLoOWfhSXHGv6QlwXJim7uNzd9EVlWK+21tCU9Ju/kR0/p2AZYPz4qSchgO8PlLIH4FpZYfzwS+rEksZjIg==
+  dependencies:
+    inherits "^2.0.3"
+    string_decoder "^1.1.1"
+    util-deprecate "^1.0.1"
+
 readdirp@^2.0.0:
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/readdirp/-/readdirp-2.2.1.tgz#0e87622a3325aa33e892285caf8b4e846529a525"
@@ -9801,6 +9811,13 @@ split2@^2.0.0:
   integrity sha512-RAb22TG39LhI31MbreBgIuKiIKhVsawfTgEGqKHTK87aG+ul/PB8Sqoi3I7kVdRWiCfrKxK3uo4/YUkpNvhPbw==
   dependencies:
     through2 "^2.0.2"
+
+split2@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/split2/-/split2-3.0.0.tgz#55057cd560687a7ef6464471597404577ff1735d"
+  integrity sha512-Cp7G+nUfKJyHCrAI8kze3Q00PFGEG1pMgrAlTFlDbn+GW24evSZHJuMl+iUJx1w/NTRDeBiTgvwnf6YOt94FMw==
+  dependencies:
+    readable-stream "^3.0.0"
 
 sprintf-js@~1.0.2:
   version "1.0.3"
@@ -10964,7 +10981,7 @@ use@^3.1.0:
   resolved "https://registry.yarnpkg.com/use/-/use-3.1.1.tgz#d50c8cac79a19fbc20f2911f56eb973f4e10070f"
   integrity sha512-cwESVXlO3url9YWlFW/TA9cshCEhtu7IKJ/p5soJ/gGpj7vbvFrAY/eIioQ6Dw23KjZhYgiIo8HOs1nQ2vr/oQ==
 
-util-deprecate@~1.0.1:
+util-deprecate@^1.0.1, util-deprecate@~1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8=
