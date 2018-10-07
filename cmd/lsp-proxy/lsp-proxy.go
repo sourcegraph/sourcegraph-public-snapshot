@@ -38,8 +38,8 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 
-	// Enable colors by default
-	color.NoColor = env.Get("COLOR", "true", "Whether to output colors") == "false"
+	// Enable colors by default but support https://no-color.org/
+	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
 
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

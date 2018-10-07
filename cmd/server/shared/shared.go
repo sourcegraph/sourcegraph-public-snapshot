@@ -7,9 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/joho/godotenv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/internal/goreman"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
@@ -58,6 +60,9 @@ var verbose = os.Getenv("SRC_LOG_LEVEL") == "dbug" || os.Getenv("SRC_LOG_LEVEL")
 // Main is the main server command function which is shared between Sourcegraph
 // server's open-source and enterprise variant.
 func Main() {
+	// Enable colors by default but support https://no-color.org/
+	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
+
 	log.SetFlags(0)
 
 	// Load $CONFIG_DIR/env before we set any defaults

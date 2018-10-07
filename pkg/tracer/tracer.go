@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -28,21 +29,27 @@ var (
 	lightstepProject             = conf.Get().LightstepProject
 	lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span logs to LightStep"))
 	useJaeger                    = conf.Get().UseJaeger
-	logColors                    = []int{5, 1, 3, 2, 6}
+	logColors                    = []color.Attribute{
+		color.FgRed,
+		color.FgRed,
+		color.FgYellow,
+		color.FgCyan,
+		color.Faint,
+	}
 	// We'd prefer these in caps, not lowercase, and don't need the 4-character alignment
 	logNames = []string{"CRIT", "ERROR", "WARN", "INFO", "DEBUG"}
 )
 
 func condensedFormat(r *log15.Record) []byte {
-	color := 0
+	var colorAttr color.Attribute
 	text := "NOTE"
 	if int(r.Lvl) >= 0 && int(r.Lvl) < len(logColors) {
-		color = logColors[int(r.Lvl)]
+		colorAttr = logColors[int(r.Lvl)]
 		text = logNames[int(r.Lvl)]
 	}
 	var msg bytes.Buffer
-	if color > 0 {
-		fmt.Fprintf(&msg, "\x1b[3%dm%s\x1b[0m %s", color, text, r.Msg)
+	if colorAttr != 0 {
+		fmt.Print(color.New(colorAttr).Sprint(text) + " " + r.Msg)
 	} else {
 		fmt.Print(&msg, r.Msg)
 	}
