@@ -61,7 +61,7 @@ var hopHeaders = map[string]struct{}{
 	"Upgrade":             struct{}{},
 }
 
-// Main is the main entrypoint for github-proxy.
+// Main is the entrypoint for github-proxy.
 func Main() {
 	env.Lock()
 	env.HandleHelpFlag()
