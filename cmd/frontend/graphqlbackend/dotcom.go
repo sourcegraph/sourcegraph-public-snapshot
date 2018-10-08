@@ -50,9 +50,7 @@ type ProductSubscription interface {
 	UUID() string
 	Name() string
 	Account(context.Context) (*UserResolver, error)
-	Plan(context.Context) (ProductPlan, error)
-	UserCount(context.Context) (*int32, error)
-	ExpiresAt(context.Context) (*string, error)
+	InvoiceItem(context.Context) (ProductSubscriptionInvoiceItem, error)
 	Events(context.Context) ([]ProductSubscriptionEvent, error)
 	ActiveLicense(context.Context) (ProductLicense, error)
 	ProductLicenses(context.Context, *graphqlutil.ConnectionArgs) (ProductLicenseConnection, error)
@@ -61,6 +59,14 @@ type ProductSubscription interface {
 	URL(context.Context) (string, error)
 	URLForSiteAdmin(context.Context) *string
 	URLForSiteAdminBilling(context.Context) (*string, error)
+}
+
+// ProductSubscriptionInvoiceItem is the interface for the GraphQL type
+// ProductSubscriptionInvoiceItem.
+type ProductSubscriptionInvoiceItem interface {
+	Plan() (ProductPlan, error)
+	UserCount() int32
+	ExpiresAt() string
 }
 
 type SetUserBillingArgs struct {

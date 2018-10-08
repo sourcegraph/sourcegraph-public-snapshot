@@ -3455,12 +3455,9 @@ type ProductSubscription implements Node {
     name: String!
     # The user (i.e., customer) to whom this subscription is granted, or null if the account has been deleted.
     account: User
-    # The product and pricing plan that this subscription entitles the account to, or null if there is none.
-    plan: ProductPlan
-    # The user count that this subscription entitles the account to, or null if there is none.
-    userCount: Int
-    # The date when the subscription expires.
-    expiresAt: String
+    # The information that determines the price of this subscription, or null if there is no billing
+    # information associated with this subscription.
+    invoiceItem: ProductSubscriptionInvoiceItem
     # A list of billing-related events related to this product subscription.
     events: [ProductSubscriptionEvent!]!
     # The currently active product license associated with this product subscription, if any.
@@ -3569,7 +3566,20 @@ type ProductPlan {
     pricePerUserPerYear: Int!
 }
 
-# An input type that describes a product subscription to be purchased.
+# The information about a product subscription that determines its price.
+#
+# FOR INTERNAL USE ONLY.
+type ProductSubscriptionInvoiceItem {
+    # The product plan for the subscription.
+    plan: ProductPlan!
+    # This subscription's user count.
+    userCount: Int!
+    # The date when the subscription expires.
+    expiresAt: String!
+}
+
+# An input type that describes a product subscription to be purchased. Corresponds to
+# ProductSubscriptionInvoiceItem.
 #
 # FOR INTERNAL USE ONLY.
 input ProductSubscriptionInput {
