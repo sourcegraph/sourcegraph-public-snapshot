@@ -238,11 +238,10 @@ func main() {
 			bk.ConcurrencyGroup("deploy"),
 			bk.Concurrency(1),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
-			bk.Env("OVERRIDE_AUTH_SECRET", "LYV99XycMmaitQ6tesJ7j"),
 			bk.Env("FORCE_COLOR", "1"),
 			bk.Cmd("yarn --frozen-lockfile"),
 			bk.Cmd("yarn list --pattern @sourcegraph/webapp"),
-			bk.Cmd("yarn run test-e2e --retries 5"),
+			bk.Cmd("yarn run test-e2e-sgdev --retries 5"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 		pipeline.AddWait()
 
