@@ -32,6 +32,9 @@ interface State {
     /** The user count input by the user. */
     userCount: number | null
 
+    /** Whether the payment and billing information is valid. */
+    paymentValidity: boolean
+
     /**
      * The result of creating the paid product subscription, or null when not pending or complete, or loading, or
      * an error.
@@ -47,10 +50,11 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
     Props & ReactStripeElements.InjectedStripeProps,
     State
 > {
-    private get emptyState(): Pick<State, 'plan' | 'userCount' | 'creationOrError'> {
+    private get emptyState(): Pick<State, 'plan' | 'userCount' | 'paymentValidity' | 'creationOrError'> {
         return {
             plan: null,
             userCount: 1,
+            paymentValidity: false,
             creationOrError: null,
         }
     }
@@ -81,13 +85,14 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
                                 if (this.state.userCount === null) {
                                     return throwError(new Error('invalid user count'))
                                 }
+                                if (!this.state.paymentValidity) {
+                                    return throwError(new Error('invalid payment and billing'))
+                                }
                                 return createPaidProductSubscription({
                                     accountID: this.props.user.id,
                                     productSubscription: {
                                         billingPlanID: this.state.plan.billingPlanID,
                                         userCount: this.state.userCount,
-                                        totalPriceNonAuthoritative:
-                                            this.state.plan.pricePerUserPerYear * this.state.userCount,
                                     },
                                     paymentToken: token.id,
                                 })
@@ -113,6 +118,7 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
     public render(): JSX.Element | null {
         const disableForm = Boolean(
             this.state.userCount === null ||
+                !this.state.paymentValidity ||
                 this.state.creationOrError === LOADING ||
                 (this.state.creationOrError && !isErrorLike(this.state.creationOrError))
         )
@@ -146,14 +152,13 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
                                         ? {
                                               plan: this.state.plan,
                                               userCount: this.state.userCount,
-                                              totalPriceNonAuthoritative:
-                                                  this.state.plan.pricePerUserPerYear * this.state.userCount,
                                           }
                                         : null
                                 }
                                 disabled={disableForm}
                                 isLightTheme={this.props.isLightTheme}
                                 user={this.props.user}
+                                onValidityChange={this.onPaymentValidityChange}
                             />
                             <div className="form-group mt-3">
                                 <button
@@ -187,6 +192,7 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
 
     private onPlanChange = (value: GQL.IProductPlan | null): void => this.setState({ plan: value })
     private onUserCountChange = (value: number | null): void => this.setState({ userCount: value })
+    private onPaymentValidityChange = (value: boolean) => this.setState({ paymentValidity: value })
 
     private onSubmit: React.FormEventHandler = e => {
         e.preventDefault()

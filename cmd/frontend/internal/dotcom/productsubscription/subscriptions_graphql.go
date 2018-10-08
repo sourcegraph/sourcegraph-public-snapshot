@@ -307,12 +307,7 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 	billingSub, err := sub.New(&stripe.SubscriptionParams{
 		Params:   stripe.Params{Context: ctx},
 		Customer: stripe.String(cust.ID),
-		Items: []*stripe.SubscriptionItemsParams{
-			{
-				Plan:     stripe.String(args.ProductSubscription.BillingPlanID),
-				Quantity: stripe.Int64(int64(args.ProductSubscription.UserCount)),
-			},
-		},
+		Items:    []*stripe.SubscriptionItemsParams{billing.ToSubscriptionItemsParams(args.ProductSubscription)},
 	})
 	if err != nil {
 		return nil, err
