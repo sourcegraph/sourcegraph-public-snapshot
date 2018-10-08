@@ -24,6 +24,7 @@ Using Go:
 ```
 go get github.com/sourcegraph/sourcegraph
 ```
+
 > Install [Go](https://golang.org/doc/install) (v1.11 or higher)
 
 
@@ -122,7 +123,7 @@ commands under `sudo`.
 Run the following command to install Yarn, a package manager for Node.js.
 
 ```
-brew install yarn
+npm install -g yarn
 ```
 
 ## Step 4: Initialize your database
