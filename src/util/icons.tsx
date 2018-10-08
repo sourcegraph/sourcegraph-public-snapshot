@@ -84,7 +84,7 @@ export const PhabricatorIcon: React.SFC<Props> = props => (
         className={`mdi-icon${props.className ? ' ' + props.className : ''}`}
         width="24"
         height="24"
-        viewBox="0 0 24 24"
+        viewBox="0 0 64 64"
     >
         <g>
             <g id="Oval">
