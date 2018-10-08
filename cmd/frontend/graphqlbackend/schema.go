@@ -3393,6 +3393,23 @@ type DotcomQuery {
         # Only Sourcegraph.com site admins may perform this query with account == null.
         account: ID
     ): ProductSubscriptionConnection!
+    # The invoice that would be generated for a new or updated subscription. This is used to show
+    # users a preview of the credits, debits, and other billing information before creating or
+    # updating a subscription.
+    #
+    # Performing this query does not mutate any data or cause any billing changes to be made.
+    previewProductSubscriptionInvoice(
+        # The customer account (user) for whom this preview invoice will be generated.
+        account: ID!
+        # If non-null, preview the invoice for an update to the existing product subscription. The
+        # product subscription's billing customer must match the account parameter. If null, preview
+        # the invoice for a new subscription.
+        subscriptionToUpdate: ID
+        # The parameters for the product subscription to preview. All fields of the input type must
+        # be set (i.e., it does not support passing a null value to mean "do not update this field's
+        # value" when updating an existing subscription).
+        productSubscription: ProductSubscriptionInput!
+    ): ProductSubscriptionPreviewInvoice!
     # A list of product licenses.
     #
     # Only Sourcegraph.com site admins may perform this query.
@@ -3467,6 +3484,17 @@ type ProductSubscriptionConnection {
     pageInfo: PageInfo!
 }
 
+# A preview of an invoice that would be generated for an update to a product subscription.
+#
+# FOR INTERNAL USE ONLY.
+type ProductSubscriptionPreviewInvoice {
+    # The amount due (positive for debits, negative for credits) for this invoice, in USD cents.
+    amountDue: Int!
+    # The effective date for which this preview invoice was calculated, expressed as the number of
+    # seconds since the epoch.
+    prorationDate: Int!
+}
+
 # An input type that describes a product license to be generated and signed.
 #
 # FOR INTERNAL USE ONLY.
@@ -3532,10 +3560,6 @@ input ProductSubscriptionInput {
     billingPlanID: String!
     # This subscription's user count.
     userCount: Int!
-    # The non-authoritative price (in USD cents) that the client computed. The server MUST independently compute
-    # the price given this input object's other properties. If the prices differ (which indicates a bug or a
-    # malicious client), then the server MUST abort and return an error.
-    totalPriceNonAuthoritative: Int!
 }
 
 # The result of Mutation.dotcom.createPaidProductSubscription.

@@ -33,6 +33,7 @@ type DotcomResolver interface {
 
 	// DotcomQuery
 	ProductSubscriptions(context.Context, *ProductSubscriptionsArgs) (ProductSubscriptionConnection, error)
+	PreviewProductSubscriptionInvoice(context.Context, *PreviewProductSubscriptionInvoiceArgs) (ProductSubscriptionPreviewInvoice, error)
 	ProductLicenses(context.Context, *ProductLicensesArgs) (ProductLicenseConnection, error)
 	ProductPlans(context.Context) ([]ProductPlan, error)
 }
@@ -87,9 +88,8 @@ type CreatePaidProductSubscriptionArgs struct {
 
 // ProductSubscriptionInput implements the GraphQL type ProductSubscriptionInput.
 type ProductSubscriptionInput struct {
-	BillingPlanID              string
-	UserCount                  int32
-	TotalPriceNonAuthoritative int32
+	BillingPlanID string
+	UserCount     int32
 }
 
 // CreatePaidProductSubscriptionResult implements the GraphQL type CreatePaidProductSubscriptionResult.
@@ -114,6 +114,12 @@ type ProductSubscriptionConnection interface {
 	Nodes(context.Context) ([]ProductSubscription, error)
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type PreviewProductSubscriptionInvoiceArgs struct {
+	Account              graphql.ID
+	SubscriptionToUpdate *graphql.ID
+	ProductSubscription  ProductSubscriptionInput
 }
 
 // ProductLicenseByID is called to look up a ProductLicense given its GraphQL ID.
@@ -148,6 +154,13 @@ type ProductLicenseConnection interface {
 	Nodes(context.Context) ([]ProductLicense, error)
 	TotalCount(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+}
+
+// ProductSubscriptionPreviewInvoice is the interface for the GraphQL type
+// ProductSubscriptionPreviewInvoice.
+type ProductSubscriptionPreviewInvoice interface {
+	AmountDue() int32
+	ProrationDate() int32
 }
 
 // ProductPlan is the interface for the GraphQL type ProductPlan.
