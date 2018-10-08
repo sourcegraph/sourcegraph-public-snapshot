@@ -25,7 +25,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props> {
         return (
             <div className="site-admin-product-subscription-page">
                 <PageTitle title="Sourcegraph product subscription" />
-                <ProductSubscriptionStatus />
+                <ProductSubscriptionStatus showTrueUpStatus={true} />
             </div>
         )
     }

@@ -9,9 +9,18 @@ import { catchError, map } from 'rxjs/operators'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { formatUserCount } from '../../productSubscription/helpers'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
+import { TrueUpStatusSummary } from '../../productSubscription/TrueUpStatusSummary'
 
 interface Props {
     className?: string
+
+    /**
+     * If true, always show the license true-up status.
+     * If undefined or false, never show the full license true-up status, and instead only show an alert
+     * if the user count is over the license limit.
+     *
+     */
+    showTrueUpStatus?: boolean
 }
 
 interface State {
@@ -60,55 +69,76 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
         // forever, and show them how to upgrade.
 
         return (
-            <ProductCertificate
-                title={productNameWithBrand}
-                detail={
-                    license ? (
-                        <>
-                            {formatUserCount(license.userCount, true)} license,{' '}
-                            <ExpirationDate date={license.expiresAt} showRelative={true} lowercase={true} />
-                        </>
-                    ) : null
-                }
-                footer={
-                    <div className="card-footer d-flex align-items-center justify-content-between">
-                        {license ? (
+            <>
+                <ProductCertificate
+                    title={productNameWithBrand}
+                    detail={
+                        license ? (
                             <>
-                                <div>
-                                    <strong>User licenses:</strong> {numberWithCommas(actualUserCount)} used /{' '}
-                                    {numberWithCommas(license.userCount - actualUserCount)} remaining
-                                </div>
-                                <a href="https://about.sourcegraph.com/pricing" className="btn btn-primary btn-sm">
-                                    Upgrade
-                                </a>
+                                {formatUserCount(license.userCount, true)} license,{' '}
+                                <ExpirationDate date={license.expiresAt} showRelative={true} lowercase={true} />
                             </>
-                        ) : (
-                            <>
-                                <div className="mr-2">
-                                    Add a license key to activate Sourcegraph Enterprise features
-                                </div>
-                                <div className="text-nowrap flex-wrap-reverse">
-                                    <Link
-                                        to="/site-admin/configuration"
-                                        className="mr-2"
-                                        data-tooltip="Set the license key in the licenseKey site configuration property"
-                                    >
-                                        Add
-                                    </Link>
+                        ) : null
+                    }
+                    footer={
+                        <div className="card-footer d-flex align-items-center justify-content-between">
+                            {license ? (
+                                <>
+                                    <div>
+                                        <strong>User licenses:</strong> {numberWithCommas(actualUserCount)} used /{' '}
+                                        {numberWithCommas(license.userCount - actualUserCount)} remaining
+                                    </div>
                                     <a
-                                        href="http://sourcegraph.com/user/subscriptions"
+                                        href="https://about.sourcegraph.com/pricing"
                                         className="btn btn-primary btn-sm"
-                                        data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
+                                        target="_blank"
                                     >
-                                        Get license
+                                        Upgrade
                                     </a>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                }
-                className={this.props.className}
-            />
+                                </>
+                            ) : (
+                                <>
+                                    <div className="mr-2">
+                                        Add a license key to activate Sourcegraph Enterprise features
+                                    </div>
+                                    <div className="text-nowrap flex-wrap-reverse">
+                                        <Link
+                                            to="/site-admin/configuration"
+                                            className="mr-2"
+                                            data-tooltip="Set the license key in the licenseKey site configuration property"
+                                        >
+                                            Add
+                                        </Link>
+                                        <a
+                                            href="http://sourcegraph.com/user/subscriptions"
+                                            className="btn btn-primary btn-sm"
+                                            data-tooltip="Buy a Sourcegraph Enterprise subscription to get a license key"
+                                        >
+                                            Get license
+                                        </a>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    }
+                    className={this.props.className}
+                />
+                {license &&
+                    (this.props.showTrueUpStatus ? (
+                        <TrueUpStatusSummary actualUserCount={actualUserCount} license={license} />
+                    ) : (
+                        license.userCount - actualUserCount < 0 && (
+                            <div className="alert alert-warning">
+                                You have exceeded your licensed users.{' '}
+                                <Link to="/site-admin/license">View your license details</Link> or{' '}
+                                <a href="https://about.sourcegraph.com/pricing" target="_blank">
+                                    upgrade your license
+                                </a>{' '}
+                                to true up and prevent a retroactive charge.
+                            </div>
+                        )
+                    ))}
+            </>
         )
     }
 
