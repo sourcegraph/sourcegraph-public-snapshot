@@ -15,7 +15,7 @@ export const enterpriseUserAreaRoutes: ReadonlyArray<UserAreaRoute> = [
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
-        path: '/subscriptions/:subscriptionID',
+        path: '/subscriptions/:subscriptionUUID',
         exact: true,
         render: props => <UserSubscriptionsProductSubscriptionPage {...props} />,
         condition: () => SHOW_BUSINESS_FEATURES,

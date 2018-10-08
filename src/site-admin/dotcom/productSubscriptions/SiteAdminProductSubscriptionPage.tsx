@@ -27,7 +27,7 @@ import {
 } from './SiteAdminProductLicenseNode'
 import { SiteAdminProductSubscriptionBillingLink } from './SiteAdminProductSubscriptionBillingLink'
 
-interface Props extends RouteComponentProps<{ subscriptionID: string }> {}
+interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {}
 
 class FilteredSiteAdminProductLicenseConnection extends FilteredConnection<
     GQL.IProductLicense,
@@ -67,17 +67,17 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
     public componentDidMount(): void {
         eventLogger.logViewEvent('SiteAdminProductSubscription')
 
-        const subscriptionIDChanges = this.componentUpdates.pipe(
-            map(props => props.match.params.subscriptionID),
+        const subscriptionUUIDChanges = this.componentUpdates.pipe(
+            map(props => props.match.params.subscriptionUUID),
             distinctUntilChanged()
         )
 
         const productSubscriptionChanges = combineLatest(
-            subscriptionIDChanges,
+            subscriptionUUIDChanges,
             this.updates.pipe(startWith(void 0))
         ).pipe(
-            switchMap(([subscriptionID]) =>
-                this.queryProductSubscription(subscriptionID).pipe(
+            switchMap(([subscriptionUUID]) =>
+                this.queryProductSubscription(subscriptionUUID).pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
                 )
@@ -99,7 +99,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                         )
                     ),
                     switchMap(() =>
-                        archiveProductSubscription({ id: this.props.match.params.subscriptionID }).pipe(
+                        archiveProductSubscription({ id: this.props.match.params.subscriptionUUID }).pipe(
                             mapTo(null),
                             tap(() => this.props.history.push('/site-admin/dotcom/product/subscriptions')),
                             catchError(error => [asError(error)]),
@@ -229,7 +229,7 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                             {this.state.showGenerate && (
                                 <div className="card-body">
                                     <SiteAdminGenerateProductLicenseForSubscriptionForm
-                                        subscriptionID={this.props.match.params.subscriptionID}
+                                        subscriptionID={this.state.productSubscriptionOrError.id}
                                         onGenerate={this.onDidUpdateProductLicense}
                                     />
                                 </div>
@@ -261,12 +261,12 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
 
     private toggleShowGenerate = () => this.setState(prevState => ({ showGenerate: !prevState.showGenerate }))
 
-    private queryProductSubscription = (id: GQL.ID): Observable<GQL.IProductSubscription> =>
+    private queryProductSubscription = (uuid: string): Observable<GQL.IProductSubscription> =>
         queryGraphQL(
             gql`
-                query ProductSubscription($id: ID!) {
-                    node(id: $id) {
-                        ... on ProductSubscription {
+                query ProductSubscription($uuid: String!) {
+                    dotcom {
+                        productSubscription(uuid: $uuid) {
                             id
                             name
                             account {
@@ -317,22 +317,22 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                     }
                 }
             `,
-            { id }
+            { uuid }
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || (errors && errors.length > 0)) {
+                if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
                     throw createAggregateError(errors)
                 }
-                return data.node as GQL.IProductSubscription
+                return data.dotcom.productSubscription
             })
         )
 
     private queryProductLicenses = (args: { first?: number }): Observable<GQL.IProductLicenseConnection> =>
         queryGraphQL(
             gql`
-                query ProductLicenses($first: Int, $subscription: ID!) {
-                    node(id: $subscription) {
-                        ... on ProductSubscription {
+                query ProductLicenses($first: Int, $subscriptionUUID: String!) {
+                    dotcom {
+                        productSubscription(uuid: $subscriptionUUID) {
                             productLicenses(first: $first) {
                                 nodes {
                                     ...ProductLicenseFields
@@ -349,15 +349,20 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
             `,
             {
                 first: args.first,
-                subscription: this.props.match.params.subscriptionID,
+                subscriptionUUID: this.props.match.params.subscriptionUUID,
             }
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || (errors && errors.length > 0)) {
+                if (
+                    !data ||
+                    !data.dotcom ||
+                    !data.dotcom.productSubscription ||
+                    !data.dotcom.productSubscription.productLicenses ||
+                    (errors && errors.length > 0)
+                ) {
                     throw createAggregateError(errors)
                 }
-                const node = data.node as GQL.IProductSubscription
-                return node.productLicenses
+                return data.dotcom.productSubscription.productLicenses
             })
         )
 

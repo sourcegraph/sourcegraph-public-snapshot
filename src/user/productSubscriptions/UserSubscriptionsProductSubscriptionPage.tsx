@@ -16,7 +16,7 @@ import { ProductSubscriptionBilling } from './ProductSubscriptionBilling'
 import { ProductSubscriptionHistory } from './ProductSubscriptionHistory'
 import { UserProductSubscriptionStatus } from './UserProductSubscriptionStatus'
 
-interface Props extends RouteComponentProps<{ subscriptionID: string }> {
+interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {
     user: GQL.IUser
 }
 
@@ -41,14 +41,14 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
     public componentDidMount(): void {
         eventLogger.logViewEvent('UserSubscriptionsProductSubscription')
 
-        const subscriptionIDChanges = this.componentUpdates.pipe(
-            map(props => props.match.params.subscriptionID),
+        const subscriptionUUIDChanges = this.componentUpdates.pipe(
+            map(props => props.match.params.subscriptionUUID),
             distinctUntilChanged()
         )
 
-        const productSubscriptionChanges = subscriptionIDChanges.pipe(
-            switchMap(subscriptionID =>
-                this.queryProductSubscription(subscriptionID).pipe(
+        const productSubscriptionChanges = subscriptionUUIDChanges.pipe(
+            switchMap(subscriptionUUID =>
+                this.queryProductSubscription(subscriptionUUID).pipe(
                     catchError(err => [asError(err)]),
                     startWith(LOADING)
                 )
@@ -179,12 +179,12 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
         )
     }
 
-    private queryProductSubscription = (id: GQL.ID): Observable<GQL.IProductSubscription> =>
+    private queryProductSubscription = (uuid: string): Observable<GQL.IProductSubscription> =>
         queryGraphQL(
             gql`
-                query ProductSubscription($id: ID!) {
-                    node(id: $id) {
-                        ... on ProductSubscription {
+                query ProductSubscription($uuid: String!) {
+                    dotcom {
+                        productSubscription(uuid: $uuid) {
                             ...ProductSubscriptionFields
                         }
                     }
@@ -231,13 +231,13 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                     urlForSiteAdmin
                 }
             `,
-            { id }
+            { uuid }
         ).pipe(
             map(({ data, errors }) => {
-                if (!data || !data.node || (errors && errors.length > 0)) {
+                if (!data || !data.dotcom || !data.dotcom.productSubscription || (errors && errors.length > 0)) {
                     throw createAggregateError(errors)
                 }
-                return data.node as GQL.IProductSubscription
+                return data.dotcom.productSubscription
             })
         )
 }

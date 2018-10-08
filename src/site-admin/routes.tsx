@@ -29,7 +29,7 @@ export const enterpriseSiteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = 
         exact: true,
     },
     {
-        path: '/dotcom/product/subscriptions/:subscriptionID',
+        path: '/dotcom/product/subscriptions/:subscriptionUUID',
         render: props => <SiteAdminDotcomProductSubscriptionPage {...props} />,
         exact: true,
     },

@@ -73,6 +73,10 @@ func unmarshalProductSubscriptionID(id graphql.ID) (productSubscriptionID string
 	return
 }
 
+func (r *productSubscription) UUID() string {
+	return r.v.ID
+}
+
 func (r *productSubscription) Name() string {
 	return fmt.Sprintf("L-%s", strings.ToUpper(strings.Replace(r.v.ID, "-", "", -1)[:10]))
 }
@@ -184,7 +188,7 @@ func (r *productSubscription) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return accountUser.URL() + "/subscriptions/" + string(r.ID()), nil
+	return accountUser.URL() + "/subscriptions/" + string(r.v.ID), nil
 }
 
 func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
@@ -193,7 +197,7 @@ func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil
 	}
-	u := fmt.Sprintf("/site-admin/dotcom/product/subscriptions/%s", r.ID())
+	u := fmt.Sprintf("/site-admin/dotcom/product/subscriptions/%s", r.v.ID)
 	return &u
 }
 
@@ -353,6 +357,12 @@ func (ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx conte
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+func (ProductSubscriptionLicensingResolver) ProductSubscription(ctx context.Context, args *graphqlbackend.ProductSubscriptionArgs) (graphqlbackend.ProductSubscription, error) {
+	// 🚨 SECURITY: Only site admins and the subscription's account owner may get a product
+	// subscription. This check is performed in productSubscriptionByDBID.
+	return productSubscriptionByDBID(ctx, args.UUID)
 }
 
 func (ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.Context, args *graphqlbackend.ProductSubscriptionsArgs) (graphqlbackend.ProductSubscriptionConnection, error) {
