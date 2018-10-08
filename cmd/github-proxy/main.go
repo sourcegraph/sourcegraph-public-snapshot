@@ -5,7 +5,7 @@
 
 package main
 
-import "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
+import "github.com/sourcegraph/sourcegraph/cmd/github-proxy/shared"
 
 func main() {
 	shared.Main()
