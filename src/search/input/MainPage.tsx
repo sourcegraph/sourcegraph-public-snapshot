@@ -503,7 +503,7 @@ export class MainPage extends React.Component<Props, State> {
                                 <input type="checkbox" />
                                 <ul>
                                     <li>
-                                        <a href="/blog">Blog</a>
+                                        <a href="//about.sourcegraph.com/blog">Blog</a>
                                     </li>
                                     <li>
                                         <a href="https://github.com/sourcegraph" target="_blank">
