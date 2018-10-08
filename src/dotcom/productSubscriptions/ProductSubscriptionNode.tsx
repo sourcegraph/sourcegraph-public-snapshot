@@ -17,11 +17,13 @@ export const productSubscriptionFragment = gql`
                 verified
             }
         }
-        plan {
-            nameWithBrand
+        invoiceItem {
+            plan {
+                nameWithBrand
+            }
+            userCount
+            expiresAt
         }
-        userCount
-        expiresAt
         activeLicense {
             licenseKey
             info {

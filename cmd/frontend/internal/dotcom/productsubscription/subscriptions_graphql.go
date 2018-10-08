@@ -85,46 +85,6 @@ func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.User
 	return graphqlbackend.UserByIDInt32(ctx, r.v.UserID)
 }
 
-// getBillingSubscription returns the subscription from the billing system. If there is no
-// associated subscription on the billing system, it returns (nil, nil).
-func (r *productSubscription) getBillingSubscription(ctx context.Context) (*stripe.Subscription, error) {
-	if r.v.BillingSubscriptionID == nil {
-		return nil, nil
-	}
-	r.once.Do(func() {
-		params := &stripe.SubscriptionParams{Params: stripe.Params{Context: ctx}}
-		params.AddExpand("plan.product")
-		r.billingSub, r.billingSubErr = sub.Get(*r.v.BillingSubscriptionID, params)
-	})
-	return r.billingSub, r.billingSubErr
-}
-
-func (r *productSubscription) Plan(ctx context.Context) (graphqlbackend.ProductPlan, error) {
-	billingSub, err := r.getBillingSubscription(ctx)
-	if billingSub == nil || err != nil {
-		return nil, err
-	}
-	return billing.ToProductPlan(billingSub.Plan)
-}
-
-func (r *productSubscription) UserCount(ctx context.Context) (*int32, error) {
-	billingSub, err := r.getBillingSubscription(ctx)
-	if billingSub == nil || err != nil {
-		return nil, err
-	}
-	userCount := int32(billingSub.Quantity)
-	return &userCount, nil
-}
-
-func (r *productSubscription) ExpiresAt(ctx context.Context) (*string, error) {
-	billingSub, err := r.getBillingSubscription(ctx)
-	if billingSub == nil || err != nil {
-		return nil, err
-	}
-	s := time.Unix(billingSub.CurrentPeriodEnd, 0).Format(time.RFC3339)
-	return &s, nil
-}
-
 func (r *productSubscription) Events(ctx context.Context) ([]graphqlbackend.ProductSubscriptionEvent, error) {
 	if r.v.BillingSubscriptionID == nil {
 		return []graphqlbackend.ProductSubscriptionEvent{}, nil

@@ -278,14 +278,16 @@ export class SiteAdminProductSubscriptionPage extends React.Component<Props, Sta
                                     verified
                                 }
                             }
-                            plan {
-                                billingPlanID
-                                name
-                                nameWithBrand
-                                pricePerUserPerYear
+                            invoiceItem {
+                                plan {
+                                    billingPlanID
+                                    name
+                                    nameWithBrand
+                                    pricePerUserPerYear
+                                }
+                                userCount
+                                expiresAt
                             }
-                            userCount
-                            expiresAt
                             events {
                                 id
                                 date

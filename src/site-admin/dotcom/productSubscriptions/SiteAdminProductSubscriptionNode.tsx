@@ -14,11 +14,13 @@ export const siteAdminProductSubscriptionFragment = gql`
             username
             displayName
         }
-        plan {
-            nameWithBrand
+        invoiceItem {
+            plan {
+                nameWithBrand
+            }
+            userCount
+            expiresAt
         }
-        userCount
-        expiresAt
         activeLicense {
             id
             info {

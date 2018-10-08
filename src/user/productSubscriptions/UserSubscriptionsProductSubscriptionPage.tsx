@@ -101,25 +101,25 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                     <div className="row">
                         <div className="col-md-9">
                             <h2>Subscription {this.state.productSubscriptionOrError.name}</h2>
-                            {(this.state.productSubscriptionOrError.plan ||
+                            {(this.state.productSubscriptionOrError.invoiceItem ||
                                 (this.state.productSubscriptionOrError.activeLicense &&
                                     this.state.productSubscriptionOrError.activeLicense.info)) && (
                                 <UserProductSubscriptionStatus
                                     subscriptionName={this.state.productSubscriptionOrError.name}
                                     productNameWithBrand={
-                                        this.state.productSubscriptionOrError.plan
-                                            ? this.state.productSubscriptionOrError.plan.nameWithBrand
+                                        this.state.productSubscriptionOrError.invoiceItem
+                                            ? this.state.productSubscriptionOrError.invoiceItem.plan.nameWithBrand
                                             : this.state.productSubscriptionOrError.activeLicense!.info!
                                                   .productNameWithBrand
                                     }
                                     userCount={
-                                        this.state.productSubscriptionOrError.userCount !== null
-                                            ? this.state.productSubscriptionOrError.userCount
+                                        this.state.productSubscriptionOrError.invoiceItem !== null
+                                            ? this.state.productSubscriptionOrError.invoiceItem.userCount
                                             : this.state.productSubscriptionOrError.activeLicense!.info!.userCount
                                     }
                                     expiresAt={
-                                        this.state.productSubscriptionOrError.expiresAt !== null
-                                            ? this.state.productSubscriptionOrError.expiresAt
+                                        this.state.productSubscriptionOrError.invoiceItem !== null
+                                            ? this.state.productSubscriptionOrError.invoiceItem.expiresAt
                                             : this.state.productSubscriptionOrError.activeLicense!.info!.expiresAt
                                     }
                                     licenseKey={
@@ -201,14 +201,16 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                             verified
                         }
                     }
-                    plan {
-                        billingPlanID
-                        name
-                        nameWithBrand
-                        pricePerUserPerYear
+                    invoiceItem {
+                        plan {
+                            billingPlanID
+                            name
+                            nameWithBrand
+                            pricePerUserPerYear
+                        }
+                        userCount
+                        expiresAt
                     }
-                    userCount
-                    expiresAt
                     events {
                         id
                         date

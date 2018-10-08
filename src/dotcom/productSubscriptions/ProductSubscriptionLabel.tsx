@@ -7,19 +7,23 @@ import { formatUserCount } from '../../productSubscription/helpers'
  * subscription.
  */
 export const ProductSubscriptionLabel: React.SFC<{
-    productSubscription: { plan: Pick<GQL.IProductPlan, 'name' | 'nameWithBrand'> | null } & Pick<
-        GQL.IProductSubscription,
-        'userCount' | 'activeLicense'
-    >
+    productSubscription: {
+        invoiceItem?:
+            | ({
+                  plan: Pick<GQL.IProductPlan, 'name' | 'nameWithBrand'>
+              } & Pick<GQL.IProductSubscriptionInvoiceItem, 'userCount'>)
+            | null
+    } & Pick<GQL.IProductSubscription, 'activeLicense'>
 
     planField?: 'name' | 'nameWithBrand'
 
     className?: string
 }> = ({ productSubscription, planField = 'nameWithBrand', className = '' }) => (
     <span className={className}>
-        {productSubscription.plan && productSubscription.userCount ? (
+        {productSubscription.invoiceItem ? (
             <>
-                {productSubscription.plan[planField]} ({formatUserCount(productSubscription.userCount)})
+                {productSubscription.invoiceItem.plan[planField]} (
+                {formatUserCount(productSubscription.invoiceItem.userCount)})
             </>
         ) : productSubscription.activeLicense && productSubscription.activeLicense.info ? (
             <>
