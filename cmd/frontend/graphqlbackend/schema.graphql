@@ -3389,6 +3389,14 @@ type DotcomMutation {
 #
 # FOR INTERNAL USE ONLY.
 type DotcomQuery {
+    # The product subscription with the given UUID. An error is returned if no such product
+    # subscription exists.
+    #
+    # Only Sourcegraph.com site admins and the account owners of the product subscription may
+    # perform this query.
+    #
+    # FOR INTERNAL USE ONLY.
+    productSubscription(uuid: String!): ProductSubscription!
     # A list of product subscriptions.
     #
     # FOR INTERNAL USE ONLY.
@@ -3440,6 +3448,9 @@ type DotcomQuery {
 type ProductSubscription implements Node {
     # The unique ID of this product subscription.
     id: ID!
+    # The unique UUID of this product subscription. Unlike ProductSubscription.id, this does not
+    # encode the type and is not a GraphQL node ID.
+    uuid: String!
     # A name for the product subscription derived from its ID. The name is not guaranteed to be unique.
     name: String!
     # The user (i.e., customer) to whom this subscription is granted, or null if the account has been deleted.

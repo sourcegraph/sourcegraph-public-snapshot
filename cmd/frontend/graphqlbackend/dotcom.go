@@ -32,6 +32,7 @@ type DotcomResolver interface {
 	ArchiveProductSubscription(context.Context, *ArchiveProductSubscriptionArgs) (*EmptyResponse, error)
 
 	// DotcomQuery
+	ProductSubscription(context.Context, *ProductSubscriptionArgs) (ProductSubscription, error)
 	ProductSubscriptions(context.Context, *ProductSubscriptionsArgs) (ProductSubscriptionConnection, error)
 	PreviewProductSubscriptionInvoice(context.Context, *PreviewProductSubscriptionInvoiceArgs) (ProductSubscriptionPreviewInvoice, error)
 	ProductLicenses(context.Context, *ProductLicensesArgs) (ProductLicenseConnection, error)
@@ -46,6 +47,7 @@ var ProductSubscriptionByID func(context.Context, graphql.ID) (ProductSubscripti
 // ProductSubscription is the interface for the GraphQL type ProductSubscription.
 type ProductSubscription interface {
 	ID() graphql.ID
+	UUID() string
 	Name() string
 	Account(context.Context) (*UserResolver, error)
 	Plan(context.Context) (ProductPlan, error)
@@ -102,6 +104,10 @@ func (r *CreatePaidProductSubscriptionResult) ProductSubscription() ProductSubsc
 }
 
 type ArchiveProductSubscriptionArgs struct{ ID graphql.ID }
+
+type ProductSubscriptionArgs struct {
+	UUID string
+}
 
 type ProductSubscriptionsArgs struct {
 	graphqlutil.ConnectionArgs
