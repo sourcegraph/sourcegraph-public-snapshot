@@ -1,6 +1,4 @@
-//docker:user sourcegraph
-
-package main
+package shared
 
 import (
 	"bytes"
@@ -63,7 +61,8 @@ var hopHeaders = map[string]struct{}{
 	"Upgrade":             struct{}{},
 }
 
-func main() {
+// Main is the main entrypoint for github-proxy.
+func Main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
