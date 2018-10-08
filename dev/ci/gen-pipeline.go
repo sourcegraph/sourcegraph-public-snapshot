@@ -16,9 +16,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
-	"time"
 
 	bk "github.com/sourcegraph/sourcegraph/pkg/buildkite"
 )
@@ -40,90 +37,6 @@ func main() {
 	pipeline := &bk.Pipeline{}
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
-	version := os.Getenv("BUILDKITE_TAG")
-	taggedRelease := true // true if this is a semver tagged release
-	if !strings.HasPrefix(version, "v") {
-		taggedRelease = false
-		commit := os.Getenv("BUILDKITE_COMMIT")
-		if commit == "" {
-			commit = "1234567890123456789012345678901234567890" // for testing
-		}
-		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
-		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
-	} else {
-		// The Git branch "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
-		version = strings.TrimPrefix(version, "v")
-	}
-
-	// addDockerImageStep adds a build step for a given app.
-	addDockerImageStep := func(app string, insiders bool) {
-		appBase := app
-		cmdDir := "./cmd/" + appBase
-		pkgPath := "github.com/sourcegraph/sourcegraph/cmd/" + appBase
-
-		if _, err := os.Stat(cmdDir); err != nil {
-			fmt.Fprintln(os.Stderr, "app does not exist: "+app)
-			os.Exit(1)
-		}
-		cmds := []bk.StepOpt{
-			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
-		}
-
-		preBuildScript := cmdDir + "/pre-build.sh"
-		if _, err := os.Stat(preBuildScript); err == nil {
-			cmds = append(cmds, bk.Cmd(preBuildScript))
-		}
-
-		image := "sourcegraph/" + appBase
-		buildScript := cmdDir + "/build.sh"
-		if _, err := os.Stat(buildScript); err == nil {
-			cmds = append(cmds,
-				bk.Env("IMAGE", image+":"+version),
-				bk.Env("VERSION", version),
-				bk.Cmd(buildScript),
-			)
-		} else {
-			cmds = append(cmds,
-				bk.Cmd("go build github.com/sourcegraph/sourcegraph/vendor/github.com/sourcegraph/godockerize"),
-				bk.Cmd(fmt.Sprintf("./godockerize build -t %s:%s --go-build-flags='-ldflags' --go-build-flags='-X github.com/sourcegraph/sourcegraph/pkg/version.version=%s' --env VERSION=%s %s", image, version, version, version, pkgPath)),
-			)
-		}
-		cmds = append(cmds,
-			bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
-		)
-		if insiders {
-			tags := []string{"insiders"}
-
-			if strings.HasPrefix(appBase, "xlang") {
-				// The "latest" tag is needed for the automatic docker management logic.
-				tags = append(tags, "latest")
-			}
-
-			for _, tag := range tags {
-				cmds = append(cmds,
-					bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", image, version, image, tag)),
-					bk.Cmd(fmt.Sprintf("docker push %s:%s", image, tag)),
-				)
-			}
-		}
-		if taggedRelease {
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", image, version, image, version)),
-				bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
-			)
-		}
-		pipeline.AddStep(":docker:", cmds...)
-	}
-
-	if strings.HasPrefix(branch, "docker-images-patch-notest/") {
-		version = version + "_patch"
-		addDockerImageStep(branch[27:], false)
-		_, err := pipeline.WriteTo(os.Stdout)
-		if err != nil {
-			panic(err)
-		}
-		return
-	}
 
 	pipeline.AddStep(":white_check_mark:",
 		bk.Cmd("./dev/check/all.sh"))
@@ -195,68 +108,6 @@ func main() {
 	}
 
 	pipeline.AddWait()
-
-	fetchClusterCredentials := func(name, zone, project string) bk.StepOpt {
-		return bk.Cmd(fmt.Sprintf("gcloud container clusters get-credentials %s --zone %s --project %s", name, zone, project))
-	}
-
-	addDeploySteps := func() {
-		// Only deploy pure-OSS images dogfood/prod. Images that contain some
-		// private code (server/frontend) are already deployed by the
-		// enterprise CI above.
-
-		if !strings.HasPrefix(branch, "docker-images/") {
-			return
-		}
-
-		// Deploy to dogfood
-		pipeline.AddStep(":dog:",
-			// Protect against concurrent/out-of-order deploys
-			bk.ConcurrencyGroup("deploy"),
-			bk.Concurrency(1),
-			bk.Env("VERSION", version),
-			bk.Env("CONTEXT", "gke_sourcegraph-dev_us-central1-a_dogfood-cluster-7"),
-			bk.Env("NAMESPACE", "default"),
-			fetchClusterCredentials("dogfood-cluster-7", "us-central1-a", "sourcegraph-dev"),
-			bk.Cmd("./dev/ci/deploy-dogfood.sh"))
-		pipeline.AddWait()
-
-		// Deploy to prod
-		pipeline.AddStep(":rocket:",
-			bk.Env("VERSION", version),
-			bk.Cmd("./dev/ci/deploy-prod.sh"))
-	}
-
-	switch {
-	case taggedRelease:
-		latest := branch == "master"
-		allDockerImages := []string{
-			"github-proxy",
-			"gitserver",
-			"indexer",
-			"lsp-proxy",
-			"query-runner",
-			"repo-updater",
-			"searcher",
-			"symbols",
-		}
-
-		for _, dockerImage := range allDockerImages {
-			addDockerImageStep(dockerImage, latest)
-		}
-		pipeline.AddWait()
-
-	case strings.HasPrefix(branch, "docker-images-patch/"):
-		version = version + "_patch"
-		addDockerImageStep(branch[20:], false)
-
-	case strings.HasPrefix(branch, "docker-images/"):
-		addDockerImageStep(branch[14:], true)
-		pipeline.AddWait()
-		if branch != "docker-images/server" {
-			addDeploySteps()
-		}
-	}
 
 	_, err := pipeline.WriteTo(os.Stdout)
 	if err != nil {
