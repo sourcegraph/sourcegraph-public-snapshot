@@ -14,7 +14,7 @@ import { formatUserCount } from '../../productSubscription/helpers'
 import { PaymentTokenFormControl } from './PaymentTokenFormControl'
 
 interface Props {
-    user: GQL.IUser
+    accountID: string
 
     /**
      * The product subscription chosen by the user, or null for an invalid choice.
@@ -57,21 +57,21 @@ export class NewProductSubscriptionPaymentSection extends React.PureComponent<
 
     public componentDidMount(): void {
         const argChanges = this.componentUpdates.pipe(
-            map(({ user, productSubscription }) => ({ account: user.id, productSubscription })),
+            map(({ accountID, productSubscription }) => ({ accountID, productSubscription })),
             distinctUntilChanged(
-                (a, b) => a.account === b.account && isEqual(a.productSubscription, b.productSubscription)
+                (a, b) => a.accountID === b.accountID && isEqual(a.productSubscription, b.productSubscription)
             )
         )
 
         this.subscriptions.add(
             argChanges
                 .pipe(
-                    switchMap(({ account, productSubscription }) => {
+                    switchMap(({ accountID, productSubscription }) => {
                         if (productSubscription === null) {
                             return of(null)
                         }
                         return queryPreviewProductSubscriptionInvoice({
-                            account,
+                            account: accountID,
                             productSubscription: {
                                 billingPlanID: productSubscription.plan.billingPlanID,
                                 userCount: productSubscription.userCount,

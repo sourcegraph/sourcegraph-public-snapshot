@@ -1,22 +1,14 @@
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { gql, mutateGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { Form } from '@sourcegraph/webapp/dist/components/Form'
 import { PageTitle } from '@sourcegraph/webapp/dist/components/PageTitle'
 import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
-import { upperFirst } from 'lodash'
+import { asError, createAggregateError, ErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { ReactStripeElements } from 'react-stripe-elements'
-import { from, Observable, Subject, Subscription, throwError } from 'rxjs'
-import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { StripeWrapper } from '../../dotcom/billing/StripeWrapper'
-import { ProductPlanFormControl } from '../../dotcom/productPlans/ProductPlanFormControl'
-import { ProductSubscriptionUserCountFormControl } from '../../dotcom/productPlans/ProductSubscriptionUserCountFormControl'
-import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
+import { Observable, Subject, Subscription } from 'rxjs'
+import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
-import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
+import { ProductSubscriptionForm } from './ProductSubscriptionForm'
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
@@ -26,42 +18,20 @@ interface Props extends RouteComponentProps<{}> {
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    /** The selected product plan. */
-    plan: GQL.IProductPlan | null
-
-    /** The user count input by the user. */
-    userCount: number | null
-
-    /** Whether the payment and billing information is valid. */
-    paymentValidity: boolean
-
     /**
-     * The result of creating the paid product subscription, or null when not pending or complete, or loading, or
-     * an error.
+     * The result of creating the paid product subscription: null when complete or not started yet,
+     * loading, or an error.
      */
-    creationOrError: null | GQL.ICreatePaidProductSubscriptionResult | typeof LOADING | ErrorLike
+    creationOrError: null | typeof LOADING | ErrorLike
 }
 
 /**
  * Displays a form and payment flow to purchase a product subscription.
  */
-// tslint:disable-next-line:class-name
-class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
-    Props & ReactStripeElements.InjectedStripeProps,
-    State
-> {
-    private get emptyState(): Pick<State, 'plan' | 'userCount' | 'paymentValidity' | 'creationOrError'> {
-        return {
-            plan: null,
-            userCount: 1,
-            paymentValidity: false,
-            creationOrError: null,
-        }
-    }
+export class UserSubscriptionsNewProductSubscriptionPage extends React.Component<Props, State> {
+    public state: State = { creationOrError: null }
 
-    public state: State = { ...this.emptyState }
-
-    private submits = new Subject<void>()
+    private submits = new Subject<GQL.ICreatePaidProductSubscriptionOnDotcomMutationArguments>()
     private subscriptions = new Subscription()
 
     public componentDidMount(): void {
@@ -69,38 +39,13 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
         this.subscriptions.add(
             this.submits
                 .pipe(
-                    switchMap(() =>
-                        // TODO(sqs): store name, address, company, etc., in token
-                        from(this.props.stripe!.createToken()).pipe(
-                            switchMap(({ token, error }) => {
-                                if (error) {
-                                    return throwError(error)
-                                }
-                                if (!token) {
-                                    return throwError(new Error('no payment token'))
-                                }
-                                if (!this.state.plan) {
-                                    return throwError(new Error('no product plan selected'))
-                                }
-                                if (this.state.userCount === null) {
-                                    return throwError(new Error('invalid user count'))
-                                }
-                                if (!this.state.paymentValidity) {
-                                    return throwError(new Error('invalid payment and billing'))
-                                }
-                                return createPaidProductSubscription({
-                                    accountID: this.props.user.id,
-                                    productSubscription: {
-                                        billingPlanID: this.state.plan.billingPlanID,
-                                        userCount: this.state.userCount,
-                                    },
-                                    paymentToken: token.id,
-                                })
-                            }),
+                    switchMap(args =>
+                        createPaidProductSubscription(args).pipe(
                             tap(({ productSubscription }) => {
                                 // Redirect to new subscription upon success.
                                 this.props.history.push(productSubscription.url)
                             }),
+                            mapTo(null),
                             catchError(err => [asError(err)]),
                             startWith(LOADING),
                             map(c => ({ creationOrError: c }))
@@ -116,93 +61,25 @@ class _UserSubscriptionsNewProductSubscriptionPage extends React.Component<
     }
 
     public render(): JSX.Element | null {
-        const disableForm = Boolean(
-            this.state.userCount === null ||
-                !this.state.paymentValidity ||
-                this.state.creationOrError === LOADING ||
-                (this.state.creationOrError && !isErrorLike(this.state.creationOrError))
-        )
-
         return (
             <div className="user-subscriptions-new-product-subscription-page">
                 <PageTitle title="New product subscription" />
                 <BackToAllSubscriptionsLink user={this.props.user} />
                 <h2>New subscription</h2>
-                <div className="alert alert-warning">
-                    Subscriptions and license keys will be introduced in Sourcegraph 2.12 (coming soon). Only use this
-                    payment form if you've been directed here by Sourcegraph.
-                </div>
-                <LicenseGenerationKeyWarning />
-                <Form onSubmit={this.onSubmit}>
-                    <div className="row">
-                        <div className="col-md-6">
-                            <ProductSubscriptionUserCountFormControl
-                                plan={this.state.plan}
-                                value={this.state.userCount}
-                                onChange={this.onUserCountChange}
-                            />
-                            <h4 className="mt-2 mb-0">Plan</h4>
-                            <ProductPlanFormControl value={this.state.plan} onChange={this.onPlanChange} />
-                        </div>
-                        <div className="col-md-6 mt-3 mt-md-0">
-                            <h3 className="mt-2 mb-0">Billing</h3>
-                            <NewProductSubscriptionPaymentSection
-                                productSubscription={
-                                    this.state.plan && this.state.userCount !== null
-                                        ? {
-                                              plan: this.state.plan,
-                                              userCount: this.state.userCount,
-                                          }
-                                        : null
-                                }
-                                disabled={disableForm}
-                                isLightTheme={this.props.isLightTheme}
-                                user={this.props.user}
-                                onValidityChange={this.onPaymentValidityChange}
-                            />
-                            <div className="form-group mt-3">
-                                <button
-                                    type="submit"
-                                    disabled={disableForm}
-                                    className={`btn btn-lg btn-${
-                                        disableForm ? 'secondary' : 'primary'
-                                    } w-100 d-flex align-items-center justify-content-center`}
-                                >
-                                    {this.state.creationOrError === LOADING ? (
-                                        <>
-                                            <LoadingSpinner className="icon-inline mr-2" /> Processing...
-                                        </>
-                                    ) : (
-                                        'Buy subscription'
-                                    )}
-                                </button>
-                                <small className="form-text text-muted">
-                                    Your license key will be available immediately after payment.
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </Form>
-                {isErrorLike(this.state.creationOrError) && (
-                    <div className="alert alert-danger mt-3">{upperFirst(this.state.creationOrError.message)}</div>
-                )}
+                <ProductSubscriptionForm
+                    accountID={this.props.user.id}
+                    isLightTheme={this.props.isLightTheme}
+                    onSubmit={this.onSubmit}
+                    submissionState={this.state.creationOrError}
+                />
             </div>
         )
     }
 
-    private onPlanChange = (value: GQL.IProductPlan | null): void => this.setState({ plan: value })
-    private onUserCountChange = (value: number | null): void => this.setState({ userCount: value })
-    private onPaymentValidityChange = (value: boolean) => this.setState({ paymentValidity: value })
-
-    private onSubmit: React.FormEventHandler = e => {
-        e.preventDefault()
-        this.submits.next()
+    private onSubmit = (args: GQL.ICreatePaidProductSubscriptionOnDotcomMutationArguments) => {
+        this.submits.next(args)
     }
 }
-
-export const UserSubscriptionsNewProductSubscriptionPage: React.SFC<Props> = props => (
-    <StripeWrapper<Props> component={_UserSubscriptionsNewProductSubscriptionPage} {...props} />
-)
 
 function createPaidProductSubscription(
     args: GQL.ICreatePaidProductSubscriptionOnDotcomMutationArguments
