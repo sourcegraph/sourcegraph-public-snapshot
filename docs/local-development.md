@@ -19,14 +19,6 @@ The sections below describe the the dependencies that you need to have to be abl
 
 Run this command to get the Sourcegraph source code on your local machine:
 
-Using GitHub:
-
-```
-git clone https://github.com/sourcegraph/sourcegraph.git
-// or via ssh if configured
-git clone git@github.com:sourcegraph/sourcegraph.git
-```
-
 Using Go:
 
 ```
