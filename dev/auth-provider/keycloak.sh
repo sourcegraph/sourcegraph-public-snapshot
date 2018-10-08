@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script is a wrapper around Keycloak's Docker image.
 
@@ -40,7 +40,7 @@ docker run \
 
 # Wait for Keycloak server to be ready.
 echo Waiting for Keycloak server to be ready...
-for i in $(seq 1 10); do
+for i in $(seq 1 20); do
     curl --retry 60 --retry-delay 2 --retry-max-time 120 -sSL $KEYCLOAK > /dev/null 2>&1 && break
     sleep 2
 done
