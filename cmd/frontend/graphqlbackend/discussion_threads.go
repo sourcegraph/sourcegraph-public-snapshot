@@ -201,7 +201,7 @@ func (d *discussionThreadTargetRepoInput) populateLinesFromRepository(ctx contex
 
 func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *struct {
 	Input *struct {
-		Title      string
+		Title      *string
 		Contents   string
 		TargetRepo *discussionThreadTargetRepoInput
 	}
@@ -221,10 +221,16 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		return nil, errors.New("no current user")
 	}
 
+	if args.Input.Title == nil {
+		// Title defaults to first line of contents.
+		title := strings.TrimSpace(strings.SplitN(strings.TrimSpace(args.Input.Contents), "\n", 2)[0])
+		args.Input.Title = &title
+	}
+
 	// Create the thread.
 	newThread := &types.DiscussionThread{
 		AuthorUserID: currentUser.user.ID,
-		Title:        args.Input.Title,
+		Title:        *args.Input.Title,
 	}
 	if args.Input.TargetRepo != nil {
 		if err := args.Input.TargetRepo.validate(); err != nil {
