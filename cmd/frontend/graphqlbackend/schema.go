@@ -2708,8 +2708,8 @@ type Site implements ConfigurationSubject {
     needsRepositoryConfiguration: Boolean!
     # Whether the site has zero access-enabled repositories.
     noRepositoriesEnabled: Boolean!
-    # Whether the site configuration has validation problems or deprecation notices.
-    configurationNotice: Boolean!
+    # Alerts to display to the viewer.
+    alerts: [Alert!]!
     # Whether the site has code intelligence. This field will be expanded in the future to describe
     # more about the code intelligence available (languages supported, etc.). It is subject to
     # change without notice.
@@ -2769,6 +2769,24 @@ type UpdateCheck {
     errorMessage: String
     # If an update is available, the version string of the updated version.
     updateVersionAvailable: String
+}
+
+# The possible types of alerts (Alert.type values).
+enum AlertType {
+    INFO
+    WARNING
+    ERROR
+}
+
+# An alert message shown to the viewer.
+type Alert {
+    # The type of this alert.
+    type: AlertType!
+    # The message body of this alert. Markdown is supported.
+    message: String!
+    # If set, this alert is dismissible. After being dismissed, no other alerts with the same
+    # isDismissibleWithKey value will be shown. If null, this alert is not dismissible.
+    isDismissibleWithKey: String
 }
 
 # ConfigurationSubject is something that can have configuration.
