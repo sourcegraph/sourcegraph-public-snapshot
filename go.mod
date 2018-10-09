@@ -45,7 +45,7 @@ require (
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
 	github.com/sourcegraph/sourcegraph v0.0.0-20181009062935-543ab475e604
 	github.com/src-d/gcfg v1.3.0 // indirect
-	github.com/stripe/stripe-go v0.0.0-20180924231549-97e2ddab8720
+	github.com/stripe/stripe-go v0.0.0-20181003141555-9e2a36d584c4
 	github.com/zenazn/goji v0.9.0 // indirect
 	go4.org v0.0.0-20180809161055-417644f6feb5
 	golang.org/x/crypto v0.0.0-20180910181607-0e37d006457b

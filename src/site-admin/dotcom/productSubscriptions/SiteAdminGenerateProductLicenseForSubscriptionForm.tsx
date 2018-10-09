@@ -174,7 +174,12 @@ export class SiteAdminGenerateProductLicenseForSubscriptionForm extends React.Co
                             />
                             <small className="form-text text-muted">
                                 {this.state.expiresAt !== null ? (
-                                    <ExpirationDate date={this.state.expiresAt} showTime={true} showRelative={true} />
+                                    <ExpirationDate
+                                        date={this.state.expiresAt}
+                                        showTime={true}
+                                        showRelative={true}
+                                        showPrefix={true}
+                                    />
                                 ) : (
                                     <>&nbsp;</>
                                 )}

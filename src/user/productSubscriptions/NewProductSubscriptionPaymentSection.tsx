@@ -3,23 +3,27 @@ import { gql, queryGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import { numberWithCommas } from '@sourcegraph/webapp/dist/util/strings'
+import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import { isEqual } from 'lodash'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import * as React from 'react'
 import { ReactStripeElements } from 'react-stripe-elements'
 import { Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
-import { ProductSubscriptionInput } from '../../dotcom/productSubscriptions/helpers'
-import { formatUserCount } from '../../productSubscription/helpers'
+import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
 import { PaymentTokenFormControl } from './PaymentTokenFormControl'
+import { ProductSubscriptionBeforeAfterInvoiceItem } from './ProductSubscriptionBeforeAfterInvoiceItem'
 
 interface Props {
-    accountID: string
+    accountID: GQL.ID
+
+    /** The existing product subscription to edit, or null if this is a new subscription. */
+    subscriptionID: GQL.ID | null
 
     /**
      * The product subscription chosen by the user, or null for an invalid choice.
      */
-    productSubscription: ProductSubscriptionInput | null
+    productSubscription: GQL.IProductSubscriptionInput | null
 
     disabled?: boolean
     isLightTheme: boolean
@@ -57,33 +61,36 @@ export class NewProductSubscriptionPaymentSection extends React.PureComponent<
 
     public componentDidMount(): void {
         const argChanges = this.componentUpdates.pipe(
-            map(({ accountID, productSubscription }) => ({ accountID, productSubscription })),
+            map(({ accountID, subscriptionID, productSubscription }) => ({
+                accountID,
+                subscriptionID,
+                productSubscription,
+            })),
             distinctUntilChanged(
-                (a, b) => a.accountID === b.accountID && isEqual(a.productSubscription, b.productSubscription)
+                (a, b) =>
+                    a.accountID === b.accountID &&
+                    a.subscriptionID === b.subscriptionID &&
+                    isEqual(a.productSubscription, b.productSubscription)
             )
         )
 
         this.subscriptions.add(
             argChanges
                 .pipe(
-                    switchMap(({ accountID, productSubscription }) => {
+                    switchMap(({ accountID, subscriptionID, productSubscription }) => {
                         if (productSubscription === null) {
                             return of(null)
                         }
                         return queryPreviewProductSubscriptionInvoice({
                             account: accountID,
-                            productSubscription: {
-                                billingPlanID: productSubscription.plan.billingPlanID,
-                                userCount: productSubscription.userCount,
-                            },
+                            subscriptionToUpdate: subscriptionID,
+                            productSubscription,
                         }).pipe(
                             catchError(err => [asError(err)]),
                             startWith(LOADING)
                         )
                     }),
-                    tap(result =>
-                        this.props.onValidityChange(result !== null && result !== LOADING && !isErrorLike(result))
-                    ),
+                    tap(result => this.props.onValidityChange(!this.isPreviewInvoiceInvalid(result))),
                     map(result => ({ previewInvoiceOrError: result }))
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
@@ -100,11 +107,22 @@ export class NewProductSubscriptionPaymentSection extends React.PureComponent<
         this.subscriptions.unsubscribe()
     }
 
+    private isPreviewInvoiceInvalid(previewInvoiceOrError: State['previewInvoiceOrError']): boolean {
+        return Boolean(
+            previewInvoiceOrError === null ||
+                previewInvoiceOrError === LOADING ||
+                isErrorLike(previewInvoiceOrError) ||
+                isEqual(previewInvoiceOrError.beforeInvoiceItem, previewInvoiceOrError.afterInvoiceItem) ||
+                previewInvoiceOrError.isDowngradeRequiringManualIntervention
+        )
+    }
+
     public render(): JSX.Element | null {
+        const disabled = Boolean(this.props.disabled || this.isPreviewInvoiceInvalid(this.state.previewInvoiceOrError))
+
         return (
             <div className="new-product-subscription-payment-section">
                 <div className="form-text mb-2">
-                    Total:{' '}
                     {this.state.previewInvoiceOrError === LOADING ? (
                         <LoadingSpinner className="icon-inline" />
                     ) : !this.props.productSubscription || this.state.previewInvoiceOrError === null ? (
@@ -117,14 +135,48 @@ export class NewProductSubscriptionPaymentSection extends React.PureComponent<
                             />{' '}
                             Error
                         </span>
+                    ) : this.state.previewInvoiceOrError.beforeInvoiceItem ? (
+                        <>
+                            <ProductSubscriptionBeforeAfterInvoiceItem
+                                beforeInvoiceItem={this.state.previewInvoiceOrError.beforeInvoiceItem}
+                                afterInvoiceItem={this.state.previewInvoiceOrError.afterInvoiceItem}
+                                className="mb-2"
+                            />
+                            {this.state.previewInvoiceOrError.isDowngradeRequiringManualIntervention ? (
+                                <div className="alert alert-danger mb-2">
+                                    Self-service downgrades are not yet supported.{' '}
+                                    <a
+                                        href={mailtoSales({
+                                            subject: `Downgrade subscription ${this.props.subscriptionID}`,
+                                        })}
+                                    >
+                                        Contact sales
+                                    </a>{' '}
+                                    for help.
+                                </div>
+                            ) : (
+                                !isEqual(
+                                    this.state.previewInvoiceOrError.beforeInvoiceItem,
+                                    this.state.previewInvoiceOrError.afterInvoiceItem
+                                ) && (
+                                    <div className="mb-2">
+                                        Amount due: ${numberWithCommas(this.state.previewInvoiceOrError.price / 100)}
+                                    </div>
+                                )
+                            )}
+                        </>
                     ) : (
                         <>
-                            ${numberWithCommas(this.state.previewInvoiceOrError.amountDue / 100)} for 1 year (
-                            {formatUserCount(this.props.productSubscription.userCount)})
+                            Total: ${numberWithCommas(this.state.previewInvoiceOrError.price / 100)} for{' '}
+                            {formatDistanceStrict(
+                                this.state.previewInvoiceOrError.afterInvoiceItem.expiresAt,
+                                Date.now()
+                            )}{' '}
+                            ({formatUserCount(this.props.productSubscription.userCount)})
                         </>
                     )}
                 </div>
-                <PaymentTokenFormControl disabled={this.props.disabled} isLightTheme={this.props.isLightTheme} />
+                <PaymentTokenFormControl disabled={disabled} isLightTheme={this.props.isLightTheme} />
             </div>
         )
     }
@@ -135,11 +187,38 @@ function queryPreviewProductSubscriptionInvoice(
 ): Observable<GQL.IProductSubscriptionPreviewInvoice> {
     return queryGraphQL(
         gql`
-            query PreviewProductSubscriptionInvoice($account: ID!, $productSubscription: ProductSubscriptionInput!) {
+            query PreviewProductSubscriptionInvoice(
+                $account: ID!
+                $subscriptionToUpdate: ID
+                $productSubscription: ProductSubscriptionInput!
+            ) {
                 dotcom {
-                    previewProductSubscriptionInvoice(account: $account, productSubscription: $productSubscription) {
-                        amountDue
+                    previewProductSubscriptionInvoice(
+                        account: $account
+                        subscriptionToUpdate: $subscriptionToUpdate
+                        productSubscription: $productSubscription
+                    ) {
+                        price
                         prorationDate
+                        isDowngradeRequiringManualIntervention
+                        beforeInvoiceItem {
+                            plan {
+                                billingPlanID
+                                name
+                                pricePerUserPerYear
+                            }
+                            userCount
+                            expiresAt
+                        }
+                        afterInvoiceItem {
+                            plan {
+                                billingPlanID
+                                name
+                                pricePerUserPerYear
+                            }
+                            userCount
+                            expiresAt
+                        }
                     }
                 }
             }

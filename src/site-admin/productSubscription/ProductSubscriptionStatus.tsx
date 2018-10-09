@@ -76,7 +76,12 @@ export class ProductSubscriptionStatus extends React.Component<Props, State> {
                         license ? (
                             <>
                                 {formatUserCount(license.userCount, true)} license,{' '}
-                                <ExpirationDate date={license.expiresAt} showRelative={true} lowercase={true} />
+                                <ExpirationDate
+                                    date={license.expiresAt}
+                                    showRelative={true}
+                                    lowercase={true}
+                                    showPrefix={true}
+                                />
                             </>
                         ) : null
                     }

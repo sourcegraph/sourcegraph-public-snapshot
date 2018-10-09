@@ -21,23 +21,29 @@ func (r *productSubscription) InvoiceItem(ctx context.Context) (graphqlbackend.P
 	if err != nil {
 		return nil, err
 	}
-	return &productSubscriptionInvoiceItem{billingSub: billingSub}, nil
+	return &productSubscriptionInvoiceItem{
+		plan:      billingSub.Plan,
+		userCount: int32(billingSub.Quantity),
+		expiresAt: time.Unix(billingSub.CurrentPeriodEnd, 0),
+	}, nil
 }
 
 type productSubscriptionInvoiceItem struct {
-	billingSub *stripe.Subscription
+	plan      *stripe.Plan
+	userCount int32
+	expiresAt time.Time
 }
 
 var _ graphqlbackend.ProductSubscriptionInvoiceItem = &productSubscriptionInvoiceItem{}
 
 func (r *productSubscriptionInvoiceItem) Plan() (graphqlbackend.ProductPlan, error) {
-	return billing.ToProductPlan(r.billingSub.Plan)
+	return billing.ToProductPlan(r.plan)
 }
 
 func (r *productSubscriptionInvoiceItem) UserCount() int32 {
-	return int32(r.billingSub.Quantity)
+	return r.userCount
 }
 
 func (r *productSubscriptionInvoiceItem) ExpiresAt() string {
-	return time.Unix(r.billingSub.CurrentPeriodEnd, 0).Format(time.RFC3339)
+	return r.expiresAt.Format(time.RFC3339)
 }

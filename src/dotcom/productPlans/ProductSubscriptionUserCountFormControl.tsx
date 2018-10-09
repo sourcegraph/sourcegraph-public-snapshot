@@ -1,10 +1,6 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import * as React from 'react'
 
 interface Props {
-    /** The selected plan. */
-    plan: GQL.IProductPlan | null
-
     /** The user count input by the user. */
     value: number | null
 
@@ -20,8 +16,6 @@ interface Props {
  */
 export class ProductSubscriptionUserCountFormControl extends React.Component<Props> {
     public render(): JSX.Element | null {
-        const disableInputs = this.props.disabled || !this.props.plan
-
         return (
             <div
                 className={`product-subscription-user-count-control form-group align-items-center ${this.props
@@ -42,7 +36,7 @@ export class ProductSubscriptionUserCountFormControl extends React.Component<Pro
                         step={1}
                         max={50000}
                         required={true}
-                        disabled={disableInputs}
+                        disabled={this.props.disabled}
                         value={this.props.value === null ? '' : this.props.value}
                         onChange={this.onUserCountChange}
                     />

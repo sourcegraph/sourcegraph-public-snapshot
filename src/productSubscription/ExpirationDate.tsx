@@ -13,13 +13,18 @@ export const ExpirationDate: React.SFC<{
     /** Show "(T remaining)" or "(T ago)" relative times. */
     showRelative?: boolean
 
+    /** Show the "Expired on" or "Valid until" prefix. */
+    showPrefix?: boolean
+
     lowercase?: boolean
-}> = ({ date, showTime, showRelative, lowercase }) => {
-    const isExpired = isProductLicenseExpired(date)
-    const text = isExpired ? 'Expired on' : 'Valid until'
+}> = ({ date, showTime, showRelative, showPrefix, lowercase }) => {
+    let text: string | undefined
+    if (showPrefix) {
+        text = isProductLicenseExpired(date) ? 'Expired on ' : 'Valid until '
+    }
     return (
         <span>
-            {lowercase ? text.toLowerCase() : text}{' '}
+            {text && lowercase ? text.toLowerCase() : text}
             {showTime ? format(date, 'PPpp') : <span title={format(date, 'PPpp')}>{format(date, 'yyyy-MM-dd')}</span>}
             {showRelative && ` (${formatRelativeExpirationDate(date)})`}
         </span>

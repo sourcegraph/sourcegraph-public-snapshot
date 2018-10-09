@@ -8,7 +8,7 @@ import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
 import { BackToAllSubscriptionsLink } from './BackToAllSubscriptionsLink'
-import { ProductSubscriptionForm } from './ProductSubscriptionForm'
+import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 
 interface Props extends RouteComponentProps<{}> {
     user: GQL.IUser
@@ -68,15 +68,22 @@ export class UserSubscriptionsNewProductSubscriptionPage extends React.Component
                 <h2>New subscription</h2>
                 <ProductSubscriptionForm
                     accountID={this.props.user.id}
+                    subscriptionID={null}
                     isLightTheme={this.props.isLightTheme}
                     onSubmit={this.onSubmit}
                     submissionState={this.state.creationOrError}
+                    primaryButtonText="Buy subscription"
+                    afterPrimaryButton={
+                        <small className="form-text text-muted">
+                            Your license key will be available immediately after payment.
+                        </small>
+                    }
                 />
             </div>
         )
     }
 
-    private onSubmit = (args: GQL.ICreatePaidProductSubscriptionOnDotcomMutationArguments) => {
+    private onSubmit = (args: ProductSubscriptionFormData) => {
         this.submits.next(args)
     }
 }

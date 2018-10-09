@@ -10,6 +10,7 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/pkg/errors"
 	"github.com/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	db_ "github.com/sourcegraph/sourcegraph/cmd/frontend/db"
@@ -18,6 +19,8 @@ import (
 	stripe "github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/customer"
 	"github.com/stripe/stripe-go/event"
+	"github.com/stripe/stripe-go/invoice"
+	"github.com/stripe/stripe-go/plan"
 	"github.com/stripe/stripe-go/sub"
 )
 
@@ -30,10 +33,6 @@ func init() {
 // productSubscription implements the GraphQL type ProductSubscription.
 type productSubscription struct {
 	v *dbSubscription
-
-	once          sync.Once
-	billingSub    *stripe.Subscription
-	billingSubErr error
 }
 
 // productSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
@@ -262,15 +261,14 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 		Params: stripe.Params{Context: ctx},
 	}
 	custUpdateParams.SetSource(args.PaymentToken)
-	cust, err := customer.Update(custID, custUpdateParams)
-	if err != nil {
+	if _, err := customer.Update(custID, custUpdateParams); err != nil {
 		return nil, err
 	}
 
 	// Create the billing subscription.
 	billingSub, err := sub.New(&stripe.SubscriptionParams{
 		Params:   stripe.Params{Context: ctx},
-		Customer: stripe.String(cust.ID),
+		Customer: stripe.String(custID),
 		Items:    []*stripe.SubscriptionItemsParams{billing.ToSubscriptionItemsParams(args.ProductSubscription)},
 	})
 	if err != nil {
@@ -303,8 +301,115 @@ func (ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx co
 	return &graphqlbackend.CreatePaidProductSubscriptionResult{ProductSubscriptionValue: sub}, nil
 }
 
+func (ProductSubscriptionLicensingResolver) UpdatePaidProductSubscription(ctx context.Context, args *graphqlbackend.UpdatePaidProductSubscriptionArgs) (*graphqlbackend.UpdatePaidProductSubscriptionResult, error) {
+	subToUpdate, err := productSubscriptionByID(ctx, args.SubscriptionID)
+	if err != nil {
+		return nil, err
+	}
+
+	// 🚨 SECURITY: Only site admins and the subscription's account owner may update product
+	// subscriptions.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, subToUpdate.v.UserID); err != nil {
+		return nil, err
+	}
+
+	// Determine which license tags to use for the purchased plan. Do this early on because it's the
+	// most likely place for a stupid mistake to cause a bug, and doing it early means the user
+	// hasn't been charged if there is an error.
+	licenseTags, err := billing.LicenseTagsForProductPlan(ctx, args.Update.BillingPlanID)
+	if err != nil {
+		return nil, err
+	}
+
+	params := &stripe.SubscriptionParams{
+		Params:  stripe.Params{Context: ctx},
+		Items:   []*stripe.SubscriptionItemsParams{billing.ToSubscriptionItemsParams(args.Update)},
+		Prorate: stripe.Bool(true),
+	}
+
+	// Get the billing customer for the current user, and update it to use the payment source
+	// provided to us.
+	custID, err := billing.GetOrAssignUserCustomerID(ctx, subToUpdate.v.UserID)
+	if err != nil {
+		return nil, err
+	}
+	custUpdateParams := &stripe.CustomerParams{
+		Params: stripe.Params{Context: ctx},
+	}
+	custUpdateParams.SetSource(args.PaymentToken)
+	if _, err := customer.Update(custID, custUpdateParams); err != nil {
+		return nil, err
+	}
+
+	if subToUpdate.v.BillingSubscriptionID == nil {
+		return nil, errors.New("unable to update product subscription that has no associated billing information")
+	}
+	subParams := &stripe.SubscriptionParams{Params: stripe.Params{Context: ctx}}
+	subParams.AddExpand("plan")
+	billingSubToUpdate, err := sub.Get(*subToUpdate.v.BillingSubscriptionID, subParams)
+	if err != nil {
+		return nil, err
+	}
+	idToReplace, err := billing.GetSubscriptionItemIDToReplace(billingSubToUpdate, custID)
+	if err != nil {
+		return nil, err
+	}
+	params.Items[0].ID = stripe.String(idToReplace)
+
+	// Forbid self-service downgrades. (Reason: We can't revoke licenses, so we want to manually
+	// intervene to ensure that customers who downgrade are not using the previous license.)
+	{
+		planParams := &stripe.PlanParams{Params: stripe.Params{Context: ctx}}
+		afterPlan, err := plan.Get(args.Update.BillingPlanID, planParams)
+		if err != nil {
+			return nil, err
+		}
+		if isDowngradeRequiringManualIntervention(int32(billingSubToUpdate.Quantity), billingSubToUpdate.Plan.Amount, args.Update.UserCount, afterPlan.Amount) {
+			return nil, errors.New("self-service downgrades are not yet supported")
+		}
+	}
+
+	// Update the billing subscription.
+	billingSub, err := sub.Update(*subToUpdate.v.BillingSubscriptionID, params)
+	if err != nil {
+		return nil, err
+	}
+
+	// Generate an invoice and charge so that payment is performed immediately. See
+	// https://stripe.com/docs/billing/subscriptions/upgrading-downgrading.
+	//
+	// TODO(sqs): use webhooks to ensure the subscription is rolled back if the invoice payment
+	// fails.
+	{
+		inv, err := invoice.New(&stripe.InvoiceParams{
+			Params:       stripe.Params{Context: ctx},
+			Customer:     stripe.String(custID),
+			Subscription: stripe.String(*subToUpdate.v.BillingSubscriptionID),
+		})
+		if err != nil {
+			return nil, err
+		}
+		if _, err := invoice.Pay(inv.ID, &stripe.InvoicePayParams{
+			Params: stripe.Params{Context: ctx},
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	// Generate a new license key for the subscription with the updated parameters.
+	if _, err := generateProductLicenseForSubscription(ctx, subToUpdate.v.ID, &graphqlbackend.ProductLicenseInput{
+		Tags:      licenseTags,
+		UserCount: args.Update.UserCount,
+		ExpiresAt: int32(billingSub.CurrentPeriodEnd),
+	}); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.UpdatePaidProductSubscriptionResult{ProductSubscriptionValue: subToUpdate}, nil
+}
+
 func (ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx context.Context, args *graphqlbackend.ArchiveProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may update product subscriptions.
+	// 🚨 SECURITY: Only site admins may archive product subscriptions.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { Form } from '@sourcegraph/webapp/dist/components/Form'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
+import { isEqual } from 'lodash'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { ReactStripeElements } from 'react-stripe-elements'
@@ -13,16 +14,35 @@ import { ProductSubscriptionUserCountFormControl } from '../../dotcom/productPla
 import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'
 import { NewProductSubscriptionPaymentSection } from './NewProductSubscriptionPaymentSection'
 
+/**
+ * The form data that is submitted by the ProductSubscriptionForm component.
+ */
+export interface ProductSubscriptionFormData {
+    /** The customer account (user) owning the product subscription. */
+    accountID: GQL.ID
+    productSubscription: GQL.IProductSubscriptionInput
+    paymentToken: string
+}
+
 const LOADING: 'loading' = 'loading'
 
 interface Props {
     /** The ID of the account associated with the subscription. */
     accountID: GQL.ID
 
+    /**
+     * The existing product subscription to edit, if this form is editing an existing subscription,
+     * or null if this is a new subscription.
+     */
+    subscriptionID: GQL.ID | null
+
     isLightTheme: boolean
 
     /** Called when the user submits the form (to buy or update the subscription). */
-    onSubmit: (args: GQL.ICreatePaidProductSubscriptionOnDotcomMutationArguments) => void
+    onSubmit: (args: ProductSubscriptionFormData) => void
+
+    /** The initial value of the form. */
+    initialValue?: GQL.IProductSubscriptionInput
 
     /**
      * The state of the form submission (the operation triggered by onSubmit): null when it hasn't
@@ -31,11 +51,17 @@ interface Props {
      * success state.
      */
     submissionState: null | typeof LOADING | ErrorLike
+
+    /** The text for the form's primary button. */
+    primaryButtonText: string
+
+    /** A fragment to render below the form's primary button. */
+    afterPrimaryButton?: React.ReactFragment
 }
 
 interface State {
     /** The selected product plan. */
-    plan: GQL.IProductPlan | null
+    billingPlanID: string | null
 
     /** The user count input by the user. */
     userCount: number | null
@@ -47,7 +73,7 @@ interface State {
      * The result of creating the billing token (which refers to the payment method chosen by the
      * user): null if successful or not yet started, loading, or an error.
      */
-    billingTokenOrError: null | typeof LOADING | ErrorLike
+    paymentTokenOrError: null | typeof LOADING | ErrorLike
 }
 
 /**
@@ -55,11 +81,18 @@ interface State {
  */
 // tslint:disable-next-line:class-name
 class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElements.InjectedStripeProps, State> {
-    public state: State = {
-        plan: null,
-        userCount: 1,
-        paymentValidity: false,
-        billingTokenOrError: null,
+    constructor(props: Props) {
+        super(props)
+
+        this.state = {
+            paymentValidity: false,
+            paymentTokenOrError: null,
+            ...this.getStateForInitialValue(props),
+        }
+    }
+
+    private getStateForInitialValue({ initialValue }: Props): Pick<State, 'billingPlanID' | 'userCount'> {
+        return initialValue || { billingPlanID: null, userCount: 1 }
     }
 
     private submits = new Subject<void>()
@@ -79,7 +112,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                 if (!token) {
                                     return throwError(new Error('no payment token'))
                                 }
-                                if (!this.state.plan) {
+                                if (!this.state.billingPlanID) {
                                     return throwError(new Error('no product plan selected'))
                                 }
                                 if (this.state.userCount === null) {
@@ -91,7 +124,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                 this.props.onSubmit({
                                     accountID: this.props.accountID,
                                     productSubscription: {
-                                        billingPlanID: this.state.plan.billingPlanID,
+                                        billingPlanID: this.state.billingPlanID,
                                         userCount: this.state.userCount,
                                     },
                                     paymentToken: token.id,
@@ -102,10 +135,19 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                             startWith(LOADING)
                         )
                     ),
-                    map(result => ({ billingTokenOrError: result }))
+                    map(result => ({ paymentTokenOrError: result }))
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
         )
+    }
+
+    public componentDidUpdate(prevProps: Props): void {
+        // When Props#initialValue changes, clobber our values. It's unlikely that this prop would
+        // change without the component being unmounted, but handle this case for completeness
+        // anyway.
+        if (!isEqual(prevProps.initialValue, this.props.initialValue)) {
+            this.setState(this.getStateForInitialValue(this.props))
+        }
     }
 
     public componentWillUnmount(): void {
@@ -115,11 +157,10 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
     public render(): JSX.Element | null {
         const disableForm = Boolean(
             this.props.submissionState === LOADING ||
-                isErrorLike(this.props.submissionState) ||
                 this.state.userCount === null ||
                 !this.state.paymentValidity ||
-                this.state.billingTokenOrError === LOADING ||
-                (this.state.billingTokenOrError && !isErrorLike(this.state.billingTokenOrError))
+                this.state.paymentTokenOrError === LOADING ||
+                (this.state.paymentTokenOrError && !isErrorLike(this.state.paymentTokenOrError))
         )
 
         return (
@@ -133,20 +174,22 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                     <div className="row">
                         <div className="col-md-6">
                             <ProductSubscriptionUserCountFormControl
-                                plan={this.state.plan}
                                 value={this.state.userCount}
                                 onChange={this.onUserCountChange}
                             />
                             <h4 className="mt-2 mb-0">Plan</h4>
-                            <ProductPlanFormControl value={this.state.plan} onChange={this.onPlanChange} />
+                            <ProductPlanFormControl
+                                value={this.state.billingPlanID}
+                                onChange={this.onBillingPlanIDChange}
+                            />
                         </div>
                         <div className="col-md-6 mt-3 mt-md-0">
                             <h3 className="mt-2 mb-0">Billing</h3>
                             <NewProductSubscriptionPaymentSection
                                 productSubscription={
-                                    this.state.plan && this.state.userCount !== null
+                                    this.state.billingPlanID !== null && this.state.userCount !== null
                                         ? {
-                                              plan: this.state.plan,
+                                              billingPlanID: this.state.billingPlanID,
                                               userCount: this.state.userCount,
                                           }
                                         : null
@@ -154,6 +197,7 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                 disabled={disableForm}
                                 isLightTheme={this.props.isLightTheme}
                                 accountID={this.props.accountID}
+                                subscriptionID={this.props.subscriptionID}
                                 onValidityChange={this.onPaymentValidityChange}
                             />
                             <div className="form-group mt-3">
@@ -164,30 +208,31 @@ class _ProductSubscriptionForm extends React.Component<Props & ReactStripeElemen
                                         disableForm ? 'secondary' : 'primary'
                                     } w-100 d-flex align-items-center justify-content-center`}
                                 >
-                                    {this.state.billingTokenOrError === LOADING ||
+                                    {this.state.paymentTokenOrError === LOADING ||
                                     this.props.submissionState === LOADING ? (
                                         <>
                                             <LoadingSpinner className="icon-inline mr-2" /> Processing...
                                         </>
                                     ) : (
-                                        'Buy subscription'
+                                        this.props.primaryButtonText
                                     )}
                                 </button>
-                                <small className="form-text text-muted">
-                                    Your license key will be available immediately after payment.
-                                </small>
+                                {this.props.afterPrimaryButton}
                             </div>
                         </div>
                     </div>
                 </Form>
-                {isErrorLike(this.state.billingTokenOrError) && (
-                    <div className="alert alert-danger mt-3">{upperFirst(this.state.billingTokenOrError.message)}</div>
+                {isErrorLike(this.state.paymentTokenOrError) && (
+                    <div className="alert alert-danger mt-3">{upperFirst(this.state.paymentTokenOrError.message)}</div>
+                )}
+                {isErrorLike(this.props.submissionState) && (
+                    <div className="alert alert-danger mt-3">{upperFirst(this.props.submissionState.message)}</div>
                 )}
             </div>
         )
     }
 
-    private onPlanChange = (value: GQL.IProductPlan | null): void => this.setState({ plan: value })
+    private onBillingPlanIDChange = (value: string | null): void => this.setState({ billingPlanID: value })
     private onUserCountChange = (value: number | null): void => this.setState({ userCount: value })
     private onPaymentValidityChange = (value: boolean) => this.setState({ paymentValidity: value })
 

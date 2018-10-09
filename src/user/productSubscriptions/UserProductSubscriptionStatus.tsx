@@ -33,7 +33,12 @@ export class UserProductSubscriptionStatus extends React.PureComponent<Props, St
                 subtitle={
                     <>
                         {formatUserCount(this.props.userCount, true)} license,{' '}
-                        <ExpirationDate date={this.props.expiresAt} showRelative={true} lowercase={true} />
+                        <ExpirationDate
+                            date={this.props.expiresAt}
+                            showRelative={true}
+                            showPrefix={true}
+                            lowercase={true}
+                        />
                     </>
                 }
                 footer={
