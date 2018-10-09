@@ -156,19 +156,17 @@ func main() {
 				bk.Cmd(fmt.Sprintf("./godockerize build -t %s:%s --go-build-flags='-ldflags' --go-build-flags='-X github.com/sourcegraph/sourcegraph/pkg/version.version=%s' --env VERSION=%s %s", image, version, version, version, pkgPath)),
 			)
 		}
-		cmds = append(cmds,
-			bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
-		)
+
+		if app != "server" || taggedRelease {
+			cmds = append(cmds,
+				bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
+			)
+		}
+
 		if insiders {
 			cmds = append(cmds,
 				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:insiders", image, version, image)),
 				bk.Cmd(fmt.Sprintf("docker push %s:insiders", image)),
-			)
-		}
-		if taggedRelease {
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s", image, version, image, version)),
-				bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
 			)
 		}
 		pipeline.AddStep(":docker:", cmds...)
