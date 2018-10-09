@@ -138,7 +138,7 @@ export class UserSubscriptionsProductSubscriptionPage extends React.Component<Pr
                                         <div className="card-footer">
                                             <a
                                                 href={mailtoSales({
-                                                    subject: `No license key for subscription ${
+                                                    subject: `Change payment method for subscription ${
                                                         this.state.productSubscriptionOrError.name
                                                     }`,
                                                 })}
