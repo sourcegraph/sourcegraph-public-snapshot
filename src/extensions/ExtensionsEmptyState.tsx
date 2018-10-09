@@ -6,7 +6,7 @@ export const ExtensionsEmptyState: React.SFC<{
     className?: string
     onClick?: () => void
 }> = ({ className = 'px-3 py-4', onClick }) => (
-    <div className={`${className} text-center bg-striped-secondary`}>
+    <div className={`${className} text-center`}>
         <h4 className="text-muted mb-3">
             Extensions add new features to Sourcegraph. Check out the{' '}
             <a href="https://about.sourcegraph.com/docs/extensions/" target="_blank">
