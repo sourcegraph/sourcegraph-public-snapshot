@@ -127,7 +127,7 @@ func main() {
 		cmdDir := "cmd/" + app
 		var pkgPath string
 		if _, err := os.Stat(cmdDir); err != nil {
-			fmt.Printf("github.com/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead", app, app)
+			fmt.Fprintf(os.Stderr, "github.com/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead\n", app, app)
 			pkgPath = "github.com/sourcegraph/sourcegraph/cmd/" + app
 		} else {
 			pkgPath = "github.com/sourcegraph/enterprise/cmd/" + app
