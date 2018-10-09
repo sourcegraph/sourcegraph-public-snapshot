@@ -29,6 +29,7 @@ type DotcomResolver interface {
 	SetProductSubscriptionBilling(context.Context, *SetProductSubscriptionBillingArgs) (*EmptyResponse, error)
 	GenerateProductLicenseForSubscription(context.Context, *GenerateProductLicenseForSubscriptionArgs) (ProductLicense, error)
 	CreatePaidProductSubscription(context.Context, *CreatePaidProductSubscriptionArgs) (*CreatePaidProductSubscriptionResult, error)
+	UpdatePaidProductSubscription(context.Context, *UpdatePaidProductSubscriptionArgs) (*UpdatePaidProductSubscriptionResult, error)
 	ArchiveProductSubscription(context.Context, *ArchiveProductSubscriptionArgs) (*EmptyResponse, error)
 
 	// DotcomQuery
@@ -94,6 +95,12 @@ type CreatePaidProductSubscriptionArgs struct {
 	PaymentToken        string
 }
 
+type UpdatePaidProductSubscriptionArgs struct {
+	SubscriptionID graphql.ID
+	Update         ProductSubscriptionInput
+	PaymentToken   string
+}
+
 // ProductSubscriptionInput implements the GraphQL type ProductSubscriptionInput.
 type ProductSubscriptionInput struct {
 	BillingPlanID string
@@ -106,6 +113,16 @@ type CreatePaidProductSubscriptionResult struct {
 }
 
 func (r *CreatePaidProductSubscriptionResult) ProductSubscription() ProductSubscription {
+	return r.ProductSubscriptionValue
+}
+
+// UpdatePaidProductSubscriptionResult implements the GraphQL type
+// UpdatePaidProductSubscriptionResult.
+type UpdatePaidProductSubscriptionResult struct {
+	ProductSubscriptionValue ProductSubscription
+}
+
+func (r *UpdatePaidProductSubscriptionResult) ProductSubscription() ProductSubscription {
 	return r.ProductSubscriptionValue
 }
 
@@ -171,8 +188,11 @@ type ProductLicenseConnection interface {
 // ProductSubscriptionPreviewInvoice is the interface for the GraphQL type
 // ProductSubscriptionPreviewInvoice.
 type ProductSubscriptionPreviewInvoice interface {
-	AmountDue() int32
-	ProrationDate() int32
+	Price() int32
+	ProrationDate() *string
+	IsDowngradeRequiringManualIntervention() bool
+	BeforeInvoiceItem() ProductSubscriptionInvoiceItem
+	AfterInvoiceItem() ProductSubscriptionInvoiceItem
 }
 
 // ProductPlan is the interface for the GraphQL type ProductPlan.
