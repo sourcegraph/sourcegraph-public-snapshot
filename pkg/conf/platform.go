@@ -7,6 +7,10 @@ type PlatformConfiguration struct {
 	RemoteRegistryURL string
 }
 
+// DefaultRemoteRegistry is the default value for the site configuration field
+// "remoteRegistry" when unspecified.
+var DefaultRemoteRegistry string
+
 // Extensions returns the configuration for the Sourcegraph platform, or nil if it is disabled.
 func Extensions() *PlatformConfiguration {
 	cfg := Get()
@@ -24,13 +28,12 @@ func Extensions() *PlatformConfiguration {
 
 	// If the "remoteRegistry" value is a string, use that. If false, then keep it empty. Otherwise
 	// use the default.
-	const defaultRemoteRegistry = "https://sourcegraph.com/.api/registry"
 	if s, ok := x.RemoteRegistry.(string); ok {
 		pc.RemoteRegistryURL = s
 	} else if b, ok := x.RemoteRegistry.(bool); ok && !b {
 		// Nothing to do.
 	} else {
-		pc.RemoteRegistryURL = defaultRemoteRegistry
+		pc.RemoteRegistryURL = DefaultRemoteRegistry
 	}
 
 	return &pc
