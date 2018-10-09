@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"go/build"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -122,25 +121,18 @@ func main() {
 	// 	bk.Cmd("node_modules/.bin/nyc report -r json"),
 	// 	bk.ArtifactPaths("coverage/coverage-final.json"))
 
-	// addDockerImageStep adds a build step for a given app. If the app name has prefix
-	// "enterprise-", that signals it is part of the enterprise distribution.
+	// addDockerImageStep adds a build step for a given app.
+	// If the app is not in the cmd directory, it is assumed to be from the open source repo.
 	addDockerImageStep := func(app string, insiders bool) {
-		isEnterprise := strings.HasPrefix(app, "enterprise:")
-		appBase := strings.TrimPrefix(app, "enterprise:")
-
-		var cmdDir string
+		cmdDir := "cmd/" + app
 		var pkgPath string
-		if isEnterprise {
-			cmdDir = "cmd/" + appBase
-			pkgPath = "github.com/sourcegraph/enterprise/cmd/" + appBase
+		if _, err := os.Stat(cmdDir); err != nil {
+			fmt.Printf("github.com/sourcegraph/enterprise/cmd/%s does not exist so building github.com/sourcegraph/sourcegraph/cmd/%s instead", app, app)
+			pkgPath = "github.com/sourcegraph/sourcegraph/cmd/" + app
 		} else {
-			log.Fatal("Only enterprise builds allowed")
+			pkgPath = "github.com/sourcegraph/enterprise/cmd/" + app
 		}
 
-		if _, err := os.Stat(cmdDir); err != nil {
-			fmt.Fprintln(os.Stderr, "app does not exist: "+app)
-			os.Exit(1)
-		}
 		cmds := []bk.StepOpt{
 			bk.Cmd(fmt.Sprintf(`echo "Building %s..."`, app)),
 		}
@@ -150,7 +142,7 @@ func main() {
 			cmds = append(cmds, bk.Cmd(preBuildScript))
 		}
 
-		image := "sourcegraph/" + appBase
+		image := "sourcegraph/" + app
 		buildScript := cmdDir + "/build.sh"
 		if _, err := os.Stat(buildScript); err == nil {
 			cmds = append(cmds,
@@ -253,27 +245,34 @@ func main() {
 
 	switch {
 	case taggedRelease:
-		latest := branch == "master"
 		allDockerImages := []string{
-			"enterprise:frontend",
-			"enterprise:server",
+			"frontend",
+			"github-proxy",
+			"gitserver",
+			"indexer",
+			"lsp-proxy",
+			"query-runner",
+			"repo-updater",
+			"searcher",
+			"server",
+			"symbols",
 			"xlang-go",
 		}
 
 		for _, dockerImage := range allDockerImages {
-			addDockerImageStep(dockerImage, latest)
+			addDockerImageStep(dockerImage, false)
 		}
 		pipeline.AddWait()
 
 	case branch == "master":
-		addDockerImageStep("enterprise:frontend", true)
-		addDockerImageStep("enterprise:server", true)
+		addDockerImageStep("frontend", true)
+		addDockerImageStep("server", true)
 		pipeline.AddWait()
 		addDeploySteps()
 
 	case strings.HasPrefix(branch, "master-dry-run/"): // replicates `master` build but does not deploy
-		addDockerImageStep("enterprise:frontend", true)
-		addDockerImageStep("enterprise:server", true)
+		addDockerImageStep("frontend", true)
+		addDockerImageStep("server", true)
 		pipeline.AddWait()
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):
@@ -283,7 +282,8 @@ func main() {
 	case strings.HasPrefix(branch, "docker-images/"):
 		addDockerImageStep(branch[14:], true)
 		pipeline.AddWait()
-		if branch != "docker-images/server" {
+		// Only deploy images that aren't auto deployed from master.
+		if branch != "docker-images/server" && branch != "docker-images/frontend" {
 			addDeploySteps()
 		}
 	}
