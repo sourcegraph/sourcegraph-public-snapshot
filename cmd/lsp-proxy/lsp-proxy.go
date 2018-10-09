@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/keegancsmith/tmpfriend"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -37,9 +36,6 @@ var (
 func main() {
 	flag.Parse()
 	log.SetFlags(0)
-
-	// Enable colors by default
-	color.NoColor = env.Get("COLOR", "true", "Whether to output colors") == "false"
 
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

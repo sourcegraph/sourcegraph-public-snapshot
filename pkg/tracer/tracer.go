@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -28,21 +29,29 @@ var (
 	lightstepProject             = conf.Get().LightstepProject
 	lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span logs to LightStep"))
 	useJaeger                    = conf.Get().UseJaeger
-	logColors                    = []int{5, 1, 3, 2, 6}
+	logColors                    = map[log15.Lvl]color.Attribute{
+		log15.LvlCrit:  color.FgRed,
+		log15.LvlError: color.FgRed,
+		log15.LvlWarn:  color.FgYellow,
+		log15.LvlInfo:  color.FgCyan,
+		log15.LvlDebug: color.Faint,
+	}
 	// We'd prefer these in caps, not lowercase, and don't need the 4-character alignment
-	logNames = []string{"CRIT", "ERROR", "WARN", "INFO", "DEBUG"}
+	logLabels = map[log15.Lvl]string{
+		log15.LvlCrit:  "CRITICAL",
+		log15.LvlError: "ERROR",
+		log15.LvlWarn:  "WARN",
+		log15.LvlInfo:  "INFO",
+		log15.LvlDebug: "DEBUG",
+	}
 )
 
 func condensedFormat(r *log15.Record) []byte {
-	color := 0
-	text := "NOTE"
-	if int(r.Lvl) >= 0 && int(r.Lvl) < len(logColors) {
-		color = logColors[int(r.Lvl)]
-		text = logNames[int(r.Lvl)]
-	}
+	colorAttr := logColors[r.Lvl]
+	text := logLabels[r.Lvl]
 	var msg bytes.Buffer
-	if color > 0 {
-		fmt.Fprintf(&msg, "\x1b[3%dm%s\x1b[0m %s", color, text, r.Msg)
+	if colorAttr != 0 {
+		fmt.Print(color.New(colorAttr).Sprint(text) + " " + r.Msg)
 	} else {
 		fmt.Print(&msg, r.Msg)
 	}
@@ -75,6 +84,11 @@ func Filter(f func(*log15.Record) bool) Option {
 	return func(o *Options) {
 		o.filters = append(o.filters, f)
 	}
+}
+
+func init() {
+	// Enable colors by default but support https://no-color.org/
+	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
 }
 
 func Init(options ...Option) {
