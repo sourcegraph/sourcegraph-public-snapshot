@@ -925,10 +925,10 @@
     string-score "^1.0.1"
     ts-key-enum "^2.0.0"
 
-"@sourcegraph/phabricator-extension@^1.14.0":
-  version "1.14.0"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/phabricator-extension/-/phabricator-extension-1.14.0.tgz#ceb50ae77849a4c791206eac9d7d7ff4b0b8e9ab"
-  integrity sha512-fkn48rx13wlaqcbkDpf2dGJTMRo1o2pA3qMdpG71bWBDRmsXifEZqoIRoPk0oGI4uStPb1l2eowNJPfyihOxJg==
+"@sourcegraph/phabricator-extension@^1.16.2":
+  version "1.16.2"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/phabricator-extension/-/phabricator-extension-1.16.2.tgz#5c77ece31e44c643a17afc05beebe79ecb92bff8"
+  integrity sha512-XbVCXnUkTsyFOzTPWb+PZoLN6RFxBmyzcly5bQ3/Mxc+RQ5+DU+N2Ms9Pj26zTk9JulIinSqsMomsML5WUE0Iw==
 
 "@sourcegraph/prettierrc@^2.2.0":
   version "2.2.0"
