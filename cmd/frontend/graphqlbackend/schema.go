@@ -3370,6 +3370,23 @@ type DotcomMutation {
         # The token that represents the payment method used to purchase this product subscription.
         paymentToken: String!
     ): CreatePaidProductSubscriptionResult!
+    # Updates a new product subscription and credits or debits the associated payment method.
+    #
+    # Only Sourcegraph.com site admins and the subscription's account owner may perform this
+    # mutation.
+    #
+    # FOR INTERNAL USE ONLY.
+    updatePaidProductSubscription(
+        # The subscription to update.
+        subscriptionID: ID!
+        # The updated details of the product subscription. All fields of the input type must be set
+        # (i.e., it does not support passing a null value to mean "do not update this field's
+        # value").
+        update: ProductSubscriptionInput!
+        # The token that represents the payment method used to pay for (or receive credit for) this
+        # product subscription update.
+        paymentToken: String!
+    ): UpdatePaidProductSubscriptionResult!
     # Archives an existing product subscription.
     #
     # Only Sourcegraph.com site admins may perform this mutation.
@@ -3492,15 +3509,26 @@ type ProductSubscriptionConnection {
     pageInfo: PageInfo!
 }
 
-# A preview of an invoice that would be generated for an update to a product subscription.
+# A preview of an invoice that would be generated for a new or updated product subscription.
 #
 # FOR INTERNAL USE ONLY.
 type ProductSubscriptionPreviewInvoice {
-    # The amount due (positive for debits, negative for credits) for this invoice, in USD cents.
-    amountDue: Int!
-    # The effective date for which this preview invoice was calculated, expressed as the number of
-    # seconds since the epoch.
-    prorationDate: Int!
+    # The net price for this invoice, in USD cents. If this invoice represents an update to a
+    # subscription, this is the difference between the existing price and the updated price.
+    price: Int!
+    # For updates to existing subscriptions, the effective date for which this preview invoice was
+    # calculated, expressed as the number of seconds since the epoch. For new subscriptions, this is
+    # null.
+    prorationDate: String
+    # Whether this invoice requires manual intervention.
+    isDowngradeRequiringManualIntervention: Boolean!
+    # The "before" state of the product subscription (i.e., the existing subscription), prior to the update that this preview
+    # represents, or null if the preview is for a new subscription.
+    beforeInvoiceItem: ProductSubscriptionInvoiceItem
+    # The "after" state of the product subscription, with the update applied to the subscription.
+    # For new subscriptions, this is just the invoice item for the subscription that will be
+    # created.
+    afterInvoiceItem: ProductSubscriptionInvoiceItem!
 }
 
 # An input type that describes a product license to be generated and signed.
@@ -3588,6 +3616,14 @@ input ProductSubscriptionInput {
 # FOR INTERNAL USE ONLY.
 type CreatePaidProductSubscriptionResult {
     # The newly created product subscription.
+    productSubscription: ProductSubscription!
+}
+
+# The result of Mutation.dotcom.updatePaidProductSubscription.
+#
+# FOR INTERNAL USE ONLY.
+type UpdatePaidProductSubscriptionResult {
+    # The updated product subscription.
     productSubscription: ProductSubscription!
 }
 
