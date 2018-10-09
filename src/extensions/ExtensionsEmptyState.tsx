@@ -10,9 +10,9 @@ export const ExtensionsEmptyState: React.SFC<{
         <h4 className="text-muted mb-3">
             Extensions add new features to Sourcegraph. Check out the{' '}
             <a href="https://about.sourcegraph.com/docs/extensions/" target="_blank">
-                docs
+                Sourcegraph Extensions documentation
             </a>{' '}
-            for adding extensions or upgrading your instance.
+            for how to publish extensions.
         </h4>
         <Link to="/extensions" className="btn btn-primary" onClick={onClick}>
             Add extensions from registry
