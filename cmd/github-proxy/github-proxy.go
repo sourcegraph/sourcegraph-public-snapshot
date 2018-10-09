@@ -17,7 +17,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/fatih/color"
 	"github.com/gorilla/handlers"
 	"github.com/prometheus/client_golang/prometheus"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -65,9 +64,6 @@ var hopHeaders = map[string]struct{}{
 }
 
 func main() {
-	// Enable colors by default but support https://no-color.org/
-	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
-
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()

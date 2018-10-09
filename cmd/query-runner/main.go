@@ -17,7 +17,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -37,9 +36,6 @@ var (
 const port = "3183"
 
 func main() {
-	// Enable colors by default but support https://no-color.org/
-	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
-
 	env.Lock()
 	env.HandleHelpFlag()
 

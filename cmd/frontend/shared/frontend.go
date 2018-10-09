@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/fatih/color"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -19,9 +18,6 @@ import (
 // main package implementations such as Sourcegraph Enterprise, which import
 // proprietary/private code.
 func Main() {
-	// Enable colors by default but support https://no-color.org/
-	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
-
 	AssertRequired()
 	env.Lock()
 	err := cli.Main()

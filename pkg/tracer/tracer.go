@@ -86,6 +86,11 @@ func Filter(f func(*log15.Record) bool) Option {
 	}
 }
 
+func init() {
+	// Enable colors by default but support https://no-color.org/
+	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
+}
+
 func Init(options ...Option) {
 	opts := &Options{}
 	for _, setter := range options {

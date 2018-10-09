@@ -17,7 +17,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -44,10 +43,6 @@ var (
 const port = "3184"
 
 func main() {
-
-	// Enable colors by default but support https://no-color.org/
-	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
-
 	env.Lock()
 	env.HandleHelpFlag()
 	log.SetFlags(0)

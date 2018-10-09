@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/fatih/color"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	"gopkg.in/inconshreveable/log15.v2"
@@ -30,10 +29,6 @@ const port = "3182"
 
 func main() {
 	ctx := context.Background()
-
-	// Enable colors by default but support https://no-color.org/
-	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
-
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()

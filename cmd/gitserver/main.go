@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/fatih/color"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -34,9 +33,6 @@ var (
 )
 
 func main() {
-	// Enable colors by default but support https://no-color.org/
-	color.NoColor = env.Get("NO_COLOR", "", "Disable colored output") != ""
-
 	env.Lock()
 	env.HandleHelpFlag()
 	tracer.Init()
