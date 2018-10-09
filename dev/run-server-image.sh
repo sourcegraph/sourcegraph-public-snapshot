@@ -22,7 +22,7 @@ if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
     rm -rf $DATA
 fi
 
-IMAGE=${IMAGE:-sourcegraph/server:insiders}
+IMAGE=${IMAGE:-sourcegraph/server:${TAG:-insiders}}
 echo "pulling docker image ${IMAGE}"
 docker pull $IMAGE
 
