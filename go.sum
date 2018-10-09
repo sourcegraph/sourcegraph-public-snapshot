@@ -181,6 +181,7 @@ github.com/keegancsmith/sqlf v1.1.0/go.mod h1:p1owj38vs/HG0UcZlyhFnXA57SgHejZiHG
 github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513 h1:xa9SZfAid/jlS3kjwAvVDQFpe6t8SiS0Vl/H51BZYww=
 github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513/go.mod h1:MhGoae1pr+JFXxDAYx3b0fMn1xtr1ly9dHa0+KHHon4=
 github.com/kevinburke/differ v0.0.0-20180719214047-7596500234bb/go.mod h1:I7eBHoOOU9N76qKli6iiqWZqh7iyxraK7SgR+kbDgW4=
+github.com/kevinburke/differ v0.0.0-20181006040839-bdfd927653c8/go.mod h1:I7eBHoOOU9N76qKli6iiqWZqh7iyxraK7SgR+kbDgW4=
 github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible h1:GxQXdxHr/j1qkRigV351ePJBbDkwHuDWJU7pJNmi7+k=
 github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible/go.mod h1:/pEEZ72flUW2p0yi30bslSp9YqD9pysLxunQDdb2CPM=
 github.com/kisielk/gotool v1.0.0 h1:AV2c/EiW3KqPNT9ZKl07ehoAGi4C5/01Cfbblndcapg=
@@ -312,6 +313,7 @@ github.com/sourcegraph/sourcegraph v0.0.0-20181006082851-41366c555c1a h1:ckcwCQr
 github.com/sourcegraph/sourcegraph v0.0.0-20181006082851-41366c555c1a/go.mod h1:Ak9d1nxsWM3A0wu4I/4cAh7QczBWXV37XzCTCQcNNcU=
 github.com/sourcegraph/sourcegraph v0.0.0-20181007171831-6e9f93f273c6/go.mod h1:Ak9d1nxsWM3A0wu4I/4cAh7QczBWXV37XzCTCQcNNcU=
 github.com/sourcegraph/sourcegraph v0.0.0-20181007230417-56d7ec8a7d5f/go.mod h1:Ak9d1nxsWM3A0wu4I/4cAh7QczBWXV37XzCTCQcNNcU=
+github.com/sourcegraph/sourcegraph v0.0.0-20181009010909-1d7722a52951/go.mod h1:Ikq4TEVm6aOSrL+PiEv1dzRelvRkFER6MaFPbvDyWo0=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f h1:u0IVxi0z+g2RENKCKITUsUW/up44ZqvVMOTNHHvTQL8=
