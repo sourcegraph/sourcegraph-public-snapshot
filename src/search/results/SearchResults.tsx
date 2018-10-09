@@ -238,7 +238,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         )
     }
 
-    /** Combines dynamic filters and search scopes into a list de-duplicated by value. */
+    /** Combines dynamic filters and search scopes into a list by value. */
     private getFilters(): SearchScope[] {
         const filters = new Map<string, SearchScope>()
 
@@ -260,11 +260,19 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 }
             } else {
                 for (const scope of this.state.scopes) {
-                    filters.set(scope.value, scope)
+                    // Check for duplicated filters and prioritize the user's configured scope names
+                    const duplicatedFilter = filters.get(scope.value)
+
+                    if (duplicatedFilter && scope.name) {
+                        duplicatedFilter.name = scope.name
+                    } else if (duplicatedFilter && !scope.name) {
+                        // Show scope value if user doesn't provide a scope name
+                        duplicatedFilter.name = scope.value
+                    }
+                    filters.set(scope.value, duplicatedFilter ? duplicatedFilter : scope)
                 }
             }
         }
-
         return Array.from(filters.values())
     }
     private showMoreResults = () => {
