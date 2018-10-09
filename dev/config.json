@@ -1,4 +1,4 @@
-// The Sourcegraph site configuration for development servers.
+// The Sourcegraph site is the configuration for development servers.
 {
   "appURL": "http://localhost:3080",
   "experimentalFeatures": {
@@ -7,10 +7,12 @@
     "updateScheduler": "enabled",
     "discussions": "enabled"
   },
+  
   "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,
   "update.channel": "release",
   "corsOrigin": "https://github.com",
+  
   "auth.providers": [
     {
       "type": "builtin",
