@@ -7,11 +7,11 @@ import { Settings } from '../schema/settings.schema'
 import { currentConfiguration } from '../settings/configuration'
 import { SiteFlags } from '../site'
 import { siteFlags } from '../site/backend'
-import { ConfigurationNoticeAlert } from '../site/ConfigurationNoticeAlert'
 import { DockerForMacAlert } from '../site/DockerForMacAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
 import { NoRepositoriesEnabledAlert } from '../site/NoRepositoriesEnabledAlert'
 import { UpdateAvailableAlert } from '../site/UpdateAvailableAlert'
+import { GlobalAlert } from './GlobalAlert'
 
 interface Props {
     isSiteAdmin: boolean
@@ -68,9 +68,9 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                                 <DockerForMacAlert className="global-alerts__alert" />
                             )}
 
-                        {this.state.siteFlags.configurationNotice && (
-                            <ConfigurationNoticeAlert className="global-alerts__alert" />
-                        )}
+                        {this.state.siteFlags.alerts.map((alert, i) => (
+                            <GlobalAlert key={i} alert={alert} className="global-alerts__alert" />
+                        ))}
                     </>
                 )}
                 {this.state.mergedSettings &&
@@ -80,7 +80,7 @@ export class GlobalAlerts extends React.PureComponent<Props, State> {
                         <DismissibleAlert
                             key={m}
                             partialStorageKey={`motd.${m}`}
-                            className="alert alert-info global-alerts__alert global-alerts__motd"
+                            className="alert alert-info global-alerts__alert"
                         >
                             <Markdown dangerousInnerHTML={marked(m, { gfm: true, breaks: true, sanitize: true })} />
                         </DismissibleAlert>

@@ -65,18 +65,6 @@ func (*siteResolver) ExternalAuthEnabled() bool {
 	return false
 }
 
-func (*siteResolver) ConfigurationNotice(ctx context.Context) bool {
-	// 🚨 SECURITY: Only the site admin cares about this. Leaking a boolean wouldn't be a security
-	// vulnerability, but just in case this method is changed to return more information, let's lock
-	// it down.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return false
-	}
-
-	messages, err := conf.Validate(conf.Raw())
-	return len(messages) > 0 || err != nil
-}
-
 func (*siteResolver) DisableBuiltInSearches() bool {
 	return conf.Get().DisableBuiltInSearches
 }

@@ -24,7 +24,11 @@ export function refreshSiteFlags(): Observable<never> {
                     site {
                         needsRepositoryConfiguration
                         noRepositoriesEnabled
-                        configurationNotice
+                        alerts {
+                            type
+                            message
+                            isDismissibleWithKey
+                        }
                         hasCodeIntelligence
                         externalAuthEnabled
                         disableBuiltInSearches

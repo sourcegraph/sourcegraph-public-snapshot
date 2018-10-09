@@ -13,9 +13,7 @@
 
         // stylelint-disable-next-line declaration-property-unit-whitelist
         font-size: 16px;
-    }
 
-    &__motd {
         // The trailing after-paragraph/list margin looks unbalanced in MOTDs.
         p:last-child,
         ul:last-child,
