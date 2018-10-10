@@ -174,7 +174,7 @@ func (c *langServersResolver) Enable(ctx context.Context, args *struct{ Language
 			return nil, err
 		}
 		// Set disabled=false in the site config.
-		if err := langservers.SetDisabled(args.Language, false); err != nil {
+		if err := langservers.SetDisabled(ctx, args.Language, false); err != nil {
 			return nil, errors.Wrap(err, "langservers.SetDisabled")
 		}
 		return &EmptyResponse{}, nil
@@ -208,7 +208,7 @@ func (c *langServersResolver) Enable(ctx context.Context, args *struct{ Language
 	// enable it.
 
 	// Set disabled=false in the site config.
-	if err := langservers.SetDisabled(args.Language, false); err != nil {
+	if err := langservers.SetDisabled(ctx, args.Language, false); err != nil {
 		return nil, errors.Wrap(err, "langservers.SetDisabled")
 	}
 
@@ -237,7 +237,7 @@ func (c *langServersResolver) Disable(ctx context.Context, args *struct{ Languag
 	}
 
 	// Set disabled=true in the site config.
-	if err := langservers.SetDisabled(args.Language, true); err != nil {
+	if err := langservers.SetDisabled(ctx, args.Language, true); err != nil {
 		return nil, errors.Wrap(err, "langservers.SetDisabled")
 	}
 	return &EmptyResponse{}, nil

@@ -53,23 +53,46 @@ func State(language string) (ConfigState, error) {
 	return StateNone, nil
 }
 
-func setDisabledInGlobalSettings(language string, disabled bool) error {
+func setDisabledInGlobalSettings(ctx context.Context, language string, disabled bool) error {
 	settings, err := db.Settings.GetLatest(context.Background(), api.ConfigurationSubject{Site: true})
 	if err != nil {
 		return err
 	}
+	var contents string
+	var id *int32
+	var authorUserID int32
 	if settings == nil {
-		return nil
+		contents = "{}"
+		// HACK: Global settings are nil (probably because this is a brand new
+		// instance), so there's no existing author user ID to reuse. Just take
+		// any user's ID. The author isn't shown anywhere, anyway.
+		users, err := db.Users.List(ctx, &db.UsersListOptions{
+			LimitOffset: &db.LimitOffset{Limit: 1},
+		})
+		if err != nil {
+			return errors.Wrap(err, "unable to obtain a user ID to edit global settings (consequently, global settings may be out of sync with langservers in site config)")
+		}
+		if len(users) > 0 {
+			authorUserID = users[0].ID
+		} else {
+			// Crazy edge case: there are no users in the entire site. All we
+			// can do is return without updating global settings.
+			return nil
+		}
+	} else {
+		contents = settings.Contents
+		authorUserID = settings.AuthorUserID
+		id = &settings.ID
 	}
-	edits, _, err := jsonx.ComputePropertyEdit(settings.Contents, jsonx.PropertyPath("extensions", "langserver/"+language), !disabled, nil, conf.FormatOptions)
+	edits, _, err := jsonx.ComputePropertyEdit(contents, jsonx.PropertyPath("extensions", "langserver/"+language), !disabled, nil, conf.FormatOptions)
 	if err != nil {
 		return err
 	}
-	newSettings, err := jsonx.ApplyEdits(settings.Contents, edits...)
+	newContents, err := jsonx.ApplyEdits(contents, edits...)
 	if err != nil {
 		return err
 	}
-	_, err = db.Settings.CreateIfUpToDate(context.Background(), api.ConfigurationSubject{Site: true}, &settings.ID, settings.AuthorUserID, newSettings)
+	_, err = db.Settings.CreateIfUpToDate(context.Background(), api.ConfigurationSubject{Site: true}, id, authorUserID, newContents)
 	if err != nil {
 		return err
 	}
@@ -83,11 +106,11 @@ func setDisabledInGlobalSettings(language string, disabled bool) error {
 //
 // This also enables/disables the corresponding Sourcegraph Extension in global
 // settings (not site configuration).
-func SetDisabled(language string, disabled bool) error {
+func SetDisabled(ctx context.Context, language string, disabled bool) error {
 	// Check if the language specified is for a custom language server or not.
 	customLangserver := checkSupported(language) != nil
 
-	err := setDisabledInGlobalSettings(language, disabled)
+	err := setDisabledInGlobalSettings(ctx, language, disabled)
 	if err != nil {
 		return errors.Wrap(err, "setDisabledInGlobalSettings")
 	}
