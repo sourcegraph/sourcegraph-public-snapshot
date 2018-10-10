@@ -49,7 +49,7 @@
     "@sourcegraph/extensions-client-common": "^10.0.0",
     "@sourcegraph/phabricator-extension": "^1.16.2",
     "@sourcegraph/react-loading-spinner": "0.0.6",
-    "@sourcegraph/webapp": "^0.0.245",
+    "@sourcegraph/webapp": "0.0.245",
     "date-fns": "^2.0.0-alpha.7",
     "lodash": "^4.17.11",
     "mdi-react": "^4.3.0",

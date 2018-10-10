@@ -963,7 +963,7 @@
     tslint-config-prettier "^1.6.0"
     tslint-react "^3.2.0"
 
-"@sourcegraph/webapp@^0.0.245":
+"@sourcegraph/webapp@0.0.245":
   version "0.0.245"
   resolved "https://registry.yarnpkg.com/@sourcegraph/webapp/-/webapp-0.0.245.tgz#6c240555a45bd21f2668f8347ccc3709905f701e"
   integrity sha512-10VU/JOA27ykZCWgbnJ5dExqzHfEEnjW3yAYxBCyN7kUmLy7/HAdSWuFKPqvxvNSBG4s5CxkTfgZ8AfpA3V8Bg==
