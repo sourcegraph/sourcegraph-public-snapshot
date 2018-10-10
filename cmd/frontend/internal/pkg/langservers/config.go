@@ -1,6 +1,7 @@
 package langservers
 
 import (
+	"gopkg.in/inconshreveable/log15.v2"
 	"context"
 	"strings"
 
@@ -69,16 +70,11 @@ func setDisabledInGlobalSettings(ctx context.Context, language string, disabled 
 		users, err := db.Users.List(ctx, &db.UsersListOptions{
 			LimitOffset: &db.LimitOffset{Limit: 1},
 		})
-		if err != nil {
-			return errors.Wrap(err, "unable to obtain a user ID to edit global settings (consequently, global settings may be out of sync with langservers in site config)")
-		}
-		if len(users) > 0 {
-			authorUserID = users[0].ID
-		} else {
-			// Crazy edge case: there are no users in the entire site. All we
-			// can do is return without updating global settings.
+		if err != nil || len(users) == 0 {
+			log15.Warn("unable to obtain a user ID to edit global settings and enable/disable a language server, so global settings may be out of sync with `langservers` in site config")
 			return nil
 		}
+		authorUserID = users[0].ID
 	} else {
 		contents = settings.Contents
 		authorUserID = settings.AuthorUserID
