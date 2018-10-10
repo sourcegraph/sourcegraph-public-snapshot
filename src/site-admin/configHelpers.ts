@@ -111,6 +111,13 @@ const addSAMLAuthProvider: ConfigInsertionFunction = config => {
     }
 }
 
+const addLicenseKey: ConfigInsertionFunction = config => {
+    const value =
+        '<input a license key generated from /site-admin/license. See https://about.sourcegraph.com/pricing for more details>'
+    const edits = setProperty(config, ['licenseKey'], value, defaultFormattingOptions)
+    return { edits, selectText: value }
+}
+
 const addSearchScopeToSettings: ConfigInsertionFunction = config => {
     const value: { name: string; value: string } = {
         name: '<name>',
@@ -126,13 +133,6 @@ const addSlackWebhook: ConfigInsertionFunction = config => {
     }
     const edits = setProperty(config, ['notifications.slack'], value, defaultFormattingOptions)
     return { edits, selectText: '""', cursorOffset: 1 }
-}
-
-const addLicenseKey: ConfigInsertionFunction = config => {
-    const value =
-        '<input a license key generated from /site-admin/license. See https://about.sourcegraph.com/pricing for more details>'
-    const edits = setProperty(config, ['licenseKey'], value, defaultFormattingOptions)
-    return { edits, selectText: value }
 }
 
 export interface EditorAction {
