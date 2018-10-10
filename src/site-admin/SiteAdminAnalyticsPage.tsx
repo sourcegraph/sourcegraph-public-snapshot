@@ -24,8 +24,8 @@ interface ChartOptions {
 }
 
 const chartGeneratorOptions: ChartOptions = {
-    daus: { label: 'Daily unique users', dateFormat: 'ddd, MMM D' },
-    waus: { label: 'Weekly unique users', dateFormat: 'ddd, MMM D' },
+    daus: { label: 'Daily unique users', dateFormat: 'E, MMM d' },
+    waus: { label: 'Weekly unique users', dateFormat: 'E, MMM d' },
     maus: { label: 'Monthly unique users', dateFormat: 'MMMM YYYY' },
 }
 
