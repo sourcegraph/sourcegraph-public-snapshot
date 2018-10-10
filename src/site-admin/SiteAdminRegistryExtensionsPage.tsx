@@ -101,13 +101,13 @@ class RegistryExtensionNodeSiteAdminRow extends React.PureComponent<
                         {!this.props.node.isLocal &&
                             this.props.node.remoteURL &&
                             this.props.node.registryName && (
-                                <Link
-                                    to={this.props.node.remoteURL}
+                                <a
+                                    href={this.props.node.remoteURL}
                                     className="btn btn-link text-info btn-sm ml-1"
                                     title={`View extension on ${this.props.node.registryName}`}
                                 >
                                     Visit
-                                </Link>
+                                </a>
                             )}
                         {this.props.node.viewerCanAdminister && (
                             <button
