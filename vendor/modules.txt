@@ -267,9 +267,9 @@ github.com/sourcegraph/ctxvfs
 github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler
 github.com/sourcegraph/go-jsonschema/jsonschema
 github.com/sourcegraph/go-jsonschema/compiler
-# github.com/sourcegraph/go-langserver v0.0.0-20180817131207-7df19dc017ef
-github.com/sourcegraph/go-langserver/pkg/lsp
-github.com/sourcegraph/go-langserver/pkg/lspext
+# github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18
+github.com/sourcegraph/go-lsp
+github.com/sourcegraph/go-lsp/lspext
 # github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18
 github.com/sourcegraph/godockerize
 # github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10

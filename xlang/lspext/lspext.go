@@ -17,7 +17,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/go-lsp"
 )
 
 // DependencyReference represents a reference to a dependency. []DependencyReference

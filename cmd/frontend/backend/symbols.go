@@ -3,8 +3,8 @@ package backend
 import (
 	"context"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	symbolsclient "github.com/sourcegraph/sourcegraph/pkg/symbols"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"

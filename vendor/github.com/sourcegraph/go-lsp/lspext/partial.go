@@ -1,6 +1,6 @@
 package lspext
 
-import "github.com/sourcegraph/go-langserver/pkg/lsp"
+import "github.com/sourcegraph/go-lsp"
 
 // PartialResultParams is the input for "$/partialResult", a notification.
 type PartialResultParams struct {

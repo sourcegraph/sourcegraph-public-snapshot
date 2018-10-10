@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/go-langserver/pkg/lspext"
+	"github.com/sourcegraph/go-lsp/lspext"
 	xlang_lspext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
