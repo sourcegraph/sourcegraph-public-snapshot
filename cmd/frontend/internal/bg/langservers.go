@@ -72,7 +72,7 @@ func StartLangServers(ctx context.Context) {
 			}
 
 			// Set disabled=false in the site config.
-			if err := langservers.SetDisabled(language, false); err != nil {
+			if err := langservers.SetDisabled(ctx, language, false); err != nil {
 				log15.Error("failed to mark running language server as enabled", "language", language, "error", err)
 				continue
 			}
