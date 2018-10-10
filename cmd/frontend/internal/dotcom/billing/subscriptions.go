@@ -17,9 +17,9 @@ func ToSubscriptionItemsParams(input graphqlbackend.ProductSubscriptionInput) *s
 	}
 }
 
-// GetSubscriptionItemIDToReplace returns a list of subscription items that replaces the subscription's existing items. It is used when updating a subscription or previewing an invoice.
-//
-// For convenience, it also returns the billing subscription.
+// GetSubscriptionItemIDToReplace returns the ID of the billing subscription item (used when
+// updating the subscription or previewing an invoice to do so). It also performs a good set of
+// sanity checks on the subscription that should be performed whenever the subscription is updated.
 func GetSubscriptionItemIDToReplace(billingSub *stripe.Subscription, billingCustomerID string) (string, error) {
 	if billingSub.Customer.ID != billingCustomerID {
 		return "", errors.New("product subscription's billing customer does not match the provided account parameter")

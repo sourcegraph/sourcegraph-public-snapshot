@@ -77,7 +77,8 @@ func (ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(ct
 		after: &productSubscriptionInvoiceItem{
 			plan:      plan,
 			userCount: args.ProductSubscription.UserCount,
-			// expiresAt depends on whether this is a new vs. updated subscription.
+			// The expiresAt field will be set below, not here, because its value depends on whether
+			// this is a new vs. updated subscription.
 		},
 	}
 
@@ -87,10 +88,7 @@ func (ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(ct
 		SubscriptionItems: []*stripe.SubscriptionItemsParams{billing.ToSubscriptionItemsParams(args.ProductSubscription)},
 	}
 
-	if args.SubscriptionToUpdate == nil {
-		// New subscription.
-		// result.after.expiresAt
-	} else {
+	if args.SubscriptionToUpdate != nil {
 		// Update a subscription.
 		//
 		// When updating an existing subscription, craft the params to replace the existing subscription
