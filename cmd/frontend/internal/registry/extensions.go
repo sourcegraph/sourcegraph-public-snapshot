@@ -5,9 +5,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 func init() {
+	conf.DefaultRemoteRegistry = "https://sourcegraph.com/.api/registry"
 	registry.GetLocalExtensionByExtensionID = func(ctx context.Context, extensionIDWithoutPrefix string) (graphqlbackend.RegistryExtension, error) {
 		x, err := dbExtensions{}.GetByExtensionID(ctx, extensionIDWithoutPrefix)
 		if err != nil {
