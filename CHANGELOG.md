@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Files with the gitattribute `export-ignore` are no longer excluded for language analysis and search.
 - "Discard changes?" confirmation popup doesn't pop up every single time you try to navigate to a new page after editting something in the site settings page anymore.
 - Fixed an issue where Git repository URLs would sometimes be logged, potentially containing e.g. basic auth tokens.
+- Fixed date formatting on the site admin Analytics page.
 
 ### Removed
 
