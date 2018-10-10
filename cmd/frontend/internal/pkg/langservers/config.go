@@ -72,8 +72,7 @@ func setDisabledInGlobalSettings(ctx context.Context, language string, disabled 
 			LimitOffset: &db.LimitOffset{Limit: 1},
 		})
 		if err != nil || len(users) == 0 {
-			log15.Warn("unable to obtain a user ID to edit global settings and enable/disable a language server, so global settings may be out of sync with `langservers` in site config")
-			return nil
+			return errors.New("unable to obtain a user ID to edit global settings and enable/disable a language server")
 		}
 		authorUserID = users[0].ID
 	} else {
