@@ -128,6 +128,13 @@ const addSlackWebhook: ConfigInsertionFunction = config => {
     return { edits, selectText: '""', cursorOffset: 1 }
 }
 
+const addLicenseKey: ConfigInsertionFunction = config => {
+    const value =
+        '<input a license key generated from /site-admin/license. See https://about.sourcegraph.com/pricing for more details>'
+    const edits = setProperty(config, ['licenseKey'], value, defaultFormattingOptions)
+    return { edits, selectText: value }
+}
+
 export interface EditorAction {
     id: string
     label: string
@@ -156,6 +163,7 @@ export const siteConfigActions: EditorAction[] = [
         run: addGSuiteOIDCAuthProvider,
     },
     { id: 'sourcegraph.site.addSAMLAUthProvider', label: 'Add SAML user auth', run: addSAMLAuthProvider },
+    { id: 'sourcegraph.site.addLicenseKey', label: 'Add license key', run: addLicenseKey },
 ]
 
 export function getUpdateChannel(text: string): string {
