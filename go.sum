@@ -285,7 +285,6 @@ github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81 h1:v4/JVxZSPWif
 github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI5FiHLxhv8prbzVpaMHaaGPFPFQSuTcxC91ryOo=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d h1:BAP431YeA7rgSoySjmVzBfFjXsLtnD93zZip5JIOWdk=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d/go.mod h1:6DfNy4BLIggAeittTJ8o9z/6d1ly+YujBTSnv03i7Bk=
-github.com/sourcegraph/go-langserver v0.0.0-20180817131207-7df19dc017ef/go.mod h1:bBMjfpzEHd6ijPRoQ7f+knFfw+e8R+W158/MsqAy77c=
 github.com/sourcegraph/go-langserver v2.0.1-0.20181010102349-2d9d8f4a24da+incompatible h1:ZzM1w2X7Yrjv0GIcCrIAOqXec7V2+RPOHBQdFaTvSZ8=
 github.com/sourcegraph/go-langserver v2.0.1-0.20181010102349-2d9d8f4a24da+incompatible/go.mod h1:bBMjfpzEHd6ijPRoQ7f+knFfw+e8R+W158/MsqAy77c=
 github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18 h1:XOwy8S85zGn+1CudjP8ZCQYot3u40RjsPRyltEsBa1s=
@@ -308,8 +307,8 @@ github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd h1:NPk22RvonOjkN
 github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 h1:FX++QsC/k2sAidBLhZX0CZQwRwrRmz5KjKZPKcXGV74=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85/go.mod h1:v7Yudh8lfegZt52Qs5X9ktO0OMWEeUeoXO+4vJqn2Iw=
-github.com/sourcegraph/sourcegraph v0.0.0-20181010035147-358617e695b3 h1:3RXFa6gaz7rR85+VzW06HO8oi1jU3EN7ENgO/qMkO/8=
-github.com/sourcegraph/sourcegraph v0.0.0-20181010035147-358617e695b3/go.mod h1:Ikq4TEVm6aOSrL+PiEv1dzRelvRkFER6MaFPbvDyWo0=
+github.com/sourcegraph/sourcegraph v0.0.0-20181010103606-2a152c79f811 h1:UM+kYXX4NhtAZWhWv1YLm30O/tx/Wt4jSxiOtSzOej4=
+github.com/sourcegraph/sourcegraph v0.0.0-20181010103606-2a152c79f811/go.mod h1:z/TS4d0AW4o68C08b0tZjA+tylApi4gQW1/ySO0baqc=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f/go.mod h1:I5NDweTUikWVakOqHBnCuqXGZOi0vJoeZRTFbHmhc1A=
