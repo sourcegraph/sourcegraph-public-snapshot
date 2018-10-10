@@ -238,7 +238,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
         )
     }
 
-    /** Combines dynamic filters and search scopes into a de-duplicated list by value. */
+    /** Combines dynamic filters and search scopes into a list de-duplicated by value. */
     private getFilters(): SearchScope[] {
         const filters = new Map<string, SearchScope>()
 
