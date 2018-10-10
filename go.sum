@@ -286,8 +286,10 @@ github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81/go.mod h1:xIvvI
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d h1:BAP431YeA7rgSoySjmVzBfFjXsLtnD93zZip5JIOWdk=
 github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d/go.mod h1:6DfNy4BLIggAeittTJ8o9z/6d1ly+YujBTSnv03i7Bk=
 github.com/sourcegraph/go-langserver v0.0.0-20180817131207-7df19dc017ef/go.mod h1:bBMjfpzEHd6ijPRoQ7f+knFfw+e8R+W158/MsqAy77c=
-github.com/sourcegraph/go-langserver v0.0.0-20180917104716-6b103664e059 h1:HRLfGFTH+KCfzLFnDH5QzVZIfgKY8My8pwaRh9LNbYI=
-github.com/sourcegraph/go-langserver v0.0.0-20180917104716-6b103664e059/go.mod h1:bBMjfpzEHd6ijPRoQ7f+knFfw+e8R+W158/MsqAy77c=
+github.com/sourcegraph/go-langserver v2.0.1-0.20181010102349-2d9d8f4a24da+incompatible h1:ZzM1w2X7Yrjv0GIcCrIAOqXec7V2+RPOHBQdFaTvSZ8=
+github.com/sourcegraph/go-langserver v2.0.1-0.20181010102349-2d9d8f4a24da+incompatible/go.mod h1:bBMjfpzEHd6ijPRoQ7f+knFfw+e8R+W158/MsqAy77c=
+github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18 h1:XOwy8S85zGn+1CudjP8ZCQYot3u40RjsPRyltEsBa1s=
+github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18/go.mod h1:tpps84QRlOVVLYk5QpKYX8Tr289D1v/UTWDLqeguiqM=
 github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd h1:wxP7dU7tNtU03+Z4GIuYGV17AO1i3HfCBArGu0igaro=
 github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd/go.mod h1:Dl+4tLnKopzymgEhEZCi6/KSIZPFBe1rvoKMxCGh0Ms=
 github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18 h1:Owk1nJ1CZIhtKyiVrG65ajT834xuNhtpJWmhnNF2x3A=
@@ -306,12 +308,8 @@ github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd h1:NPk22RvonOjkN
 github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd/go.mod h1:7jkSQ2sdxwXMaIDxKJotTt+hwKnT9b/wbJFU7/ObUEY=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 h1:FX++QsC/k2sAidBLhZX0CZQwRwrRmz5KjKZPKcXGV74=
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85/go.mod h1:v7Yudh8lfegZt52Qs5X9ktO0OMWEeUeoXO+4vJqn2Iw=
-github.com/sourcegraph/sourcegraph v0.0.0-20181009085806-9baba3ef9ff8 h1:IRf8JMwvJClTSnAHx/RT5dnGpZyoZNdZHLndSv9bEK8=
-github.com/sourcegraph/sourcegraph v0.0.0-20181009085806-9baba3ef9ff8/go.mod h1:Ikq4TEVm6aOSrL+PiEv1dzRelvRkFER6MaFPbvDyWo0=
-github.com/sourcegraph/sourcegraph v0.0.0-20181009140906-1f7f8ac94227/go.mod h1:Ikq4TEVm6aOSrL+PiEv1dzRelvRkFER6MaFPbvDyWo0=
-github.com/sourcegraph/sourcegraph v0.0.0-20181009211922-10c1d03bd646/go.mod h1:Ikq4TEVm6aOSrL+PiEv1dzRelvRkFER6MaFPbvDyWo0=
-github.com/sourcegraph/sourcegraph v0.0.0-20181010030425-b0ec56955713/go.mod h1:Ikq4TEVm6aOSrL+PiEv1dzRelvRkFER6MaFPbvDyWo0=
-github.com/sourcegraph/sourcegraph v0.0.0-20181010040429-358617e695b3/go.mod h1:Ikq4TEVm6aOSrL+PiEv1dzRelvRkFER6MaFPbvDyWo0=
+github.com/sourcegraph/sourcegraph v0.0.0-20181010035147-358617e695b3 h1:3RXFa6gaz7rR85+VzW06HO8oi1jU3EN7ENgO/qMkO/8=
+github.com/sourcegraph/sourcegraph v0.0.0-20181010035147-358617e695b3/go.mod h1:Ikq4TEVm6aOSrL+PiEv1dzRelvRkFER6MaFPbvDyWo0=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f/go.mod h1:I5NDweTUikWVakOqHBnCuqXGZOi0vJoeZRTFbHmhc1A=

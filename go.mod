@@ -37,13 +37,14 @@ require (
 	github.com/slimsag/godocmd v0.0.0-20161025000126-a1005ad29fe3 // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
-	github.com/sourcegraph/go-langserver v0.0.0-20180917104716-6b103664e059
+	github.com/sourcegraph/go-langserver v2.0.1-0.20181010102349-2d9d8f4a24da+incompatible
+	github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18 // indirect
 	github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd
 	github.com/sourcegraph/godockerize v0.0.0-20181001062649-0f33644f1829
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
-	github.com/sourcegraph/sourcegraph v0.0.0-20181010040429-358617e695b3
+	github.com/sourcegraph/sourcegraph v0.0.0-20181010035147-358617e695b3
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stripe/stripe-go v0.0.0-20181003141555-9e2a36d584c4
 	github.com/zenazn/goji v0.9.0 // indirect
