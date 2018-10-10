@@ -124,7 +124,7 @@ func (e httpError) Error() string { return fmt.Sprintf("HTTP error %d", e) }
 // Name returns the registry name given its URL.
 func Name(registry *url.URL) string {
 	if registry.Host == "" {
-		return "localhost"
+		return "127.0.0.1"
 	}
 	return registry.Host
 }
