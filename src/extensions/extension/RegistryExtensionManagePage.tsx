@@ -4,7 +4,7 @@ import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import { Form } from '@sourcegraph/webapp/dist/components/Form'
 import { HeroPage } from '@sourcegraph/webapp/dist/components/HeroPage'
 import { PageTitle } from '@sourcegraph/webapp/dist/components/PageTitle'
-import { RegistryPublisher, toExtensionID } from '@sourcegraph/webapp/dist/extensions/extension/extension'
+import { toExtensionID } from '@sourcegraph/webapp/dist/extensions/extension/extension'
 import { ExtensionAreaRouteContext } from '@sourcegraph/webapp/dist/extensions/extension/ExtensionArea'
 import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
@@ -15,7 +15,6 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
-import { queryViewerRegistryPublishers } from '../registry/backend'
 import { RegistryExtensionDeleteButton } from './RegistryExtensionDeleteButton'
 import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from './RegistryExtensionForm'
 
@@ -56,9 +55,6 @@ function updateExtension(
 interface Props extends ExtensionAreaRouteContext, RouteComponentProps<{}> {}
 
 interface State {
-    /** The viewer's authorized publishers, 'loading', or an error. */
-    publishersOrError: 'loading' | RegistryPublisher[] | ErrorLike
-
     name?: string
 
     /** The update result, undefined if not triggered, 'loading', or an error. */
@@ -67,9 +63,7 @@ interface State {
 
 /** A page for managing an extension in the extension registry. */
 export class RegistryExtensionManagePage extends React.PureComponent<Props, State> {
-    public state: State = {
-        publishersOrError: 'loading',
-    }
+    public state: State = {}
 
     private submits = new Subject<React.FormEvent<HTMLFormElement>>()
     private componentUpdates = new Subject<Props>()
@@ -77,16 +71,6 @@ export class RegistryExtensionManagePage extends React.PureComponent<Props, Stat
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('RegistryExtensionManage')
-
-        this.subscriptions.add(
-            concat(
-                [{ publishersOrError: 'loading' }],
-                queryViewerRegistryPublishers().pipe(
-                    map(result => ({ publishersOrError: result, publisher: result[0] && result[0].id })),
-                    catchError(error => [{ publishersOrError: asError(error) }])
-                )
-            ).subscribe(stateUpdate => this.setState(stateUpdate as State), err => console.error(err))
-        )
 
         this.subscriptions.add(
             this.submits
@@ -154,13 +138,7 @@ export class RegistryExtensionManagePage extends React.PureComponent<Props, Stat
         const extensionName =
             this.state.name === undefined ? this.props.extension.registryExtension.name : this.state.name
 
-        let extensionID: string | undefined
-        if (this.state.publishersOrError !== 'loading' && !isErrorLike(this.state.publishersOrError)) {
-            const p = this.state.publishersOrError.find(p => p.id === publisher.id)
-            if (p) {
-                extensionID = toExtensionID(p, extensionName)
-            }
-        }
+        const extensionID = toExtensionID(publisher, extensionName)
 
         return (
             <div className="registry-extension-manage-page">
@@ -170,7 +148,7 @@ export class RegistryExtensionManagePage extends React.PureComponent<Props, Stat
                     <RegistryPublisherFormGroup
                         className="registry-extension-manage-page__input"
                         value={publisher.id}
-                        publishersOrError={this.state.publishersOrError}
+                        publishersOrError={[publisher]}
                         disabled={true}
                     />
                     <RegistryExtensionNameFormGroup
