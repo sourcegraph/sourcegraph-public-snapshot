@@ -209,6 +209,12 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		TargetRepo *discussionThreadTargetRepoInput
 	}
 }) (*discussionThreadResolver, error) {
+	if args.Input.Title == nil {
+		// Title defaults to first line of contents.
+		title := strings.TrimSpace(strings.SplitN(strings.TrimSpace(args.Input.Contents), "\n", 2)[0])
+		args.Input.Title = &title
+	}
+
 	// 🚨 SECURITY: Only signed in users with a verified email may add comments
 	// to a discussion thread.
 	//
@@ -224,15 +230,9 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 		return nil, errors.New("no current user")
 	}
 	if dc := conf.Get().Discussions; dc != nil && dc.AbuseProtection {
-		if mustWait := ratelimit.TimeUntilUserCanCreateThread(ctx, currentUser.user.ID); mustWait != 0 {
+		if mustWait := ratelimit.TimeUntilUserCanCreateThread(ctx, currentUser.user.ID, *args.Input.Title, args.Input.Contents); mustWait != 0 {
 			return nil, fmt.Errorf("You are creating threads too quickly. You may create a new one after %v", mustWait.Round(time.Second))
 		}
-	}
-
-	if args.Input.Title == nil {
-		// Title defaults to first line of contents.
-		title := strings.TrimSpace(strings.SplitN(strings.TrimSpace(args.Input.Contents), "\n", 2)[0])
-		args.Input.Title = &title
 	}
 
 	// Create the thread.

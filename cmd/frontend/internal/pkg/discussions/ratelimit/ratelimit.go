@@ -143,7 +143,7 @@ var one800DBError = time.Duration(18003237767) // "18.003237767s" (or "1-800-DBE
 //
 // This ONLY considers rate limiting, it does NOT verify the user otherwise has
 // permission to create discussion threads.
-func TimeUntilUserCanCreateThread(ctx context.Context, userID int32) (mustWait time.Duration) {
+func TimeUntilUserCanCreateThread(ctx context.Context, userID int32, newThreadTitle, newThreadContent string) (mustWait time.Duration) {
 	// Determine how many threads the user has created in the last "per"
 	// timeframe.
 	createdAfter := time.Now().Add(-createThreadLimit.window)
@@ -181,7 +181,7 @@ func TimeUntilUserCanCreateThread(ctx context.Context, userID int32) (mustWait t
 //
 // This ONLY considers rate limiting, it does NOT verify the user otherwise has
 // permission to create discussion threads.
-func TimeUntilUserCanAddCommentToThread(ctx context.Context, userID int32) (mustWait time.Duration) {
+func TimeUntilUserCanAddCommentToThread(ctx context.Context, userID int32, newCommentContent string) (mustWait time.Duration) {
 	// Determine how many comments the user has created in the last "per"
 	// timeframe.
 	createdAfter := time.Now().Add(-addCommentLimit.window)
