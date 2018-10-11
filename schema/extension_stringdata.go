@@ -22,6 +22,11 @@ const ExtensionSchemaJSON = `{
       "type": "string",
       "maxLength": 280
     },
+    "icon": {
+      "description": "The extension icon in data URI format (must begin with data:image/png).",
+      "type": "string",
+      "format": "^data:image/png"
+    },
     "readme": {
       "description":
         "The extension's README, which should describe (in detail) the extension's purpose, features, and usage instructions. Markdown formatting is supported.",
@@ -64,12 +69,102 @@ const ExtensionSchemaJSON = `{
       "description":
         "Features contributed by this extension. Extensions may also register certain types of contributions dynamically.",
       "type": "object",
-      "additionalProperties": false,
       "properties": {
         "configuration": {
           "description":
             "The JSON Schema for the configuration settings used by this extension. This schema is merged with the Sourcegraph settings schema. The final schema for settings is the union of Sourcegraph settings and all added extensions' settings.",
           "$ref": "http://json-schema.org/draft-07/schema#"
+        },
+        "actions": {
+          "description": "The actions that this extension supports.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "title": "action",
+            "properties": {
+              "id": {
+                "description": "The unique ID for this action.",
+                "type": "string"
+              },
+              "command": {
+                "description": "The command to execute when this action is taken.",
+                "type": "string"
+              },
+              "commandArguments": {
+                "description": "The arguments to the command.",
+                "type": "array",
+                "items": { "type": "string" }
+              },
+              "title": {
+                "description": "The text that is shown in the UI.",
+                "type": "string"
+              },
+              "category": {
+                "description": "The category of this action.",
+                "type": "string"
+              },
+              "iconURL": {
+                "description": "The icon that is shown in the UI (usually a data URI).",
+                "type": "string"
+              },
+              "actionItem": {
+                "description": "The action item.",
+                "type": "object",
+                "properties": {
+                  "label": {
+                    "description": "The text that is shown on the action item the UI.",
+                    "type": "string"
+                  },
+                  "description": {
+                    "description": "The tooltip text for an action item that is shown in the UI.",
+                    "type": "string"
+                  },
+                  "iconURL": {
+                    "description": "The icon that is shown in the UI (usually a data URI).",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "menus": {
+          "description": "Describes where to place actions in menus.",
+          "type": "object",
+          "properties": {
+            "editor/title": {
+              "description": "The file header.",
+              "type": "array",
+              "items": { "$ref": "#/definitions/MenuItem" }
+            },
+            "commandPalette": {
+              "description": "The command palette (usually in the upper right).",
+              "type": "array",
+              "items": { "$ref": "#/definitions/MenuItem" }
+            },
+            "help": {
+              "description": "The help menu.",
+              "type": "array",
+              "items": { "$ref": "#/definitions/MenuItem" }
+            }
+          }
+        }
+      }
+    },
+    "MenuItem": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "description": "The ID of the action to take when this menu item is clicked.",
+          "type": "string"
+        },
+        "alt": {
+          "description": "The tooltip text to show when hovering over this menu item.",
+          "type": "string"
+        },
+        "when": {
+          "description": "An expression that determines whether or not to show this menu item.",
+          "type": "string"
         }
       }
     },

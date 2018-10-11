@@ -3,7 +3,6 @@ import { Redirect, RouteComponentProps } from 'react-router'
 import { ResizablePanel } from '../panel/Panel'
 import { getModeFromPath } from '../util'
 import { formatHash, isLegacyFragment, parseHash } from '../util/url'
-import { CodeIntelStatusIndicator } from './actions/CodeIntelStatusIndicator'
 import { BlobPage } from './blob/BlobPage'
 import { RepositoryCommitsPage } from './commits/RepositoryCommitsPage'
 import { FilePathBreadcrumb } from './FilePathBreadcrumb'
@@ -59,26 +58,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                 }
                                 repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
                             />
-                            {objectType === 'blob' && (
-                                <RepoHeaderContributionPortal
-                                    position="right"
-                                    priority={-10}
-                                    element={
-                                        <CodeIntelStatusIndicator
-                                            key="code-intel-status"
-                                            userIsSiteAdmin={!!context.user && context.user.siteAdmin}
-                                            repoPath={context.repo.name}
-                                            rev={context.rev}
-                                            commitID={context.resolvedRev.commitID}
-                                            filePath={filePath}
-                                            mode={mode}
-                                        />
-                                    }
-                                    repoHeaderContributionsLifecycleProps={
-                                        context.repoHeaderContributionsLifecycleProps
-                                    }
-                                />
-                            )}
                         </>
                     )}
                     <RepoRevSidebar

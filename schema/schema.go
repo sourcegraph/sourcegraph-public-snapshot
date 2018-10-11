@@ -16,6 +16,22 @@ type AWSCodeCommitConnection struct {
 	RepositoryPathPattern       string `json:"repositoryPathPattern,omitempty"`
 	SecretAccessKey             string `json:"secretAccessKey"`
 }
+type Action struct {
+	ActionItem       *ActionItem `json:"actionItem,omitempty"`
+	Category         string      `json:"category,omitempty"`
+	Command          string      `json:"command,omitempty"`
+	CommandArguments []string    `json:"commandArguments,omitempty"`
+	IconURL          string      `json:"iconURL,omitempty"`
+	Id               string      `json:"id,omitempty"`
+	Title            string      `json:"title,omitempty"`
+}
+
+// ActionItem description: The action item.
+type ActionItem struct {
+	Description string `json:"description,omitempty"`
+	IconURL     string `json:"iconURL,omitempty"`
+	Label       string `json:"label,omitempty"`
+}
 
 // AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 type AuthAccessTokens struct {
@@ -94,7 +110,9 @@ type CloneURLToRepositoryName struct {
 
 // Contributions description: Features contributed by this extension. Extensions may also register certain types of contributions dynamically.
 type Contributions struct {
+	Actions       []*Action          `json:"actions,omitempty"`
 	Configuration *jsonschema.Schema `json:"configuration,omitempty"`
+	Menus         *Menus             `json:"menus,omitempty"`
 }
 
 // Discussions description: Configures Sourcegraph code discussions.
@@ -181,6 +199,18 @@ type Links struct {
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
 	Sentry *Sentry `json:"sentry,omitempty"`
+}
+type MenuItem struct {
+	Action string `json:"action,omitempty"`
+	Alt    string `json:"alt,omitempty"`
+	When   string `json:"when,omitempty"`
+}
+
+// Menus description: Describes where to place actions in menus.
+type Menus struct {
+	CommandPalette []*MenuItem `json:"commandPalette,omitempty"`
+	EditorTitle    []*MenuItem `json:"editor/title,omitempty"`
+	Help           []*MenuItem `json:"help,omitempty"`
 }
 
 // Metadata description: Language server metadata. Used to populate various UI elements.
@@ -373,6 +403,7 @@ type SourcegraphExtensionManifest struct {
 	Args             *map[string]interface{} `json:"args,omitempty"`
 	Contributes      *Contributions          `json:"contributes,omitempty"`
 	Description      string                  `json:"description,omitempty"`
+	Icon             string                  `json:"icon,omitempty"`
 	Readme           string                  `json:"readme,omitempty"`
 	Repository       *ExtensionRepository    `json:"repository,omitempty"`
 	Title            string                  `json:"title,omitempty"`
