@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -125,12 +127,8 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local g
 }
 
 // getLocalRegistryName returns the name of the local registry.
-func getLocalRegistryName() (string, error) {
-	u, err := url.Parse(conf.Get().AppURL)
-	if err != nil {
-		return "", err
-	}
-	return registry.Name(u), nil
+func getLocalRegistryName() string {
+	return registry.Name(globals.AppURL)
 }
 
 var mockLocalRegistryExtensionIDPrefix **string
@@ -144,10 +142,7 @@ func GetLocalRegistryExtensionIDPrefix() *string {
 	if envvar.SourcegraphDotComMode() {
 		return nil
 	}
-	name, err := getLocalRegistryName()
-	if err != nil {
-		return nil
-	}
+	name := getLocalRegistryName()
 	return &name
 }
 
