@@ -2,10 +2,11 @@
 set -e
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-export GOBIN="$PWD/vendor/.bin"
+export GOBIN="$PWD/.bin"
 export PATH=$GOBIN:$PATH
+export GO111MODULE=on
 
-go install github.com/sourcegraph/sourcegraph/vendor/honnef.co/go/tools/cmd/megacheck
+go install honnef.co/go/tools/cmd/megacheck
 
 echo go install...
 go install -buildmode=archive ./...
