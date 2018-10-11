@@ -128,7 +128,11 @@ func GetExtensionByExtensionID(ctx context.Context, extensionID string) (local g
 
 // getLocalRegistryName returns the name of the local registry.
 func getLocalRegistryName() string {
-	return registry.Name(globals.AppURL)
+	u, err := url.Parse(conf.Get().AppURL)
+	if err != nil || u == nil || u.Host == "" {
+		return registry.Name(globals.AppURL)
+	}
+	return registry.Name(u)
 }
 
 var mockLocalRegistryExtensionIDPrefix **string
