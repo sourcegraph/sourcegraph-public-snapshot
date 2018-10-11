@@ -349,10 +349,7 @@ Known issues:
 
 ## Go dependency management
 
-We use Go modules to manage Go dependencies in this repository. The CI test
-suite will check whether you have updated `go.mod` and `go.sum` correctly - in
-particular, running `go mod tidy && go mod vendor` should not generate a Git
-diff.
+We use Go modules to manage Go dependencies in this repository.
 
 ## Codegen
 
