@@ -30,12 +30,6 @@ interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsCo
     onHelpPopoverToggle: (visible?: boolean) => void
 }
 
-/**
- * Feature flag for hiding the "Extensions" link in global nav, usually used with `localStorage.platform=true` to
- * enable platform functionality without exposing extension creation and configuration to users yet.
- */
-const HIDE_EXTENSIONS_LINK = localStorage.getItem('hideExtensionsLink') !== null
-
 export class NavLinks extends React.PureComponent<Props> {
     private subscriptions = new Subscription()
 
@@ -90,13 +84,11 @@ export class NavLinks extends React.PureComponent<Props> {
                         </Link>
                     </li>
                 )}
-                {!HIDE_EXTENSIONS_LINK && (
-                    <li className="nav-item">
-                        <Link to="/extensions" className="nav-link">
-                            Extensions
-                        </Link>
-                    </li>
-                )}
+                <li className="nav-item">
+                    <Link to="/extensions" className="nav-link">
+                        Extensions
+                    </Link>
+                </li>
                 {this.props.user &&
                     this.props.user.siteAdmin && (
                         <li className="nav-item">
