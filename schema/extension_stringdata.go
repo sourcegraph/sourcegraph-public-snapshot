@@ -76,37 +76,77 @@ const ExtensionSchemaJSON = `{
           "$ref": "http://json-schema.org/draft-07/schema#"
         },
         "actions": {
+          "description": "The actions that this extension supports.",
           "type": "array",
           "items": {
             "type": "object",
             "title": "action",
             "properties": {
-              "id": { "type": "string" },
-              "command": { "type": "string" },
+              "id": {
+                "description": "The unique ID for this action.",
+                "type": "string"
+              },
+              "command": {
+                "description": "The command to execute when this action is taken.",
+                "type": "string"
+              },
               "commandArguments": {
+                "description": "The arguments to the command.",
                 "type": "array",
                 "items": { "type": "string" }
               },
-              "title": { "type": "string" },
-              "category": { "type": "string" },
-              "iconURL": { "type": "string" },
+              "title": {
+                "description": "The text that is shown in the UI.",
+                "type": "string"
+              },
+              "category": {
+                "description": "The category of this action.",
+                "type": "string"
+              },
+              "iconURL": {
+                "description": "The icon that is shown in the UI (usually a data URI).",
+                "type": "string"
+              },
               "actionItem": {
+                "description": "The action item.",
                 "type": "object",
                 "properties": {
-                  "label": { "type": "string" },
-                  "description": { "type": "string" },
-                  "iconURL": { "type": "string" }
+                  "label": {
+                    "description": "The text that is shown on the action item the UI.",
+                    "type": "string"
+                  },
+                  "description": {
+                    "description": "The tooltip text for an action item that is shown in the UI.",
+                    "type": "string"
+                  },
+                  "iconURL": {
+                    "description": "The icon that is shown in the UI (usually a data URI).",
+                    "type": "string"
+                  }
                 }
               }
             }
           }
         },
         "menus": {
+          "description": "Describes where to place actions in menus.",
           "type": "object",
           "properties": {
-            "editor/title": { "type": "array", "items": { "$ref": "#/definitions/MenuItem" } },
-            "commandPalette": { "type": "array", "items": { "$ref": "#/definitions/MenuItem" } },
-            "help": { "type": "array", "items": { "$ref": "#/definitions/MenuItem" } }
+            "editor/title": {
+              "description": "The file header.",
+              "type": "array",
+              "items": { "$ref": "#/definitions/MenuItem" }
+            },
+            "commandPalette": {
+              "description": "The command palette (usually in the upper right).",
+              "type": "array",
+              "items": { "$ref": "#/definitions/MenuItem" }
+            },
+            "help": {
+              "description": "The help menu.",
+              "type": "array",
+              "items": { "$ref": "#/definitions/MenuItem" }
+            }
           }
         }
       }
@@ -114,9 +154,18 @@ const ExtensionSchemaJSON = `{
     "MenuItem": {
       "type": "object",
       "properties": {
-        "action": { "type": "string" },
-        "alt": { "type": "string" },
-        "when": { "type": "string" }
+        "action": {
+          "description": "The ID of the action to take when this menu item is clicked.",
+          "type": "string"
+        },
+        "alt": {
+          "description": "The tooltip text to show when hovering over this menu item.",
+          "type": "string"
+        },
+        "when": {
+          "description": "An expression that determines whether or not to show this menu item.",
+          "type": "string"
+        }
       }
     },
     "ExtensionRepository": {

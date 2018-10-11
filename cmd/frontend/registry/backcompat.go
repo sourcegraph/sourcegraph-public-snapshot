@@ -121,7 +121,8 @@ func init() {
 							Id: "langserver.status",
 							ActionItem: &schema.ActionItem{
 								Description: "Code intelligence active for ${resource.language}",
-								IconURL:     "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMjQgMjQiPgogICAgICAgICAgICAgICAgICAgPHN2ZyBjbGFzcz0ibWRpLWljb24gaWNvbi1pbmxpbmUiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iIzM3YjI0ZCIgdmlld0JveD0iMCAwIDI0IDI0Ij4KICAgICAgICAgICAgICAgICAgICAgPHBhdGggZD0iTTE2LDdWM0gxNFY3SDEwVjNIOFY3SDhDNyw3IDYsOCA2LDlWMTQuNUw5LjUsMThWMjFIMTQuNVYxOEwxOCwxNC41VjlDMTgsOCAxNyw3IDE2LDdaIj48L3BhdGg+CiAgICAgICAgICAgICAgICAgICA8L3N2Zz4KICAgICAgICAgICAgICAgICA8L3N2Zz4KICAgICAgICAgICAgICAgIA==",
+								// This is a data URI for an SVG icon of the green plug.
+								IconURL: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgMjQgMjQiPgogICAgICAgICAgICAgICAgICAgPHN2ZyBjbGFzcz0ibWRpLWljb24gaWNvbi1pbmxpbmUiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0iIzM3YjI0ZCIgdmlld0JveD0iMCAwIDI0IDI0Ij4KICAgICAgICAgICAgICAgICAgICAgPHBhdGggZD0iTTE2LDdWM0gxNFY3SDEwVjNIOFY3SDhDNyw3IDYsOCA2LDlWMTQuNUw5LjUsMThWMjFIMTQuNVYxOEwxOCwxNC41VjlDMTgsOCAxNyw3IDE2LDdaIj48L3BhdGg+CiAgICAgICAgICAgICAgICAgICA8L3N2Zz4KICAgICAgICAgICAgICAgICA8L3N2Zz4KICAgICAgICAgICAgICAgIA==",
 							},
 						},
 					},

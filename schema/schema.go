@@ -25,6 +25,8 @@ type Action struct {
 	Id               string      `json:"id,omitempty"`
 	Title            string      `json:"title,omitempty"`
 }
+
+// ActionItem description: The action item.
 type ActionItem struct {
 	Description string `json:"description,omitempty"`
 	IconURL     string `json:"iconURL,omitempty"`
@@ -203,6 +205,8 @@ type MenuItem struct {
 	Alt    string `json:"alt,omitempty"`
 	When   string `json:"when,omitempty"`
 }
+
+// Menus description: Describes where to place actions in menus.
 type Menus struct {
 	CommandPalette []*MenuItem `json:"commandPalette,omitempty"`
 	EditorTitle    []*MenuItem `json:"editor/title,omitempty"`
