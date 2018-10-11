@@ -155,6 +155,9 @@ func Main() error {
 	goroutine.Go(func() {
 		bg.StartLangServers(context.Background())
 	})
+	goroutine.Go(func() {
+		bg.KeepLangServersAndGlobalSettingsInSync(context.Background())
+	})
 	goroutine.Go(func() { bg.MigrateExternalAccounts(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()

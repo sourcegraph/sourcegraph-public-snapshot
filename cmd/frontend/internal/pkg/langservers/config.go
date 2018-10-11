@@ -4,12 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/pkg/errors"
-
-	"github.com/sourcegraph/sourcegraph/pkg/api"
-
 	"github.com/sourcegraph/jsonx"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -53,61 +48,13 @@ func State(language string) (ConfigState, error) {
 	return StateNone, nil
 }
 
-func setDisabledInGlobalSettings(ctx context.Context, language string, disabled bool) error {
-	settings, err := db.Settings.GetLatest(context.Background(), api.ConfigurationSubject{Site: true})
-	if err != nil {
-		return err
-	}
-	var contents string
-	var id *int32
-	var authorUserID int32
-	if settings == nil {
-		contents = "{}"
-		// HACK: Global settings are nil (probably because this is a brand new
-		// instance), so there's no existing author user ID to reuse. Just take
-		// any user's ID. The author isn't shown anywhere, anyway.
-		users, err := db.Users.List(ctx, &db.UsersListOptions{
-			LimitOffset: &db.LimitOffset{Limit: 1},
-		})
-		if err != nil || len(users) == 0 {
-			return errors.New("unable to obtain a user ID to edit global settings and enable/disable a language server")
-		}
-		authorUserID = users[0].ID
-	} else {
-		contents = settings.Contents
-		authorUserID = settings.AuthorUserID
-		id = &settings.ID
-	}
-	edits, _, err := jsonx.ComputePropertyEdit(contents, jsonx.PropertyPath("extensions", "langserver/"+language), !disabled, nil, conf.FormatOptions)
-	if err != nil {
-		return err
-	}
-	newContents, err := jsonx.ApplyEdits(contents, edits...)
-	if err != nil {
-		return err
-	}
-	_, err = db.Settings.CreateIfUpToDate(context.Background(), api.ConfigurationSubject{Site: true}, id, authorUserID, newContents)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // SetDisabled sets the state of the language server for the specified language.
 //
 // This is done by updating the site configuration, and as such should never be
 // invoked in response to a conf.Watch callback, etc.
-//
-// This also enables/disables the corresponding Sourcegraph Extension in global
-// settings (not site configuration).
 func SetDisabled(ctx context.Context, language string, disabled bool) error {
 	// Check if the language specified is for a custom language server or not.
 	customLangserver := checkSupported(language) != nil
-
-	err := setDisabledInGlobalSettings(ctx, language, disabled)
-	if err != nil {
-		return errors.Wrap(err, "setDisabledInGlobalSettings")
-	}
 
 	return conf.Edit(func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error) {
 		// Copy the langservers slice, since we intend to edit it.
