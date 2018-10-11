@@ -19,6 +19,7 @@ The commands are:
 	list       lists repositories
 	enable     enables repositories
 	disable    disables repositories
+	delete 	   deletes repositories
 
 Use "src repos [command] -h" for more information about a command.
 `

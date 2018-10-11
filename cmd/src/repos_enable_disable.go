@@ -1,10 +1,11 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
-	"log"
+
+	multierror "github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -67,17 +68,14 @@ func initReposEnableDisable(cmdName string, enable bool, usage string) {
 	handler := func(args []string) error {
 		flagSet.Parse(args)
 
-		errs := false
+		var errs *multierror.Error
 		for _, repoName := range flagSet.Args() {
 			if err := setRepositoryEnabled(repoName, enable); err != nil {
-				errs = true
-				log.Println(err)
+				err = errors.Wrapf(err, "Failed to %s repository %q", cmdName, repoName)
+				errs = multierror.Append(errs, err)
 			}
 		}
-		if errs {
-			return errors.New("(errors occurred)")
-		}
-		return nil
+		return errs.ErrorOrNil()
 	}
 
 	// Register the command.
