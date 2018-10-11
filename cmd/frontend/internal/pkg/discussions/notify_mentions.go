@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"html/template"
 	"path"
-	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mentions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -99,7 +99,7 @@ func (n *notifier) subscribers(ctx context.Context) ([]string, error) {
 		subscribers []string
 		set         = make(map[string]struct{})
 	)
-	for _, mention := range parseMentions(n.thread.Title) {
+	for _, mention := range mentions.Parse(n.thread.Title) {
 		if _, ok := set[mention]; !ok {
 			set[mention] = struct{}{}
 			subscribers = append(subscribers, mention)
@@ -114,7 +114,7 @@ func (n *notifier) subscribers(ctx context.Context) ([]string, error) {
 			set[commentAuthor.Username] = struct{}{}
 			subscribers = append(subscribers, commentAuthor.Username)
 		}
-		for _, mention := range parseMentions(comment.Contents) {
+		for _, mention := range mentions.Parse(comment.Contents) {
 			if _, ok := set[mention]; !ok {
 				set[mention] = struct{}{}
 				subscribers = append(subscribers, mention)
@@ -282,18 +282,6 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			CodeContextHTML: codeContextHTML,
 		},
 	})
-}
-
-var mentions = regexp.MustCompile(`(^|\s)@(\S*)`)
-
-// parseMentions parses the @mentions from the given markdown comment contents.
-func parseMentions(contents string) []string {
-	matches := mentions.FindAllStringSubmatch(contents, -1)
-	mentions := make([]string, 0, len(matches))
-	for _, groups := range matches {
-		mentions = append(mentions, groups[2])
-	}
-	return mentions
 }
 
 var (
