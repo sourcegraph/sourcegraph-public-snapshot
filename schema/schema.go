@@ -17,13 +17,13 @@ type AWSCodeCommitConnection struct {
 	SecretAccessKey             string `json:"secretAccessKey"`
 }
 type Action struct {
-	ActionItem       *ActionItem `json:"actionItem,omitempty"`
-	Category         string      `json:"category,omitempty"`
-	Command          string      `json:"command,omitempty"`
-	CommandArguments []string    `json:"commandArguments,omitempty"`
-	IconURL          string      `json:"iconURL,omitempty"`
-	Id               string      `json:"id,omitempty"`
-	Title            string      `json:"title,omitempty"`
+	ActionItem       *ActionItem   `json:"actionItem,omitempty"`
+	Category         string        `json:"category,omitempty"`
+	Command          string        `json:"command,omitempty"`
+	CommandArguments []interface{} `json:"commandArguments,omitempty"`
+	IconURL          string        `json:"iconURL,omitempty"`
+	Id               string        `json:"id,omitempty"`
+	Title            string        `json:"title,omitempty"`
 }
 
 // ActionItem description: The action item.

@@ -63,6 +63,7 @@
     "Contributions": {
       "description":
         "Features contributed by this extension. Extensions may also register certain types of contributions dynamically.",
+      "additionalProperties": false,
       "type": "object",
       "properties": {
         "configuration": {
@@ -88,18 +89,19 @@
               "commandArguments": {
                 "description": "The arguments to the command.",
                 "type": "array",
-                "items": { "type": "string" }
+                "items": {}
               },
               "title": {
-                "description": "The text that is shown in the UI.",
+                "description": "The templated text that is shown in the UI.",
                 "type": "string"
               },
               "category": {
-                "description": "The category of this action.",
+                "description":
+                  "The templated prefix for the title (e.g. a category of `Codecov` shows up as `Codecov: ...` in the command palette).",
                 "type": "string"
               },
               "iconURL": {
-                "description": "The icon that is shown in the UI (usually a data URI).",
+                "description": "The templated icon that is shown in the UI (usually a data URI).",
                 "type": "string"
               },
               "actionItem": {
@@ -107,15 +109,15 @@
                 "type": "object",
                 "properties": {
                   "label": {
-                    "description": "The text that is shown on the action item the UI.",
+                    "description": "The templated text that is shown on the action item the UI.",
                     "type": "string"
                   },
                   "description": {
-                    "description": "The tooltip text for an action item that is shown in the UI.",
+                    "description": "The templated tooltip text for an action item that is shown in the UI.",
                     "type": "string"
                   },
                   "iconURL": {
-                    "description": "The icon that is shown in the UI (usually a data URI).",
+                    "description": "The templated icon that is shown in the UI (usually a data URI).",
                     "type": "string"
                   }
                 }
