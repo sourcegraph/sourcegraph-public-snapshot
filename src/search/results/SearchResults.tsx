@@ -260,11 +260,17 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                 }
             } else {
                 for (const scope of this.state.scopes) {
-                    filters.set(scope.value, scope)
+                    // Check for if filter.value already exists and if so, overwrite with user's configured scope name.
+                    const existingFilter = filters.get(scope.value)
+                    // This works because user setting configs are the last to be processed after Global and Org.
+                    // Thus, user set filters overwrite the equal valued existing filters.
+                    if (existingFilter) {
+                        existingFilter.name = scope.name || scope.value
+                    }
+                    filters.set(scope.value, existingFilter || scope)
                 }
             }
         }
-
         return Array.from(filters.values())
     }
     private showMoreResults = () => {
