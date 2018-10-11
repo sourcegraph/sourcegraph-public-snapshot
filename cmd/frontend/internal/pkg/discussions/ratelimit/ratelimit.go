@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mentions"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -134,6 +135,20 @@ var (
 		uniquePenaltyFactor: 3,
 		maxUniquePenalty:    18,
 	}
+
+	// Mentions defines how many @mention notifications a user can send,
+	// globally across all threads, during the window period.
+	//
+	// When the limit is hit, thread or comment creation will fail. This limit
+	// has no effect on subsequent messages which notify people previously
+	// @mentioned.
+	//
+	// The primary purpose of this limit is just to prevent someone from
+	// @mentioning hundreds of users and spamming them.
+	mentionsLimit = limit{
+		maxActions: 15,
+		window:     1 * time.Minute,
+	}
 )
 
 var one800DBError = time.Duration(18003237767) // "18.003237767s" (or "1-800-DBERROR")
@@ -144,8 +159,8 @@ var one800DBError = time.Duration(18003237767) // "18.003237767s" (or "1-800-DBE
 // This ONLY considers rate limiting, it does NOT verify the user otherwise has
 // permission to create discussion threads.
 func TimeUntilUserCanCreateThread(ctx context.Context, userID int32, newThreadTitle, newThreadContent string) (mustWait time.Duration) {
-	// Determine how many threads the user has created in the last "per"
-	// timeframe.
+	// Determine how many comments the user has created in the last window
+	// period.
 	createdAfter := time.Now().Add(-createThreadLimit.window)
 	threads, err := db.DiscussionThreads.List(ctx, &db.DiscussionThreadsListOptions{
 		AuthorUserIDs: []int32{userID},
@@ -173,7 +188,12 @@ func TimeUntilUserCanCreateThread(ctx context.Context, userID int32, newThreadTi
 			key:  key,
 		})
 	}
-	return createThreadLimit.calculateWaitTime(actions)
+	t1 := createThreadLimit.calculateWaitTime(actions)
+	t2 := timeUntilUserCanMention(ctx, userID, newThreadTitle+" "+newThreadContent)
+	if t1 > t2 {
+		return t1
+	}
+	return t2
 }
 
 // TimeUntilUserCanAddCommentToThread tells how long the user must wait until
@@ -182,8 +202,8 @@ func TimeUntilUserCanCreateThread(ctx context.Context, userID int32, newThreadTi
 // This ONLY considers rate limiting, it does NOT verify the user otherwise has
 // permission to create discussion threads.
 func TimeUntilUserCanAddCommentToThread(ctx context.Context, userID int32, newCommentContent string) (mustWait time.Duration) {
-	// Determine how many comments the user has created in the last "per"
-	// timeframe.
+	// Determine how many comments the user has created in the last window
+	// period.
 	createdAfter := time.Now().Add(-addCommentLimit.window)
 	comments, err := db.DiscussionComments.List(ctx, &db.DiscussionCommentsListOptions{
 		AuthorUserID: &userID,
@@ -203,7 +223,65 @@ func TimeUntilUserCanAddCommentToThread(ctx context.Context, userID int32, newCo
 			key:  fmt.Sprint(c.ThreadID),
 		})
 	}
-	return addCommentLimit.calculateWaitTime(actions)
+	t1 := addCommentLimit.calculateWaitTime(actions)
+	t2 := timeUntilUserCanMention(ctx, userID, newCommentContent)
+	if t1 > t2 {
+		return t1
+	}
+	return t2
+}
+
+// timeUntilUserCanMention tells how long the user must wait until they may
+// add a comment or create a thread which mentions the user specified in
+// newContents.
+//
+// IMPORTANT: We must outright block creation of the comment or thread (or
+// actually remove the @mentions from their message) when the mention rate
+// limit is hit. If we did not and instead just did not send the notification,
+// those mentioned users would become implicitly 'subscribed' to the thread and
+// the rate limit would be bypassed by simply creating a new reply to the
+// thread after posting the rate-limited one mentioning users. To solve this,
+// we would likely have to create a proper subscription database and not just
+// use the thread comment history for determining subscriptions.
+func timeUntilUserCanMention(ctx context.Context, userID int32, newContents string) (mustWait time.Duration) {
+	// Determine how many comments the user has created in the last window
+	// period.
+	createdAfter := time.Now().Add(-mentionsLimit.window)
+	comments, err := db.DiscussionComments.List(ctx, &db.DiscussionCommentsListOptions{
+		CreatedAfter: &createdAfter,
+		AuthorUserID: &userID,
+	})
+	if err != nil {
+		// It's OK to swallow the error here because showing this to the user
+		// would never be useful, and if there is an error here it is likely to
+		// be e.g. an outright database failure.
+		log15.Error("discussions: failed to determine ratelimit for mentions in thread", "error", err)
+		return one800DBError
+	}
+	set := map[string]struct{}{}
+	var actions []action
+	for _, c := range comments {
+		for _, mention := range mentions.Parse(c.Contents) {
+			if _, ok := set[mention]; ok {
+				continue
+			}
+			set[mention] = struct{}{}
+
+			// Verify the user actually exists so that someone e.g. pasting a
+			// poorly formatted list starting with @ constantly doesn't consume
+			// their entire notification ratelimit.
+			_, err := db.Users.GetByUsername(ctx, mention)
+			if err != nil {
+				continue
+			}
+
+			actions = append(actions, action{
+				key:  mention,
+				time: c.CreatedAt,
+			})
+		}
+	}
+	return mentionsLimit.calculateWaitTime(actions)
 }
 
 func orEmpty(s *string) string {
