@@ -99,9 +99,12 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURL.serviceType)
         const Icon = icon || ExportIcon
 
-        // Special-case for GitHub: add line numbers to URL.
+        // Special-case for GitHub: add branch and line numbers to URL.
         let url = externalURL.url
         if (externalURL.serviceType === 'github') {
+            if (this.props.rev && this.props.rev !== 'HEAD') {
+                url += `/tree/${this.props.rev}`
+            }
             if (this.props.range) {
                 url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
             } else if (this.props.position) {
