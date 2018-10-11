@@ -1,11 +1,11 @@
-package discussions
+package mentions
 
 import (
 	"reflect"
 	"testing"
 )
 
-func TestParseMentions(t *testing.T) {
+func TestParse(t *testing.T) {
 	tests := []struct {
 		name, input string
 		want        []string
@@ -23,7 +23,7 @@ func TestParseMentions(t *testing.T) {
 	}
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got := parseMentions(tst.input)
+			got := Parse(tst.input)
 			if !reflect.DeepEqual(got, tst.want) {
 				t.Fatalf("got %q want %q", got, tst.want)
 			}
