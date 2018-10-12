@@ -1,6 +1,6 @@
 steps:
   - command: |
-      go run ./dev/ci/gen-pipeline.go | tee pipeline.yml
+      GO111MODULE=on go run ./dev/ci/gen-pipeline.go | tee pipeline.yml
       buildkite-agent pipeline upload pipeline.yml
     label: ':pipeline:'
     plugins:
