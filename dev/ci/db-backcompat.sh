@@ -42,7 +42,7 @@ CURRENT_DB_SCHEMA=$(psql -t -d sourcegraph-test-db -c 'select version from schem
 
 if [ "$LATEST_SCHEMA" != "$CURRENT_DB_SCHEMA" ]; then
     echo "Latest migration schema version ($LATEST_SCHEMA) does not match schema in test DB ($CURRENT_DB_SCHEMA)."
-    echo '    You can run `GOCACHE=off go test -v ./cmd/frontend/db/  -run=TestMigrations` to update the test DB schema.'
+    echo '    You can run `go test -count=1 -v ./cmd/frontend/db/  -run=TestMigrations` to update the test DB schema.'
     exit 1
 fi
 
@@ -63,7 +63,7 @@ function runTest() {
         set -ex
         # Test without cache, because schema change does not
         # necessarily mean Go source has changed.
-        GOCACHE=off SKIP_MIGRATION_TEST=true go test -v ./cmd/frontend/db/
+        SKIP_MIGRATION_TEST=true go test -count=1 -v ./cmd/frontend/db/
         set +ex
 
         NOW_DB_SCHEMA=$(psql -t -d sourcegraph-test-db -c 'select version from schema_migrations' | xargs echo -n)
