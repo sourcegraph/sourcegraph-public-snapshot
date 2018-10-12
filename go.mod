@@ -68,5 +68,3 @@ replace (
 )
 
 replace github.com/graph-gophers/graphql-go => github.com/sourcegraph/graphql-go v0.0.0-20180929065141-c790ffc3c46a
-
-replace github.com/sourcegraph/sourcegraph => ../sourcegraph

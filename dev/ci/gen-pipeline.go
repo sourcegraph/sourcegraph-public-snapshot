@@ -37,7 +37,6 @@ func main() {
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
-		bk.Cmd("./dev/ci/ensure-go-mod.sh"),
 	)
 
 	pipeline.AddStep(":white_check_mark:",

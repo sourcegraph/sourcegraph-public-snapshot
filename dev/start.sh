@@ -9,20 +9,8 @@ go build github.com/sourcegraph/sourcegraph/pkg/version/minversion || {
     exit 1
 }
 
-if [ ! -d ../sourcegraph ]; then
-    echo "OSS repo not found at ../sourcegraph"
-    exit 1
-fi
-
 echo "Installing enterprise web dependencies..."
 yarn --check-files
-pushd ../sourcegraph
-echo "Installing OSS web dependencies..."
-yarn --check-files
-echo "Linking OSS webapp to node_modules"
-yarn link
-popd
-yarn link @sourcegraph/webapp
 
 # Stripe test API keys (https://dashboard.stripe.com/account/apikeys) and product ID. These do not
 # have any sensitive data associated with them and are NOT the ones used in production.
