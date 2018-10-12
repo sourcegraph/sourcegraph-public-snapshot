@@ -38,6 +38,9 @@ func main() {
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
 
+	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
+		bk.Env("GO111MODULE", "on"))
+
 	pipeline.AddStep(":white_check_mark:",
 		bk.Cmd("./dev/check/all.sh"))
 
