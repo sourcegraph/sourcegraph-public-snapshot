@@ -22,6 +22,12 @@ func KeepLangServersAndGlobalSettingsInSync(ctx context.Context) {
 			return
 		}
 
+		// Don't bother getting the existing settings and a user ID if there are
+		// no edits to make.
+		if len(config.Langservers) == 0 {
+			return
+		}
+
 		settings, err := db.Settings.GetLatest(context.Background(), api.ConfigurationSubject{Site: true})
 		if err != nil {
 			log15.Warn("error getting existing global settings", "error", err)
