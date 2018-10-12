@@ -1,6 +1,7 @@
 module github.com/sourcegraph/sourcegraph
 
 require (
+	github.com/BurntSushi/toml v0.3.1 // indirect
 	github.com/NYTimes/gziphandler v1.0.1
 	github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
@@ -121,7 +122,7 @@ require (
 	gopkg.in/src-d/go-git.v4 v4.6.0
 	gopkg.in/urfave/cli.v2 v2.0.0-20180128182452-d3ae77c26ac8 // indirect
 	gopkg.in/yaml.v2 v2.2.1
-	honnef.co/go/tools v0.0.0-20180728063816-88497007e858
+	honnef.co/go/tools v0.0.0-20180910201051-f1b53a58b022
 	sourcegraph.com/sourcegraph/go-diff v0.0.0-20171119081133-3f415a150aec
 	sourcegraph.com/sqs/pbtypes v0.0.0-20180604144634-d3ebe8f20ae4 // indirect
 )
