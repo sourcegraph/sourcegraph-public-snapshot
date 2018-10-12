@@ -15,6 +15,7 @@ interface Props {
     repo?: GQL.IRepository | null
     rev: string
     filePath?: string
+    diffPath?: string
     position?: Position
     range?: Range
 
@@ -102,9 +103,19 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         // Special-case for GitHub: add branch and line numbers to URL.
         let url = externalURL.url
         if (externalURL.serviceType === 'github') {
-            if (this.props.rev && this.props.rev !== 'HEAD') {
+            // If in a branch, add branch path to the GitHub URL.
+            if (this.props.rev && this.props.rev !== 'HEAD' && !this.state.fileExternalLinksOrError) {
                 url += `/tree/${this.props.rev}`
             }
+            // If showing a comparison, add comparison specifier to the GitHub URL.
+            if (this.props.diffPath) {
+                if (this.props.diffPath.startsWith('...')) {
+                    url += `/compare/HEAD${this.props.diffPath}`
+                } else {
+                    url += `/compare/${this.props.diffPath}`
+                }
+            }
+            // Add range or position path to the GitHub URL.
             if (this.props.range) {
                 url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
             } else if (this.props.position) {
