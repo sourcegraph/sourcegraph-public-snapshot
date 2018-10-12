@@ -309,6 +309,7 @@ github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 h1:FX++QsC/k2sAidB
 github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85/go.mod h1:v7Yudh8lfegZt52Qs5X9ktO0OMWEeUeoXO+4vJqn2Iw=
 github.com/sourcegraph/sourcegraph v0.0.0-20181011234801-62389b131d7b h1:DWT2/ZUR/2JrGDnpF4ydDDfHkxcOShfVi+vDv/fUmYI=
 github.com/sourcegraph/sourcegraph v0.0.0-20181011234801-62389b131d7b/go.mod h1:z/TS4d0AW4o68C08b0tZjA+tylApi4gQW1/ySO0baqc=
+github.com/sourcegraph/sourcegraph v0.0.0-20181012041525-42f113900de6/go.mod h1:z/TS4d0AW4o68C08b0tZjA+tylApi4gQW1/ySO0baqc=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG93cPwA5f7s/ZPBJnGOYQNK/vKsaDaseuKT5Asee8=
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/zoekt v0.0.0-20180814142946-6c42419fec1f/go.mod h1:I5NDweTUikWVakOqHBnCuqXGZOi0vJoeZRTFbHmhc1A=
