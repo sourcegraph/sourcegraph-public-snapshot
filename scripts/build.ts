@@ -1,6 +1,6 @@
 import signale from 'signale'
 import webpack from 'webpack'
-import config from '../webpack/prod.config'
+import config from '../config/webpack/prod.config'
 import * as tasks from './tasks'
 
 const buildChrome = tasks.buildChrome('prod')

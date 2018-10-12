@@ -16,8 +16,8 @@
     "cypress:open": "yarn run build && cypress open",
     "test:e2e": "yarn run build && cypress run --browser chrome",
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
-    "storybook": "start-storybook -c ./storybook -p 6006",
-    "build-storybook": "build-storybook -c ./storybook"
+    "storybook": "start-storybook -c ./config/storybook -p 6006",
+    "build-storybook": "build-storybook -c ./config/storybook"
   },
   "husky": {
     "hooks": {
