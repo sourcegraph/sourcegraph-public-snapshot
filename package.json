@@ -67,7 +67,7 @@
     "@types/signale": "1.2.0",
     "@types/socket.io": "1.4.38",
     "@types/socket.io-client": "1.4.32",
-    "@types/storybook__addon-actions": "^3.4.1",
+    "@types/storybook__addon-actions": "3.4.1",
     "@types/storybook__react": "3.0.9",
     "@types/textarea-caret": "3.0.0",
     "@types/uuid": "3.4.4",
