@@ -1,8 +1,8 @@
-@import 'node_modules/@sourcegraph/extensions-client-common/lib/ui/generic/PopoverButton.css';
-@import 'node_modules/@sourcegraph/extensions-client-common/lib/ui/generic/Toggle.css';
-@import 'node_modules/@sourcegraph/extensions-client-common/lib/app/CommandList';
-@import 'node_modules/@sourcegraph/extensions-client-common/lib/app/ExtensionStatus';
-@import 'node_modules/@sourcegraph/extensions-client-common/lib/extensions/manager/ExtensionCard.css';
+@import '@sourcegraph/extensions-client-common/lib/ui/generic/PopoverButton.css';
+@import '@sourcegraph/extensions-client-common/lib/ui/generic/Toggle.css';
+@import '@sourcegraph/extensions-client-common/lib/app/CommandList';
+@import '@sourcegraph/extensions-client-common/lib/app/ExtensionStatus';
+@import '@sourcegraph/extensions-client-common/lib/extensions/manager/ExtensionCard.css';
 
 $body-color-light: #2b3750;
 $body-color-dark: #f2f4f8;
@@ -29,9 +29,9 @@ $body-color-dark: #f2f4f8;
 }
 
 .command-list {
-    @import 'node_modules/bootstrap/scss/list-group';
-    @import 'node_modules/bootstrap/scss/forms';
-    @import 'node_modules/bootstrap/scss/input-group';
+    @import 'bootstrap/scss/list-group';
+    @import 'bootstrap/scss/forms';
+    @import 'bootstrap/scss/input-group';
 
     a {
         cursor: pointer;

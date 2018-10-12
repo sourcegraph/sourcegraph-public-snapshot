@@ -68,15 +68,20 @@ export default {
                 loader: babelLoader,
             },
             {
-                // sass / scss loader for webpack
+                // SCSS rule for our own styles and Bootstrap
                 test: /\.(css|sass|scss)$/,
-                loader: ExtractTextPlugin.extract([
-                    'css-loader',
+                use: ExtractTextPlugin.extract([
+                    {
+                        loader: 'css-loader',
+                        options: {
+                            minimize: process.env.NODE_ENV === 'production',
+                        },
+                    },
                     'postcss-loader',
                     {
                         loader: 'sass-loader',
                         options: {
-                            includePaths: [path.resolve(__dirname, '..', '/node_modules')],
+                            includePaths: [path.resolve(__dirname, '..', 'node_modules')],
                             importer: sassImportOnce,
                             importOnce: {
                                 css: true,

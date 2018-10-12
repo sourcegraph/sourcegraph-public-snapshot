@@ -1,4 +1,4 @@
-@import 'node_modules/open-color/open-color.scss';
+@import 'open-color/open-color.scss';
 @import './global-styles/colors';
 
 // Bootstrap configuration before Bootstrap is imported
@@ -69,14 +69,14 @@ $theme-colors-light: (
     background-color: rgba(255, 192, 120, 0.5);
 }
 
-@import 'node_modules/bootstrap/scss/functions';
-@import 'node_modules/bootstrap/scss/variables';
-@import 'node_modules/bootstrap/scss/mixins';
-@import 'node_modules/bootstrap/scss/alert';
-@import 'node_modules/bootstrap/scss/card';
-@import 'node_modules/bootstrap/scss/utilities/text';
-@import 'node_modules/bootstrap/scss/nav';
-@import 'node_modules/bootstrap/scss/popover';
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/alert';
+@import 'bootstrap/scss/card';
+@import 'bootstrap/scss/utilities/text';
+@import 'bootstrap/scss/nav';
+@import 'bootstrap/scss/popover';
 @import './global-styles/card';
 @import './global-styles/icons';
 @import './repo/tooltips';
@@ -88,9 +88,9 @@ $theme-colors-light: (
 @import './components/alerts';
 @import './components/symbols';
 @import './components/codeIntelStatusIndicator';
-@import 'node_modules/@sourcegraph/codeintellify/lib/HoverOverlay.scss';
+@import '@sourcegraph/codeintellify/lib/HoverOverlay.scss';
 @import '../libs/code_intelligence/HoverOverlay.scss';
-@import 'node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
+@import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 @import './extensions-client-common';
 
 #sourcegraph-options-menu {

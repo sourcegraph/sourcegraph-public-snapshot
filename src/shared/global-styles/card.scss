@@ -4,7 +4,7 @@ $card-bg: var(--body-bg);
 $card-border-color: #{$color-light-border};
 $card-cap-bg: #{rgba($color-light-bg-2, 0.75)};
 
-@import 'node_modules/bootstrap/scss/card';
+@import 'bootstrap/scss/card';
 
 .card-header {
     font-weight: bold;
