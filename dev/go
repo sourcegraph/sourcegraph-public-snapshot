@@ -7,6 +7,4 @@ export GO111MODULE=on
 go mod edit -dropreplace github.com/sourcegraph/sourcegraph
 go "$@"
 go mod tidy
-if [[ -z "$BUILDKITE" ]]; then
-    go mod edit -replace github.com/sourcegraph/sourcegraph=../sourcegraph
-fi
+
