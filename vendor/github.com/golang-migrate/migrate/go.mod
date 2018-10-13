@@ -3,7 +3,7 @@ module github.com/golang-migrate/migrate
 require (
 	cloud.google.com/go v0.23.0
 	github.com/Microsoft/go-winio v0.4.9 // indirect
-	github.com/Sirupsen/logrus v1.0.6 // indirect
+	github.com/Sirupsen/logrus v1.1.1 // indirect
 	github.com/aws/aws-sdk-go v1.14.32
 	github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
@@ -50,7 +50,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/pkg/errors v0.8.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/sirupsen/logrus v1.0.6 // indirect
+	github.com/sirupsen/logrus v1.1.1 // indirect
 	github.com/smartystreets/assertions v0.0.0-20180820201707-7c9eb446e3cf // indirect
 	github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a // indirect
 	github.com/stretchr/testify v1.2.2 // indirect
