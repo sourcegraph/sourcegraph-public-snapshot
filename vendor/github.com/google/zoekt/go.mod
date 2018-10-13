@@ -2,7 +2,7 @@ module github.com/google/zoekt
 
 require (
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
-	github.com/andygrunwald/go-gerrit v0.0.0-20171029143327-95b11af228a1
+	github.com/andygrunwald/go-gerrit 0.5.2
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emirpasic/gods v1.9.0 // indirect
