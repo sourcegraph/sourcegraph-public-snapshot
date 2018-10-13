@@ -1,5 +1,6 @@
 cloud.google.com/go v0.23.0 h1:w1svupRqvZnfjN9+KksMiggoIRQuMzWkVzpxcR96xDs=
 cloud.google.com/go v0.23.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+cloud.google.com/go v0.30.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/Microsoft/go-winio v0.4.9 h1:3RbgqgGVqmcpbOiwrjbVtDHLlJBGF6aE+yHmNtBNsFQ=
 github.com/Microsoft/go-winio v0.4.9/go.mod h1:VhR8bwka0BXejwEJY73c50VrPtXAaKcyvVC4A4RozmA=
 github.com/Sirupsen/logrus v1.0.6 h1:HCAGQRk48dRVPA5Y+Yh0qdCSTzPOyU1tBJ7Q9YzotII=
