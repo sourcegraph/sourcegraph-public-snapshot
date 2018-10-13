@@ -36,7 +36,7 @@ require (
 	github.com/google/go-github v15.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
+	github.com/gopherjs/gopherjs v0.0.0-20181013172414-1babbf986f6f // indirect
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect
