@@ -16,7 +16,7 @@ require (
 	github.com/google/slothfs v0.0.0-20170112234537-ecdd255f653d
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/keegancsmith/rpc v1.1.0
-	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
+	github.com/kevinburke/ssh_config v0.0.0-20181013172424-81db2a75821e // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348
 	github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747 // indirect
