@@ -28,7 +28,7 @@ require (
 	github.com/fsouza/fake-gcs-server v1.0.0
 	github.com/go-ini/ini v1.38.1 // indirect
 	github.com/go-sql-driver/mysql v1.4.0
-	github.com/gocql/gocql v0.0.0-20180617115710-e06f8c1bcd78
+	github.com/gocql/gocql v0.0.0-20181013172404-44e29ed5b8a4
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
