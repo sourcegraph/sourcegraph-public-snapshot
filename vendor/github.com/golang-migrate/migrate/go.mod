@@ -2,7 +2,7 @@ module github.com/golang-migrate/migrate
 
 require (
 	cloud.google.com/go v0.23.0
-	github.com/Microsoft/go-winio v0.4.9 // indirect
+	github.com/Microsoft/go-winio v0.4.11 // indirect
 	github.com/Sirupsen/logrus v1.0.6 // indirect
 	github.com/aws/aws-sdk-go v1.14.32
 	github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932 // indirect
