@@ -594,7 +594,7 @@ func queryContainerInfoWorker() {
 		// Prevent running _too_ quickly, but still run quickly enough that
 		// this info is always up-to-date and just as accurate as e.g. going
 		// to a terminal and checking yourself.
-		time.Sleep(1 * time.Second)
+		time.Sleep(5 * time.Second)
 
 		for _, language := range Languages {
 			updateInfoCache(language)
