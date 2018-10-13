@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go v1.14.32
 	github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
-	github.com/cockroachdb/cockroach-go v0.0.0-20180212155653-59c0560478b7
+	github.com/cockroachdb/cockroach-go v0.0.0-20181013172359-e0a95dfd547c
 	github.com/cznic/b v0.0.0-20180115125044-35e9bbe41f07 // indirect
 	github.com/cznic/fileutil v0.0.0-20180108211300-6a051e75936f // indirect
 	github.com/cznic/internal v0.0.0-20160905094039-cef02a853c3a // indirect
