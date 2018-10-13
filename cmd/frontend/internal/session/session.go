@@ -264,7 +264,6 @@ func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, i
 }
 
 func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
-	fmt.Println("AUTH_BY_COOKIE")
 	// If the request is already authenticated from a cookie (and not a token), then do not clobber the request's existing
 	// authenticated actor with the actor (if any) derived from the session cookie.
 	if a := actor.FromContext(r.Context()); a.IsAuthenticated() && a.FromSessionCookie {
