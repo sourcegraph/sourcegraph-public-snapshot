@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
 )
@@ -22,7 +23,7 @@ import (
 func init() {
 	// Use a caching HTTP client for communicating with the remote registry.
 	const sleepIfUncached = false
-	if envvar.InsecureDevMode() && sleepIfUncached {
+	if env.InsecureDev && sleepIfUncached {
 		// Also simulate latency in dev mode. See docs for sleepIfUncachedTransport for more information.
 		registry.HTTPClient = &http.Client{Transport: sleepIfUncachedTransport{httputil.CachingClient.Transport}}
 	} else {

@@ -8,7 +8,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/tmpfriend"
@@ -28,9 +27,8 @@ func init() {
 }
 
 var (
-	addr           = flag.String("addr", ":4388", "proxy server TCP listen address")
-	trace          = flag.Bool("trace", false, "print traces of JSON-RPC 2.0 requests/responses")
-	insecureDev, _ = strconv.ParseBool(env.Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
+	addr  = flag.String("addr", ":4388", "proxy server TCP listen address")
+	trace = flag.Bool("trace", false, "print traces of JSON-RPC 2.0 requests/responses")
 )
 
 func main() {
@@ -51,7 +49,7 @@ func run() error {
 
 	proxy.RegisterServers()
 
-	if insecureDev && strings.HasPrefix(*addr, ":") {
+	if env.InsecureDev && strings.HasPrefix(*addr, ":") {
 		*addr = net.JoinHostPort("127.0.0.1", (*addr)[1:])
 	}
 	lis, err := net.Listen("tcp", *addr)

@@ -86,7 +86,7 @@ func main() {
 
 	pipeline.AddStep(":go:",
 		bk.Cmd("./dev/ci/reset-test-db.sh || true"),
-		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
+		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -coverpkg=github.com/sourcegraph/sourcegraph/... -race ./..."),
 		bk.ArtifactPaths("coverage.txt"))
 
 	pipeline.AddWait()

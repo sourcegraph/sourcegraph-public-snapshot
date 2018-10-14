@@ -137,7 +137,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		Version:             env.Version,
 		IsAuthenticatedUser: actor.IsAuthenticated(),
 		SentryDSN:           sentryDSNFrontend,
-		Debug:               envvar.InsecureDevMode(),
+		Debug:               env.InsecureDev,
 		SiteID:              siteID,
 
 		SiteGQLID: string(graphqlbackend.SiteGQLID()),

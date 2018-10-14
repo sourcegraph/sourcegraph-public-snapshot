@@ -20,6 +20,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/randstring"
 	"github.com/sourcegraph/sourcegraph/pkg/routevar"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
@@ -258,7 +259,7 @@ func initRouter() {
 	}))
 	router.Get(routeRepo).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Debug mode: register the __errorTest handler.
-		if envvar.InsecureDevMode() && r.URL.Path == "/__errorTest" {
+		if env.InsecureDev && r.URL.Path == "/__errorTest" {
 			handler(serveErrorTest).ServeHTTP(w, r)
 			return
 		}
@@ -411,7 +412,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 	}
 
 	var errorIfDebug string
-	if forceServeError || (envvar.InsecureDevMode() && !nodebug) {
+	if forceServeError || (env.InsecureDev && !nodebug) {
 		errorIfDebug = err.Error()
 	}
 
@@ -466,7 +467,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, err error, status
 // in production), `error` controls the error message text, and status controls
 // the status code.
 func serveErrorTest(w http.ResponseWriter, r *http.Request) error {
-	if !envvar.InsecureDevMode() {
+	if !env.InsecureDev {
 		w.WriteHeader(http.StatusNotFound)
 		return nil
 	}

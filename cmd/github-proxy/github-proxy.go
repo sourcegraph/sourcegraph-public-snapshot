@@ -29,7 +29,6 @@ import (
 
 var (
 	logRequests, _ = strconv.ParseBool(env.Get("LOG_REQUESTS", "", "log HTTP requests"))
-	insecureDev, _ = strconv.ParseBool(env.Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 )
 
 const port = "3180"
@@ -163,7 +162,7 @@ func main() {
 	http.Handle("/", h)
 
 	host := ""
-	if insecureDev {
+	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)

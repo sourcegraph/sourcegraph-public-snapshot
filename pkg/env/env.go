@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -25,6 +26,7 @@ var (
 	Version            = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
 	LogLevel           = Get("SRC_LOG_LEVEL", "dbug", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
 	LogFormat          = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed)")
+	InsecureDev, _     = strconv.ParseBool(Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 )
 
 var (
@@ -71,6 +73,11 @@ func init() {
 	CritOut = lvlFilterStderr(log15.LvlCrit)
 }
 
+// common is a list of environment variables which are commonly shared between
+// main entrypoints. We allow them to conflict to allow go test -coverpkg to
+// compile (which will include multiple main entrypoints).
+var common = []string{"CACHE_DIR"}
+
 // Get returns the value of the given environment variable. It also registers the description for
 // PrintHelp. Calling Get with the same name twice causes a panic. Get should only be called on
 // package initialization. Calls at a later point will cause a panic if Lock was called before.
@@ -83,7 +90,15 @@ func Get(name string, defaultValue string, description string) string {
 	}
 
 	if _, ok := descriptions[name]; ok {
-		panic(fmt.Sprintf("%q already registered", name))
+		isCommon := false
+		for _, c := range common {
+			if name == c {
+				isCommon = true
+			}
+		}
+		if !isCommon {
+			panic(fmt.Sprintf("%q already registered", name))
+		}
 	}
 
 	if defaultValue != "" {

@@ -14,8 +14,8 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/templates"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 )
 
 // TODO(slimsag): tests for everything in this file
@@ -74,7 +74,7 @@ func loadTemplate(path string) (*template.Template, error) {
 	loadTemplateMu.RLock()
 	tmpl, ok := loadTemplateCache[path]
 	loadTemplateMu.RUnlock()
-	if ok && !envvar.InsecureDevMode() {
+	if ok && !env.InsecureDev {
 		return tmpl, nil
 	}
 
@@ -164,7 +164,7 @@ func mustListTemplates() []string {
 		return list, nil
 	}
 
-	if envvar.InsecureDevMode() {
+	if env.InsecureDev {
 		// In debug mode the underlying templates can change, so we can't use
 		// the perf optimization of doing it in a sync.Once
 		templates, err := walk("ui") // TODO(slimsag): replace with root in the future
