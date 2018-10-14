@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -30,7 +29,6 @@ import (
 
 var (
 	forceRunInterval = env.Get("FORCE_RUN_INTERVAL", "", "Force an interval to run saved queries at, instead of assuming query execution time * 30 (query that takes 2s to run, runs every 60s)")
-	insecureDev, _   = strconv.ParseBool(env.Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 )
 
 const port = "3183"
@@ -64,7 +62,7 @@ func main() {
 	}()
 
 	host := ""
-	if insecureDev {
+	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)

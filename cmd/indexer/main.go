@@ -23,7 +23,6 @@ import (
 )
 
 var numWorkers = env.Get("NUM_WORKERS", "4", "The maximum number of indexing done in parallel.")
-var insecureDev, _ = strconv.ParseBool(env.Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 
 var queueLength = prometheus.NewGauge(prometheus.GaugeOpts{
 	Namespace: "src",
@@ -76,7 +75,7 @@ func main() {
 	})
 
 	host := ""
-	if insecureDev {
+	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)

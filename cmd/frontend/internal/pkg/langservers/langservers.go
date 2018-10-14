@@ -13,9 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -268,7 +268,7 @@ func init() {
 	}
 	sort.Strings(Languages)
 
-	if envvar.InsecureDevMode() {
+	if env.InsecureDev {
 		// Running in debug / development mode. In this case, the frontend is
 		// not running inside of a Docker container itself, and we are not on
 		// the 'lsp' network. So we must actually expose the language server's
@@ -453,7 +453,7 @@ func start(language string) error {
 	}
 
 	cmd := []string{"run", "--detach", "--restart=always", "--network=lsp", "--name=" + containerName(language)}
-	if envvar.InsecureDevMode() {
+	if env.InsecureDev {
 		cmd = append(cmd, startDebugArgs(language)...)
 	} else {
 		cmd = append(cmd, startProdArgs(language)...)
@@ -1003,7 +1003,7 @@ func setupNetworking() {
 // e.g. the Go language server can reach the gitserver in our container.
 func setContainerID() {
 	// We do not do this in dev mode, since we are not running in a container.
-	if envvar.InsecureDevMode() {
+	if env.InsecureDev {
 		return
 	}
 	containerID, err := thisContainerID()
@@ -1027,7 +1027,7 @@ func deleteLSPBridge() {
 		// In dev mode, deleting the LSP bridge almost always fails because goreman doesn't
 		// send us SIGINT or SIGHUP(!) so we cannot do graceful shutdown of containers, and
 		// hence the network would always have active endpoints.
-		if envvar.InsecureDevMode() {
+		if env.InsecureDev {
 			return
 		}
 		log15.Error("langservers: error deleting Docker lsp bridge network", "error", err)
@@ -1048,7 +1048,7 @@ func createLSPBridge() {
 	// Connect this container to the LSP bridge network we just created.
 	//
 	// We do not do this in dev mode, since we are not running in a container.
-	if envvar.InsecureDevMode() {
+	if env.InsecureDev {
 		return
 	}
 	_, err = dockerCmd("network", "connect", "lsp", "sourcegraph")

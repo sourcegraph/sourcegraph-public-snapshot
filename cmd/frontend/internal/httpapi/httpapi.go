@@ -15,6 +15,7 @@ import (
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/registry"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -151,7 +152,7 @@ func handleError(w http.ResponseWriter, r *http.Request, status int, err error) 
 	errBody := err.Error()
 
 	var displayErrBody string
-	if envvar.InsecureDevMode() {
+	if env.InsecureDev {
 		// Only display error message to admins when in debug mode, since it may
 		// contain sensitive info (like API keys in net/http error messages).
 		displayErrBody = string(errBody)
