@@ -59,7 +59,7 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 	}
 
 	for _, bbsCfg := range cfg.BitbucketServer {
-		if bbsCfg.Token != "" && (bbsCfg.Username != "" || bbsCfg.Password != "") {
+		if bbsCfg.Token != "" && bbsCfg.Password != "" {
 			invalid("for Bitbucket Server, specify either a token or a username/password, not both")
 		} else if bbsCfg.Token == "" && bbsCfg.Username == "" && bbsCfg.Password == "" {
 			invalid("for Bitbucket Server, you must specify either a token or a username/password to authenticate")
