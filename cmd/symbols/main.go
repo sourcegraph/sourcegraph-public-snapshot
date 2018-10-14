@@ -37,7 +37,6 @@ var (
 	cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "0", "maximum size of the disk cache in megabytes")
 	ctagsProcesses = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.NumCPU()), "number of ctags child processes to run")
 	ctagsCommand   = env.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)")
-	insecureDev, _ = strconv.ParseBool(env.Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 )
 
 const port = "3184"
@@ -79,7 +78,7 @@ func main() {
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service.Handler())
 
 	host := ""
-	if insecureDev {
+	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)

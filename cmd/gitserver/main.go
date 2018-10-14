@@ -29,7 +29,6 @@ const janitorInterval = 24 * time.Hour
 var (
 	reposDir          = env.Get("SRC_REPOS_DIR", "", "Root dir containing repos.")
 	runRepoCleanup, _ = strconv.ParseBool(env.Get("SRC_RUN_REPO_CLEANUP", "", "Periodically remove inactive repositories."))
-	insecureDev, _    = strconv.ParseBool(env.Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 )
 
 func main() {
@@ -72,7 +71,7 @@ func main() {
 
 	port := "3178"
 	host := ""
-	if insecureDev {
+	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)

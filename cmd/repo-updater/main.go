@@ -9,7 +9,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strconv"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
@@ -22,8 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/tracer"
 )
-
-var insecureDev, _ = strconv.ParseBool(env.Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 
 const port = "3182"
 
@@ -39,7 +36,7 @@ func main() {
 	var repoupdater repoupdater.Server
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), repoupdater.Handler())
 	host := ""
-	if insecureDev {
+	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 	addr := net.JoinHostPort(host, port)

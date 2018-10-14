@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -25,6 +26,7 @@ var (
 	Version            = Get("VERSION", "dev", "the version of the packaged app, usually set by Dockerfile")
 	LogLevel           = Get("SRC_LOG_LEVEL", "dbug", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
 	LogFormat          = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed)")
+	InsecureDev, _     = strconv.ParseBool(Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
 )
 
 var (

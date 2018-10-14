@@ -6,8 +6,8 @@ import (
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -31,7 +31,7 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 			w.Header().Set("cache-control", "no-cache")
 
 			var body string
-			if envvar.InsecureDevMode() {
+			if env.InsecureDev {
 				body = fmt.Sprintf("Error: HTTP %d %s\n\nError: %s", status, http.StatusText(status), err.Error())
 			} else {
 				body = fmt.Sprintf("Error: HTTP %d: %s", status, http.StatusText(status))
