@@ -73,6 +73,11 @@ func init() {
 	CritOut = lvlFilterStderr(log15.LvlCrit)
 }
 
+// common is a list of environment variables which are commonly shared between
+// main entrypoints. We allow them to conflict to allow go test -coverpkg to
+// compile (which will include multiple main entrypoints).
+var common = []string{"CACHE_DIR"}
+
 // Get returns the value of the given environment variable. It also registers the description for
 // PrintHelp. Calling Get with the same name twice causes a panic. Get should only be called on
 // package initialization. Calls at a later point will cause a panic if Lock was called before.
@@ -85,7 +90,15 @@ func Get(name string, defaultValue string, description string) string {
 	}
 
 	if _, ok := descriptions[name]; ok {
-		panic(fmt.Sprintf("%q already registered", name))
+		isCommon := false
+		for _, c := range common {
+			if name == c {
+				isCommon = true
+			}
+		}
+		if !isCommon {
+			panic(fmt.Sprintf("%q already registered", name))
+		}
 	}
 
 	if defaultValue != "" {
