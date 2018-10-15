@@ -753,12 +753,6 @@ func validate(language string) error {
 		return err
 	}
 
-	return canManageDocker()
-}
-
-// canManageDocker returns an error if running in Data Center mode, or if the
-// Docker socket is not present.
-func canManageDocker() error {
 	if reason, ok := conf.SupportsManagingLanguageServers(); !ok {
 		return errors.New(reason)
 	}
@@ -893,12 +887,6 @@ func dockerEventNotify(c chan<- struct{}, filter ...string) {
 	}
 
 	for {
-		if canManageDocker() != nil {
-			// We don't need to run events, so check again soon
-			time.Sleep(5 * time.Second)
-			continue
-		}
-
 		err := notifyNewLine(exec.Command("docker", args...), c)
 		if err != nil {
 			// If we failed with error, wait a bit longer to prevent fast
