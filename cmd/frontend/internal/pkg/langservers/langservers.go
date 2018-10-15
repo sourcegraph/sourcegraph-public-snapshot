@@ -823,6 +823,59 @@ func relatedLanguages(language string) []string {
 	return []string{language}
 }
 
+// notifyNewLine notifies c each time a read of Stdout contains a new line,
+// but not every newline. It is meant to wake up processes waiting for new
+// output. Additionally once the process is started it notifices c.
+//
+// It sets cmd.Stdout and starts cmd and blocks until cmd is finished.
+func notifyNewLine(cmd *exec.Cmd, c chan<- struct{}) error {
+	if cmd.Stderr == nil {
+		cmd.Stderr = &prefixsuffixsaver.Writer{N: 32 << 10}
+	}
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		// notify we have started
+		select {
+		case c <- struct{}{}:
+		default:
+		}
+
+		buf := make([]byte, 4096)
+		for {
+			n, err := stdout.Read(buf)
+			// Each event is on its own line, so just look for a line in
+			// the buffer.
+			if bytes.IndexByte(buf[:n], '\n') >= 0 {
+				select {
+				case c <- struct{}{}:
+				default:
+				}
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	err = cmd.Wait()
+	if err != nil && cmd.Stderr != nil {
+		if w, ok := cmd.Stderr.(interface{ Bytes() []byte }); ok {
+			return fmt.Errorf("exec: docker events: error: %s stderr:\n%s", err, w.Bytes())
+		}
+	}
+
+	return err
+}
+
 // dockerEventNotify notifies c each time there is one or more docker event(s)
 // matching a filter.
 //
@@ -839,51 +892,6 @@ func dockerEventNotify(c chan<- struct{}, filter ...string) {
 		args = append(args, "--filter="+f)
 	}
 
-	runEvents := func() error {
-		cmd := exec.Command("docker", args...)
-		cmd.Stderr = &prefixsuffixsaver.Writer{N: 32 << 10}
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return err
-		}
-		err = cmd.Start()
-		if err != nil {
-			return err
-		}
-
-		go func() {
-			// notify we have started
-			select {
-			case c <- struct{}{}:
-			default:
-			}
-
-			buf := make([]byte, 4096)
-			for {
-				n, err := stdout.Read(buf)
-				// Each event is on its own line, so just look for a line in
-				// the buffer.
-				if bytes.IndexByte(buf[:n], '\n') >= 0 {
-					select {
-					case c <- struct{}{}:
-					default:
-					}
-				}
-				if err != nil {
-					return
-				}
-			}
-		}()
-
-		err = cmd.Wait()
-		if err != nil {
-			if _, ok := err.(*exec.ExitError); ok {
-				return fmt.Errorf("exec: docker events: error: %s stderr:\n%s", err, cmd.Stderr.(*prefixsuffixsaver.Writer).Bytes())
-			}
-		}
-		return err
-	}
-
 	for {
 		if canManageDocker() != nil {
 			// We don't need to run events, so check again soon
@@ -891,7 +899,7 @@ func dockerEventNotify(c chan<- struct{}, filter ...string) {
 			continue
 		}
 
-		err := runEvents()
+		err := notifyNewLine(exec.Command("docker", args...), c)
 		if err != nil {
 			// If we failed with error, wait a bit longer to prevent fast
 			// spamming.
