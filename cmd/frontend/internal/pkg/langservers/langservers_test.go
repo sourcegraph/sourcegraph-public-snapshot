@@ -1,6 +1,11 @@
 package langservers
 
-import "testing"
+import (
+	"os"
+	"os/exec"
+	"testing"
+	"time"
+)
 
 func TestStaticInfo_SiteConfig_Language(t *testing.T) {
 	// Sanity check that the siteConfig language fields match their map keys,
@@ -43,5 +48,78 @@ func TestDebugContainerPorts_unique(t *testing.T) {
 		}
 
 		allPorts[ports.HostPort] = language
+	}
+}
+
+func TestNotifyNewLine_missing(t *testing.T) {
+	c := make(chan struct{}, 1)
+	err := notifyNewLine(exec.Command("IDoNotExistOnPATH"), c)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	select {
+	case <-c:
+		t.Fatal("did not expect an event")
+	default:
+	}
+}
+
+func TestNotifyNewLine_failed(t *testing.T) {
+	c := make(chan struct{}, 1)
+	err := notifyNewLine(exec.Command("false"), c)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	select {
+	case <-c:
+	case <-time.After(time.Second):
+		t.Fatal("Expected an event")
+	}
+}
+
+func TestNotifyNewLine_started(t *testing.T) {
+	c := make(chan struct{}, 10) // large buffer to ensure we don't miss an event
+	cmd := exec.Command("sh", "-c", `sleep 10 & PID=$!; trap "kill $PID" INT; echo a; wait; echo b`)
+	var err error
+	go func() {
+		err = notifyNewLine(cmd, c)
+		close(c)
+	}()
+	wantEvent := func(reason string) {
+		t.Helper()
+		select {
+		case <-c:
+		case <-time.After(time.Second):
+			t.Fatal("Expected an event: ", reason)
+		}
+	}
+
+	wantEvent("started event")
+	wantEvent("initial output")
+
+	// We do not expect an event until we send sigint
+	select {
+	case <-c:
+		t.Fatal("unexpected event")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	cmd.Process.Signal(os.Interrupt)
+	wantEvent("final output")
+
+	_, ok := <-c
+	if ok {
+		t.Fatal("expected c to be closed by helper")
+	}
+
+	if err != nil {
+		t.Fatal("unexpected error", err)
+	}
+}
+
+func TestNotifyNewLine_nonblocking(t *testing.T) {
+	err := notifyNewLine(exec.Command("echo", "a"), make(chan struct{}))
+	if err != nil {
+		t.Fatal("unexpected error", err)
 	}
 }

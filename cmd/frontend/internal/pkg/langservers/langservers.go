@@ -1,6 +1,7 @@
 package langservers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -590,15 +592,28 @@ var latestInfo = struct {
 }
 
 func queryContainerInfoWorker() {
+	// Monitor events to containers, when a containers state changes we
+	// refresh our state from docker. We use a buffer size of 1 so if an event
+	// happens while we are running updateInfoCache we will run
+	// updateInfoCache again.
+	event := make(chan struct{}, 1)
+	go dockerEventNotify(event, "type=container")
+	// Periodically refresh everything anyways, just in case we aren't
+	// notified of an event.
+	refresh := time.Tick(time.Minute)
 	for {
-		// Prevent running _too_ quickly, but still run quickly enough that
-		// this info is always up-to-date and just as accurate as e.g. going
-		// to a terminal and checking yourself.
-		time.Sleep(1 * time.Second)
+		select {
+		case <-event:
+		case <-refresh:
+		}
 
 		for _, language := range Languages {
 			updateInfoCache(language)
 		}
+
+		// Always sleep at least 1 second incase we have a lot of events
+		// leading to use refreshing state at a high rate.
+		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -800,6 +815,89 @@ func relatedLanguages(language string) []string {
 		}
 	}
 	return []string{language}
+}
+
+// notifyNewLine notifies c each time a read of Stdout contains a new line,
+// but not every newline. It is meant to wake up processes waiting for new
+// output. Additionally once the process is started it notifices c.
+//
+// It sets cmd.Stdout and starts cmd and blocks until cmd is finished.
+func notifyNewLine(cmd *exec.Cmd, c chan<- struct{}) error {
+	if cmd.Stderr == nil {
+		cmd.Stderr = &prefixsuffixsaver.Writer{N: 32 << 10}
+	}
+
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	err = cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		// notify we have started
+		select {
+		case c <- struct{}{}:
+		default:
+		}
+
+		buf := make([]byte, 4096)
+		for {
+			n, err := stdout.Read(buf)
+			// Each event is on its own line, so just look for a line in
+			// the buffer.
+			if bytes.IndexByte(buf[:n], '\n') >= 0 {
+				select {
+				case c <- struct{}{}:
+				default:
+				}
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	err = cmd.Wait()
+	if err != nil && cmd.Stderr != nil {
+		if w, ok := cmd.Stderr.(interface{ Bytes() []byte }); ok {
+			return fmt.Errorf("exec: docker events: error: %s stderr:\n%s", err, w.Bytes())
+		}
+	}
+
+	return err
+}
+
+// dockerEventNotify notifies c each time there is one or more docker event(s)
+// matching a filter.
+//
+// dockerEventNotify will not block sending to c and is best-effort. On the
+// underlying "docker events" command starting it will notify, and will then
+// notify for each event received. It will restart docker event in the case of
+// the process dieing.
+//
+// See the documentation for "docker event" for more information on the
+// filters.
+func dockerEventNotify(c chan<- struct{}, filter ...string) {
+	args := []string{"events"}
+	for _, f := range filter {
+		args = append(args, "--filter="+f)
+	}
+
+	for {
+		err := notifyNewLine(exec.Command("docker", args...), c)
+		if err != nil {
+			// If we failed with error, wait a bit longer to prevent fast
+			// spamming.
+			log15.Warn("docker events failed. Will try again in 30s", "error", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
+
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func haveDockerSocket() (bool, error) {
