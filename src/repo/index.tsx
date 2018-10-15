@@ -275,7 +275,6 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     }
     if (diffSep !== -1) {
         diffPath = pathname.substr(diffSep + '/-/compare/'.length)
-        console.log('compare: ', diffPath)
     }
     let position: Position | undefined
     let range: Range | undefined
