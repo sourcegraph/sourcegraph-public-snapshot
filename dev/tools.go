@@ -12,7 +12,5 @@ import (
 	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"
 	_ "github.com/sourcegraph/godockerize"
 	_ "golang.org/x/tools/cmd/stringer"
-	_ "honnef.co/go/tools/cmd/megacheck"
 	_ "honnef.co/go/tools/cmd/staticcheck"
-	_ "honnef.co/go/tools/cmd/unused"
 )

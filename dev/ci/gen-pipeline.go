@@ -38,6 +38,9 @@ func main() {
 
 	branch := os.Getenv("BUILDKITE_BRANCH")
 
+	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
+		bk.Env("GO111MODULE", "on"))
+
 	pipeline.AddStep(":white_check_mark:",
 		bk.Cmd("./dev/check/all.sh"))
 
@@ -79,7 +82,7 @@ func main() {
 
 	pipeline.AddStep(":docker:",
 		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
-		bk.Cmd("git ls-files | grep -v '^vendor/' | grep Dockerfile | xargs ./hadolint"))
+		bk.Cmd("git ls-files | grep Dockerfile | xargs ./hadolint"))
 
 	pipeline.AddStep(":postgres:",
 		bk.Cmd("./dev/ci/ci-db-backcompat.sh"))
