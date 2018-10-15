@@ -45,7 +45,7 @@ require (
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/schema v1.0.2
 	github.com/gorilla/securecookie v1.1.1
-	github.com/gorilla/sessions v1.1.2
+	github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b
 	github.com/gorilla/websocket v1.4.0
 	github.com/graph-gophers/graphql-go v0.0.0-20180806175703-94da0f0031f9
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7

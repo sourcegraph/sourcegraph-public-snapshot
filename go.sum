@@ -146,6 +146,8 @@ github.com/gorilla/securecookie v1.1.1 h1:miw7JPhV+b/lAHSXz4qd/nN9jRiAFV5FwjeKyC
 github.com/gorilla/securecookie v1.1.1/go.mod h1:ra0sb63/xPlUeL+yeDciTfxMRAA+MP+HVt/4epWDjd4=
 github.com/gorilla/sessions v1.1.2 h1:4esMHhwKLQ9Odtku/p+onvH+eRJFWjV4y3iTDVWrZNU=
 github.com/gorilla/sessions v1.1.2/go.mod h1:8KCfur6+4Mqcc6S0FEfKuN15Vl5MgXW92AE8ovaJD0w=
+github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b h1:f7hwT2OyqHpOYXLrYcIU++OAWPdJQV36OS05+q+TN/g=
+github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b/go.mod h1:Ieo8HYsV0qN9WIJeic1HRzDxX9UY5BkplHncRmmZPwU=
 github.com/gorilla/websocket v1.4.0 h1:WDFjx/TMzVgy9VdMMQi2K2Emtwi2QcUQsztZ/zLaH/Q=
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
 github.com/graph-gophers/graphql-go v0.0.0-20180806175703-94da0f0031f9 h1:szkPl6mglONCUK9VrQxlzuALNb/JVF5vS/98r+kCDCg=
