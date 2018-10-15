@@ -5,12 +5,12 @@ branches do not necessarily reflect the changes that have gone into that branch.
 
 All notable changes to Sourcegraph are documented in this file.
 
-## Unreleased changes
+## 2.12.0
 
 ### Changed
 
-- Reduced the size of in-memory data structured used for storing search results. This shdould reduce the backend memory usage of large result sets.
-- Code intelligence is now provided by [Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph-extension-api). The extension for each language in the site configuration `langservers` property is automatically enabled. TODO BEFORE RELEASE: Make the previous sentence true. See https://github.com/sourcegraph/sourcegraph/issues/13125.
+- Reduced the size of in-memory data structured used for storing search results. This should reduce the backend memory usage of large result sets.
+- Code intelligence is now provided by [Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph-extension-api). The extension for each language in the site configuration `langservers` property is automatically enabled.
 - Support for multiple authentication providers is now enabled by default. To disable it, set the `experimentalFeatures.multipleAuthProviders` site config option to `"disabled"`. This only applies to Sourcegraph Enterprise.
 - When using the `http-header` auth provider, valid auth cookies (from other auth providers that are currently configured or were previously configured) are now respected and will be used for authentication. These auth cookies also take precedence over the `http-header` auth. Previously, the `http-header` auth took precedence.
 - Bitbucket Server username configuration is now used to clone repositories if the Bitbucket Server API does not set a username.
