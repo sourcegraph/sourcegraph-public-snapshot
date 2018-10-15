@@ -76,6 +76,7 @@ eb-bundle.zip
 *.sublime-workspace
 
 .bin/
+.env
 
 .gtm/
 

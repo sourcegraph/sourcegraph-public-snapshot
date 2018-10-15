@@ -5,6 +5,12 @@
 
 set -euf -o pipefail
 
+if [ -f .env ]; then
+    set -o allexport
+    source .env
+    set +o allexport
+fi
+
 export GO111MODULE=on
 go build ./pkg/version/minversion || {
     echo "Go version 1.11.x or newer must be used to build Sourcegraph; found: $(go version)"
