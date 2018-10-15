@@ -1,6 +1,7 @@
 package langservers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/prefixsuffixsaver"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -590,15 +592,28 @@ var latestInfo = struct {
 }
 
 func queryContainerInfoWorker() {
+	// Monitor events to containers, when a containers state changes we
+	// refresh our state from docker. We use a buffer size of 1 so if an event
+	// happens while we are running updateInfoCache we will run
+	// updateInfoCache again.
+	event := make(chan struct{}, 1)
+	go dockerEventNotify(event, "type=container")
+	// Periodically refresh everything anyways, just in case we aren't
+	// notified of an event.
+	refresh := time.Tick(time.Minute)
 	for {
-		// Prevent running _too_ quickly, but still run quickly enough that
-		// this info is always up-to-date and just as accurate as e.g. going
-		// to a terminal and checking yourself.
-		time.Sleep(1 * time.Second)
+		select {
+		case <-event:
+		case <-refresh:
+		}
 
 		for _, language := range Languages {
 			updateInfoCache(language)
 		}
+
+		// Always sleep at least 1 second incase we have a lot of events
+		// leading to use refreshing state at a high rate.
+		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -738,6 +753,12 @@ func validate(language string) error {
 		return err
 	}
 
+	return canManageDocker()
+}
+
+// canManageDocker returns an error if running in Data Center mode, or if the
+// Docker socket is not present.
+func canManageDocker() error {
 	if reason, ok := conf.SupportsManagingLanguageServers(); !ok {
 		return errors.New(reason)
 	}
@@ -800,6 +821,87 @@ func relatedLanguages(language string) []string {
 		}
 	}
 	return []string{language}
+}
+
+// dockerEventNotify notifies c each time there is one or more docker event(s)
+// matching a filter.
+//
+// dockerEventNotify will not block sending to c and is best-effort. On the
+// underlying "docker events" command starting it will notify, and will then
+// notify for each event received. It will restart docker event in the case of
+// the process dieing.
+//
+// See the documentation for "docker event" for more information on the
+// filters.
+func dockerEventNotify(c chan<- struct{}, filter ...string) {
+	args := []string{"events"}
+	for _, f := range filter {
+		args = append(args, "--filter="+f)
+	}
+
+	runEvents := func() error {
+		cmd := exec.Command("docker", args...)
+		cmd.Stderr = &prefixsuffixsaver.Writer{N: 32 << 10}
+		stdout, err := cmd.StdoutPipe()
+		if err != nil {
+			return err
+		}
+		err = cmd.Start()
+		if err != nil {
+			return err
+		}
+
+		go func() {
+			// notify we have started
+			select {
+			case c <- struct{}{}:
+			default:
+			}
+
+			buf := make([]byte, 4096)
+			for {
+				n, err := stdout.Read(buf)
+				// Each event is on its own line, so just look for a line in
+				// the buffer.
+				if bytes.IndexByte(buf[:n], '\n') >= 0 {
+					select {
+					case c <- struct{}{}:
+					default:
+					}
+				}
+				if err != nil {
+					return
+				}
+			}
+		}()
+
+		err = cmd.Wait()
+		if err != nil {
+			if _, ok := err.(*exec.ExitError); ok {
+				return fmt.Errorf("exec: docker events: error: %s stderr:\n%s", err, cmd.Stderr.(*prefixsuffixsaver.Writer).Bytes())
+			}
+		}
+		return err
+	}
+
+	for {
+		if canManageDocker() != nil {
+			// We don't need to run events, so check again soon
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		err := runEvents()
+		if err != nil {
+			// If we failed with error, wait a bit longer to prevent fast
+			// spamming.
+			log15.Warn("docker events failed. Will try again in 30s", "error", err)
+			time.Sleep(30 * time.Second)
+			continue
+		}
+
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func haveDockerSocket() (bool, error) {
