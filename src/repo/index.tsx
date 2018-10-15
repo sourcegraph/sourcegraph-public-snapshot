@@ -40,11 +40,11 @@ export interface FileSpec {
     filePath: string
 }
 
-export interface DiffSpec {
+export interface ComparisonSpec {
     /**
      * a diff specifier with base and comparison, e.g. "master...my-branch"
      */
-    diffPath: string
+    commitRange: string
 }
 
 export interface PositionSpec {
@@ -92,7 +92,7 @@ export interface ParsedRepoURI
         Partial<RevSpec>,
         Partial<ResolvedRevSpec>,
         Partial<FileSpec>,
-        Partial<DiffSpec>,
+        Partial<ComparisonSpec>,
         Partial<PositionSpec>,
         Partial<RangeSpec> {}
 
@@ -263,18 +263,18 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     const commitID = rev && /^[a-f0-9]{40}$/i.test(rev) ? rev : undefined
 
     let filePath: string | undefined
-    let diffPath: string | undefined
+    let commitRange: string | undefined
     const treeSep = pathname.indexOf('/-/tree/')
     const blobSep = pathname.indexOf('/-/blob/')
-    const diffSep = pathname.indexOf('/-/compare/')
+    const comparisonSep = pathname.indexOf('/-/compare/')
     if (treeSep !== -1) {
         filePath = pathname.substr(treeSep + '/-/tree/'.length)
     }
     if (blobSep !== -1) {
         filePath = pathname.substr(blobSep + '/-/blob/'.length)
     }
-    if (diffSep !== -1) {
-        diffPath = pathname.substr(diffSep + '/-/compare/'.length)
+    if (comparisonSep !== -1) {
+        commitRange = pathname.substr(comparisonSep + '/-/compare/'.length)
     }
     let position: Position | undefined
     let range: Range | undefined
@@ -297,7 +297,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
         }
     }
 
-    return { repoPath, rev, commitID, filePath, diffPath, position, range }
+    return { repoPath, rev, commitID, filePath, commitRange, position, range }
 }
 
 /**

@@ -15,7 +15,7 @@ interface Props {
     repo?: GQL.IRepository | null
     rev: string
     filePath?: string
-    diffPath?: string
+    commitRange?: string
     position?: Position
     range?: Range
 
@@ -108,11 +108,11 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
                 url += `/tree/${this.props.rev}`
             }
             // If showing a comparison, add comparison specifier to the GitHub URL.
-            if (this.props.diffPath) {
-                if (this.props.diffPath.startsWith('...')) {
-                    url += `/compare/HEAD${this.props.diffPath}`
+            if (this.props.commitRange) {
+                if (this.props.commitRange.startsWith('...')) {
+                    url += `/compare/HEAD${this.props.commitRange}`
                 } else {
-                    url += `/compare/${this.props.diffPath}`
+                    url += `/compare/${this.props.commitRange}`
                 }
             }
             // Add range or position path to the GitHub URL.
