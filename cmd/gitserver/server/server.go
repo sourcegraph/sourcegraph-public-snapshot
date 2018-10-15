@@ -1022,7 +1022,7 @@ var (
 		Namespace: "src",
 		Subsystem: "gitserver",
 		Name:      "repo_cloned",
-		Help:      "number of repos waiting to be updated (enqueue-repo-update)",
+		Help:      "number of successful git clones run",
 	})
 )
 
