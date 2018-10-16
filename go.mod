@@ -75,20 +75,14 @@ require (
 	github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5 // indirect
 	github.com/prometheus/common v0.0.0-20180801064454-c7de2306084e // indirect
 	github.com/prometheus/procfs v0.0.0-20180725123919-05ee40e3a273 // indirect
-	github.com/russross/blackfriday v0.0.0-20180829180401-f1f45ab762c2 // indirect
-	github.com/shurcooL/github_flavored_markdown v0.0.0-20180602233135-8913699a52e3
 	github.com/shurcooL/go v0.0.0-20180423040247-9e1955d9fb6e // indirect
 	github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041
-	github.com/shurcooL/highlight_diff v0.0.0-20170515013008-09bb4053de1b // indirect
-	github.com/shurcooL/highlight_go v0.0.0-20170515013102-78fb10f4a5f8 // indirect
 	github.com/shurcooL/httpfs v0.0.0-20171119174359-809beceb2371
 	github.com/shurcooL/httpgzip v0.0.0-20180522190206-b1c53ac65af9 // indirect
-	github.com/shurcooL/octicon v0.0.0-20180602230221-c42b0e3b24d9 // indirect
-	github.com/shurcooL/sanitized_anchor_name v0.0.0-20170918181015-86672fcb3f95 // indirect
 	github.com/shurcooL/vfsgen v0.0.0-20180825020608-02ddb050ef6b
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
-	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
+	github.com/sourcegraph/docsite v0.0.0-20181016141641-6d431be47b69
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
 	github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18
 	github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18
@@ -96,7 +90,6 @@ require (
 	github.com/sourcegraph/httpcache v0.0.0-20160524185540-16db777d8ebe
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
-	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/sqs/httpgzip v0.0.0-20180622165210-91da61ed4dff
 	github.com/stvp/tempredis v0.0.0-20160122230306-83f7aae7ea49 // indirect
 	github.com/temoto/robotstxt-go v0.0.0-20180810133444-97ee4a9ee6ea
