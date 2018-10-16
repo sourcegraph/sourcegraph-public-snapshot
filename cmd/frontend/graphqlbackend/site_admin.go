@@ -31,7 +31,7 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		return nil, errors.New("unable to delete current user")
 	}
 
-	if args.Hard != nil || *args.Hard {
+	if args.Hard != nil && *args.Hard {
 		if err := db.Users.HardDelete(ctx, userID); err != nil {
 			return nil, err
 		}

@@ -11,17 +11,6 @@ When deleting or nuking a user, the following information is removed:
 
 - All user data (access tokens, email addresses, external account info, survey responses, etc)
 - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
-- Sourcegraph Extensions published by the user.
+- Sourcegraph Extensions published by the user on the instance the deletion request is sent to.
 - User, Organization, or Global settings authored or modified by the user.
 - Discussion threads and comments created by the user.
-
-Data that is NOT currently removed:
-
-- BUG(@dadlerj): Redis store user activity data
-- BUG(@dadlerj): CRM, Analytics DB, etc.
-- Repositories the user may have added (impossible because we don't track this).
-- Organizations the user may have created (impossible because we don't track this, and it would evict other members).
-- Extension releases the user may have made on extensions _not created by that same user_.
-- Product licenses & subscriptions the user has created (this would prevent us from having a legal record of sales).
-
-For GDPR-style deletion requests, the above user data not deleted as part of this operation and must currently be performed manually. Contact support@sourcegraph.com for more information.

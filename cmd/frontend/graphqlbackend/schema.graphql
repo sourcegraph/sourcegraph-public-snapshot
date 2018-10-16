@@ -136,8 +136,7 @@ type Mutation {
     # If hard == true, a hard delete is performed. By default, deletes are
     # 'soft deletes' and could theoretically be undone with manual DB commands.
     # If a hard delete is performed, the data is truly removed from the
-    # database and deletion can NEVER be undone. This is for e.g. GDPR-style
-    # deletion.
+    # database and deletion can NEVER be undone.
     #
     # Data that is deleted as part of this operation:
     #
@@ -147,17 +146,6 @@ type Mutation {
     # - User, Organization, or Global settings authored by the user.
     # - Discussion threads and comments created by the user.
     #
-    # Data that is not currently deleted as part of this operation:
-    #
-    # - BUG(dadlerj): Redis store user activity data
-    # - BUG(dadlerj): CRM, Analytics DB, etc.
-    # - Repositories the user may have added (impossible because we don't track this).
-    # - Organizations the user may have created (impossible because we don't track this, and it would evict other members).
-    # - Extension releases the user may have made on extensions not owned by the user.
-    # - Product licenses & subscriptions the user has created (this would prevent us from having a legal record of sales).
-    #
-    # For GDPR-style deletion requests, the above user data not deleted as part
-    # of this operation must currently be performed manually.
     deleteUser(user: ID!, hard: Boolean): EmptyResponse
     # Updates the current user's password. The oldPassword arg must match the user's current password.
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse

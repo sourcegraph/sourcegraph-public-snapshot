@@ -446,9 +446,6 @@ func (u *users) HardDelete(ctx context.Context, id int32) error {
 	if _, err := tx.ExecContext(ctx, "DELETE FROM user_external_accounts WHERE user_id=$1", id); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM user_activity WHERE user_id=$1", id); err != nil {
-		return err
-	}
 	if _, err := tx.ExecContext(ctx, "DELETE FROM survey_responses WHERE user_id=$1", id); err != nil {
 		return err
 	}
