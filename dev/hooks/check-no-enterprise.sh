@@ -36,9 +36,6 @@ EOF
     exit 1
 }
 
-if [ -d "$(git rev-parse --show-toplevel)/enterprise" ]; then
-    failCheck
-fi
 if [ ! -z "$(git log -- :/enterprise)" ]; then
     failCheck
 fi
