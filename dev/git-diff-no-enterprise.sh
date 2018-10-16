@@ -16,4 +16,4 @@ if [ ! -z "$VERBOSE" ]; then
 fi
 set -euo pipefail
 
-git diff --stat "$1" "$2" ":(exclude)$(git rev-parse --show-toplevel)/enterprise"
+git diff --stat "$1" "$2" ":(exclude)$(git rev-parse --show-toplevel)/enterprise" ":(exclude)$(git rev-parse --show-toplevel)/.github"
