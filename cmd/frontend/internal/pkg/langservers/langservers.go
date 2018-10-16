@@ -819,7 +819,7 @@ func relatedLanguages(language string) []string {
 
 // notifyNewLine notifies c each time a read of Stdout contains a new line,
 // but not every newline. It is meant to wake up processes waiting for new
-// output. Additionally once the process is started it notifices c.
+// output. Additionally once the process is started it notifies c.
 //
 // It sets cmd.Stdout and starts cmd and blocks until cmd is finished.
 func notifyNewLine(cmd *exec.Cmd, c chan<- struct{}) error {
