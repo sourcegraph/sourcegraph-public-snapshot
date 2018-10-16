@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"strconv"
@@ -276,6 +277,7 @@ var gitHubRepositorySyncWorker = &worker{
 // RunGitHubRepositorySyncWorker runs the worker that syncs repositories from the configured GitHub and GitHub
 // Enterprise instances to Sourcegraph.
 func RunGitHubRepositorySyncWorker(ctx context.Context) {
+	log.Printf("# RunGitHubRepositorySyncWorker")
 	gitHubRepositorySyncWorker.start(ctx)
 }
 
@@ -287,11 +289,16 @@ func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository)
 func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 	repos := conn.listAllRepositories(ctx)
 
+	// log.Printf("# updateGitHubRepositories")
+	// for repo := range repos {
+	// 	log.Printf("# repo: %v", repo)
+	// }
+
 	repoChan := make(chan repoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("github:%s", conn.config.Token), repoChan)
 	for repo := range repos {
-		// log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
+		log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
 		repoChan <- repoCreateOrUpdateRequest{
 			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
 				RepoURI:      githubRepositoryToRepoPath(conn, repo),
@@ -404,6 +411,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 						log15.Error("Error listing public repositories", "sinceRepoID", sinceRepoID, "error", err)
 						return
 					}
+
 					if len(repos) == 0 {
 						// Last page
 						return
@@ -455,6 +463,8 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 	go func() {
 		defer wg.Done()
 		for _, nameWithOwner := range c.config.Repos {
+			// log.Printf("# fetching %s", nameWithOwner)
+
 			owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 			if err != nil {
 				log15.Error("Invalid GitHub repository", "nameWithOwner", nameWithOwner)
