@@ -217,6 +217,7 @@ export async function unusedExports(): Promise<void> {
 export function typescript(): ChildProcess {
     return spawn(__dirname + '/node_modules/.bin/tsc', ['-p', __dirname + '/tsconfig.dist.json', '--pretty'], {
         stdio: 'inherit',
+        shell: true,
     })
 }
 
@@ -226,6 +227,7 @@ export function watchTypescript(): ChildProcess {
         ['-p', __dirname + '/tsconfig.dist.json', '--watch', '--preserveWatchOutput', '--pretty'],
         {
             stdio: 'inherit',
+            shell: true,
         }
     )
 }
