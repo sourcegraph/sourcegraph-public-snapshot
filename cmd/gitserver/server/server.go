@@ -850,6 +850,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoURI, url string, op
 		}
 
 		log15.Info("repo cloned", "repo", repo)
+		repoClonedCounter.Inc()
 
 		return nil
 	}
@@ -1017,6 +1018,12 @@ var (
 		Name:      "update_queue",
 		Help:      "number of repos waiting to be updated (enqueue-repo-update)",
 	})
+	repoClonedCounter = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Subsystem: "gitserver",
+		Name:      "repo_cloned",
+		Help:      "number of successful git clones run",
+	})
 )
 
 func init() {
@@ -1025,6 +1032,7 @@ func init() {
 	prometheus.MustRegister(cloneQueue)
 	prometheus.MustRegister(lsRemoteQueue)
 	prometheus.MustRegister(updateQueue)
+	prometheus.MustRegister(repoClonedCounter)
 }
 
 func (s *Server) repoUpdateLoop() chan<- updateRepoRequest {
