@@ -36,8 +36,6 @@ func main() {
 	flag.Parse()
 	pipeline := &bk.Pipeline{}
 
-	branch := os.Getenv("BUILDKITE_BRANCH")
-
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"))
 
@@ -98,17 +96,6 @@ func main() {
 		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
-
-	if branch == "master" {
-		// Publish @sourcegraph/webapp to npm
-		pipeline.AddStep(":npm:",
-			bk.Cmd("yarn --frozen-lockfile"),
-			bk.Cmd("yarn run dist"),
-			bk.Cmd("yarn run release"),
-			bk.ConcurrencyGroup("webapp-publish"),
-			bk.Concurrency(1),
-		)
-	}
 
 	pipeline.AddWait()
 
