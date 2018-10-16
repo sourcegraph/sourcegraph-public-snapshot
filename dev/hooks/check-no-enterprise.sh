@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e -o pipefail
-
 function currentRemote() {
     currentBranch="$(git rev-parse --abbrev-ref HEAD)"
     if [ -z "$currentBranch" ]; then
@@ -12,6 +10,8 @@ function currentRemote() {
 }
 
 remoteUrl="${2:-$(currentRemote)}"  # if this is invoked as a pre-push hook, the remote URL is the second argument
+
+set -e -o pipefail
 
 case $remoteUrl in
     *"sourcegraph/sourcegraph"*)
