@@ -1,0 +1,6 @@
+{
+  "hooks": {
+    "pre-commit": "dev/hooks/check-no-enterprise.sh",
+    "pre-push": "dev/hooks/check-no-enterprise.sh ${HUSKY_GIT_PARAMS}"
+  }
+}
