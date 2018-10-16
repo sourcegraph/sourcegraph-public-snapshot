@@ -45,7 +45,6 @@ export interface RepoContainerProps
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
     user: GQL.IUser | null
-    onHelpPopoverToggle: () => void
     isLightTheme: boolean
 }
 
@@ -205,7 +204,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             user: this.props.user,
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
-            onHelpPopoverToggle: this.props.onHelpPopoverToggle,
             configurationCascade: this.props.configurationCascade,
             extensions: this.props.extensions,
             extensionsOnVisibleTextDocumentsChange: this.props.extensionsOnVisibleTextDocumentsChange,

@@ -24,8 +24,6 @@ interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
     isLightTheme: boolean
     onThemeChange: () => void
     onMainPage: (mainPage: boolean) => void
-    showHelpPopover: boolean
-    onHelpPopoverToggle: (visible?: boolean) => void
 }
 
 interface State {

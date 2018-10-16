@@ -21,8 +21,6 @@ interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsCo
     onThemeChange: () => void
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
-    showHelpPopover: boolean
-    onHelpPopoverToggle: (visible?: boolean) => void
 
     /**
      * Whether to use the low-profile form of the navbar, which has no border or background. Used on the search
