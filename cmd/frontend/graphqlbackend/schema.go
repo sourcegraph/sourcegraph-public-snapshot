@@ -130,7 +130,33 @@ type Mutation {
     # Only site admins may perform this mutation.
     setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
     # Deletes a user account. Only site admins may perform this mutation.
-    deleteUser(user: ID!): EmptyResponse
+    #
+    # If hard == true, a hard delete is performed. By default, deletes are
+    # 'soft deletes' and could theoretically be undone with manual DB commands.
+    # If a hard delete is performed, the data is truly removed from the
+    # database and deletion can NEVER be undone. This is for e.g. GDPR-style
+    # deletion.
+    #
+    # Data that is deleted as part of this operation:
+    #
+    # - All user data (access tokens, email addresses, external account info, survey responses, etc)
+    # - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
+    # - Sourcegraph Extensions published by the user.
+    # - User, Organization, or Global settings authored by the user.
+    # - Discussion threads and comments created by the user.
+    #
+    # Data that is not currently deleted as part of this operation:
+    #
+    # - BUG(dadlerj): Redis store user activity data
+    # - BUG(dadlerj): CRM, Analytics DB, etc.
+    # - Repositories the user may have added (impossible because we don't track this).
+    # - Organizations the user may have created (impossible because we don't track this, and it would evict other members).
+    # - Extension releases the user may have made on extensions not owned by the user.
+    # - Product licenses & subscriptions the user has created (this would prevent us from having a legal record of sales).
+    #
+    # For GDPR-style deletion requests, the above user data not deleted as part
+    # of this operation must currently be performed manually.
+    deleteUser(user: ID!, hard: Boolean): EmptyResponse
     # Updates the current user's password. The oldPassword arg must match the user's current password.
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     # Creates an access token that grants the privileges of the specified user (referred to as the access token's
