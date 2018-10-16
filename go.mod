@@ -5,7 +5,7 @@ require (
 	github.com/NYTimes/gziphandler v1.0.1
 	github.com/aws/aws-sdk-go-v2 v2.0.0-preview.4+incompatible
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
-	github.com/boj/redistore v0.0.0-20160128113310-fc113767cd6b
+	github.com/boj/redistore v0.0.0-20181016190658-cd5dcc76aeff
 	github.com/certifi/gocertifi v0.0.0-20180118203423-deb3ae2ef261 // indirect
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/coreos/go-semver v0.2.0
