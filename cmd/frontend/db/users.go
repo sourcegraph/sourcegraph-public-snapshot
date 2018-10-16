@@ -403,6 +403,17 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 		return err
 	}
 
+	// Soft-delete discussions data.
+	if _, err := tx.ExecContext(ctx, "UPDATE discussion_mail_reply_tokens SET deleted_at=now() WHERE deleted_at IS NULL AND user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=now() WHERE deleted_at IS NULL AND author_user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE discussion_threads SET deleted_at=now() WHERE deleted_at IS NULL AND author_user_id=$1", id); err != nil {
+		return err
+	}
+
 	return nil
 }
 
