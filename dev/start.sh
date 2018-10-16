@@ -27,7 +27,7 @@ export LIGHTSTEP_INCLUDE_SENSITIVE=true
 export PGSSLMODE=disable
 
 # Default to "info" level debugging, and "condensed" log format (nice for human readers)
-export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-info}
+export SRC_LOG_LEVEL=${SRC_LOG_LEVEL:-dbug}
 export SRC_LOG_FORMAT=${SRC_LOG_FORMAT:-condensed}
 export GITHUB_BASE_URL=http://127.0.0.1:3180
 export SRC_REPOS_DIR=$HOME/.sourcegraph/repos

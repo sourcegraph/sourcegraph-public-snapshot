@@ -2,7 +2,7 @@
 gitserver: ./dev/delve-hook gitserver
 indexer: ./dev/delve-hook indexer
 query-runner: ./dev/delve-hook query-runner
-repo-updater: ./dev/delve-hook repo-updater
+# repo-updater: ./dev/delve-hook repo-updater
 searcher: ./dev/delve-hook .bin/searcher
 symbols: ./dev/delve-hook symbols
 github-proxy: ./dev/delve-hook github-proxy
