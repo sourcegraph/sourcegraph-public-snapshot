@@ -8,7 +8,7 @@ directly, `go test ./util/textutil`.
 To run tests for the website, run `yarn run test`.
 
 To run the end-to-end tests for the website: `yarn run test-e2e`. See
-[docs/web.md](/tree/master/docs/web.md) for more information.
+[web app development documentation](web_app.md) for more information.
 
 ### Continuous Integration
 
