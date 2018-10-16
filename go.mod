@@ -82,7 +82,7 @@ require (
 	github.com/shurcooL/vfsgen v0.0.0-20180825020608-02ddb050ef6b
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
-	github.com/sourcegraph/docsite v0.0.0-20181016141641-6d431be47b69
+	github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
 	github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18
 	github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18
@@ -101,11 +101,11 @@ require (
 	github.com/xeipuuv/gojsonschema v0.0.0-20180816142147-da425ebb7609
 	go.uber.org/atomic v1.3.2 // indirect
 	golang.org/x/crypto v0.0.0-20180904163835-0709b304e793
-	golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
+	golang.org/x/net v0.0.0-20181011144130-49bb7cea24b1
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
 	golang.org/x/sys v0.0.0-20180925112736-b09afc3d579e
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
-	golang.org/x/tools v0.0.0-20181001162950-8deeabbe2e53
+	golang.org/x/tools v0.0.0-20181017151246-e94054f4104a
 	google.golang.org/grpc v1.14.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec

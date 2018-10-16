@@ -10,6 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+
+	// Register Sourcegraph documentation for /help.
+	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/docsite"
 )
 
 // Main is the main function that runs the frontend process.
