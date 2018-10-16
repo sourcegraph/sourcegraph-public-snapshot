@@ -221,8 +221,6 @@ func initRouter() {
 		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
-		router.Get(routeLegacyEditorAuth).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
-		router.Get(routeLegacyEditorAuth2).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
 	}
 	router.Get(routeLegacySearchQueries).Handler(staticRedirectHandler("/search/searches", http.StatusMovedPermanently))
 
