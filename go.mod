@@ -74,7 +74,7 @@ require (
 	github.com/prometheus/client_golang v0.8.0
 	github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5 // indirect
 	github.com/prometheus/common v0.0.0-20180801064454-c7de2306084e // indirect
-	github.com/prometheus/procfs v0.0.0-20180725123919-05ee40e3a273 // indirect
+	github.com/prometheus/procfs v0.0.0-20181017211134-185b4288413d // indirect
 	github.com/shurcooL/go v0.0.0-20180423040247-9e1955d9fb6e // indirect
 	github.com/shurcooL/go-goon v0.0.0-20170922171312-37c2f522c041
 	github.com/shurcooL/httpfs v0.0.0-20171119174359-809beceb2371
