@@ -1754,7 +1754,7 @@ type GitTree implements TreeEntry {
         first: Int
         # Recurse into sub-trees.
         recursive: Boolean = false
-    ): [GitTree]!
+    ): [GitTree!]!
     # A list of files in this tree.
     files(
         # Returns the first n files in the tree.
