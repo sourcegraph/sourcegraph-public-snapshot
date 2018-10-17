@@ -48,11 +48,7 @@
   "github": [
     {
       "url": "https://github.com",
-      "repos": [
-        "gorilla/mux",
-        "beyang/mux"
-      ],
-      "token": "f6f68255b7f3bf9fa9f2f886ea25f34f854df8e5"
+      "token": "e99201f23d4c8d2d7d3df4c0cb23a4804ad5f1b8" // unprivileged sqs-test user
     },
     {
       "url": "http://ghe.sgdev.org",
