@@ -5,7 +5,7 @@ As a site administrator, you have the ability to delete users and their associat
 On this page, you are presented two options:
 
 - Deleting a user: the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
-- Nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo this). For GDPR-style requests, nuking is used (but not sufficient on its own, see below).
+- Nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo this).
 
 When deleting or nuking a user, the following information is removed:
 
