@@ -825,10 +825,10 @@
   dependencies:
     find-up "^2.1.0"
 
-"@gql2ts/from-schema@^1.8.0":
-  version "1.9.0"
-  resolved "https://registry.yarnpkg.com/@gql2ts/from-schema/-/from-schema-1.9.0.tgz#d9d6dd4004c6d4216e940a304d22ca461a040b47"
-  integrity sha512-zPJR2dAq3OlJklxajljLSSfyifjejbf/7O7ByANnJc/GMebVToBACG3yxacGMbgsy95gv6ZigJ1crgQhIIoDog==
+"@gql2ts/from-schema@^1.10.1":
+  version "1.10.1"
+  resolved "https://registry.yarnpkg.com/@gql2ts/from-schema/-/from-schema-1.10.1.tgz#f8bb1f9525d5731163b16f5bcf300f87ef560273"
+  integrity sha512-atYXxY8WBBfK39fEbdwx3CgqRYYUR10a1hGPIwVcvEuNYIlAnIUR1drVbmC3higwMbAyHGkMxDPJ9Us7tnNz6w==
   dependencies:
     "@gql2ts/language-typescript" "^1.9.0"
     "@gql2ts/util" "^1.9.0"
