@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -821,6 +822,74 @@ func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repositor
 	r.updateSource("internalConfig", newList)
 }
 
+// Snapshot represents the state of the various queues repo-updater
+// maintains. The fields are ordered by priority.
+type Snapshot struct {
+	HighPriority []*repoData
+	New          []*repoData
+	Queue        []*repoData
+	Unscheduled  []*repoData
+
+	// LockHeld is how long the global mutex was held to generate the
+	// snapshot.
+	LockHeld time.Duration
+}
+
+// snapshot returns a snapshot of the schedulers queue state. Note: This holds
+// the global mutex while copying the repo structures.
+func (r *repoList) snapshot() *Snapshot {
+	// Critical section. Avoid map lookups to make as fast as possible.
+	r.mu.Lock()
+	t := time.Now()
+	repos := make(map[string]*repoData, len(r.repos))
+	for k, v := range r.repos {
+		v2 := *v
+		repos[k] = &v2
+	}
+	highPriority := make([]string, len(r.bumped))
+	for i, v := range r.bumped {
+		highPriority[i] = v.Name
+	}
+	new := make([]string, len(r.newQueue))
+	for i, v := range r.newQueue {
+		new[i] = v.Name
+	}
+	r.mu.Unlock()
+	lockHeld := time.Since(t)
+
+	q := make([]*repoData, 0, len(repos))
+	for _, v := range repos {
+		q = append(q, v)
+	}
+
+	// Put unscheduled items at the front of q. Otherwise sort by Due.
+	sort.Slice(q, func(i, j int) bool {
+		if (q[i].heapIndex == -1) != (q[j].heapIndex == -1) {
+			return q[i].heapIndex == -1
+		}
+		return q[i].Due.Before(q[j].Due)
+	})
+	heapStart := 0
+	for heapStart < len(q) && q[heapStart].heapIndex < 0 {
+		heapStart++
+	}
+
+	s := &Snapshot{
+		HighPriority: make([]*repoData, len(highPriority)),
+		New:          make([]*repoData, len(new)),
+		Queue:        q[heapStart:],
+		Unscheduled:  q[:heapStart],
+		LockHeld:     lockHeld,
+	}
+	for i, k := range highPriority {
+		s.HighPriority[i] = repos[k]
+	}
+	for i, k := range new {
+		s.New[i] = repos[k]
+	}
+	return s
+}
+
 func startRepositorySyncWorker(ctx context.Context, shutdown chan struct{}) {
 	configs := conf.Get().ReposList
 	if len(configs) == 0 {
@@ -943,4 +1012,10 @@ func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLo
 	}
 
 	return nil, false, nil // not found
+}
+
+// QueueSnapshot represents the state of the various queues repo-updater
+// maintains. The fields are ordered by priority.
+func QueueSnapshot() *Snapshot {
+	return repos.snapshot()
 }
