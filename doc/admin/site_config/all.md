@@ -3,167 +3,167 @@
 This page lists site configuration options for Sourcegraph.
 
 Configure your Sourcegraph instance on the **Configuration** page in the site admin area.
-For more information, see ["Configuration overview"](/docs/config).
+For more information, see ["Configuration overview"](index.md).
 
-- [auth.userOrgMap](#authuserorgmap-object)
+- [auth.userOrgMap](all.md#auth-userorgmap-object)
 
-- [log](#log-object)
+- [log](all.md#log-object)
 
-- [siteID](#siteid-string)
+- [siteID](all.md#siteid-string)
 
-- [appURL](#appurl-string)
+- [appURL](all.md#appurl-string)
 
-- [dontIncludeSymbolResultsByDefault](#dontincludesymbolresultsbydefault-boolean)
+- [dontIncludeSymbolResultsByDefault](all.md#dontincludesymbolresultsbydefault-boolean)
 
-- [disableBuiltInSearches](#disablebuiltinsearches-boolean)
+- [disableBuiltInSearches](all.md#disablebuiltinsearches-boolean)
 
-- [experimentalFeatures](#experimentalfeatures-object)
+- [experimentalFeatures](all.md#experimentalfeatures-object)
 
-- [tls.letsencrypt](#tlsletsencrypt-string-enum)
+- [tls.letsencrypt](all.md#tlsletsencrypt-string-enum)
 
-- [tlsCert](#tlscert-string)
+- [tlsCert](all.md#tlscert-string)
 
-- [tlsKey](#tlskey-string)
+- [tlsKey](all.md#tlskey-string)
 
-- [httpToHttpsRedirect](#httptohttpsredirect)
+- [httpToHttpsRedirect](all.md#httptohttpsredirect)
 
-- [httpStrictTransportSecurity](#httpstricttransportsecurity)
+- [httpStrictTransportSecurity](all.md#httpstricttransportsecurity)
 
-- [corsOrigin](#corsorigin-string)
+- [corsOrigin](all.md#corsorigin-string)
 
-- [disableBrowserExtension](#disablebrowserextension-boolean)
+- [disableBrowserExtension](all.md#disablebrowserextension-boolean)
 
-- [disableAutoGitUpdates](#disableautogitupdates-boolean)
+- [disableAutoGitUpdates](all.md#disableautogitupdates-boolean)
 
-- [disablePublicRepoRedirects](#disablepublicreporedirects-boolean)
+- [disablePublicRepoRedirects](all.md#disablepublicreporedirects-boolean)
 
-- [phabricator](#phabricator-array)
+- [phabricator](all.md#phabricator-array)
 
-- [git.cloneURLToRepositoryName](#gitcloneurltorepositoryname-array)
+- [git.cloneURLToRepositoryName](all.md#git-cloneurltorepositoryname-array)
 
-- [github](#github-array)
+- [github](all.md#github-array)
 
-- [githubClientID](#githubclientid-string)
+- [githubClientID](all.md#githubclientid-string)
 
-- [githubClientSecret](#githubclientsecret-string)
+- [githubClientSecret](all.md#githubclientsecret-string)
 
-- [gitlab](#gitlab-array)
+- [gitlab](all.md#gitlab-array)
 
-- [awsCodeCommit](#awscodecommit-array)
+- [awsCodeCommit](all.md#awscodecommit-array)
 
-- [bitbucketServer](#bitbucketserver-array)
+- [bitbucketServer](all.md#bitbucketserver-array)
 
-- [gitolite](#gitolite-array)
+- [gitolite](all.md#gitolite-array)
 
-- [gitMaxConcurrentClones](#gitmaxconcurrentclones-integer)
+- [gitMaxConcurrentClones](all.md#gitmaxconcurrentclones-integer)
 
-- [repos.list](#reposlist-array)
+- [repos.list](all.md#repos-list-array)
 
-- [reviewBoard](#reviewboard-array)
+- [reviewBoard](all.md#reviewboard-array)
 
-- [lightstepAccessToken](#lightstepaccesstoken-string)
+- [lightstepAccessToken](all.md#lightstepaccesstoken-string)
 
-- [lightstepProject](#lightstepproject-string)
+- [lightstepProject](all.md#lightstepproject-string)
 
-- [useJaeger](#usejaeger-boolean)
+- [useJaeger](all.md#usejaeger-boolean)
 
-- [noGoGetDomains](#nogogetdomains-string)
+- [noGoGetDomains](all.md#nogogetdomains-string)
 
-- [blacklistGoGet](#blacklistgoget-array)
+- [blacklistGoGet](all.md#blacklistgoget-array)
 
-- [repoListUpdateInterval](#repolistupdateinterval-integer)
+- [repoListUpdateInterval](all.md#repolistupdateinterval-integer)
 
-- [searchScopes](#searchscopes-siteconfigsearchscope)
+- [searchScopes](all.md#searchscopes-siteconfigsearchscope-siteconfigsearchscope-object)
 
-- [htmlHeadTop](#htmlheadtop-string)
+- [htmlHeadTop](all.md#htmlheadtop-string)
 
-- [htmlHeadBottom](#htmlheadbottom-string)
+- [htmlHeadBottom](all.md#htmlheadbottom-string)
 
-- [htmlBodyTop](#htmlbodytop-string)
+- [htmlBodyTop](all.md#htmlbodytop-string)
 
-- [htmlBodyBottom](#htmlbodybottom-string)
+- [htmlBodyBottom](all.md#htmlbodybottom-string)
 
-- [licenseKey](#licensekey-string)
+- [licenseKey](all.md#licensekey-string)
 
-- [maxReposToSearch](#maxrepostosearch-integer)
+- [maxReposToSearch](all.md#maxrepostosearch-integer)
 
-- [executeGradleOriginalRootPaths](#executegradleoriginalrootpaths-string)
+- [executeGradleOriginalRootPaths](all.md#executegradleoriginalrootpaths-string)
 
-- [privateArtifactRepoID](#privateartifactrepoid-string)
+- [privateArtifactRepoID](all.md#privateartifactrepoid-string)
 
-- [privateArtifactRepoURL](#privateartifactrepourl-string)
+- [privateArtifactRepoURL](all.md#privateartifactrepourl-string)
 
-- [privateArtifactRepoUsername](#privateartifactrepousername-string)
+- [privateArtifactRepoUsername](all.md#privateartifactrepousername-string)
 
-- [privateArtifactRepoPassword](#privateartifactrepopassword-string)
+- [privateArtifactRepoPassword](all.md#privateartifactrepopassword-string)
 
-- [parentSourcegraph](#parentsourcegraph-object)
+- [parentSourcegraph](all.md#parentsourcegraph-object)
 
-- [auth.provider](#authprovider-string-enum)
+- [auth.provider](all.md#auth-provider-string-enum)
 
-- [auth.providers](#authproviders-array)
+- [auth.providers](all.md#auth-providers-array)
 
-- [auth.allowSignup](#authallowsignup-boolean)
+- [auth.allowSignup](all.md#auth-allowsignup-boolean)
 
-- [auth.disableAccessTokens](#authdisableaccesstokens-boolean)
+- [auth.disableAccessTokens](all.md#auth-disableaccesstokens-boolean)
 
-- [auth.accessTokens](#authaccesstokens-object)
+- [auth.accessTokens](all.md#auth-accesstokens-object)
 
-- [auth.public](#authpublic-boolean)
+- [auth.public](all.md#auth-public-boolean)
 
-- [auth.openIDConnect](#authopenidconnect-openidconnectauthprovider)
+- [auth.openIDConnect](all.md#auth-openidconnect-openidconnectauthprovider-openidconnectauthprovider-object)
 
-- [auth.saml](#authsaml-samlauthprovider)
+- [auth.saml](all.md#auth-saml-samlauthprovider-samlauthprovider-object)
 
-- [auth.sessionExpiry](#authsessionexpiry-string)
+- [auth.sessionExpiry](all.md#auth-sessionexpiry-string)
 
-- [auth.userIdentityHTTPHeader](#authuseridentityhttpheader-string)
+- [auth.userIdentityHTTPHeader](all.md#auth-useridentityhttpheader-string)
 
-- [email.smtp](#emailsmtp-smtpserverconfig)
+- [email.smtp](all.md#email-smtp-smtpserverconfig-smtpserverconfig-object)
 
-- [email.imap](#emailimap-imapserverconfig)
+- [email.imap](all.md#email-imap-imapserverconfig-imapserverconfig-object)
 
-- [email.address](#emailaddress-string)
+- [email.address](all.md#email-address-string)
 
-- [update.channel](#updatechannel-string-enum)
+- [update.channel](all.md#updatechannel-string-enum)
 
-- [langservers](#langservers-array)
+- [langservers](all.md#langservers-array)
 
-- [extensions](#extensions-object)
+- [extensions](all.md#extensions-object)
 
-- [discussions](#discussions-object)
+- [discussions](all.md#discussions-object)
 
-- [settings](#settings-object)
+- [settings](all.md#settings-object)
 
-- [GitHubConnection](#githubconnection-object)
+- [GitHubConnection](all.md#githubconnection-object)
 
-- [GitLabConnection](#gitlabconnection-object)
+- [GitLabConnection](all.md#gitlabconnection-object)
 
-- [BitbucketServerConnection](#bitbucketserverconnection-object)
+- [BitbucketServerConnection](all.md#bitbucketserverconnection-object)
 
-- [AWSCodeCommitConnection](#awscodecommitconnection-object)
+- [AWSCodeCommitConnection](all.md#awscodecommitconnection-object)
 
-- [GitoliteConnection](#gitoliteconnection-object)
+- [GitoliteConnection](all.md#gitoliteconnection-object)
 
-- [CloneURLToRepositoryName](#cloneurltorepositoryname-object)
+- [CloneURLToRepositoryName](all.md#cloneurltorepositoryname-object)
 
-- [Repository](#repository-object)
+- [Repository](all.md#repository-object)
 
-- [BuiltinAuthProvider](#builtinauthprovider-object)
+- [BuiltinAuthProvider](all.md#builtinauthprovider-object)
 
-- [OpenIDConnectAuthProvider](#openidconnectauthprovider-object)
+- [OpenIDConnectAuthProvider](all.md#openidconnectauthprovider-object)
 
-- [SAMLAuthProvider](#samlauthprovider-object)
+- [SAMLAuthProvider](all.md#samlauthprovider-object)
 
-- [HTTPHeaderAuthProvider](#httpheaderauthprovider-object)
+- [HTTPHeaderAuthProvider](all.md#httpheaderauthprovider-object)
 
-- [AuthProviderCommon](#authprovidercommon-object)
+- [AuthProviderCommon](all.md#authprovidercommon-object)
 
-- [SMTPServerConfig](#smtpserverconfig-object)
+- [SMTPServerConfig](all.md#smtpserverconfig-object)
 
-- [IMAPServerConfig](#imapserverconfig-object)
+- [IMAPServerConfig](all.md#imapserverconfig-object)
 
-- [SiteConfigSearchScope](#siteconfigsearchscope-array)
+- [SiteConfigSearchScope](all.md#siteconfigsearchscope-array)
 
 <hr />
 
@@ -173,25 +173,25 @@ The available configuration options for Sourcegraph are listed below:
 
 <br/>
 
-## `auth.userOrgMap` (object)
+## auth.userOrgMap (object)
 
 Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{"*": ["org1", "org2"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `"*"`.
 
 <br/>
 
-## `log` (object)
+## log (object)
 
 Configuration for logging and alerting, including to external services.
 
 Properties of the `log` object:
 
-### `sentry` (object)
+### sentry (object)
 
 Configuration for Sentry
 
 Properties of the `sentry` object:
 
-#### `dsn` (string)
+#### dsn (string)
 
 Sentry Data Source Name (DSN). Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
 
@@ -201,37 +201,37 @@ Additional restrictions:
 
 <br/>
 
-## `siteID` (string)
+## siteID (string)
 
 The identifier for this site. A Sourcegraph site is a collection of one or more Sourcegraph instances that are all part of the same logical site. If the site ID is not set here, it is stored in the database the first time the server is run.
 
 <br/>
 
-## `appURL` (string)
+## appURL (string)
 
 Publicly accessible URL to web app (e.g., what you type into your browser).
 
 <br/>
 
-## `dontIncludeSymbolResultsByDefault` (boolean)
+## dontIncludeSymbolResultsByDefault (boolean)
 
 Set to `true` to not include symbol results if no `type:` filter was given
 
 <br/>
 
-## `disableBuiltInSearches` (boolean)
+## disableBuiltInSearches (boolean)
 
 Whether built-in searches should be hidden on the Searches page.
 
 <br/>
 
-## `experimentalFeatures` (object)
+## experimentalFeatures (object)
 
 Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 
 Properties of the `experimentalFeatures` object:
 
-### `updateScheduler` (string, enum)
+### updateScheduler (string, enum)
 
 Enables or disables a newer update scheduling algorithm which attempts to prioritize frequently-updated repositories, and throttles automatic updates to limit congestion.
 
@@ -242,7 +242,7 @@ This property must be one of the following enum values:
 
 Default: `"enabled"`
 
-### `jumpToDefOSSIndex` (string, enum)
+### jumpToDefOSSIndex (string, enum)
 
 Enables or disables consulting the OSS package index on Sourcegraph.com for cross repository jump to definition. When enabled Sourcegraph.com will receive Code Intelligence requests when they fail to resolve locally. NOTE: disablePublicRepoRedirects must not be set, or should be set to false.
 
@@ -253,7 +253,7 @@ This property must be one of the following enum values:
 
 Default: `"disabled"`
 
-### `canonicalURLRedirect` (string, enum)
+### canonicalURLRedirect (string, enum)
 
 Enables or disables redirecting to the canonical URL (underneath the "appURL") for incoming HTTP requests. This experiment is intended to be enabled for all instances as of Sourcegraph 2.9.
 
@@ -264,7 +264,7 @@ This property must be one of the following enum values:
 
 Default: `"disabled"`
 
-### `configVars` (string, enum)
+### configVars (string, enum)
 
 Enables or disables the interpolation of variables in string values in the site configuration JSON data.
 
@@ -277,7 +277,7 @@ This property must be one of the following enum values:
 
 Default: `"disabled"`
 
-### `multipleAuthProviders` (string, enum)
+### multipleAuthProviders (string, enum)
 
 Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users.
 
@@ -290,7 +290,7 @@ This property must be one of the following enum values:
 
 Default: `"enabled"`
 
-### `discussions` (string, enum)
+### discussions (string, enum)
 
 Enables the code discussions experiment.
 
@@ -303,7 +303,7 @@ Default: `"disabled"`
 
 <br/>
 
-## `tls.letsencrypt` (string, enum)
+## tls.letsencrypt (string, enum)
 
 Toggles ACME functionality for automatically using a TLS certificate issued by the Let's Encrypt Certificate Authority.
 The default value is auto, which uses the following conditions to switch on:
@@ -322,11 +322,11 @@ Default: `"auto"`
 
 <br/>
 
-## `tlsCert` (string)
+## tlsCert (string)
 
 The contents of the PEM-encoded TLS certificate for the web server (for the web app and API).
 
-See [https://about.sourcegraph.com/docs/config/tlsssl/](/docs/config/tlsssl/) for more information.
+See [https://about.sourcegraph.com/docs/config/tlsssl/](../tls_ssl.md) for more information.
 
 Additional restrictions:
 
@@ -334,11 +334,11 @@ Additional restrictions:
 
 <br/>
 
-## `tlsKey` (string)
+## tlsKey (string)
 
 The contents of the PEM-encoded TLS key for the web server (for the web app and API).
 
-See [https://about.sourcegraph.com/docs/config/tlsssl/](/docs/config/tlsssl/) for more information.
+See [https://about.sourcegraph.com/docs/config/tlsssl/](../tls_ssl.md) for more information.
 
 Additional restrictions:
 
@@ -346,7 +346,7 @@ Additional restrictions:
 
 <br/>
 
-## `httpToHttpsRedirect`
+## httpToHttpsRedirect
 
 Redirect users from HTTP to HTTPS. Accepted values are "on", "off", and "load-balanced" (boolean values true and false are also accepted and equivalent to "on" and "off" respectively). If "load-balanced" then additionally we use "X-Forwarded-Proto" to determine if on HTTP.
 
@@ -354,7 +354,7 @@ Default: `"off"`
 
 <br/>
 
-## `httpStrictTransportSecurity`
+## httpStrictTransportSecurity
 
 The value of the HTTP Strict-Transport-Security (HSTS) header sent by Sourcegraph, if non-empty
 
@@ -362,13 +362,13 @@ Default: `"max-age=31536000"`
 
 <br/>
 
-## `corsOrigin` (string)
+## corsOrigin (string)
 
 Value for the Access-Control-Allow-Origin header returned with all requests.
 
 <br/>
 
-## `disableBrowserExtension` (boolean)
+## disableBrowserExtension (boolean)
 
 Disable incoming connections from the Sourcegraph browser extension.
 
@@ -376,7 +376,7 @@ Default: `false`
 
 <br/>
 
-## `disableAutoGitUpdates` (boolean)
+## disableAutoGitUpdates (boolean)
 
 Disable periodically fetching git contents for existing repositories.
 
@@ -384,13 +384,13 @@ Default: `false`
 
 <br/>
 
-## `disablePublicRepoRedirects` (boolean)
+## disablePublicRepoRedirects (boolean)
 
 Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.
 
 <br/>
 
-## `phabricator` (array)
+## phabricator (array)
 
 JSON array of configuration for Phabricator hosts. See Phabricator Configuration section for more information.
 
@@ -417,7 +417,7 @@ The array object has the following properties:
 
 <br/>
 
-## `git.cloneURLToRepositoryName` (array)
+## git.cloneURLToRepositoryName (array)
 
 JSON array of configuration that maps from Git clone URL to repository URI. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 
@@ -425,7 +425,7 @@ The object is an array with all elements of the type [`CloneURLToRepositoryName`
 
 <br/>
 
-## `github` (array)
+## github (array)
 
 JSON array of configuration for GitHub hosts. See GitHub Configuration section for more information.
 
@@ -433,19 +433,19 @@ The object is an array with all elements of the type [`GitHubConnection`](#githu
 
 <br/>
 
-## `githubClientID` (string)
+## githubClientID (string)
 
 Client ID for GitHub.
 
 <br/>
 
-## `githubClientSecret` (string)
+## githubClientSecret (string)
 
 Client secret for GitHub.
 
 <br/>
 
-## `gitlab` (array)
+## gitlab (array)
 
 JSON array of configuration for GitLab hosts.
 
@@ -453,7 +453,7 @@ The object is an array with all elements of the type [`GitLabConnection`](#gitla
 
 <br/>
 
-## `awsCodeCommit` (array)
+## awsCodeCommit (array)
 
 JSON array of configuration for AWS CodeCommit endpoints.
 
@@ -461,7 +461,7 @@ The object is an array with all elements of the type [`AWSCodeCommitConnection`]
 
 <br/>
 
-## `bitbucketServer` (array)
+## bitbucketServer (array)
 
 JSON array of configuration for Bitbucket Server hosts.
 
@@ -469,7 +469,7 @@ The object is an array with all elements of the type [`BitbucketServerConnection
 
 <br/>
 
-## `gitolite` (array)
+## gitolite (array)
 
 JSON array of configuration for Gitolite hosts.
 
@@ -477,7 +477,7 @@ The object is an array with all elements of the type [`GitoliteConnection`](#git
 
 <br/>
 
-## `gitMaxConcurrentClones` (integer)
+## gitMaxConcurrentClones (integer)
 
 Maximum number of git clone processes that will be run concurrently to update repositories.
 
@@ -485,7 +485,7 @@ Default: `5`
 
 <br/>
 
-## `repos.list` (array)
+## repos.list (array)
 
 JSON array of configuration for external repositories.
 
@@ -493,7 +493,7 @@ The object is an array with all elements of the type [`Repository`](#repository-
 
 <br/>
 
-## `reviewBoard` (array)
+## reviewBoard (array)
 
 JSON array of configuration for Review Board.
 
@@ -506,19 +506,19 @@ The array object has the following properties:
 
 <br/>
 
-## `lightstepAccessToken` (string)
+## lightstepAccessToken (string)
 
 Access token for sending traces to LightStep.
 
 <br/>
 
-## `lightstepProject` (string)
+## lightstepProject (string)
 
 The project ID on LightStep that corresponds to the `lightstepAccessToken`, only for generating links to traces. For example, if `lightstepProject` is `mycompany-prod`, all HTTP responses from Sourcegraph will include an X-Trace header with the URL to the trace on LightStep, of the form `https://app.lightstep.com/mycompany-prod/trace?span_guid=...&at_micros=...`.
 
 <br/>
 
-## `useJaeger` (boolean)
+## useJaeger (boolean)
 
 Use local Jaeger instance for tracing. Kubernetes cluster deployments only.
 
@@ -536,7 +536,7 @@ following:
 
 <br/>
 
-## `noGoGetDomains` (string)
+## noGoGetDomains (string)
 
 List of domains in import paths to NOT perform `go get` on, but instead treat as standard Git repositories. Separated by ','.
 
@@ -544,7 +544,7 @@ For example, if your code imports non-go-gettable packages like `"mygitolite.aws
 
 <br/>
 
-## `blacklistGoGet` (array)
+## blacklistGoGet (array)
 
 List of domains to blacklist dependency fetching from. Separated by ','.
 
@@ -554,7 +554,7 @@ The object is an array with all elements of the type `string`.
 
 <br/>
 
-## `repoListUpdateInterval` (integer)
+## repoListUpdateInterval (integer)
 
 Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
 
@@ -562,41 +562,41 @@ Default: `1`
 
 <br/>
 
-## `searchScopes` ([SiteConfigSearchScope](#siteconfigsearchscope-object))
+## searchScopes ([SiteConfigSearchScope](#siteconfigsearchscope-object))
 
 <br/>
 
-## `htmlHeadTop` (string)
+## htmlHeadTop (string)
 
 HTML to inject at the top of the `<head>` element on each page, for analytics scripts
 
 <br/>
 
-## `htmlHeadBottom` (string)
+## htmlHeadBottom (string)
 
 HTML to inject at the bottom of the `<head>` element on each page, for analytics scripts
 
 <br/>
 
-## `htmlBodyTop` (string)
+## htmlBodyTop (string)
 
 HTML to inject at the top of the `<body>` element on each page, for analytics scripts
 
 <br/>
 
-## `htmlBodyBottom` (string)
+## htmlBodyBottom (string)
 
 HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts
 
 <br/>
 
-## `licenseKey` (string)
+## licenseKey (string)
 
 The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription.
 
 <br/>
 
-## `maxReposToSearch` (integer)
+## maxReposToSearch (integer)
 
 The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.
 
@@ -604,50 +604,50 @@ Default: `500`
 
 <br/>
 
-## `executeGradleOriginalRootPaths` (string)
+## executeGradleOriginalRootPaths (string)
 
 Java: A comma-delimited list of patterns that selects repository revisions for which to execute Gradle scripts, rather than extracting Gradle metadata statically. **Security note:** these should be restricted to repositories within your own organization. A percent sign ('%') can be used to prefix-match. For example, `git://my.internal.host/org1/%,git://my.internal.host/org2/repoA?%` would select all revisions of all repositories in org1 and all revisions of repoA in org2.
 Note: this field is misnamed, as it matches against the originalRootURI LSP initialize parameter, rather than the no-longer-used originalRootPath parameter.
 
 <br/>
 
-## `privateArtifactRepoID` (string)
+## privateArtifactRepoID (string)
 
 Java: Private artifact repository ID in your build files. If you do not explicitly include the private artifact repository, then set this to some unique string (e.g,. "my-repository").
 
 <br/>
 
-## `privateArtifactRepoURL` (string)
+## privateArtifactRepoURL (string)
 
 Java: The URL that corresponds to privateArtifactRepoID (e.g., http://my.artifactory.local/artifactory/root).
 
 <br/>
 
-## `privateArtifactRepoUsername` (string)
+## privateArtifactRepoUsername (string)
 
 Java: The username to authenticate to the private Artifactory.
 
 <br/>
 
-## `privateArtifactRepoPassword` (string)
+## privateArtifactRepoPassword (string)
 
 Java: The password to authenticate to the private Artifactory.
 
 <br/>
 
-## `parentSourcegraph` (object)
+## parentSourcegraph (object)
 
 URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 
 Properties of the `parentSourcegraph` object:
 
-### `url` (string)
+### url (string)
 
 Default: `"https://sourcegraph.com"`
 
 <br/>
 
-## `auth.provider` (string, enum)
+## auth.provider (string, enum)
 
 The authentication provider to use for identifying and signing in users. Defaults to "builtin" authentication.
 
@@ -664,7 +664,7 @@ Default: `"builtin"`
 
 <br/>
 
-## `auth.providers` (array)
+## auth.providers (array)
 
 The authentication providers to use for identifying and signing in users.
 
@@ -682,7 +682,7 @@ The elements of the array must match _exactly one_ of the following types:
 
 <br/>
 
-## `auth.allowSignup` (boolean)
+## auth.allowSignup (boolean)
 
 Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.
 
@@ -696,7 +696,7 @@ Default: `false`
 
 <br/>
 
-## `auth.disableAccessTokens` (boolean)
+## auth.disableAccessTokens (boolean)
 
 DEPRECATED. Use "auth.accessTokens.restrict" with value "disable" instead.
 
@@ -706,13 +706,13 @@ Default: `false`
 
 <br/>
 
-## `auth.accessTokens` (object)
+## auth.accessTokens (object)
 
 Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 
 Properties of the `auth.accessTokens` object:
 
-### `allow` (string, enum)
+### allow (string, enum)
 
 Allow or restrict the use of access tokens. The default is "all-users-create", which enables all users to create access tokens. Use "none" to disable access tokens entirely. Use "site-admin-create" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).
 
@@ -726,7 +726,7 @@ Default: `"all-users-create"`
 
 <br/>
 
-## `auth.public` (boolean)
+## auth.public (boolean)
 
 Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).
 
@@ -738,15 +738,15 @@ Default: `false`
 
 <br/>
 
-## `auth.openIDConnect` ([OpenIDConnectAuthProvider](#openidconnectauthprovider-object))
+## auth.openIDConnect ([OpenIDConnectAuthProvider](#openidconnectauthprovider-object))
 
 <br/>
 
-## `auth.saml` ([SAMLAuthProvider](#samlauthprovider-object))
+## auth.saml ([SAMLAuthProvider](#samlauthprovider-object))
 
 <br/>
 
-## `auth.sessionExpiry` (string)
+## auth.sessionExpiry (string)
 
 The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.
 
@@ -765,7 +765,7 @@ Default: `"2160h"`
 
 <br/>
 
-## `auth.userIdentityHTTPHeader` (string)
+## auth.userIdentityHTTPHeader (string)
 
 The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
 
@@ -775,15 +775,15 @@ DEPRECATED: Use "auth.providers" with an entry of the form {"type": "http-header
 
 <br/>
 
-## `email.smtp` ([SMTPServerConfig](#smtpserverconfig-object))
+## email.smtp ([SMTPServerConfig](#smtpserverconfig-object))
 
 <br/>
 
-## `email.imap` ([IMAPServerConfig](#imapserverconfig-object))
+## email.imap ([IMAPServerConfig](#imapserverconfig-object))
 
 <br/>
 
-## `email.address` (string)
+## email.address (string)
 
 The "from" address for emails sent by this server.
 
@@ -791,7 +791,7 @@ Default: `"noreply@sourcegraph.com"`
 
 <br/>
 
-## `update.channel` (string, enum)
+## update.channel (string, enum)
 
 The channel on which to automatically check for Sourcegraph updates.
 
@@ -804,7 +804,7 @@ Default: `"release"`
 
 <br/>
 
-## `langservers` (array)
+## langservers (array)
 
 Language server configuration.
 
@@ -842,19 +842,19 @@ The array object has the following properties:
 
 <br/>
 
-## `extensions` (object)
+## extensions (object)
 
 Configures Sourcegraph extensions.
 
 Properties of the `extensions` object:
 
-### `disabled` (boolean)
+### disabled (boolean)
 
 Disable all usage of extensions.
 
 Default: `false`
 
-### `remoteRegistry`
+### remoteRegistry
 
 The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.
 
@@ -863,7 +863,7 @@ The object must be one of the following types:
 - `string`
 - `boolean`
 
-### `allowRemoteExtensions` (array)
+### allowRemoteExtensions (array)
 
 Allow only the explicitly listed remote extensions (by extension ID, such as "alice/myextension") from the remote registry. If not set, all remote extensions may be used from the remote registry. To completely disable the remote registry, set `remoteRegistry` to `false`.
 
@@ -873,19 +873,19 @@ The object is an array with all elements of the type `string`.
 
 <br/>
 
-## `discussions` (object)
+## discussions (object)
 
 Configures Sourcegraph code discussions.
 
 Properties of the `discussions` object:
 
-### `abuseProtection` (boolean)
+### abuseProtection (boolean)
 
 Enable abuse protection features (for public instances like Sourcegraph.com, not recommended for private instances).
 
 Default: `false`
 
-### `abuseEmails` (array)
+### abuseEmails (array)
 
 Email addresses to notify of e.g. new user reports about abusive comments. Otherwise emails will not be sent.
 
@@ -899,7 +899,7 @@ Default:
 
 <br/>
 
-## `settings` (object)
+## settings (object)
 
 Site settings hard-coded in site configuration.
 
@@ -907,9 +907,9 @@ DEPRECATED: Specify site settings in the site admin global settings page instead
 
 Properties of the `settings` object:
 
-### `search.scopes` ([SiteConfigSearchScope](#siteconfigsearchscope-object))
+### search.scopes ([SiteConfigSearchScope](#siteconfigsearchscope-object))
 
-### `search.repositoryGroups` (object)
+### search.repositoryGroups (object)
 
 Named groups of repositories that can be referenced in a search query using the repogroup: operator.
 
@@ -917,11 +917,11 @@ Named groups of repositories that can be referenced in a search query using the 
 
 # Types
 
-## `GitHubConnection` (object)
+## GitHubConnection (object)
 
 Properties of the `GitHubConnection` object:
 
-### `url` (string)
+### url (string)
 
 URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com
 
@@ -929,13 +929,13 @@ Additional restrictions:
 
 - Regex pattern: `^https?://`
 
-### `gitURLType` (string, enum)
+### gitURLType (string, enum)
 
 The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.
 
 If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).
 
-If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: [https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication](/docs/config/repositories#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: [https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication](../add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
 
 This property must be one of the following enum values:
 
@@ -944,7 +944,7 @@ This property must be one of the following enum values:
 
 Default: `"http"`
 
-### `token` (string, required)
+### token (string, required)
 
 A GitHub personal access token with repo and org scope.
 
@@ -952,7 +952,7 @@ Additional restrictions:
 
 - Regex pattern: `^[^<>]+$`
 
-### `certificate` (string)
+### certificate (string)
 
 TLS certificate of a GitHub Enterprise instance.
 
@@ -960,13 +960,13 @@ Additional restrictions:
 
 - Regex pattern: `^-----BEGIN CERTIFICATE-----`
 
-### `repos` (array)
+### repos (array)
 
 An array of repository "owner/name" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.
 
 The object is an array with all elements of the type `string`.
 
-### `repositoryQuery` (array)
+### repositoryQuery (array)
 
 An array of strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph. The valid values are:
 
@@ -991,7 +991,7 @@ Default:
 ]
 ```
 
-### `repositoryPathPattern` (string)
+### repositoryPathPattern (string)
 
 The pattern used to generate the corresponding Sourcegraph repository path for a GitHub or GitHub Enterprise repository. In the pattern, the variable "{host}" is replaced with the GitHub host (such as github.example.com), and "{nameWithOwner}" is replaced with the GitHub repository's "owner/path" (such as "myorg/myrepo").
 
@@ -999,17 +999,17 @@ For example, if your GitHub Enterprise URL is https://github.example.com and you
 
 Default: `"{host}/{nameWithOwner}"`
 
-### `initialRepositoryEnablement` (boolean)
+### initialRepositoryEnablement (boolean)
 
 Defines whether repositories from this GitHub instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitHub repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitHub); site admins can still disable them explicitly, and they'll remain disabled.
 
 <hr />
 
-## `GitLabConnection` (object)
+## GitLabConnection (object)
 
 Properties of the `GitLabConnection` object:
 
-### `url` (string, required)
+### url (string, required)
 
 URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com
 
@@ -1019,7 +1019,7 @@ Additional restrictions:
 
 - Regex pattern: `^https?://`
 
-### `token` (string, required)
+### token (string, required)
 
 A GitLab personal access token with "api" scope.
 
@@ -1027,13 +1027,13 @@ Additional restrictions:
 
 - Regex pattern: `^[^<>]+$`
 
-### `gitURLType` (string, enum)
+### gitURLType (string, enum)
 
 The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.
 
 If "http", Sourcegraph will access GitLab repositories using Git URLs of the form http(s)://gitlab.example.com/myteam/myproject.git (using https: if the GitLab instance uses HTTPS).
 
-If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: [https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication](/docs/config/repositories#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access GitLab repositories using Git URLs of the form git@example.gitlab.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: [https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication](../add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
 
 This property must be one of the following enum values:
 
@@ -1042,7 +1042,7 @@ This property must be one of the following enum values:
 
 Default: `"http"`
 
-### `certificate` (string)
+### certificate (string)
 
 TLS certificate of a GitLab instance.
 
@@ -1050,7 +1050,7 @@ Additional restrictions:
 
 - Regex pattern: `^-----BEGIN CERTIFICATE-----`
 
-### `projectQuery` (array)
+### projectQuery (array)
 
 An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL query string for the GitLab projects API, such as "?membership=true&search=foo".
 
@@ -1066,7 +1066,7 @@ Default:
 ]
 ```
 
-### `repositoryPathPattern` (string)
+### repositoryPathPattern (string)
 
 The pattern used to generate a the corresponding Sourcegraph repository path for a GitLab project. In the pattern, the variable "{host}" is replaced with the GitLab URL's host (such as gitlab.example.com), and "{pathWithNamespace}" is replaced with the GitLab project's "namespace/path" (such as "myteam/myproject").
 
@@ -1074,17 +1074,17 @@ For example, if your GitLab is https://gitlab.example.com and your Sourcegraph i
 
 Default: `"{host}/{pathWithNamespace}"`
 
-### `initialRepositoryEnablement` (boolean)
+### initialRepositoryEnablement (boolean)
 
 Defines whether repositories from this GitLab instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable GitLab repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by GitLab); site admins can still disable them explicitly, and they'll remain disabled.
 
 <hr />
 
-## `BitbucketServerConnection` (object)
+## BitbucketServerConnection (object)
 
 Properties of the `BitbucketServerConnection` object:
 
-### `url` (string, required)
+### url (string, required)
 
 URL of a Bitbucket Server instance, such as https://bitbucket.example.com
 
@@ -1092,7 +1092,7 @@ Additional restrictions:
 
 - Regex pattern: `^https?://`
 
-### `token` (string)
+### token (string)
 
 A Bitbucket Server personal access token with Read scope. Create one at https://[your-bitbucket-hostname]/plugins/servlet/access-tokens/add.
 
@@ -1102,25 +1102,25 @@ Additional restrictions:
 
 - Regex pattern: `^[^<>]+$`
 
-### `username` (string)
+### username (string)
 
 The username to use when authenticating to the Bitbucket Server instance. Also set the corresponding "password" field.
 
 For Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the "token" field).
 
-### `password` (string)
+### password (string)
 
 The password to use when authenticating to the Bitbucket Server instance. Also set the corresponding "username" field.
 
 For Bitbucket Server instances that support personal access tokens (Bitbucket Server version 5.5 and newer), it is recommended to provide a token instead (in the "token" field).
 
-### `gitURLType` (string, enum)
+### gitURLType (string, enum)
 
 The type of Git URLs to use for cloning and fetching Git repositories on this Bitbucket Server instance.
 
 If "http", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form http(s)://bitbucket.example.com/scm/myproject/myrepo.git (using https: if the Bitbucket Server instance uses HTTPS).
 
-If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: [https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication](/docs/config/repositories#repositories-that-need-https-or-ssh-authentication).
+If "ssh", Sourcegraph will access Bitbucket Server repositories using Git URLs of the form ssh://git@example.bitbucket.com/myproject/myrepo.git. See the documentation for how to provide SSH private keys and known_hosts: [https://about.sourcegraph.com/docs/config/repositories#repositories-that-need-https-or-ssh-authentication](../add_from_git_repository.md#repositories-that-need-https-or-ssh-authentication).
 
 This property must be one of the following enum values:
 
@@ -1129,7 +1129,7 @@ This property must be one of the following enum values:
 
 Default: `"http"`
 
-### `certificate` (string)
+### certificate (string)
 
 TLS certificate of a Bitbucket Server instance.
 
@@ -1137,7 +1137,7 @@ Additional restrictions:
 
 - Regex pattern: `^-----BEGIN CERTIFICATE-----`
 
-### `repositoryPathPattern` (string)
+### repositoryPathPattern (string)
 
 The pattern used to generate the corresponding Sourcegraph repository path for a Bitbucket Server repository.
 
@@ -1149,21 +1149,21 @@ For example, if your Bitbucket Server is https://bitbucket.example.com and your 
 
 Default: `"{host}/{projectKey}/{repositorySlug}"`
 
-### `excludePersonalRepositories` (boolean)
+### excludePersonalRepositories (boolean)
 
-Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See [https://about.sourcegraph.com/docs/config/repositories/#excluding-personal-repositories](/docs/config/repositories/#excluding-personal-repositories) for more information. Default: false.
+Whether or not personal repositories should be excluded or not. When true, Sourcegraph will ignore personal repositories it may have access to. See [https://about.sourcegraph.com/docs/config/repositories/#excluding-personal-repositories](../../integration/bitbucket_server.md#excluding-personal-repositories) for more information. Default: false.
 
-### `initialRepositoryEnablement` (boolean)
+### initialRepositoryEnablement (boolean)
 
 Defines whether repositories from this Bitbucket Server instance should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable Bitbucket Server repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by Bitbucket Server); site admins can still disable them explicitly, and they'll remain disabled.
 
 <hr />
 
-## `AWSCodeCommitConnection` (object)
+## AWSCodeCommitConnection (object)
 
 Properties of the `AWSCodeCommitConnection` object:
 
-### `region` (string, enum, required)
+### region (string, enum, required)
 
 The AWS region in which to access AWS CodeCommit. See the list of supported regions at https://docs.aws.amazon.com/codecommit/latest/userguide/regions.html#regions-git.
 
@@ -1190,15 +1190,15 @@ Additional restrictions:
 
 - Regex pattern: `^[a-z\d-]+$`
 
-### `accessKeyID` (string, required)
+### accessKeyID (string, required)
 
 The AWS access key ID to use when listing and updating repositories from AWS CodeCommit. Must have the AWSCodeCommitReadOnly IAM policy.
 
-### `secretAccessKey` (string, required)
+### secretAccessKey (string, required)
 
 The AWS secret access key (that corresponds to the AWS access key ID set in `accessKeyID`).
 
-### `repositoryPathPattern` (string)
+### repositoryPathPattern (string)
 
 The pattern used to generate a the corresponding Sourcegraph repository path for an AWS CodeCommit repository. In the pattern, the variable "{name}" is replaced with the repository's name.
 
@@ -1206,55 +1206,55 @@ For example, if your Sourcegraph instance is at https://src.example.com, then a 
 
 Default: `"{name}"`
 
-### `initialRepositoryEnablement` (boolean)
+### initialRepositoryEnablement (boolean)
 
 Defines whether repositories from AWS CodeCommit should be enabled and cloned when they are first seen by Sourcegraph. If false, the site admin must explicitly enable AWS CodeCommit repositories (in the site admin area) to clone them and make them searchable on Sourcegraph. If true, they will be enabled and cloned immediately (subject to rate limiting by AWS); site admins can still disable them explicitly, and they'll remain disabled.
 
 <hr />
 
-## `GitoliteConnection` (object)
+## GitoliteConnection (object)
 
 Properties of the `GitoliteConnection` object:
 
-### `prefix` (string, required)
+### prefix (string, required)
 
 Repository URI prefix that will map to this Gitolite host. This should likely end with a trailing slash. E.g., "gitolite.example.com/".
 
-### `host` (string, required)
+### host (string, required)
 
 Gitolite host that stores the repositories (e.g., git@gitolite.example.com).
 
-### `blacklist` (string)
+### blacklist (string)
 
 Regular expression to filter repositories from auto-discovery, so they will not get cloned automatically.
 
-### `phabricatorMetadataCommand` (string)
+### phabricatorMetadataCommand (string)
 
 Bash command that prints out the Phabricator callsign for a Gitolite repository. This will be run with environment variable $REPO set to the URI of the repository and used to obtain the Phabricator metadata for a Gitolite repository. (Note: this requires `bash` to be installed.)
 
 <hr />
 
-## `CloneURLToRepositoryName` (object)
+## CloneURLToRepositoryName (object)
 
 Describes a mapping from clone URL to repository name. The `from` field contains a regular expression with named capturing groups. The `to` field contains a template string that references capturing group names. For instance, if `from` is "^../(?P<name>\w+)$" and `to` is "github.com/user/{name}", the clone URL "../myRepository" would be mapped to the repository name "github.com/user/myRepository".
 
 Properties of the `CloneURLToRepositoryName` object:
 
-### `from` (string, required)
+### from (string, required)
 
 A regular expression that matches a set of clone URLs. The regular expression should use the Go regular expression syntax (https://golang.org/pkg/regexp/) and contain at least one named capturing group. The regular expression matches partially by default, so use "^...$" if whole-string matching is desired.
 
-### `to` (string, required)
+### to (string, required)
 
 The repository name output pattern. This should use `{matchGroup}` syntax to reference the capturing groups from the `from` field.
 
 <hr />
 
-## `Repository` (object)
+## Repository (object)
 
 Properties of the `Repository` object:
 
-### `type` (string, enum)
+### type (string, enum)
 
 Type of the version control system for this repository, such as "git"
 
@@ -1264,11 +1264,11 @@ This property must be one of the following enum values:
 
 Default: `"git"`
 
-### `url` (string, required)
+### url (string, required)
 
 Clone URL for the repository, such as git@example.com:my/repo.git
 
-### `path` (string, required)
+### path (string, required)
 
 Display path on Sourcegraph for the repository, such as my/repo
 
@@ -1276,39 +1276,39 @@ Additional restrictions:
 
 - Regex pattern: `^[\w_]`
 
-### `links` (object)
+### links (object)
 
 Properties of the `links` object:
 
-#### `repository` (string)
+#### repository (string)
 
 URL specifying where to view the repository at an external location e.g. "https://example.com/myrepo"
 
-#### `commit` (string)
+#### commit (string)
 
 URL template for specifying how to link to commits at an external location. Use "{commit}" as a placeholder for a given commit ID e.g. "https://example.com/myrepo/view-commit/{commit}"
 
-#### `tree` (string)
+#### tree (string)
 
 URL template for specifying how to link to paths at an external location. Use "{path}" as a placeholder for a given path and "{rev}" as a placeholder for a given revision e.g. "https://example.com/myrepo@{rev}/browse/{path}"
 
-#### `blob` (string)
+#### blob (string)
 
 URL template for specifying how to link to files at an external location. Use "{path}" as a placeholder for a given path and "{rev}" as a placeholder for a given revision e.g. "https://example.com/myrepo@{rev}/browse/{path}"
 
 <hr />
 
-## `BuiltinAuthProvider` (object)
+## BuiltinAuthProvider (object)
 
 Configures the builtin username-password authentication provider.
 
 Properties of the `BuiltinAuthProvider` object:
 
-### `type` (string, required)
+### type (string, required)
 
 Constant value: `"builtin"`
 
-### `allowSignup` (boolean)
+### allowSignup (boolean)
 
 Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.
 
@@ -1318,19 +1318,19 @@ Default: `false`
 
 <hr />
 
-## `OpenIDConnectAuthProvider` (object)
+## OpenIDConnectAuthProvider (object)
 
 Configures the OpenID Connect authentication provider for SSO.
 
 Properties of the `OpenIDConnectAuthProvider` object:
 
-### `type` (string, required)
+### type (string, required)
 
 Constant value: `"openidconnect"`
 
-### `displayName`
+### displayName
 
-### `issuer` (string, required)
+### issuer (string, required)
 
 The URL of the OpenID Connect issuer.
 
@@ -1340,7 +1340,7 @@ Additional restrictions:
 
 - Regex pattern: `^https?://`
 
-### `clientID` (string, required)
+### clientID (string, required)
 
 The client ID for the OpenID Connect client for this site.
 
@@ -1350,7 +1350,7 @@ Additional restrictions:
 
 - Regex pattern: `^[^<]`
 
-### `clientSecret` (string, required)
+### clientSecret (string, required)
 
 The client secret for the OpenID Connect client for this site.
 
@@ -1360,7 +1360,7 @@ Additional restrictions:
 
 - Regex pattern: `^[^<]`
 
-### `requireEmailDomain` (string)
+### requireEmailDomain (string)
 
 Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading "@". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.
 
@@ -1370,7 +1370,7 @@ Additional restrictions:
 
 <hr />
 
-## `SAMLAuthProvider` (object)
+## SAMLAuthProvider (object)
 
 Configures the SAML authentication provider for SSO.
 
@@ -1378,17 +1378,17 @@ Note: if you are using IdP-initiated login, you must have _at most one_ SAMLAuth
 
 Properties of the `SAMLAuthProvider` object:
 
-### `type` (string, required)
+### type (string, required)
 
 Constant value: `"saml"`
 
-### `displayName`
+### displayName
 
-### `serviceProviderIssuer` (string)
+### serviceProviderIssuer (string)
 
 The name of this SAML Service Provider, which is used by the Identity Provider to identify this Service Provider. It defaults to https://sourcegraph.example.com/.auth/saml/metadata (where https://sourcegraph.example.com is replaced with this Sourcegraph instance's "appURL"). It is only necessary to explicitly set the issuer if you are using multiple SAML authentication providers.
 
-### `identityProviderMetadataURL` (string)
+### identityProviderMetadataURL (string)
 
 The SAML Identity Provider metadata URL (for dynamic configuration of the SAML Service Provider).
 
@@ -1396,11 +1396,11 @@ Additional restrictions:
 
 - Regex pattern: `^https?://`
 
-### `identityProviderMetadata` (string)
+### identityProviderMetadata (string)
 
 The SAML Identity Provider metadata XML contents (for static configuration of the SAML Service Provider). The value of this field should be an XML document whose root element is `<EntityDescriptor>` or `<EntityDescriptors>`.
 
-### `serviceProviderCertificate` (string)
+### serviceProviderCertificate (string)
 
 The SAML Service Provider certificate in X.509 encoding (begins with "-----BEGIN CERTIFICATE-----"). This certificate is used by the Identity Provider to validate the Service Provider's AuthnRequests and LogoutRequests. It corresponds to the Service Provider's private key (`serviceProviderPrivateKey`).
 
@@ -1408,7 +1408,7 @@ Additional restrictions:
 
 - Regex pattern: `^(-----BEGIN CERTIFICATE----- |\$)`
 
-### `serviceProviderPrivateKey` (string)
+### serviceProviderPrivateKey (string)
 
 The SAML Service Provider private key in PKCS#8 encoding (begins with "-----BEGIN PRIVATE KEY-----"). This private key is used to sign AuthnRequests and LogoutRequests. It corresponds to the Service Provider's certificate (`serviceProviderCertificate`).
 
@@ -1416,7 +1416,7 @@ Additional restrictions:
 
 - Regex pattern: `^(-----BEGIN PRIVATE KEY----- |\$)`
 
-### `nameIDFormat` (string)
+### nameIDFormat (string)
 
 The SAML NameID format to use when performing user authentication.
 
@@ -1426,11 +1426,11 @@ Additional restrictions:
 
 - Regex pattern: `^urn:`
 
-### `signRequests` (boolean)
+### signRequests (boolean)
 
 Sign AuthnRequests and LogoutRequests sent to the Identity Provider using the Service Provider's private key (`serviceProviderPrivateKey`). It defaults to true if the `serviceProviderPrivateKey` and `serviceProviderCertificate` are set, and false otherwise.
 
-### `insecureSkipAssertionSignatureValidation` (boolean)
+### insecureSkipAssertionSignatureValidation (boolean)
 
 Whether the Service Provider should (insecurely) accept assertions from the Identity Provider without a valid signature.
 
@@ -1438,17 +1438,17 @@ Default: `false`
 
 <hr />
 
-## `HTTPHeaderAuthProvider` (object)
+## HTTPHeaderAuthProvider (object)
 
 Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
 
 Properties of the `HTTPHeaderAuthProvider` object:
 
-### `type` (string, required)
+### type (string, required)
 
 Constant value: `"http-header"`
 
-### `usernameHeader` (string, required)
+### usernameHeader (string, required)
 
 The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
 
@@ -1456,41 +1456,41 @@ Requires auth.provider=="http-header".
 
 <hr />
 
-## `AuthProviderCommon` (object)
+## AuthProviderCommon (object)
 
 Common properties for authentication providers.
 
 Properties of the `AuthProviderCommon` object:
 
-### `displayName` (string)
+### displayName (string)
 
 The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).
 
 <hr />
 
-## `SMTPServerConfig` (object)
+## SMTPServerConfig (object)
 
 The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
 
 Properties of the `SMTPServerConfig` object:
 
-### `host` (string, required)
+### host (string, required)
 
 The SMTP server host.
 
-### `port` (integer, required)
+### port (integer, required)
 
 The SMTP server port.
 
-### `username` (string)
+### username (string)
 
 The username to use when communicating with the SMTP server.
 
-### `password` (string)
+### password (string)
 
 The username to use when communicating with the SMTP server.
 
-### `authentication` (string, enum, required)
+### authentication (string, enum, required)
 
 The type of authentication to use for the SMTP server.
 
@@ -1500,37 +1500,37 @@ This property must be one of the following enum values:
 - `PLAIN`
 - `CRAM-MD5`
 
-### `domain` (string)
+### domain (string)
 
 The HELO domain to provide to the SMTP server (if needed).
 
 <hr />
 
-## `IMAPServerConfig` (object)
+## IMAPServerConfig (object)
 
 Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
 
 Properties of the `IMAPServerConfig` object:
 
-### `host` (string, required)
+### host (string, required)
 
 The IMAP server host.
 
-### `port` (integer, required)
+### port (integer, required)
 
 The IMAP server port.
 
-### `username` (string)
+### username (string)
 
 The username to use when communicating with the IMAP server.
 
-### `password` (string)
+### password (string)
 
 The username to use when communicating with the IMAP server.
 
 <hr />
 
-## `SiteConfigSearchScope` (array)
+## SiteConfigSearchScope (array)
 
 Predefined search scopes
 

@@ -16,59 +16,29 @@ By spinning up Sourcegraph, you can get code intelligence:
 - On diffs in your code review tool, via our [integrations](../../integration/index.md)
 - Via the Sourcegraph API (for programmatic access)
 
-<div class="code-intel-images">
-
-<div>
-
 **Hover tooltips with documentation and type signatures**
 
 <img src="img/hover-tooltip.png" width="500"/>
-
-</div>
-
-<div>
 
 **Go to definition**
 
 <img src="img/go-to-def.gif" width="500"/>
 
-</div>
-
-<div>
-
 **Find references**
 
 <img src="img/find-refs.gif" width="450"/>
-
-</div>
-
-<div>
 
 **GitHub pull request and file integration**
 
 <img src="img/CodeReview.gif" width="450" style="margin-left:0;margin-right:0;"/>
 
-</div>
-
-<div>
-
 **Symbol search**
 
 <img src="img/Symbols.png" width="500"/>
 
-</div>
-
-<div>
-
 **Symbol sidebar**
 
 <img src="img/SymbolSidebar.png" width="500"/>
-
-</div>
-
-</div>
-
-<div style="clear:both">&nbsp;</div>
 
 ---
 

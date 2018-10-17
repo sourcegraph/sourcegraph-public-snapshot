@@ -14,7 +14,7 @@ For Kubernetes cluster deployments of Sourcegraph, edit the `config-file.ConfigM
 
 <!-- TODO!(sqs): emit all site config options -->
 
-See [all site configuration options](index.md), or read walkthroughs of common configuration use cases:
+See [all site configuration options](all.md), or read walkthroughs of common configuration use cases:
 
 - [Add repositories to search from your code host](../repo/add.md)
 - [Add user authentication providers (SSO)](../auth/index.md)
