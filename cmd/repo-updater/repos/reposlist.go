@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -85,20 +86,43 @@ func setNewScheduler(v bool) bool {
 
 // repo represents a repository we're tracking.
 type repoData struct {
-	name      string        // name used as the unique key, also sometimes api.RepoURI
-	url       string        // origin URL
-	heapIndex int           // the location of this repo in our heap
-	due       time.Time     // next time this repo should be updated
-	started   time.Time     // timestamp from starting work, used to compute runtime
-	auto      bool          // schedule for automatic updates
-	manual    bool          // has a manual update request pending
-	working   bool          // currently being processed
-	interval  time.Duration // how often to check it
-	fetchTime time.Duration // duration of last fetch
+	// Name used as the unique key, also sometimes api.RepoURI
+	Name string
+
+	// URL is the git origin URL.
+	URL string
+
+	// Due is the next time this repo should be updated.
+	Due time.Time
+
+	// LastUpdateStarted is when we last started an update. Used to compute
+	// LastUpdateDuration.
+	LastUpdateStarted time.Time
+
+	// LastUpdateDuration is the duration of last update.
+	LastUpdateDuration time.Duration
+
+	// AutoUpdate is true if repo should be scheduled for automatic updates.
+	AutoUpdate bool
+
+	// UpdateSoon is true if repo is on the high priority queue. Repos are
+	// placed on this queue if a user browses to its page.
+	UpdateSoon bool
+
+	// IsUpdating is true if the repository is currently being updated.
+	IsUpdating bool
+
+	// UpdateInterval is how often we should automatically check for updates
+	// in a repo.
+	UpdateInterval time.Duration
+
+	// heapIndex is the location of this repo in our heap. It is maintained by
+	// the repoHeap methods.
+	heapIndex int
 }
 
 func (r *repoData) scatterDelay() time.Duration {
-	seconds := r.interval.Seconds()
+	seconds := r.UpdateInterval.Seconds()
 	if seconds < minDelay.Seconds() {
 		seconds = minDelay.Seconds()
 	}
@@ -114,7 +138,7 @@ func (rh repoHeap) Len() int {
 
 // The item Pop() yields will be the one with the lowest time.
 func (rh repoHeap) Less(i, j int) bool {
-	return rh[i].due.Before(rh[j].due)
+	return rh[i].Due.Before(rh[j].Due)
 }
 
 func (rh repoHeap) Swap(i, j int) {
@@ -226,9 +250,9 @@ func (r *repoList) recomputeScale() {
 	var scale float64
 	queued := 0
 	for _, repo := range r.repos {
-		if repo.auto {
+		if repo.AutoUpdate {
 			queued++
-			scale += float64(repo.fetchTime) / float64(repo.interval)
+			scale += float64(repo.LastUpdateDuration) / float64(repo.UpdateInterval)
 		}
 	}
 	r.stats.autoQueue = queued
@@ -310,27 +334,27 @@ func (r *repoList) queue(name, url string) {
 		return
 	}
 	// Possibly update the URL for future updates.
-	repo.url = url
-	if repo.auto && repo.heapIndex >= 0 {
+	repo.URL = url
+	if repo.AutoUpdate && repo.heapIndex >= 0 {
 		// already done
 		return
 	}
-	repo.auto = true
+	repo.AutoUpdate = true
 	// it's being processed manually, so it will get requeued later
-	if repo.manual {
+	if repo.UpdateSoon {
 		return
 	}
 	// don't schedule an update when auto-updates are off.
 	if r.autoUpdatesDisabled {
 		return
 	}
-	repo.due = time.Now().Add(repo.scatterDelay())
+	repo.Due = time.Now().Add(repo.scatterDelay())
 	if repo.heapIndex >= 0 {
 		heap.Fix(&r.heap, repo.heapIndex)
 	} else {
 		heap.Push(&r.heap, repo)
 	}
-	r.ping(repo.due, repo.name)
+	r.ping(repo.Due, repo.Name)
 }
 
 // dequeue unmarks the named repository for automatic scheduling. it does
@@ -344,12 +368,12 @@ func (r *repoList) dequeue(name, url string) {
 		return
 	}
 	// Possibly update the URL for future updates.
-	repo.url = url
+	repo.URL = url
 	// remove from automatic schedule
 	if repo.heapIndex >= 0 {
 		heap.Remove(&r.heap, repo.heapIndex)
 	}
-	repo.auto = false
+	repo.AutoUpdate = false
 }
 
 // update marks the named repository for a manual update.
@@ -363,20 +387,20 @@ func (r *repoList) update(name, url string) {
 		return
 	}
 	// Possibly update the URL for future updates.
-	repo.url = url
-	if repo.manual || repo.working {
+	repo.URL = url
+	if repo.UpdateSoon || repo.IsUpdating {
 		// already scheduled
 		return
 	}
-	repo.manual = true
-	repo.due = time.Now()
+	repo.UpdateSoon = true
+	repo.Due = time.Now()
 	r.bumped = append(r.bumped, repo)
 	// cancel any automatic scheduled processing; we'll still requeue
 	// later if set for auto.
 	if repo.heapIndex >= 0 {
 		heap.Remove(&r.heap, repo.heapIndex)
 	}
-	r.ping(repo.due, repo.name)
+	r.ping(repo.Due, repo.Name)
 }
 
 // add creates the repository described, and schedules it for
@@ -390,13 +414,13 @@ func (r *repoList) add(name, url string, queue bool) {
 	// create an entry
 	log15.Debug("repoList add new", "repo", name)
 	repo := &repoData{
-		name:      string(name),
-		url:       url,
-		heapIndex: -1,
-		due:       time.Now(),
-		auto:      queue,
-		interval:  r.interval(24 * time.Hour),
-		fetchTime: 1 * time.Second,
+		Name:               string(name),
+		URL:                url,
+		heapIndex:          -1,
+		Due:                time.Now(),
+		AutoUpdate:         queue,
+		UpdateInterval:     r.interval(24 * time.Hour),
+		LastUpdateDuration: 1 * time.Second,
 	}
 	r.repos[name] = repo
 	if queue {
@@ -404,15 +428,15 @@ func (r *repoList) add(name, url string, queue bool) {
 	} else {
 		r.bumped = append(r.bumped, repo)
 	}
-	r.ping(repo.due, repo.name)
+	r.ping(repo.Due, repo.Name)
 }
 
 // startUpdate is a helper function for initiating an update and setting
 // flags. call only when you hold the mutex.
 func (r *repoList) startUpdate(ctx context.Context, nextUp *repoData, auto bool) {
 	r.activeRequests++
-	nextUp.working = true
-	nextUp.started = time.Now()
+	nextUp.IsUpdating = true
+	nextUp.LastUpdateStarted = time.Now()
 	if auto {
 		r.stats.autoFetches++
 		schedAutoFetch.Inc()
@@ -433,10 +457,10 @@ func (r *repoList) doUpdate(ctx context.Context, repo *repoData) {
 	// We need to hold the lock to read values from repo and r. So we read
 	// everything we need at the very start.
 	r.mu.Lock()
-	name := repo.name
-	url := repo.url
-	interval := repo.interval
-	manual := repo.manual
+	name := repo.Name
+	url := repo.URL
+	interval := repo.UpdateInterval
+	manual := repo.UpdateSoon
 	autoUpdatesDisabled := r.autoUpdatesDisabled
 	r.mu.Unlock()
 
@@ -480,17 +504,17 @@ func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateR
 	defer r.mu.Unlock()
 	r.activeRequests--
 	if r.activeRequests < 0 {
-		log15.Error("activeRequests went under zero", "repo", repo.name)
+		log15.Error("activeRequests went under zero", "repo", repo.Name)
 		r.activeRequests = 0
 	}
 	now := time.Now()
 	// Clear inProcess flag while holding the lock on the repolist; see interactions
 	// with repoList.add()
-	repo.working = false
+	repo.IsUpdating = false
 	// whether or not this was actually manual, any manual request is cleared by completing
 	// a fetch attempt.
-	repo.manual = false
-	repo.fetchTime = now.Sub(repo.started)
+	repo.UpdateSoon = false
+	repo.LastUpdateDuration = now.Sub(repo.LastUpdateStarted)
 	if err != nil {
 		r.stats.errors++
 		schedError.Inc()
@@ -505,46 +529,46 @@ func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateR
 		}
 		if resp.Finished != nil && resp.Received != nil {
 			altTime := resp.Finished.Sub(*resp.Received)
-			log15.Debug("time taken/reported", "repo", repo.name, "fetchTime", repo.fetchTime, "altTime", altTime)
+			log15.Debug("time taken/reported", "repo", repo.Name, "fetchTime", repo.LastUpdateDuration, "altTime", altTime)
 		}
 		switch {
 		case resp.Error != "":
 			// A failed fetch could indicate a problem like a bad auth token, so we want to be
 			// conservative.
-			repo.interval = repo.interval * 2
+			repo.UpdateInterval = repo.UpdateInterval * 2
 			// cap at a one-day loop.
-			if repo.interval > 24*time.Hour {
-				repo.interval = 24 * time.Hour
+			if repo.UpdateInterval > 24*time.Hour {
+				repo.UpdateInterval = 24 * time.Hour
 			}
-			log15.Info("interval backoff due to error", "repo", repo.name, "error", resp.Error, "interval", repo.interval)
+			log15.Info("interval backoff due to error", "repo", repo.Name, "error", resp.Error, "interval", repo.UpdateInterval)
 		case resp.LastChanged != nil:
 			sinceLast := now.Sub(*resp.LastChanged)
-			repo.interval = r.interval(sinceLast)
-			log15.Debug("interval set", "repo", repo.name, "sinceLast", sinceLast, "interval", repo.interval)
+			repo.UpdateInterval = r.interval(sinceLast)
+			log15.Debug("interval set", "repo", repo.Name, "sinceLast", sinceLast, "interval", repo.UpdateInterval)
 		default:
 			// If we don't have data on how old the repo is, we'll be aggressive,
 			// partially because we'll probably get that data "soon"; usually this
 			// would only happen during initial cloning. Note, this won't happen
 			// if we get an actual error back from gitserver, and shouldn't happen
 			// in any case where gitserver didn't have an error to report.
-			repo.interval = r.interval(1 * time.Hour)
+			repo.UpdateInterval = r.interval(1 * time.Hour)
 		}
 	} else {
-		log15.Debug("no response data from gitserver", "repo", repo.name)
+		log15.Debug("no response data from gitserver", "repo", repo.Name)
 		// No response at all, we try again relatively soon.
-		repo.interval = r.interval(1 * time.Hour)
+		repo.UpdateInterval = r.interval(1 * time.Hour)
 	}
 	// if this repo is set for auto updates, and auto-updates are not disabled,
 	// add it back to the queue.
-	if repo.auto && !r.autoUpdatesDisabled && NewScheduler() {
+	if repo.AutoUpdate && !r.autoUpdatesDisabled && NewScheduler() {
 		// Stagger retries to reduce flooding.
-		repo.due = now.Add(repo.interval + time.Duration(rand.Int()%10)*time.Second)
+		repo.Due = now.Add(repo.UpdateInterval + time.Duration(rand.Int()%10)*time.Second)
 		if repo.heapIndex >= 0 {
 			heap.Fix(&r.heap, repo.heapIndex)
 		} else {
 			heap.Push(&r.heap, repo)
 		}
-		r.ping(repo.due, "requeue: "+repo.name)
+		r.ping(repo.Due, "requeue: "+repo.Name)
 	}
 }
 
@@ -606,18 +630,18 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 			}
 		}
 		r.bumped = newBumped
-		for nextUp = r.heap.peek(); nextUp != nil && nextUp.due.Before(now) && r.activeRequests < r.maxRequests; nextUp = r.heap.peek() {
+		for nextUp = r.heap.peek(); nextUp != nil && nextUp.Due.Before(now) && r.activeRequests < r.maxRequests; nextUp = r.heap.peek() {
 			// We didn't use Pop() above because popping and immediately pushing again
 			// would be much more expensive, in the case where we woke up from a ping
 			// rather than because the next item was due.
 			nextUp = heap.Pop(&r.heap).(*repoData)
-			log15.Debug("repo ready", "repo", nextUp.name)
+			log15.Debug("repo ready", "repo", nextUp.Name)
 			// process this entry, if it's not already running
-			if !nextUp.working {
+			if !nextUp.IsUpdating {
 				r.startUpdate(ctx, nextUp, true)
 			} else {
 				// skip this update, maybe try again in the normal update interval.
-				nextUp.due = now.Add(nextUp.interval)
+				nextUp.Due = now.Add(nextUp.UpdateInterval)
 				heap.Push(&r.heap, nextUp)
 			}
 		}
@@ -631,7 +655,7 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 			// in process now, and we should skip it. Or it might have been processed,
 			// and had a new due time picked, and we should skip it. In either case,
 			// it's already where it needs to be in the regular queue(s).
-			if now.After(newEntry.due) && !newEntry.working {
+			if now.After(newEntry.Due) && !newEntry.IsUpdating {
 				// This is always an "automatic" update; it was not triggered by user
 				// interaction with the repo, but was done automatically from config.
 				r.startUpdate(ctx, newEntry, true)
@@ -642,11 +666,11 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 		// in which case this loop waking up fairly often won't be a problem.
 		waitTime := 10 * time.Second
 		if nextUp != nil {
-			waitTime = time.Until(nextUp.due) + 50*time.Millisecond
+			waitTime = time.Until(nextUp.Due) + 50*time.Millisecond
 			if waitTime < 0 {
 				waitTime = 1 * time.Second
 			}
-			log15.Debug("nextUp due", "interval", nextUp.interval, "due", nextUp.due, "repo", nextUp.name)
+			log15.Debug("nextUp due", "interval", nextUp.UpdateInterval, "due", nextUp.Due, "repo", nextUp.Name)
 		}
 		// If something is bumped, but in-process, we'll try again soon
 		// note, if auto updates are on, that will be redundant, but that's why
@@ -798,6 +822,74 @@ func (r *repoList) updateConfig(ctx context.Context, configs []*schema.Repositor
 	r.updateSource("internalConfig", newList)
 }
 
+// Snapshot represents the state of the various queues repo-updater
+// maintains. The fields are ordered by priority.
+type Snapshot struct {
+	HighPriority []*repoData
+	New          []*repoData
+	Queue        []*repoData
+	Unscheduled  []*repoData
+
+	// LockHeld is how long the global mutex was held to generate the
+	// snapshot.
+	LockHeld time.Duration
+}
+
+// snapshot returns a snapshot of the schedulers queue state. Note: This holds
+// the global mutex while copying the repo structures.
+func (r *repoList) snapshot() *Snapshot {
+	// Critical section. Avoid map lookups to make as fast as possible.
+	r.mu.Lock()
+	t := time.Now()
+	repos := make(map[string]*repoData, len(r.repos))
+	for k, v := range r.repos {
+		v2 := *v
+		repos[k] = &v2
+	}
+	highPriority := make([]string, len(r.bumped))
+	for i, v := range r.bumped {
+		highPriority[i] = v.Name
+	}
+	new := make([]string, len(r.newQueue))
+	for i, v := range r.newQueue {
+		new[i] = v.Name
+	}
+	r.mu.Unlock()
+	lockHeld := time.Since(t)
+
+	q := make([]*repoData, 0, len(repos))
+	for _, v := range repos {
+		q = append(q, v)
+	}
+
+	// Put unscheduled items at the front of q. Otherwise sort by Due.
+	sort.Slice(q, func(i, j int) bool {
+		if (q[i].heapIndex == -1) != (q[j].heapIndex == -1) {
+			return q[i].heapIndex == -1
+		}
+		return q[i].Due.Before(q[j].Due)
+	})
+	heapStart := 0
+	for heapStart < len(q) && q[heapStart].heapIndex < 0 {
+		heapStart++
+	}
+
+	s := &Snapshot{
+		HighPriority: make([]*repoData, len(highPriority)),
+		New:          make([]*repoData, len(new)),
+		Queue:        q[heapStart:],
+		Unscheduled:  q[:heapStart],
+		LockHeld:     lockHeld,
+	}
+	for i, k := range highPriority {
+		s.HighPriority[i] = repos[k]
+	}
+	for i, k := range new {
+		s.New[i] = repos[k]
+	}
+	return s
+}
+
 func startRepositorySyncWorker(ctx context.Context, shutdown chan struct{}) {
 	configs := conf.Get().ReposList
 	if len(configs) == 0 {
@@ -920,4 +1012,10 @@ func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLo
 	}
 
 	return nil, false, nil // not found
+}
+
+// QueueSnapshot represents the state of the various queues repo-updater
+// maintains. The fields are ordered by priority.
+func QueueSnapshot() *Snapshot {
+	return repos.snapshot()
 }

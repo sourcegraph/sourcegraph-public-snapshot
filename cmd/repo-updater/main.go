@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net"
 	"net/http"
@@ -30,7 +31,19 @@ func main() {
 	env.HandleHelpFlag()
 	tracer.Init()
 
-	go debugserver.Start()
+	go debugserver.Start(debugserver.Endpoint{
+		Name: "Repo Updater State",
+		Path: "/repo-updater-state",
+		Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			d, err := json.MarshalIndent(repos.QueueSnapshot(), "", "  ")
+			if err != nil {
+				http.Error(w, "failed to marshal snapshot: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			w.Write(d)
+		}),
+	})
 
 	// Start up handler that frontend relies on
 	var repoupdater repoupdater.Server
