@@ -162,6 +162,10 @@ permissions.onRemoved(permissions => {
 })
 
 storage.addSyncMigration((items, set, remove) => {
+    if (!items.accessTokens) {
+        set({ accessTokens: {} })
+    }
+
     if (items.phabricatorURL) {
         remove('phabricatorURL')
 

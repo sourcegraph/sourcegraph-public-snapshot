@@ -3,7 +3,7 @@ import { Controller } from '@sourcegraph/extensions-client-common/lib/client/con
 import { ConfigurationSubject, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
 import { from, Observable, of, OperatorFunction, throwError, throwError as error } from 'rxjs'
 import { ajax, AjaxResponse } from 'rxjs/ajax'
-import { catchError, map, tap } from 'rxjs/operators'
+import { catchError, map, switchMap, tap } from 'rxjs/operators'
 import { HoverMerged } from 'sourcegraph/module/client/types/hover'
 import { TextDocumentPositionParams } from 'sourcegraph/module/protocol'
 import { Definition, TextDocumentIdentifier } from 'vscode-languageserver-types'
@@ -44,6 +44,21 @@ export function isEmptyHover(hover: HoverMerged | null): boolean {
     return !hover || !hover.contents || (Array.isArray(hover.contents) && hover.contents.length === 0)
 }
 
+const request = (url: string, method: string, requests: any[]): Observable<AjaxResponse> =>
+    getHeaders(url).pipe(
+        switchMap(headers =>
+            ajax({
+                method: 'POST',
+                url: `${url}/.api/xlang/${method || ''}`,
+                headers,
+                crossDomain: true,
+                withCredentials: true,
+                body: JSON.stringify(requests),
+                async: true,
+            })
+        )
+    )
+
 export function sendLSPHTTPRequests(requests: any[], url: string = sourcegraphUrl): Observable<any[]> {
     const sendTo = (urlsToTry: string[]): Observable<AjaxResponse> => {
         if (urlsToTry.length === 0) {
@@ -52,15 +67,8 @@ export function sendLSPHTTPRequests(requests: any[], url: string = sourcegraphUr
 
         const urlToTry = urlsToTry[0]
         const urlPathHint = requests[1] && requests[1].method
-        return ajax({
-            method: 'POST',
-            url: `${urlToTry}/.api/xlang/${urlPathHint || ''}`,
-            headers: getHeaders(),
-            crossDomain: true,
-            withCredentials: true,
-            body: JSON.stringify(requests),
-            async: true,
-        }).pipe(
+
+        return request(urlToTry, urlPathHint, requests).pipe(
             // Workaround for https://github.com/ReactiveX/rxjs/issues/3606
             tap(response => {
                 if (response.status === 0) {
@@ -172,15 +180,7 @@ const fetchHover = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable
         return of(null)
     }
 
-    return ajax({
-        method: 'POST',
-        url: `${url}/.api/xlang/textDocument/hover`,
-        headers: getHeaders(),
-        crossDomain: true,
-        withCredentials: true,
-        body: JSON.stringify(body),
-        async: true,
-    }).pipe(extractLSPResponse)
+    return request(url, 'textDocument/hover', body).pipe(extractLSPResponse)
 }, makeRepoURI)
 
 const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Observable<Definition> => {
@@ -213,16 +213,7 @@ const fetchDefinition = memoizeObservable((pos: AbsoluteRepoFilePosition): Obser
     if (!canFetchForURL(url)) {
         return of([])
     }
-
-    return ajax({
-        method: 'POST',
-        url: `${url}/.api/xlang/textDocument/definition`,
-        headers: getHeaders(),
-        crossDomain: true,
-        withCredentials: true,
-        body: JSON.stringify(body),
-        async: true,
-    }).pipe(extractLSPResponse)
+    return request(url, 'textDocument/definition', body).pipe(extractLSPResponse)
 }, makeRepoURI)
 
 export function fetchJumpURL(
@@ -287,28 +278,22 @@ const fetchServerCapabilities = (pos: AbsoluteRepoLanguageFile): Observable<Serv
     if (!canFetchForURL(url)) {
         return of(undefined)
     }
-    return ajax({
-        method: 'POST',
-        url: `${url}/.api/xlang/initialize`,
-        headers: getHeaders(),
-        crossDomain: true,
-        withCredentials: true,
-        body: JSON.stringify(
-            [
-                {
-                    id: 0,
-                    method: 'initialize',
-                    params: {
-                        rootUri: `git://${pos.repoPath}?${pos.commitID}`,
-                        initializationOptions: { mode },
-                    },
+    return request(
+        url,
+        'initialize',
+        [
+            {
+                id: 0,
+                method: 'initialize',
+                params: {
+                    rootUri: `git://${pos.repoPath}?${pos.commitID}`,
+                    initializationOptions: { mode },
                 },
-                { id: 1, method: 'shutdown' },
-                { method: 'exit' },
-            ].filter(m => m !== null)
-        ),
-        async: true,
-    }).pipe(
+            },
+            { id: 1, method: 'shutdown' },
+            { method: 'exit' },
+        ].filter(m => m !== null)
+    ).pipe(
         tap(response => {
             if (response.status === 0) {
                 throw Object.assign(new Error('Ajax status 0'), response)

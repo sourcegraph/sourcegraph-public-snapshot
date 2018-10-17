@@ -20,10 +20,21 @@ export const featureFlagDefaults: FeatureFlags = {
     newInject: false,
 }
 
+/** A map where the key is the server URL and the value is the token. */
+export interface AccessTokens {
+    [url: string]: string
+}
+
 // TODO(chris) Switch to Partial<StorageItems> to eliminate bugs caused by
 // missing items.
 export interface StorageItems {
     sourcegraphURL: string
+    /**
+     * The current users access tokens the different sourcegraphUrls they have
+     * had configured.
+     */
+    accessTokens: AccessTokens
+
     gitHubEnterpriseURL: string
     phabricatorURL: string
     inlineSymbolSearchEnabled: boolean
@@ -66,6 +77,8 @@ interface ClientConfigurationDetails {
 
 export const defaultStorageItems: StorageItems = {
     sourcegraphURL: 'https://sourcegraph.com',
+    accessTokens: {},
+
     serverUrls: ['https://sourcegraph.com'],
     gitHubEnterpriseURL: '',
     phabricatorURL: '',

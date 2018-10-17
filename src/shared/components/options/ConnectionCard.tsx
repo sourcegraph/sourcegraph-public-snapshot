@@ -14,6 +14,7 @@ import {
     ListGroupItemHeading,
     Row,
 } from 'reactstrap'
+import { Subscription } from 'rxjs'
 import * as permissions from '../../../browser/permissions'
 import storage from '../../../browser/storage'
 import { StorageItems } from '../../../browser/types'
@@ -37,6 +38,8 @@ export class ConnectionCard extends React.Component<Props, State> {
     private urlInput: HTMLInputElement | null
     private contentScriptUrls: string[]
 
+    private subscriptions = new Subscription()
+
     constructor(props: Props) {
         super(props)
         this.state = {
@@ -56,6 +59,10 @@ export class ConnectionCard extends React.Component<Props, State> {
 
     public componentWillReceiveProps(nextProps: Props): void {
         this.setContentScriptUrls(nextProps)
+    }
+
+    public componentWillUnmount(): void {
+        this.subscriptions.unsubscribe()
     }
 
     private sourcegraphServerAlert = (): JSX.Element => {
@@ -225,13 +232,15 @@ export class ConnectionCard extends React.Component<Props, State> {
     }
 
     private checkConnection = (): void => {
-        fetchSite().subscribe(
-            site => {
-                this.setState(() => ({ site }))
-            },
-            () => {
-                this.setState(() => ({ site: undefined }))
-            }
+        this.subscriptions.add(
+            fetchSite().subscribe(
+                site => {
+                    this.setState({ site })
+                },
+                () => {
+                    this.setState({ site: undefined })
+                }
+            )
         )
     }
 

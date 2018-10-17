@@ -29,11 +29,12 @@ export const resolveClientConfiguration = (): Observable<IClientConfigurationDet
         }, catchError((err, caught) => caught))
     )
 
-export const fetchCurrentUser = (): Observable<GQL.IUser | undefined> =>
+export const fetchCurrentUser = (useToken = true): Observable<GQL.IUser | undefined> =>
     queryGraphQLNoRetry(
         getContext({ repoKey: '' }),
         `query CurrentUser() {
             currentUser {
+                id
                 displayName
                 username
                 avatarURL
@@ -43,7 +44,10 @@ export const fetchCurrentUser = (): Observable<GQL.IUser | undefined> =>
                 }
                 siteAdmin
             }
-        }`
+        }`,
+        undefined,
+        undefined,
+        useToken
     ).pipe(
         map(result => {
             if (!result || !result.data || !result.data.currentUser) {
