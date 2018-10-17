@@ -11,7 +11,6 @@ import { buildSearchURLQuery, parseSearchURLQuery } from '..'
 import * as GQL from '../../backend/graphqlschema'
 import { FileMatch } from '../../components/FileMatch'
 import { ModalContainer } from '../../components/ModalContainer'
-import { OpenHelpPopoverButton } from '../../global/OpenHelpPopoverButton'
 import { eventLogger } from '../../tracking/eventLogger'
 import { ErrorLike, isErrorLike } from '../../util/errors'
 import { RepositoryIcon } from '../../util/icons' // TODO: Switch to mdi icon
@@ -40,8 +39,6 @@ interface SearchResultsListProps {
     onDidCreateSavedQuery: () => void
     onSaveQueryClick: () => void
     didSave: boolean
-
-    onHelpPopoverToggle: () => void
 }
 
 export class SearchResultsListOld extends React.PureComponent<SearchResultsListProps, {}> {
@@ -179,11 +176,9 @@ export class SearchResultsListOld extends React.PureComponent<SearchResultsListP
                 )}
                 <div className="pb-4" />
                 {this.props.resultsOrError !== undefined && (
-                    <OpenHelpPopoverButton
-                        className="mb-2"
-                        onHelpPopoverToggle={this.props.onHelpPopoverToggle}
-                        text="Not seeing expected results?"
-                    />
+                    <Link className="mb-2" to="/help/user/search">
+                        Not seeing expected results?
+                    </Link>
                 )}
             </div>
         )

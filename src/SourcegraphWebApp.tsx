@@ -89,9 +89,6 @@ interface SourcegraphWebAppState
      */
     navbarSearchQuery: string
 
-    /** Whether the help popover is shown. */
-    showHelpPopover: boolean
-
     clientConnection: Promise<ClientConnection>
 }
 
@@ -114,7 +111,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state = {
             isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
             navbarSearchQuery: '',
-            showHelpPopover: false,
             configurationCascade: { subjects: null, merged: null },
             extensions,
             extensionsEnvironment: EXTENSIONS_EMPTY_ENVIRONMENT,
@@ -273,9 +269,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 // Search query
                                 navbarSearchQuery={this.state.navbarSearchQuery}
                                 onNavbarQueryChange={this.onNavbarQueryChange}
-                                // Help popover
-                                showHelpPopover={this.state.showHelpPopover}
-                                onHelpPopoverToggle={this.onHelpPopoverToggle}
                                 // Extensions
                                 extensions={this.state.extensions}
                                 extensionsEnvironment={this.state.extensionsEnvironment}
@@ -307,15 +300,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
     private onNavbarQueryChange = (navbarSearchQuery: string) => {
         this.setState({ navbarSearchQuery })
-    }
-
-    private onHelpPopoverToggle = (visible?: boolean): void => {
-        eventLogger.log('HelpPopoverToggled')
-        this.setState(prevState => ({
-            // If visible is any non-boolean type (e.g., MouseEvent), treat it as undefined. This lets callers use
-            // onHelpPopoverToggle directly in an event handler without wrapping it in an another function.
-            showHelpPopover: visible !== true && visible !== false ? !prevState.showHelpPopover : visible,
-        }))
     }
 
     private onConfigurationCascadeChange(

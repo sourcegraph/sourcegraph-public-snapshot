@@ -229,6 +229,7 @@ hr {
 @import './extensions/extension/ExtensionArea';
 @import './global/GlobalAlerts';
 @import './global/GlobalDebug';
+@import './docSite/DocSitePage';
 @import './search/input/MainPage';
 @import './search/input/ScopePage';
 @import './search/input/SearchPage';
@@ -260,8 +261,6 @@ hr {
 @import './components/Overview';
 @import './components/RadioButtons';
 @import './components/tooltip/Tooltip';
-@import './components/HelpPopover';
-@import './global/OpenHelpPopoverButton';
 @import './user/account/UserAccountArea';
 @import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';

@@ -111,7 +111,6 @@ export const repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [
                                     location={context.location}
                                     history={context.history}
                                     isLightTheme={context.isLightTheme}
-                                    onHelpPopoverToggle={context.onHelpPopoverToggle}
                                 />
                             )}
                             <ResizablePanel {...context} />

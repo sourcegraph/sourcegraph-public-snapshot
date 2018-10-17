@@ -1,12 +1,12 @@
 import { ActionsNavItems } from '@sourcegraph/extensions-client-common/lib/app/actions/ActionsNavItems'
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
 import * as H from 'history'
+import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Subscription } from 'rxjs'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as GQL from '../backend/graphqlschema'
-import { HelpPopover } from '../components/HelpPopover'
 import { ThemeSwitcher } from '../components/ThemeSwitcher'
 import { isDiscussionsEnabled } from '../discussions'
 import {
@@ -14,7 +14,6 @@ import {
     ExtensionsControllerProps,
     ExtensionsProps,
 } from '../extensions/ExtensionsClientCommonContext'
-import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
@@ -26,8 +25,6 @@ interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsCo
     isLightTheme: boolean
     onThemeChange: () => void
     isMainPage?: boolean
-    showHelpPopover: boolean
-    onHelpPopoverToggle: (visible?: boolean) => void
 }
 
 export class NavLinks extends React.PureComponent<Props> {
@@ -122,15 +119,10 @@ export class NavLinks extends React.PureComponent<Props> {
                     )
                 )}
                 <li className="nav-item">
-                    <OpenHelpPopoverButton className="nav-link px-0" onHelpPopoverToggle={this.onHelpPopoverToggle} />
+                    <Link to="/help" className="nav-link">
+                        <HelpCircleOutlineIcon className="icon-inline" />
+                    </Link>
                 </li>
-                {this.props.showHelpPopover && (
-                    <HelpPopover
-                        onDismiss={this.onHelpPopoverToggle}
-                        extensionsController={this.props.extensionsController}
-                        extensions={this.props.extensions}
-                    />
-                )}
                 {!this.props.isMainPage && (
                     <li className="nav-item">
                         <ThemeSwitcher {...this.props} className="nav-link px-0" />
@@ -145,9 +137,5 @@ export class NavLinks extends React.PureComponent<Props> {
                 )}
             </ul>
         )
-    }
-
-    private onHelpPopoverToggle = (): void => {
-        this.props.onHelpPopoverToggle()
     }
 }

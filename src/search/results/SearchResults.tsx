@@ -23,7 +23,6 @@ interface SearchResultsProps {
     history: H.History
     isLightTheme: boolean
     navbarSearchQuery: string
-    onHelpPopoverToggle: () => void
 }
 
 interface SearchScope {
@@ -214,7 +213,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         history={this.props.history}
                         user={this.props.user}
                         isLightTheme={this.props.isLightTheme}
-                        onHelpPopoverToggle={this.props.onHelpPopoverToggle}
                     />
                 ) : (
                     <SearchResultsListOld
@@ -230,7 +228,6 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         location={this.props.location}
                         user={this.props.user}
                         isLightTheme={this.props.isLightTheme}
-                        onHelpPopoverToggle={this.props.onHelpPopoverToggle}
                         uiLimit={this.state.uiLimit}
                     />
                 )}

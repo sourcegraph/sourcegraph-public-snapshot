@@ -4,7 +4,6 @@ import { parseSearchURLQuery } from '..'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
-import { OpenHelpPopoverButton } from '../../global/OpenHelpPopoverButton'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
@@ -19,8 +18,6 @@ interface Props {
     history: H.History
     isLightTheme: boolean
     onThemeChange: () => void
-    showHelpPopover: boolean
-    onHelpPopoverToggle: (visible?: boolean) => void
 }
 
 interface State {
@@ -76,7 +73,6 @@ export class SearchPage extends React.Component<Props, State> {
                             hasGlobalQueryBehavior={true}
                         />
                         <SearchButton />
-                        <OpenHelpPopoverButton onHelpPopoverToggle={this.props.onHelpPopoverToggle} />
                     </div>
                     <div className="search-page__input-sub-container">
                         <SearchFilterChips

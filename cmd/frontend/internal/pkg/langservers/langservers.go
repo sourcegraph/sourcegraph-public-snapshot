@@ -1018,7 +1018,7 @@ func init() {
 		return
 	}
 	if !haveSocket {
-		const msg = "Language server management capabilities disabled because /var/run/docker.sock was not found. See https://about.sourcegraph.com/docs/code-intelligence/install for help."
+		const msg = "Language server management capabilities disabled because /var/run/docker.sock was not found. See https://about.sourcegraph.com/docs/code-intelligence/install for help." // TODO!(sqs): update this
 		canManage = errors.New(msg)
 		log15.Error(msg)
 		return

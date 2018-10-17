@@ -62,6 +62,7 @@ const (
 	routeSurveyScore    = "survey-score"
 	routeRegistry       = "registry"
 	routeExtensions     = "extensions"
+	routeHelp           = "help"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -133,6 +134,7 @@ func newRouter() *mux.Router {
 	r.Path("/survey/{score}").Methods("GET").Name(routeSurveyScore)
 	r.PathPrefix("/registry").Methods("GET").Name(routeRegistry)
 	r.PathPrefix("/extensions").Methods("GET").Name(routeExtensions)
+	r.PathPrefix("/help").Methods("GET").Name(routeHelp)
 
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
@@ -203,6 +205,7 @@ func initRouter() {
 	router.Get(routeSurveyScore).Handler(handler(serveBasicPageString("Survey - Sourcegraph")))
 	router.Get(routeRegistry).Handler(handler(serveBasicPageString("Registry - Sourcegraph")))
 	router.Get(routeExtensions).Handler(handler(serveBasicPageString("Extensions - Sourcegraph")))
+	router.Get(routeHelp).HandlerFunc(serveHelp)
 
 	router.Get(routeUserSettings).Handler(handler(serveBasicPageString("User settings - Sourcegraph")))
 	router.Get(routeUserRedirect).Handler(handler(serveBasicPageString("User - Sourcegraph")))
@@ -218,8 +221,6 @@ func initRouter() {
 		router.Get(routeLegacyDefRedirectToDefLanding).Handler(http.HandlerFunc(serveDefRedirectToDefLanding))
 		router.Get(routeLegacyDefLanding).Handler(handler(serveDefLanding))
 		router.Get(routeLegacyRepoLanding).Handler(handler(serveRepoLanding))
-		router.Get(routeLegacyEditorAuth).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
-		router.Get(routeLegacyEditorAuth2).Handler(staticRedirectHandler("/settings/tokens", http.StatusMovedPermanently))
 	}
 	router.Get(routeLegacySearchQueries).Handler(staticRedirectHandler("/search/searches", http.StatusMovedPermanently))
 

@@ -65,8 +65,6 @@ export interface LayoutProps
     isMainPage: boolean
     navbarSearchQuery: string
     onNavbarQueryChange: (query: string) => void
-    showHelpPopover: boolean
-    onHelpPopoverToggle: (visible?: boolean) => void
 
     children?: never
 }

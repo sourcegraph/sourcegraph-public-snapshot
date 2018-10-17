@@ -27,7 +27,6 @@ import {
     ExtensionsControllerProps,
     ExtensionsProps,
 } from '../extensions/ExtensionsClientCommonContext'
-import { OpenHelpPopoverButton } from '../global/OpenHelpPopoverButton'
 import { searchQueryForRepoRev } from '../search'
 import { submitSearch } from '../search/helpers'
 import { QueryInput } from '../search/input/QueryInput'
@@ -108,7 +107,6 @@ interface Props extends ConfigurationCascadeProps, ExtensionsControllerProps, Ex
     commitID: string
     rev: string
     isLightTheme: boolean
-    onHelpPopoverToggle: () => void
 
     location: H.Location
     history: H.History
@@ -263,7 +261,6 @@ export class TreePage extends React.PureComponent<Props, State> {
                                         placeholder=""
                                     />
                                     <SearchButton />
-                                    <OpenHelpPopoverButton onHelpPopoverToggle={this.props.onHelpPopoverToggle} />
                                 </Form>
                             </section>
                             {!isDiscussionsEnabled(this.props.configurationCascade) &&
