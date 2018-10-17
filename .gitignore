@@ -78,6 +78,8 @@ eb-bundle.zip
 .bin/
 .env
 
+/vendor/
+
 .gtm/
 
 cmd/src/debug
