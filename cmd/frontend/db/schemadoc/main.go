@@ -23,7 +23,7 @@ func main() {
 	const dbname = "schemadoc-gen-temp"
 	_ = exec.Command("dropdb", dbname).Run()
 	if out, err := exec.Command("createdb", dbname).CombinedOutput(); err != nil {
-		log.Fatal("createdb", out, err)
+		log.Fatalf("createdb: %s, %v", out, err)
 	}
 	defer exec.Command("dropdb", dbname).Run()
 
