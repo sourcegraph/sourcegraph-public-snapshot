@@ -112,7 +112,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         const clientConnection = connectAsPage()
         const extensions = createExtensionsContextController(clientConnection)
         this.state = {
-            isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
+            isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) === 'false',
             navbarSearchQuery: '',
             showHelpPopover: false,
             configurationCascade: { subjects: null, merged: null },
