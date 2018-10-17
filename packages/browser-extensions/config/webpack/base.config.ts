@@ -22,7 +22,7 @@ export default {
         phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.tsx'),
 
         bootstrap: path.join(__dirname, '../../../../node_modules/bootstrap/dist/css/bootstrap.css'),
-        style: path.join(__dirname, '../../src/shared/app.scss'),
+        style: path.join(__dirname, '../../src/app.scss'),
     },
     output: {
         path: path.join(__dirname, '../../build/dist/js'),

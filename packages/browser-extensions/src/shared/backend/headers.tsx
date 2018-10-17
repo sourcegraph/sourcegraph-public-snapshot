@@ -1,8 +1,8 @@
 import { Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
+import { isInPage, isPhabricator } from '../../context'
 import { getAccessToken } from '../auth/access_token'
-import { isInPage, isPhabricator } from '../context'
 import { getExtensionVersionSync, getPlatformName, isSourcegraphDotCom } from '../util/context'
 
 /**

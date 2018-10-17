@@ -1,0 +1,24 @@
+.json-editor {
+    display: flex;
+    flex-direction: row;
+
+    border-radius: 2px;
+    border: solid 1px #e4e9f1;
+
+    font-size: 0.85rem;
+
+    &__lines {
+        display: flex;
+        flex-direction: column;
+        padding: 0 16px;
+        color: #8e9093;
+        margin: 0.5rem 0;
+    }
+
+    &__textarea {
+        font-family: $code-font-family;
+        width: 100%;
+        border: none;
+        margin-top: 0.5rem;
+    }
+}

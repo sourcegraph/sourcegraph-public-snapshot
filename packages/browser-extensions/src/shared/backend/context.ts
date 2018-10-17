@@ -1,5 +1,5 @@
+import { isInPage, isPhabricator } from '../../context'
 import { parseURL } from '../../libs/github/util'
-import { isInPage, isPhabricator } from '../context'
 // TODO: Make a code host agnostic parseURL so we don't reach into an application directory from the shared directory.
 // Let's do this when we make code hosts an interface. Require a `parseURL: () => ParsedRepoURI`
 /**

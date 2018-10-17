@@ -1,6 +1,6 @@
 import storage from '../../browser/storage'
 import { FeatureFlags } from '../../browser/types'
-import { isInPage } from '../context'
+import { isInPage } from '../../context'
 
 interface FeatureFlagsStorage {
     /**

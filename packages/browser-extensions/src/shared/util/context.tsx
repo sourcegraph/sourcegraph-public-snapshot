@@ -1,7 +1,7 @@
 import * as path from 'path'
 import * as runtime from '../../browser/runtime'
 import storage from '../../browser/storage'
-import { isPhabricator } from '../context'
+import { isPhabricator } from '../../context'
 import { EventLogger } from '../tracking/EventLogger'
 
 export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
@@ -26,11 +26,9 @@ export const repoUrlCache: UrlCache = {}
 if (window.SG_ENV === 'EXTENSION') {
     storage.getSync(items => {
         sourcegraphUrl = items.sourcegraphURL
-
-        renderMermaidGraphsEnabled = items.renderMermaidGraphsEnabled
-
-        inlineSymbolSearchEnabled = items.inlineSymbolSearchEnabled
-        useExtensions = items.useExtensions
+        renderMermaidGraphsEnabled = items.featureFlags.renderMermaidGraphsEnabled
+        inlineSymbolSearchEnabled = items.featureFlags.inlineSymbolSearchEnabled
+        useExtensions = items.featureFlags.useExtensions
     })
 }
 

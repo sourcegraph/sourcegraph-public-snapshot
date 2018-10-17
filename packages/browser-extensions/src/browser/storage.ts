@@ -8,7 +8,13 @@ export { StorageItems, defaultStorageItems } from './types'
 type MigrateFunc = (
     items: StorageItems,
     set: (items: Partial<StorageItems>) => void,
-    remove: (key: keyof StorageItems) => void
+    /**
+     * Remove an item from storage.
+     *
+     * @param key the key of the item you'd like to remove. We accept arbitary
+     * strings so we can remove items that are no longer in our types.
+     */
+    remove: (key: string) => void
 ) => void
 
 export interface Storage {

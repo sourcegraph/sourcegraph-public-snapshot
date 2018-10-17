@@ -13,9 +13,10 @@ import * as permissions from '../../browser/permissions'
 import * as runtime from '../../browser/runtime'
 import storage, { defaultStorageItems } from '../../browser/storage'
 import * as tabs from '../../browser/tabs'
+import { featureFlagDefaults } from '../../browser/types'
 import initializeCli from '../../libs/cli'
+import { ExtensionConnectionInfo, onFirstMessage } from '../../messaging'
 import { resolveClientConfiguration } from '../../shared/backend/server'
-import { ExtensionConnectionInfo, onFirstMessage } from '../../shared/messaging'
 import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl, sourcegraphUrl } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 
@@ -161,6 +162,7 @@ permissions.onRemoved(permissions => {
     })
 })
 
+// Ensure access tokens are in storage and they are in the correct shape.jj
 storage.addSyncMigration((items, set, remove) => {
     if (!items.accessTokens) {
         set({ accessTokens: {} })
@@ -178,50 +180,22 @@ storage.addSyncMigration((items, set, remove) => {
 
         set({ accessTokens })
     }
+})
 
-    if (items.phabricatorURL) {
-        remove('phabricatorURL')
-
-        const newItems: {
-            enterpriseUrls?: string[]
-        } = {}
-
-        if (items.enterpriseUrls && !items.enterpriseUrls.find(u => u === items.phabricatorURL)) {
-            newItems.enterpriseUrls = items.enterpriseUrls.concat(items.phabricatorURL)
-        } else if (!items.enterpriseUrls) {
-            newItems.enterpriseUrls = [items.phabricatorURL]
+// Ensure all feature flags are in storage.
+storage.addSyncMigration((items, set, remove) => {
+    for (const key of Object.keys(featureFlagDefaults)) {
+        if (typeof items.featureFlags[key] === 'undefined') {
+            remove(key)
+            set({ featureFlags: { ...featureFlagDefaults, ...items.featureFlags, [key]: featureFlagDefaults[key] } })
         }
-
-        set(newItems)
     }
+})
 
-    if (!items.repoLocations) {
-        set({ repoLocations: {} })
-    }
-
-    if (items.openFileOnSourcegraph === undefined) {
-        set({ openFileOnSourcegraph: true })
-    }
-
-    if (items.featureFlags && !items.featureFlags.newInject) {
-        set({ featureFlags: { ...items.featureFlags, newInject: true } })
-    }
-
-    if (!items.inlineSymbolSearchEnabled) {
-        set({ inlineSymbolSearchEnabled: true })
-    }
-
-    if (items.serverUrls) {
-        if (items.sourcegraphURL) {
-            if (items.sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
-                const urls = without(items.serverUrls, DEFAULT_SOURCEGRAPH_URL)
-                if (urls.length) {
-                    set({ sourcegraphURL: urls[0], serverUrls: [urls[0]] })
-                }
-            } else {
-                set({ serverUrls: [items.sourcegraphURL] })
-            }
-        }
+// Add access tokens to storage.
+storage.addSyncMigration((items, set) => {
+    if (!items.accessTokens) {
+        set({ accessTokens: {} })
     }
 })
 
@@ -371,11 +345,8 @@ function handleManagedPermissionRequest(managedUrls: string[]): void {
 
 function setDefaultBrowserAction(): void {
     browserAction.setBadgeText({ text: '' })
+    browserAction.setPopup({ popup: 'options.html?popup=true' })
 }
-
-browserAction.onClicked(() => {
-    runtime.openOptionsPage()
-})
 
 /**
  * Fetches JavaScript from a URL and runs it in a web worker.

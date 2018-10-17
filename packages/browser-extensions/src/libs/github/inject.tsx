@@ -84,7 +84,7 @@ const actionsNavItemClassProps = {
     actionItemClass: 'btn btn-sm tooltipped tooltipped-n BtnGroup-item',
 }
 
-function refreshModules(): void {
+async function refreshModules(): Promise<void> {
     for (const el of Array.from(document.getElementsByClassName('sourcegraph-app-annotator'))) {
         el.remove()
     }
@@ -95,16 +95,16 @@ function refreshModules(): void {
         el.classList.remove('sg-annotated')
     }
     hideTooltip()
-    inject()
+    await inject()
 }
 
-window.addEventListener('pjax:end', () => {
-    refreshModules()
+window.addEventListener('pjax:end', async () => {
+    await refreshModules()
 })
 
-export function injectGitHubApplication(marker: HTMLElement): void {
+export async function injectGitHubApplication(marker: HTMLElement): Promise<void> {
     document.body.appendChild(marker)
-    inject()
+    await inject()
 }
 
 function injectCodeIntelligence(): void {
@@ -271,7 +271,7 @@ function injectCodeIntelligence(): void {
     )
 }
 
-function inject(): void {
+async function inject(): Promise<void> {
     featureFlags
         .isEnabled('newInject')
         .then(isEnabled => {
