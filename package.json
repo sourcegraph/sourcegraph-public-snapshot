@@ -105,7 +105,7 @@
     "worker-loader": "^2.0.0"
   },
   "dependencies": {
-    "@sourcegraph/codeintellify": "^3.8.4",
+    "@sourcegraph/codeintellify": "^3.9.0",
     "@sourcegraph/extensions-client-common": "^10.0.0",
     "@sourcegraph/react-loading-spinner": "0.0.6",
     "@sqs/jsonc-parser": "^1.0.3",
