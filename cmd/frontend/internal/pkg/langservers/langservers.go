@@ -836,7 +836,10 @@ func notifyNewLine(cmd *exec.Cmd, c chan<- struct{}) error {
 		return err
 	}
 
+	done := make(chan struct{})
 	go func() {
+		defer close(done)
+
 		// notify we have started
 		select {
 		case c <- struct{}{}:
@@ -861,6 +864,10 @@ func notifyNewLine(cmd *exec.Cmd, c chan<- struct{}) error {
 	}()
 
 	err = cmd.Wait()
+
+	// wait until goroutine is done so we stop writing to c when we return.
+	<-done
+
 	if err != nil && cmd.Stderr != nil {
 		if w, ok := cmd.Stderr.(interface{ Bytes() []byte }); ok {
 			return fmt.Errorf("exec: docker events: error: %s stderr:\n%s", err, w.Bytes())
