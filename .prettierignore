@@ -16,3 +16,4 @@ src/schema/
 ts-node-*
 testdata
 .github/*
+doc/dev/roadmap.md
