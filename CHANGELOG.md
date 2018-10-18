@@ -5,6 +5,12 @@ branches do not necessarily reflect the changes that have gone into that branch.
 
 All notable changes to Sourcegraph are documented in this file.
 
+## Unreleased
+
+### Removed
+
+- The experimental feature flag to disable the new repo update scheduler has been removed.
+
 ## 2.12.0
 
 ### Changed
