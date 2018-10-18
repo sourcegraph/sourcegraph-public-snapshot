@@ -57,7 +57,7 @@ docker run \
   --volume ~/.sourcegraph/config:/etc/sourcegraph \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph \
   --volume /var/run/docker.sock:/var/run/docker.sock \
-  sourcegraph/server:VERSION
+  sourcegraph/server:2.12.0
 ```
 
 If you are running on cloud infrastructure, you will likely need to add an ingress rule to make port 30443 accessible to the Internet.
