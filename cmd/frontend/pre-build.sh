@@ -6,4 +6,4 @@ cd $(dirname "${BASH_SOURCE[0]}")/../..
 [[ -z "${CI}" ]] && yarn || yarn --frozen-lockfile
 NODE_ENV=production DISABLE_TYPECHECKING=true yarn run build
 
-go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates
+go generate ./cmd/frontend/internal/app/assets ./cmd/frontend/internal/app/templates ./cmd/frontend/docsite
