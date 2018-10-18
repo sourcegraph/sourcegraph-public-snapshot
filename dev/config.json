@@ -15,15 +15,5 @@
       "type": "builtin",
       "allowSignup": true
     }
-  ],
-  "langservers": [
-    {
-      "address": "tcp://localhost:2081",
-      "language": "go"
-    },
-    {
-      "address": "tcp://localhost:2083",
-      "language": "python"
-    }
   ]
 }
