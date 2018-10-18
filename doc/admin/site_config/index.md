@@ -4,9 +4,7 @@ Sourcegraph is configured by a site configuration JSON file. To view and edit yo
 
 For Kubernetes cluster deployments of Sourcegraph, edit the `config-file.ConfigMap.yaml` file and then use `kubectl apply -f ...` to update the resource.
 
-<div style="padding-bottom:67.1%;height:0;position:relative;overflow:hidden">
-    <img src="img/Admin.png" width="800" class="flex br2 ba pa2 b--light-8 mv4 center"/>
-</div>
+![](img/Admin.png)
 
 ---
 
