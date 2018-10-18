@@ -144,6 +144,7 @@ export async function graphQLTypes(): Promise<void> {
  * Generates the TypeScript types for the JSON schemas and copies the schemas to src/ so they can be imported
  */
 export async function schema(): Promise<void> {
+    await execa('go', ['generate', './schema'])
     await Promise.all([mkdirp(__dirname + '/src/schema'), mkdirp(__dirname + '/dist/schema')])
     await Promise.all(
         ['json-schema', 'settings', 'site', 'extension'].map(async file => {
