@@ -3,8 +3,6 @@ package github
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -13,7 +11,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"time"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
@@ -77,22 +74,8 @@ func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Clie
 		return category
 	})
 
-	var cacheTTL time.Duration
 	hostname := strings.ToLower(apiURL.Hostname())
 	githubDotCom := hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
-	if githubDotCom {
-		cacheTTL = 10 * time.Minute
-		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
-		// rate limit).
-		apiURL = githubProxyURL
-	} else {
-		// GitHub Enterprise
-		cacheTTL = 30 * time.Second
-	}
-
-	// Cache for repository metadata.
-	key := sha256.Sum256([]byte(token + ":" + apiURL.String()))
-	repoCache := rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
 	return &Client{
 		apiURL:       apiURL,
@@ -100,7 +83,6 @@ func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Clie
 		token:        token,
 		httpClient:   &http.Client{Transport: transport},
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
-		repoCache:    repoCache,
 	}
 }
 

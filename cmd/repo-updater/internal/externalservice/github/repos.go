@@ -1,7 +1,6 @@
 package github
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -169,30 +168,13 @@ type cachedRepo struct {
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
 func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
-	b, ok := c.repoCache.Get(strings.ToLower(key))
-	if !ok {
-		return nil
-	}
-
-	var cached cachedRepo
-	if err := json.Unmarshal(b, &cached); err != nil {
-		return nil
-	}
-
-	return &cached
+	return nil
 }
 
 // addRepositoryToCache will cache the value for repo. The caller can provide multiple cache keys
 // for the multiple ways that this repository can be retrieved (e.g., both "owner/name" and the
 // GraphQL node ID).
 func (c *Client) addRepositoryToCache(keys []string, repo *cachedRepo) {
-	b, err := json.Marshal(repo)
-	if err != nil {
-		return
-	}
-	for _, key := range keys {
-		c.repoCache.Set(strings.ToLower(key), b)
-	}
 }
 
 // addRepositoriesToCache will cache repositories that exist
