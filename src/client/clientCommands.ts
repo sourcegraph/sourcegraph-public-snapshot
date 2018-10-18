@@ -56,7 +56,12 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
         controller.registries.commands.registerCommand({
             command: 'queryGraphQL',
             run: (query: string, variables: { [name: string]: any }): Promise<any> =>
-                from(context.queryGraphQL(query, variables)).toPromise(),
+                // 🚨 SECURITY: The request might contain private info (such as
+                // repository names), so the `mightContainPrivateInfo` parameter
+                // is set to `true`. It is up to the client (e.g. browser
+                // extension) to check that parameter and prevent the request
+                // from being sent to Sourcegraph.com.
+                from(context.queryGraphQL(query, variables, true)).toPromise(),
         })
     )
 

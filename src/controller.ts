@@ -55,7 +55,8 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
                     }
                     ${registryExtensionFragment}
                 `[graphQLContent],
-                { extensionID }
+                { extensionID },
+                false
             )
         )
             .pipe(
@@ -104,7 +105,8 @@ export class Controller<S extends ConfigurationSubject, C extends Settings> {
                 {
                     first: extensionIDs.length,
                     prioritizeExtensionIDs: extensionIDs,
-                }
+                },
+                false
             )
         ).pipe(
             map(({ data, errors }) => {

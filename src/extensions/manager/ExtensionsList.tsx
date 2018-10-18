@@ -271,7 +271,8 @@ export class ExtensionsList<S extends ConfigurationSubject, C extends Settings> 
                         {
                             ...args,
                             prioritizeExtensionIDs: viewerExtensions.map(({ id }) => id),
-                        } as GQL.IExtensionsOnExtensionRegistryArguments
+                        } as GQL.IExtensionsOnExtensionRegistryArguments,
+                        false
                     )
                 ).pipe(
                     map(({ data, errors }) => {

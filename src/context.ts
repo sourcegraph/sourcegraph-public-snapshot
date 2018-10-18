@@ -31,11 +31,14 @@ export interface Context<S extends ConfigurationSubject, C extends Settings> {
      *
      * @param request The GraphQL request (query or mutation)
      * @param variables An object whose properties are GraphQL query name-value variable pairs
+     * @param mightContainPrivateInfo 🚨 SECURITY: Whether or not sending the GraphQL request to Sourcegraph.com
+     * could leak private information such as repository names.
      * @return Observable that emits the result or an error if the HTTP request failed
      */
     queryGraphQL(
         request: string,
-        variables?: { [name: string]: any }
+        variables?: { [name: string]: any },
+        mightContainPrivateInfo?: boolean
     ): Subscribable<QueryResult<Pick<GQL.IQuery, 'extensionRegistry'>>>
 
     /**
