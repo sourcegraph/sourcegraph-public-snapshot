@@ -5,6 +5,9 @@
 
 set -euf -o pipefail
 
+unset CDPATH
+cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
+
 if [ -f .env ]; then
     set -o allexport
     source .env
@@ -16,9 +19,6 @@ go build ./pkg/version/minversion || {
     echo "Go version 1.11.x or newer must be used to build Sourcegraph; found: $(go version)"
     exit 1
 }
-
-unset CDPATH
-cd "$(dirname "${BASH_SOURCE[0]}")/.." # cd to repo root dir
 
 export GOMOD_ROOT="${GOMOD_ROOT:-$PWD}"
 
