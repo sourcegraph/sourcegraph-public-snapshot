@@ -83,16 +83,18 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                             </div>
                         )}
                 </ul>
-                <CodeIntelStatusIndicator
-                    key="code-intel-status"
-                    userIsSiteAdmin={currentUser ? currentUser.siteAdmin : false}
-                    repoPath={this.props.repoPath}
-                    commitID={this.props.commitID}
-                    filePath={this.props.filePath}
-                    onChange={this.props.onEnabledChange}
-                    simpleProviderFns={this.props.simpleProviderFns}
-                    site={site}
-                />
+                {!this.props.extensionsController && (
+                    <CodeIntelStatusIndicator
+                        key="code-intel-status"
+                        userIsSiteAdmin={currentUser ? currentUser.siteAdmin : false}
+                        repoPath={this.props.repoPath}
+                        commitID={this.props.commitID}
+                        filePath={this.props.filePath}
+                        onChange={this.props.onEnabledChange}
+                        simpleProviderFns={this.props.simpleProviderFns}
+                        site={site}
+                    />
+                )}
                 {this.props.baseCommitID &&
                     this.props.baseHasFileContents && (
                         <OpenOnSourcegraph

@@ -98,16 +98,18 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                             </div>
                         )}
                 </ul>
-                <CodeIntelStatusIndicator
-                    key="code-intel-status"
-                    userIsSiteAdmin={currentUser ? currentUser.siteAdmin : false}
-                    repoPath={this.props.repoPath}
-                    commitID={this.props.baseCommitID}
-                    filePath={this.props.filePath}
-                    onChange={this.props.onEnabledChange}
-                    simpleProviderFns={this.props.simpleProviderFns}
-                    site={site}
-                />
+                {!this.props.extensionsController && (
+                    <CodeIntelStatusIndicator
+                        key="code-intel-status"
+                        userIsSiteAdmin={currentUser ? currentUser.siteAdmin : false}
+                        repoPath={this.props.repoPath}
+                        commitID={this.props.baseCommitID}
+                        filePath={this.props.filePath}
+                        onChange={this.props.onEnabledChange}
+                        simpleProviderFns={this.props.simpleProviderFns}
+                        site={site}
+                    />
+                )}
                 <OpenOnSourcegraph
                     label={`View File${this.props.headCommitID ? ' (base)' : ''}`}
                     ariaLabel="View file on Sourcegraph"
