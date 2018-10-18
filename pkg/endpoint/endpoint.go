@@ -62,8 +62,6 @@ func New(rawurl string) *Map {
 		if err != nil {
 			return nil, err
 		}
-		b := &urlMapBuilder{K8sURL: u}
-		b.Add(&endpoints)
 
 		// Kick off watcher in the background
 		go func() {
@@ -74,7 +72,7 @@ func New(rawurl string) *Map {
 			}
 		}()
 
-		return b.Build()
+		return endpointsToMap(u, &endpoints)
 	}
 
 	return m
@@ -115,38 +113,30 @@ func inform(client *k8s.Client, m *Map, u *k8sURL) error {
 			return err
 		}
 
-		b := &urlMapBuilder{K8sURL: u}
-		if eventType == k8s.EventAdded || eventType == k8s.EventModified {
-			b.Add(&endpoints)
+		if eventType != k8s.EventAdded && eventType != k8s.EventModified {
+			// Either we are error or the endpoint has been removed.
+			endpoints.Subsets = nil
 		}
-		urls, err := b.Build()
+		urls, err := endpointsToMap(u, &endpoints)
 		m.mu.Lock()
 		m.urls, m.err = urls, err
 		m.mu.Unlock()
 	}
 }
 
-type urlMapBuilder struct {
-	K8sURL *k8sURL
-	urls   []string
-}
-
-// Add adds all addresses associated with the endpoint for the Service.
-func (b *urlMapBuilder) Add(ep *corev1.Endpoints) {
-	for _, subset := range ep.Subsets {
+func endpointsToMap(u *k8sURL, eps *corev1.Endpoints) (*hashMap, error) {
+	var urls []string
+	for _, subset := range eps.Subsets {
 		for _, addr := range subset.Addresses {
 			if addr.Ip != nil {
-				b.urls = append(b.urls, b.K8sURL.endpointURL(*addr.Ip))
+				urls = append(urls, u.endpointURL(*addr.Ip))
 			}
 		}
 	}
-}
-
-func (b *urlMapBuilder) Build() (*hashMap, error) {
-	if len(b.urls) == 0 {
-		return nil, errors.Errorf("No %s endpoints", b.K8sURL.Service)
+	if len(urls) == 0 {
+		return nil, errors.Errorf("No %s endpoints", u.Service)
 	}
-	return newConsistentHashMap(b.urls), nil
+	return newConsistentHashMap(urls), nil
 }
 
 type k8sURL struct {
