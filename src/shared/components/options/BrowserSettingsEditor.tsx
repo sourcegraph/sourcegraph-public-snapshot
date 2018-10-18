@@ -44,7 +44,6 @@ export class BrowserSettingsEditor extends React.Component<{}, State> {
     public render(): JSX.Element | null {
         return (
             <div>
-                <div className="options__section-header">Client settings</div>
                 <div className="options__section-contents">
                     <FormGroup>
                         <Label className="options__input">

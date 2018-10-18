@@ -1,15 +1,15 @@
 import * as React from 'react'
-import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 import * as permissions from '../../../browser/permissions'
 import storage from '../../../browser/storage'
 import { StorageItems } from '../../../browser/types'
 import { GQL } from '../../../types/gqlschema'
 import { fetchCurrentUser } from '../../backend/server'
+import { ClientSettingsCard } from './ClientSettingsCard'
 import { ConnectionCard } from './ConnectionCard'
 import { FeatureFlagCard } from './FeatureFlagCard'
 
-interface Props extends RouteComponentProps<any> {}
+interface Props {}
 interface State {
     currentUser: GQL.IUser | undefined
     storage: StorageItems | undefined
@@ -78,6 +78,7 @@ export class OptionsConfiguration extends React.Component<Props, State> {
             <div className="options-configuation-page">
                 <ConnectionCard permissionOrigins={permissionOrigins} storage={storage} currentUser={currentUser} />
                 <FeatureFlagCard storage={storage} />
+                {storage.useExtensions && <ClientSettingsCard />}
             </div>
         )
     }
