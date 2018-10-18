@@ -65,13 +65,6 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "updateScheduler": {
-          "description":
-            "Enables or disables a newer update scheduling algorithm which attempts to prioritize frequently-updated repositories, and throttles automatic updates to limit congestion.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "jumpToDefOSSIndex": {
           "description":
             "Enables or disables consulting the OSS package index on Sourcegraph.com for cross repository jump to definition. When enabled Sourcegraph.com will receive Code Intelligence requests when they fail to resolve locally. NOTE: disablePublicRepoRedirects must not be set, or should be set to false.",

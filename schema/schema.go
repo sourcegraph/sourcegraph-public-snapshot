@@ -128,7 +128,6 @@ type ExperimentalFeatures struct {
 	Discussions           string `json:"discussions,omitempty"`
 	JumpToDefOSSIndex     string `json:"jumpToDefOSSIndex,omitempty"`
 	MultipleAuthProviders string `json:"multipleAuthProviders,omitempty"`
-	UpdateScheduler       string `json:"updateScheduler,omitempty"`
 }
 
 // ExtensionRepository description: The location of the version control repository for this extension.
