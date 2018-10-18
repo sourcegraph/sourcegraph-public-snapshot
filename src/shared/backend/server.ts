@@ -3,24 +3,26 @@ import { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import { GQL } from '../../types/gqlschema'
 import { getContext } from './context'
-import { queryGraphQLNoRetry } from './graphql'
+import { queryGraphQL } from './graphql'
 
 /**
  * @return Observable that emits the client configuration details.
  *         Errors
  */
 export const resolveClientConfiguration = (): Observable<IClientConfigurationDetails> =>
-    queryGraphQLNoRetry(
-        getContext({ repoKey: '' }),
-        `query ClientConfiguration() {
+    queryGraphQL({
+        ctx: getContext({ repoKey: '' }),
+        request: `query ClientConfiguration() {
             clientConfiguration {
                 contentScriptUrls
                 parentSourcegraph {
                     url
                 }
             }
-        }`
-    ).pipe(
+        }`,
+        retry: false,
+        requestMightContainPrivateInfo: false,
+    }).pipe(
         map(result => {
             if (!result || !result.data) {
                 throw new Error('No results')
@@ -29,10 +31,10 @@ export const resolveClientConfiguration = (): Observable<IClientConfigurationDet
         }, catchError((err, caught) => caught))
     )
 
-export const fetchCurrentUser = (useToken = true): Observable<GQL.IUser | undefined> =>
-    queryGraphQLNoRetry(
-        getContext({ repoKey: '' }),
-        `query CurrentUser() {
+export const fetchCurrentUser = (useAccessToken = true): Observable<GQL.IUser | undefined> =>
+    queryGraphQL({
+        ctx: getContext({ repoKey: '' }),
+        request: `query CurrentUser() {
             currentUser {
                 id
                 displayName
@@ -45,10 +47,10 @@ export const fetchCurrentUser = (useToken = true): Observable<GQL.IUser | undefi
                 siteAdmin
             }
         }`,
-        undefined,
-        undefined,
-        useToken
-    ).pipe(
+        useAccessToken,
+        retry: false,
+        requestMightContainPrivateInfo: false,
+    }).pipe(
         map(result => {
             if (!result || !result.data || !result.data.currentUser) {
                 return undefined
@@ -58,16 +60,18 @@ export const fetchCurrentUser = (useToken = true): Observable<GQL.IUser | undefi
     )
 
 export const fetchSite = (): Observable<GQL.ISite> =>
-    queryGraphQLNoRetry(
-        getContext({ repoKey: '' }),
-        `query SiteProductVersion() {
+    queryGraphQL({
+        ctx: getContext({ repoKey: '' }),
+        request: `query SiteProductVersion() {
             site {
                 productVersion
                 buildVersion
                 hasCodeIntelligence
             }
-        }`
-    ).pipe(
+        }`,
+        retry: false,
+        requestMightContainPrivateInfo: false,
+    }).pipe(
         map(result => {
             if (!result || !result.data) {
                 throw new Error('unable to fetch site information.')

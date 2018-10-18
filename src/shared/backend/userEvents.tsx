@@ -1,6 +1,6 @@
 import { DEFAULT_SOURCEGRAPH_URL, repoUrlCache, sourcegraphUrl } from '../util/context'
 import { getContext } from './context'
-import { mutateGraphQLNoRetry } from './graphql'
+import { mutateGraphQL } from './graphql'
 
 /**
  * Log a user action on the associated self-hosted Sourcegraph instance (allows site admins on a private
@@ -15,15 +15,16 @@ export const logUserEvent = (event: string, uid: string): void => {
     if (!url || url === DEFAULT_SOURCEGRAPH_URL) {
         return
     }
-    mutateGraphQLNoRetry(
+    mutateGraphQL({
         ctx,
-        `mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
+        request: `mutation logUserEvent($event: UserEvent!, $userCookieID: String!) {
             logUserEvent(event: $event, userCookieID: $userCookieID) {
                 alwaysNil
             }
         }`,
-        { event, userCookieID: uid }
-    ).subscribe(undefined, error => {
+        variables: { event, userCookieID: uid },
+        retry: false,
+    }).subscribe(undefined, error => {
         // Swallow errors. If a Sourcegraph instance isn't upgraded, this request may fail
         // (e.g., if CODEINTELINTEGRATION user events aren't yet supported).
         // However, end users shouldn't experience this failure, as their admin is

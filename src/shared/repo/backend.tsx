@@ -21,9 +21,9 @@ import { memoizeAsync, memoizeObservable } from '../util/memoize'
 export function fetchLangServer(
     language: string
 ): Observable<Pick<GQL.ILangServer, 'displayName' | 'homepageURL' | 'issuesURL' | 'experimental'> | null> {
-    return queryGraphQL(
-        getContext({}),
-        `
+    return queryGraphQL({
+        ctx: getContext({}),
+        request: `
             query LangServer($language: String!) {
                 site {
                     langServer(language: $language) {
@@ -35,8 +35,8 @@ export function fetchLangServer(
                 }
             }
         `,
-        { language }
-    ).pipe(
+        variables: { language },
+    }).pipe(
         map(({ data, errors }) => {
             if (!data || !data.site) {
                 throw createAggregateError(errors)
@@ -52,9 +52,9 @@ export function fetchLangServer(
  */
 export const resolveParentRev = memoizeObservable(
     (ctx: { repoPath: string; rev: string }): Observable<string> =>
-        queryGraphQL(
-            getContext({ repoKey: ctx.repoPath }),
-            `query ResolveParentRev($repoPath: String!, $rev: String!) {
+        queryGraphQL({
+            ctx: getContext({ repoKey: ctx.repoPath }),
+            request: `query ResolveParentRev($repoPath: String!, $rev: String!) {
                 repository(uri: $repoPath) {
                     mirrorInfo {
                         cloneInProgress
@@ -66,8 +66,8 @@ export const resolveParentRev = memoizeObservable(
                     }
                 }
             }`,
-            { ...ctx, rev: ctx.rev || '' }
-        ).pipe(
+            variables: { ...ctx, rev: ctx.rev || '' },
+        }).pipe(
             map(result => {
                 if (!result.data) {
                     throw new Error('invalid response received from graphql endpoint')
@@ -96,15 +96,15 @@ export const resolveParentRev = memoizeObservable(
  */
 export const resolveRepo = memoizeObservable(
     (ctx: { repoPath: string }): Observable<string> =>
-        queryGraphQL(
-            getContext({ repoKey: ctx.repoPath }),
-            `query ResolveRepo($repoPath: String!) {
+        queryGraphQL({
+            ctx: getContext({ repoKey: ctx.repoPath }),
+            request: `query ResolveRepo($repoPath: String!) {
                 repository(uri: $repoPath) {
                     url
                 }
             }`,
-            { ...ctx }
-        ).pipe(
+            variables: { ...ctx },
+        }).pipe(
             map(result => {
                 if (!result.data || !result.data.repository) {
                     throw new RepoNotFoundError(ctx.repoPath)
@@ -122,9 +122,9 @@ export const resolveRepo = memoizeObservable(
  */
 export const resolveRev = memoizeObservable(
     (ctx: { repoPath: string; rev?: string }): Observable<string> =>
-        queryGraphQL(
-            getContext({ repoKey: ctx.repoPath }),
-            `query ResolveRev($repoPath: String!, $rev: String!) {
+        queryGraphQL({
+            ctx: getContext({ repoKey: ctx.repoPath }),
+            request: `query ResolveRev($repoPath: String!, $rev: String!) {
                 repository(uri: $repoPath) {
                     mirrorInfo {
                         cloneInProgress
@@ -134,8 +134,8 @@ export const resolveRev = memoizeObservable(
                     }
                 }
             }`,
-            { ...ctx, rev: ctx.rev || '' }
-        ).pipe(
+            variables: { ...ctx, rev: ctx.rev || '' },
+        }).pipe(
             map(result => {
                 if (!result.data) {
                     throw new Error('invalid response received from graphql endpoint')
@@ -189,9 +189,9 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
 
 export const fetchTree = memoizeObservable(
     (args: { repoPath: string; commitID: string }): Observable<string[]> =>
-        queryGraphQL(
-            getContext({ repoKey: args.repoPath }),
-            `
+        queryGraphQL({
+            ctx: getContext({ repoKey: args.repoPath }),
+            request: `
                 query FileTree($repoPath: String!, $commitID: String!) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
@@ -204,8 +204,8 @@ export const fetchTree = memoizeObservable(
                     }
                 }
             `,
-            args
-        ).pipe(
+            variables: args,
+        }).pipe(
             map(({ data, errors }) => {
                 if (
                     !data ||
@@ -224,17 +224,17 @@ export const fetchTree = memoizeObservable(
 
 export const listAllSearchResults = memoizeAsync(
     (ctx: { query: string }): Promise<number> =>
-        queryGraphQL(
-            getContext({ repoKey: '' }),
-            `query Search($query: String!) {
+        queryGraphQL({
+            ctx: getContext({ repoKey: '' }),
+            request: `query Search($query: String!) {
                 search(query: $query) {
                     results {
                         resultCount
                     }
                 }
             }`,
-            ctx
-        )
+            variables: ctx,
+        })
             .toPromise()
             .then(result => {
                 if (!result.data || !result.data.search || !result.data.search.results) {
@@ -252,9 +252,9 @@ const trimRepoPath = ({ repoPath, ...rest }) => ({ ...rest, repoPath: repoPath.r
 
 export const fetchBlobContentLines = memoizeObservable(
     (ctx: AbsoluteRepoFile): Observable<string[]> =>
-        queryGraphQL(
-            getContext({ repoKey: ctx.repoPath }),
-            `query BlobContent($repoPath: String!, $commitID: String!, $filePath: String!) {
+        queryGraphQL({
+            ctx: getContext({ repoKey: ctx.repoPath }),
+            request: `query BlobContent($repoPath: String!, $commitID: String!, $filePath: String!) {
                 repository(uri: $repoPath) {
                     commit(rev: $commitID) {
                         file(path: $filePath) {
@@ -263,8 +263,8 @@ export const fetchBlobContentLines = memoizeObservable(
                     }
                 }
             }`,
-            trimRepoPath(ctx)
-        ).pipe(
+            variables: trimRepoPath(ctx),
+        }).pipe(
             map(({ data, errors }) => {
                 if (
                     !data ||

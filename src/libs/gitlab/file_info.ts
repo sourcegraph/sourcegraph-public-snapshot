@@ -1,11 +1,11 @@
-import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { Observable, of, zip } from 'rxjs'
-import { filter, map, switchMap } from 'rxjs/operators'
+import { Observable, of, throwError, zip } from 'rxjs'
+import { map, switchMap } from 'rxjs/operators'
 
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
 import { getBaseCommitIDForCommit, getBaseCommitIDForMergeRequest } from './api'
 import {
+    getCommitIDFromPermalink,
     getCommitPageInfo,
     getDiffPageInfo,
     getFilePageInfo,
@@ -29,21 +29,31 @@ const ensureRevisionsAreCloned = (files: Observable<FileInfo>): Observable<FileI
 /**
  * Resolves file information for a page with a single file, not including diffs with only one file.
  */
-export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
-    of(undefined).pipe(
-        map(() => {
-            const { repoPath, filePath, rev } = getFilePageInfo()
-
-            return { repoPath, filePath, rev }
-        }),
-        filter(propertyIsDefined('filePath')),
-        switchMap(({ repoPath, rev, ...rest }) =>
-            resolveRev({ repoPath, rev }).pipe(
-                retryWhenCloneInProgressError(),
-                map(commitID => ({ ...rest, repoPath, commitID, rev: rev || commitID }))
+export const resolveFileInfo = (): Observable<FileInfo> => {
+    const { repoPath, filePath, rev } = getFilePageInfo()
+    if (!filePath) {
+        return throwError(
+            new Error(
+                `Unable to determine the file path of the current file because the current URL (window.location ${
+                    window.location
+                }) does not have a file path.`
             )
         )
-    )
+    }
+
+    try {
+        const commitID = getCommitIDFromPermalink()
+
+        return of({
+            repoPath,
+            filePath,
+            commitID,
+            rev,
+        })
+    } catch (error) {
+        return throwError(error)
+    }
+}
 
 /**
  * Gets `FileInfo` for a diff file.

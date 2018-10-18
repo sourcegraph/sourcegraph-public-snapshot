@@ -1,9 +1,10 @@
 import { isDefined, propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { Observable, of, zip } from 'rxjs'
+import { Observable, of, throwError, zip } from 'rxjs'
 import { filter, map, switchMap } from 'rxjs/operators'
 import { GitHubBlobUrl } from '.'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { FileInfo } from '../code_intelligence'
+import { getCommitIDFromPermalink } from './scrape'
 import { getDeltaFileName, getDiffResolvedRev, getGitHubState, parseURL } from './util'
 
 export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
@@ -64,21 +65,31 @@ export const resolveDiffFileInfo = (codeView: HTMLElement): Observable<FileInfo>
         }))
     )
 
-export const resolveFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
-    of(codeView).pipe(
-        map(() => {
-            const { repoPath, filePath, rev } = parseURL()
-
-            return { repoPath, filePath, rev }
-        }),
-        filter(propertyIsDefined('filePath')),
-        switchMap(({ repoPath, rev, ...rest }) =>
-            resolveRev({ repoPath, rev }).pipe(
-                retryWhenCloneInProgressError(),
-                map(commitID => ({ ...rest, repoPath, commitID, rev: rev || commitID }))
+export const resolveFileInfo = (): Observable<FileInfo> => {
+    const { repoPath, filePath, rev } = parseURL()
+    if (!filePath) {
+        return throwError(
+            new Error(
+                `Unable to determine the file path of the current file because the current URL (window.location ${
+                    window.location
+                }) does not have a file path.`
             )
         )
-    )
+    }
+
+    try {
+        const commitID = getCommitIDFromPermalink()
+
+        return of({
+            repoPath,
+            filePath,
+            commitID,
+            rev: rev || commitID,
+        })
+    } catch (error) {
+        return throwError(error)
+    }
+}
 
 export const resolveSnippetFileInfo = (codeView: HTMLElement): Observable<FileInfo> =>
     of(codeView).pipe(

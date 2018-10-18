@@ -1,5 +1,6 @@
 import { last, take } from 'lodash'
 
+import { commitIDFromPermalink } from '../../shared/util/dom'
 import { FileInfo } from '../code_intelligence'
 
 export enum GitLabPageKind {
@@ -181,4 +182,14 @@ export function getCommitPageInfo(): GitLabCommitPageInfo {
         repoName,
         commitID: last(window.location.pathname.split('/'))!,
     }
+}
+
+/**
+ * Get the commit ID from the permalink element on the page.
+ */
+export function getCommitIDFromPermalink(): string {
+    return commitIDFromPermalink({
+        selector: '.js-data-file-blob-permalink-url',
+        hrefRegex: new RegExp('^/.*?/.*?/blob/([0-9a-f]{40})/'),
+    })
 }

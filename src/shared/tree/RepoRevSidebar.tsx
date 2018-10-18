@@ -15,9 +15,9 @@ import { Tree } from './Tree'
 
 const fetchTree = memoizeObservable(
     (args: { repoPath: string; commitID: string; rev: string }): Observable<string[]> =>
-        queryGraphQL(
-            getContext({ repoKey: args.repoPath }),
-            `
+        queryGraphQL({
+            ctx: getContext({ repoKey: args.repoPath }),
+            request: `
                 query FileTree($repoPath: String!, $commitID: String!) {
                     repository(uri: $repoPath) {
                         commit(rev: $commitID) {
@@ -30,8 +30,8 @@ const fetchTree = memoizeObservable(
                     }
                 }
             `,
-            args
-        ).pipe(
+            variables: args,
+        }).pipe(
             map(({ data, errors }) => {
                 if (
                     !data ||

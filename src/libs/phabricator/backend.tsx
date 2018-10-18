@@ -259,17 +259,17 @@ interface CreatePhabricatorRepoOptions {
 
 export const createPhabricatorRepo = memoizeObservable(
     (options: CreatePhabricatorRepoOptions): Observable<void> =>
-        mutateGraphQL(
-            getContext({ repoKey: options.repoPath, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
-            `mutation addPhabricatorRepo(
+        mutateGraphQL({
+            ctx: getContext({ repoKey: options.repoPath, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
+            request: `mutation addPhabricatorRepo(
             $callsign: String!,
             $repoPath: String!
             $phabricatorURL: String!
         ) {
             addPhabricatorRepo(callsign: $callsign, uri: $repoPath, url: $phabricatorURL) { alwaysNil }
         }`,
-            options
-        ).pipe(
+            variables: options,
+        }).pipe(
             map(({ data, errors }) => {
                 if (!data || (errors && errors.length > 0)) {
                     throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
@@ -560,9 +560,9 @@ interface ResolveStagingOptions {
 
 export const resolveStagingRev = memoizeObservable(
     (options: ResolveStagingOptions): Observable<string | null> =>
-        mutateGraphQL(
-            getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
-            `mutation ResolveStagingRev(
+        mutateGraphQL({
+            ctx: getContext({ repoKey: options.repoName, blacklist: [DEFAULT_SOURCEGRAPH_URL] }),
+            request: `mutation ResolveStagingRev(
                 $repoName: String!,
                 $diffID: ID!,
                 $baseRev: String!,
@@ -585,8 +585,8 @@ export const resolveStagingRev = memoizeObservable(
                    oid
                }
             }`,
-            options
-        ).pipe(
+            variables: options,
+        }).pipe(
             map(({ data, errors }) => {
                 if (!(data && data.resolvePhabricatorDiff) || (errors && errors.length > 0)) {
                     throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })

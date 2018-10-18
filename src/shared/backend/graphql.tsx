@@ -18,8 +18,11 @@ export interface MutationResult {
     errors?: GQL.IGraphQLResponseError[]
 }
 
-interface RequestGraphQLOptions {
-    /** Whether we should use the retry logic to fall back to other URLs. */
+export interface GraphQLRequestArgs {
+    ctx: RequestContext
+    request: string
+    variables?: any
+    url?: string
     retry?: boolean
     /**
      * Whether or not to use an access token for the request. All requests
@@ -28,6 +31,8 @@ interface RequestGraphQLOptions {
      * user ID for `createAccessToken`.
      */
     useAccessToken?: boolean
+    authError?: AuthRequiredError
+    requestMightContainPrivateInfo?: boolean
 }
 
 /**
@@ -39,16 +44,18 @@ interface RequestGraphQLOptions {
  * @param options configuration options for the request
  * @return Observable That emits the result or errors if the HTTP request failed
  */
-function requestGraphQL(
-    ctx: RequestContext,
-    request: string,
-    variables: any = {},
-    url: string = sourcegraphUrl,
-    { retry, useAccessToken }: RequestGraphQLOptions = { retry: true, useAccessToken: true },
-    authError?: AuthRequiredError
-): Observable<GQL.IGraphQLResponseRoot> {
+function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
+    ctx,
+    request,
+    variables = {},
+    url = sourcegraphUrl,
+    retry = true,
+    useAccessToken = true,
+    authError,
+    requestMightContainPrivateInfo = true,
+}: GraphQLRequestArgs): Observable<T> {
     // Check if it's a private repo - if so don't make a request to Sourcegraph.com.
-    if (isPrivateRepository() && url === DEFAULT_SOURCEGRAPH_URL) {
+    if (isPrivateRepository() && url === DEFAULT_SOURCEGRAPH_URL && requestMightContainPrivateInfo) {
         return throwError(new NoSourcegraphURLError())
     }
     const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
@@ -88,7 +95,16 @@ function requestGraphQL(
                             // need to recreate one.
                             return removeAccessToken(url).pipe(
                                 switchMap(() =>
-                                    requestGraphQL(ctx, request, variables, url, { retry, useAccessToken }, authError)
+                                    requestGraphQL({
+                                        ctx,
+                                        request,
+                                        variables,
+                                        url,
+                                        retry,
+                                        useAccessToken,
+                                        authError,
+                                        requestMightContainPrivateInfo,
+                                    })
                                 )
                             )
                         }
@@ -104,14 +120,16 @@ function requestGraphQL(
                         throw err
                     }
 
-                    return requestGraphQL(
+                    return requestGraphQL({
                         ctx,
                         request,
                         variables,
-                        DEFAULT_SOURCEGRAPH_URL,
-                        { retry, useAccessToken: true },
-                        authError
-                    )
+                        url: DEFAULT_SOURCEGRAPH_URL,
+                        retry,
+                        useAccessToken: true,
+                        authError,
+                        requestMightContainPrivateInfo,
+                    })
                 })
             )
         )
@@ -151,67 +169,10 @@ function shouldResponseTriggerRetryOrError(response: any): boolean {
 
 /**
  * Does a GraphQL query to the Sourcegraph GraphQL API running under `/.api/graphql`
- *
- * @param query The GraphQL query
- * @param variables A key/value object with variable values
- * @param variables An array of Sourcegraph URLs to potentially query
- * @return Observable That emits the result or errors if the HTTP request failed
  */
-export function queryGraphQL(
-    ctx: RequestContext,
-    query: string,
-    variables: any = {},
-    url: string = sourcegraphUrl
-): Observable<QueryResult<IQuery>> {
-    return requestGraphQL(ctx, query, variables, url) as Observable<QueryResult<IQuery>>
-}
-
-/**
- * Does a GraphQL query to the Sourcegraph GraphQL API running under `/.api/graphql`
- * Unlike queryGraphQL, if the first request fails, this will not retry with the rest of the server URLs.
- *
- * @param query The GraphQL query
- * @param variables A key/value object with variable values
- * @return Observable That emits the result or errors if the HTTP request failed
- */
-export function queryGraphQLNoRetry(
-    ctx: RequestContext,
-    query: string,
-    variables: any = {},
-    url: string = sourcegraphUrl,
-    useAccessToken?: boolean
-): Observable<QueryResult<IQuery>> {
-    return requestGraphQL(ctx, query, variables, url, { retry: false, useAccessToken }) as Observable<
-        QueryResult<IQuery>
-    >
-}
+export const queryGraphQL = (args: GraphQLRequestArgs) => requestGraphQL<QueryResult<IQuery>>(args)
 
 /**
  * Does a GraphQL mutation to the Sourcegraph GraphQL API running under `/.api/graphql`
- *
- * @param mutation The GraphQL mutation
- * @param variables A key/value object with variable values
- * @return Observable That emits the result or errors if the HTTP request failed
  */
-export function mutateGraphQL(ctx: RequestContext, mutation: string, variables: any = {}): Observable<MutationResult> {
-    return requestGraphQL(ctx, mutation, variables, sourcegraphUrl) as Observable<MutationResult>
-}
-
-/**
- * Does a GraphQL mutation to the Sourcegraph GraphQL API running under `/.api/graphql`.
- * Unlike mutateGraphQL, if the first request fails, this will not retry with the rest of the server URLs.
- *
- * @param mutation The GraphQL mutation
- * @param variables A key/value object with variable values
- * @return Observable That emits the result or errors if the HTTP request failed
- */
-export function mutateGraphQLNoRetry(
-    ctx: RequestContext,
-    mutation: string,
-    variables: any = {},
-    useAccessToken?: boolean
-): Observable<MutationResult> {
-    return requestGraphQL(ctx, mutation, variables, sourcegraphUrl, { retry: false, useAccessToken }) as Observable<
-        MutationResult
-    >
-}
+export const mutateGraphQL = (args: GraphQLRequestArgs) => requestGraphQL<MutationResult>(args)

@@ -29,6 +29,7 @@ import uuid from 'uuid'
 import { Disposable } from 'vscode-languageserver'
 import storage, { StorageItems } from '../../browser/storage'
 import { ExtensionConnectionInfo, onFirstMessage } from '../messaging'
+import { canFetchForURL } from '../util/context'
 import { getContext } from './context'
 import { createAggregateError, isErrorLike } from './errors'
 import { queryGraphQL } from './graphql'
@@ -215,9 +216,9 @@ const configurationCascadeFragment = gql`
  */
 export const gqlConfigurationCascade = storage.observeSync('sourcegraphURL').pipe(
     switchMap(url =>
-        queryGraphQL(
-            getContext({ repoKey: '', isRepoSpecific: false }),
-            gql`
+        queryGraphQL({
+            ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+            request: gql`
                 query Configuration {
                     viewerConfiguration {
                         ...ConfigurationCascadeFields
@@ -225,9 +226,9 @@ export const gqlConfigurationCascade = storage.observeSync('sourcegraphURL').pip
                 }
                 ${configurationCascadeFragment}
             `[graphQLContent],
-            {},
-            url
-        ).pipe(
+            url,
+            requestMightContainPrivateInfo: false,
+        }).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.viewerConfiguration) {
                     throw createAggregateError(errors)
@@ -257,14 +258,25 @@ export function createExtensionsContextController(
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
         updateExtensionSettings,
-        queryGraphQL: (request, variables) =>
+        queryGraphQL: (request, variables, requestMightContainPrivateInfo) =>
             storage.observeSync('sourcegraphURL').pipe(
                 take(1),
                 mergeMap(url =>
-                    queryGraphQL(getContext({ repoKey: '', isRepoSpecific: false }), request, variables, url)
+                    queryGraphQL({
+                        ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+                        request,
+                        variables,
+                        url,
+                        requestMightContainPrivateInfo,
+                    })
                 )
             ),
-        queryLSP: requests => sendLSPHTTPRequests(requests),
+        queryLSP: canFetchForURL(sourcegraphUrl)
+            ? requests => sendLSPHTTPRequests(requests)
+            : () =>
+                  throwError(
+                      'The queryLSP command is unavailable because the current repository does not exist on the Sourcegraph instance.'
+                  ),
         icons: {
             Loader: LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>,
             Info: InfoIcon as React.ComponentType<{ className: string; onClick?: () => void }>,

@@ -150,9 +150,9 @@ export interface SearchOptions {
 }
 
 export const fetchSuggestions = (options: SearchOptions, first: number) =>
-    queryGraphQL(
-        getContext({ repoKey: '', isRepoSpecific: false }),
-        `
+    queryGraphQL({
+        ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+        request: `
             query SearchSuggestions($query: String!, $first: Int!) {
                 search(query: $query) {
                     suggestions(first: $first) {
@@ -178,12 +178,12 @@ export const fetchSuggestions = (options: SearchOptions, first: number) =>
             }
             ${symbolsFragment}
         `,
-        {
+        variables: {
             query: options.query,
             // The browser extension API only takes 5 suggestions
             first,
-        }
-    ).pipe(
+        },
+    }).pipe(
         mergeMap(({ data, errors }) => {
             if (!data || !data.search || !data.search.suggestions) {
                 throw createAggregateError(errors)
@@ -239,9 +239,9 @@ export const createSuggestionFetcher = (first = 5) => {
 }
 
 export const fetchSymbols = (options: SearchOptions): Observable<GQL.ISymbol[]> =>
-    queryGraphQL(
-        getContext({ isRepoSpecific: true }),
-        `
+    queryGraphQL({
+        ctx: getContext({ isRepoSpecific: true }),
+        request: `
             query SearchResults($query: String!) {
                 search(query: $query) {
                     results {
@@ -257,10 +257,10 @@ export const fetchSymbols = (options: SearchOptions): Observable<GQL.ISymbol[]> 
             }
             ${symbolsFragment}
         `,
-        {
+        variables: {
             query: options.query,
-        }
-    ).pipe(
+        },
+    }).pipe(
         map(({ data, errors }) => {
             if (!data || !data.search || !data.search.results || !data.search.results.results) {
                 throw createAggregateError(errors)
