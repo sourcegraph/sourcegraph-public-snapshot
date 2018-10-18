@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
@@ -20,9 +19,6 @@ import (
 
 // Server is a repoupdater server.
 type Server struct {
-	fetches int
-	errors  int
-	mu      sync.Mutex
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -67,7 +63,6 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 	}
 
 	repos.UpdateOnce(r.Context(), req.Repo, req.URL)
-	return
 }
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
