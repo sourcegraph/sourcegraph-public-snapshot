@@ -39,8 +39,8 @@ instructions](doc/dev/local_development.md#step-2-install-dependencies).
 
 ### Installation
 
-1.  [Ensure Docker is running](https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-5-start-docker)
-1.  [Initialize the PostgreSQL database](https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-4-initialize-your-database)
+1.  [Ensure Docker is running](doc/dev/local_development.md#step-5-start-docker)
+1.  [Initialize the PostgreSQL database](doc/dev/local_development.md#step-4-initialize-your-database)
 1.  Start the development server
 
     ```
