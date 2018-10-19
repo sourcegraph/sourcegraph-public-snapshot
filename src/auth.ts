@@ -1,7 +1,8 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
-import { dataOrThrowErrors, gql, queryGraphQL } from './backend/graphql'
+import { gql, queryGraphQL } from './backend/graphql'
 import * as GQL from './backend/graphqlschema'
+import { createAggregateError } from './util/errors'
 
 /**
  * Always represents the latest
@@ -45,8 +46,15 @@ export function refreshCurrentUser(): Observable<never> {
             }
         }
     `).pipe(
-        map(dataOrThrowErrors),
-        tap(data => currentUser.next(data.currentUser)),
+        tap(({ data, errors }) => {
+            // TODO(Dan): see https://github.com/sourcegraph/sourcegraph/issues/426. We should handle actual errors returned here
+            // more gracefully. If the backend returns partial user data AND an error, some notification of the potential issue should be
+            // provided to users. TBD: should errors be returned if a user doesn't have an email address?
+            if (!data) {
+                throw createAggregateError(errors)
+            }
+            currentUser.next(data.currentUser)
+        }),
         catchError(error => {
             currentUser.next(null)
             return []
