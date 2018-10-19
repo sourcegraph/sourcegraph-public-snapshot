@@ -216,8 +216,13 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context) (*searchAl
 
 func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAlert, error) {
 	alert := &searchAlert{
-		title:       "Too many matching repositories",
-		description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+		title: "Too many matching repositories",
+	}
+
+	if envvar.SourcegraphDotComMode() {
+		alert.description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or setup a private Sourcegraph instance to search an unlimited number of repositories."
+	} else {
+		alert.description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results."
 	}
 
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx) == nil
