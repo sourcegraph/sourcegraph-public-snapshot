@@ -10,6 +10,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
+- We use GitHub's REST API to query affliated repositories. This API has wider
+  support on older GitHub enterprise versions.
 
 ## 2.12.0
 
