@@ -35,17 +35,16 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var (
-	maxReposToSearch = conf.GetTODO().MaxReposToSearch
-)
-
-func init() {
-	if maxReposToSearch == 0 {
+func maxReposToSearch() int {
+	switch c := conf.Get().MaxReposToSearch; c {
+	case 0:
 		// Not specified OR specified as literal zero. Use our default value.
-		maxReposToSearch = 500
-	} else if maxReposToSearch == -1 {
+		return 500
+	case -1:
 		// Default to a very large number that will not overflow if incremented.
-		maxReposToSearch = int(math.MaxInt32 >> 1)
+		return math.MaxInt32 >> 1
+	default:
+		return c
 	}
 }
 
@@ -358,7 +357,7 @@ func resolveRepositories(ctx context.Context, op resolveRepoOp) (repoRevisions, 
 	}
 	excludePatterns := op.minusRepoFilters
 
-	maxRepoListSize := maxReposToSearch
+	maxRepoListSize := maxReposToSearch()
 
 	// If any repo groups are specified, take the intersection of the repo
 	// groups and the set of repos specified with repo:. (If none are specified
