@@ -71,7 +71,8 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!this.props.repo) {
+        // If neither repo or file can be loaded, return null, which will hide all code host icons
+        if (!this.props.repo || isErrorLike(this.state.fileExternalLinksOrError)) {
             return null
         }
 
@@ -111,8 +112,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             if (this.props.commitRange) {
                 if (this.props.commitRange.startsWith('...')) {
                     url += `/compare/HEAD${this.props.commitRange}`
-                }
-                if (this.props.commitRange.endsWith('...')) {
+                } else if (this.props.commitRange.endsWith('...')) {
                     url += `/compare/${this.props.commitRange}HEAD`
                 } else {
                     url += `/compare/${this.props.commitRange}`
