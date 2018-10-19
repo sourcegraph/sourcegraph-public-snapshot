@@ -111,6 +111,9 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             if (this.props.commitRange) {
                 if (this.props.commitRange.startsWith('...')) {
                     url += `/compare/HEAD${this.props.commitRange}`
+                }
+                if (this.props.commitRange.endsWith('...')) {
+                    url += `/compare/${this.props.commitRange}HEAD`
                 } else {
                     url += `/compare/${this.props.commitRange}`
                 }
