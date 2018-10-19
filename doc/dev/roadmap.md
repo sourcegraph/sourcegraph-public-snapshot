@@ -19,8 +19,20 @@ We want Sourcegraph to be the best way to answer questions while writing, review
 - **Deployment:** making it easy to run and maintain a self-hosted Sourcegraph instance
 - **Enterprise:** features that larger companies need (e.g., scaling, authentication, authorization, auditing, etc.)
 
+## Key
+
+📣 = draft blog post<br>
+🐞 = issues<br>
+📖 = draft docs<br>
+📽 = demo or screencast video<br>
+
 <style>
-tr td:nth-child(2), tr td:nth-child(3) {
+tr td:nth-child(2) {
+width: 0;
+white-space: nowrap;
+padding: 6px;
+}
+tr td:nth-child(3), tr td:nth-child(4) {
 width: 20%;
 font-size: 80%;
 }
@@ -28,57 +40,56 @@ font-size: 80%;
 
 ## October 2018
 
-> NOTE: Not all features have their blog posts and docs linked yet.
-
-Feature | Themes/products | Team
-------- | -------- | ----
-[Language support via Sourcegraph extensions](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/simplified-language-support.md) | Code intelligence, extensibility, [Sourcegraph][sourcegraph], [browser extension][browser-extensions], [extension API][sourcegraph-extension-api] | [@chrismwendt][chrismwendt] [@felixfbecker][felixfbecker]
-[Sub-query support in search](https://github.com/sourcegraph/about/pull/8) | Search, [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith]
-Indexed search enabled by default | Search, [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith]
-Better config and deployment for code host UI integrations | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
-Search results from Sourcegraph extensions *(tentative)* | Search, extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@attfarhan][attfarhan]
-Core product UX | Search and browsing, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@francisschmaltz][francisschmaltz]
-Unified site config editing and management console | Deployment, [Sourcegraph][sourcegraph], [deploy-sourcegraph][deploy-sourcegraph] | [@ggilmore][ggilmore]
-[Repository permissions](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/acls.md) | Enterprise, integrations, [Sourcegraph][sourcegraph] | [@beyang][beyang]
-Product documentation | All, [Sourcegraph][sourcegraph] | [@sqs][sqs]
-Sourcegraph extensions usage and authoring experience | Extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag] [@ryan-blunden][ryan-blunden]
+Feature | 🔗 | Themes/products | Team
+------- | --- | -------- | ----
+Language support via Sourcegraph extensions | [📣](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/simplified-language-support.md)[📽️](https://sourcegraph.slack.com/archives/G9EN3TJDD/p1539988097000100) | Code intelligence, extensibility, [Sourcegraph][sourcegraph], [browser extension][browser-extensions], [extension API][sourcegraph-extension-api] | [@chrismwendt][chrismwendt] [@felixfbecker][felixfbecker]
+Sub-query support in search | [📣](https://github.com/sourcegraph/about/pull/8) | Search, [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith]
+Indexed search enabled by default | [📖](https://github.com/sourcegraph/sourcegraph/pull/459) | Search, [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith]
+Better config and deployment for code host UI integrations | [📣](https://github.com/sourcegraph/about/pull/38) | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
+Search results from Sourcegraph extensions | [📣](https://github.com/sourcegraph/about/pull/40) | Search, extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@attfarhan][attfarhan]
+Primary workflow UX improvements | [📣](https://github.com/sourcegraph/about/pull/39)[🐞](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+assignee%3Avanesa+milestone%3A%22October+2018%22) | Search and browsing, integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@francisschmaltz][francisschmaltz]
+Unified site config editing and management console | [📣](https://github.com/sourcegraph/about/pull/36) | Deployment, [Sourcegraph][sourcegraph], [deploy-sourcegraph][deploy-sourcegraph] | [@ggilmore][ggilmore]
+Titus cluster deployment | [📣](https://github.com/sourcegraph/about/pull/37) | Deployment, [deploy-sourcegraph][deploy-sourcegraph] | T.B.D. ([@ggilmore][ggilmore] or [@slimsag][slimsag])
+Repository permissions | [📖](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/acls.md) | Enterprise, integrations, [Sourcegraph][sourcegraph] | [@beyang][beyang]
+Product documentation | [📖](https://github.com/sourcegraph/docs.sourcegraph.com#readme) | All, [Sourcegraph][sourcegraph] | [@sqs][sqs]
+Sourcegraph extensions usage and authoring experience | [📖](https://docs.google.com/document/d/13LSEzCphgBCiMJfdCpfKgD6Qvu6hQhuHJSqz7A1dmk4/edit#)[🐞](https://github.com/sourcegraph/sourcegraph-extension-api/issues?q=is%3Aopen+is%3Aissue+label%3Anext-release) | Extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag] [@ryan-blunden][ryan-blunden]
 
 <small>Release: week of 5 November 2018 --- [All October 2018 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+author%3Asqs+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%22October+2018%22)</small>
 
 ---
 
-## November 2018 *(tentative)*
+## November 2018
 
-> NOTE: Not all features have their blog posts and docs linked yet.
+> NOTE: *Tentative.* Not all features have their blog posts and docs linked yet.
 
-Feature | Themes/products | Team
-------- | -------- | ----
-More robust code host repository syncing | Integrations, [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith]
-[Global public search on Sourcegraph.com](https://github.com/sourcegraph/about/pull/8) *(tentative)* | [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith] [@attfarhan][attfarhan]
-Standardized code host UI integration points for Sourcegraph extensions | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@chrismwendt][chrismwendt]
-Doc site integrations | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow]
-Direct UI integration and deployment bundling with GitLab | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ggilmore][ggilmore] [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
-JavaScript/TypeScript language support improvements | Code intelligence, sourcegraph-typescript | [@felixfbecker][felixfbecker]
-Go language support improvements | Code intelligence, sourcegraph-go | T.B.D.
-Python language support improvements (including MyPy) | Code intelligence, sourcegraph-python | T.B.D.
-Swift language support | Code intelligence, sourcegraph-swift | T.B.D. ([@nicksnyder][nicksnyder] or [@chrismwendt][chrismwendt]?)
-Cross-language API/IDL support ([GraphQL](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/graphql-sourcegraph-extension.md), Thrift, Protobuf) | Code intelligence, sourcegraph-{graphql,thrift,protobuf} | T.B.D
-Custom views and panels from Sourcegraph extensions | Extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag] [@francisschmaltz][francisschmaltz]
+Feature | 🔗 | Themes/products | Team
+------- | --- | -------- | ----
+More robust code host repository syncing | | Integrations, [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith]
+[Global public search on Sourcegraph.com](https://github.com/sourcegraph/about/pull/8) *(tentative)* | | [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith] [@attfarhan][attfarhan]
+Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@chrismwendt][chrismwendt]
+Doc site integrations | | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow]
+Direct UI integration and deployment bundling with GitLab | | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ggilmore][ggilmore] [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
+JavaScript/TypeScript language support improvements | | Code intelligence, sourcegraph-typescript | [@felixfbecker][felixfbecker]
+Go language support improvements | | Code intelligence, sourcegraph-go | T.B.D.
+Python language support improvements (including MyPy) | | Code intelligence, sourcegraph-python | T.B.D.
+Swift language support | | Code intelligence, sourcegraph-swift | | T.B.D. ([@nicksnyder][nicksnyder] or [@chrismwendt][chrismwendt]?)
+Cross-language API/IDL support ([GraphQL](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/graphql-sourcegraph-extension.md), Thrift, Protobuf) | | Code intelligence, sourcegraph-{graphql,thrift,protobuf} | T.B.D
+Custom views and panels from Sourcegraph extensions | | Extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag] [@francisschmaltz][francisschmaltz]
 
 <small>Release: week of 3 December 2018 --- [All November 2018 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+author%3Asqs+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%22November+2018%22)</small>
 
 ---
 
-## December 2018 *(tentative)*
+## December 2018
 
-> NOTE: Not all features have their blog posts and docs linked yet.
+> NOTE: *Tentative.* Not all features have their blog posts and docs linked yet.
 
-Feature | Themes/products | Team
-------- | -------- | ----
-Using Sourcegraph extensions in the editor | Integrations, extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag]
-Extension registry discovery and statistics | Extensibility, [Sourcegraph][sourcegraph] | [@slimsag][slimsag] [@vanesa][vanesa] [@francisschmaltz][francisschmaltz]
-Ruby language support | Code intelligence, sourcegraph-ruby | T.B.D.
-Rust language support *(tentative)* | Code intelligence, sourcegraph-go | [@slimsag][slimsag]
+Feature | 🔗 | Themes/products | Team
+------- | --- | -------- | ----
+Using Sourcegraph extensions in the editor | | Integrations, extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag]
+Extension registry discovery and statistics | [📣](https://github.com/sourcegraph/docs-private/blob/master/201809/tentative/social-cxp-registry.md) | Extensibility, [Sourcegraph][sourcegraph] | [@slimsag][slimsag] [@vanesa][vanesa] [@francisschmaltz][francisschmaltz]
+Ruby language support | | Code intelligence, sourcegraph-ruby | T.B.D.
+Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@slimsag][slimsag]
 
 <small>Release: week of 7 January 2019 --- [All December 2018 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+author%3Asqs+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%22November+2018%22)</small>
 
