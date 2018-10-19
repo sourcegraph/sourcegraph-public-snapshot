@@ -295,6 +295,7 @@ var doNotRequireRestart = []string{
 	"experimentalFeatures::discussions",
 	"reviewBoard",
 	"parentSourcegraph",
+	"maxReposToSearch",
 }
 
 // Write writes the JSON configuration to the config file. If the file is unknown
