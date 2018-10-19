@@ -3596,6 +3596,8 @@ type ProductLicenseConnection {
 type ProductPlan {
     # The billing system's unique ID for the plan.
     billingPlanID: String!
+    # The unique ID for the product.
+    productPlanID: String!
     # The name of the product plan (e.g., "Enterprise Starter"). This is displayed to the user and
     # should be human-readable.
     name: String!
@@ -3603,6 +3605,20 @@ type ProductPlan {
     nameWithBrand: String!
     # The price (in USD cents) for one user for a year.
     pricePerUserPerYear: Int!
+    # Defines if the tiering price should be graduated or volume based.
+    tiersMode: String!
+    # The tiered pricing for the plan.
+    planTiers: [PlanTier!]!
+}
+
+# The information about a plan's tier.
+#
+# FOR INTERNAL USE ONLY.
+type PlanTier {
+    # The per-user amount.
+    unitAmount: Int!
+    # The maximum number of users that this tier applies to.
+    upTo: Int!
 }
 
 # The information about a product subscription that determines its price.
