@@ -1,3 +1,5 @@
+@import '../gitlab/style.scss';
+
 .hover-overlay-mount__phabricator {
     .hover-overlay {
         .hover-overlay__action {
@@ -14,10 +16,5 @@
                 text-decoration: none;
             }
         }
-    }
-}
-.hover-overlay-mount__gitlab {
-    .hover-overlay {
-        z-index: 1000;
     }
 }

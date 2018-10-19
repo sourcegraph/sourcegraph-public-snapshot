@@ -68,19 +68,20 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
     public render(): JSX.Element | null {
         const { site, currentUser } = this.state
         return (
-            <div style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}>
+            <div
+                className="code-view-toolbar"
+                style={{ display: 'inline-flex', verticalAlign: 'middle', alignItems: 'center' }}
+            >
                 <ul className={`nav ${this.props.extensions ? 'pr-1' : ''}`}>
                     {this.props.extensionsController &&
                         this.props.extensions && (
-                            <div className="BtnGroup">
-                                <ActionsNavItems
-                                    menu={ContributableMenu.EditorTitle}
-                                    extensionsController={this.props.extensionsController}
-                                    extensions={this.props.extensions}
-                                    listClass="BtnGroup"
-                                    actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
-                                />
-                            </div>
+                            <ActionsNavItems
+                                menu={ContributableMenu.EditorTitle}
+                                extensionsController={this.props.extensionsController}
+                                extensions={this.props.extensions}
+                                listClass="BtnGroup"
+                                actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
+                            />
                         )}
                 </ul>
                 {!this.props.extensionsController && (

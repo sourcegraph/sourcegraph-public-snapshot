@@ -43,7 +43,6 @@
       {
         "matches": [
           "https://github.com/*",
-          "https://gitlab.com/*",
           "https://sourcegraph.com/*",
           "https://localhost:3443/*",
           "http://localhost:32773/*"
