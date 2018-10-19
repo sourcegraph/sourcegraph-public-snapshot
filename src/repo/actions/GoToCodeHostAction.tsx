@@ -110,13 +110,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
             }
             // If showing a comparison, add comparison specifier to the GitHub URL.
             if (this.props.commitRange) {
-                if (this.props.commitRange.startsWith('...')) {
-                    url += `/compare/HEAD${this.props.commitRange}`
-                } else if (this.props.commitRange.endsWith('...')) {
-                    url += `/compare/${this.props.commitRange}HEAD`
-                } else {
-                    url += `/compare/${this.props.commitRange}`
-                }
+                url += `/compare/${this.props.commitRange.replace(/^\.\.\./, 'HEAD...').replace(/\.\.\.$/, '...HEAD')}`
             }
             // Add range or position path to the GitHub URL.
             if (this.props.range) {

@@ -42,7 +42,10 @@ export interface FileSpec {
 
 export interface ComparisonSpec {
     /**
-     * a diff specifier with base and comparison, e.g. "master...my-branch"
+     * a diff specifier with optional base and comparison. Examples:
+     * - "master..." (implicitly: "master...HEAD")
+     * - "...my-branch" (implicitly: "HEAD...my-branch")
+     * - "master...my-branch"
      */
     commitRange: string
 }
