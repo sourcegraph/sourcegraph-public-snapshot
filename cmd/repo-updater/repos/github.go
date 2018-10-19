@@ -419,14 +419,14 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 					}
 				}
 			case "affiliated":
-				var endCursor *string // GraphQL pagination cursor
-				for {
+				hasNextPage := true
+				for page := 1; hasNextPage; page++ {
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
-					repos, endCursor, rateLimitCost, err = c.client.ListViewerRepositories(ctx, first, endCursor)
+					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, page)
 					if err != nil {
-						log15.Error("Error listing viewer's affiliated GitHub repositories", "endCursor", endCursor, "error", err)
+						log15.Error("Error listing viewer's affiliated GitHub repositories", "page", page, "error", err)
 						break
 					}
 					rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
@@ -439,10 +439,9 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 						// log15.Debug("github sync: ListViewerRepositories: repo", "repo", r.NameWithOwner)
 						ch <- r
 					}
-					if endCursor == nil {
-						break
+					if hasNextPage {
+						time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
 					}
-					time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
 				}
 
 			case "none":

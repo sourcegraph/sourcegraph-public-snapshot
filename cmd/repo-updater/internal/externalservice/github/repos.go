@@ -298,56 +298,19 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 	return repos, nil
 }
 
-// ListViewerRepositories lists GitHub repositories affiliated with the viewer (the currently authenticated user).
-// The nextPageCursor is the ID value to pass back to this method (in the "after" parameter) to retrieve the next
-// page of repositories.
-func (c *Client) ListViewerRepositories(ctx context.Context, first int, after *string) (repos []*Repository, nextPageCursor *string, rateLimitCost int, err error) {
-	var result struct {
-		Viewer struct {
-			Repositories struct {
-				Nodes    []*Repository
-				PageInfo struct {
-					HasNextPage bool
-					EndCursor   *string
-				}
-			}
-		}
-		RateLimit struct {
-			Cost int
-		}
+// ListViewerRepositories lists GitHub repositories affiliated with the viewer
+// (the currently authenticated user). page is the page of results to
+// return. Pages are 1-indexed (so the first call should be for page 1).
+func (c *Client) ListViewerRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+	var restRepos []restRepository
+	path := fmt.Sprintf("user/repos?sort=pushed&page=%d", page)
+	if err := c.requestGet(ctx, path, &restRepos); err != nil {
+		return nil, false, 1, err
 	}
-	if err := c.requestGraphQL(ctx, `
-	query AffiliatedRepositories($first: Int!, $after: String) {
-		viewer {
-			repositories(
-				first: $first
-				after: $after
-				affiliations: [OWNER, ORGANIZATION_MEMBER, COLLABORATOR]
-				orderBy:{ field: PUSHED_AT, direction: DESC }
-			) {
-				nodes {
-					...RepositoryFields
-				}
-				pageInfo {
-					hasNextPage
-					endCursor
-				}
-			}
-		}
-		rateLimit {
-			cost
-		}
-	}`+c.repositoryFieldsGraphQLFragment(),
-		map[string]interface{}{"first": first, "after": after},
-		&result,
-	); err != nil {
-		return nil, nil, 0, err
+	repos = make([]*Repository, 0, len(restRepos))
+	for _, restRepo := range restRepos {
+		repos = append(repos, convertRestRepo(restRepo))
 	}
-
-	c.addRepositoriesToCache(result.Viewer.Repositories.Nodes)
-	nextPageCursor = result.Viewer.Repositories.PageInfo.EndCursor
-	if !result.Viewer.Repositories.PageInfo.HasNextPage {
-		nextPageCursor = nil
-	}
-	return result.Viewer.Repositories.Nodes, nextPageCursor, result.RateLimit.Cost, nil
+	c.addRepositoriesToCache(repos)
+	return repos, len(repos) > 0, 1, nil
 }

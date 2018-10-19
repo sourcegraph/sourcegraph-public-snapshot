@@ -12,7 +12,7 @@ docker run \
   --volume ~/.sourcegraph/config:/etc/sourcegraph \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph \
   --volume /var/run/docker.sock:/var/run/docker.sock \
-  sourcegraph/server:VERSION
+  sourcegraph/server:2.12.0
 ```
 
 When Sourcegraph is ready, continue at http://localhost:7080.
