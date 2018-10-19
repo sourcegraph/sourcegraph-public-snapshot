@@ -10,10 +10,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	gitserverprotocol "github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
@@ -60,29 +58,6 @@ const (
 	minDelay = 45 * time.Second
 	maxDelay = 8 * time.Hour
 )
-
-var (
-	envNewScheduler      = env.Get("SRC_UPDATE_SCHEDULER", "enabled", "Use updated repo-update scheduler.")
-	useNewScheduler      bool
-	useNewSchedulerMutex sync.Mutex
-)
-
-// NewScheduler indicates whether the new scheduler is active.
-func NewScheduler() bool {
-	useNewSchedulerMutex.Lock()
-	defer useNewSchedulerMutex.Unlock()
-	return useNewScheduler
-}
-
-// setNewScheduler enables or disables the new scheduler, returning the
-// previous state.
-func setNewScheduler(v bool) bool {
-	useNewSchedulerMutex.Lock()
-	defer useNewSchedulerMutex.Unlock()
-	// Swap states so we can return the old one.
-	useNewScheduler, v = v, useNewScheduler
-	return v
-}
 
 // repo represents a repository we're tracking.
 type repoData struct {
@@ -560,7 +535,7 @@ func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateR
 	}
 	// if this repo is set for auto updates, and auto-updates are not disabled,
 	// add it back to the queue.
-	if repo.AutoUpdate && !r.autoUpdatesDisabled && NewScheduler() {
+	if repo.AutoUpdate && !r.autoUpdatesDisabled {
 		// Stagger retries to reduce flooding.
 		repo.Due = now.Add(repo.UpdateInterval + time.Duration(rand.Int()%10)*time.Second)
 		if repo.heapIndex >= 0 {
@@ -577,7 +552,7 @@ func (r *repoList) requeue(repo *repoData, respP **gitserverprotocol.RepoUpdateR
 // Each time through the loop, we fire off any items which are "bumped",
 // then fire off any scheduled items which are currently due, then wait
 // until the next item is due, or until something else wakes us up.
-func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
+func (r *repoList) updateLoop(ctx context.Context) {
 	log15.Debug("starting repo update loop")
 	// We don't want to do the whole scale recomputation super often, so we
 	// do a counter and run that computation every so often; currently
@@ -691,16 +666,6 @@ func (r *repoList) updateLoop(ctx context.Context, shutdown chan struct{}) {
 		case <-ctx.Done():
 			log15.Info("context complete, terminating update loop.")
 			return
-		case <-shutdown:
-			log15.Info("shutdown received. scheduler should be restarted soon.")
-			// Drop any existing lists; they'll get recreated by periodic updates later
-			// if the scheduler gets reenabled.
-			r.mu.Lock()
-			r.repos = make(map[string]*repoData)
-			r.heap = make([]*repoData, 0)
-			r.bumped = make([]*repoData, 0)
-			r.mu.Unlock()
-			return
 		}
 	}
 }
@@ -755,43 +720,16 @@ func (r *repoList) updateSource(source string, newList sourceRepoList) (enqueued
 
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
 func RunRepositorySyncWorker(ctx context.Context) {
-	shutdown := make(chan struct{})
 	conf.Watch(func() {
-		// Determine which scheduler to run.
 		c := conf.Get()
-		ef := c.ExperimentalFeatures
-		sched := true
-		if ef != nil {
-			sched = ef.UpdateScheduler != "disabled"
-		}
-		// Allow direct environment override.
-		if envNewScheduler == "disabled" {
-			sched = false
-		}
-		prevSched := setNewScheduler(sched)
 
-		// For any state other than "was using new scheduler, still are",
-		// we need to shut down the previous scheduler.
-		//
-		if !sched || !prevSched {
-			close(shutdown)
-			shutdown = make(chan struct{})
-		}
-		// The new scheduler has to be started on transitions to it only,
-		// the old scheduler gets restarted on every config change.
-		if sched {
-			repos.mu.Lock()
-			repos.autoUpdatesDisabled = c.DisableAutoGitUpdates
-			repos.mu.Unlock()
-			if !prevSched {
-				// Actually start the scheduler.
-				go repos.updateLoop(ctx, shutdown)
-			}
-			repos.updateConfig(ctx, c.ReposList)
-		} else {
-			go startRepositorySyncWorker(ctx, shutdown)
-		}
+		repos.mu.Lock()
+		repos.autoUpdatesDisabled = c.DisableAutoGitUpdates
+		repos.mu.Unlock()
+
+		repos.updateConfig(ctx, c.ReposList)
 	})
+	go repos.updateLoop(ctx)
 }
 
 // updateConfig responds to changes in the configured list of repositories;
@@ -888,70 +826,6 @@ func (r *repoList) snapshot() *Snapshot {
 		s.New[i] = repos[k]
 	}
 	return s
-}
-
-func startRepositorySyncWorker(ctx context.Context, shutdown chan struct{}) {
-	configs := conf.Get().ReposList
-	if len(configs) == 0 {
-		return
-	}
-
-	for _, cfg := range configs {
-		if cfg.Type == "" {
-			cfg.Type = "git"
-		}
-		// We only support git repos at the moment.
-		if cfg.Type != "git" {
-			log15.Error("Error syncing repos, VCS type not supported", "type", cfg.Type, "repo", cfg.Path)
-		}
-	}
-	for {
-		fetches := 0
-		errors := 0
-		for i, cfg := range configs {
-			log15.Debug("RunRepositorySyncWorker:updateRepo", "repoURL", cfg.Url, "ith", i, "total", len(configs))
-			err := updateRepo(ctx, cfg)
-			fetches++
-			if err != nil {
-				log15.Warn("error updating repo", "path", cfg.Path, "error", err)
-				errors++
-				continue
-			}
-		}
-		repoListUpdateTime.Set(float64(time.Now().Unix()))
-		select {
-		case <-shutdown:
-			return
-		case <-time.After(getUpdateInterval()):
-		}
-	}
-}
-
-func updateRepo(ctx context.Context, repoConf *schema.Repository) error {
-	uri := api.RepoURI(repoConf.Path)
-	repo, err := api.InternalClient.ReposCreateIfNotExists(ctx, api.RepoCreateOrUpdateRequest{RepoURI: uri, Enabled: true})
-	if err != nil {
-		return err
-	}
-
-	if !repo.Enabled {
-		// The repo is not enabled.
-		return nil
-	}
-
-	// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
-	cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, uri)
-	if err != nil {
-		return errors.Wrap(err, "error checking if repo cloned")
-	}
-	if !conf.Get().DisableAutoGitUpdates || !cloned {
-		log15.Debug("fetching repos.list repo", "repo", uri, "url", repoConf.Url, "cloned", cloned)
-		err := gitserver.DefaultClient.EnqueueRepoUpdateDeprecated(ctx, gitserver.Repo{Name: repo.URI, URL: repoConf.Url})
-		if err != nil {
-			return errors.Wrap(err, "error cloning repo")
-		}
-	}
-	return nil
 }
 
 // UpdateOnce causes a single update of the given repository.

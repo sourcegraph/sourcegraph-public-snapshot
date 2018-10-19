@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/awscodecommit"
@@ -14,16 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // Server is a repoupdater server.
 type Server struct {
-	fetches int
-	errors  int
-	mu      sync.Mutex
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
@@ -67,23 +62,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Feature flag for the new scheduler: Call that and return instead of hitting
-	// the old code path.
-	if repos.NewScheduler() {
-		repos.UpdateOnce(r.Context(), req.Repo, req.URL)
-		return
-	}
-	err := gitserver.DefaultClient.EnqueueRepoUpdateDeprecated(r.Context(), gitserver.Repo{Name: req.Repo, URL: req.URL})
-	// It's bad form to insert things between the call and the error check, but we
-	// don't want to hold the mutex while a possibly-long thing happens.
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.fetches++
-	if err != nil {
-		s.errors++
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	repos.UpdateOnce(r.Context(), req.Repo, req.URL)
 }
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)

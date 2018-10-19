@@ -13,6 +13,10 @@ All notable changes to Sourcegraph are documented in this file.
 - We use GitHub's REST API to query affliated repositories. This API has wider
   support on older GitHub enterprise versions.
 
+### Removed
+
+- The experimental feature flag to disable the new repo update scheduler has been removed.
+
 ## 2.12.0
 
 ### Changed

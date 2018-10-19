@@ -286,7 +286,6 @@ var doNotRequireRestart = []string{
 	"langservers",
 	"platform",
 	"log",
-	"experimentalFeatures::updateScheduler",
 	"experimentalFeatures::jumpToDefOSSIndex",
 	"experimentalFeatures::canonicalURLRedirect",
 	"experimentalFeatures::configVars",

@@ -12,7 +12,6 @@ import (
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -63,8 +62,6 @@ type repoCreateOrUpdateRequest struct {
 // being updated, so repo-updater can detect when repositories are dropped from
 // a given source.
 func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan repoCreateOrUpdateRequest) {
-	enqueued := 0
-	errors := 0
 	newList := make(sourceRepoList)
 
 	do := func(op repoCreateOrUpdateRequest) {
@@ -75,48 +72,21 @@ func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan
 		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op.RepoCreateOrUpdateRequest)
 		if err != nil {
 			log15.Warn("Error creating or updating repository", "repo", op.RepoURI, "error", err)
-			errors++
 			return
 		}
 
 		err = api.InternalClient.ReposUpdateMetadata(ctx, op.RepoURI, op.Description, op.Fork, op.Archived)
 		if err != nil {
 			log15.Warn("Error updating repository metadata", "repo", op.RepoURI, "error", err)
-			errors++
 			return
 		}
 
-		// if newScheduler is set (controlled by feature flag), do this instead of running
-		// the old code.
-		if NewScheduler() {
-			newList[string(createdRepo.URI)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
-			return
-		}
-		if createdRepo.Enabled {
-			// If newly added, the repository will have been set to enabled upon creation above. Explicitly enqueue a
-			// clone/update now so that those occur in order of most recently pushed.
-			isCloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, createdRepo.URI)
-			if err != nil {
-				log15.Warn("Error creating/checking local mirror repository for remote source repository", "repo", createdRepo.URI, "error", err)
-				errors++
-				return
-			}
-			log15.Debug("fetching repo", "repo", createdRepo.URI, "cloned", isCloned)
-			err = gitserver.DefaultClient.EnqueueRepoUpdateDeprecated(ctx, gitserver.Repo{Name: createdRepo.URI, URL: op.URL})
-			enqueued++
-			if err != nil {
-				log15.Warn("Error enqueueing Git clone/update for repository", "repo", op.RepoURI, "error", err)
-				errors++
-				return
-			}
-		}
+		newList[string(createdRepo.URI)] = configuredRepo{url: op.URL, enabled: createdRepo.Enabled}
 	}
 	for repo := range repoChan {
 		do(repo)
 	}
-	if NewScheduler() {
-		repos.updateSource(source, newList)
-	}
+	repos.updateSource(source, newList)
 }
 
 // setUserinfoBestEffort adds the username and password to rawurl. If user is

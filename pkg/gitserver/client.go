@@ -320,18 +320,6 @@ func doListOne(ctx context.Context, urlSuffix string, addr string) ([]string, er
 	return list, err
 }
 
-// EnqueueRepoUpdateDeprecated is deprecated. Please use
-// repoupdater.DefaultClient.EnqueueRepoUpdate instead.
-func (c *Client) EnqueueRepoUpdateDeprecated(ctx context.Context, repo Repo) error {
-	req := &protocol.RepoUpdateRequest{
-		Repo: repo.Name,
-		URL:  repo.URL,
-	}
-	resp, err := c.httpPost(ctx, repo.Name, "enqueue-repo-update", req)
-	resp.Body.Close()
-	return err
-}
-
 // RequestRepoUpdate is the new protocol endpoint for synchronous requests
 // with more detailed responses. Do not use this if you are not repo-updater.
 //
