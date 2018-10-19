@@ -11,7 +11,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- When the `DEPLOY_TYPE` environment variable is incorrectly specified, Sourcegraph now shuts down and logs an error message. 
+- When the `DEPLOY_TYPE` environment variable is incorrectly specified, Sourcegraph now shuts down and logs an error message.
 
 ### Removed
 
