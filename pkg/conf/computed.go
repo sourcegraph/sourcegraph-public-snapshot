@@ -2,6 +2,7 @@ package conf
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"os"
 	"strconv"
@@ -9,6 +10,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func init() {
+	deployType := DeployType()
+	if !IsValidDeployType(deployType) {
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q. Got: %q", DeployKubernetes, DeployDocker, DeployDev, deployType)
+	}
+}
 
 const defaultHTTPStrictTransportSecurity = "max-age=31536000" // 1 year
 
@@ -142,6 +150,12 @@ func EnabledLangservers() []*schema.Langservers {
 	return results
 }
 
+const (
+	DeployKubernetes = "k8s"
+	DeployDocker     = "docker-container"
+	DeployDev        = "dev"
+)
+
 // DeployType tells the deployment type.
 func DeployType() string {
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
@@ -149,24 +163,30 @@ func DeployType() string {
 	}
 	// Default to Kubernetes (currently the only kind of cluster supported) so that every Kubernetes
 	// deployment doesn't need to be configured with DEPLOY_TYPE.
-	return "k8s"
+	return DeployKubernetes
 }
 
 // IsDeployTypeKubernetesCluster tells if the given deployment type is a Kubernetes cluster (and
 // non-dev, non-single Docker image).
 func IsDeployTypeKubernetesCluster(deployType string) bool {
-	return deployType == "k8s"
+	return deployType == DeployKubernetes
 }
 
 // IsDeployTypeDockerContainer tells if the given deployment type is Docker sourcegraph/server
 // single-container (non-Kubernetes, non-cluster, non-dev).
 func IsDeployTypeDockerContainer(deployType string) bool {
-	return deployType == "docker-container"
+	return deployType == DeployDocker
 }
 
 // IsDev tells if the given deployment type is "dev".
 func IsDev(deployType string) bool {
-	return deployType == "dev"
+	return deployType == DeployDev
+}
+
+// IsValidDeployType returns true iff the given deployType is a Kubernetes deployment, Docker deployment, or a
+// local development environmnent.
+func IsValidDeployType(deployType string) bool {
+	return IsDeployTypeKubernetesCluster(deployType) || IsDeployTypeDockerContainer(deployType) || IsDev(deployType)
 }
 
 // DebugManageDocker tells if Docker language servers should be managed or not.
