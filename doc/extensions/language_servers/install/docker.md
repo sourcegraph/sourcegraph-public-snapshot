@@ -32,7 +32,7 @@ docker run \
   --network=lsp --name=sourcegraph \
   --volume ~/.sourcegraph/config:/etc/sourcegraph \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph \
-  sourcegraph/server:VERSION
+  sourcegraph/server:2.12.0
 ```
 
 ### Run the language server containers

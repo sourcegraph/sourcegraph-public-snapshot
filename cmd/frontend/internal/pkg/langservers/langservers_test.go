@@ -118,7 +118,7 @@ func TestNotifyNewLine_started(t *testing.T) {
 }
 
 func TestNotifyNewLine_nonblocking(t *testing.T) {
-	err := notifyNewLine(exec.Command("echo", "a"), make(chan struct{}))
+	err := notifyNewLine(exec.Command("sh", "-c", "yes | head"), make(chan struct{}))
 	if err != nil {
 		t.Fatal("unexpected error", err)
 	}

@@ -351,13 +351,10 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 	}
 
 	// Asynchronously remove old temporary directories
-	go func() {
-		files, err := ioutil.ReadDir(s.ReposDir)
-		if err != nil {
-			log15.Error("failed to do tmp cleanup", "error", err)
-			return
-		}
-
+	files, err := ioutil.ReadDir(s.ReposDir)
+	if err != nil {
+		log15.Error("failed to do tmp cleanup", "error", err)
+	} else {
 		for _, f := range files {
 			// Remove older .tmp directories as well as our older tmp-
 			// directories we would place into ReposDir. In September 2018 we
@@ -365,12 +362,13 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 			if !strings.HasPrefix(f.Name(), oldPrefix) && !strings.HasPrefix(f.Name(), "tmp-") {
 				continue
 			}
-			path := filepath.Join(s.ReposDir, f.Name())
-			if err := os.RemoveAll(path); err != nil {
-				log15.Error("failed to remove old temporary directory", "path", path, "error", err)
-			}
+			go func(path string) {
+				if err := os.RemoveAll(path); err != nil {
+					log15.Error("failed to remove old temporary directory", "path", path, "error", err)
+				}
+			}(filepath.Join(s.ReposDir, f.Name()))
 		}
-	}()
+	}
 
 	return dir, nil
 }
