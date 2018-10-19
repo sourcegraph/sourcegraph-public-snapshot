@@ -9,6 +9,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
 
+### Changed
+
+- When the `DEPLOY_TYPE` environment variable is incorrectly specified, Sourcegraph now shuts down and logs an error message. 
+
 ### Removed
 
 - The experimental feature flag to disable the new repo update scheduler has been removed.
