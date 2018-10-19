@@ -18,7 +18,7 @@ docker run [...] \
   -e PGPASSWORD=secret \
   -e PGDATABASE=sourcegraph \
   -e PGSSLMODE=disable \
-  sourcegraph/server:2.12.0
+  sourcegraph/server:2.12.1
 ```
 
 Most standard PostgreSQL environment variables may be specified (`PGPORT`, etc). See http://www.postgresql.org/docs/current/static/libpq-envars.html for a full list.
@@ -34,7 +34,7 @@ Simply add the `REDIS_ENDPOINT` environment variable to your `docker run` comman
 ```
 docker run [...] \
   -e REDIS_ENDPOINT=redis.mycompany.org:6379 \
-  sourcegraph/server:2.12.0
+  sourcegraph/server:2.12.1
 ```
 
 > NOTE: On Mac/Windows, if trying to connect to a Redis server on the same host machine, remember that Sourcegraph is running inside a Docker container inside of the Docker virtual machine. You may need to specify your actual machine IP address and not `localhost` or `127.0.0.1` as that refers to the Docker VM itself.
