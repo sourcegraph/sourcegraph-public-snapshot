@@ -2,7 +2,7 @@
 
 Sourcegraph is a code search and browsing tool with code intelligence that helps developers write and review code. Learn more about Sourcegraph at [about.sourcegraph.com](https://about.sourcegraph.com).
 
-Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph). If these docs don't solve your problem, check the [issue tracker](https://github.com/sourcegraph/sourcegraph/issues) or the [latest documentation](https://about.sourcegraph.com/docs).
+Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph). If these docs don't solve your problem, check the [issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
 
 ## For users
 
@@ -40,6 +40,5 @@ For self-hosted Sourcegraph instances, you run a Docker image or Kubernetes clus
 
 - [Sourcegraph open-source repository](https://github.com/sourcegraph/sourcegraph)
 - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
-- [Latest documentation](https://about.sourcegraph.com/docs)
 - [about.sourcegraph.com](https://about.sourcegraph.com) (general information about Sourcegraph)
 - [@srcgraph on Twitter](https://twitter.com/srcgraph)
