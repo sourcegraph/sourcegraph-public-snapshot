@@ -35,12 +35,12 @@
 - Yarn
 
 For a detailed guide to installing prerequisites, see [these
-instructions](docs/local-development.md#step-2-install-dependencies).
+instructions](doc/dev/local_development.md#step-2-install-dependencies).
 
 ### Installation
 
-1.  [Ensure Docker is running](https://github.com/sourcegraph/sourcegraph/blob/master/docs/local-development.md#step-5-start-docker)
-1.  [Initialize the PostgreSQL database](https://github.com/sourcegraph/sourcegraph/blob/master/docs/local-development.md#step-4-initialize-your-database)
+1.  [Ensure Docker is running](https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-5-start-docker)
+1.  [Initialize the PostgreSQL database](https://github.com/sourcegraph/sourcegraph/blob/master/doc/dev/local_development.md#step-4-initialize-your-database)
 1.  Start the development server
 
     ```
@@ -49,15 +49,15 @@ instructions](docs/local-development.md#step-2-install-dependencies).
 
 Sourcegraph should now be running at http://localhost:3080.
 
-For detailed instructions and troubleshooting, see the [local development documentation](./docs/local-development.md).
+For detailed instructions and troubleshooting, see the [local development documentation](./doc/dev/local_development.md).
 
 ### Documentation
 
 The `docs` folder has additional documentation for developing and understanding Sourcegraph:
 
-- [Project FAQ](./docs/FAQ.md)
-- [Architecture](./docs/architecture.md): high-level architecture
-- [Database setup](./docs/storage.md): database setup and best practices
-- [Style guide](./docs/style.md)
-- [GraphQL API](./docs/api.md): useful tips when modifying the GraphQL API
+- [Project FAQ](./doc/admin/faq.md)
+- [Architecture](./doc/dev/architecture.md): high-level architecture
+- [Database setup](./doc/dev/postgresql.md): database setup and best practices
+- [Style guide](./doc/dev/style.md)
+- [GraphQL API](./doc/dev/graphql_api.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
