@@ -249,7 +249,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                 <h2>Site configuration</h2>
                 <p>
                     View and edit the Sourcegraph site configuration. See{' '}
-                    <a href="https://about.sourcegraph.com/docs/server/">documentation</a> for more information.
+                    <a href="https://docs.sourcegraph.com/admin/site_config">documentation</a> for more information.
                 </p>
                 <div className="site-admin-configuration-page__alerts">{alerts}</div>
                 {this.state.loading && <LoadingSpinner className="icon-inline" />}
@@ -276,7 +276,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 <small>
                                     Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
                                     more information, see the{' '}
-                                    <a href="https://about.sourcegraph.com/docs/server/config/settings">
+                                    <a href="https://docs.sourcegraph.com/admin/site_config/all">
                                         documentation
                                     </a>.
                                 </small>
