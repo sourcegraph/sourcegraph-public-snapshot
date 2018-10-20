@@ -931,10 +931,10 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/extensions-client-common@^10.0.0":
-  version "10.2.1"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.2.1.tgz#a9ba194996d5936e59c9f2158d3e6bc7202956fd"
-  integrity sha512-JjdSqBG2XrDWzEl8SIzb7ALu/Q6mxSmaPYHAugDh9NxtI/obFwDTiapGf+GIEipV8BARSoBBZbxlHUl/eQHi+g==
+"@sourcegraph/extensions-client-common@^10.2.0":
+  version "10.2.0"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.2.0.tgz#18f92f0e7aee085725598a5e02b7df5859164dad"
+  integrity sha512-PydJVaUjPrjXvIzz4qoQUSLQz+ieAiBp2ZaTLkfCMl2hhZFf7VG6lL9qwvN5oc/ZA07qwsy55pi+c6zCWU5ZJg==
   dependencies:
     "@shopify/react-shortcuts" "^1.0.2"
     bootstrap "^4.1.3"
