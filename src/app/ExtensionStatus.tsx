@@ -143,7 +143,6 @@ export class ExtensionStatusPopover<S extends ConfigurationSubject, C extends Se
             <PopoverButton
                 caretIcon={this.props.caretIcon}
                 placement="auto-end"
-                globalKeyBinding="X"
                 hideOnChange={this.props.location}
                 popoverElement={<ExtensionStatus {...this.props} />}
             >

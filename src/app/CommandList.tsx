@@ -1,3 +1,4 @@
+import { Shortcut } from '@shopify/react-shortcuts'
 import { isArray, sortBy, uniq } from 'lodash-es'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
@@ -251,7 +252,9 @@ export function filterAndRankItems(
 }
 
 export class CommandListPopoverButton<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
-    Props<S, C>,
+    Props<S, C> & {
+        toggleVisibilityKeybinding?: Pick<Shortcut['props'], 'held' | 'ordered'>[]
+    },
     { hideOnChange?: any }
 > {
     public state: { hideOnChange?: any } = {}
@@ -262,8 +265,7 @@ export class CommandListPopoverButton<S extends ConfigurationSubject, C extends 
                 caretIcon={this.props.extensions.context.icons.CaretDown}
                 popoverClassName="rounded"
                 placement="auto-end"
-                globalKeyBinding={Key.F1}
-                globalKeyBindingActiveInInputs={true}
+                toggleVisibilityKeybinding={this.props.toggleVisibilityKeybinding}
                 hideOnChange={this.state.hideOnChange}
                 popoverElement={<CommandList {...this.props} onSelect={this.dismissPopover} />}
             >
