@@ -14,11 +14,12 @@ import {
     ExtensionsControllerProps,
     ExtensionsProps,
 } from '../extensions/ExtensionsClientCommonContext'
+import { KeybindingsProps } from '../keybindings'
 import { eventLogger } from '../tracking/eventLogger'
 import { UserAvatar } from '../user/UserAvatar'
 import { canListAllRepositories, showDotComMarketing } from '../util/features'
 
-interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsControllerProps {
+interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsControllerProps, KeybindingsProps {
     location: H.Location
     history: H.History
     authenticatedUser: GQL.IUser | null
@@ -98,6 +99,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     menu={ContributableMenu.CommandPalette}
                     extensionsController={this.props.extensionsController}
                     extensions={this.props.extensions}
+                    toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
                 />
                 {this.props.authenticatedUser ? (
                     <li className="nav-item">

@@ -1,3 +1,4 @@
+import { ShortcutProvider } from '@shopify/react-shortcuts'
 import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
 import { createController as createExtensionsController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
@@ -27,13 +28,14 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
 import {
     ConfigurationCascadeProps,
     createMessageTransports,
     ExtensionsControllerProps,
     ExtensionsProps,
 } from './extensions/ExtensionsClientCommonContext'
+import { createExtensionsContextController } from './extensions/ExtensionsClientCommonContext'
+import { KeybindingsProps } from './keybindings'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
@@ -48,7 +50,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { isErrorLike } from './util/errors'
 
-export interface SourcegraphWebAppProps {
+export interface SourcegraphWebAppProps extends KeybindingsProps {
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
     extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
@@ -254,7 +256,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         const { children, ...props } = this.props
 
         return (
-            <>
+            <ShortcutProvider>
                 <BrowserRouter key={0}>
                     <Route
                         path="/"
@@ -286,7 +288,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 </BrowserRouter>
                 <Tooltip key={1} />
                 <Notifications key={2} extensionsController={this.state.extensionsController} />
-            </>
+            </ShortcutProvider>
         )
     }
 

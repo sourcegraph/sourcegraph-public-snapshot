@@ -193,8 +193,6 @@ export class QueryInput extends React.Component<Props, State> {
                                 // Slash shortcut (if no input element is focused)
                                 (event.key === '/' &&
                                     !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
-                                // Cmd/Ctrl+P shortcut
-                                ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
                                 // Cmd/Ctrl+Shift+F shortcut
                                 ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key === 'f')
                         ),

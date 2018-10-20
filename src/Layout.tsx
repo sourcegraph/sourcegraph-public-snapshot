@@ -15,6 +15,7 @@ import {
 } from './extensions/ExtensionsClientCommonContext'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { KeybindingsProps } from './keybindings'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
@@ -34,7 +35,8 @@ export interface LayoutProps
         ExtensionsProps,
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        ExtensionsDocumentsProps,
+        KeybindingsProps {
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
     extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
