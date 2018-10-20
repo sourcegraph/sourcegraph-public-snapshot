@@ -255,14 +255,14 @@ Default: `"disabled"`
 
 ### canonicalURLRedirect (string, enum)
 
-Enables or disables redirecting to the canonical URL (underneath the "appURL") for incoming HTTP requests. This experiment is intended to be enabled for all instances as of Sourcegraph 2.9.
+Enables or disables redirecting to the canonical URL (underneath the "appURL") for incoming HTTP requests. Enabled by default.
 
 This property must be one of the following enum values:
 
 - `enabled`
 - `disabled`
 
-Default: `"disabled"`
+Default: `"enabled"`
 
 ### configVars (string, enum)
 

@@ -9,6 +9,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
 
+### Changed
+
+- The `experimentalFeatures.canonicalURLRedirect` site config property now defaults to `enabled`. Set it to `disabled` to disable redirection to the `appURL` from other hosts.
+
 ### Removed
 
 - The experimental feature flag to disable the new repo update scheduler has been removed.
