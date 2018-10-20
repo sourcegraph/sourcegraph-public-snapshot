@@ -25,9 +25,6 @@ var (
 )
 
 // Raw returns the raw site configuration JSON.
-//
-// If using SOURCEGRAPH_EXPAND_CONFIG_VARS, this value is NOT expanded. Callers must expand env vars
-// in it (using expandEnv) before validating or applying it.
 func Raw() string {
 	rawMu.RLock()
 	defer rawMu.RUnlock()
@@ -181,12 +178,6 @@ func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		data, _, err = expandEnv(data)
-		if err != nil {
-			return nil, err
-		}
-
 		if err := json.Unmarshal(data, &tmpConfig); err != nil {
 			return nil, err
 		}
@@ -288,7 +279,6 @@ var doNotRequireRestart = []string{
 	"log",
 	"experimentalFeatures::jumpToDefOSSIndex",
 	"experimentalFeatures::canonicalURLRedirect",
-	"experimentalFeatures::configVars",
 	"experimentalFeatures::multipleAuthProviders",
 	"experimentalFeatures::platform",
 	"experimentalFeatures::discussions",
