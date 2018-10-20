@@ -231,17 +231,6 @@ Experimental features to enable or disable. Features that are now enabled by def
 
 Properties of the `experimentalFeatures` object:
 
-### updateScheduler (string, enum)
-
-Enables or disables a newer update scheduling algorithm which attempts to prioritize frequently-updated repositories, and throttles automatic updates to limit congestion.
-
-This property must be one of the following enum values:
-
-- `enabled`
-- `disabled`
-
-Default: `"enabled"`
-
 ### jumpToDefOSSIndex (string, enum)
 
 Enables or disables consulting the OSS package index on Sourcegraph.com for cross repository jump to definition. When enabled Sourcegraph.com will receive Code Intelligence requests when they fail to resolve locally. NOTE: disablePublicRepoRedirects must not be set, or should be set to false.
