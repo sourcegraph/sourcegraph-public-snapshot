@@ -276,9 +276,7 @@ export class SiteAdminConfigurationPage extends React.Component<Props, State> {
                                 <small>
                                     Use Ctrl+Space for completion, and hover over JSON properties for documentation. For
                                     more information, see the{' '}
-                                    <a href="https://docs.sourcegraph.com/admin/site_config/all">
-                                        documentation
-                                    </a>.
+                                    <a href="https://docs.sourcegraph.com/admin/site_config/all">documentation</a>.
                                 </small>
                             </p>
                         </div>
