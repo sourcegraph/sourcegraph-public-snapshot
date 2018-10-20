@@ -69,10 +69,10 @@
         },
         "canonicalURLRedirect": {
           "description":
-            "Enables or disables redirecting to the canonical URL (underneath the \"appURL\") for incoming HTTP requests. This experiment is intended to be enabled for all instances as of Sourcegraph 2.9.",
+            "Enables or disables redirecting to the canonical URL (underneath the \"appURL\") for incoming HTTP requests. Enabled by default.",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "disabled"
+          "default": "enabled"
         },
         "configVars": {
           "description":
