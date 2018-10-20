@@ -264,19 +264,6 @@ This property must be one of the following enum values:
 
 Default: `"enabled"`
 
-### configVars (string, enum)
-
-Enables or disables the interpolation of variables in string values in the site configuration JSON data.
-
-If set to "enabled", all string values (except for JSON object property names) are interpolated, replacing ${var} or $var in the string with the value of the referenced environment variable (or the empty string if undefined).
-
-This property must be one of the following enum values:
-
-- `enabled`
-- `disabled`
-
-Default: `"disabled"`
-
 ### multipleAuthProviders (string, enum)
 
 Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users.

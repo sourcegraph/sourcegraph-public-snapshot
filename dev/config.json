@@ -2,7 +2,6 @@
 {
   "appURL": "http://localhost:3080",
   "experimentalFeatures": {
-    "configVars": "enabled",
     "discussions": "enabled"
   },
   "disablePublicRepoRedirects": true,
