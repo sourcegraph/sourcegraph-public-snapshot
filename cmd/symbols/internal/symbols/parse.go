@@ -74,7 +74,7 @@ func (s *Service) parseUncached(ctx context.Context, repo api.RepoURI, commitID 
 	var (
 		mu  sync.Mutex // protects symbols and err
 		wg  sync.WaitGroup
-		sem = make(chan struct{}, 1000) // TODO: this is a super aggressive number, should we lower it further?
+		sem = make(chan struct{}, runtime.NumCPU())
 	)
 	tr.LazyPrintf("parse")
 	totalParseRequests := 0
