@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,8 +10,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -20,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 )
@@ -37,71 +33,6 @@ func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
 	}
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
-	return nil
-}
-
-// serveGitoliteUpdateReposDeprecated is an obsolete endpoint that was used to
-// request that all configured Gitolite repos get fetched. It's now handled
-// internally to repo-updater. This endpoint still needs to exist until
-// everyone's upgraded to a more recent repo-updater.
-func serveGitoliteUpdateReposDeprecated(w http.ResponseWriter, r *http.Request) error {
-	// Get complete list of Gitolite repositories
-	log15.Debug("serveGitoliteUpdateRepos")
-
-	// This is fundamentally a background sync, so we don't care if the HTTP context gets canceled.
-	ctx := context.Background()
-
-	for _, gconf := range conf.Get().Gitolite {
-		rlist, err := gitserver.DefaultClient.ListGitolite(ctx, gconf.Host)
-		if err != nil {
-			return err
-		}
-
-		insertRepoOps := make([]api.InsertRepoOp, len(rlist))
-		for i, entry := range rlist {
-			insertRepoOps[i] = api.InsertRepoOp{URI: api.RepoURI(entry), Enabled: true}
-		}
-		if err := backend.Repos.TryInsertNewBatch(ctx, insertRepoOps); err != nil {
-			log15.Warn("TryInsertNewBatch failed", "numRepos", len(insertRepoOps), "err", err)
-		}
-
-		// Assert existence of and initiate clone of each inserted repository
-		for i, entry := range rlist {
-			uri := api.RepoURI(entry)
-			repo, err := backend.Repos.GetByURI(ctx, uri)
-			if err != nil {
-				log15.Warn("Could not ensure repository updated", "uri", uri, "error", err)
-				continue
-			}
-
-			if !repo.Enabled {
-				continue
-			}
-
-			// Run a git fetch to kick-off an update or a clone if the repo doesn't already exist.
-			cloned, err := gitserver.DefaultClient.IsRepoCloned(ctx, uri)
-			if err != nil {
-				log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
-				continue
-			}
-			if !conf.Get().DisableAutoGitUpdates || !cloned {
-				log15.Info("fetching Gitolite repo", "repo", uri, "cloned", cloned, "i", i, "total", len(rlist))
-				// TODO!(sqs): derive gitolite clone URL
-				err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserver.Repo{Name: repo.URI})
-				if err != nil {
-					log15.Warn("Could not ensure repository cloned", "uri", uri, "error", err)
-					continue
-				}
-			}
-
-			if gconf.PhabricatorMetadataCommand != "" {
-				tryUpdateGitolitePhabricatorMetadataDeprecated(ctx, gconf, uri, entry)
-			}
-		}
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-	w.Write([]byte("OK"))
 	return nil
 }
 

@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	opentracing "github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
@@ -26,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
@@ -132,12 +131,6 @@ func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
 
 func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	return db.Repos.Upsert(ctx, op)
-}
-
-// DEPRECATED: TryInsertNewBatch should be removed after the deprecated
-// serveGitoliteUpdateReposDeprecated function is removed.
-func (s *repos) TryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
-	return db.Repos.TryInsertNewBatch(ctx, repos)
 }
 
 func (s *repos) List(ctx context.Context, opt db.ReposListOptions) (repos []*types.Repo, err error) {
