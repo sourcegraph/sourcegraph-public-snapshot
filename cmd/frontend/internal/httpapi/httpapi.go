@@ -3,12 +3,8 @@ package httpapi
 import (
 	"log"
 	"net/http"
-	"reflect"
-	"strconv"
-	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
@@ -117,22 +113,6 @@ func handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 		},
 		Error: handleError,
 	}
-}
-
-var schemaDecoder = schema.NewDecoder()
-
-func init() {
-	schemaDecoder.IgnoreUnknownKeys(true)
-
-	// Register a converter for unix timestamp strings -> time.Time values
-	// (needed for Appdash PageLoadEvent type).
-	schemaDecoder.RegisterConverter(time.Time{}, func(s string) reflect.Value {
-		ms, err := strconv.ParseInt(s, 10, 64)
-		if err != nil {
-			return reflect.ValueOf(err)
-		}
-		return reflect.ValueOf(time.Unix(0, ms*int64(time.Millisecond)))
-	})
 }
 
 func handleError(w http.ResponseWriter, r *http.Request, status int, err error) {
