@@ -9,7 +9,6 @@ import (
 	"github.com/NYTimes/gziphandler"
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
@@ -33,18 +31,15 @@ func newExternalHTTPHandler(ctx context.Context) (http.Handler, error) {
 
 	// HTTP API handler.
 	apiHandler := httpapi.NewHandler(router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter()))
-	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
-	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication (except those with the
-	// X-Requested-With header). Doing so would open it up to CSRF attacks.
+	apiHandler = authMiddlewares.API(apiHandler)                                                      // 🚨 SECURITY: auth middleware
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = httpapi.AccessTokenAuthMiddleware(apiHandler)                                        // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 
 	// App handler (HTML pages).
 	appHandler := app.NewHandler()
-	appHandler = handlerutil.CSRFMiddleware(appHandler, globals.AppURL.Scheme == "https") // after appAuthMiddleware because SAML IdP posts data to us w/o a CSRF token
-	appHandler = authMiddlewares.App(appHandler)                                          // 🚨 SECURITY: auth middleware
-	appHandler = session.CookieMiddleware(appHandler)                                     // app accepts cookies
+	appHandler = authMiddlewares.App(appHandler)      // 🚨 SECURITY: auth middleware
+	appHandler = session.CookieMiddleware(appHandler) // app accepts cookies
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()

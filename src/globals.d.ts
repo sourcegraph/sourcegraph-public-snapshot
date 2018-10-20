@@ -26,7 +26,6 @@ interface ImmutableUser {
  */
 interface SourcegraphContext {
     xhrHeaders: { [key: string]: string }
-    csrfToken: string
     userAgentIsBot: boolean
 
     /**
