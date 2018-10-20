@@ -351,6 +351,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                     element={
                         <RepoRevSidebarCommits
                             key="commits"
+                            repoName={this.props.repoPath}
                             repoID={this.props.repoID}
                             rev={this.props.rev}
                             filePath={this.props.filePath}
