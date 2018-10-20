@@ -1,4 +1,4 @@
-import shallowEqual from 'fbjs/lib/shallowEqual'
+import { isEqual } from 'lodash'
 import * as React from 'react'
 import { RepoHeaderContribution, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 
@@ -26,14 +26,11 @@ export class RepoHeaderContributionPortal extends React.Component<Props> {
     public shouldComponentUpdate(nextProps: Props): boolean {
         // This "smart" comparison lets us skip ~75% of the updates that extending React.PureComponent (and not
         // implementing shouldComponentUpdate) or always returning true here would yield.
-        //
-        // We use fbjs/lib/shallowEqual because it's what React uses, so it avoids bringing in another dep and
-        // avoids implementation disparities (and is faster than a deep comparison).
         return (
             this.props.repoHeaderContributionsLifecycleProps !== nextProps.repoHeaderContributionsLifecycleProps ||
             this.props.position !== nextProps.position ||
             this.props.priority !== nextProps.priority ||
-            !shallowEqual(this.props.element.props, nextProps.element.props)
+            !isEqual(this.props.element.props, nextProps.element.props)
         )
     }
 
