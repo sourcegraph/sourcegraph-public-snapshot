@@ -6,7 +6,7 @@
 if [ ! -z "$VERBOSE" ]; then
     set -x
 fi
-set -euo pipefail
+set -eo pipefail
 
 function usage() {
     echo "Usage:   ./cherry-pick.sh <commit-range> <prune-dir>"
@@ -15,8 +15,7 @@ function usage() {
 }
 
 function pickOne() {
-    set -e
-
+    set +e
     COMMIT=$1
     PRUNE_DIR=$2
     if [ -z "$COMMIT" ] || [ -z "$PRUNE_DIR" ]; then
@@ -24,10 +23,9 @@ function pickOne() {
         exit 1
     fi
 
-    set +e
     git cherry-pick $COMMIT &>/dev/null
-    set -e
     if [ "$?" = 0 ]; then
+        set -e
         PRUNE_DIR_EXISTED=$(test -d "$PRUNE_DIR"; echo $?)
 
         # clean cherry-pick
@@ -44,6 +42,7 @@ function pickOne() {
             fi
         fi
     else
+        set -e
         # dirty cherry-pick
         rm -rf "$PRUNE_DIR" && (git add "$PRUNE_DIR" 2>/dev/null || true)
         if [ ! -z "$(git status --porcelain | grep -v '^M')" ]; then
@@ -51,7 +50,17 @@ function pickOne() {
             echo 'You must either `git cherry-pick --abort` OR manually resolve the conflict and run `git cherry-pick --continue`.'
             exit 1
         fi
+        set +e
         git -c core.editor=true cherry-pick --continue 2>/dev/null
+        if [ "$?" != 0 ]; then
+            set -e
+            if [ -z "$(git status --porcelain | grep -v '^M')" ]; then
+                git -c core.editor=true commit --allow-empty
+                git reset --hard HEAD^ &>/dev/null
+            fi
+        fi
+        set -e
+
         echo "$COMMIT cherry-pick, removed $PRUNE_DIR/"
     fi
 }
