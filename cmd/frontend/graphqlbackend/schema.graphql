@@ -3612,6 +3612,8 @@ type ProductPlan {
     nameWithBrand: String!
     # The price (in USD cents) for one user for a year.
     pricePerUserPerYear: Int!
+    # The minimum quantity (user count) that can be purchased. Only applies when using tiered pricing.
+    minQuantity: Int
     # Defines if the tiering price should be graduated or volume based.
     tiersMode: String!
     # The tiered pricing for the plan.

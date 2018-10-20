@@ -202,6 +202,7 @@ type ProductPlan interface {
 	Name() string
 	NameWithBrand() string
 	PricePerUserPerYear() int32
+	MinQuantity() *int32
 	TiersMode() string
 	PlanTiers() []PlanTier
 }
