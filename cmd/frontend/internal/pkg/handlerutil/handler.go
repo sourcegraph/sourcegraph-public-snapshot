@@ -2,8 +2,10 @@ package handlerutil
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"os"
 	"runtime"
@@ -95,4 +97,22 @@ func collapseMultipleErrors(err error) error {
 		return errs[0]
 	}
 	return err
+}
+
+// DecodeJSON checks that the Content-Type HTTP request header is application/json and then calls
+// json.NewDecoder(r.Body).Decode(&v).
+//
+// 🚨 SECURITY: The Content-Type check is necessary to protect against CSRF where an HTML form
+// submits a "Content-Type: text/plain" POST body that is parseable as JSON. HTML forms can submit
+// cross-origin but not with application/json, so by checking that the Content-Type is
+// application/json, we guarantee that this wasn't submitted by a cross-origin form.
+func DecodeJSON(r *http.Request, v interface{}) error {
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.WithMessage(err, "Content-Type")}
+	}
+	if mediaType != "application/json" {
+		return &errcode.HTTPErr{Status: http.StatusBadRequest, Err: errors.New("Content-Type must be application/json")}
+	}
+	return json.NewDecoder(r.Body).Decode(&v)
 }

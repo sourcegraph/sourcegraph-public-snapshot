@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
@@ -108,7 +109,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 
 	// Decode this early so we can print more useful log messages.
 	var reqs []jsonrpc2.Request
-	if err := json.NewDecoder(r.Body).Decode(&reqs); err != nil {
+	if err := handlerutil.DecodeJSON(r, &reqs); err != nil {
 		return err
 	}
 

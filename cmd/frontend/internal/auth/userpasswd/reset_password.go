@@ -1,12 +1,12 @@
 package userpasswd
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
@@ -29,7 +29,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 	var formData struct {
 		Email string `json:"email"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
+	if err := handlerutil.DecodeJSON(r, &formData); err != nil {
 		httpLogAndError(w, "Could not decode password reset request body", http.StatusBadRequest, "err", err)
 		return
 	}
@@ -106,7 +106,7 @@ func HandleResetPasswordCode(w http.ResponseWriter, r *http.Request) {
 		Code     string `json:"code"`
 		Password string `json:"password"` // new password
 	}
-	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
+	if err := handlerutil.DecodeJSON(r, &params); err != nil {
 		httpLogAndError(w, "Password reset with code: could not decode request body", http.StatusBadGateway, "err", err)
 		return
 	}

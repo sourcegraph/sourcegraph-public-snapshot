@@ -2,7 +2,6 @@ package userpasswd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
@@ -59,7 +59,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		return
 	}
 	var creds credentials
-	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+	if err := handlerutil.DecodeJSON(r, &creds); err != nil {
 		http.Error(w, "could not decode request body", http.StatusBadRequest)
 		return
 	}
@@ -160,7 +160,7 @@ func HandleSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var creds credentials
-	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+	if err := handlerutil.DecodeJSON(r, &creds); err != nil {
 		http.Error(w, "Could not decode request body", http.StatusBadRequest)
 		return
 	}
