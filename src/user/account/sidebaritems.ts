@@ -11,8 +11,8 @@ export const userAccountSideBarItems: UserAccountSidebarItems = {
             label: 'Password',
             to: `/password`,
             exact: true,
-            condition: ({ siteAdminViewingOtherUser, externalAuthEnabled }) =>
-                siteAdminViewingOtherUser && !externalAuthEnabled,
+            // Only the builtin auth provider has a password.
+            condition: ({ authProviders }) => authProviders.some(({ isBuiltin }) => isBuiltin),
         },
         {
             label: 'Emails',

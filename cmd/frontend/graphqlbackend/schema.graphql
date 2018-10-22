@@ -2165,8 +2165,8 @@ type AuthProviderConnection {
     pageInfo: PageInfo!
 }
 
-# A provider of user authentication, such as an external single-sign-on service (e.g., using OpenID
-# Connect or SAML).
+# A provider of user authentication, such as an external single-sign-on service (e.g., using OpenID Connect or
+# SAML). The provider information in this type is visible to all viewers and does not contain any secret values.
 type AuthProvider {
     # The type of the auth provider.
     serviceType: String!
@@ -2709,7 +2709,8 @@ type Site implements ConfigurationSubject {
         # Returns the first n access tokens from the list.
         first: Int
     ): AccessTokenConnection!
-    # A list of all authentication providers.
+    # A list of all authentication providers. This information is visible to all viewers and does not contain any
+    # secret information.
     authProviders: AuthProviderConnection!
     # A list of all user external accounts on this site.
     externalAccounts(
@@ -2741,8 +2742,6 @@ type Site implements ConfigurationSubject {
     # more about the code intelligence available (languages supported, etc.). It is subject to
     # change without notice.
     hasCodeIntelligence: Boolean!
-    # Whether the site is using an external authentication service such as OIDC or SAML.
-    externalAuthEnabled: Boolean!
     # Whether we want to show built-in searches on the saved searches page
     disableBuiltInSearches: Boolean!
     # Whether the server sends emails to users to verify email addresses. If false, then site admins must manually

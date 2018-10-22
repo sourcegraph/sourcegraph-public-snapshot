@@ -14,6 +14,10 @@ All notable changes to Sourcegraph are documented in this file.
 - Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
 - The update check page no longer shows an error if you are using an insiders build. Insiders builds will now notify site administrators that updates are available 40 days after the release date of the installed build.
 
+### Fixed
+
+- The user account sidebar "Password" link (to the change-password form) is now shown correctly.
+
 ### Removed
 
 - The experimental feature flag to disable the new repo update scheduler has been removed.

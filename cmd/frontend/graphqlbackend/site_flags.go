@@ -56,15 +56,6 @@ func noRepositoriesEnabled(ctx context.Context) (bool, error) {
 	return len(repos) == 0, nil
 }
 
-func (*siteResolver) ExternalAuthEnabled() bool {
-	for _, p := range conf.AuthProviders() {
-		if p.Builtin == nil {
-			return true // has a non-builtin auth provider
-		}
-	}
-	return false
-}
-
 func (*siteResolver) DisableBuiltInSearches() bool {
 	return conf.Get().DisableBuiltInSearches
 }

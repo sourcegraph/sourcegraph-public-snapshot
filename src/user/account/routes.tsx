@@ -19,7 +19,6 @@ export const userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute> = [
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
         render: props => <UserAccountPasswordPage {...props} />,
-        condition: ({ externalAuthEnabled }) => externalAuthEnabled,
     },
     {
         path: '/emails',
