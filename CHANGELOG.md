@@ -6,6 +6,7 @@ branches do not necessarily reflect the changes that have gone into that branch.
 All notable changes to Sourcegraph Server and Data Center are documented in this file.
 
 ## Unreleased changes
+
 ## Unreleased
 
 ### Changed
