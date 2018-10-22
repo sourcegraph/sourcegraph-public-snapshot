@@ -69,7 +69,7 @@ More robust code host repository syncing | | Integrations, [Sourcegraph][sourceg
 [Global public search on Sourcegraph.com](https://github.com/sourcegraph/about/pull/8) *(tentative)* | | [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith] [@attfarhan][attfarhan]
 Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@chrismwendt][chrismwendt]
 Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201808/docs-code-intel.md) | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow]
-Direct UI integration and deployment bundling with GitLab | | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ggilmore][ggilmore] [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
+[Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/about/pull/41) | | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ggilmore][ggilmore] [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
 JavaScript/TypeScript language support improvements | | Code intelligence, sourcegraph-typescript | [@felixfbecker][felixfbecker]
 Go language support improvements | | Code intelligence, sourcegraph-go | T.B.D.
 Python language support improvements (including MyPy) | | Code intelligence, sourcegraph-python | T.B.D.
