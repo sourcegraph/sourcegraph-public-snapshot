@@ -24,7 +24,7 @@ interface State {
     newPasswordConfirmation: string
 }
 
-export class UserAccountAccountPage extends React.Component<Props, State> {
+export class UserAccountPasswordPage extends React.Component<Props, State> {
     public state: State = {
         oldPassword: '',
         newPassword: '',
@@ -38,7 +38,7 @@ export class UserAccountAccountPage extends React.Component<Props, State> {
     private setNewPasswordConfirmationField = (e: HTMLInputElement | null) => (this.newPasswordConfirmationField = e)
 
     public componentDidMount(): void {
-        eventLogger.logViewEvent('UserAccount')
+        eventLogger.logViewEvent('UserAccountPassword')
         this.subscriptions.add(
             this.submits
                 .pipe(
@@ -48,11 +48,15 @@ export class UserAccountAccountPage extends React.Component<Props, State> {
                     }),
                     filter(event => event.currentTarget.checkValidity()),
                     tap(() => this.setState({ loading: true })),
-                    mergeMap(event =>
+                    mergeMap(() =>
                         updatePassword({
                             oldPassword: this.state.oldPassword,
                             newPassword: this.state.newPassword,
-                        }).pipe(catchError(this.handleError))
+                        }).pipe(
+                            // Change URL after updating to trigger Chrome to show "Update password?" dialog.
+                            tap(() => this.props.history.replace({ hash: 'updated' })),
+                            catchError(this.handleError)
+                        )
                     )
                 )
                 .subscribe(
@@ -76,17 +80,26 @@ export class UserAccountAccountPage extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="user-settings-account-page">
-                <PageTitle title="Profile" />
+            <div className="user-account-password-page">
+                <PageTitle title="Change password" />
                 <h2>Change password</h2>
                 {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
                 {this.state.saved && <p className="alert alert-success">Password changed!</p>}
-                <Form className="user-settings-account-page__form" onSubmit={this.handleSubmit}>
+                <Form onSubmit={this.handleSubmit}>
+                    {/* Include a username field as a hint for password managers to update the saved password. */}
+                    <input
+                        type="text"
+                        value={this.props.user.username}
+                        name="username"
+                        autoComplete="username"
+                        readOnly={true}
+                        hidden={true}
+                    />
                     <div className="form-group">
                         <label>Old password</label>
                         <PasswordInput
                             value={this.state.oldPassword}
-                            onInput={this.onOldPasswordFieldChange}
+                            onChange={this.onOldPasswordFieldChange}
                             disabled={this.state.loading}
                             name="oldPassword"
                             placeholder=" "
@@ -97,7 +110,7 @@ export class UserAccountAccountPage extends React.Component<Props, State> {
                         <label>New password</label>
                         <PasswordInput
                             value={this.state.newPassword}
-                            onInput={this.onNewPasswordFieldChange}
+                            onChange={this.onNewPasswordFieldChange}
                             disabled={this.state.loading}
                             name="newPassword"
                             placeholder=" "
@@ -108,7 +121,7 @@ export class UserAccountAccountPage extends React.Component<Props, State> {
                         <label>Confirm new password</label>
                         <PasswordInput
                             value={this.state.newPasswordConfirmation}
-                            onInput={this.onNewPasswordConfirmationFieldChange}
+                            onChange={this.onNewPasswordConfirmationFieldChange}
                             disabled={this.state.loading}
                             name="newPasswordConfirmation"
                             placeholder=" "
@@ -117,7 +130,7 @@ export class UserAccountAccountPage extends React.Component<Props, State> {
                         />
                     </div>
                     <button
-                        className="btn btn-primary user-settings-account-page__button"
+                        className="btn btn-primary user-account-password-page__button"
                         type="submit"
                         disabled={this.state.loading}
                     >
