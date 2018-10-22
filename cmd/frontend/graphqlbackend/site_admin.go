@@ -11,6 +11,7 @@ import (
 
 func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	User graphql.ID
+	Hard *bool
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete users.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
@@ -30,8 +31,14 @@ func (*schemaResolver) DeleteUser(ctx context.Context, args *struct {
 		return nil, errors.New("unable to delete current user")
 	}
 
-	if err := db.Users.Delete(ctx, userID); err != nil {
-		return nil, err
+	if args.Hard != nil && *args.Hard {
+		if err := db.Users.HardDelete(ctx, userID); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := db.Users.Delete(ctx, userID); err != nil {
+			return nil, err
+		}
 	}
 	return &EmptyResponse{}, nil
 }

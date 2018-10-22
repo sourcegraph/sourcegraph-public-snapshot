@@ -130,7 +130,21 @@ type Mutation {
     # Only site admins may perform this mutation.
     setUserEmailVerified(user: ID!, email: String!, verified: Boolean!): EmptyResponse!
     # Deletes a user account. Only site admins may perform this mutation.
-    deleteUser(user: ID!): EmptyResponse
+    #
+    # If hard == true, a hard delete is performed. By default, deletes are
+    # 'soft deletes' and could theoretically be undone with manual DB commands.
+    # If a hard delete is performed, the data is truly removed from the
+    # database and deletion can NEVER be undone.
+    #
+    # Data that is deleted as part of this operation:
+    #
+    # - All user data (access tokens, email addresses, external account info, survey responses, etc)
+    # - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
+    # - Sourcegraph Extensions published by the user.
+    # - User, Organization, or Global settings authored by the user.
+    # - Discussion threads and comments created by the user.
+    #
+    deleteUser(user: ID!, hard: Boolean): EmptyResponse
     # Updates the current user's password. The oldPassword arg must match the user's current password.
     updatePassword(oldPassword: String!, newPassword: String!): EmptyResponse
     # Creates an access token that grants the privileges of the specified user (referred to as the access token's

@@ -1,6 +1,7 @@
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import RadioactiveIcon from 'mdi-react/RadioactiveIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -39,6 +40,16 @@ interface UserNodeState {
     errorDescription?: string
     resetPasswordURL?: string | null
 }
+
+const nukeDetails = `
+- By deleting a user, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
+- By nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo this). When deleting data at a user's request, nuking is used.
+
+Beware this includes e.g. deleting extensions authored by the user, deleting ANY settings authored or updated by the user, etc.
+
+For more information about what data is deleted, see https://github.com/sourcegraph/sourcegraph/blob/master/docs/user-data-deletion.md
+
+Are you ABSOLUTELY certain you wish to delete this user and all associated data?`
 
 class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public state: UserNodeState = {
@@ -136,6 +147,16 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 <DeleteIcon className="icon-inline" />
                             </button>
                         )}
+                        {this.props.node.id !== this.props.currentUser.id && (
+                            <button
+                                className="ml-1 btn btn-sm btn-danger"
+                                onClick={this.nukeUser}
+                                disabled={this.state.loading}
+                                data-tooltip="Nuke user (click for more information)"
+                            >
+                                <RadioactiveIcon className="icon-inline" />
+                            </button>
+                        )}
                     </div>
                 </div>
                 {this.state.errorDescription && (
@@ -216,8 +237,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             )
     }
 
-    private deleteUser = () => {
-        if (!window.confirm(`Delete the user ${this.props.node.username}?`)) {
+    private deleteUser = () => this.doDeleteUser(false)
+    private nukeUser = () => this.doDeleteUser(true)
+
+    private doDeleteUser = (hard: boolean) => {
+        let message = `Delete the user ${this.props.node.username}?`
+        if (hard) {
+            message = `Nuke the user ${this.props.node.username}?${nukeDetails}`
+        }
+        if (!window.confirm(message)) {
             return
         }
 
@@ -227,7 +255,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             loading: true,
         })
 
-        deleteUser(this.props.node.id)
+        deleteUser(this.props.node.id, hard)
             .toPromise()
             .then(
                 () => {

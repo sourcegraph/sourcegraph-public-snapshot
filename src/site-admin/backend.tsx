@@ -488,16 +488,16 @@ export function randomizeUserPassword(user: GQL.ID): Observable<GQL.IRandomizeUs
     )
 }
 
-export function deleteUser(user: GQL.ID): Observable<void> {
+export function deleteUser(user: GQL.ID, hard?: boolean): Observable<void> {
     return mutateGraphQL(
         gql`
-            mutation DeleteUser($user: ID!) {
-                deleteUser(user: $user) {
+            mutation DeleteUser($user: ID!, $hard: Boolean) {
+                deleteUser(user: $user, hard: $hard) {
                     alwaysNil
                 }
             }
         `,
-        { user }
+        { user, hard }
     ).pipe(
         map(dataOrThrowErrors),
         map(data => {

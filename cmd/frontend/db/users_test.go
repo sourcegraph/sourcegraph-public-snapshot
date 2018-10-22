@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 )
 
@@ -376,43 +377,97 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 }
 
 func TestUsers_Delete(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	ctx := dbtesting.TestContext(t)
+	for name, hard := range map[string]bool{"": false, "_Hard": true} {
+		t.Run("TestUsers_Delete"+name, func(t *testing.T) {
+			if testing.Short() {
+				t.Skip()
+			}
+			ctx := dbtesting.TestContext(t)
 
-	user, err := Users.Create(ctx, NewUser{
-		Email:                 "a@a.com",
-		Username:              "u",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+			user, err := Users.Create(ctx, NewUser{
+				Email:                 "a@a.com",
+				Username:              "u",
+				Password:              "p",
+				EmailVerificationCode: "c",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	// Delete user.
-	if err := Users.Delete(ctx, user.ID); err != nil {
-		t.Fatal(err)
-	}
+			// Create a repository to comply with the postgres repo constraint.
+			if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
+				t.Fatal(err)
+			}
+			repo, err := Repos.GetByURI(ctx, "myrepo")
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	// User no longer exists.
-	_, err = Users.GetByID(ctx, user.ID)
-	if !errcode.IsNotFound(err) {
-		t.Errorf("got error %v, want ErrUserNotFound", err)
-	}
-	users, err := Users.List(ctx, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(users) > 0 {
-		t.Errorf("got %d users, want 0", len(users))
-	}
+			// Create a discussion thread to confirm that deletion properly removes
+			// threads and their associated comments.
+			newThread, err := DiscussionThreads.Create(ctx, &types.DiscussionThread{
+				AuthorUserID: user.ID,
+				Title:        "Hello world",
+				TargetRepo: &types.DiscussionThreadTargetRepo{
+					RepoID:   repo.ID,
+					Path:     strPtr("foo/bar/mux.go"),
+					Branch:   strPtr("master"),
+					Revision: strPtr("0c1a96370c1a96370c1a96370c1a96370c1a9637"),
+				},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			newComment, err := DiscussionComments.Create(ctx, &types.DiscussionComment{
+				ThreadID:     newThread.ID,
+				AuthorUserID: user.ID,
+				Contents:     "Thread contents",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	// Can't delete already-deleted user.
-	err = Users.Delete(ctx, user.ID)
-	if !errcode.IsNotFound(err) {
-		t.Errorf("got error %v, want ErrUserNotFound", err)
+			if hard {
+				// Hard delete user.
+				if err := Users.HardDelete(ctx, user.ID); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				// Delete user.
+				if err := Users.Delete(ctx, user.ID); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// User no longer exists.
+			_, err = Users.GetByID(ctx, user.ID)
+			if !errcode.IsNotFound(err) {
+				t.Errorf("got error %v, want ErrUserNotFound", err)
+			}
+			users, err := Users.List(ctx, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(users) > 0 {
+				t.Errorf("got %d users, want 0", len(users))
+			}
+
+			// Can't delete already-deleted user.
+			err = Users.Delete(ctx, user.ID)
+			if !errcode.IsNotFound(err) {
+				t.Errorf("got error %v, want ErrUserNotFound", err)
+			}
+
+			// Confirm discussion thread/comment no longer exists.
+			_, err = DiscussionThreads.Get(ctx, newThread.ID)
+			if _, ok := err.(*ErrThreadNotFound); !ok {
+				t.Fatal("expected ErrThreadNotFound")
+			}
+			_, err = DiscussionComments.Get(ctx, newComment.ID)
+			if _, ok := err.(*ErrCommentNotFound); !ok {
+				t.Fatal("expected ErrCommentNotFound")
+			}
+		})
 	}
 }
 
