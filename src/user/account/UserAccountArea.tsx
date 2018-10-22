@@ -29,15 +29,14 @@ export interface UserAccountAreaRouteContext extends UserAccountAreaProps {
      * is viewing another user's account page).
      */
     user: GQL.IUser
-
-    externalAuthEnabled: boolean
+    authProviders: GQL.IAuthProvider[]
     newToken?: GQL.ICreateAccessTokenResult
     onDidCreateAccessToken: (value?: GQL.ICreateAccessTokenResult) => void
     onDidPresentNewToken: (value?: GQL.ICreateAccessTokenResult) => void
 }
 
 interface UserAccountAreaState {
-    externalAuthEnabled: boolean
+    authProviders: GQL.IAuthProvider[]
 
     /**
      * Holds the newly created access token (from UserAccountCreateAccessTokenPage), if any. After
@@ -51,13 +50,13 @@ interface UserAccountAreaState {
  */
 export const UserAccountArea = withAuthenticatedUser(
     class UserAccountArea extends React.Component<UserAccountAreaProps, UserAccountAreaState> {
-        public state: UserAccountAreaState = { externalAuthEnabled: false }
+        public state: UserAccountAreaState = { authProviders: [] }
         private subscriptions = new Subscription()
 
         public componentDidMount(): void {
             this.subscriptions.add(
-                siteFlags.pipe(map(({ externalAuthEnabled }) => externalAuthEnabled)).subscribe(externalAuthEnabled => {
-                    this.setState({ externalAuthEnabled })
+                siteFlags.pipe(map(({ authProviders }) => authProviders)).subscribe(({ nodes }) => {
+                    this.setState({ authProviders: nodes })
                 })
             )
         }
@@ -92,14 +91,14 @@ export const UserAccountArea = withAuthenticatedUser(
                 user: this.props.user,
                 onDidCreateAccessToken: this.setNewToken,
                 onDidPresentNewToken: this.setNewToken,
-                externalAuthEnabled: this.state.externalAuthEnabled,
+                authProviders: this.state.authProviders,
             }
 
             return (
                 <div className="user-settings-area area">
                     <UserAccountSidebar
-                        externalAuthEnabled={this.state.externalAuthEnabled}
                         items={this.props.sideBarItems}
+                        authProviders={this.state.authProviders}
                         {...this.props}
                         className="area__sidebar"
                     />

@@ -2,6 +2,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, filter, mergeMap, tap } from 'rxjs/operators'
 import { PasswordInput } from '../../auth/SignInSignUpCommon'
@@ -13,6 +14,7 @@ import { updatePassword } from './backend'
 
 interface Props extends RouteComponentProps<any> {
     user: GQL.IUser
+    authenticatedUser: GQL.IUser
 }
 
 interface State {
@@ -83,65 +85,78 @@ export class UserAccountPasswordPage extends React.Component<Props, State> {
             <div className="user-account-password-page">
                 <PageTitle title="Change password" />
                 <h2>Change password</h2>
-                {this.state.error && <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>}
-                {this.state.saved && <p className="alert alert-success">Password changed!</p>}
-                <Form onSubmit={this.handleSubmit}>
-                    {/* Include a username field as a hint for password managers to update the saved password. */}
-                    <input
-                        type="text"
-                        value={this.props.user.username}
-                        name="username"
-                        autoComplete="username"
-                        readOnly={true}
-                        hidden={true}
-                    />
-                    <div className="form-group">
-                        <label>Old password</label>
-                        <PasswordInput
-                            value={this.state.oldPassword}
-                            onChange={this.onOldPasswordFieldChange}
-                            disabled={this.state.loading}
-                            name="oldPassword"
-                            placeholder=" "
-                            autoComplete="current-password"
-                        />
+                {this.props.authenticatedUser.id !== this.props.user.id ? (
+                    <div className="alert alert-danger">
+                        Only the user may change their password. Site admins may{' '}
+                        <Link to={`/site-admin/users?query=${encodeURIComponent(this.props.user.username)}`}>
+                            reset a user's password
+                        </Link>.
                     </div>
-                    <div className="form-group">
-                        <label>New password</label>
-                        <PasswordInput
-                            value={this.state.newPassword}
-                            onChange={this.onNewPasswordFieldChange}
-                            disabled={this.state.loading}
-                            name="newPassword"
-                            placeholder=" "
-                            autoComplete="new-password"
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label>Confirm new password</label>
-                        <PasswordInput
-                            value={this.state.newPasswordConfirmation}
-                            onChange={this.onNewPasswordConfirmationFieldChange}
-                            disabled={this.state.loading}
-                            name="newPasswordConfirmation"
-                            placeholder=" "
-                            inputRef={this.setNewPasswordConfirmationField}
-                            autoComplete="new-password"
-                        />
-                    </div>
-                    <button
-                        className="btn btn-primary user-account-password-page__button"
-                        type="submit"
-                        disabled={this.state.loading}
-                    >
-                        Update password
-                    </button>
-                    {this.state.loading && (
-                        <div className="icon-inline">
-                            <LoadingSpinner className="icon-inline" />
-                        </div>
-                    )}
-                </Form>
+                ) : (
+                    <>
+                        {this.state.error && (
+                            <p className="alert alert-danger">{upperFirst(this.state.error.message)}</p>
+                        )}
+                        {this.state.saved && <p className="alert alert-success">Password changed!</p>}
+                        <Form onSubmit={this.handleSubmit}>
+                            {/* Include a username field as a hint for password managers to update the saved password. */}
+                            <input
+                                type="text"
+                                value={this.props.user.username}
+                                name="username"
+                                autoComplete="username"
+                                readOnly={true}
+                                hidden={true}
+                            />
+                            <div className="form-group">
+                                <label>Old password</label>
+                                <PasswordInput
+                                    value={this.state.oldPassword}
+                                    onChange={this.onOldPasswordFieldChange}
+                                    disabled={this.state.loading}
+                                    name="oldPassword"
+                                    placeholder=" "
+                                    autoComplete="current-password"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>New password</label>
+                                <PasswordInput
+                                    value={this.state.newPassword}
+                                    onChange={this.onNewPasswordFieldChange}
+                                    disabled={this.state.loading}
+                                    name="newPassword"
+                                    placeholder=" "
+                                    autoComplete="new-password"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Confirm new password</label>
+                                <PasswordInput
+                                    value={this.state.newPasswordConfirmation}
+                                    onChange={this.onNewPasswordConfirmationFieldChange}
+                                    disabled={this.state.loading}
+                                    name="newPasswordConfirmation"
+                                    placeholder=" "
+                                    inputRef={this.setNewPasswordConfirmationField}
+                                    autoComplete="new-password"
+                                />
+                            </div>
+                            <button
+                                className="btn btn-primary user-account-password-page__button"
+                                type="submit"
+                                disabled={this.state.loading}
+                            >
+                                Update password
+                            </button>
+                            {this.state.loading && (
+                                <div className="icon-inline">
+                                    <LoadingSpinner className="icon-inline" />
+                                </div>
+                            )}
+                        </Form>
+                    </>
+                )}
             </div>
         )
     }

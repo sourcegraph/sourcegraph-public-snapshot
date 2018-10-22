@@ -30,7 +30,16 @@ export function refreshSiteFlags(): Observable<never> {
                             isDismissibleWithKey
                         }
                         hasCodeIntelligence
-                        externalAuthEnabled
+                        authProviders {
+                            nodes {
+                                serviceType
+                                serviceID
+                                clientID
+                                displayName
+                                isBuiltin
+                                authenticationURL
+                            }
+                        }
                         disableBuiltInSearches
                         sendsEmailVerificationEmails
                         updateCheck {
