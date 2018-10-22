@@ -640,6 +640,12 @@
           "type": "string",
           "pattern": "^-----BEGIN CERTIFICATE-----\n"
         },
+        "orgs": {
+          "description":
+            "An array of organization names that should be mirrored from a GitHub or GitHub Enterprise host. This option syncs all accessible repositories under the specified org. To sync individual repositories, use the \"repos\" field instead.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[\\w-]+$" }
+        },
         "repos": {
           "description":
             "An array of repository \"owner/name\" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.",

@@ -936,6 +936,12 @@ Additional restrictions:
 
 - Regex pattern: `^-----BEGIN CERTIFICATE-----`
 
+### orgs (array)
+
+An array of organization names that should be mirrored from a GitHub or GitHub Enterprise host. This option syncs all accessible repositories under the specified org. To sync individual repositories, use the \"repos\" field instead.
+
+The object is an array with all elements of the type `string`.
+
 ### repos (array)
 
 An array of repository "owner/name" strings specifying which GitHub or GitHub Enterprise repositories to mirror on Sourcegraph.

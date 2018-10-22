@@ -314,3 +314,17 @@ func (c *Client) ListViewerRepositories(ctx context.Context, page int) (repos []
 	c.addRepositoriesToCache(repos)
 	return repos, len(repos) > 0, 1, nil
 }
+
+func (c *Client) ListOrgRepositories(ctx context.Context, orgName string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
+	var restRepos []restRepository
+	path := fmt.Sprintf("orgs/%s/repos?page=%d", orgName, page)
+	if err := c.requestGet(ctx, path, &restRepos); err != nil {
+		return nil, false, 1, err
+	}
+	repos = make([]*Repository, 0, len(restRepos))
+	for _, restRepo := range restRepos {
+		repos = append(repos, convertRestRepo(restRepo))
+	}
+	c.addRepositoriesToCache(repos)
+	return repos, len(repos) > 0, 1, nil
+}

@@ -452,6 +452,31 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 			}
 		}(repositoryQuery)
 	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for _, orgName := range c.config.Orgs {
+			hasNextPage := true
+			for page := 1; hasNextPage; page++ {
+				var repos []*github.Repository
+				var rateLimitCost int
+				var err error
+				repos, hasNextPage, rateLimitCost, err = c.client.ListOrgRepositories(ctx, orgName, page)
+				if err != nil {
+					log15.Error("Error listing GitHub repositories for org", "orgName", orgName, "page", page, "error", err)
+					break
+				}
+				rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
+				log15.Debug("github sync: ListOrgRepositories", "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
+				for _, r := range repos {
+					ch <- r
+				}
+				if hasNextPage {
+					time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
+				}
+			}
+		}
+	}()
 
 	wg.Add(1)
 	go func() {
