@@ -51,7 +51,7 @@ function pickOne() {
             exit 1
         fi
         set +e
-        git -c core.editor=true cherry-pick --continue 2>/dev/null
+        git -c core.editor=true cherry-pick --continue &>/dev/null
         if [ "$?" != 0 ]; then
             set -e
             if [ -z "$(git status --porcelain | grep -v '^M')" ]; then
