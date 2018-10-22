@@ -174,7 +174,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
             return null
         }
 
-        const { repoPath, filePath, position, range } = parseBrowserRepoURL(
+        const { repoPath, filePath, commitRange, position, range } = parseBrowserRepoURL(
             location.pathname + location.search + location.hash
         )
         const viewerCanAdminister = !!this.props.user && this.props.user.siteAdmin
@@ -239,6 +239,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             // We need a rev to generate code host URLs, since we don't have a default use HEAD.
                             rev={this.state.rev || 'HEAD'}
                             filePath={filePath}
+                            commitRange={commitRange}
                             position={position}
                             range={range}
                             externalLinks={this.state.externalLinks}

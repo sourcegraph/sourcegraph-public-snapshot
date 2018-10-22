@@ -15,6 +15,7 @@ interface Props {
     repo?: GQL.IRepository | null
     rev: string
     filePath?: string
+    commitRange?: string
     position?: Position
     range?: Range
 
@@ -70,7 +71,8 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        if (!this.props.repo) {
+        // If neither repo or file can be loaded, return null, which will hide all code host icons
+        if (!this.props.repo || isErrorLike(this.state.fileExternalLinksOrError)) {
             return null
         }
 
@@ -99,9 +101,18 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURL.serviceType)
         const Icon = icon || ExportIcon
 
-        // Special-case for GitHub: add line numbers to URL.
+        // Special-case for GitHub: add branch and line numbers to URL.
         let url = externalURL.url
         if (externalURL.serviceType === 'github') {
+            // If in a branch, add branch path to the GitHub URL.
+            if (this.props.rev && this.props.rev !== 'HEAD' && !this.state.fileExternalLinksOrError) {
+                url += `/tree/${this.props.rev}`
+            }
+            // If showing a comparison, add comparison specifier to the GitHub URL.
+            if (this.props.commitRange) {
+                url += `/compare/${this.props.commitRange.replace(/^\.\.\./, 'HEAD...').replace(/\.\.\.$/, '...HEAD')}`
+            }
+            // Add range or position path to the GitHub URL.
             if (this.props.range) {
                 url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
             } else if (this.props.position) {
