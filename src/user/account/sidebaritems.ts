@@ -9,7 +9,7 @@ export const userAccountSideBarItems: UserAccountSidebarItems = {
         },
         {
             label: 'Password',
-            to: `/account`,
+            to: `/password`,
             exact: true,
             condition: ({ siteAdminViewingOtherUser, externalAuthEnabled }) =>
                 siteAdminViewingOtherUser && !externalAuthEnabled,

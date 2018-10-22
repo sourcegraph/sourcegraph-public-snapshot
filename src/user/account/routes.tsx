@@ -1,8 +1,8 @@
 import React from 'react'
-import { UserAccountAccountPage } from './UserAccountAccountPage'
 import { UserAccountAreaRoute } from './UserAccountArea'
 import { UserAccountCreateAccessTokenPage } from './UserAccountCreateAccessTokenPage'
 import { UserAccountEmailsPage } from './UserAccountEmailsPage'
+import { UserAccountPasswordPage } from './UserAccountPasswordPage'
 import { UserAccountProfilePage } from './UserAccountProfilePage'
 import { UserAccountTokensPage } from './UserAccountTokensPage'
 
@@ -15,10 +15,10 @@ export const userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute> = [
         render: props => <UserAccountProfilePage {...props} />,
     },
     {
-        path: '/account',
+        path: '/password',
         exact: true,
         // tslint:disable-next-line:jsx-no-lambda
-        render: props => <UserAccountAccountPage {...props} />,
+        render: props => <UserAccountPasswordPage {...props} />,
         condition: ({ externalAuthEnabled }) => externalAuthEnabled,
     },
     {
