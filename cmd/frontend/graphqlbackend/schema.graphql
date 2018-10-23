@@ -153,14 +153,21 @@ type Mutation {
     # "subject" user after token creation). The result is the access token value, which the caller is responsible
     # for storing (it is not accessible by Sourcegraph after creation).
     #
-    # The supported scopes are:
-    #
-    # - "user:all": Full control of all resources accessible to the user account.
-    # - "site-admin:sudo": Ability to perform any action as any other user. (Only site admins may create tokens
-    #   with this scope.)
-    #
     # Only the user or site admins may perform this mutation.
-    createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
+    createAccessToken(
+        # The user whose privileges are granted to the holder of the access token.
+        user: ID!
+        # The scopes, which specify the operations permitted to the holder of the access token.
+        #
+        # The supported scopes are:
+        #
+        # - "user:all": Full control of all resources accessible to the user account.
+        # - "site-admin:sudo": Ability to perform any action as any other user. (Only site admins may create tokens
+        #   with this scope.)
+        scopes: [String!]!
+        # A note describing the purpose of this access token.
+        note: String!
+    ): CreateAccessTokenResult!
     # Deletes and immediately revokes the specified access token, specified by either its ID or by the token
     # itself.
     #
