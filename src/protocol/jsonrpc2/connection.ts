@@ -48,7 +48,7 @@ const NullLogger: Logger = Object.freeze({
     },
 })
 
-enum ConnectionErrors {
+export enum ConnectionErrors {
     /**
      * The connection is closed.
      */
@@ -63,7 +63,7 @@ enum ConnectionErrors {
     AlreadyListening = 3,
 }
 
-class ConnectionError extends Error {
+export class ConnectionError extends Error {
     public readonly code: ConnectionErrors
 
     constructor(code: ConnectionErrors, message: string) {
@@ -632,9 +632,15 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
             }
             state = ConnectionState.Unsubscribed
             unsubscribeEmitter.fire(undefined)
-            const error = new Error('Connection got unsubscribed.')
             for (const key of Object.keys(responsePromises)) {
-                responsePromises[key].reject(error)
+                responsePromises[key].reject(
+                    new ConnectionError(
+                        ConnectionErrors.Unsubscribed,
+                        `The underlying JSON-RPC connection got unsubscribed while responding to this ${
+                            responsePromises[key].method
+                        } request.`
+                    )
+                )
             }
             responsePromises = Object.create(null)
             requestTokens = Object.create(null)
