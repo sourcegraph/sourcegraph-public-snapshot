@@ -44,15 +44,7 @@ class EventLogger {
     /**
      * Set user-level properties in all external tracking services
      */
-    public updateUser(
-        user:
-            | GQL.IUser
-            | {
-                  sourcegraphID: number | null
-                  username: string | null
-                  email: string | null
-              }
-    ): void {
+    public updateUser(user: GQL.IUser): void {
         this.setUserIds(user.sourcegraphID, user.username)
         if (user.email) {
             this.setUserEmail(user.email)

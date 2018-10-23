@@ -19,6 +19,10 @@ All notable changes to Sourcegraph are documented in this file.
 - The experimental feature flag to disable the new repo update scheduler has been removed.
 - The `experimentalFeatures.configVars` feature flag was removed.
 
+### Fixed
+
+- Fixed an error that prevented users without emails from submitting satisfaction surveys.
+
 ## 2.12.1
 
 ### Fixed
