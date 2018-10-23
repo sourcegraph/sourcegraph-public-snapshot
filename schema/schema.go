@@ -145,7 +145,6 @@ type GitHubConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
 	GitURLType                  string   `json:"gitURLType,omitempty"`
 	InitialRepositoryEnablement bool     `json:"initialRepositoryEnablement,omitempty"`
-	Orgs                        []string `json:"orgs,omitempty"`
 	Repos                       []string `json:"repos,omitempty"`
 	RepositoryPathPattern       string   `json:"repositoryPathPattern,omitempty"`
 	RepositoryQuery             []string `json:"repositoryQuery,omitempty"`
