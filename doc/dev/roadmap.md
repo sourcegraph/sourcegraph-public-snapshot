@@ -54,6 +54,7 @@ Pure Docker cluster deployment | [📣](https://github.com/sourcegraph/about/pul
 Repository permissions | [📖](https://sourcegraph.com/github.com/sourcegraph/about/-/blob/projects/acls.md) | Enterprise, integrations, [Sourcegraph][sourcegraph] | [@beyang][beyang]
 Product documentation | [📖](https://docs.sourcegraph.com/dev/documentation)[📖](https://github.com/sourcegraph/docs.sourcegraph.com#readme) | All, [Sourcegraph][sourcegraph] | [@sqs][sqs]
 Sourcegraph extensions usage and authoring experience | [📖](https://docs.google.com/document/d/13LSEzCphgBCiMJfdCpfKgD6Qvu6hQhuHJSqz7A1dmk4/edit#)[🐞](https://github.com/sourcegraph/sourcegraph-extension-api/issues?q=is%3Aopen+is%3Aissue+label%3Anext-release) | Extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@slimsag][slimsag] [@ryan-blunden][ryan-blunden]
+Browser authorization flow for clients | [🐞](https://github.com/sourcegraph/src-cli/issues/28) [📖](https://github.com/sourcegraph/about/pull/42) | Integrations, [Sourcegraph][sourcegraph], [`src`][src-cli] | [@sqs][sqs]
 
 <small>Release: week of 5 November 2018 --- [All October 2018 issues](https://github.com/issues?utf8=%E2%9C%93&q=is%3Aissue+is%3Aopen+author%3Asqs+archived%3Afalse+sort%3Aupdated-desc+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fsourcegraph+repo%3Asourcegraph%2Fenterprise+repo%3Asourcegraph%2Fsourcegraph-extension-api+repo%3Asourcegraph%2Fbrowser-extensions+repo%3Asourcegraph%2Fextensions-client-common+repo%3Asourcegraph%2Fsrc-cli+repo%3Asourcegraph%2Fcodeintellify+repo%3Asourcegraph%2Fgo-langserver+repo%3Asourcegraph%2Fjavascript-typescript-langserver+repo%3Asourcegraph%2Fjava-langserver+repo%3Asourcegraph%2Fdocs.sourcegraph.com+milestone%3A%22October+2018%22)</small>
 
@@ -110,6 +111,7 @@ Rust language support *(tentative)* | | Code intelligence, sourcegraph-go | [@sl
 [sourcegraph-extension-api]: https://github.com/sourcegraph/sourcegraph-extension-api
 [browser-extensions]: https://github.com/sourcegraph/browser-extensions
 [deploy-sourcegraph]: https://github.com/sourcegraph/deploy-sourcegraph
+[src-cli]: https://github.com/sourcegraph/src-cli
 [chrismwendt]: https://github.com/chrismwendt
 [keegancsmith]: https://github.com/keegancsmith
 [vanesa]: https://github.com/vanesa
