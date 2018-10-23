@@ -107,7 +107,10 @@ export class SavedQueries extends React.Component<Props, State> {
         const isHomepage = this.props.location.pathname === '/search'
         const isPanelOpen = this.state.isViewingExamples || this.state.isCreating
 
-        // If not logged in, redirect to sign in
+        // If not logged in, redirect to sign in.
+        //
+        // NOTE: This class can't use the withAuthenticatedUser wrapper because we DO NOT redirect to sign-in if
+        // isHomepage.
         if (!this.props.authenticatedUser && !isHomepage) {
             const newUrl = new URL(window.location.href)
             // Return to the current page after sign up/in.

@@ -2,24 +2,15 @@ import * as H from 'history'
 import * as React from 'react'
 import { Redirect } from 'react-router'
 import { userURL } from '..'
+import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import * as GQL from '../../backend/graphqlschema'
 
 /**
  * Redirects from /settings to /user/$USERNAME/settings, where $USERNAME is the currently authenticated user's
  * username.
  */
-export const RedirectToUserSettings: React.SFC<{
-    authenticatedUser: GQL.IUser | null
-    location: H.Location
-}> = ({ authenticatedUser, location }) => {
-    // If not logged in, redirect to sign in
-    if (!authenticatedUser) {
-        const newURL = new URL(window.location.href)
-        newURL.pathname = '/sign-in'
-        // Return to the current page after sign up/in.
-        newURL.searchParams.set('returnTo', window.location.href)
-        return <Redirect to={{ pathname: newURL.pathname, search: newURL.search }} />
-    }
-
-    return <Redirect to={{ pathname: `${userURL(authenticatedUser.username)}/settings`, search: location.search }} />
-}
+export const RedirectToUserSettings = withAuthenticatedUser(
+    ({ authenticatedUser, location }: { authenticatedUser: GQL.IUser; location: H.Location }) => (
+        <Redirect to={{ pathname: `${userURL(authenticatedUser.username)}/settings`, search: location.search }} />
+    )
+)
