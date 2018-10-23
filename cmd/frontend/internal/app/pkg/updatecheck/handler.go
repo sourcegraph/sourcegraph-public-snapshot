@@ -26,7 +26,7 @@ var (
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("2.12.1")
+	latestReleaseKubernetesBuild = newBuild("2.12.2")
 )
 
 func getLatestRelease(deployType string) build {
