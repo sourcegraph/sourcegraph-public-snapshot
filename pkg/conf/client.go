@@ -9,6 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func init() {
+	go Client.run()
+}
+
 type client struct {
 	configMu sync.RWMutex
 	config   *schema.SiteConfiguration
@@ -16,21 +20,23 @@ type client struct {
 	rawMu sync.RWMutex
 	raw   string
 
+	ready chan struct{}
+
 	watchersMu sync.Mutex
 	watchers   []chan struct{}
 }
 
-var DefaultClient = Client()
+var Client = &client{}
 
-func Client() *client {
-	c := &client{}
+func (c *client) run() {
 	err := c.fetchAndUpdate()
 	if err != nil {
-		//TODO@ggilmore: Constructor that uses network operations?
-		log.Fatalf("receieved error during initial configuration update, err: %s", err)
+		return log.Fatalf("received error during initial configuration update, err: %s", err)
 	}
+
 	go func() { c.continouslyUpdate(5 * time.Second) }()
-	return c
+	
+	close(c.ready)
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -50,7 +56,7 @@ func Client() *client {
 //
 // Get is a wrapper around client.Get.
 func Get() *schema.SiteConfiguration {
-	return DefaultClient.Get()
+	return Client.Get()
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -68,6 +74,8 @@ func Get() *schema.SiteConfiguration {
 // be done in such a way that it responds to config changes while the process
 // is running.
 func (c *client) Get() *schema.SiteConfiguration {
+	<-c.ready
+
 	c.configMu.RLock()
 	defer c.configMu.RUnlock()
 	if mockGetData != nil {
@@ -101,7 +109,7 @@ var mockGetData *schema.SiteConfiguration
 //
 // Mock is a wrapper around client.Mock.
 func Mock(mockery *schema.SiteConfiguration) {
-	DefaultClient.Mock(mockery)
+	Client.Mock(mockery)
 }
 
 // Mock sets up mock data for the site configuration. It uses the configuration
@@ -120,7 +128,7 @@ func (c *client) Mock(mockery *schema.SiteConfiguration) {
 //
 // Watch is a wrapper around client.Watch.
 func Watch(f func()) {
-	DefaultClient.Watch(f)
+	Client.Watch(f)
 }
 
 // Watch calls the given function in a separate goroutine whenever the
@@ -129,6 +137,8 @@ func Watch(f func()) {
 //
 // Before Watch returns, it will invoke f to use the current configuration.
 func (c *client) Watch(f func()) {
+	<-c.ready
+
 	// Add the watcher channel now, rather than after invoking f below, in case
 	// an update were to happen while we were invoking f.
 	notify := make(chan struct{}, 1)
