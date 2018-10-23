@@ -14,6 +14,24 @@ All notable changes to Sourcegraph are documented in this file.
 - Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
 - We use GitHub's REST API to query affliated repositories. This API has wider
   support on older GitHub enterprise versions.
+- When the `DEPLOY_TYPE` environment variable is incorrectly specified, Sourcegraph now shuts down and logs an error message.
+- The `experimentalFeatures.canonicalURLRedirect` site config property now defaults to `enabled`. Set it to `disabled` to disable redirection to the `appURL` from other hosts.
+
+### Removed
+
+- The experimental feature flag to disable the new repo update scheduler has been removed.
+- The `experimentalFeatures.configVars` feature flag was removed.
+
+### Fixed
+
+- Fixed an error that prevented users without emails from submitting satisfaction surveys.
+
+## 2.12.1
+
+### Fixed
+
+- We use GitHub's REST API to query affliated repositories. This API has wider support on older GitHub enterprise versions.
+- Fixed an issue that prevented users without email addresses from signing in (https://github.com/sourcegraph/sourcegraph/issues/426).
 
 ## 2.12.0
 
