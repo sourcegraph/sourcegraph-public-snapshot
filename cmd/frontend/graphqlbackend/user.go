@@ -59,7 +59,7 @@ func UnmarshalUserID(id graphql.ID) (userID int32, err error) {
 
 func (r *UserResolver) SourcegraphID() int32 { return r.user.ID }
 
-// Email returns the user's oldest verified email, if one exists.
+// Email returns the user's oldest email, if one exists.
 // DEPRECATED: use Emails instead.
 func (r *UserResolver) Email(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
