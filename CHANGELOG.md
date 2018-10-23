@@ -21,6 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an error that prevented users without emails from submitting satisfaction surveys.
+- Fixed an issue where GitHub rate limits were underutilized if the remaining rate limit dropped below 150.
 
 ## 2.12.2
 
