@@ -23,7 +23,14 @@ type client struct {
 var DefaultClient = Client()
 
 func Client() *client {
-	return &client{}
+	c := &client{}
+	err := c.fetchAndUpdate()
+	if err != nil {
+		//TODO@ggilmore: Constructor that uses network operations?
+		log.Fatalf("receieved error during initial configuration update, err: %s", err)
+	}
+	go func() { c.continouslyUpdate(5 * time.Second) }()
+	return c
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -41,7 +48,7 @@ func Client() *client {
 // be done in such a way that it responds to config changes while the process
 // is running.
 //
-// Get is a wrapper around client.Get().
+// Get is a wrapper around client.Get.
 func Get() *schema.SiteConfiguration {
 	return DefaultClient.Get()
 }
@@ -69,14 +76,40 @@ func (c *client) Get() *schema.SiteConfiguration {
 	return c.config
 }
 
+// GetTODO denotes code that may or may not be using configuration correctly.
+// The code may need to be updated to use conf.Watch, or it may already be e.g.
+// invoked only in response to a user action (in which case it does not need to
+// use conf.Watch). See Get documentation for more details.
+//
+// GetTODO is a wrapper around client.GetTODO.
+func GetTODO() *schema.SiteConfiguration {
+	return DefaultClient.GetTODO()
+}
+
+// GetTODO denotes code that may or may not be using configuration correctly.
+// The code may need to be updated to use conf.Watch, or it may already be e.g.
+// invoked only in response to a user action (in which case it does not need to
+// use conf.Watch). See Get documentation for more details.
+func (c *client) GetTODO() *schema.SiteConfiguration {
+	return c.Get()
+}
+
 var mockGetData *schema.SiteConfiguration
 
 // Mock sets up mock data for the site configuration. It uses the configuration
 // mutex, to avoid possible races between test code and possible config watchers.
+//
+// Mock is a wrapper around client.Mock.
 func Mock(mockery *schema.SiteConfiguration) {
-	cfgMu.Lock()
-	defer cfgMu.Unlock()
+	DefaultClient.Mock(mockery)
+}
+
+// Mock sets up mock data for the site configuration. It uses the configuration
+// mutex, to avoid possible races between test code and possible config watchers.
+func (c *client) Mock(mockery *schema.SiteConfiguration) {
+	c.configMu.Lock()
 	mockGetData = mockery
+	c.configMu.Unlock()
 }
 
 // Watch calls the given function in a separate goroutine whenever the
@@ -85,7 +118,7 @@ func Mock(mockery *schema.SiteConfiguration) {
 //
 // Before Watch returns, it will invoke f to use the current configuration.
 //
-// Get is a wrapper around client.Get().
+// Watch is a wrapper around client.Watch.
 func Watch(f func()) {
 	DefaultClient.Watch(f)
 }
@@ -115,60 +148,52 @@ func (c *client) Watch(f func()) {
 	}()
 }
 
-func (c *client) continouslyUpdate() {
-	go func() {
-		for {
-			time.Sleep(5 * time.Second)
-
-			newConfig, err := c.fetchConfig()
-			if err != nil {
-				log.Printf("unable to fetch new configuration, err: %s", err)
-				continue
-			}
-
-			if !c.shouldUpdate(newConfig) {
-				continue
-			}
-
-			err = c.update(newConfig)
-			if err != nil {
-				log.Printf("unable to update new configuration, err: %s", err)
-				continue
-			}
-
-			c.watchersMu.Lock()
-			defer c.watchersMu.Unlock()
-
-			for _, watcher := range c.watchers {
-				// Perform a non-blocking send.
-				//
-				// Since the watcher channels that we are sending on have a
-				// buffer of 1, it is guaranteed the watcher will
-				// reconsider the config at some point in the future even
-				// if this send fails.
-				select {
-				case watcher <- struct{}{}:
-				default:
-				}
-			}
+// notifyWatchers runs all the callbacks registered via client.Watch() whenever
+// the configuration has changed.
+func (c *client) notifyWatchers() {
+	c.watchersMu.Lock()
+	defer c.watchersMu.Unlock()
+	for _, watcher := range c.watchers {
+		// Perform a non-blocking send.
+		//
+		// Since the watcher channels that we are sending on have a
+		// buffer of 1, it is guaranteed the watcher will
+		// reconsider the config at some point in the future even
+		// if this send fails.
+		select {
+		case watcher <- struct{}{}:
+		default:
 		}
-	}()
+	}
 }
 
-func (c *client) update(rawConfig string) error {
-	rawMu.Lock()
-	c.raw = rawConfig
-	rawMu.Unlock()
+func (c *client) continouslyUpdate(interval time.Duration) {
+	for {
+		err := c.fetchAndUpdate()
+		if err != nil {
+			log.Printf("received error during background config update, err: %s", err)
+		}
 
-	tmpConfig, err := parseConfig(rawConfig)
+		time.Sleep(interval)
+	}
+}
+
+func (c *client) fetchAndUpdate() error {
+	newRawConfig, err := c.fetchConfig()
 	if err != nil {
-		return errors.Wrap(err, "when parsing rawConfig during update")
+		return errors.Wrap(err, "unable to fetch new configuration")
 	}
 
-	c.configMu.Lock()
-	defer c.configMu.Unlock()
-	c.config = tmpConfig
+	if !c.shouldUpdate(newRawConfig) {
+		return nil
+	}
 
+	err = c.updateCache(newRawConfig)
+	if err != nil {
+		return errors.Wrap(err, "unable to update new configuration")
+	}
+
+	c.notifyWatchers()
 	return nil
 }
 
@@ -176,9 +201,27 @@ func (c *client) fetchConfig() (string, error) {
 	return "TEST", nil
 }
 
-func (c *client) shouldUpdate(newRawConfig string) bool {
+func (c *client) updateCache(rawConfig string) error {
 	c.rawMu.Lock()
-	oldRawConfig := c.raw
+	c.raw = rawConfig
 	c.rawMu.Unlock()
+
+	tmpConfig, err := parseConfig(rawConfig)
+	if err != nil {
+		return errors.Wrap(err, "when parsing rawConfig during update")
+	}
+
+	c.configMu.Lock()
+	c.config = tmpConfig
+	c.configMu.Unlock()
+
+	return nil
+}
+
+func (c *client) shouldUpdate(newRawConfig string) bool {
+	c.rawMu.RLock()
+	oldRawConfig := c.raw
+	c.rawMu.RUnlock()
+
 	return oldRawConfig != newRawConfig
 }
