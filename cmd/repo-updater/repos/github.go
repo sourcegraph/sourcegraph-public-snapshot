@@ -55,8 +55,8 @@ func init() {
 				// Add a GitHub.com entry by default, to support navigating to URL paths like
 				// /github.com/foo/bar to auto-add that repository.
 				githubConf = append(githubConf, &schema.GitHubConnection{
-					RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
-					Url:                         "https://github.com",
+					RepositoryQuery: []string{"none"}, // don't try to list all repositories during syncs
+					Url:             "https://github.com",
 					InitialRepositoryEnablement: true,
 				})
 			}
@@ -424,7 +424,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
-					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, page)
+					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, page, c.githubDotCom)
 					if err != nil {
 						log15.Error("Error listing viewer's affiliated GitHub repositories", "page", page, "error", err)
 						break
