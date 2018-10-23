@@ -10,14 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
-	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
-
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/externalservice/github"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/atomicvalue"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/schema"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -55,8 +54,8 @@ func init() {
 				// Add a GitHub.com entry by default, to support navigating to URL paths like
 				// /github.com/foo/bar to auto-add that repository.
 				githubConf = append(githubConf, &schema.GitHubConnection{
-					RepositoryQuery: []string{"none"}, // don't try to list all repositories during syncs
-					Url:             "https://github.com",
+					RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
+					Url:                         "https://github.com",
 					InitialRepositoryEnablement: true,
 				})
 			}
@@ -424,7 +423,7 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
-					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, page, c.githubDotCom)
+					repos, hasNextPage, rateLimitCost, err = c.client.ListViewerRepositories(ctx, page)
 					if err != nil {
 						log15.Error("Error listing viewer's affiliated GitHub repositories", "page", page, "error", err)
 						break
