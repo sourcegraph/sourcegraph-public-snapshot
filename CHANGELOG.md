@@ -7,12 +7,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
-- Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
-
 ### Changed
 
 - When the `DEPLOY_TYPE` environment variable is incorrectly specified, Sourcegraph now shuts down and logs an error message.
 - The `experimentalFeatures.canonicalURLRedirect` site config property now defaults to `enabled`. Set it to `disabled` to disable redirection to the `appURL` from other hosts.
+- Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
 
 ### Removed
 
