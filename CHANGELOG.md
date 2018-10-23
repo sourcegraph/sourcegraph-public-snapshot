@@ -22,6 +22,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed an error that prevented users without emails from submitting satisfaction surveys.
 
+## 2.12.2
+
+### Fixed
+
+- Fixed an issue where private GitHub Enterprise repositories were not fetched.
+
 ## 2.12.1
 
 ### Fixed
