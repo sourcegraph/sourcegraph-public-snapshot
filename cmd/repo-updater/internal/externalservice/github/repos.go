@@ -1,12 +1,11 @@
 package github
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
-
-	"context"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -303,7 +302,12 @@ func (c *Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) 
 // return. Pages are 1-indexed (so the first call should be for page 1).
 func (c *Client) ListViewerRepositories(ctx context.Context, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
 	var restRepos []restRepository
-	path := fmt.Sprintf("user/repos?sort=pushed&page=%d", page)
+	var path string
+	if c.githubDotCom {
+		path = fmt.Sprintf("user/repos?sort=pushed&page=%d", page)
+	} else {
+		path = fmt.Sprintf("v3/user/repos?sort=pushed&page=%d", page)
+	}
 	if err := c.requestGet(ctx, path, &restRepos); err != nil {
 		return nil, false, 1, err
 	}
