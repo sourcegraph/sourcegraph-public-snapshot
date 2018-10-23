@@ -115,7 +115,7 @@ export class SavedQueries extends React.Component<Props, State> {
             const newUrl = new URL(window.location.href)
             // Return to the current page after sign up/in.
             newUrl.searchParams.set('returnTo', window.location.href)
-            return <Redirect to={'/sign-up' + newUrl.search} />
+            return <Redirect to={'/sign-in' + newUrl.search} />
         }
 
         return (
