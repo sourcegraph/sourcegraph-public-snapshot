@@ -21,7 +21,7 @@ import { canListAllRepositories, showDotComMarketing } from '../util/features'
 interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsControllerProps {
     location: H.Location
     history: H.History
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
     isMainPage?: boolean
@@ -60,7 +60,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     extensionsController={this.props.extensionsController}
                     extensions={this.props.extensions}
                 />
-                {this.props.user && (
+                {this.props.authenticatedUser && (
                     <li className="nav-item">
                         <Link to="/search/searches" className="nav-link">
                             Searches
@@ -86,8 +86,8 @@ export class NavLinks extends React.PureComponent<Props> {
                         Extensions
                     </Link>
                 </li>
-                {this.props.user &&
-                    this.props.user.siteAdmin && (
+                {this.props.authenticatedUser &&
+                    this.props.authenticatedUser.siteAdmin && (
                         <li className="nav-item">
                             <Link to="/site-admin" className="nav-link">
                                 Admin
@@ -99,13 +99,13 @@ export class NavLinks extends React.PureComponent<Props> {
                     extensionsController={this.props.extensionsController}
                     extensions={this.props.extensions}
                 />
-                {this.props.user ? (
+                {this.props.authenticatedUser ? (
                     <li className="nav-item">
-                        <Link className="nav-link py-0" to={`${this.props.user.url}/account`}>
-                            {this.props.user.avatarURL ? (
-                                <UserAvatar size={64} />
+                        <Link className="nav-link py-0" to={`${this.props.authenticatedUser.url}/account`}>
+                            {this.props.authenticatedUser.avatarURL ? (
+                                <UserAvatar user={this.props.authenticatedUser} size={64} />
                             ) : (
-                                <strong>{this.props.user.username}</strong>
+                                <strong>{this.props.authenticatedUser.username}</strong>
                             )}
                         </Link>
                     </li>

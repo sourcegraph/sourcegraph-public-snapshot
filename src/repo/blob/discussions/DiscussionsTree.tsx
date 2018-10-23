@@ -13,7 +13,7 @@ interface Props {
     filePath: string
     history: H.History
     location: H.Location
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 }
 
 export class DiscussionsTree extends React.PureComponent<Props> {

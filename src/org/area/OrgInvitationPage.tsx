@@ -5,7 +5,7 @@ import { Link, Redirect } from 'react-router-dom'
 import { concat, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, tap, withLatestFrom } from 'rxjs/operators'
 import { orgURL } from '..'
-import { refreshCurrentUser } from '../../auth'
+import { refreshAuthenticatedUser } from '../../auth'
 import { gql, mutateGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
@@ -67,7 +67,7 @@ export class OrgInvitationPage extends React.PureComponent<Props, State> {
                                 tap(() => this.props.onDidRespondToInvitation()),
                                 concatMap(() => [
                                     // Refresh current user's list of organizations.
-                                    refreshCurrentUser(),
+                                    refreshAuthenticatedUser(),
                                     { submissionOrError: null },
                                 ]),
                                 catchError(err => [{ submissionOrError: asError(err) }])

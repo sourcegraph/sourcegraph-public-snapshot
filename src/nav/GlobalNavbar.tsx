@@ -16,7 +16,7 @@ import { NavLinks } from './NavLinks'
 interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsControllerProps {
     history: H.History
     location: H.Location
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
     navbarSearchQuery: string

@@ -44,7 +44,7 @@ export interface RepoContainerProps
         ExtensionsControllerProps {
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
 }
 
@@ -177,7 +177,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
         const { repoPath, filePath, commitRange, position, range } = parseBrowserRepoURL(
             location.pathname + location.search + location.hash
         )
-        const viewerCanAdminister = !!this.props.user && this.props.user.siteAdmin
+        const viewerCanAdminister = !!this.props.authenticatedUser && this.props.authenticatedUser.siteAdmin
 
         if (isErrorLike(this.state.repoOrError)) {
             // Display error page
@@ -201,7 +201,7 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
 
         const transferProps = {
             repo: this.state.repoOrError,
-            user: this.props.user,
+            authenticatedUser: this.props.authenticatedUser,
             isLightTheme: this.props.isLightTheme,
             repoMatchURL,
             configurationCascade: this.props.configurationCascade,

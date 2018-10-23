@@ -17,7 +17,7 @@ import { combineLatest, from, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import { EMPTY_ENVIRONMENT as EXTENSIONS_EMPTY_ENVIRONMENT } from 'sourcegraph/module/client/environment'
 import { TextDocumentItem } from 'sourcegraph/module/client/types/textDocument'
-import { currentUser } from './auth'
+import { authenticatedUser } from './auth'
 import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
@@ -70,7 +70,9 @@ interface SourcegraphWebAppState
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps {
     error?: Error
-    user?: GQL.IUser | null
+
+    /** The currently authenticated user (or null if the viewer is anonymous). */
+    authenticatedUser?: GQL.IUser | null
 
     viewerSubject: LayoutProps['viewerSubject']
 
@@ -128,7 +130,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
         document.body.classList.add('theme')
         this.subscriptions.add(
-            currentUser.subscribe(user => this.setState({ user }), () => this.setState({ user: null }))
+            authenticatedUser.subscribe(
+                authenticatedUser => this.setState({ authenticatedUser }),
+                () => this.setState({ authenticatedUser: null })
+            )
         )
 
         this.state.clientConnection
@@ -145,9 +150,9 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.subscriptions.add(
             combineLatest(
                 from(this.state.extensions.context.configurationCascade).pipe(startWith(null)),
-                currentUser.pipe(startWith(null)),
+                authenticatedUser.pipe(startWith(null)),
                 clientConfiguration
-            ).subscribe(([cascade, user, clientConfiguration]) => {
+            ).subscribe(([cascade, authenticatedUser, clientConfiguration]) => {
                 this.setState(() => {
                     if (clientConfiguration !== undefined) {
                         return {
@@ -156,8 +161,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 viewerCanAdminister: true,
                             },
                         }
-                    } else if (user) {
-                        return { viewerSubject: user }
+                    } else if (authenticatedUser) {
+                        return { viewerSubject: authenticatedUser }
                     } else if (
                         cascade &&
                         !isErrorLike(cascade) &&
@@ -241,8 +246,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { user } = this.state
-        if (user === undefined) {
+        const { authenticatedUser } = this.state
+        if (authenticatedUser === undefined) {
             return null
         }
 
@@ -258,7 +263,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                             <Layout
                                 {...props}
                                 {...routeComponentProps}
-                                user={user}
+                                authenticatedUser={authenticatedUser}
                                 viewerSubject={this.state.viewerSubject}
                                 configurationCascade={this.state.configurationCascade}
                                 // Theme

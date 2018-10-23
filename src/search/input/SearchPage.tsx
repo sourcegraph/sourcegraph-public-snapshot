@@ -13,7 +13,7 @@ import { SearchButton } from './SearchButton'
 import { SearchFilterChips } from './SearchFilterChips'
 
 interface Props {
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -79,6 +79,7 @@ export class SearchPage extends React.Component<Props, State> {
                             location={this.props.location}
                             history={this.props.history}
                             query={this.state.userQuery}
+                            authenticatedUser={this.props.authenticatedUser}
                         />
                     </div>
                 </Form>

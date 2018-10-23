@@ -1,8 +1,6 @@
 import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import { Subscription } from 'rxjs'
-import { currentUser } from '../auth'
 import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
 import { Toast } from './Toast'
@@ -51,31 +49,23 @@ export class SurveyCTA extends React.PureComponent<SurveyCTAProps> {
     }
 }
 
+interface Props {
+    authenticatedUser: GQL.IUser | null
+}
+
 interface State {
-    user: GQL.IUser | null
     visible: boolean
 }
 
-export class SurveyToast extends React.Component<{}, State> {
-    private subscriptions = new Subscription()
-
-    constructor(props: {}) {
+export class SurveyToast extends React.Component<Props, State> {
+    constructor(props: Props) {
         super(props)
         this.state = {
-            user: null,
             visible: localStorage.getItem(HAS_DISMISSED_TOAST_KEY) !== 'true' && daysActiveCount === 3,
         }
         if (this.state.visible) {
             eventLogger.log('SurveyReminderViewed', { marketing: { sessionCount: daysActiveCount } })
         }
-    }
-
-    public componentDidMount(): void {
-        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
-    }
-
-    public componentWillUnmount(): void {
-        this.subscriptions.unsubscribe()
     }
 
     public render(): JSX.Element | null {

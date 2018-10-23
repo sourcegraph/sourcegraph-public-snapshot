@@ -18,7 +18,7 @@ import { QueryInputForModal } from './QueryInputForModal'
 import { SearchButton } from './SearchButton'
 
 interface Props extends ExtensionsControllerProps, ExtensionsDocumentsProps {
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     isLightTheme: boolean

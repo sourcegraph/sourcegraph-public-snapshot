@@ -1,4 +1,4 @@
-import { currentUser } from '../../auth'
+import { authenticatedUser } from '../../auth'
 import * as GQL from '../../backend/graphqlschema'
 import { logUserEvent } from '../../user/account/backend'
 
@@ -11,7 +11,7 @@ class ServerAdminWrapper {
 
     constructor() {
         if (!window.context.sourcegraphDotComMode) {
-            currentUser.subscribe(user => {
+            authenticatedUser.subscribe(user => {
                 if (user) {
                     this.isAuthenicated = true
                 }

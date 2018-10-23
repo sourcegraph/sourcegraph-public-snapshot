@@ -111,7 +111,6 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
 
 interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
-    user: GQL.IUser
 }
 
 interface State {

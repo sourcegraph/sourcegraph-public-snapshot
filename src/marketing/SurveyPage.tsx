@@ -15,7 +15,7 @@ import { SurveyCTA } from './SurveyToast'
 interface SurveyFormProps {
     location: H.Location
     history: H.History
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     score?: number
     onScoreChange?: (score: number) => void
     onSubmit: () => void
@@ -55,7 +55,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
                     How likely is it that you would recommend Sourcegraph to a friend?
                 </label>
                 <SurveyCTA className="survey-form__scores" onClick={this.onScoreChange} score={this.props.score} />
-                {!this.props.user && (
+                {!this.props.authenticatedUser && (
                     <div className="form-group">
                         <input
                             className={`form-control survey-form__input`}
@@ -162,7 +162,7 @@ class SurveyForm extends React.Component<SurveyFormProps, SurveyFormState> {
 
 interface SurveyPageProps extends RouteComponentProps<{ score?: string }> {
     isLightTheme: boolean
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 }
 
 export class SurveyPage extends React.Component<SurveyPageProps> {

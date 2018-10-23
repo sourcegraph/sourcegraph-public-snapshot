@@ -22,7 +22,12 @@ export interface UserAccountAreaProps extends UserAreaRouteContext, RouteCompone
 }
 
 export interface UserAccountAreaRouteContext extends UserAccountAreaProps {
+    /**
+     * The user who is the subject of the page. This can differ from the authenticatedUser (e.g., when a site admin
+     * is viewing another user's account page).
+     */
     user: GQL.IUser
+
     externalAuthEnabled: boolean
     newToken?: GQL.ICreateAccessTokenResult
     onDidCreateAccessToken: (value?: GQL.ICreateAccessTokenResult) => void
