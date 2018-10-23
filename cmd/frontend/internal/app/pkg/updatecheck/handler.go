@@ -7,15 +7,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
-
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
-
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/tracking"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/eventlogger"
+	"github.com/sourcegraph/sourcegraph/pkg/hubspot"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -24,12 +21,12 @@ var (
 	// non-cluster installations what the latest version is. The version here _must_ be
 	// available at https://hub.docker.com/r/sourcegraph/server/tags/ before
 	// landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("2.12.0")
+	latestReleaseDockerServerImageBuild = newBuild("2.12.2")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("2.10.0")
+	latestReleaseKubernetesBuild = newBuild("2.12.1")
 )
 
 func getLatestRelease(deployType string) build {
