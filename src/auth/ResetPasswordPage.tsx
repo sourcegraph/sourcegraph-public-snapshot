@@ -203,7 +203,7 @@ class ResetPasswordCodeForm extends React.PureComponent<ResetPasswordCodeFormPro
 }
 
 interface ResetPasswordPageProps extends RouteComponentProps<{}> {
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 }
 
 /**
@@ -217,7 +217,7 @@ export class ResetPasswordPage extends React.PureComponent<ResetPasswordPageProp
 
     public render(): JSX.Element | null {
         let body: JSX.Element
-        if (this.props.user) {
+        if (this.props.authenticatedUser) {
             body = <div className="alert alert-danger">Authenticated users may not perform password reset.</div>
         } else if (window.context.resetPasswordEnabled) {
             const searchParams = new URLSearchParams(this.props.location.search)

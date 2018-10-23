@@ -29,7 +29,7 @@ const RepositoryNode: React.SFC<RepositoryNodeProps> = ({ node: repo }) => (
 )
 
 interface Props extends RouteComponentProps<any> {
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 }
 
 interface State {
@@ -63,16 +63,16 @@ export class ExplorePage extends React.PureComponent<Props, State> {
                 <div className="area__content">
                     <PageTitle title="Repositories" />
                     <h2>Explore repositories</h2>
-                    {this.props.user &&
-                        this.props.user.siteAdmin && (
+                    {this.props.authenticatedUser &&
+                        this.props.authenticatedUser.siteAdmin && (
                             <div>
                                 <Link to="/site-admin/repositories" className="btn btn-primary">
                                     <SettingsIcon className="icon-inline" /> Configure repositories
                                 </Link>
                             </div>
                         )}
-                    {this.props.user &&
-                        this.props.user.siteAdmin &&
+                    {this.props.authenticatedUser &&
+                        this.props.authenticatedUser.siteAdmin &&
                         typeof this.state.disabledRepositoriesCount === 'number' &&
                         this.state.disabledRepositoriesCount > 0 && (
                             <div className="alert alert-info mt-3 mb-2">

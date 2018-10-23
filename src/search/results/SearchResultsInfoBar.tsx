@@ -13,8 +13,8 @@ import { showDotComMarketing } from '../../util/features'
 import { pluralize } from '../../util/strings'
 
 interface SearchResultsInfoBarProps {
-    /** The logged-in user or null */
-    user: GQL.IUser | null
+    /** The currently authenticated user or null */
+    authenticatedUser: GQL.IUser | null
 
     /** The loaded search results and metadata */
     results: GQL.ISearchResults
@@ -116,7 +116,7 @@ export const SearchResultsInfoBar: React.StatelessComponent<SearchResultsInfoBar
                         </button>
                     )}
                     {/* Saved Queries */}
-                    {props.user && (
+                    {props.authenticatedUser && (
                         <button onClick={props.onSaveQueryClick} className="btn btn-link" disabled={props.didSave}>
                             {props.didSave ? (
                                 <>

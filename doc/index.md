@@ -27,6 +27,8 @@ See the [contributor documentation](dev/index.md) and the [main Sourcegraph repo
 
 The [Sourcegraph roadmap](dev/roadmap.md) describes what's coming next.
 
+<!-- TODO(sqs): Add link to ./graphbook when it has more content. -->
+
 ## Sourcegraph subscriptions
 
 You can use Sourcegraph in 2 ways:

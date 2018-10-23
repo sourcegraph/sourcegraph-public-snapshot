@@ -5,7 +5,6 @@ import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { combineLatest, of, Subject, Subscription } from 'rxjs'
 import { catchError, concat, map, switchMap } from 'rxjs/operators'
-import { currentUser } from '../../auth'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { HeroPage } from '../../components/HeroPage'
@@ -35,7 +34,9 @@ const ScopeNotFound = () => (
     />
 )
 
-interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }> {}
+interface ScopePageProps extends RouteComponentProps<{ id: GQL.ID }> {
+    authenticatedUser: GQL.IUser | null
+}
 
 interface State {
     query: string
@@ -47,7 +48,6 @@ interface State {
     markdownDescription?: string
     first: number
     errorMessage?: string
-    user?: GQL.IUser | null
 }
 
 export class ScopePage extends React.Component<ScopePageProps, State> {
@@ -64,7 +64,6 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
 
     public componentDidMount(): void {
         eventLogger.logViewEvent('Scope')
-        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
 
         this.subscriptions.add(
             combineLatest(
@@ -220,7 +219,7 @@ export class ScopePage extends React.Component<ScopePageProps, State> {
                                     ))}
                             </div>
                             {window.context.sourcegraphDotComMode &&
-                                !this.state.user && (
+                                !this.props.authenticatedUser && (
                                     <small>
                                         Have an idea for a search scope for your community, or want to add a repository
                                         to this scope? Tweet us <a href="https://twitter.com/srcgraph">@srcgraph</a>.

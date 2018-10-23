@@ -9,15 +9,13 @@ import (
 	"net/http"
 	"time"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"golang.org/x/net/context/ctxhttp"
-
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"golang.org/x/net/context/ctxhttp"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", "sourcegraph-frontend-internal", "HTTP address for internal frontend HTTP API.")
@@ -315,10 +313,6 @@ func (c *internalClient) ReposGetInventory(ctx context.Context, repo RepoID, com
 		return nil, err
 	}
 	return &inv, nil
-}
-
-func (c *internalClient) GitoliteUpdateReposDeprecated(ctx context.Context) error {
-	return c.postInternal(ctx, "gitolite/update-repos", nil, nil)
 }
 
 func (c *internalClient) PhabricatorRepoCreate(ctx context.Context, uri RepoURI, callsign, url string) error {

@@ -40,6 +40,16 @@ export interface FileSpec {
     filePath: string
 }
 
+export interface ComparisonSpec {
+    /**
+     * a diff specifier with optional base and comparison. Examples:
+     * - "master..." (implicitly: "master...HEAD")
+     * - "...my-branch" (implicitly: "HEAD...my-branch")
+     * - "master...my-branch"
+     */
+    commitRange: string
+}
+
 export interface PositionSpec {
     /**
      * a 1-indexed point in the blob
@@ -85,6 +95,7 @@ export interface ParsedRepoURI
         Partial<RevSpec>,
         Partial<ResolvedRevSpec>,
         Partial<FileSpec>,
+        Partial<ComparisonSpec>,
         Partial<PositionSpec>,
         Partial<RangeSpec> {}
 
@@ -255,15 +266,19 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
     const commitID = rev && /^[a-f0-9]{40}$/i.test(rev) ? rev : undefined
 
     let filePath: string | undefined
+    let commitRange: string | undefined
     const treeSep = pathname.indexOf('/-/tree/')
     const blobSep = pathname.indexOf('/-/blob/')
+    const comparisonSep = pathname.indexOf('/-/compare/')
     if (treeSep !== -1) {
         filePath = pathname.substr(treeSep + '/-/tree/'.length)
     }
     if (blobSep !== -1) {
         filePath = pathname.substr(blobSep + '/-/blob/'.length)
     }
-
+    if (comparisonSep !== -1) {
+        commitRange = pathname.substr(comparisonSep + '/-/compare/'.length)
+    }
     let position: Position | undefined
     let range: Range | undefined
     if (loc.hash) {
@@ -285,7 +300,7 @@ export function parseBrowserRepoURL(href: string): ParsedRepoURI {
         }
     }
 
-    return { repoPath, rev, commitID, filePath, position, range }
+    return { repoPath, rev, commitID, filePath, commitRange, position, range }
 }
 
 /**

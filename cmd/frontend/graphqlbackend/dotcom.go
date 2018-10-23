@@ -197,10 +197,14 @@ type ProductSubscriptionPreviewInvoice interface {
 
 // ProductPlan is the interface for the GraphQL type ProductPlan.
 type ProductPlan interface {
+	ProductPlanID() string
 	BillingPlanID() string
 	Name() string
 	NameWithBrand() string
 	PricePerUserPerYear() int32
+	MinQuantity() *int32
+	TiersMode() string
+	PlanTiers() []PlanTier
 }
 
 // ProductSubscriptionEvent is the interface for the GraphQL type ProductSubscriptionEvent.
@@ -210,4 +214,10 @@ type ProductSubscriptionEvent interface {
 	Title() string
 	Description() *string
 	URL() *string
+}
+
+// PlanTier is the interface for the GraphQL type PlanTier.
+type PlanTier interface {
+	UnitAmount() int32
+	UpTo() int32
 }

@@ -35,7 +35,6 @@ const (
 	GitResolveRevision     = "internal.git.resolve-revision"
 	GitTar                 = "internal.git.tar"
 	GitUploadPack          = "internal.git.upload-pack"
-	GitoliteUpdateRepos    = "internal.gitolite.update-repos"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
 	ReposCreateIfNotExists = "internal.repos.create-if-not-exists"
 	ReposGetByURI          = "internal.repos.get-by-uri"
@@ -96,7 +95,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/extension").Methods("POST").Name(Extension)
 	base.Path("/defs/refresh-index").Methods("POST").Name(DefsRefreshIndex)
 	base.Path("/pkgs/refresh-index").Methods("POST").Name(PkgsRefreshIndex)
-	base.Path("/gitolite/update-repos").Methods("POST").Name(GitoliteUpdateRepos)
 	base.Path("/git/{RepoURI:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoURI:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
 	base.Path("/git/{RepoURI:.*}/tar/{Commit}").Methods("GET").Name(GitTar)

@@ -43,9 +43,13 @@ func handleEnabledCheck(w http.ResponseWriter) (handled bool) {
 	return false
 }
 
-func validateConfig(c *schema.SiteConfiguration) (problems []string) {
+func init() {
+	conf.ContributeValidator(validateConfig)
+}
+
+func validateConfig(c schema.SiteConfiguration) (problems []string) {
 	var builtinAuthProviders int
-	for _, p := range conf.AuthProvidersFromConfig(c) {
+	for _, p := range conf.AuthProvidersFromConfig(&c) {
 		if p.Builtin != nil {
 			builtinAuthProviders++
 		}

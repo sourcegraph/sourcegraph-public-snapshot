@@ -1,6 +1,6 @@
 import { concat, Observable } from 'rxjs'
 import { map, mergeMap } from 'rxjs/operators'
-import { refreshCurrentUser } from '../auth'
+import { refreshAuthenticatedUser } from '../auth'
 import { gql, mutateGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
@@ -38,7 +38,7 @@ export function createOrganization(args: {
                     org_name: data.createOrganization.name,
                 },
             })
-            return concat(refreshCurrentUser(), [data.createOrganization])
+            return concat(refreshAuthenticatedUser(), [data.createOrganization])
         })
     )
 }
@@ -79,7 +79,7 @@ export function removeUserFromOrganization(args: {
             }
             eventLogger.log('OrgMemberRemoved', eventData)
             // Reload user data
-            return concat(refreshCurrentUser(), [void 0])
+            return concat(refreshAuthenticatedUser(), [void 0])
         })
     )
 }

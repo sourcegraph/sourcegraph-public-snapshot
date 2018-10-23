@@ -1,18 +1,13 @@
 package db
 
 import (
-	"database/sql"
+	"context"
 	"errors"
 	"fmt"
 	regexpsyntax "regexp/syntax"
 	"strings"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
-	"context"
-
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -639,90 +634,4 @@ func (s dbExternalRepoSpec) toAPISpec() *api.ExternalRepoSpec {
 		}
 	}
 	return nil
-}
-
-var insertBatchSize = 100
-
-// DEPRECATED: TryInsertNewBatch should be removed after the deprecated
-// serveGitoliteUpdateReposDeprecated function is removed.
-func (s *repos) TryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
-	if len(repos) < insertBatchSize {
-		return s.tryInsertNewBatch(ctx, repos)
-	}
-	for i := 0; i+insertBatchSize <= len(repos); i += insertBatchSize {
-		log15.Info("TryInsertNewBatch:batch-start", "i", i, "j", i+insertBatchSize)
-		if err := s.tryInsertNewBatch(ctx, repos[i:i+insertBatchSize]); err != nil {
-			return err
-		}
-		log15.Info("TryInsertNewBatch:batch-end", "i", i, "j", i+insertBatchSize)
-	}
-	remainder := len(repos) % insertBatchSize
-	if remainder != 0 {
-		log15.Info("TryInsertNewBatch:batch-start", "i", len(repos)-remainder, "j", len(repos))
-		if err := s.tryInsertNewBatch(ctx, repos[len(repos)-remainder:]); err != nil {
-			return err
-		}
-		log15.Info("TryInsertNewBatch:batch-end", "i", len(repos)-remainder, "j", len(repos))
-	}
-	return nil
-}
-
-func (s *repos) tryInsertNewBatch(ctx context.Context, repos []api.InsertRepoOp) error {
-	if len(repos) == 0 {
-		return nil
-	}
-
-	tx, err := dbconn.Global.Begin()
-	if err != nil {
-		return err
-	}
-	return func(tx *sql.Tx) (err error) {
-		defer func() {
-			if err != nil {
-				tx.Rollback()
-			} else {
-				commitErr := tx.Commit()
-				if err != nil {
-					err = commitErr
-				}
-			}
-		}()
-
-		if _, err := tx.ExecContext(ctx, "CREATE TEMPORARY TABLE bulk_repos(uri citext, description text, fork boolean, enabled boolean, external_id text, external_service_type text, external_service_id text)"); err != nil {
-			return err
-		}
-
-		stmt, err := tx.PrepareContext(ctx, pq.CopyIn("bulk_repos", "uri", "description", "fork", "enabled", "external_id", "external_service_type", "external_service_id"))
-		if err != nil {
-			return err
-		}
-		seenURIs := make(map[string]struct{})
-		for _, rp := range repos {
-			if _, seen := seenURIs[strings.ToLower(string(rp.URI))]; seen {
-				continue
-			}
-			seenURIs[strings.ToLower(string(rp.URI))] = struct{}{}
-
-			spec := (&dbExternalRepoSpec{}).fromAPISpec(rp.ExternalRepo)
-			if _, err := stmt.Exec(rp.URI, rp.Description, rp.Fork, rp.Enabled, spec.id, spec.serviceType, spec.serviceID); err != nil {
-				return err
-			}
-		}
-		if _, err := stmt.Exec(); err != nil {
-			return err
-		}
-		stmt.Close()
-
-		// TODO(sqs): Unlike TryInsertNew, this does not update the external_* columns of existing repositories.
-		_, err = tx.ExecContext(ctx, `INSERT INTO repo(uri, description, fork, enabled, external_id, external_service_type, external_service_id, language) (SELECT bulk_repos.*, '' AS language FROM bulk_repos WHERE uri IS NOT NULL AND uri NOT IN (SELECT uri FROM repo))`)
-		if err != nil {
-			return err
-		}
-
-		_, err = tx.ExecContext(ctx, `DROP TABLE bulk_repos`)
-		if err != nil {
-			return err
-		}
-		return nil
-	}(tx)
 }

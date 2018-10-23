@@ -88,9 +88,9 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 func TestValidator(t interface {
 	Errorf(format string, args ...interface{})
 	Helper()
-}, c schema.SiteConfiguration, f func(*schema.SiteConfiguration) []string, wantProblems []string) {
+}, c schema.SiteConfiguration, f func(schema.SiteConfiguration) []string, wantProblems []string) {
 	t.Helper()
-	problems := f(&c)
+	problems := f(c)
 	wantSet := make(map[string]struct{}, len(wantProblems))
 	for _, p := range wantProblems {
 		wantSet[p] = struct{}{}

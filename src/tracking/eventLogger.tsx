@@ -1,6 +1,6 @@
 import { matchPath } from 'react-router'
 import uuid from 'uuid'
-import { currentUser } from '../auth'
+import { authenticatedUser } from '../auth'
 import * as GQL from '../backend/graphqlschema'
 import { parseBrowserRepoURL } from '../repo'
 import { repoRevRoute } from '../routes'
@@ -27,7 +27,7 @@ class EventLogger {
             }
         })
 
-        currentUser.subscribe(
+        authenticatedUser.subscribe(
             user => {
                 this.user = user
                 if (user) {

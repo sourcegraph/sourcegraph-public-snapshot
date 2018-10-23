@@ -39,7 +39,7 @@ interface ExtensionsAreaProps
     /**
      * The currently authenticated user.
      */
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 
     viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
     isLightTheme: boolean
@@ -78,7 +78,7 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
 
     public render(): JSX.Element | null {
         const context: ExtensionsAreaRouteContext = {
-            authenticatedUser: this.props.user,
+            authenticatedUser: this.props.authenticatedUser,
             configurationCascade: this.props.configurationCascade,
             extensions: this.props.extensions,
             subject: this.props.viewerSubject,

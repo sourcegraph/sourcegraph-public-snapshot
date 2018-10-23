@@ -294,7 +294,7 @@ export class RepositoryErrorPage extends React.PureComponent<Props, State> {
                                             onClick={this.enableRepository}
                                             disabled={this.state.enabledOrError === 'loading'}
                                         >
-                                            {this.state.enabledOrError !== 'loading' ? (
+                                            {this.state.enabledOrError === 'loading' ? (
                                                 <LoadingSpinner className="icon-inline" />
                                             ) : (
                                                 <CheckCircleIcon className="icon-inline" />

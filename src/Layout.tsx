@@ -15,6 +15,7 @@ import {
 } from './extensions/ExtensionsClientCommonContext'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { KeybindingsProps } from './keybindings'
 import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
@@ -34,7 +35,8 @@ export interface LayoutProps
         ExtensionsProps,
         ExtensionsEnvironmentProps,
         ExtensionsControllerProps,
-        ExtensionsDocumentsProps {
+        ExtensionsDocumentsProps,
+        KeybindingsProps {
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
     extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
@@ -49,7 +51,7 @@ export interface LayoutProps
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
 
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 
     /**
      * The subject GraphQL node ID of the viewer, which is used to look up the viewer's configuration settings.
@@ -87,8 +89,10 @@ export const Layout: React.SFC<LayoutProps> = props => {
 
     return (
         <div className="layout">
-            <GlobalAlerts isSiteAdmin={!!props.user && props.user.siteAdmin} />
-            {!needsSiteInit && !isSiteInit && !!props.user && <IntegrationsToast history={props.history} />}
+            <GlobalAlerts isSiteAdmin={!!props.authenticatedUser && props.authenticatedUser.siteAdmin} />
+            {!needsSiteInit &&
+                !isSiteInit &&
+                !!props.authenticatedUser && <IntegrationsToast history={props.history} />}
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
@@ -108,7 +112,9 @@ export const Layout: React.SFC<LayoutProps> = props => {
                                     ].join(' ')}
                                 >
                                     {route.render({ ...props, ...routeComponentProps })}
-                                    {!!props.user && <LinkExtension user={props.user} />}
+                                    {!!props.authenticatedUser && (
+                                        <LinkExtension authenticatedUser={props.authenticatedUser} />
+                                    )}
                                 </div>
                             )}
                         />

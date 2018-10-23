@@ -49,11 +49,6 @@ var ignoreLegacyKubernetesFields = map[string]struct{}{
 func Validate(inputStr string) (problems []string, err error) {
 	input := []byte(jsonc.Normalize(inputStr))
 
-	input, _, err = expandEnv(input)
-	if err != nil {
-		return nil, err
-	}
-
 	res, err := validate([]byte(schema.SiteSchemaJSON), input)
 	if err != nil {
 		return nil, err

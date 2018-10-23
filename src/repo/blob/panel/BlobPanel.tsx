@@ -65,7 +65,7 @@ interface Props
     repoPath: string
     commitID: string
     isLightTheme: boolean
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 }
 
 /** The subject (what the contextual information refers to). */
@@ -351,6 +351,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                     element={
                         <RepoRevSidebarCommits
                             key="commits"
+                            repoName={this.props.repoPath}
                             repoID={this.props.repoID}
                             rev={this.props.rev}
                             filePath={this.props.filePath}
@@ -373,7 +374,7 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                                 filePath={this.props.filePath}
                                 history={this.props.history}
                                 location={this.props.location}
-                                user={this.props.user}
+                                authenticatedUser={this.props.authenticatedUser}
                             />
                         }
                     />

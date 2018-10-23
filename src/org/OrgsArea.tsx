@@ -16,7 +16,7 @@ const NotFoundPage = () => (
 )
 
 interface Props extends RouteComponentProps<any>, ExtensionsProps {
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
 }
 

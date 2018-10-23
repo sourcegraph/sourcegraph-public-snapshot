@@ -5,7 +5,7 @@ import * as GQL from '../backend/graphqlschema'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 }
 
 /**
@@ -25,13 +25,13 @@ export class SiteInitPage extends React.Component<Props> {
                         className="site-init-page__logo"
                         src={`${window.context.assetsRoot}/img/sourcegraph-light-head-logo.svg`}
                     />
-                    {this.props.user ? (
+                    {this.props.authenticatedUser ? (
                         // If there's already a user but the site is not initialized, then the we're in an
                         // unexpected state, likely because of a previous bug or because someone manually modified
                         // the site_config DB table.
                         <p>
-                            You're signed in as <strong>{this.props.user.username}</strong>. A site admin must
-                            initialize Sourcegraph before you can continue.
+                            You're signed in as <strong>{this.props.authenticatedUser.username}</strong>. A site admin
+                            must initialize Sourcegraph before you can continue.
                         </p>
                     ) : (
                         <>

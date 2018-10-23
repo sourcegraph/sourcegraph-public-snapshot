@@ -22,7 +22,7 @@ interface Props {
     filePath: string
     history: H.History
     location: H.Location
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 }
 
 interface State {
@@ -81,7 +81,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
         // TODO(slimsag:discussions): future: test error state + cleanup CSS
 
         const { error, loading, thread } = this.state
-        const { location, commentID, user } = this.props
+        const { location, commentID, authenticatedUser } = this.props
 
         // If the thread is loaded, ensure that the URL hash is updated to
         // reflect the line that the discussion was created on.
@@ -110,7 +110,7 @@ export class DiscussionsThread extends React.PureComponent<Props, State> {
                                 key={node.id}
                                 {...this.props}
                                 comment={node}
-                                isSiteAdmin={!!user && user.siteAdmin}
+                                isSiteAdmin={!!authenticatedUser && authenticatedUser.siteAdmin}
                                 onReport={this.onCommentReport}
                                 onClearReports={this.onCommentClearReports}
                                 onDelete={this.onCommentDelete}

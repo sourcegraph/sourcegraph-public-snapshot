@@ -18,7 +18,7 @@ import { userURL } from '../user'
 import { createAggregateError } from '../util/errors'
 
 interface Props extends RouteComponentProps<{}> {
-    user: GQL.IUser
+    authenticatedUser: GQL.IUser
 }
 
 interface State {}
@@ -48,7 +48,7 @@ export class SiteAdminTokensPage extends React.PureComponent<Props, State> {
                     <h2>Access tokens</h2>
                     <Link
                         className="btn btn-primary ml-2"
-                        to={`${userURL(this.props.user.username)}/account/tokens/new`}
+                        to={`${userURL(this.props.authenticatedUser.username)}/account/tokens/new`}
                     >
                         <AddIcon className="icon-inline" /> Generate access token
                     </Link>

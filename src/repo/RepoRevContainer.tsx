@@ -35,7 +35,7 @@ export interface RepoRevContainerContext
         ExtensionsProps {
     repo: GQL.IRepository
     rev: string
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     resolvedRev: ResolvedRev
     isLightTheme: boolean
     routePrefix: string
@@ -53,7 +53,7 @@ interface RepoRevContainerProps
     routes: ReadonlyArray<RepoRevContainerRoute>
     repo: GQL.IRepository
     rev: string
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
     routePrefix: string
 
@@ -198,7 +198,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             resolvedRev: this.props.resolvedRevOrError,
             rev: this.props.rev,
             routePrefix: this.props.routePrefix,
-            user: this.props.user,
+            authenticatedUser: this.props.authenticatedUser,
             configurationCascade: this.props.configurationCascade,
         }
 
@@ -206,7 +206,7 @@ export class RepoRevContainer extends React.PureComponent<RepoRevContainerProps,
             <div className="repo-rev-container">
                 {IS_CHROME && <ChromeExtensionToast />}
                 {IS_FIREFOX && <FirefoxExtensionToast />}
-                <SurveyToast />
+                <SurveyToast authenticatedUser={this.props.authenticatedUser} />
                 <RepoHeaderContributionPortal
                     position="nav"
                     priority={100}

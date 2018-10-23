@@ -74,8 +74,14 @@ export interface GitCommitNodeProps {
     /** Expand the commit message body. */
     expandCommitMessageBody?: boolean
 
+    /** Hide the button to expand the commit message body. */
+    hideExpandCommitMessageBody?: boolean
+
     /** Show the full 40-character SHA and parents on their own row. */
     showSHAAndParentsRow?: boolean
+
+    /** Fragment to show at the end to the right of the SHA. */
+    afterElement?: React.ReactFragment
 }
 
 interface State {
@@ -109,6 +115,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                     {this.props.node.subject}
                 </Link>
                 {this.props.node.body &&
+                    !this.props.hideExpandCommitMessageBody &&
                     !this.props.expandCommitMessageBody && (
                         <button
                             type="button"
@@ -185,6 +192,7 @@ export class GitCommitNode extends React.PureComponent<GitCommitNodeProps, State
                             <Link to={this.props.node.canonicalURL}>{oidElement}</Link>
                         </>
                     )}
+                    {this.props.afterElement}
                 </div>
                 {(this.props.expandCommitMessageBody || this.state.showCommitMessageBody) && (
                     <div className="git-commit-node__row">

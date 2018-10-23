@@ -1,6 +1,7 @@
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import RadioactiveIcon from 'mdi-react/RadioactiveIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -26,7 +27,7 @@ interface UserNodeProps {
     /**
      * The currently authenticated user.
      */
-    currentUser: GQL.IUser
+    authenticatedUser: GQL.IUser
 
     /**
      * Called when the user is updated by an action in this list item.
@@ -39,6 +40,16 @@ interface UserNodeState {
     errorDescription?: string
     resetPasswordURL?: string | null
 }
+
+const nukeDetails = `
+- By deleting a user, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
+- By nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo this). When deleting data at a user's request, nuking is used.
+
+Beware this includes e.g. deleting extensions authored by the user, deleting ANY settings authored or updated by the user, etc.
+
+For more information about what data is deleted, see https://github.com/sourcegraph/sourcegraph/blob/master/docs/user-data-deletion.md
+
+Are you ABSOLUTELY certain you wish to delete this user and all associated data?`
 
 class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public state: UserNodeState = {
@@ -107,7 +118,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 Reset password
                             </button>
                         )}{' '}
-                        {this.props.node.id !== this.props.currentUser.id &&
+                        {this.props.node.id !== this.props.authenticatedUser.id &&
                             (this.props.node.siteAdmin ? (
                                 <button
                                     className="btn btn-sm btn-secondary"
@@ -126,7 +137,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     Promote to site admin
                                 </button>
                             ))}{' '}
-                        {this.props.node.id !== this.props.currentUser.id && (
+                        {this.props.node.id !== this.props.authenticatedUser.id && (
                             <button
                                 className="btn btn-sm btn-danger"
                                 onClick={this.deleteUser}
@@ -134,6 +145,16 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 data-tooltip="Delete user"
                             >
                                 <DeleteIcon className="icon-inline" />
+                            </button>
+                        )}
+                        {this.props.node.id !== this.props.authenticatedUser.id && (
+                            <button
+                                className="ml-1 btn btn-sm btn-danger"
+                                onClick={this.nukeUser}
+                                disabled={this.state.loading}
+                                data-tooltip="Nuke user (click for more information)"
+                            >
+                                <RadioactiveIcon className="icon-inline" />
                             </button>
                         )}
                     </div>
@@ -216,8 +237,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             )
     }
 
-    private deleteUser = () => {
-        if (!window.confirm(`Delete the user ${this.props.node.username}?`)) {
+    private deleteUser = () => this.doDeleteUser(false)
+    private nukeUser = () => this.doDeleteUser(true)
+
+    private doDeleteUser = (hard: boolean) => {
+        let message = `Delete the user ${this.props.node.username}?`
+        if (hard) {
+            message = `Nuke the user ${this.props.node.username}?${nukeDetails}`
+        }
+        if (!window.confirm(message)) {
             return
         }
 
@@ -227,7 +255,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
             loading: true,
         })
 
-        deleteUser(this.props.node.id)
+        deleteUser(this.props.node.id, hard)
             .toPromise()
             .then(
                 () => {
@@ -242,7 +270,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
 }
 
 interface Props extends RouteComponentProps<any> {
-    user: GQL.IUser
+    authenticatedUser: GQL.IUser
 }
 
 interface State {
@@ -252,7 +280,7 @@ interface State {
 
 class FilteredUserConnection extends FilteredConnection<
     GQL.IUser,
-    Pick<UserNodeProps, 'currentUser' | 'onDidUpdate'>
+    Pick<UserNodeProps, 'authenticatedUser' | 'onDidUpdate'>
 > {}
 
 /**
@@ -273,8 +301,8 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<UserNodeProps, 'currentUser' | 'onDidUpdate'> = {
-            currentUser: this.props.user,
+        const nodeProps: Pick<UserNodeProps, 'authenticatedUser' | 'onDidUpdate'> = {
+            authenticatedUser: this.props.authenticatedUser,
             onDidUpdate: this.onDidUpdateUser,
         }
 
