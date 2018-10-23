@@ -11,12 +11,6 @@ Common TypeScript/React client application code for [Sourcegraph extension](http
 - Sourcegraph
 - "Sourcegraph for X" products (Chrome extension, Firefox extension, and more soon)
 
-**Status:** Alpha
-
-### Components
-
-TODO
-
 ## Usage
 
 ```shell
