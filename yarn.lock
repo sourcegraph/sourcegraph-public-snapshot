@@ -5523,9 +5523,9 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.1:
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
 sourcegraph@^18.0.0:
-  version "18.0.0"
-  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.0.0.tgz#bbb61f7ab03ed169138d12dd258b1195198fe851"
-  integrity sha512-0bhjDK5gMMX/O7TkBMU49XDgHD3YOki/aqzdz+MoQd94aGrD1OxsAugINUHH+Kq3zGWZZPBmZiPTqM9iIkBkXw==
+  version "18.0.1"
+  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.0.1.tgz#7e741c1521337cb799fc0f8f1ecc6dd8158aa504"
+  integrity sha512-fhrbx6v0s0sAcdiO5VoxI/es0bhTy5npksT+EHENUj94L2KcRj39qlH4RYwutZgn7K/dirnX7tso/H9K9+c0Lw==
   dependencies:
     minimatch "^3.0.4"
     rxjs "^6.3.2"
