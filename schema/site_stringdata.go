@@ -85,6 +85,13 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "clientAuthorizationFlow": {
+          "description":
+            "Enables the client authorization flow, which lets client applications initiate a browser-based authorization flow and obtain an access token for the current user (if the user approves the authorization request).",
+          "type": "boolean",
+          "!go": { "pointer": true },
+          "default": false
+        },
         "discussions": {
           "description": "Enables the code discussions experiment.",
           "type": "string",

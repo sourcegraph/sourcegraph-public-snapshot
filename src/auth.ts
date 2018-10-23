@@ -52,7 +52,9 @@ export function refreshAuthenticatedUser(): Observable<never> {
     )
 }
 
-const initialSiteConfigAuthPublic = window.context.site['auth.public']
+const initialSiteConfigAuthPublic = Boolean(
+    typeof window !== 'undefined' && window.context && window.context.site && window.context.site['auth.public']
+)
 
 /**
  * Whether auth is required to perform any action.
@@ -66,7 +68,7 @@ const initialSiteConfigAuthPublic = window.context.site['auth.public']
 export const authRequired = authenticatedUser.pipe(map(user => user === null && !initialSiteConfigAuthPublic))
 
 // Populate authenticatedUser.
-if (window.context.isAuthenticatedUser) {
+if (typeof window !== 'undefined' && window.context && window.context.isAuthenticatedUser) {
     refreshAuthenticatedUser()
         .toPromise()
         .then(() => void 0, err => console.error(err))

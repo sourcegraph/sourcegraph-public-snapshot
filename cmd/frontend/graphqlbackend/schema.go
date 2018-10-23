@@ -165,6 +165,11 @@ type Mutation {
         scopes: [String!]!
         # A note describing the purpose of this access token.
         note: String!
+        # An optional nonce that ties this access token to the client application that initiated the authorization
+        # flow to create it. If given, then the holder of the requestSession value may read the access token from
+        # the Sourcegraph instance (without any other authorization). This allows client applications to perform a
+        # browser-based authorization flow to obtain an access token for the current user.
+        requestSession: String
     ): CreateAccessTokenResult!
     # Deletes and immediately revokes the specified access token, specified by either its ID or by the token
     # itself.

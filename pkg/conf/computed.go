@@ -42,6 +42,12 @@ func JumpToDefOSSIndexEnabled() bool {
 	return p == "enabled"
 }
 
+// ClientAuthorizationFlowEnabled reports whether the clientAuthorizationFlow experiment is enabled.
+func ClientAuthorizationFlowEnabled() bool {
+	p := Get().ExperimentalFeatures.ClientAuthorizationFlow
+	return p != nil && *p // default is disabled
+}
+
 type AccessTokAllow string
 
 const (

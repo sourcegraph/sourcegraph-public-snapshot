@@ -8,7 +8,7 @@ const config = {
       '@babel/preset-env',
       {
         useBuiltIns: 'entry',
-        modules: false,
+        modules: 'commonjs',
       },
     ],
   ],

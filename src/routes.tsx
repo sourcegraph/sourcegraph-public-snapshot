@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { APIConsole } from './api/APIConsole'
+import { ClientAuthorizationFlow } from './auth/ClientAuthorizationFlow'
 import { ResetPasswordPage } from './auth/ResetPasswordPage'
 import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
@@ -163,6 +164,10 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     {
         path: '/help',
         render: props => <DocSitePage {...props} path={props.location.pathname.slice(props.match.path.length + 1)} />,
+    },
+    {
+        path: '/auth/client',
+        render: props => <ClientAuthorizationFlow {...props} />,
     },
     repoRevRoute,
 ]

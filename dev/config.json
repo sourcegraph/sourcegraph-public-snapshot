@@ -2,6 +2,7 @@
 {
   "appURL": "http://localhost:3080",
   "experimentalFeatures": {
+    "clientAuthorizationFlow": true,
     "discussions": "enabled"
   },
   "disablePublicRepoRedirects": true,
