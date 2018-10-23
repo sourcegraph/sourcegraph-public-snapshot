@@ -8,7 +8,6 @@ import { Redirect } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { currentUser } from '../../auth'
 import * as GQL from '../../backend/graphqlschema'
 import { siteFlags } from '../../site/backend'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -19,7 +18,7 @@ import { SavedQueryCreateForm } from './SavedQueryCreateForm'
 import { SavedQueryFields } from './SavedQueryForm'
 
 interface Props {
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     location: H.Location
     isLightTheme: boolean
     hideExampleSearches?: boolean
@@ -35,7 +34,6 @@ interface State {
 
     loading: boolean
     error?: Error
-    user: GQL.IUser | null
 
     isViewingExamples: boolean
     exampleQuery: Partial<SavedQueryFields> | null
@@ -49,7 +47,6 @@ export class SavedQueries extends React.Component<Props, State> {
         savedQueries: [],
         isCreating: false,
         loading: true,
-        user: null,
         isViewingExamples: window.context.sourcegraphDotComMode
             ? false
             : localStorage.getItem(EXAMPLE_SEARCHES_CLOSED_KEY) !== 'true',
@@ -92,8 +89,6 @@ export class SavedQueries extends React.Component<Props, State> {
                     })
                 })
         )
-
-        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
     }
 
     public componentWillReceiveProps(newProps: Props): void {
@@ -113,7 +108,7 @@ export class SavedQueries extends React.Component<Props, State> {
         const isPanelOpen = this.state.isViewingExamples || this.state.isCreating
 
         // If not logged in, redirect to sign in
-        if (!this.state.user && !isHomepage) {
+        if (!this.props.authenticatedUser && !isHomepage) {
             const newUrl = new URL(window.location.href)
             // Return to the current page after sign up/in.
             newUrl.searchParams.set('returnTo', window.location.href)
@@ -157,7 +152,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         </div>
                         {this.state.isCreating && (
                             <SavedQueryCreateForm
-                                user={this.props.user}
+                                authenticatedUser={this.props.authenticatedUser}
                                 onDidCreate={this.onDidCreateSavedQuery}
                                 onDidCancel={this.toggleCreating}
                                 values={this.state.exampleQuery || {}}
@@ -186,7 +181,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         this.state.savedQueries.length === 0 && <p>You don't have any saved searches yet.</p>}
                     {this.state.savedQueries.map((savedQuery, i) => (
                         <SavedQuery
-                            user={this.props.user}
+                            authenticatedUser={this.props.authenticatedUser}
                             key={`${savedQuery.query}-${i}`}
                             savedQuery={savedQuery}
                             onDidDuplicate={this.onDidDuplicateSavedQuery}
@@ -195,7 +190,7 @@ export class SavedQueries extends React.Component<Props, State> {
                     ))}
                 </div>
                 {this.state.savedQueries.length === 0 &&
-                    this.state.user &&
+                    this.props.authenticatedUser &&
                     isHomepage && (
                         <div className="saved-query">
                             <Link to="/search/searches">

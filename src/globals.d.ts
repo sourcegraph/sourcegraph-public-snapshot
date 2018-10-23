@@ -30,8 +30,7 @@ interface SourcegraphContext {
     userAgentIsBot: boolean
 
     /**
-     * Whether the user is authenticated. Use currentUser in ./auth.ts to obtain information about
-     * the user.
+     * Whether the user is authenticated. Use authenticatedUser in ./auth.ts to obtain information about the user.
      */
     readonly isAuthenticatedUser: boolean
 

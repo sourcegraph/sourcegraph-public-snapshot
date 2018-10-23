@@ -27,7 +27,7 @@ interface UserNodeProps {
     /**
      * The currently authenticated user.
      */
-    currentUser: GQL.IUser
+    authenticatedUser: GQL.IUser
 
     /**
      * Called when the user is updated by an action in this list item.
@@ -118,7 +118,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 Reset password
                             </button>
                         )}{' '}
-                        {this.props.node.id !== this.props.currentUser.id &&
+                        {this.props.node.id !== this.props.authenticatedUser.id &&
                             (this.props.node.siteAdmin ? (
                                 <button
                                     className="btn btn-sm btn-secondary"
@@ -137,7 +137,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     Promote to site admin
                                 </button>
                             ))}{' '}
-                        {this.props.node.id !== this.props.currentUser.id && (
+                        {this.props.node.id !== this.props.authenticatedUser.id && (
                             <button
                                 className="btn btn-sm btn-danger"
                                 onClick={this.deleteUser}
@@ -147,7 +147,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 <DeleteIcon className="icon-inline" />
                             </button>
                         )}
-                        {this.props.node.id !== this.props.currentUser.id && (
+                        {this.props.node.id !== this.props.authenticatedUser.id && (
                             <button
                                 className="ml-1 btn btn-sm btn-danger"
                                 onClick={this.nukeUser}
@@ -270,7 +270,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
 }
 
 interface Props extends RouteComponentProps<any> {
-    user: GQL.IUser
+    authenticatedUser: GQL.IUser
 }
 
 interface State {
@@ -280,7 +280,7 @@ interface State {
 
 class FilteredUserConnection extends FilteredConnection<
     GQL.IUser,
-    Pick<UserNodeProps, 'currentUser' | 'onDidUpdate'>
+    Pick<UserNodeProps, 'authenticatedUser' | 'onDidUpdate'>
 > {}
 
 /**
@@ -301,8 +301,8 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
     }
 
     public render(): JSX.Element | null {
-        const nodeProps: Pick<UserNodeProps, 'currentUser' | 'onDidUpdate'> = {
-            currentUser: this.props.user,
+        const nodeProps: Pick<UserNodeProps, 'authenticatedUser' | 'onDidUpdate'> = {
+            authenticatedUser: this.props.authenticatedUser,
             onDidUpdate: this.onDidUpdateUser,
         }
 

@@ -15,7 +15,7 @@ import {
     tap,
 } from 'rxjs/operators'
 import { USER_DISPLAY_NAME_MAX_LENGTH } from '..'
-import { refreshCurrentUser } from '../../auth'
+import { refreshAuthenticatedUser } from '../../auth'
 import { UsernameInput } from '../../auth/SignInSignUpCommon'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
@@ -143,7 +143,7 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                     }),
 
                     // In case the edited user is the current user, immediately reflect the changes in the UI.
-                    mergeMap(() => refreshCurrentUser().pipe(concat([null])))
+                    mergeMap(() => refreshAuthenticatedUser().pipe(concat([null])))
                 )
                 .subscribe(undefined, this.handleError)
         )
@@ -233,13 +233,7 @@ export class UserAccountProfilePage extends React.Component<Props, State> {
                                 </div>
                                 {this.state.userOrError.avatarURL && (
                                     <div className="user-settings-profile-page__avatar-column">
-                                        <UserAvatar
-                                            user={
-                                                this.state.userOrError.avatarURL
-                                                    ? { avatarURL: this.state.userOrError.avatarURL }
-                                                    : undefined
-                                            }
-                                        />
+                                        <UserAvatar user={this.state.userOrError} />
                                     </div>
                                 )}
                             </div>

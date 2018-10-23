@@ -16,7 +16,6 @@ import { ActionContainer } from './components/ActionContainer'
 
 interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
-    user: GQL.IUser
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }
 

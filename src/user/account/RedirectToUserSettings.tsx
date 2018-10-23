@@ -9,11 +9,11 @@ import * as GQL from '../../backend/graphqlschema'
  * username.
  */
 export const RedirectToUserSettings: React.SFC<{
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     location: H.Location
-}> = ({ user, location }) => {
+}> = ({ authenticatedUser, location }) => {
     // If not logged in, redirect to sign in
-    if (!user) {
+    if (!authenticatedUser) {
         const newURL = new URL(window.location.href)
         newURL.pathname = '/sign-in'
         // Return to the current page after sign up/in.
@@ -21,5 +21,5 @@ export const RedirectToUserSettings: React.SFC<{
         return <Redirect to={{ pathname: newURL.pathname, search: newURL.search }} />
     }
 
-    return <Redirect to={{ pathname: `${userURL(user.username)}/settings`, search: location.search }} />
+    return <Redirect to={{ pathname: `${userURL(authenticatedUser.username)}/settings`, search: location.search }} />
 }

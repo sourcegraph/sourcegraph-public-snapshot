@@ -22,7 +22,7 @@ const NotSiteAdminPage: React.ComponentType<{}> = () => (
 
 export interface SiteAdminAreaRouteContext extends ExtensionsProps {
     site: Pick<GQL.ISite, '__typename' | 'id'>
-    user: GQL.IUser
+    authenticatedUser: GQL.IUser
     isLightTheme: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
@@ -35,7 +35,7 @@ interface SiteAdminAreaProps extends RouteComponentProps<{}>, ExtensionsProps {
     routes: ReadonlyArray<SiteAdminAreaRoute>
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: ReadonlyArray<React.ComponentType>
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
 }
 
@@ -45,7 +45,7 @@ interface SiteAdminAreaProps extends RouteComponentProps<{}>, ExtensionsProps {
 export class SiteAdminArea extends React.Component<SiteAdminAreaProps> {
     public render(): JSX.Element | null {
         // If not logged in, redirect to sign in.
-        if (!this.props.user) {
+        if (!this.props.authenticatedUser) {
             const newUrl = new URL(window.location.href)
             newUrl.pathname = '/sign-in'
             // Return to the current page after sign up/in.
@@ -54,12 +54,12 @@ export class SiteAdminArea extends React.Component<SiteAdminAreaProps> {
         }
 
         // If not site admin, redirect to sign in.
-        if (!this.props.user.siteAdmin) {
+        if (!this.props.authenticatedUser.siteAdmin) {
             return <NotSiteAdminPage />
         }
 
         const context: SiteAdminAreaRouteContext = {
-            user: this.props.user,
+            authenticatedUser: this.props.authenticatedUser,
             extensions: this.props.extensions,
             isLightTheme: this.props.isLightTheme,
             site: { __typename: 'Site' as 'Site', id: window.context.siteGQLID },

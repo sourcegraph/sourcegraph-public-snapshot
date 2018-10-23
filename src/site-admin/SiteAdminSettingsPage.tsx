@@ -29,7 +29,7 @@ function querySiteConfigDeprecatedSettings(): Observable<string | null> {
 }
 
 interface Props extends RouteComponentProps<{}>, ExtensionsProps {
-    user: GQL.IUser
+    authenticatedUser: GQL.IUser
     isLightTheme: boolean
     site: Pick<GQL.ISite, '__typename' | 'id'>
 }
@@ -66,7 +66,7 @@ export class SiteAdminSettingsPage extends React.Component<Props, State> {
                 <SettingsArea
                     {...this.props}
                     subject={this.props.site}
-                    authenticatedUser={this.props.user}
+                    authenticatedUser={this.props.authenticatedUser}
                     extraHeader={
                         <>
                             <p>

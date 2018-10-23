@@ -7,7 +7,6 @@ import { NavLink } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, mergeMap } from 'rxjs/operators'
 import { authRequired } from '../../auth'
-import { currentUser } from '../../auth'
 import * as GQL from '../../backend/graphqlschema'
 import { Tooltip } from '../../components/tooltip/Tooltip'
 import { routes } from '../../routes'
@@ -20,6 +19,7 @@ import { submitSearch, toggleSearchFilter } from '../helpers'
 interface Props {
     location: H.Location
     history: H.History
+    authenticatedUser: GQL.IUser | null
 
     /**
      * The current query.
@@ -37,7 +37,6 @@ interface State {
     configuredScopes?: ISearchScope[]
     /** All fetched search scopes */
     remoteScopes?: ISearchScope[]
-    user: GQL.IUser | null
 }
 
 export class SearchFilterChips extends React.PureComponent<Props, State> {
@@ -47,7 +46,7 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        this.state = { user: null }
+        this.state = {}
 
         this.subscriptions.add(
             authRequired
@@ -72,7 +71,6 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
                 })
             )
         )
-        this.subscriptions.add(currentUser.subscribe(user => this.setState({ user })))
 
         // Update tooltip text immediately after clicking.
         this.subscriptions.add(
@@ -107,7 +105,7 @@ export class SearchFilterChips extends React.PureComponent<Props, State> {
                             name={scope.name}
                         />
                     ))}
-                {this.state.user && (
+                {this.props.authenticatedUser && (
                     <div className="search-filter-chips__edit">
                         <NavLink
                             className="search-filter-chips__add-edit"

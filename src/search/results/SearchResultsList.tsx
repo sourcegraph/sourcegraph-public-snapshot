@@ -29,7 +29,7 @@ interface SearchResultsListProps {
     isLightTheme: boolean
     location: H.Location
     history: H.History
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 
     // Result list
     resultsOrError?: GQL.ISearchResults | ErrorLike
@@ -243,7 +243,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                             onClose={this.props.onSavedQueryModalClose}
                             component={
                                 <SavedQueryCreateForm
-                                    user={this.props.user}
+                                    authenticatedUser={this.props.authenticatedUser}
                                     values={{ query: parsedQuery ? parsedQuery.query : '' }}
                                     onDidCancel={this.props.onSavedQueryModalClose}
                                     onDidCreate={this.props.onDidCreateSavedQuery}
@@ -269,7 +269,7 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
                                 <>
                                     {/* Info Bar */}
                                     <SearchResultsInfoBar
-                                        user={this.props.user}
+                                        authenticatedUser={this.props.authenticatedUser}
                                         results={results}
                                         allExpanded={this.props.allExpanded}
                                         didSave={this.props.didSave}
