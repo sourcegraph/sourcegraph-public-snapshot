@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>com.sourcegraph.jetbrains</id>
   <name>Sourcegraph</name>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
   <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
   <description><![CDATA[
@@ -10,6 +10,11 @@
 
   <change-notes><![CDATA[
     <ul>
+    <li>v1.1.2 - Fixed no selection search error.
+        <ul>
+          <li>Updated the search action to trigger the open action when no text is selected.</li>
+        </ul>
+      </li>
       <li>v1.1.1 - Fixed search shortcut.
         <ul>
           <li>Updated the search URL to reflect a recent Sourcegraph.com change.</li>

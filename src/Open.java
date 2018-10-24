@@ -1,21 +1,19 @@
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.command.CommandProcessor;
+import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sun.org.apache.bcel.internal.generic.NEW;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.application.ApplicationInfo;
 
-import java.io.*;
-import java.awt.Desktop;
+import java.awt.*;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 
@@ -41,7 +39,6 @@ public class Open extends AnAction {
         if (currentFile == null) {
             return;
         }
-        SelectionModel sel = editor.getSelectionModel();
 
         // Get repo information.
         RepoInfo repoInfo = Util.repoInfo(currentFile.getPath());
@@ -49,10 +46,16 @@ public class Open extends AnAction {
             return;
         }
 
+        Open.DoOpen(editor, repoInfo, logger);
+        return;
+    }
+
+    public static void DoOpen(Editor editor, RepoInfo repoInfo, Logger logger) {
         // Build the URL that we will open.
         String productName = ApplicationInfo.getInstance().getVersionName();
         String productVersion = ApplicationInfo.getInstance().getFullVersion();
         String uri;
+        SelectionModel sel = editor.getSelectionModel();
         try {
             LogicalPosition start = editor.visualToLogicalPosition(sel.getSelectionStartPosition());
             LogicalPosition end = editor.visualToLogicalPosition(sel.getSelectionEndPosition());
@@ -81,6 +84,5 @@ public class Open extends AnAction {
             logger.debug("failed to open browser");
             err.printStackTrace();
         }
-        return;
     }
 }

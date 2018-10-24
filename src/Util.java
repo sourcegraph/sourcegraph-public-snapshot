@@ -1,12 +1,6 @@
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.VisualPosition;
-import org.jetbrains.annotations.NotNull;
-import sun.plugin.dom.exception.InvalidStateException;
-import com.intellij.openapi.editor.LogicalPosition;
 
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Properties;
 
 public class Util {

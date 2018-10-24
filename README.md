@@ -73,6 +73,7 @@ Please file an issue: https://github.com/sourcegraph/sourcegraph-jetbrains/issue
 
 ## Version History
 
+- v1.1.2 - Updated the search action to trigger the open action when no text is selected.
 - v1.1.1 - Fixed search shortcut; Updated the search URL to reflect a recent Sourcegraph.com change.
 - v1.1.0 - Added support for using the plugin with on-premises Sourcegraph instances.
 - v1.0.0 - Initial Release; basic Open File & Search functionality.
