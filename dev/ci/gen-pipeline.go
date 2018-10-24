@@ -96,7 +96,7 @@ func main() {
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
 		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
 
-	if branch == "master" {
+	if branch == "master" || branch == "2.12" {
 		// Publish @sourcegraph/webapp to npm
 		pipeline.AddStep(":npm:",
 			bk.Cmd("yarn --frozen-lockfile"),
