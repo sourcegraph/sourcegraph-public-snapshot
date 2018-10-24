@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
+	
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -23,84 +23,6 @@ var (
 	rawMu sync.RWMutex
 	raw   string
 )
-
-// Raw returns the raw site configuration JSON.
-func Raw() string {
-	rawMu.RLock()
-	defer rawMu.RUnlock()
-	return raw
-}
-
-// Get returns a copy of the configuration. The returned value should NEVER be
-// modified.
-//
-// Important: The configuration can change while the process is running! Code
-// should only call this in response to conf.Watch OR it should invoke it
-// periodically or in direct response to a user action (e.g. inside an HTTP
-// handler) to ensure it responds to configuration changes while the process
-// is running.
-//
-// There are a select few configuration options that do restart the server (for
-// example, TLS or which port the frontend listens on) but these are the
-// exception rather than the rule. In general, ANY use of configuration should
-// be done in such a way that it responds to config changes while the process
-// is running.
-func Get() *schema.SiteConfiguration {
-	cfgMu.RLock()
-	defer cfgMu.RUnlock()
-	if mockGetData != nil {
-		return mockGetData
-	}
-	return cfg
-}
-
-var mockGetData *schema.SiteConfiguration
-
-// Mock sets up mock data for the site configuration. It uses the configuration
-// mutex, to avoid possible races between test code and possible config watchers.
-func Mock(mockery *schema.SiteConfiguration) {
-	cfgMu.Lock()
-	defer cfgMu.Unlock()
-	mockGetData = mockery
-}
-
-// GetTODO denotes code that may or may not be using configuration correctly.
-// The code may need to be updated to use conf.Watch, or it may already be e.g.
-// invoked only in response to a user action (in which case it does not need to
-// use conf.Watch). See Get documentation for more details.
-func GetTODO() *schema.SiteConfiguration {
-	return Get()
-}
-
-var (
-	watchersMu sync.Mutex
-	watchers   []chan struct{}
-)
-
-// Watch calls the given function in a separate goroutine whenever the
-// configuration has changed. The new configuration can be received by calling
-// conf.Get.
-//
-// Before Watch returns, it will invoke f to use the current configuration.
-func Watch(f func()) {
-	// Add the watcher channel now, rather than after invoking f below, in case
-	// an update were to happen while we were invoking f.
-	notify := make(chan struct{}, 1)
-	watchersMu.Lock()
-	watchers = append(watchers, notify)
-	watchersMu.Unlock()
-
-	// Call the function now, to use the current configuration.
-	f()
-
-	go func() {
-		// Invoke f when the configuration has changed.
-		for {
-			<-notify
-			f()
-		}
-	}()
-}
 
 var (
 	cfgMu sync.RWMutex
@@ -287,39 +209,7 @@ var doNotRequireRestart = []string{
 	"maxReposToSearch",
 }
 
-// Write writes the JSON configuration to the config file. If the file is unknown
-// or it's not editable, an error is returned.
-func Write(input string) error {
-	if !IsWritable() {
-		return errors.New("configuration is not writable")
-	}
 
-	// Parse the configuration so that we can diff it (this also validates it
-	// is proper JSON).
-	after, err := parseConfig(input)
-	if err != nil {
-		return err
-	}
-
-	before := Get()
-
-	if err := ioutil.WriteFile(configFilePath, []byte(input), 0600); err != nil {
-		return err
-	}
-
-	// Wait for the change to the configuration file to be detected. Otherwise
-	// we would return to the caller earlier than conf.Get() would return the
-	// new configuration.
-	doneReading := make(chan struct{}, 1)
-	fileWrite <- doneReading
-	<-doneReading
-
-	// Update global "needs restart" state.
-	if needRestartToApply(before, after) {
-		markNeedServerRestart()
-	}
-	return nil
-}
 
 // merge a map, overwriting keys
 func mergeMap(destMap, srcMap reflect.Value) {
@@ -492,54 +382,7 @@ func parseJSONTag(tag string) string {
 	return tag
 }
 
-// Edit invokes the provided function to compute edits to the site
-// configuration. It then applies and writes them.
-//
-// The computation function is provided the current configuration, which should
-// NEVER be modified in any way. Always copy values.
-func Edit(computeEdits func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error)) error {
-	current := Get()
-	raw := Raw()
-
-	// Compute edits.
-	edits, err := computeEdits(current, raw)
-	if err != nil {
-		return errors.Wrap(err, "computeEdits")
-	}
-
-	// Apply edits and write out new configuration.
-	newConfig, err := jsonx.ApplyEdits(raw, edits...)
-	if err != nil {
-		return errors.Wrap(err, "jsonx.ApplyEdits")
-	}
-	err = Write(newConfig)
-	if err != nil {
-		return errors.Wrap(err, "conf.Write")
-	}
-	return nil
-}
-
 // FormatOptions is the default format options that should be used for jsonx
 // edit computation.
 var FormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}
 
-var (
-	needRestartMu sync.RWMutex
-	needRestart   bool
-)
-
-// NeedServerRestart tells if the server needs to restart for pending configuration
-// changes to take effect.
-func NeedServerRestart() bool {
-	needRestartMu.RLock()
-	defer needRestartMu.RUnlock()
-	return needRestart
-}
-
-// markNeedServerRestart marks the server as needing a restart so that pending
-// configuration changes can take effect.
-func markNeedServerRestart() {
-	needRestartMu.Lock()
-	needRestart = true
-	needRestartMu.Unlock()
-}

@@ -10,32 +10,35 @@ import (
 )
 
 func init() {
-	go Client.run()
+	go defaultClient.run()
 }
 
 type client struct {
-	configMu sync.RWMutex
-	config   *schema.SiteConfiguration
-
-	rawMu sync.RWMutex
-	raw   string
-
-	ready chan struct{}
+	cache *configCache
 
 	watchersMu sync.Mutex
 	watchers   []chan struct{}
+
+	// barrier to block handling requests until the
+	ready chan struct{}
 }
 
-var Client = &client{}
+var defaultClient = &client{}
 
 func (c *client) run() {
-	err := c.fetchAndUpdate()
-	if err != nil {
-		return log.Fatalf("received error during initial configuration update, err: %s", err)
+
+	for {
+		err := c.fetchAndUpdate()
+		if err == nil {
+			break
+		}
+
+		log.Printf("received error during initial configuration update, err: %s", err)
+		time.Sleep(1 * time.Second)
 	}
 
 	go func() { c.continouslyUpdate(5 * time.Second) }()
-	
+
 	close(c.ready)
 }
 
@@ -56,7 +59,7 @@ func (c *client) run() {
 //
 // Get is a wrapper around client.Get.
 func Get() *schema.SiteConfiguration {
-	return Client.Get()
+	return defaultClient.Get()
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -91,7 +94,7 @@ func (c *client) Get() *schema.SiteConfiguration {
 //
 // GetTODO is a wrapper around client.GetTODO.
 func GetTODO() *schema.SiteConfiguration {
-	return DefaultClient.GetTODO()
+	return defaultClient.GetTODO()
 }
 
 // GetTODO denotes code that may or may not be using configuration correctly.
@@ -109,7 +112,7 @@ var mockGetData *schema.SiteConfiguration
 //
 // Mock is a wrapper around client.Mock.
 func Mock(mockery *schema.SiteConfiguration) {
-	Client.Mock(mockery)
+	defaultClient.Mock(mockery)
 }
 
 // Mock sets up mock data for the site configuration. It uses the configuration
@@ -128,7 +131,7 @@ func (c *client) Mock(mockery *schema.SiteConfiguration) {
 //
 // Watch is a wrapper around client.Watch.
 func Watch(f func()) {
-	Client.Watch(f)
+	defaultClient.Watch(f)
 }
 
 // Watch calls the given function in a separate goroutine whenever the
@@ -143,7 +146,7 @@ func (c *client) Watch(f func()) {
 	// an update were to happen while we were invoking f.
 	notify := make(chan struct{}, 1)
 	c.watchersMu.Lock()
-	c.watchers = append(watchers, notify)
+	c.watchers = append(c.watchers, notify)
 	c.watchersMu.Unlock()
 
 	// Call the function now, to use the current configuration.
@@ -194,11 +197,11 @@ func (c *client) fetchAndUpdate() error {
 		return errors.Wrap(err, "unable to fetch new configuration")
 	}
 
-	if !c.shouldUpdate(newRawConfig) {
+	if !c.cache.IsDirty(newRawConfig) {
 		return nil
 	}
 
-	err = c.updateCache(newRawConfig)
+	err = c.cache.Update(newRawConfig)
 	if err != nil {
 		return errors.Wrap(err, "unable to update new configuration")
 	}
@@ -209,29 +212,4 @@ func (c *client) fetchAndUpdate() error {
 
 func (c *client) fetchConfig() (string, error) {
 	return "TEST", nil
-}
-
-func (c *client) updateCache(rawConfig string) error {
-	c.rawMu.Lock()
-	c.raw = rawConfig
-	c.rawMu.Unlock()
-
-	tmpConfig, err := parseConfig(rawConfig)
-	if err != nil {
-		return errors.Wrap(err, "when parsing rawConfig during update")
-	}
-
-	c.configMu.Lock()
-	c.config = tmpConfig
-	c.configMu.Unlock()
-
-	return nil
-}
-
-func (c *client) shouldUpdate(newRawConfig string) bool {
-	c.rawMu.RLock()
-	oldRawConfig := c.raw
-	c.rawMu.RUnlock()
-
-	return oldRawConfig != newRawConfig
 }
