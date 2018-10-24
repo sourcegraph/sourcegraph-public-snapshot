@@ -284,6 +284,7 @@ var doNotRequireRestart = []string{
 	"repoListUpdateInterval",
 	"repos.list",
 	"reviewBoard",
+	"search.index",
 	"settings",
 }
 
