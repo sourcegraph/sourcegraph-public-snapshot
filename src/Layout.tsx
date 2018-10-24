@@ -19,7 +19,7 @@ import { IntegrationsToast } from './marketing/IntegrationsToast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
-import { routes } from './routes'
+import { LayoutRouteProps } from './routes'
 import { parseSearchURLQuery } from './search'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -49,6 +49,7 @@ export interface LayoutProps
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
+    routes: ReadonlyArray<LayoutRouteProps>
 
     authenticatedUser: GQL.IUser | null
 
@@ -93,7 +94,7 @@ export const Layout: React.SFC<LayoutProps> = props => {
             {!isSiteInit && <GlobalNavbar {...props} lowProfile={isSearchHomepage} />}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
             <Switch>
-                {routes.map((route, i) => {
+                {props.routes.map((route, i) => {
                     const isFullWidth = !route.forceNarrowWidth
                     return (
                         <Route

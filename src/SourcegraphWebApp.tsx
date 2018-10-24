@@ -39,6 +39,7 @@ import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
+import { LayoutRouteProps } from './routes'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { eventLogger } from './tracking/eventLogger'
@@ -62,6 +63,7 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
+    routes: ReadonlyArray<LayoutRouteProps>
 }
 
 interface SourcegraphWebAppState

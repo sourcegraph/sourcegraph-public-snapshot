@@ -12,6 +12,14 @@ import * as GQL from '../../backend/graphqlschema'
 export const RedirectToUserPage = withAuthenticatedUser(
     ({ authenticatedUser, location }: { authenticatedUser: GQL.IUser; location: H.Location }) => {
         const path = location.pathname.replace(/^\/user\//, '') // trim leading '/user/'
-        return <Redirect to={{ pathname: `${userURL(authenticatedUser.username)}/${path}`, search: location.search }} />
+        return (
+            <Redirect
+                to={{
+                    pathname: `${userURL(authenticatedUser.username)}/${path}`,
+                    search: location.search,
+                    hash: location.hash,
+                }}
+            />
+        )
     }
 )

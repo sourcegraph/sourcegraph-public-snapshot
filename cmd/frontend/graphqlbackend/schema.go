@@ -3455,8 +3455,8 @@ type DotcomQuery {
     #
     # Performing this query does not mutate any data or cause any billing changes to be made.
     previewProductSubscriptionInvoice(
-        # The customer account (user) for whom this preview invoice will be generated.
-        account: ID!
+        # The customer account (user) for whom this preview invoice will be generated, or null if there is none.
+        account: ID
         # If non-null, preview the invoice for an update to the existing product subscription. The
         # product subscription's billing customer must match the account parameter. If null, preview
         # the invoice for a new subscription.
