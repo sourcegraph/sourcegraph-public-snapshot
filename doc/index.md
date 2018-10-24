@@ -4,6 +4,32 @@ Sourcegraph is a code search and browsing tool with code intelligence that helps
 
 Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph). If these docs don't solve your problem, check the [issue tracker](https://github.com/sourcegraph/sourcegraph/issues).
 
+## Quickstart
+
+Set up a private Sourcegraph instance for your team in seconds with the command below. Visit the [site administrator documentation](admin/index.md) to learn more about installation options, or start [adding repositories](admin/repo/add.md) and searching!
+
+**Prerequisites:** [Docker](https://docs.docker.com/engine/installation/) is required.
+
+```
+docker run \
+  --publish 7080:7080 --rm \
+  --volume ~/.sourcegraph/config:/etc/sourcegraph \
+  --volume ~/.sourcegraph/data:/var/opt/sourcegraph \
+  --volume /var/run/docker.sock:/var/run/docker.sock \
+  sourcegraph/server:2.12.2
+```
+
+When Sourcegraph is ready, continue at http://localhost:7080.
+
+### Next steps
+
+- [Add repositories](admin/repo/add.md)
+- [Configure your Sourcegraph instance](admin/site_config/index.md)
+- [Configure code intelligence](extensions/language_servers/index.md)
+- [Deploy Sourcegraph on AWS](admin/install/docker/aws.md)
+- [Deploy Sourcegraph on Google Cloud Platform](admin/install/docker/google_cloud.md)
+- [Deploy Sourcegraph on Digital Ocean](admin/install/docker/digitalocean.md)
+
 ## For users
 
 The [user documentation](user/index.md) is about how to use Sourcegraph. The most read docs are:
