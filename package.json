@@ -17,7 +17,9 @@
     "test:e2e": "yarn run build && cypress run --browser chrome",
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "storybook": "start-storybook -c ./config/storybook -p 6006",
-    "build-storybook": "build-storybook -c ./config/storybook"
+    "build-storybook": "build-storybook -c ./config/storybook",
+    "test": "mocha --require ts-node/register --watch --watch-extensions ts './src/**/*.test.ts?(x)'",
+    "test:ci": "mocha --require ts-node/register './src/**/*.test.ts?(x)'"
   },
   "husky": {
     "hooks": {
@@ -49,6 +51,7 @@
     "@storybook/addons": "4.0.0-alpha.21",
     "@storybook/react": "4.0.0-alpha.21",
     "@types/bluebird": "3.5.24",
+    "@types/chai": "^4.1.6",
     "@types/chalk": "2.2.0",
     "@types/cypress": "1.1.3",
     "@types/extract-text-webpack-plugin": "3.0.3",
@@ -57,6 +60,7 @@
     "@types/lodash": "4.14.116",
     "@types/marked": "0.4.0",
     "@types/mermaid": "8.0.0",
+    "@types/mocha": "^5.2.5",
     "@types/node": "8.0.44",
     "@types/react": "16.4.13",
     "@types/react-dom": "16.0.8",
@@ -76,12 +80,14 @@
     "babel-core": "^6.26.3",
     "babel-loader": "^8.0.2",
     "babel-runtime": "^6.26.0",
+    "chai": "^4.2.0",
     "css-loader": "^1.0.0",
     "cypress": "^3.1.0",
     "extract-text-webpack-plugin": "^4.0.0-beta.0",
     "get-graphql-schema": "^2.1.1",
     "gql2ts": "^1.2.1",
     "husky": "^1.1.0",
+    "mocha": "^5.2.0",
     "node-sass": "^4.9.0",
     "postcss-loader": "^3.0.0",
     "prettier": "1.14.0",

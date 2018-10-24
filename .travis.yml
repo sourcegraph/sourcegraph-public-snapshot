@@ -31,6 +31,12 @@ jobs:
         - CYPRESS_INSTALL_BINARY=0
         - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
       script:
+        - yarn test:ci
+    - stage: test
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+      script:
         - yarn run prettier
         - yarn run tslint
         - yarn run browserslist
