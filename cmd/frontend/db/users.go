@@ -461,7 +461,14 @@ func (u *users) HardDelete(ctx context.Context, id int32) error {
 	if _, err := tx.ExecContext(ctx, "DELETE FROM org_members WHERE user_id=$1", id); err != nil {
 		return err
 	}
-	if _, err := tx.ExecContext(ctx, "DELETE FROM settings WHERE user_id=$1 OR author_user_id=$1", id); err != nil {
+	if _, err := tx.ExecContext(ctx, "DELETE FROM settings WHERE user_id=$1", id); err != nil {
+		return err
+	}
+
+	// Settings that were merely authored by this user should not be deleted. They may be global or
+	// org settings that apply to other users, too. There is currently no way to hard-delete
+	// settings for an org or globally, but we can handle those rare cases manually.
+	if _, err := tx.ExecContext(ctx, "UPDATE settings SET author_user_id=NULL WHERE author_user_id=$1", id); err != nil {
 		return err
 	}
 
