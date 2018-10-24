@@ -1,4 +1,4 @@
-import { Shortcut } from '@shopify/react-shortcuts'
+import { Shortcut, ShortcutProps } from '@slimsag/react-shortcuts'
 import * as React from 'react'
 import Popover, { PopoverProps } from 'reactstrap/lib/Popover'
 import { LinkOrSpan } from './LinkOrSpan'
@@ -37,7 +37,7 @@ interface Props {
     /**
      * A keybinding  that toggles the visibility of this element.
      */
-    toggleVisibilityKeybinding?: Pick<Shortcut['props'], 'held' | 'ordered'>[]
+    toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
 
     /** Popover placement. */
     placement?: PopoverProps['placement']

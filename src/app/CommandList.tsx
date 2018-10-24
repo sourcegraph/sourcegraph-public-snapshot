@@ -1,4 +1,4 @@
-import { Shortcut } from '@shopify/react-shortcuts'
+import { ShortcutProps } from '@slimsag/react-shortcuts'
 import { isArray, sortBy, uniq } from 'lodash-es'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
@@ -253,7 +253,7 @@ export function filterAndRankItems(
 
 export class CommandListPopoverButton<S extends ConfigurationSubject, C extends Settings> extends React.PureComponent<
     Props<S, C> & {
-        toggleVisibilityKeybinding?: Pick<Shortcut['props'], 'held' | 'ordered'>[]
+        toggleVisibilityKeybinding?: Pick<ShortcutProps, 'held' | 'ordered'>[]
     },
     { hideOnChange?: any }
 > {

@@ -348,10 +348,10 @@
     into-stream "^3.1.0"
     lodash "^4.17.4"
 
-"@shopify/react-shortcuts@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@shopify/react-shortcuts/-/react-shortcuts-1.0.2.tgz#01d9f6979ff5cce1d70474e1452fb750f7bbe819"
-  integrity sha512-KEQd0IKSE/IRmPn5MfboeBxJzh5KGb7OLvpfoxjhcbijj/YsU117H62PKsjBuPMc0fi0f8jTIeg938w2y0U5xg==
+"@slimsag/react-shortcuts@^1.2.0":
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/@slimsag/react-shortcuts/-/react-shortcuts-1.2.0.tgz#fdae7dfe1575d1687e635391eb9ae50d2922a07c"
+  integrity sha512-//jcU6SMAoaCX1dnSG1+7BvUBkiRKVRUBeJYeGaz8l9M+dtwJiPgTNSwApqsQiDyrIjVonXCs4AZbaErwv1CBQ==
   dependencies:
     prop-types "^15.6.2"
 
