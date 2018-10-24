@@ -1306,6 +1306,13 @@
   dependencies:
     prop-types "^15.6.2"
 
+"@slimsag/react-shortcuts@^1.2.1":
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/@slimsag/react-shortcuts/-/react-shortcuts-1.2.1.tgz#a3ea054a057137de8636bc9fabac61369103e597"
+  integrity sha512-dUTQjBX1yjnHbqkTL5ditqtx5R6QhcXI3lCnjOy8e5XUOr5LOtVpol1mufU2lAb7DtEYrSVRQpUeNmZrTEgLcg==
+  dependencies:
+    prop-types "^15.6.2"
+
 "@sourcegraph/codeintellify@^3.9.0":
   version "3.9.0"
   resolved "https://registry.yarnpkg.com/@sourcegraph/codeintellify/-/codeintellify-3.9.0.tgz#1e3f002558cc367e8c5ee9b0a54e0c47c6ee8761"

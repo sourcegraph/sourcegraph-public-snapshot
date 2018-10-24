@@ -25,6 +25,7 @@ import * as H from 'history'
 import { isErrorLike } from '../../shared/backend/errors'
 import { createExtensionsContextController, createMessageTransports } from '../../shared/backend/extensions'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
+import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 import { sourcegraphUrl } from '../../shared/util/context'
 import { getGlobalDebugMount } from '../github/extensions'
 import { MountGetter } from './code_intelligence'
@@ -111,11 +112,13 @@ export function initializeExtensions(
     const { extensionsContextController, extensionsController } = createControllers(documents)
 
     render(
-        <CommandListPopoverButton
-            extensionsController={extensionsController}
-            menu={ContributableMenu.CommandPalette}
-            extensions={extensionsContextController}
-        />,
+        <ShortcutProvider>
+            <CommandListPopoverButton
+                extensionsController={extensionsController}
+                menu={ContributableMenu.CommandPalette}
+                extensions={extensionsContextController}
+            />
+        </ShortcutProvider>,
         getCommandPaletteMount()
     )
 

@@ -8,6 +8,7 @@ import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
+import { ShortcutProvider } from '../../shared/components/ShortcutProvider'
 
 export function getCommandPaletteMount(): HTMLElement {
     const headerElem = document.querySelector('div.HeaderMenu>div:last-child')
@@ -51,11 +52,13 @@ export function injectExtensionsGlobalComponents({
     extensionsContextController: Controller<ConfigurationSubject, Settings>
 }): void {
     render(
-        <CommandListPopoverButton
-            extensionsController={extensionsController}
-            menu={ContributableMenu.CommandPalette}
-            extensions={extensionsContextController}
-        />,
+        <ShortcutProvider>
+            <CommandListPopoverButton
+                extensionsController={extensionsController}
+                menu={ContributableMenu.CommandPalette}
+                extensions={extensionsContextController}
+            />
+        </ShortcutProvider>,
         getCommandPaletteMount()
     )
 

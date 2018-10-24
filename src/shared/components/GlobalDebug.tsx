@@ -6,6 +6,7 @@ import * as H from 'history'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import { sourcegraphUrl } from '../util/context'
+import { ShortcutProvider } from './ShortcutProvider'
 
 interface Props {
     location: H.Location
@@ -28,13 +29,17 @@ export const GlobalDebug: React.SFC<Props> = props =>
         <div className="global-debug navbar navbar-expand">
             <ul className="navbar-nav align-items-center">
                 <li className="nav-item">
-                    <ExtensionStatusPopover
-                        location={props.location}
-                        loaderIcon={LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>}
-                        caretIcon={MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>}
-                        extensionsController={props.extensionsController}
-                        link={ExtensionLink}
-                    />
+                    <ShortcutProvider>
+                        <ExtensionStatusPopover
+                            location={props.location}
+                            loaderIcon={
+                                LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>
+                            }
+                            caretIcon={MenuDownIcon as React.ComponentType<{ className: string; onClick?: () => void }>}
+                            extensionsController={props.extensionsController}
+                            link={ExtensionLink}
+                        />
+                    </ShortcutProvider>
                 </li>
             </ul>
         </div>
