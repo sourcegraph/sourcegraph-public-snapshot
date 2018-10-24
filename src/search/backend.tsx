@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash'
-import { Observable, of } from 'rxjs'
+import { Observable } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mergeMap, switchMap } from 'rxjs/operators'
 import { SearchOptions } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
@@ -8,7 +8,6 @@ import { mutateConfigurationGraphQL } from '../configuration/backend'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { currentConfiguration } from '../settings/configuration'
 import { asError, createAggregateError, ErrorLike } from '../util/errors'
-import { SearchResults } from './results/SearchResults'
 
 export function search(
     options: SearchOptions,
