@@ -276,6 +276,7 @@ var doNotRequireRestart = []string{
 	"httpStrictTransportSecurity",
 	"httpToHttpsRedirect",
 	"langservers",
+	"licenseKey",
 	"log",
 	"maxReposToSearch",
 	"parentSourcegraph",
