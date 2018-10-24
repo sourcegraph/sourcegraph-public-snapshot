@@ -111,7 +111,7 @@ func repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.Re
 		}
 		if repo != nil {
 			go func() {
-				err := api.InternalClient.ReposUpdateMetadata(ctx, repo.URI, repo.Description, repo.Fork, repo.Archived)
+				err := api.InternalClient.ReposUpdateMetadata(context.Background(), repo.URI, repo.Description, repo.Fork, repo.Archived)
 				if err != nil {
 					log15.Warn("Error updating repo metadata", "repo", repo.URI, "err", err)
 				}
