@@ -19,14 +19,13 @@ type server struct {
 	needRestartMu sync.RWMutex
 	needRestart   bool
 
+	// fileWrite signals when our app writes to the configuration file. The
+	// secondary channel is closed when conf.Get() would return the new
+	// configuration that has been written to disk.
+	// TODO@ggilmore: is it important that the channel here is buffered?
+	// var fileWrite = make(chan chan struct{}, 1)
 	fileWrite chan chan struct{}
 }
-
-// fileWrite signals when our app writes to the configuration file. The
-// secondary channel is closed when conf.Get() would return the new
-// configuration that has been written to disk.
-// TODO@ggilmore: is it important that the channel here is buffered?
-// var fileWrite = make(chan chan struct{}, 1)
 
 func (s *server) Raw() string {
 	return s.cache.Raw()
@@ -100,17 +99,58 @@ func (s *server) watchDisk() {
 			// File possibly changed on FS, so check now.
 		}
 
-		if IsDirty() {
-			// Read the new configuration from disk.
-			if err := initConfig(true); err != nil {
-				log.Printf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
-			}
+		err := s.updateFromDisk(true)
+		if err != nil {
+			log.Printf("failed to read configuration file: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err, s.configFilePath)
 		}
 
 		if signalDoneReading != nil {
 			close(signalDoneReading)
 		}
 	}
+}
+
+func (s *server) updateFromDisk(reinitialize bool) error {
+	rawConfig, err := s.readConfig()
+	if err != nil {
+		return err
+	}
+
+	if !s.cache.IsDirty(rawConfig) {
+		return nil
+	}
+
+	oldConfig := s.cache.Parsed()
+
+	err = s.cache.Update(rawConfig)
+	if err != nil {
+		return err
+	}
+
+	newConfig := s.cache.Parsed()
+
+	// TODO@ggilmore: I'm not sure how I feel about relying on s.cache.Parsed()
+	// to return a copy of the new configuration (e.g. this code path would break
+	// if oldConfig and newConfig were references to the same object)
+	if reinitialize {
+		// Update global "needs restart" state.
+		if needRestartToApply(oldConfig, newConfig) {
+			s.markNeedServerRestart()
+		}
+	}
+
+	return nil
+}
+
+// readConfig reads the raw configuration that's currently saved to the disk
+// (bypasses the cache).
+func (s *server) readConfig() (string, error) {
+	data, err := ioutil.ReadFile(s.configFilePath)
+	if err != nil {
+		return "", errors.Wrapf(err, "unable to read config file from %q", s.configFilePath)
+	}
+
+	return string(data), nil
 }
 
 // NeedServerRestart tells if the server needs to restart for pending configuration
@@ -128,3 +168,7 @@ func (s *server) markNeedServerRestart() {
 	s.needRestart = true
 	s.needRestartMu.Unlock()
 }
+
+// FilePath is the path to the configuration file, if any.
+// TODO@ggilmore: re-evaluate whether or not we need this
+func (s *server) FilePath() string { return s.configFilePath }

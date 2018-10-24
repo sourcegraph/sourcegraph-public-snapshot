@@ -3,93 +3,13 @@ package conf
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
-	"os"
 	"reflect"
 	"strings"
-	"sync"
-	"time"
 
-	
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
-var (
-	configFilePath string
-
-	rawMu sync.RWMutex
-	raw   string
-)
-
-var (
-	cfgMu sync.RWMutex
-	cfg   *schema.SiteConfiguration
-
-	// fileWrite signals when our app writes to the configuration file. The
-	// secondary channel is closed when conf.Get() would return the new
-	// configuration that has been written to disk.
-	fileWrite = make(chan chan struct{}, 1)
-)
-
-func init() {
-	configFilePath = os.Getenv("SOURCEGRAPH_CONFIG_FILE")
-
-	// Read configuration initially.
-	if err := initConfig(false); err != nil {
-		log.Fatalf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
-	}
-
-	// Every five seconds, check if the configuration has changed and notify
-	// watchers when it has.
-	go func() {
-		for {
-			var signalDoneReading chan struct{}
-			select {
-			case signalDoneReading = <-fileWrite:
-				// File was changed on FS, so check now.
-			case <-time.After(5 * time.Second):
-				// File possibly changed on FS, so check now.
-			}
-			if IsDirty() {
-				// Read the new configuration from disk.
-				if err := initConfig(true); err != nil {
-					log.Printf("failed to read configuration from environment: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://about.sourcegraph.com/docs to learn more.", err, configFilePath)
-				}
-				if signalDoneReading != nil {
-					close(signalDoneReading)
-				}
-
-				watchersMu.Lock()
-				for _, watcher := range watchers {
-					// Perform a non-blocking send.
-					//
-					// Since the watcher channels that we are sending on have a
-					// buffer of 1, it is guaranteed the watcher will
-					// reconsider the config at some point in the future even
-					// if this send fails.
-					select {
-					case watcher <- struct{}{}:
-					default:
-					}
-				}
-				watchersMu.Unlock()
-			} else if signalDoneReading != nil {
-				close(signalDoneReading)
-			}
-		}
-	}()
-}
-
-func readConfig() (string, error) {
-	if configFilePath == "" {
-		return "", nil
-	}
-	data, err := ioutil.ReadFile(configFilePath)
-	return string(data), err
-}
 
 // ParseConfigData reads the provided config string, but NOT the environment
 func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
@@ -130,36 +50,6 @@ func parseConfig(data string) (*schema.SiteConfiguration, error) {
 	}
 	return tmpConfig, nil
 }
-
-func initConfig(reinitialize bool) error {
-	rawConfig, err := readConfig()
-	if err != nil {
-		return err
-	}
-
-	rawMu.Lock()
-	raw = rawConfig
-	rawMu.Unlock()
-
-	tmpConfig, err := parseConfig(rawConfig)
-	if err != nil {
-		return err
-	}
-
-	cfgMu.Lock()
-	defer cfgMu.Unlock()
-	if reinitialize {
-		// Update global "needs restart" state.
-		if needRestartToApply(cfg, tmpConfig) {
-			markNeedServerRestart()
-		}
-	}
-	cfg = tmpConfig
-	return nil
-}
-
-// FilePath is the path to the configuration file, if any.
-func FilePath() string { return configFilePath }
 
 // TODO(slimsag): add back requireRestart and make use of it (it is a list of config properties that
 // require restarting the given services to take effect)
@@ -208,8 +98,6 @@ var doNotRequireRestart = []string{
 	"parentSourcegraph",
 	"maxReposToSearch",
 }
-
-
 
 // merge a map, overwriting keys
 func mergeMap(destMap, srcMap reflect.Value) {
@@ -311,19 +199,6 @@ func AppendConfig(dest, src *schema.SiteConfiguration) *schema.SiteConfiguration
 	return dest
 }
 
-// IsWritable reports whether the config can be overwritten.
-func IsWritable() bool { return configFilePath != "" }
-
-// IsDirty reports whether the config has been changed since this process started.
-// This can occur when config is read from a file and the file has changed on disk.
-func IsDirty() bool {
-	if configFilePath == "" {
-		return false
-	}
-	data, err := ioutil.ReadFile(configFilePath)
-	return err != nil || string(data) != raw
-}
-
 // needRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
 func needRestartToApply(before, after *schema.SiteConfiguration) bool {
@@ -385,4 +260,3 @@ func parseJSONTag(tag string) string {
 // FormatOptions is the default format options that should be used for jsonx
 // edit computation.
 var FormatOptions = jsonx.FormatOptions{InsertSpaces: true, TabSize: 2, EOL: "\n"}
-

@@ -45,7 +45,8 @@ func (c *configCache) Update(rawConfig string) error {
 	return nil
 }
 
-// IsDirty reports whether the config has been changed since this process started.
+// IsDirty reports whether the config has been changed since the last time this
+// cache was updated.
 // This can occur when config is read from a file and the file has changed on disk.
 func (c *configCache) IsDirty(newRawConfig string) bool {
 	c.rawMu.RLock()
