@@ -61,7 +61,7 @@ const SiteSchemaJSON = `{
     },
     "search.index": {
       "description":
-        "Whether indexed search is enabled. \"auto\" (the default) detects the environment to decide if indexed search is enabled. Indexed Search is RAM heavy, as such is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
+        "Whether indexed search is enabled. \"auto\" (the default) detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
       "type": "string",
       "enum": ["auto", "enabled", "disabled"],
       "default": "auto"

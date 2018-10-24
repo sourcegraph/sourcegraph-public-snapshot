@@ -215,7 +215,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                         </>
                     ) : (
                         <div className="alert alert-info">
-                            This Sourcegraph site has not enabled indexed search. Add See{' '}
+                            This Sourcegraph site has not enabled indexed search. See{' '}
                             <a href="https://docs.sourcegraph.com/admin/search">Search Documentation</a> for information
                             on how to enable it.
                         </div>

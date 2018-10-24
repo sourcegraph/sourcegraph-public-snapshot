@@ -35,7 +35,7 @@ func TestComputed(t *testing.T) {
 		fun:  SearchIndexEnabled,
 		want: true,
 	}, {
-		name: "SearchIndex auto is false in docker",
+		name: "SearchIndex auto is false in k8s",
 		sc:   &schema.SiteConfiguration{SearchIndex: "auto"},
 		env:  []string{"DEPLOY_TYPE=k8s"},
 		fun:  SearchIndexEnabled,
