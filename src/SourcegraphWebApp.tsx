@@ -1,4 +1,4 @@
-import { ShortcutProvider } from '@shopify/react-shortcuts'
+import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
 import { createController as createExtensionsController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'

@@ -1,4 +1,4 @@
-import { Key, ModifierKey } from '@shopify/react-shortcuts'
+import { Key, ModifierKey } from '@slimsag/react-shortcuts'
 
 /**
  * A map of action names to the keys that trigger them. The actions are their own namespace for now, but it will be
