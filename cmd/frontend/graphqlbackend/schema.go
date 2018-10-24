@@ -140,7 +140,7 @@ type Mutation {
     #
     # - All user data (access tokens, email addresses, external account info, survey responses, etc)
     # - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
-    # - Sourcegraph Extensions published by the user.
+    # - Sourcegraph extensions published by the user.
     # - User, Organization, or Global settings authored by the user.
     # - Discussion threads and comments created by the user.
     #
