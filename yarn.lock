@@ -894,19 +894,12 @@
     "@shellscape/koa-send" "^4.1.0"
     debug "^2.6.8"
 
-"@shopify/react-shortcuts@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@shopify/react-shortcuts/-/react-shortcuts-1.0.2.tgz#01d9f6979ff5cce1d70474e1452fb750f7bbe819"
-  integrity sha512-KEQd0IKSE/IRmPn5MfboeBxJzh5KGb7OLvpfoxjhcbijj/YsU117H62PKsjBuPMc0fi0f8jTIeg938w2y0U5xg==
-  dependencies:
-    prop-types "^15.6.2"
-
 "@sindresorhus/is@^0.7.0":
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.7.0.tgz#9a06f4f137ee84d7df0460c1fdb1135ffa6c50fd"
   integrity sha512-ONhaKPIufzzrlNbqtWFFd+jlnemX6lJAgq9ZeiZtS7I1PIf/la7CW4m83rTXRnVnsMbW2k56pGYu7AUFJD9Pow==
 
-"@slimsag/react-shortcuts@^1.2.1":
+"@slimsag/react-shortcuts@^1.2.0", "@slimsag/react-shortcuts@^1.2.1":
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/@slimsag/react-shortcuts/-/react-shortcuts-1.2.1.tgz#a3ea054a057137de8636bc9fabac61369103e597"
   integrity sha512-dUTQjBX1yjnHbqkTL5ditqtx5R6QhcXI3lCnjOy8e5XUOr5LOtVpol1mufU2lAb7DtEYrSVRQpUeNmZrTEgLcg==
@@ -938,12 +931,12 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/extensions-client-common@^10.2.0":
-  version "10.2.0"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.2.0.tgz#18f92f0e7aee085725598a5e02b7df5859164dad"
-  integrity sha512-PydJVaUjPrjXvIzz4qoQUSLQz+ieAiBp2ZaTLkfCMl2hhZFf7VG6lL9qwvN5oc/ZA07qwsy55pi+c6zCWU5ZJg==
+"@sourcegraph/extensions-client-common@^10.2.2":
+  version "10.2.2"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.2.2.tgz#2fc150db3b75adc430f416e391a3ea768e0ec047"
+  integrity sha512-Aykp7Sre+QP7QiVReAs6MSG0QBXwUDW1sGqFmr+Jyx0zi5GfdvD/EHEj7Ao/YfDCc865qcBJSRe+89OR702IzQ==
   dependencies:
-    "@shopify/react-shortcuts" "^1.0.2"
+    "@slimsag/react-shortcuts" "^1.2.0"
     bootstrap "^4.1.3"
     lodash-es "^4.17.10"
     react "^16.4.2"
