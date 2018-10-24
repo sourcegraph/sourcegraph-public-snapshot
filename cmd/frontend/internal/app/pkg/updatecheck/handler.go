@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/prometheus/client_golang/prometheus"
@@ -60,8 +62,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
-	clientVersionString = strings.TrimPrefix(clientVersionString, "v")
-	clientVersion, err := semver.NewVersion(clientVersionString)
+
+	latestReleaseBuild := getLatestRelease(deployType)
+	hasUpdate, err := canUpdate(clientVersionString, latestReleaseBuild)
 	if err != nil {
 		// Still log pings on malformed version strings.
 		logPing(r, clientVersionString, false)
@@ -70,8 +73,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latestReleaseBuild := getLatestRelease(deployType)
-	hasUpdate := clientVersion.LessThan(latestReleaseBuild.Version)
 	logPing(r, clientVersionString, hasUpdate)
 
 	if !hasUpdate {
@@ -89,6 +90,51 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	requestHasUpdateCounter.Inc()
 	_, _ = w.Write(body)
+}
+
+func canUpdate(clientVersionString string, latestReleaseBuild build) (bool, error) {
+	hasVersionUpdate, err := canUpdateVersion(clientVersionString, latestReleaseBuild)
+	if err == nil {
+		return hasVersionUpdate, nil
+	}
+	hasDateUpdate, err2 := canUpdateDate(clientVersionString)
+	if err2 == nil {
+		return hasDateUpdate, nil
+	}
+	return false, err
+}
+
+// canUpdateVersion returns true if the latest released build is newer than
+// the clientVersionString. It returns an error if clientVersionString is not a semver.
+func canUpdateVersion(clientVersionString string, latestReleaseBuild build) (bool, error) {
+	clientVersionString = strings.TrimPrefix(clientVersionString, "v")
+	clientVersion, err := semver.NewVersion(clientVersionString)
+	if err != nil {
+		return false, err
+	}
+	return clientVersion.LessThan(latestReleaseBuild.Version), nil
+}
+
+var dateRegex = regexp.MustCompile("_([0-9]{4}-[0-9]{2}-[0-9]{2})_")
+var timeNow = time.Now
+
+// canUpdateDate returns true if clientVersionString contains a date
+// more than 40 days in the past. It returns an error if there is no
+// parsable date in clientVersionString
+func canUpdateDate(clientVersionString string) (bool, error) {
+	match := dateRegex.FindStringSubmatch(clientVersionString)
+	if len(match) != 2 {
+		return false, fmt.Errorf("no date in version string %q", clientVersionString)
+	}
+
+	t, err := time.ParseInLocation("2006-01-02", match[1], time.UTC)
+	if err != nil {
+		// This shouldn't ever happen if the above code is correct.
+		return false, err
+	}
+
+	// Assume that we release a new version at least every 40 days.
+	return timeNow().After(t.Add(40 * 24 * time.Hour)), nil
 }
 
 func logPing(r *http.Request, clientVersionString string, hasUpdate bool) {
