@@ -92,16 +92,17 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(body)
 }
 
+// canUpdate returns true if the latestReleaseBuild is newer than the clientVersionString.
 func canUpdate(clientVersionString string, latestReleaseBuild build) (bool, error) {
-	hasVersionUpdate, err := canUpdateVersion(clientVersionString, latestReleaseBuild)
-	if err == nil {
-		return hasVersionUpdate, nil
-	}
-	hasDateUpdate, err2 := canUpdateDate(clientVersionString)
-	if err2 == nil {
+	// Check for a date in the version string to handle developer builds that don't have a semver.
+	// If there is an error parsing a date out of the version string, then we ignore the error
+	// and parse it as a semver.
+	if hasDateUpdate, err := canUpdateDate(clientVersionString); err == nil {
 		return hasDateUpdate, nil
 	}
-	return false, err
+
+	// Released builds will have a semantic version that we can compare.
+	return canUpdateVersion(clientVersionString, latestReleaseBuild)
 }
 
 // canUpdateVersion returns true if the latest released build is newer than
