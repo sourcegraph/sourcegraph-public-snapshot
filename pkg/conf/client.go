@@ -21,6 +21,9 @@ type client struct {
 
 	// barrier to block handling requests until the
 	ready chan struct{}
+
+	mockMu      sync.RWMutex
+	mockGetData *schema.SiteConfiguration
 }
 
 var defaultClient = &client{}
@@ -79,12 +82,14 @@ func Get() *schema.SiteConfiguration {
 func (c *client) Get() *schema.SiteConfiguration {
 	<-c.ready
 
-	c.configMu.RLock()
-	defer c.configMu.RUnlock()
-	if mockGetData != nil {
-		return mockGetData
+	c.mockMu.RLock()
+	defer c.mockMu.RUnlock()
+
+	if c.mockGetData != nil {
+		return c.mockGetData
 	}
-	return c.config
+
+	return c.cache.Parsed()
 }
 
 // GetTODO denotes code that may or may not be using configuration correctly.
@@ -105,8 +110,6 @@ func (c *client) GetTODO() *schema.SiteConfiguration {
 	return c.Get()
 }
 
-var mockGetData *schema.SiteConfiguration
-
 // Mock sets up mock data for the site configuration. It uses the configuration
 // mutex, to avoid possible races between test code and possible config watchers.
 //
@@ -118,9 +121,9 @@ func Mock(mockery *schema.SiteConfiguration) {
 // Mock sets up mock data for the site configuration. It uses the configuration
 // mutex, to avoid possible races between test code and possible config watchers.
 func (c *client) Mock(mockery *schema.SiteConfiguration) {
-	c.configMu.Lock()
-	mockGetData = mockery
-	c.configMu.Unlock()
+	c.mockMu.Lock()
+	c.mockGetData = mockery
+	c.mockMu.Unlock()
 }
 
 // Watch calls the given function in a separate goroutine whenever the
