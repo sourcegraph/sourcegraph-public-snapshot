@@ -166,6 +166,19 @@ storage.addSyncMigration((items, set, remove) => {
         set({ accessTokens: {} })
     }
 
+    if (items.accessTokens) {
+        const accessTokens = {}
+
+        for (const url of Object.keys(items.accessTokens)) {
+            const token = items.accessTokens[url]
+            if (typeof token !== 'string' && token.id && token.token) {
+                accessTokens[url] = token
+            }
+        }
+
+        set({ accessTokens })
+    }
+
     if (items.phabricatorURL) {
         remove('phabricatorURL')
 

@@ -1,3 +1,4 @@
+import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import * as React from 'react'
 import {
     Alert,
@@ -14,12 +15,15 @@ import {
     ListGroupItemHeading,
     Row,
 } from 'reactstrap'
-import { Subscription } from 'rxjs'
+import { of, Subscription } from 'rxjs'
+import { filter, map, switchMap } from 'rxjs/operators'
 import * as permissions from '../../../browser/permissions'
 import storage from '../../../browser/storage'
 import { StorageItems } from '../../../browser/types'
 import { GQL } from '../../../types/gqlschema'
-import { fetchSite } from '../../backend/server'
+import { getAccessToken, setAccessToken } from '../../auth/access_token'
+import { createAccessToken, fetchAccessTokenIDs } from '../../backend/auth'
+import { fetchCurrentUser, fetchSite } from '../../backend/server'
 import { DEFAULT_SOURCEGRAPH_URL, isSourcegraphDotCom, setSourcegraphUrl, sourcegraphUrl } from '../../util/context'
 
 interface Props {
@@ -232,8 +236,10 @@ export class ConnectionCard extends React.Component<Props, State> {
     }
 
     private checkConnection = (): void => {
+        const fetchingSite = fetchSite()
+
         this.subscriptions.add(
-            fetchSite().subscribe(
+            fetchingSite.subscribe(
                 site => {
                     this.setState({ site })
                 },
@@ -241,6 +247,34 @@ export class ConnectionCard extends React.Component<Props, State> {
                     this.setState({ site: undefined })
                 }
             )
+        )
+
+        this.subscriptions.add(
+            // Ensure the site is valid.
+            fetchingSite
+                .pipe(
+                    // Get the access token for this server if we have it.
+                    switchMap(() => getAccessToken(sourcegraphUrl)),
+                    switchMap(token => fetchCurrentUser(false).pipe(map(user => ({ user, token })))),
+                    filter(propertyIsDefined('user')),
+                    // Get the IDs for all access tokens for the user.
+                    switchMap(({ token, user }) =>
+                        fetchAccessTokenIDs(user.id).pipe(map(usersTokenIDs => ({ usersTokenIDs, user, token })))
+                    ),
+                    // Make sure the token still exists on the server. If it
+                    // does exits, use it, otherwise create a new one.
+                    switchMap(({ user, token, usersTokenIDs }) => {
+                        const tokenExists = token && usersTokenIDs.map(({ id }) => id).includes(token.id)
+
+                        return token && tokenExists
+                            ? of(token)
+                            : createAccessToken(user.id).pipe(setAccessToken(sourcegraphUrl))
+                    })
+                )
+                .subscribe(() => {
+                    // We don't need to do anything with the token now. We just
+                    // needed to ensure we had one saved.
+                })
         )
     }
 

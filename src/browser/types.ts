@@ -20,9 +20,14 @@ export const featureFlagDefaults: FeatureFlags = {
     newInject: false,
 }
 
+export interface AccessToken {
+    id: string
+    token: string
+}
+
 /** A map where the key is the server URL and the value is the token. */
 export interface AccessTokens {
-    [url: string]: string
+    [url: string]: AccessToken
 }
 
 // TODO(chris) Switch to Partial<StorageItems> to eliminate bugs caused by

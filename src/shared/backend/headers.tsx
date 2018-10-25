@@ -1,26 +1,9 @@
 import { Observable, of } from 'rxjs'
-import { filter, map, switchMap } from 'rxjs/operators'
+import { map, switchMap } from 'rxjs/operators'
 
-import { isDefined } from '@sourcegraph/codeintellify/lib/helpers'
-import { getAccessToken, setAccessToken } from '../auth/access_token'
-import { isInPage, isPhabricator } from '../context'
+import { getAccessToken } from '../auth/access_token'
+import { isContent, isInPage, isPhabricator } from '../context'
 import { getExtensionVersionSync, getPlatformName, isSourcegraphDotCom } from '../util/context'
-import { createAccessToken } from './auth'
-import { fetchCurrentUser } from './server'
-
-const withAccessToken = (url: string) =>
-    getAccessToken(url).pipe(
-        switchMap(token => {
-            if (token) {
-                return of(token)
-            }
-
-            return fetchCurrentUser(false).pipe(
-                filter(isDefined),
-                switchMap(user => createAccessToken(user.id).pipe(setAccessToken(url)))
-            )
-        })
-    )
 
 /**
  * getHeaders emits the required headers for making requests to Sourcegraph server instances.
@@ -41,11 +24,11 @@ export function getHeaders(
     }
 
     return of(url).pipe(
-        switchMap(url => (useToken && !isSourcegraphDotCom(url) ? withAccessToken(url) : of(undefined))),
+        switchMap(url => (isContent && useToken && !isSourcegraphDotCom(url) ? getAccessToken(url) : of(undefined))),
         map(accessToken => {
             const headers = new Headers()
             if (accessToken) {
-                headers.append('Authorization', `token ${accessToken}`)
+                headers.append('Authorization', `token ${accessToken.token}`)
             }
 
             return headers

@@ -2,8 +2,9 @@ import { omit } from 'lodash'
 import { Observable } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import storage from '../../browser/storage'
+import { AccessToken } from '../../browser/types'
 
-export const getAccessToken = (url: string): Observable<string | undefined> =>
+export const getAccessToken = (url: string): Observable<AccessToken | undefined> =>
     new Observable(observer => {
         storage.getSync(items => {
             observer.next(items.accessTokens[url])
@@ -11,11 +12,11 @@ export const getAccessToken = (url: string): Observable<string | undefined> =>
         })
     })
 
-export const setAccessToken = (url: string) => (tokens: Observable<string>): Observable<string> =>
+export const setAccessToken = (url: string) => (tokens: Observable<AccessToken>): Observable<AccessToken> =>
     tokens.pipe(
         switchMap(
             token =>
-                new Observable<string>(observer => {
+                new Observable(observer => {
                     storage.getSync(({ accessTokens }) =>
                         storage.setSync({ accessTokens: { ...accessTokens, [url]: token } }, () => {
                             observer.next(token)
