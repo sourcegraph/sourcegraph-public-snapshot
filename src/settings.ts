@@ -5,11 +5,6 @@ import { parseJSONCOrError } from './util'
 
 export type ID = string
 
-export interface IClient {
-    __typename: 'Client'
-    displayName: string
-}
-
 /**
  * A subset of the settings JSON Schema type containing the minimum needed by this library.
  */
@@ -30,7 +25,6 @@ export interface Settings {
  */
 export type ConfigurationSubject = Pick<GQL.IConfigurationSubject, 'id' | 'settingsURL' | 'viewerCanAdminister'> &
     (
-        | Pick<IClient, '__typename' | 'displayName'>
         | Pick<GQL.IUser, '__typename' | 'username' | 'displayName'>
         | Pick<GQL.IOrg, '__typename' | 'name' | 'displayName'>
         | Pick<GQL.ISite, '__typename'>)
@@ -219,12 +213,10 @@ export function merge(base: any, add: any, custom?: CustomMergeFunctions): void 
 /**
  * The conventional ordering of extension configuration subject types in a list.
  */
-export const SUBJECT_TYPE_ORDER: ConfigurationSubject['__typename'][] = ['Client', 'User', 'Org', 'Site']
+export const SUBJECT_TYPE_ORDER: ConfigurationSubject['__typename'][] = ['User', 'Org', 'Site']
 
 export function subjectTypeHeader(nodeType: ConfigurationSubject['__typename']): string | null {
     switch (nodeType) {
-        case 'Client':
-            return null
         case 'Site':
             return null
         case 'Org':
@@ -236,8 +228,6 @@ export function subjectTypeHeader(nodeType: ConfigurationSubject['__typename']):
 
 export function subjectLabel(subject: ConfigurationSubject): string {
     switch (subject.__typename) {
-        case 'Client':
-            return 'Client'
         case 'Site':
             return 'Everyone'
         case 'Org':
