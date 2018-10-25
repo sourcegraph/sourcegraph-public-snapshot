@@ -26,7 +26,7 @@ const NotFoundPage = () => (
 
 interface Props extends RouteComponentProps<any>, RepoHeaderContributionsLifecycleProps {
     repo: GQL.IRepository
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     onDidUpdateRepository: (update: Partial<GQL.IRepository>) => void
 }
 
@@ -84,12 +84,11 @@ export class RepoSettingsArea extends React.Component<Props> {
                 />
             )
         }
-        if (!this.props.user) {
+        if (!this.props.authenticatedUser) {
             return null
         }
 
-        const transferProps: { user: GQL.IUser; repo: GQL.IRepository } = {
-            user: this.props.user,
+        const transferProps = {
             repo: this.state.repo,
         }
 

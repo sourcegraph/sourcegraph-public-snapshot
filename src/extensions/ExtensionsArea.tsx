@@ -1,4 +1,3 @@
-import { ClientConnection } from '@sourcegraph/extensions-client-common/lib/messaging'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -25,7 +24,6 @@ export interface ExtensionsAreaRouteContext extends ConfigurationCascadeProps, E
     /** The subject whose extensions and configuration to display. */
     subject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
     isLightTheme: boolean
-    clientConnection: Promise<ClientConnection>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
 }
@@ -39,11 +37,10 @@ interface ExtensionsAreaProps
     /**
      * The currently authenticated user.
      */
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 
     viewerSubject: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAdminister'>
     isLightTheme: boolean
-    clientConnection: Promise<ClientConnection>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
@@ -78,11 +75,10 @@ export class ExtensionsArea extends React.Component<ExtensionsAreaProps, Extensi
 
     public render(): JSX.Element | null {
         const context: ExtensionsAreaRouteContext = {
-            authenticatedUser: this.props.user,
+            authenticatedUser: this.props.authenticatedUser,
             configurationCascade: this.props.configurationCascade,
             extensions: this.props.extensions,
             subject: this.props.viewerSubject,
-            clientConnection: this.props.clientConnection,
             extensionAreaRoutes: this.props.extensionAreaRoutes,
             extensionAreaHeaderNavItems: this.props.extensionAreaHeaderNavItems,
             isLightTheme: this.props.isLightTheme,

@@ -83,8 +83,15 @@ export class DocSitePage extends React.PureComponent<Props, State> {
         this.componentUpdates.next(this.props)
     }
 
-    public componentDidUpdate(): void {
+    public componentDidUpdate(prevProps: Props, prevState: State): void {
         this.componentUpdates.next(this.props)
+
+        if (
+            this.props.location.hash &&
+            (this.props.location.hash !== prevProps.location.hash || this.state.pageOrError !== prevState.pageOrError)
+        ) {
+            setTimeout(() => (window.location.href = this.props.location.hash))
+        }
     }
 
     public componentWillUnmount(): void {

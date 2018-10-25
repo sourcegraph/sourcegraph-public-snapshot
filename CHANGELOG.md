@@ -7,16 +7,32 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
-- Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
-
 ### Changed
 
+- When the `DEPLOY_TYPE` environment variable is incorrectly specified, Sourcegraph now shuts down and logs an error message.
 - The `experimentalFeatures.canonicalURLRedirect` site config property now defaults to `enabled`. Set it to `disabled` to disable redirection to the `appURL` from other hosts.
+- Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
+- The update check page no longer shows an error if you are using an insiders build. Insiders builds will now notify site administrators that updates are available 40 days after the release date of the installed build.
+
+### Fixed
+
+- The user account sidebar "Password" link (to the change-password form) is now shown correctly.
 
 ### Removed
 
 - The experimental feature flag to disable the new repo update scheduler has been removed.
 - The `experimentalFeatures.configVars` feature flag was removed.
+
+### Fixed
+
+- Fixed an error that prevented users without emails from submitting satisfaction surveys.
+- Fixed an issue where GitHub rate limits were underutilized if the remaining rate limit dropped below 150.
+
+## 2.12.2
+
+### Fixed
+
+- Fixed an issue where private GitHub Enterprise repositories were not fetched.
 
 ## 2.12.1
 

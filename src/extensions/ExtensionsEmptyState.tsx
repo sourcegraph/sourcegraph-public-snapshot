@@ -9,8 +9,8 @@ export const ExtensionsEmptyState: React.SFC<{
     <div className={`${className} text-center`}>
         <h4 className="text-muted mb-3">
             Extensions add new features to Sourcegraph. Check out the{' '}
-            <a href="https://about.sourcegraph.com/docs/extensions/" target="_blank">
-                Sourcegraph Extensions documentation
+            <a href="https://docs.sourcegraph.com/extensions" target="_blank">
+                Sourcegraph extensions documentation
             </a>{' '}
             for how to publish extensions.
         </h4>

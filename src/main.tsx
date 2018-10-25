@@ -13,6 +13,7 @@ import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAre
 import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
 import { extensionsAreaRoutes } from './extensions/routes'
+import { keybindings } from './keybindings'
 import { repoHeaderActionButtons } from './repo/repoHeaderActionButtons'
 import { repoRevContainerRoutes } from './repo/routes'
 import { siteAdminOverviewComponents } from './site-admin/overviewComponents'
@@ -40,6 +41,7 @@ window.addEventListener('DOMContentLoaded', () => {
             userAccountAreaRoutes={userAccountAreaRoutes}
             repoRevContainerRoutes={repoRevContainerRoutes}
             repoHeaderActionButtons={repoHeaderActionButtons}
+            keybindings={keybindings}
         />,
         document.querySelector('#root')
     )

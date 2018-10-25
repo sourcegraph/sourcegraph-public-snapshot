@@ -9,11 +9,11 @@ Sourcegraph supports the following ways for users to sign in:
 - [SAML](#saml)
 - [HTTP authentication proxies](#http-authentication-proxies)
 
-The authentication provider is configured in the [`auth.providers`](../site_config/index.md#code-classlanguage-textauthproviders-array) site configuration option.
+The authentication provider is configured in the [`auth.providers`](../site_config/all.md#authproviders-array) site configuration option.
 
 ## Builtin authentication
 
-The [`builtin` auth provider](../site_config/index.md#code-classlanguage-textbuiltinauthprovider-object) manages user accounts internally in its own database. It supports user signup, login, and password reset (via email if configured, or else via a site admin).
+The [`builtin` auth provider](../site_config/all.md#builtinauthprovider-object) manages user accounts internally in its own database. It supports user signup, login, and password reset (via email if configured, or else via a site admin).
 
 Site configuration example:
 
@@ -24,11 +24,11 @@ Site configuration example:
 }
 ```
 
-The top-level [`auth.public`](../site_config/index.md#code-classlanguage-textauthpublic-boolean) (default `false`) site configuration option controls whether anonymous users are allowed to access and use the site without being signed in .
+The top-level [`auth.public`](../site_config/all.md#authpublic-boolean) (default `false`) site configuration option controls whether anonymous users are allowed to access and use the site without being signed in .
 
 ## OpenID Connect
 
-The [`openidconnect` auth provider](../site_config/index.md#code-classlanguage-textopenidconnectauthprovider-object) authenticates users via OpenID Connect, which is supported by many external services, including:
+The [`openidconnect` auth provider](../site_config/all.md#openidconnectauthprovider-object) authenticates users via OpenID Connect, which is supported by many external services, including:
 
 - [G Suite (Google accounts)](#g-suite-google-accounts)
 - [Okta](https://developer.okta.com/docs/api/resources/oidc.html)
@@ -46,7 +46,7 @@ To configure Sourcegraph to authenticate users via OpenID Connect:
 1.  Provide the OpenID Connect client's issuer, client ID, and client secret in the Sourcegraph site configuration shown below.
 1.  (Optional) Require users to have a specific email domain name to authenticate (e.g., to limit users to only those from your organization).
 
-Example [`openidconnect` auth provider](../site_config/index.md#code-classlanguage-textopenidconnectauthprovider-object) configuration:
+Example [`openidconnect` auth provider](../site_config/all.md#openidconnectauthprovider-object) configuration:
 
 ```json
 {
@@ -66,7 +66,7 @@ Example [`openidconnect` auth provider](../site_config/index.md#code-classlangua
 
 Sourcegraph supports the OpenID Connect Discovery standard for configuring the auth provider (using the document at, e.g., `https://oidc.example.com/.well-known/openid-configuration`).
 
-See the [`openid` auth provider documentation](../site_config/index.md#code-classlanguage-textopenidconnectauthprovider-object) for the full set of configuration options.
+See the [`openid` auth provider documentation](../site_config/all.md#openidconnectauthprovider-object) for the full set of configuration options.
 
 ### G Suite (Google accounts)
 
@@ -80,7 +80,7 @@ Google's G Suite supports OpenID Connect, which is the best way to enable Source
 1.  Use the **client ID** and **client secret** values in Sourcegraph site configuration (as shown in the example below).
 1.  Set your G Suite domain in `requireEmailDomain` to prevent users outside your organization from signing in.
 
-Example [`openidconnect` auth provider](../site_config/index.md#code-classlanguage-textopenidconnectauthprovider-object) configuration for G Suite:
+Example [`openidconnect` auth provider](../site_config/all.md#openidconnectauthprovider-object) configuration for G Suite:
 
 ```json
 {
@@ -100,7 +100,7 @@ Example [`openidconnect` auth provider](../site_config/index.md#code-classlangua
 
 ## SAML
 
-The [`saml` auth provider](../site_config/index.md#code-classlanguage-textsamlauthprovider-object) authenticates users via SAML 2.0, which is supported by many external services, including:
+The [`saml` auth provider](../site_config/all.md#samlauthprovider-object) authenticates users via SAML 2.0, which is supported by many external services, including:
 
 - [Okta](https://developer.okta.com/standards/SAML/index) - _Admin > Classic UI > Applications > Add Application > Create New App > Web / SAML 2.0_
 - [OneLogin](https://www.onelogin.com/saml) - _Administration > Apps > Add Apps > SAML Test Connector (SP)_
@@ -112,15 +112,15 @@ The [`saml` auth provider](../site_config/index.md#code-classlanguage-textsamlau
 To configure Sourcegraph to authenticate users via SAML:
 
 1.  Register Sourcegraph as a SAML Service Provider in the external SAML Identity Provider (such as one of those listed above). Use the following settings (the exact names and labels vary across services).
-    - **Assertion Consumer Service URL, Recipient URL, Destination URL, Single sign-on URL:** `https://sourcegraph.example.com/.auth/saml/acs` (substituting your [`appURL`](../site_config/index.md#appurl-string))
-    - **Service Provider (issuer, entity ID, audience URI, metadata URL):** `https://sourcegraph.example.com/.auth/saml/metadata` (substituting your [`appURL`](../site_config/index.md#appurl-string))
+    - **Assertion Consumer Service URL, Recipient URL, Destination URL, Single sign-on URL:** `https://sourcegraph.example.com/.auth/saml/acs` (substituting your [`appURL`](../site_config/all.md#appurl-string))
+    - **Service Provider (issuer, entity ID, audience URI, metadata URL):** `https://sourcegraph.example.com/.auth/saml/metadata` (substituting your [`appURL`](../site_config/all.md#appurl-string))
     - **Attribute statements:**
       - `email` (required): the user's email
       - `login` (optional): the user's username
       - `displayName` (optional): the full name of the user
 1.  Obtain the SAML identity provider metadata URL and use it in Sourcegraph site configuration as shown below.
 
-Example [`saml` auth provider](../site_config/index.md#code-classlanguage-textsamlauthprovider-object) configuration:
+Example [`saml` auth provider](../site_config/all.md#samlauthprovider-object) configuration:
 
 ```json
 {
@@ -137,7 +137,7 @@ Example [`saml` auth provider](../site_config/index.md#code-classlanguage-textsa
 }
 ```
 
-See the [`saml` auth provider documentation](../site_config/index.md#code-classlanguage-textsamlauthprovider-object) for the full set of configuration options.
+See the [`saml` auth provider documentation](../site_config/all.md#samlauthprovider-object) for the full set of configuration options.
 
 ### SAML troubleshooting
 

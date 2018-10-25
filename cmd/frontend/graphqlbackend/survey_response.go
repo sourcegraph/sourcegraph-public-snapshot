@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/hubspot/hubspotutil"
 )
 
@@ -84,7 +85,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	if actor.IsAuthenticated() {
 		uid = &actor.UID
 		e, _, err := db.UserEmails.GetPrimaryEmail(ctx, actor.UID)
-		if err != nil {
+		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}
 		if e != "" {

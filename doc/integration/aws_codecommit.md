@@ -10,7 +10,7 @@ Sourcegraph supports syncing repositories from [AWS CodeCommit](https://aws.amaz
 2.  Press **Add AWS CodeCommit repositories**.
 3.  Fill in the fields in the generated `awsCodeCommit` configuration option.
 
-To see other optional AWS CodeCommit configuration settings, view [`awsCodeCommit` site config documentation](../admin/site_config/index.md#code-classlanguage-textawscodecommitconnection-object) or press Ctrl+Space or Cmd+Space in the site configuration editor.
+To see other optional AWS CodeCommit configuration settings, view [`awsCodeCommit` site config documentation](../admin/site_config/all.md#awscodecommitconnection-object) or press Ctrl+Space or Cmd+Space in the site configuration editor.
 
 ## Browser extension
 

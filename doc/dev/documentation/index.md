@@ -108,7 +108,7 @@ When running Sourcegraph in development mode, you can access a live preview of t
 
 You can also follow the [sourcegraph/docs.sourcegraph.com README](https://github.com/sourcegraph/docs.sourcegraph.com) to run the docs.sourcegraph.com site locally.
 
-## Sourcegraph `/help`
+## Sourcegraph /help
 
 Every Sourcegraph instance includes the documentation at the URL path `/help`
 (`https://sourcegraph.example.com/help`), e.g., <https://sourcegraph.com/help>.
@@ -116,7 +116,7 @@ Every Sourcegraph instance includes the documentation at the URL path `/help`
 The documentation available on docs.sourcegraph.com is continuously <!-- TODO(sqs): set up continuous deploy of docs -->
 deployed every hour from the `master` branch of `sourcegraph/sourcegraph`. Once a pull request gets merged, it will be available on docs.sourcegraph.com soon, and its doc changes will ship in the next release.
 
-### Linking to `/help`
+### Linking to /help
 
 When you're building a new feature, you may need to link to the documentation from the product. In-product documentation links should refer to the documentation hosted on the product itself (at `/help`) so that the product and documentation versions are consistent. (The docs on docs.sourcegraph.com may be for a newer version than what the user is running.)
 

@@ -30,7 +30,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   runcmd:
   - mkdir -p /root/.sourcegraph/config
   - mkdir -p /root/.sourcegraph/data
-  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.1' ]
+  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.2' ]
   ```
 
 - Launch your instance, then navigate to its IP address.
@@ -75,7 +75,7 @@ To upgrade your existing instance to use automatic code intelligence, **SSH into
 2.  Start the Docker container again using the new `docker run` command provided in the updated user-data `#cloud-config` script above. i.e.:
 
     ```
-    docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.1
+    docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.2
     ```
 
 These steps only need to be performed once, and they will persist across machine restarts.

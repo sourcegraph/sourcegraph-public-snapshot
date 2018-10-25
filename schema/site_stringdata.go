@@ -5,7 +5,7 @@ package schema
 // SiteSchemaJSON is the content of the file "site.schema.json".
 const SiteSchemaJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://sourcegraph.com/v1/site.schema.json#",
+  "$id": "site.schema.json#",
   "title": "Site configuration",
   "description": "Configuration for a Sourcegraph site.",
   "type": "object",

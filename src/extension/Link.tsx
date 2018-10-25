@@ -8,7 +8,7 @@ const extensionUrl = 'chrome-extension://dgjhfomjieaadpoljlnidmbgkdffpack'
 // const extensionUrl = 'chrome-extension://bmfbcejdknlknpncfpeloejonjoledha'
 
 interface Props {
-    user: GQL.IUser
+    authenticatedUser: GQL.IUser
 }
 
 /**
@@ -28,5 +28,5 @@ const getExtensionLinkURL = (email: string): string => {
  * extension.
  */
 export const LinkExtension: React.SFC<Props> = props => (
-    <iframe className="link-extension" src={getExtensionLinkURL(props.user.email)} />
+    <iframe className="link-extension" src={getExtensionLinkURL(props.authenticatedUser.email)} />
 )

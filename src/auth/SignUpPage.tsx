@@ -156,7 +156,7 @@ export class SignUpForm extends React.Component<SignUpFormProps, SignUpFormState
 interface SignUpPageProps {
     location: H.Location
     history: H.History
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 }
 
 export class SignUpPage extends React.Component<SignUpPageProps> {
@@ -165,7 +165,7 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
     }
 
     public render(): JSX.Element | null {
-        if (this.props.user) {
+        if (this.props.authenticatedUser) {
             const returnTo = getReturnTo(this.props.location)
             return <Redirect to={returnTo} />
         }
