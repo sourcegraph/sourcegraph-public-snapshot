@@ -324,15 +324,10 @@ type SiteConfigSettings struct {
 type SiteConfiguration struct {
 	AppURL                            string                       `json:"appURL,omitempty"`
 	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
-	AuthAllowSignup                   bool                         `json:"auth.allowSignup,omitempty"`
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
-	AuthOpenIDConnect                 *OpenIDConnectAuthProvider   `json:"auth.openIDConnect,omitempty"`
-	AuthProvider                      string                       `json:"auth.provider,omitempty"`
 	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
 	AuthPublic                        bool                         `json:"auth.public,omitempty"`
-	AuthSaml                          *SAMLAuthProvider            `json:"auth.saml,omitempty"`
 	AuthSessionExpiry                 string                       `json:"auth.sessionExpiry,omitempty"`
-	AuthUserIdentityHTTPHeader        string                       `json:"auth.userIdentityHTTPHeader,omitempty"`
 	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
 	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
 	BitbucketServer                   []*BitbucketServerConnection `json:"bitbucketServer,omitempty"`

@@ -12,24 +12,21 @@ func TestValidateCustom(t *testing.T) {
 		input        schema.SiteConfiguration
 		wantProblems []string
 	}{
-		"no auth.provider": {
+		"no auth.providers": {
 			input:        schema.SiteConfiguration{},
 			wantProblems: []string{"no auth providers set"},
 		},
-		"unrecognized auth.provider": {
-			input:        schema.SiteConfiguration{AuthProvider: "x"},
-			wantProblems: []string{"no auth providers set", "auth.provider is deprecated"},
+		"empty auth.providers": {
+			input:        schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{}},
+			wantProblems: []string{"no auth providers set"},
 		},
-		"deprecated auth.provider": {
-			input:        schema.SiteConfiguration{AuthProvider: "builtin"},
-			wantProblems: []string{"auth.provider is deprecated"},
-		},
-		"auth.provider and auth.providers": {
+		"single auth provider": {
 			input: schema.SiteConfiguration{
-				AuthProvider:  "builtin",
-				AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}},
+				AuthProviders: []schema.AuthProviders{
+					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
+				},
 			},
-			wantProblems: []string{"auth.providers takes precedence"},
+			wantProblems: nil,
 		},
 		"multiple auth providers": {
 			input: schema.SiteConfiguration{

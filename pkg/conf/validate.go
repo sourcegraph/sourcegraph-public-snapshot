@@ -66,17 +66,6 @@ func Validate(inputStr string) (problems []string, err error) {
 			keyPath = e.Field()
 		}
 
-		// TEMPORARY: Ignore validation errors in the singleton auth config because we can
-		// 100% infer them for now.
-		//
-		// TODO(sqs): Remove this. https://github.com/sourcegraph/sourcegraph/issues/11148
-		if e.Field() == "type" && (keyPath == "auth.openIDConnect" || keyPath == "auth.saml") {
-			continue
-		}
-		if e.Field() == "auth.saml.type" || e.Field() == "auth.openIDConnect.type" {
-			continue
-		}
-
 		problems = append(problems, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 

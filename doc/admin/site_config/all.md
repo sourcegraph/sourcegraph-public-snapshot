@@ -99,11 +99,7 @@ For more information, see ["Configuration overview"](index.md).
 
 - [parentSourcegraph](all.md#parentsourcegraph-object)
 
-- [auth.provider](all.md#auth-provider-string-enum)
-
 - [auth.providers](all.md#auth-providers-array)
-
-- [auth.allowSignup](all.md#auth-allowsignup-boolean)
 
 - [auth.disableAccessTokens](all.md#auth-disableaccesstokens-boolean)
 
@@ -111,13 +107,7 @@ For more information, see ["Configuration overview"](index.md).
 
 - [auth.public](all.md#auth-public-boolean)
 
-- [auth.openIDConnect](all.md#auth-openidconnect-openidconnectauthprovider-openidconnectauthprovider-object)
-
-- [auth.saml](all.md#auth-saml-samlauthprovider-samlauthprovider-object)
-
 - [auth.sessionExpiry](all.md#auth-sessionexpiry-string)
-
-- [auth.userIdentityHTTPHeader](all.md#auth-useridentityhttpheader-string)
 
 - [email.smtp](all.md#email-smtp-smtpserverconfig-smtpserverconfig-object)
 
@@ -616,30 +606,11 @@ Default: `"https://sourcegraph.com"`
 
 <br/>
 
-## auth.provider (string, enum)
-
-The authentication provider to use for identifying and signing in users. Defaults to "builtin" authentication.
-
-DEPRECATED: Use "auth.providers" instead. During the deprecation period (before this property is removed), provider set here will be added as an entry in "auth.providers".
-
-This property must be one of the following enum values:
-
-- `builtin`
-- `openidconnect`
-- `saml`
-- `http-header`
-
-Default: `"builtin"`
-
-<br/>
-
 ## auth.providers (array)
 
 The authentication providers to use for identifying and signing in users.
 
-Only one authentication provider is officially supported at the moment. Multiple providers can be specified, but the support is experimental. If you set the deprecated field "auth.provider", then that value is used as the authentication provider, and you can't set another one here.
-
-The elements of the array must match _exactly one_ of the following types:
+The elements of the array must be of the following types:
 
 ####[BuiltinAuthProvider](#builtinauthprovider-object)
 
@@ -648,20 +619,6 @@ The elements of the array must match _exactly one_ of the following types:
 ####[OpenIDConnectAuthProvider](#openidconnectauthprovider-object)
 
 ####[HTTPHeaderAuthProvider](#httpheaderauthprovider-object)
-
-<br/>
-
-## auth.allowSignup (boolean)
-
-Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.
-
-SECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).
-
-Requires auth.provider == "builtin"
-
-DEPRECATED: Use "auth.providers" with an entry of the form {"type": "builtin", "allowSignup": true} instead.
-
-Default: `false`
 
 <br/>
 
@@ -707,14 +664,6 @@ Default: `false`
 
 <br/>
 
-## auth.openIDConnect ([OpenIDConnectAuthProvider](#openidconnectauthprovider-object))
-
-<br/>
-
-## auth.saml ([SAMLAuthProvider](#samlauthprovider-object))
-
-<br/>
-
 ## auth.sessionExpiry (string)
 
 The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.
@@ -731,16 +680,6 @@ Note: changing this field does not affect the expiration of existing sessions. I
   ```
 
 Default: `"2160h"`
-
-<br/>
-
-## auth.userIdentityHTTPHeader (string)
-
-The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
-
-Requires auth.provider=="http-header".
-
-DEPRECATED: Use "auth.providers" with an entry of the form {"type": "http-header", "usernameHeader": "..."} instead.
 
 <br/>
 
@@ -1420,8 +1359,6 @@ Constant value: `"http-header"`
 ### usernameHeader (string, required)
 
 The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.
-
-Requires auth.provider=="http-header".
 
 <hr />
 
