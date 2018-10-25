@@ -3,11 +3,11 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
-import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
+import { LinkOrSpan } from '../../components/LinkOrSpan'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -81,16 +81,16 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
             <Icon
                 className={`icon-inline repo-settings-index-page__ref-icon repo-settings-index-page__ref-icon--${iconClassName}`}
             />
-            <Link to={indexedRef.ref.url}>
+            <LinkOrSpan to={indexedRef.ref.url}>
                 <strong>
                     <code>{indexedRef.ref.displayName}</code>
                 </strong>
-            </Link>{' '}
+            </LinkOrSpan>{' '}
             {indexedRef.indexed ? (
                 <span>
                     &nbsp;&mdash; indexed at{' '}
                     <code>
-                        <Link
+                        <LinkOrSpan
                             to={
                                 indexedRef.indexedCommit && indexedRef.indexedCommit.commit
                                     ? indexedRef.indexedCommit.commit.url
@@ -98,7 +98,7 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
                             }
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
-                        </Link>
+                        </LinkOrSpan>
                     </code>{' '}
                     {indexedRef.current ? '(up to date)' : '(index update in progress)'}
                 </span>
