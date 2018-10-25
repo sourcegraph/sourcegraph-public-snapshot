@@ -69,6 +69,16 @@ docker run -d ... sourcegraph/server:X.Y.Z
 
 ---
 
+## Using an external database for persistence
+
+The Docker container has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the container, you can [use external databases](../../external_database.md) for persistence, such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) and [Amazon ElastiCache](https://aws.amazon.com/elasticache/redis/).
+
+The [site configuration JSON](../../site_config/index.md) is not yet stored in the database, so you must manually back it up. This will no longer be necessary in [Sourcegraph 3.0 preview](https://github.com/sourcegraph/about/pull/36). <!-- TODO: remove this when https://github.com/sourcegraph/about/pull/36 is merged -->
+
+> NOTE: Use of external databases requires [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).
+
+---
+
 ## Sourcegraph instances created before July 30, 2018
 
 **The below sections only pertain to Sourcegraph instances created using this tutorial before July 30, 2018**.
