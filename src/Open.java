@@ -1,7 +1,5 @@
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.command.CommandProcessor;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
@@ -10,7 +8,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.application.ApplicationInfo;
 
