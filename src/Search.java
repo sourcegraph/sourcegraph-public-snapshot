@@ -9,7 +9,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.application.ApplicationInfo;
-import org.jdesktop.swingx.action.ActionManager;
 
 import java.io.*;
 import java.awt.Desktop;
@@ -45,8 +44,6 @@ public class Search extends AnAction {
 
         String q = sel.getSelectedText();
         if (q == null || q.equals("")) {
-            // Perform the open action instead.
-            Open.DoOpen(editor, repoInfo, logger);
             return; // nothing to query
         }
 
@@ -63,7 +60,7 @@ public class Search extends AnAction {
                     + "&version=" + URLEncoder.encode(Util.VERSION, "UTF-8")
                     + "&utm_product_name=" + URLEncoder.encode(productName, "UTF-8")
                     + "&utm_product_version=" + URLEncoder.encode(productVersion, "UTF-8")
-                    + "&search=" + URLEncoder.encode(q, "UTF-8");
+                    + "&search=" + URLEncoder.encode(String.format("\"%s\"", q.replaceAll("\"", "\\\\\"")), "UTF-8");
         } catch (UnsupportedEncodingException err) {
             logger.debug("failed to build URL");
             err.printStackTrace();

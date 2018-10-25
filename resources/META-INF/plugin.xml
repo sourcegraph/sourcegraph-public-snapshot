@@ -12,7 +12,7 @@
     <ul>
     <li>v1.1.2 - Fixed no selection search error.
         <ul>
-          <li>Updated the search action to trigger the open action when no text is selected.</li>
+          <li>Add null selection check.</li>
         </ul>
       </li>
       <li>v1.1.1 - Fixed search shortcut.
