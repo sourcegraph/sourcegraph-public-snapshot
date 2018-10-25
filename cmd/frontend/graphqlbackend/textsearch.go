@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -521,6 +522,10 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 				}
 				offsets := make([][2]int32, len(l.LineFragments))
 				for k, m := range l.LineFragments {
+					l.Line = bytes.Split(l.Line, []byte{'\n'})[0]
+					if m.LineOffset+m.MatchLength > len(l.Line) {
+						m.MatchLength = len(l.Line) - m.LineOffset
+					}
 					offset := utf8.RuneCount(l.Line[:m.LineOffset])
 					length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
 					offsets[k] = [2]int32{int32(offset), int32(length)}
