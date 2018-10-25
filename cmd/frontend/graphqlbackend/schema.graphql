@@ -728,8 +728,6 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
     ): Search
-    # The search scopes.
-    searchScopes: [SearchScope!]!
     # All saved queries configured for the current user, merged from all configurations.
     savedQueries: [SavedQuery!]!
     # All repository groups for the current user, merged from all configurations.
@@ -856,19 +854,6 @@ type SearchFilter {
 
 # A search suggestion.
 union SearchSuggestion = Repository | File | Symbol
-
-# A search scope.
-type SearchScope {
-    # A unique identifier for the search scope.
-    # If set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value.
-    id: String
-    # The name.
-    name: String!
-    # The value.
-    value: String!
-    # A description for this search scope, which will appear on the scoped search page.
-    description: String
-}
 
 # A search-related alert message.
 type SearchAlert {
@@ -2684,9 +2669,6 @@ type Site implements ConfigurationSubject {
     # The site's latest site-wide settings (which are the lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
-    # Deprecated settings specified in the site configuration "settings" field. These are distinct from a site's
-    # latestSettings (which are stored in the DB) and are applied at the lowest level of precedence.
-    deprecatedSiteConfigurationSettings: String
     # The configuration cascade including this subject and all applicable subjects whose configuration is lower
     # precedence than this subject.
     configurationCascade: ConfigurationCascade!

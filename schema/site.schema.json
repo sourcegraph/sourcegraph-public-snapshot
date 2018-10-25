@@ -284,9 +284,6 @@
       "type": "integer",
       "default": 1
     },
-    "searchScopes": {
-      "$ref": "#/definitions/SiteConfigSearchScope"
-    },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
       "type": "string"
@@ -562,24 +559,6 @@
           "type": "array",
           "items": { "type": "string" },
           "default": []
-        }
-      }
-    },
-    "settings": {
-      "title": "SiteConfigSettings",
-      "description":
-        "Site settings hard-coded in site configuration.\n\nDEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying for cluster deployments.",
-      "type": "object",
-      "properties": {
-        "search.scopes": { "$ref": "#/definitions/SiteConfigSearchScope" },
-        "search.repositoryGroups": {
-          "description":
-            "Named groups of repositories that can be referenced in a search query using the repogroup: operator.",
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": { "type": "string" }
-          }
         }
       }
     }
@@ -1122,34 +1101,6 @@
         "password": {
           "description": "The username to use when communicating with the IMAP server.",
           "type": "string"
-        }
-      }
-    },
-    "SiteConfigSearchScope": {
-      "description": "Predefined search scopes",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["name", "value"],
-        "properties": {
-          "id": {
-            "type": "string",
-            "description":
-              "A unique identifier for the search scope.\n\nIf set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value."
-          },
-          "name": {
-            "type": "string",
-            "description": "The human-readable name for this search scope"
-          },
-          "value": {
-            "type": "string",
-            "description": "The query string of this search scope"
-          },
-          "description": {
-            "type": "string",
-            "description": "A description for this search scope"
-          }
         }
       }
     }

@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -80,20 +79,6 @@ func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 
 func (r *siteResolver) configurationSubject() api.ConfigurationSubject {
 	return api.ConfigurationSubject{Site: true}
-}
-
-func (r *siteResolver) DeprecatedSiteConfigurationSettings() (*string, error) {
-	// The site configuration (which is only visible to admins) contains a field "settings"
-	// that is visible to all users. So, this does not need a permissions check.
-	settings := conf.Get().Settings
-	if settings == nil {
-		return nil, nil
-	}
-	data, err := json.MarshalIndent(settings, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	return strptr(string(data)), nil
 }
 
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
