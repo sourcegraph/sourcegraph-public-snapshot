@@ -14,7 +14,7 @@ func init() {
 }
 
 type client struct {
-	cache *configCache
+	store *configStore
 
 	watchersMu sync.Mutex
 	watchers   []chan struct{}
@@ -29,7 +29,6 @@ type client struct {
 var defaultClient = &client{}
 
 func (c *client) run() {
-
 	for {
 		err := c.fetchAndUpdate()
 		if err == nil {
@@ -89,7 +88,7 @@ func (c *client) Get() *schema.SiteConfiguration {
 		return c.mockGetData
 	}
 
-	return c.cache.Parsed()
+	return c.store.Parsed()
 }
 
 // GetTODO denotes code that may or may not be using configuration correctly.
@@ -200,16 +199,15 @@ func (c *client) fetchAndUpdate() error {
 		return errors.Wrap(err, "unable to fetch new configuration")
 	}
 
-	if !c.cache.IsDirty(newRawConfig) {
-		return nil
-	}
-
-	err = c.cache.Update(newRawConfig)
+	configChange, err := c.store.MaybeUpdate(newRawConfig)
 	if err != nil {
 		return errors.Wrap(err, "unable to update new configuration")
 	}
 
-	c.notifyWatchers()
+	if configChange != nil {
+		c.notifyWatchers()
+	}
+
 	return nil
 }
 

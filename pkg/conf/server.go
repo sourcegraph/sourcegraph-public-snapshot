@@ -14,7 +14,7 @@ import (
 type server struct {
 	configFilePath string
 
-	cache *configCache
+	store *configStore
 
 	needRestartMu sync.RWMutex
 	needRestart   bool
@@ -28,18 +28,16 @@ type server struct {
 }
 
 func (s *server) Raw() string {
-	return s.cache.Raw()
+	return s.store.Raw()
 }
 
 func (s *server) Write(input string) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	after, err := parseConfig(input)
+	_, err := parseConfig(input)
 	if err != nil {
 		return err
 	}
-
-	before := s.cache.Parsed()
 
 	if err := ioutil.WriteFile(s.configFilePath, []byte(input), 0600); err != nil {
 		return err
@@ -52,10 +50,11 @@ func (s *server) Write(input string) error {
 	s.fileWrite <- doneReading
 	<-doneReading
 
-	// Update global "needs restart" state.
-	if needRestartToApply(before, after) {
-		s.markNeedServerRestart()
-	}
+	// Update global "needs restart" state
+	// TODO@ggilmore: Is this necessary? Why can't we rely on the background process to do this?.
+	// if needRestartToApply(before, after) {
+	// 	s.markNeedServerRestart()
+	// }
 
 	return nil
 }
@@ -66,8 +65,8 @@ func (s *server) Write(input string) error {
 // The computation function is provided the current configuration, which should
 // NEVER be modified in any way. Always copy values.
 func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error)) error {
-	current := s.cache.Parsed()
-	raw := s.cache.Raw()
+	current := s.store.Parsed()
+	raw := s.store.Raw()
 
 	// Compute edits.
 	edits, err := computeEdits(current, raw)
@@ -116,25 +115,18 @@ func (s *server) updateFromDisk(reinitialize bool) error {
 		return err
 	}
 
-	if !s.cache.IsDirty(rawConfig) {
-		return nil
-	}
-
-	oldConfig := s.cache.Parsed()
-
-	err = s.cache.Update(rawConfig)
+	configChange, err := s.store.MaybeUpdate(rawConfig)
 	if err != nil {
 		return err
 	}
 
-	newConfig := s.cache.Parsed()
+	if configChange == nil {
+		return nil
+	}
 
-	// TODO@ggilmore: I'm not sure how I feel about relying on s.cache.Parsed()
-	// to return a copy of the new configuration (e.g. this code path would break
-	// if oldConfig and newConfig were references to the same object)
 	if reinitialize {
 		// Update global "needs restart" state.
-		if needRestartToApply(oldConfig, newConfig) {
+		if needRestartToApply(configChange.Old, configChange.New) {
 			s.markNeedServerRestart()
 		}
 	}
@@ -171,4 +163,6 @@ func (s *server) markNeedServerRestart() {
 
 // FilePath is the path to the configuration file, if any.
 // TODO@ggilmore: re-evaluate whether or not we need this
-func (s *server) FilePath() string { return s.configFilePath }
+func (s *server) FilePath() string {
+	return s.configFilePath
+}
