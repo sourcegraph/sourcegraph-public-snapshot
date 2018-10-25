@@ -353,16 +353,8 @@ const SiteSchemaJSON = `{
         }
       }
     },
-    "auth.provider": {
-      "description":
-        "The authentication provider to use for identifying and signing in users. Defaults to \"builtin\" authentication.\n\nDEPRECATED: Use \"auth.providers\" instead. During the deprecation period (before this property is removed), provider set here will be added as an entry in \"auth.providers\".",
-      "default": "builtin",
-      "type": "string",
-      "enum": ["builtin", "openidconnect", "saml", "http-header"]
-    },
     "auth.providers": {
-      "description":
-        "The authentication providers to use for identifying and signing in users. If you set the deprecated field \"auth.provider\", then that value is used as the authentication provider, and you can't set another one here.",
+      "description": "The authentication providers to use for identifying and signing in users.",
       "type": "array",
       "items": {
         "required": ["type"],
@@ -382,12 +374,6 @@ const SiteSchemaJSON = `{
           "taggedUnionType": true
         }
       }
-    },
-    "auth.allowSignup": {
-      "description":
-        "Allows new visitors to sign up for accounts. The sign-up page will be enabled and accessible to all visitors.\n\nSECURITY: If the site has no users (i.e., during initial setup), it will always allow the first user to sign up and become site admin **without any approval** (first user to sign up becomes the admin).\n\nRequires auth.provider == \"builtin\"\n\nDEPRECATED: Use \"auth.providers\" with an entry of the form {\"type\": \"builtin\", \"allowSignup\": true} instead.",
-      "type": "boolean",
-      "default": false
     },
     "auth.disableAccessTokens": {
       "description":
@@ -416,22 +402,11 @@ const SiteSchemaJSON = `{
       "type": "boolean",
       "default": false
     },
-    "auth.openIDConnect": {
-      "$ref": "#/definitions/OpenIDConnectAuthProvider"
-    },
-    "auth.saml": {
-      "$ref": "#/definitions/SAMLAuthProvider"
-    },
     "auth.sessionExpiry": {
       "type": "string",
       "description":
         "The duration of a user session, after which it expires and the user is required to re-authenticate. The default is 90 days. There is typically no need to set this, but some users may have specific internal security requirements.\n\nThe string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). E.g., \"720h\", \"43200m\", \"2592000s\" all indicate a timespan of 30 days.\n\nNote: changing this field does not affect the expiration of existing sessions. If you would like to enforce this limit for existing sessions, you must log out currently signed-in users. You can force this by removing all keys beginning with \"session_\" from the Redis store:\n\n* For deployments using ` + "`" + `sourcegraph/server` + "`" + `: ` + "`" + `docker exec $CONTAINER_ID redis-cli --raw keys 'session_*' | xargs docker exec $CONTAINER_ID redis-cli del` + "`" + `\n* For cluster deployments: \n  ` + "`" + `` + "`" + `` + "`" + `\n  REDIS_POD=\"$(kubectl get pods -l app=redis-store -o jsonpath={.items[0].metadata.name})\";\n  kubectl exec \"$REDIS_POD\" -- redis-cli --raw keys 'session_*' | xargs kubectl exec \"$REDIS_POD\" -- redis-cli --raw del;\n  ` + "`" + `` + "`" + `` + "`" + `\n",
       "default": "2160h"
-    },
-    "auth.userIdentityHTTPHeader": {
-      "description":
-        "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".\n\nDEPRECATED: Use \"auth.providers\" with an entry of the form {\"type\": \"http-header\", \"usernameHeader\": \"...\"} instead.",
-      "type": "string"
     },
     "email.smtp": {
       "$ref": "#/definitions/SMTPServerConfig"

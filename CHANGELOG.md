@@ -29,6 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The experimental feature flag to disable the new repo update scheduler has been removed.
 - The `experimentalFeatures.configVars` feature flag was removed.
 - The `experimentalFeatures.multipleAuthProviders` feature flag was removed because the feature is now always enabled.
+- The following deprecated auth provider configuration properties were removed: `auth.provider`, `auth.saml`, `auth.openIDConnect`, `auth.userIdentityHTTPHeader`, and `auth.allowSignup`. Use `auth.providers` for all auth provider configuration. (If you were still using the deprecated properties and had no `auth.providers` set, all access to your instance will be rejected until you manually set `auth.providers`.)
 
 ## 2.12.3
 
