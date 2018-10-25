@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+// Server
 type server struct {
 	configFilePath string
 
@@ -20,18 +21,29 @@ type server struct {
 	needRestart   bool
 
 	// fileWrite signals when our app writes to the configuration file. The
-	// secondary channel is closed when conf.Get() would return the new
+	// secondary channel is closed when conf.Raw() would return the new
 	// configuration that has been written to disk.
 	// TODO@ggilmore: is it important that the channel here is buffered?
 	// var fileWrite = make(chan chan struct{}, 1)
 	fileWrite chan chan struct{}
+
+	// raedy is a barrier to block request handling until the server
+	// has been initialized via server.Start().
+	ready chan struct{}
 }
 
+// Raw returns the raw text of the configuration file.
 func (s *server) Raw() string {
+	<-s.ready
+
 	return s.store.Raw()
 }
 
+// Write writes the JSON config file to the config file's path. If the JSON configuration is
+// invalid, an error is returned.
 func (s *server) Write(input string) error {
+	<-s.ready
+
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
 	_, err := parseConfig(input)
@@ -44,7 +56,7 @@ func (s *server) Write(input string) error {
 	}
 
 	// Wait for the change to the configuration file to be detected. Otherwise
-	// we would return to the caller earlier than conf.Get() would return the
+	// we would return to the caller earlier than server.Raw() would return the
 	// new configuration.
 	doneReading := make(chan struct{}, 1)
 	s.fileWrite <- doneReading
@@ -65,6 +77,11 @@ func (s *server) Write(input string) error {
 // The computation function is provided the current configuration, which should
 // NEVER be modified in any way. Always copy values.
 func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error)) error {
+	<-s.ready
+
+	// TODO@ggilmore: There is a race condition here (also present in the existing library).
+	// Current and raw could be inconsistent. Another thing to offload to configStore?
+	// Snapshot method?
 	current := s.store.Parsed()
 	raw := s.store.Raw()
 
@@ -80,6 +97,9 @@ func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 		return errors.Wrap(err, "jsonx.ApplyEdits")
 	}
 
+	// TODO@ggilmore: Another race condition (also present in the existing library). Locks
+	// aren't held between applying the edits and writing the config file,
+	// so the newConfig could be outdated.
 	err = s.Write(newConfig)
 	if err != nil {
 		return errors.Wrap(err, "conf.Write")
@@ -88,6 +108,29 @@ func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 	return nil
 }
 
+// Start prepares the server to start handling requests by
+// periodically reloading the configuration file from disk.
+func (s *server) Start() {
+	s.store = &configStore{}
+
+	for {
+		// TODO@ggilmore: This logic is incorrect. If there is a JSON syntax error when parsing the file,
+		// then the channel will never be closed. (We block writing invalid files to disk with server.Write(), but
+		// it's possible for people to directly edit the file). Maybe check to see if err is specifically
+		// a syntax error, and continue anyway?
+		err := s.updateFromDisk(false)
+		if err == nil {
+			close(s.ready)
+			break
+		}
+
+	}
+
+	go s.watchDisk()
+}
+
+// watchDisk reloads the configuration file from disk at least every five seconds or whenever
+// server.Write() is called.
 func (s *server) watchDisk() {
 	for {
 		var signalDoneReading chan struct{}
@@ -120,7 +163,7 @@ func (s *server) updateFromDisk(reinitialize bool) error {
 		return err
 	}
 
-	if configChange == nil {
+	if !configChange.Changed {
 		return nil
 	}
 
@@ -135,7 +178,7 @@ func (s *server) updateFromDisk(reinitialize bool) error {
 }
 
 // readConfig reads the raw configuration that's currently saved to the disk
-// (bypasses the cache).
+// (bypasses the configStore).
 func (s *server) readConfig() (string, error) {
 	data, err := ioutil.ReadFile(s.configFilePath)
 	if err != nil {

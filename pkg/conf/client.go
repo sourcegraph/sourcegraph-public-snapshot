@@ -204,7 +204,7 @@ func (c *client) fetchAndUpdate() error {
 		return errors.Wrap(err, "unable to update new configuration")
 	}
 
-	if configChange != nil {
+	if configChange.Changed {
 		c.notifyWatchers()
 	}
 
