@@ -174,6 +174,7 @@ export const applyDecoration = (
     if (decoration.after) {
         const linkTo = (url: string) => (e: HTMLElement): HTMLElement => {
             const link = document.createElement('a')
+            link.className = 'sourcegraph-extension-element'
             link.setAttribute('href', url)
             link.style.color = decoration.after!.color || null
             link.appendChild(e)
@@ -181,6 +182,7 @@ export const applyDecoration = (
         }
 
         const after = document.createElement('span')
+        after.className = 'sourcegraph-extension-element'
         after.style.backgroundColor = decoration.after.backgroundColor || null
         after.textContent = decoration.after.contentText || null
 

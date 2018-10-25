@@ -365,6 +365,19 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                     const toURIWithPath = (ctx: AbsoluteRepoFile) =>
                         `git://${ctx.repoPath}?${ctx.commitID}#${ctx.filePath}`
 
+                    const originalDOM = dom
+                    dom = {
+                        ...dom,
+                        // If any parent element has the sourcegraph-extension-element
+                        // class then that element does not have any code. We
+                        // must check for "any parent element" because extensions
+                        // create their DOM changes before the blob is tokenized
+                        // into multiple elements.
+                        getCodeElementFromTarget: (target: HTMLElement): HTMLElement | null =>
+                            target.closest('.sourcegraph-extension-element') !== null
+                                ? null
+                                : originalDOM.getCodeElementFromTarget(target),
+                    }
                     if (extensionsController) {
                         const { content, baseContent } = getContentOfCodeView(codeView, { isDiff, getLineRanges, dom })
 
