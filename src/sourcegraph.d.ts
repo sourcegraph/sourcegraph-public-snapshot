@@ -558,7 +558,6 @@ declare module 'sourcegraph' {
      * Global settings
      * Organization settings (for all organizations the user is a member of)
      * User settings
-     * Client settings
      * Repository settings
      * Directory settings
      *
