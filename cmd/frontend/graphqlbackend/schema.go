@@ -2823,8 +2823,8 @@ type Settings {
     configuration: Configuration!
     # The subject that these settings are for.
     subject: ConfigurationSubject!
-    # The author.
-    author: User!
+    # The author, or null if there is no author or the authoring user was deleted.
+    author: User
     # The time when this was created.
     createdAt: String!
     # The contents.
