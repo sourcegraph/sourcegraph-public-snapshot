@@ -148,17 +148,12 @@ func Main() error {
 		return err
 	}
 
-	go bg.ApplyUserOrgMap(context.Background())
-	goroutine.Go(func() {
-		bg.MigrateOrgSlackWebhookURLs(context.Background())
-	})
 	goroutine.Go(func() {
 		bg.StartLangServers(context.Background())
 	})
 	goroutine.Go(func() {
 		bg.KeepLangServersAndGlobalSettingsInSync(context.Background())
 	})
-	goroutine.Go(func() { bg.MigrateExternalAccounts(context.Background()) })
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	go useractivity.MigrateUserActivityData(context.Background())
