@@ -5,7 +5,7 @@ package schema
 // ExtensionSchemaJSON is the content of the file "extension.schema.json".
 const ExtensionSchemaJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://sourcegraph.com/v1/extension.schema.json#",
+  "$id": "extension.schema.json#",
   "title": "Sourcegraph extension manifest",
   "description": "The Sourcegraph extension manifest describes the extension and the features it provides.",
   "type": "object",

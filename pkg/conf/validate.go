@@ -131,9 +131,9 @@ type jsonLoaderFactory struct{}
 
 func (f jsonLoaderFactory) New(source string) gojsonschema.JSONLoader {
 	switch source {
-	case "https://sourcegraph.com/v1/settings.schema.json":
+	case "settings.schema.json":
 		return gojsonschema.NewStringLoader(schema.SettingsSchemaJSON)
-	case "https://sourcegraph.com/v1/site.schema.json":
+	case "site.schema.json":
 		return gojsonschema.NewStringLoader(schema.SiteSchemaJSON)
 	}
 	return nil
