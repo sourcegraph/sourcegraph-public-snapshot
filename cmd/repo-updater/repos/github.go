@@ -334,11 +334,16 @@ func newGitHubConnection(config *schema.GitHubConnection) (*githubConnection, er
 		return nil, err
 	}
 
+	// Create a shared repository cache for client and searchClient, since they
+	// have independent rate limits but are querying the same underlying data.
+	repoCache := github.NewRepoCache(&apiURL, config.Token)
+
 	return &githubConnection{
 		config:           config,
 		baseURL:          baseURL,
 		githubDotCom:     githubDotCom,
-		client:           github.NewClient(&apiURL, config.Token, transport),
+		client:           github.NewClient(&apiURL, config.Token, transport, repoCache),
+		searchClient:     github.NewClient(&apiURL, config.Token, transport, repoCache),
 		originalHostname: originalHostname,
 	}, nil
 }
@@ -348,6 +353,9 @@ type githubConnection struct {
 	githubDotCom bool
 	baseURL      *url.URL
 	client       *github.Client
+	// searchClient is for using the GitHub search API, which has an independent
+	// rate limit much lower than non-search API requests.
+	searchClient *github.Client
 
 	// originalHostname is the hostname of config.Url (differs from client APIURL, whose host is api.github.com
 	// for an originalHostname of github.com).
@@ -454,18 +462,18 @@ func (c *githubConnection) listAllRepositories(ctx context.Context) <-chan *gith
 					var repos []*github.Repository
 					var rateLimitCost int
 					var err error
-					repos, hasNextPage, rateLimitCost, err = c.client.ListRepositoriesForSearch(ctx, repositoryQuery, page)
+					repos, hasNextPage, rateLimitCost, err = c.searchClient.ListRepositoriesForSearch(ctx, repositoryQuery, page)
 					if err != nil {
 						log15.Error("Error listing GitHub repositories for search", "searchString", repositoryQuery, "page", page, "error", err)
 						break
 					}
-					rateLimitRemaining, rateLimitReset, _ := c.client.RateLimit.Get()
+					rateLimitRemaining, rateLimitReset, _ := c.searchClient.RateLimit.Get()
 					log15.Debug("github sync: ListRepositoriesForSearch", "searchString", repositoryQuery, "repos", len(repos), "rateLimitCost", rateLimitCost, "rateLimitRemaining", rateLimitRemaining, "rateLimitReset", rateLimitReset)
 					for _, r := range repos {
 						ch <- r
 					}
 					if hasNextPage {
-						time.Sleep(c.client.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
+						time.Sleep(c.searchClient.RateLimit.RecommendedWaitForBackgroundOp(rateLimitCost))
 					}
 				}
 			}

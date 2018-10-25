@@ -338,7 +338,7 @@ func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString str
 		return nil, false, 1, err
 	}
 	if response.IncompleteResults {
-		log15.Error("GitHub repository search returned incomplete results, some repositories may have been skipped", "searchString", searchString, "page", page, "total repository count", response.totalCount)
+		log15.Error("GitHub repository search returned incomplete results, some repositories may have been skipped", "searchString", searchString, "page", page, "total repository count", response.TotalCount)
 	}
 	repos = make([]*Repository, 0, len(response.Items))
 	for _, restRepo := range response.Items {
