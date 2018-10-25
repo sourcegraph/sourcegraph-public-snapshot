@@ -931,10 +931,10 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/extensions-client-common@^10.2.2":
-  version "10.2.2"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.2.2.tgz#2fc150db3b75adc430f416e391a3ea768e0ec047"
-  integrity sha512-Aykp7Sre+QP7QiVReAs6MSG0QBXwUDW1sGqFmr+Jyx0zi5GfdvD/EHEj7Ao/YfDCc865qcBJSRe+89OR702IzQ==
+"@sourcegraph/extensions-client-common@^10.3.1":
+  version "10.3.1"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.3.1.tgz#e4f0250a5799336b25e0ecb9a99e0119e8c79292"
+  integrity sha512-dj+DD0n8IxWERzHauCjESjlhI0GT0yJTYvGUZl/9/6QTDvLJ9TQXiKgBbS/NBsRkX0COIGTl/AIwXsiWiCVDJQ==
   dependencies:
     "@slimsag/react-shortcuts" "^1.2.0"
     bootstrap "^4.1.3"

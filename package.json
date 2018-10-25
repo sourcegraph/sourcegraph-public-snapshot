@@ -71,7 +71,7 @@
     "@babel/polyfill": "^7.0.0",
     "@slimsag/react-shortcuts": "^1.2.1",
     "@sourcegraph/codeintellify": "^3.9.0",
-    "@sourcegraph/extensions-client-common": "^10.2.2",
+    "@sourcegraph/extensions-client-common": "^10.3.1",
     "@sqs/jsonc-parser": "^1.0.3",
     "@types/react": "16.4.14",
     "@types/react-dom": "16.0.8",
