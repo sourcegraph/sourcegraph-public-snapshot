@@ -76,9 +76,9 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 		u := &url.URL{Path: "/search"}
 		q := u.Query()
 		// Escape double quotes in search query.
-		search = strings.Replace(search, "\"", "\\\"", -1)
+		search = strings.Replace(search, `"`, `\"`, -1)
 		// Search as a string literal
-		q.Add("q", "\""+search+"\"")
+		q.Add("q", `"`+search+`"`)
 		q.Add("utm_source", editor+"-"+version)
 		if utmProductName != "" {
 			q.Add("utm_product_name", utmProductName)
