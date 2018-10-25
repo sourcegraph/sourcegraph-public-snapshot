@@ -13,7 +13,10 @@ export function search(
     options: SearchOptions,
     { extensionsController }: ExtensionsControllerProps
 ): Observable<GQL.ISearchResults | ErrorLike> {
-    return extensionsController.registries.search.transformQuery(options.query).pipe(
+    /**
+     * Emits whenever a search is executed, and whenever a search extension is registered as a search provider.
+     */
+    return extensionsController.registries.queryTransformer.transformQuery(options.query).pipe(
         switchMap(query =>
             queryGraphQL(
                 gql`
