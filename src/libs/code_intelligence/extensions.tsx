@@ -1,4 +1,5 @@
 import { CommandListPopoverButton } from '@sourcegraph/extensions-client-common/lib/app/CommandList'
+import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
 import {
     Controller as ClientController,
     createController,
@@ -118,6 +119,7 @@ export function initializeExtensions(
                 menu={ContributableMenu.CommandPalette}
                 extensions={extensionsContextController}
             />
+            <Notifications extensionsController={extensionsController} />
         </ShortcutProvider>,
         getCommandPaletteMount()
     )
