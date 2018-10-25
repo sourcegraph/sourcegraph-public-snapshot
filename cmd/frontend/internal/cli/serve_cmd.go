@@ -157,7 +157,7 @@ func Main() error {
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	if hooks.EnterpriseLaunch != nil {
-		go hooks.EnterpriseLaunch()
+		goroutine.Go(hooks.EnterpriseLaunch())
 	}
 
 	tlsCertAndKey := tlsCert != "" && tlsKey != ""
