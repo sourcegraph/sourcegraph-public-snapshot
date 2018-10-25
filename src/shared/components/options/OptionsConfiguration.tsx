@@ -5,7 +5,6 @@ import storage from '../../../browser/storage'
 import { StorageItems } from '../../../browser/types'
 import { GQL } from '../../../types/gqlschema'
 import { fetchCurrentUser } from '../../backend/server'
-import { ClientSettingsCard } from './ClientSettingsCard'
 import { ConnectionCard } from './ConnectionCard'
 import { FeatureFlagCard } from './FeatureFlagCard'
 
@@ -78,7 +77,6 @@ export class OptionsConfiguration extends React.Component<Props, State> {
             <div className="options-configuation-page">
                 <ConnectionCard permissionOrigins={permissionOrigins} storage={storage} currentUser={currentUser} />
                 <FeatureFlagCard storage={storage} />
-                {storage.useExtensions && <ClientSettingsCard />}
             </div>
         )
     }

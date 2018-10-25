@@ -2,18 +2,8 @@ import { UpdateExtensionSettingsArgs } from '@sourcegraph/extensions-client-comm
 import { Controller as ExtensionsContextController } from '@sourcegraph/extensions-client-common/lib/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
 import { gql, graphQLContent } from '@sourcegraph/extensions-client-common/lib/graphql'
-import {
-    ConfigurationCascade,
-    ConfigurationCascadeOrError,
-    ConfigurationSubject,
-    gqlToCascade,
-    mergeSettings,
-    Settings,
-} from '@sourcegraph/extensions-client-common/lib/settings'
+import { ConfigurationSubject, gqlToCascade, Settings } from '@sourcegraph/extensions-client-common/lib/settings'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { applyEdits } from '@sqs/jsonc-parser'
-import * as JSONC from '@sqs/jsonc-parser'
-import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { isEqual } from 'lodash'
 import AddIcon from 'mdi-react/AddIcon'
 import Alert from 'mdi-react/AlertIcon'
@@ -21,18 +11,19 @@ import InfoIcon from 'mdi-react/InformationIcon'
 import MenuDown from 'mdi-react/MenuDownIcon'
 import Menu from 'mdi-react/MenuIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import { combineLatest, from, Observable, throwError } from 'rxjs'
-import { distinctUntilChanged, map, mergeMap, switchMap, take } from 'rxjs/operators'
+import { combineLatest, Observable, Subject, throwError } from 'rxjs'
+import { distinctUntilChanged, map, mapTo, mergeMap, startWith, switchMap, take, tap } from 'rxjs/operators'
 import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
 import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import uuid from 'uuid'
 import { Disposable } from 'vscode-languageserver'
-import storage, { StorageItems } from '../../browser/storage'
+import storage from '../../browser/storage'
+import { GQL } from '../../types/gqlschema'
 import { ExtensionConnectionInfo, onFirstMessage } from '../messaging'
 import { canFetchForURL } from '../util/context'
 import { getContext } from './context'
 import { createAggregateError, isErrorLike } from './errors'
-import { queryGraphQL } from './graphql'
+import { mutateGraphQL, queryGraphQL } from './graphql'
 import { sendLSPHTTPRequests } from './lsp'
 import { createPortMessageTransports } from './PortMessageTransports'
 
@@ -137,45 +128,6 @@ export const applyDecoration = ({
     return mergeDisposables(...disposables)
 }
 
-const storageConfigurationCascade: Observable<
-    ConfigurationCascade<ConfigurationSubject, Settings>
-> = storage.observeSync('clientSettings').pipe(
-    map(clientSettingsString => JSONC.parse(clientSettingsString || '')),
-    map(clientSettings => ({
-        subjects: [
-            {
-                subject: {
-                    id: 'Client',
-                    settingsURL: 'N/A',
-                    viewerCanAdminister: true,
-                    __typename: 'Client',
-                    displayName: 'Client',
-                } as ConfigurationSubject,
-                settings: clientSettings,
-            },
-        ],
-        merged: clientSettings || {},
-    }))
-)
-
-const mergeCascades = (
-    cascadeOrError: ConfigurationCascadeOrError<ConfigurationSubject, Settings>,
-    cascade: ConfigurationCascade<ConfigurationSubject, Settings>
-): ConfigurationCascadeOrError<ConfigurationSubject, Settings> => ({
-    subjects:
-        cascadeOrError.subjects === null
-            ? cascade.subjects
-            : isErrorLike(cascadeOrError.subjects)
-                ? cascadeOrError.subjects
-                : [...cascadeOrError.subjects, ...cascade.subjects],
-    merged:
-        cascadeOrError.merged === null
-            ? cascade.merged
-            : isErrorLike(cascadeOrError.merged)
-                ? cascadeOrError.merged
-                : mergeSettings([cascadeOrError.merged, cascade.merged]),
-})
-
 const configurationCascadeFragment = gql`
     fragment ConfigurationCascadeFields on ConfigurationCascade {
         subjects {
@@ -210,12 +162,21 @@ const configurationCascadeFragment = gql`
     }
 `
 
+/** A subject that emits whenever the configuration cascade must be refreshed from the Sourcegraph instance. */
+const configurationCascadeRefreshes = new Subject<void>()
+
 /**
  * Always represents the entire configuration cascade; i.e., it contains the
  * individual configs from the various config subjects (orgs, user, etc.).
  */
-export const gqlConfigurationCascade = storage.observeSync('sourcegraphURL').pipe(
-    switchMap(url =>
+export const configurationCascade = combineLatest(
+    storage.observeSync('sourcegraphURL'),
+    configurationCascadeRefreshes.pipe(
+        mapTo(null),
+        startWith(null)
+    )
+).pipe(
+    switchMap(([url]) =>
         queryGraphQL({
             ctx: getContext({ repoKey: '', isRepoSpecific: false }),
             request: gql`
@@ -233,13 +194,6 @@ export const gqlConfigurationCascade = storage.observeSync('sourcegraphURL').pip
                 if (!data || !data.viewerConfiguration) {
                     throw createAggregateError(errors)
                 }
-
-                for (const subject of data.viewerConfiguration.subjects) {
-                    // User/org/global settings cannot be edited from the
-                    // browser extension (only client settings can).
-                    subject.viewerCanAdminister = false
-                }
-
                 return data.viewerConfiguration
             })
         )
@@ -253,8 +207,8 @@ export function createExtensionsContextController(
     sourcegraphLanguageServerURL.pathname = '.api/xlang'
 
     return new ExtensionsContextController<ConfigurationSubject, Settings>({
-        configurationCascade: combineLatest(gqlConfigurationCascade, storageConfigurationCascade).pipe(
-            map(([gqlCascade, storageCascade]) => mergeCascades(gqlToCascade(gqlCascade), storageCascade)),
+        configurationCascade: configurationCascade.pipe(
+            map(gqlCascade => gqlToCascade(gqlCascade)),
             distinctUntilChanged((a, b) => isEqual(a, b))
         ),
         updateExtensionSettings,
@@ -295,40 +249,62 @@ export function createExtensionsContextController(
     })
 }
 
-export const updateExtensionSettings = (subjectID, args: UpdateExtensionSettingsArgs): Observable<undefined> => {
-    if (subjectID !== 'Client') {
-        return throwError('Cannot update settings for ' + subjectID + '.')
-    }
-    return from(
-        new Promise<StorageItems>(resolve => storage.getSync(storageItems => resolve(storageItems))).then(
-            storageItems => {
-                let clientSettings = storageItems.clientSettings
-
-                const format = { tabSize: 2, insertSpaces: true, eol: '\n' }
-
-                if ('edit' in args && args.edit) {
-                    clientSettings = applyEdits(
-                        clientSettings,
-                        // TODO(chris): remove `.slice()` (which guards against
-                        // mutation) once
-                        // https://github.com/Microsoft/node-jsonc-parser/pull/12
-                        // is merged in.
-                        setProperty(clientSettings, args.edit.path.slice(), args.edit.value, format)
-                    )
-                } else if ('extensionID' in args) {
-                    clientSettings = applyEdits(
-                        clientSettings,
-                        typeof args.enabled === 'boolean'
-                            ? setProperty(clientSettings, ['extensions', args.extensionID], args.enabled, format)
-                            : removeProperty(clientSettings, ['extensions', args.extensionID], format)
-                    )
-                }
-                return new Promise<undefined>(resolve =>
-                    storage.setSync({ clientSettings }, () => {
-                        resolve(undefined)
-                    })
-                )
+// TODO(sqs): copied from sourcegraph/sourcegraph temporarily
+function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsArgs): Observable<void> {
+    return configurationCascade.pipe(
+        take(1),
+        switchMap(configurationCascade => {
+            const subjectConfig = configurationCascade.subjects.find(s => s.id === subject)
+            if (!subjectConfig) {
+                throw new Error(`no configuration subject: ${subject}`)
             }
-        )
+            const lastID = subjectConfig.latestSettings ? subjectConfig.latestSettings.id : null
+
+            let edit: GQL.IConfigurationEdit
+            if ('edit' in args && args.edit) {
+                edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
+            } else if ('extensionID' in args) {
+                edit = {
+                    keyPath: toGQLKeyPath(['extensions', args.extensionID]),
+                    value: typeof args.enabled === 'boolean' ? args.enabled : null,
+                }
+            } else {
+                throw new Error('no edit')
+            }
+
+            return editConfiguration(subject, lastID, edit)
+        })
     )
+}
+
+// TODO(sqs): copied from sourcegraph/sourcegraph temporarily
+function editConfiguration(subject: GQL.ID, lastID: number | null, edit: GQL.IConfigurationEdit): Observable<void> {
+    return mutateGraphQL({
+        ctx: getContext({ repoKey: '', isRepoSpecific: false }),
+        request: `
+            mutation EditSettings($subject: ID!, $lastID: Int, $edit: ConfigurationEdit!) {
+                configurationMutation(input: { subject: $subject, lastID: $lastID }) {
+                    editConfiguration(edit: $edit) {
+                        empty {
+                            alwaysNil
+                        }
+                    }
+                }
+            }
+        `,
+        variables: { subject, lastID, edit },
+    }).pipe(
+        map(({ errors }) => {
+            if (errors && errors.length > 0) {
+                throw createAggregateError(errors)
+            }
+        }),
+        map(() => undefined),
+        tap(() => configurationCascadeRefreshes.next())
+    )
+}
+
+// TODO(sqs): copied from sourcegraph/sourcegraph temporarily
+function toGQLKeyPath(keyPath: (string | number)[]): GQL.IKeyPathSegment[] {
+    return keyPath.map(v => (typeof v === 'string' ? { property: v } : { index: v }))
 }
