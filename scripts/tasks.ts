@@ -49,7 +49,7 @@ export function copyPhabricator(): void {
 }
 
 const browserTitles = {
-    firefox: 'FireFox',
+    firefox: 'Firefox',
     chrome: 'Chrome',
 }
 
