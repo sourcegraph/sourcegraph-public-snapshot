@@ -10,9 +10,9 @@
 
   <change-notes><![CDATA[
     <ul>
-    <li>v1.1.2 - Fixed no selection search error.
+    <li>v1.1.2 - Minor bug fixes around searching.
         <ul>
-          <li>Add null selection check.</li>
+          <li>Fixed an error that occurred when trying to search with no selection.</li>
         </ul>
       </li>
       <li>v1.1.1 - Fixed search shortcut.

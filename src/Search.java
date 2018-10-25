@@ -60,7 +60,7 @@ public class Search extends AnAction {
                     + "&version=" + URLEncoder.encode(Util.VERSION, "UTF-8")
                     + "&utm_product_name=" + URLEncoder.encode(productName, "UTF-8")
                     + "&utm_product_version=" + URLEncoder.encode(productVersion, "UTF-8")
-                    + "&search=" + URLEncoder.encode(String.format("\"%s\"", q.replaceAll("\"", "\\\\\"")), "UTF-8");
+                    + "&search=" + URLEncoder.encode(q, "UTF-8");
         } catch (UnsupportedEncodingException err) {
             logger.debug("failed to build URL");
             err.printStackTrace();
