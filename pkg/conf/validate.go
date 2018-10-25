@@ -77,10 +77,6 @@ func Validate(inputStr string) (problems []string, err error) {
 			continue
 		}
 
-		if !MultipleAuthProvidersEnabled() && keyPath == "(root)" && e.Description() == "Must validate \"else\" as \"if\" was not valid" {
-			continue
-		}
-
 		problems = append(problems, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 

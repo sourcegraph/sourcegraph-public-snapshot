@@ -14,7 +14,6 @@ func TestValidateCustom(t *testing.T) {
 	}{
 		"multiple": {
 			input: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{MultipleAuthProviders: "enabled"},
 				AuthProviders: []schema.AuthProviders{
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
 					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},

@@ -79,13 +79,6 @@ const SiteSchemaJSON = `{
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "multipleAuthProviders": {
-          "description":
-            "Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users.\n\nOnly applies to Sourcegraph Enterprise Starter and Sourcegraph Enterprise.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "discussions": {
           "description": "Enables the code discussions experiment.",
           "type": "string",
@@ -363,7 +356,7 @@ const SiteSchemaJSON = `{
     },
     "auth.providers": {
       "description":
-        "The authentication providers to use for identifying and signing in users.\n\nOnly one authentication provider is officially supported at the moment. Multiple providers can be specified, but the support is experimental. If you set the deprecated field \"auth.provider\", then that value is used as the authentication provider, and you can't set another one here.",
+        "The authentication providers to use for identifying and signing in users. If you set the deprecated field \"auth.provider\", then that value is used as the authentication provider, and you can't set another one here.",
       "type": "array",
       "items": {
         "required": ["type"],
@@ -1081,7 +1074,7 @@ const SiteSchemaJSON = `{
         },
         "usernameHeader": {
           "description":
-            "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.\n\nRequires auth.provider==\"http-header\".",
+            "The name (case-insensitive) of an HTTP header whose value is taken to be the username of the client requesting the page. Set this value when using an HTTP proxy that authenticates requests, and you don't want the extra configurability of the other authentication methods.",
           "type": "string"
         }
       }
@@ -1182,39 +1175,6 @@ const SiteSchemaJSON = `{
             "description": "A description for this search scope"
           }
         }
-      }
-    }
-  },
-  "$comment": "Allow multiple auth.providers only if experimentalFeatures.multipleAuthProviders is enabled.",
-  "if": {
-    "type": "object",
-    "properties": {
-      "experimentalFeatures": {
-        "type": "object",
-        "required": ["multipleAuthProviders"],
-        "properties": {
-          "multipleAuthProviders": {
-            "type": "string",
-            "const": "enabled"
-          }
-        }
-      }
-    }
-  },
-  "then": {
-    "type": "object",
-    "properties": {
-      "auth.providers": {
-        "type": "array"
-      }
-    }
-  },
-  "else": {
-    "type": "object",
-    "properties": {
-      "auth.providers": {
-        "type": "array",
-        "maxItems": 1
       }
     }
   }

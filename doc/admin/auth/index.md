@@ -139,6 +139,8 @@ Example [`saml` auth provider](../site_config/all.md#samlauthprovider-object) co
 
 See the [`saml` auth provider documentation](../site_config/all.md#samlauthprovider-object) for the full set of configuration options.
 
+> WARNING: When using SAML identity provider-initiated authentication, only 1 SAML auth provider is currently supported.
+
 ### SAML troubleshooting
 
 Setting the env var `INSECURE_SAML_LOG_TRACES=1` on the `sourcegraph/server` Docker conatiner (or the `sourcegraph-frontend` pod if Sourcegraph is deployed to a Kubernetes cluster) causes all SAML requests and responses to be logged.

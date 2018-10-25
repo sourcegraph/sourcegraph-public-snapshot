@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The experimental feature flag to disable the new repo update scheduler has been removed.
 - The `experimentalFeatures.configVars` feature flag was removed.
+- The `experimentalFeatures.multipleAuthProviders` feature flag was removed because the feature is now always enabled.
 
 ### Fixed
 
