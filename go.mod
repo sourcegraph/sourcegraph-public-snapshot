@@ -33,7 +33,7 @@ require (
 	github.com/gobwas/glob v0.0.0-20180809073612-f756513aec94
 	github.com/gogo/protobuf v0.0.0-20170330071051-c0656edd0d9e // indirect
 	github.com/golang-migrate/migrate v0.0.0-20180905051849-93d53a5ae84d
-	github.com/golang/groupcache v0.0.0-20180513044358-24b0969c4cb7
+	github.com/golang/groupcache v0.0.0-20181025014042-c65c006176ff
 	github.com/golangplus/bytes v0.0.0-20160111154220-45c989fe5450 // indirect
 	github.com/golangplus/fmt v0.0.0-20150411045040-2a5d6d7d2995 // indirect
 	github.com/golangplus/testing v0.0.0-20180327235837-af21d9c3145e // indirect
