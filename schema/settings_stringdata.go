@@ -5,7 +5,7 @@ package schema
 // SettingsSchemaJSON is the content of the file "settings.schema.json".
 const SettingsSchemaJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://sourcegraph.com/v1/settings.schema.json#",
+  "$id": "settings.schema.json#",
   "title": "Settings",
   "description": "Configuration settings for users and organizations on Sourcegraph.",
   "type": "object",
@@ -49,7 +49,7 @@ const SettingsSchemaJSON = `{
       "description": "Predefined search scopes",
       "type": "array",
       "items": {
-        "$ref": "https://sourcegraph.com/v1/settings.schema.json#/definitions/SearchScope"
+        "$ref": "#/definitions/SearchScope"
       }
     },
     "search.repositoryGroups": {
@@ -62,7 +62,7 @@ const SettingsSchemaJSON = `{
       }
     },
     "notifications.slack": {
-      "$ref": "https://sourcegraph.com/v1/settings.schema.json#/definitions/SlackNotificationsConfig"
+      "$ref": "#/definitions/SlackNotificationsConfig"
     },
     "motd": {
       "description":
