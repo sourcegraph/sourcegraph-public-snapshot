@@ -76,6 +76,7 @@ describe('Connection', () => {
             (error: ResponseError<any>) => {
                 assert.strictEqual(error.code, ErrorCodes.InternalError)
                 assert.strictEqual(error.message, 'test')
+                assert.strictEqual(error.data && typeof error.data.stack, 'string')
             }
         )
     })
@@ -95,6 +96,7 @@ describe('Connection', () => {
             (error: ResponseError<any>) => {
                 assert.strictEqual(error.code, ErrorCodes.InternalError)
                 assert.strictEqual(error.message, 'test')
+                assert.strictEqual(error.data && typeof error.data.stack, 'string')
             }
         )
     })

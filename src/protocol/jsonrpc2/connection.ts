@@ -365,7 +365,12 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                             if (error instanceof ResponseError) {
                                 replyError(error as ResponseError<any>)
                             } else if (error && typeof error.message === 'string') {
-                                replyError(new ResponseError<void>(ErrorCodes.InternalError, error.message))
+                                replyError(
+                                    new ResponseError<void>(ErrorCodes.InternalError, error.message, {
+                                        stack: error.stack,
+                                        ...error,
+                                    })
+                                )
                             } else {
                                 replyError(
                                     new ResponseError<void>(
@@ -387,7 +392,12 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
                 if (error instanceof ResponseError) {
                     reply(error as ResponseError<any>)
                 } else if (error && typeof error.message === 'string') {
-                    replyError(new ResponseError<void>(ErrorCodes.InternalError, error.message))
+                    replyError(
+                        new ResponseError<void>(ErrorCodes.InternalError, error.message, {
+                            stack: error.stack,
+                            ...error,
+                        })
+                    )
                 } else {
                     replyError(
                         new ResponseError<void>(
