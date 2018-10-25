@@ -180,7 +180,7 @@ func (s ConfigurationSubject) String() string {
 type Settings struct {
 	ID           int32                // the unique ID of this settings value
 	Subject      ConfigurationSubject // the subject of these settings
-	AuthorUserID int32                // the ID of the user who authored this settings value
+	AuthorUserID *int32               // the ID of the user who authored this settings value
 	Contents     string               // the raw JSON (with comments and trailing commas allowed)
 	CreatedAt    time.Time            // the date when this settings value was created
 }

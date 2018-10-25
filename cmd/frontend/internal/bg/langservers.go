@@ -35,27 +35,10 @@ func KeepLangServersAndGlobalSettingsInSync(ctx context.Context) {
 		}
 		var contents string
 		var id *int32
-		var authorUserID int32
 		if settings == nil {
 			contents = "{}"
-			// HACK: Global settings are nil (probably because this is a brand new
-			// instance), so there's no existing author user ID to reuse. Just take
-			// any user's ID. The author isn't shown anywhere, anyway.
-			users, err := db.Users.List(ctx, &db.UsersListOptions{
-				LimitOffset: &db.LimitOffset{Limit: 1},
-			})
-			if err != nil {
-				log15.Warn("error listing users in order to enable/disable a language extension", "error", err)
-				return
-			}
-			if len(users) == 0 {
-				log15.Warn("unable to obtain a user ID to enable/disable a language extension because there are no users in the database")
-				return
-			}
-			authorUserID = users[0].ID
 		} else {
 			contents = settings.Contents
-			authorUserID = settings.AuthorUserID
 			id = &settings.ID
 		}
 
@@ -73,7 +56,7 @@ func KeepLangServersAndGlobalSettingsInSync(ctx context.Context) {
 			}
 		}
 
-		_, err = db.Settings.CreateIfUpToDate(context.Background(), api.ConfigurationSubject{Site: true}, id, authorUserID, contents)
+		_, err = db.Settings.CreateIfUpToDate(context.Background(), api.ConfigurationSubject{Site: true}, id, nil, contents)
 		if err != nil {
 			log15.Warn("error updating global settings to enable/disable a language extension", "error", err)
 			return
