@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/markdown"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
+	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -74,7 +75,7 @@ type notifier struct {
 	eventAuthorUserID int32
 	thread            *types.DiscussionThread
 	comment           *types.DiscussionComment
-	template          txemail.Templates
+	template          txtypes.Templates
 }
 
 // subscribers returns a list of all usernames who are subscribed to receive
@@ -349,13 +350,13 @@ var (
 </body>
 </html>
 `
-	newThreadEmailTemplate = txemail.MustValidate(txemail.Templates{
+	newThreadEmailTemplate = txemail.MustValidate(txtypes.Templates{
 		Subject: sharedCommentSubjectTemplate,
 		Text:    sharedCommentTextTemplate,
 		HTML:    sharedCommentHTMLTemplate,
 	})
 
-	newCommentEmailTemplate = txemail.MustValidate(txemail.Templates{
+	newCommentEmailTemplate = txemail.MustValidate(txtypes.Templates{
 		Subject: sharedCommentSubjectTemplate,
 		Text:    sharedCommentTextTemplate,
 		HTML:    sharedCommentHTMLTemplate,

@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
-	"github.com/sourcegraph/sourcegraph/pkg/txemail"
+	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"golang.org/x/net/context/ctxhttp"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -237,7 +237,7 @@ func (c *internalClient) CanSendEmail(ctx context.Context) (canSendEmail bool, e
 }
 
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) SendEmail(ctx context.Context, message txemail.Message) error {
+func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message) error {
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
