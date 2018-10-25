@@ -17,13 +17,17 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - The user account sidebar "Password" link (to the change-password form) is now shown correctly.
-- Fixed an issue where GitHub rate limits were underutilized if the remaining rate limit dropped below 150.
 
 ### Removed
 
 - The experimental feature flag to disable the new repo update scheduler has been removed.
 - The `experimentalFeatures.configVars` feature flag was removed.
 - The `experimentalFeatures.multipleAuthProviders` feature flag was removed because the feature is now always enabled.
+
+### Fixed
+
+- Fixed an issue where GitHub rate limits were underutilized if the remaining
+  rate limit dropped below 150.
 
 ## 2.12.3
 
