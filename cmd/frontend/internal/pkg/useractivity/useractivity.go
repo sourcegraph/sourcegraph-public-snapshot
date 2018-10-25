@@ -6,7 +6,6 @@
 package useractivity
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 	"time"
 
 	"github.com/garyburd/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -42,45 +40,6 @@ const (
 
 	maxStorageDays = 93
 )
-
-// MigrateUserActivityData moves all old user activity data from the DB to Redis.
-// Should only ever happen one time.
-func MigrateUserActivityData(ctx context.Context) {
-	defer func() {
-		if err := recover(); err != nil {
-			log15.Error("panic in useractivity.MigrateUserActivityData", "error", err)
-		}
-	}()
-
-	c := pool.Get()
-	defer c.Close()
-
-	migrateKey := keyPrefix + "dbmigrate"
-	migrated, err := redis.Bool(c.Do("GET", migrateKey))
-	if err != nil && err != redis.ErrNil {
-		log15.Error("Failed to check if useractivity is migrated", "error", err)
-		return
-	}
-	if migrated {
-		return
-	}
-
-	allUserActivity, err := db.UserActivity.GetAll(ctx)
-	if err != nil {
-		log15.Error("Error migrating user_activity data to persistent redis cache", "error", err)
-		return
-	}
-
-	for _, userActivity := range allUserActivity {
-		userIDStr := strconv.Itoa(int(userActivity.UserID))
-		key := keyPrefix + userIDStr
-		c.Send("HMSET", key,
-			fPageViews, userActivity.PageViews,
-			fSearchQueries, userActivity.SearchQueries)
-	}
-
-	c.Send("SET", migrateKey, strconv.FormatBool(true))
-}
 
 // GetByUserID returns a single user's UserActivity.
 func GetByUserID(userID int32) (*types.UserActivity, error) {

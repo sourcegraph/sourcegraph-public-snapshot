@@ -7,7 +7,6 @@ var (
 	DiscussionMailReplyTokens = &discussionMailReplyTokens{}
 	Repos                     = &repos{}
 	Phabricator               = &phabricator{}
-	UserActivity              = &userActivity{} // DEPRECATED: use package useractivity instead (based on persisted redis cache)
 	SavedQueries              = &savedQueries{}
 	Orgs                      = &orgs{}
 	OrgMembers                = &orgMembers{}
