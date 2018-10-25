@@ -96,3 +96,18 @@ docker run -e LOGO=false ... sourcegraph/server
 ```
 
 See [sourcegraph/sourcegraph#398](https://github.com/sourcegraph/sourcegraph/issues/398) for more information.
+
+### `.sourcegraph/config` does not exist on Windows
+
+On Windows, the `.sourcegraph/config` path must exist prior to starting Sourcegraph with the `docker run ... sourcegraph/server` command, or else you will see the following error:
+
+```
+The source path "C:/Users/USER/.sourcegraph/config" does not exist and is not known to Docker.
+```
+
+To work around this issue, run the following commands before the `docker run` command:
+
+```shell
+mkdir -p ~/.sourcegraph/data
+mkdir -p ~/.sourcegraph/config
+```
