@@ -220,25 +220,6 @@ export function fetchSuggestions(options: SearchOptions): Observable<GQL.SearchS
     )
 }
 
-export function fetchSearchScopes(): Observable<GQL.ISearchScope[]> {
-    return queryGraphQL(gql`
-        query SearchScopes {
-            searchScopes {
-                name
-                value
-                description
-            }
-        }
-    `).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.searchScopes) {
-                throw createAggregateError(errors)
-            }
-            return data.searchScopes
-        })
-    )
-}
-
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
     return queryGraphQL(
         gql`
