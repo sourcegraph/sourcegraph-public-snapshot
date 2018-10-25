@@ -607,6 +607,11 @@ func queryContainerInfoWorker() {
 		case <-refresh:
 		}
 
+		if err := dockerPing(); err != nil {
+			log15.Warn("docker not available to update language server info", "error", err)
+			continue
+		}
+
 		for _, language := range Languages {
 			updateInfoCache(language)
 		}
@@ -1083,6 +1088,11 @@ func setupNetworking() {
 
 	// Do not block server startup, since we're running inside init.
 	goroutine.Go(func() {
+		if err := dockerPing(); err != nil {
+			log15.Error("docker not available to setup network", "error", err)
+			return
+		}
+
 		// Unlock container access for all languages once we're done.
 		defer func() {
 			for _, lang := range Languages {
@@ -1101,6 +1111,13 @@ func setupNetworking() {
 		// Now create the LSP bridge network.
 		createLSPBridge()
 	})
+}
+
+// dockerPing returns an error if we fail a basic docker command (docker
+// version). This will commonly fail if the docker daemon is not reachable.
+func dockerPing() error {
+	_, err := dockerCmd("version")
+	return err
 }
 
 // setContainerID changes the name of our container to "sourcegraph" so that it is
