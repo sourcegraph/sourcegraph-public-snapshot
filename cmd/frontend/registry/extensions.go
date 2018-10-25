@@ -202,7 +202,7 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 		x.RegistryURL = registryURL.String()
 	}
 
-	if !IsRemoteExtensionAllowed(x.ExtensionID) {
+	if x != nil && !IsRemoteExtensionAllowed(x.ExtensionID) {
 		return nil, fmt.Errorf("extension is not allowed in site configuration: %q", x.ExtensionID)
 	}
 
