@@ -73,12 +73,6 @@ func (s *server) Write(input string) error {
 	s.fileWrite <- doneReading
 	<-doneReading
 
-	// Update global "needs restart" state
-	// TODO@ggilmore: Is this necessary? Why can't we rely on the background process to do this?.
-	// if needRestartToApply(before, after) {
-	// 	s.markNeedServerRestart()
-	// }
-
 	return nil
 }
 
