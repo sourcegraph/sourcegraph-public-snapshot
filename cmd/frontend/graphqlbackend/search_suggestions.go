@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -136,7 +135,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 			}
 		}
 
-		sort.Sort(searchResultSorter(results))
+		sortSearchSuggestions(results)
 		const maxBoostedSymbolResults = 3
 		boost := maxBoostedSymbolResults
 		if len(results) < boost {
@@ -265,7 +264,7 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 	}
 	allSuggestions = uniqueSuggestions
 
-	sort.Sort(searchResultSorter(allSuggestions))
+	sortSearchSuggestions(allSuggestions)
 	if len(allSuggestions) > int(*args.First) {
 		allSuggestions = allSuggestions[:*args.First]
 	}

@@ -32,11 +32,6 @@ func AuthProviders() []schema.AuthProviders { return AuthProvidersFromConfig(Get
 // instead of using the current global value.
 func AuthProvidersFromConfig(c *schema.SiteConfiguration) []schema.AuthProviders {
 	if c.AuthProviders != nil {
-		if !MultipleAuthProvidersEnabledFromConfig(c) && len(c.AuthProviders) >= 1 {
-			// Only return first auth provider because the multipleAuthProviders experiment is
-			// disabled.
-			return c.AuthProviders[:1]
-		}
 		return c.AuthProviders
 	}
 

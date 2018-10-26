@@ -1,6 +1,6 @@
 import { matchPath } from 'react-router'
 import uuid from 'uuid'
-import { currentUser } from '../auth'
+import { authenticatedUser } from '../auth'
 import * as GQL from '../backend/graphqlschema'
 import { parseBrowserRepoURL } from '../repo'
 import { repoRevRoute } from '../routes'
@@ -27,7 +27,7 @@ class EventLogger {
             }
         })
 
-        currentUser.subscribe(
+        authenticatedUser.subscribe(
             user => {
                 this.user = user
                 if (user) {
@@ -44,15 +44,7 @@ class EventLogger {
     /**
      * Set user-level properties in all external tracking services
      */
-    public updateUser(
-        user:
-            | GQL.IUser
-            | {
-                  sourcegraphID: number | null
-                  username: string | null
-                  email: string | null
-              }
-    ): void {
+    public updateUser(user: GQL.IUser): void {
         this.setUserIds(user.sourcegraphID, user.username)
         if (user.email) {
             this.setUserEmail(user.email)

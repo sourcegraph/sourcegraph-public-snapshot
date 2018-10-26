@@ -9,14 +9,15 @@ import {
     ExtensionsControllerProps,
     ExtensionsProps,
 } from '../extensions/ExtensionsClientCommonContext'
+import { KeybindingsProps } from '../keybindings'
 import { parseSearchURLQuery, SearchOptions } from '../search'
 import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { NavLinks } from './NavLinks'
 
-interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsControllerProps {
+interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsControllerProps, KeybindingsProps {
     history: H.History
     location: H.Location
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     isLightTheme: boolean
     onThemeChange: () => void
     navbarSearchQuery: string

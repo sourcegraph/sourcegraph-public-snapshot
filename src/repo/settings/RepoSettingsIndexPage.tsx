@@ -8,6 +8,7 @@ import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
+import { LinkOrSpan } from '../../components/LinkOrSpan'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -81,16 +82,16 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
             <Icon
                 className={`icon-inline repo-settings-index-page__ref-icon repo-settings-index-page__ref-icon--${iconClassName}`}
             />
-            <Link to={indexedRef.ref.url}>
+            <LinkOrSpan to={indexedRef.ref.url}>
                 <strong>
                     <code>{indexedRef.ref.displayName}</code>
                 </strong>
-            </Link>{' '}
+            </LinkOrSpan>{' '}
             {indexedRef.indexed ? (
                 <span>
                     &nbsp;&mdash; indexed at{' '}
                     <code>
-                        <Link
+                        <LinkOrSpan
                             to={
                                 indexedRef.indexedCommit && indexedRef.indexedCommit.commit
                                     ? indexedRef.indexedCommit.commit.url
@@ -98,7 +99,7 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
                             }
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
-                        </Link>
+                        </LinkOrSpan>
                     </code>{' '}
                     {indexedRef.current ? '(up to date)' : '(index update in progress)'}
                 </span>
@@ -111,7 +112,6 @@ const TextSearchIndexedRef: React.SFC<{ repo: GQL.IRepository; indexedRef: GQL.I
 
 interface Props extends RouteComponentProps<any> {
     repo: GQL.IRepository
-    user: GQL.IUser
 }
 
 interface State {
@@ -216,10 +216,9 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                         </>
                     ) : (
                         <div className="alert alert-info">
-                            {/* TODO(keegan): update this to a doc page with instructions */}
-                            This Sourcegraph site doesn't support indexed search. See{' '}
-                            <a href="https://github.com/sourcegraph/sourcegraph/pull/239">PR #239</a> for information on
-                            how to enable it.
+                            This Sourcegraph site has not enabled indexed search. See{' '}
+                            <Link to="/help/admin/search">search documentation</Link> for information on how to enable
+                            it.
                         </div>
                     ))}
             </div>

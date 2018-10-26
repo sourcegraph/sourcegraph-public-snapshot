@@ -64,7 +64,7 @@ interface Props extends RouteComponentProps<{ name: string }>, ExtensionsProps {
     /**
      * The currently authenticated user.
      */
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 
     isLightTheme: boolean
 }
@@ -150,7 +150,7 @@ export class OrgArea extends React.Component<Props> {
         }
 
         const transferProps: OrgAreaPageProps = {
-            authenticatedUser: this.props.user,
+            authenticatedUser: this.props.authenticatedUser,
             org: this.state.orgOrError,
             onOrganizationUpdate: this.onDidUpdateOrganization,
             extensions: this.props.extensions,

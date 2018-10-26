@@ -403,6 +403,96 @@ func (u *users) Delete(ctx context.Context, id int32) error {
 		return err
 	}
 
+	// Soft-delete discussions data.
+	if _, err := tx.ExecContext(ctx, "UPDATE discussion_mail_reply_tokens SET deleted_at=now() WHERE deleted_at IS NULL AND user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE discussion_comments SET deleted_at=now() WHERE deleted_at IS NULL AND author_user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE discussion_threads SET deleted_at=now() WHERE deleted_at IS NULL AND author_user_id=$1", id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (u *users) HardDelete(ctx context.Context, id int32) error {
+	// Wrap in transaction because we delete from multiple tables.
+	tx, err := dbconn.Global.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollErr := tx.Rollback()
+			if rollErr != nil {
+				err = multierror.Append(err, rollErr)
+			}
+			return
+		}
+		err = tx.Commit()
+	}()
+
+	if _, err := tx.ExecContext(ctx, "DELETE FROM names WHERE user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM access_tokens WHERE subject_user_id=$1 OR creator_user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM user_external_accounts WHERE user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM survey_responses WHERE user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM registry_extension_releases WHERE registry_extension_id IN (SELECT id FROM registry_extensions WHERE publisher_user_id=$1)", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM registry_extensions WHERE publisher_user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM org_invitations WHERE sender_user_id=$1 OR recipient_user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM org_members WHERE user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM settings WHERE user_id=$1 OR author_user_id=$1", id); err != nil {
+		return err
+	}
+
+	// Hard-delete discussions data.
+	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_mail_reply_tokens WHERE user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE discussion_threads SET target_repo_id=null WHERE author_user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_threads_target_repo WHERE thread_id IN (SELECT id FROM discussion_threads WHERE author_user_id=$1)", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_comments WHERE author_user_id=$1", id); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM discussion_threads WHERE author_user_id=$1", id); err != nil {
+		return err
+	}
+
+	res, err := tx.ExecContext(ctx, "DELETE FROM users WHERE id=$1", id)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return userNotFoundErr{args: []interface{}{id}}
+	}
 	return nil
 }
 

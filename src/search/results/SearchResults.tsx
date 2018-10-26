@@ -18,7 +18,7 @@ import { SearchResultsListOld } from './SearchResultsListOld'
 const UI_PAGE_SIZE = 75
 
 interface SearchResultsProps {
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
     isLightTheme: boolean
@@ -211,7 +211,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         didSave={this.state.didSaveQuery}
                         location={this.props.location}
                         history={this.props.history}
-                        user={this.props.user}
+                        authenticatedUser={this.props.authenticatedUser}
                         isLightTheme={this.props.isLightTheme}
                     />
                 ) : (
@@ -226,7 +226,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                         onDidCreateSavedQuery={this.onDidCreateSavedQuery}
                         didSave={this.state.didSaveQuery}
                         location={this.props.location}
-                        user={this.props.user}
+                        authenticatedUser={this.props.authenticatedUser}
                         isLightTheme={this.props.isLightTheme}
                         uiLimit={this.state.uiLimit}
                     />

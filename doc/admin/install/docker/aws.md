@@ -38,7 +38,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   - sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
   - service docker start
   - usermod -a -G docker ec2-user
-  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.1' ]
+  - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.3' ]
   ```
 
 - Select **Next: ...** until you get to the **Configure Security Group** page, then add the default **HTTP** rule (port range "80", source "0.0.0.0/0, ::/0")
@@ -69,6 +69,16 @@ docker run -d ... sourcegraph/server:X.Y.Z
 
 ---
 
+## Using an external database for persistence
+
+The Docker container has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the container, you can [use external databases](../../external_database.md) for persistence, such as [AWS RDS for PostgreSQL](https://aws.amazon.com/rds/) and [Amazon ElastiCache](https://aws.amazon.com/elasticache/redis/).
+
+The [site configuration JSON](../../site_config/index.md) is not yet stored in the database, so you must manually back it up. This will no longer be necessary in [Sourcegraph 3.0 preview](https://github.com/sourcegraph/about/pull/36). <!-- TODO: remove this when https://github.com/sourcegraph/about/pull/36 is merged -->
+
+> NOTE: Use of external databases requires [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).
+
+---
+
 ## Sourcegraph instances created before July 30, 2018
 
 **The below sections only pertain to Sourcegraph instances created using this tutorial before July 30, 2018**.
@@ -93,7 +103,7 @@ To upgrade your existing instance to use automatic code intelligence, **SSH into
 2.  Start the Docker container again using the new `docker run` command provided in the updated user-data `#cloud-config` script above. i.e.:
 
     ```
-    docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.1
+    docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.3
     ```
 
 These steps only need to be performed once, and they will persist across machine restarts.

@@ -12,7 +12,7 @@ import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 interface SignInPageProps {
     location: H.Location
     history: H.History
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 }
 
 export class SignInPage extends React.Component<SignInPageProps> {
@@ -21,7 +21,7 @@ export class SignInPage extends React.Component<SignInPageProps> {
     }
 
     public render(): JSX.Element | null {
-        if (this.props.user) {
+        if (this.props.authenticatedUser) {
             const returnTo = getReturnTo(this.props.location)
             return <Redirect to={returnTo} />
         }

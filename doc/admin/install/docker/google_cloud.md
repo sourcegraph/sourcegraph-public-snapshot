@@ -31,7 +31,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   sudo apt-get install -y docker-ce
   mkdir -p /root/.sourcegraph/config
   mkdir -p /root/.sourcegraph/data
-  docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.1
+  docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.3
   ```
 
 - Create your VM, then navigate to its public IP address.
@@ -49,6 +49,16 @@ docker ps # get the $CONTAINER_ID of the running sourcegraph/server container
 docker rm -f $CONTAINER_ID
 docker run -d ... sourcegraph/server:X.Y.Z
 ```
+
+---
+
+## Using an external database for persistence
+
+The Docker container has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the container, you can [use external databases](../../external_database.md) for persistence, such as Google Cloud's [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/) and [Cloud Memorystore](https://cloud.google.com/memorystore/).
+
+The [site configuration JSON](../../site_config/index.md) is not yet stored in the database, so you must manually back it up. This will no longer be necessary in [Sourcegraph 3.0 preview](https://github.com/sourcegraph/about/pull/36). <!-- TODO: remove this when https://github.com/sourcegraph/about/pull/36 is merged -->
+
+> NOTE: Use of external databases requires [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).
 
 ---
 
@@ -76,7 +86,7 @@ To upgrade your existing instance to use automatic code intelligence, **SSH into
 2.  Start the Docker container again using the new `docker run` command provided in the updated user-data `#cloud-config` script above. i.e.:
 
     ```
-    docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.1
+    docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.3
     ```
 
 These steps only need to be performed once, and they will persist across machine restarts.

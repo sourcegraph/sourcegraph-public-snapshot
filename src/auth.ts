@@ -1,24 +1,20 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
-import { gql, queryGraphQL } from './backend/graphql'
+import { dataOrThrowErrors, gql, queryGraphQL } from './backend/graphql'
 import * as GQL from './backend/graphqlschema'
-import { createAggregateError } from './util/errors'
 
 /**
- * Always represents the latest
- * state of the currently authenticated user.
+ * Always represents the latest state of the currently authenticated user.
  *
- * Note that currentUser is not designed to survive across changes in the
- * currently authenicated user. Sign in, sign out, and account changes are
- * all expected to refresh the app.
+ * Note that authenticatedUser is not designed to survive across changes in the currently authenticated user. Sign
+ * in, sign out, and account changes all require a full-page reload in the browser to take effect.
  */
-export const currentUser = new ReplaySubject<GQL.IUser | null>(1)
+export const authenticatedUser = new ReplaySubject<GQL.IUser | null>(1)
 
 /**
- * refreshCurrentUser can be called to fetch the current user, orgs, and config
- * state from the remote. Emits no items, completes when done.
+ * Fetches the current user, orgs, and config state from the remote. Emits no items, completes when done.
  */
-export function refreshCurrentUser(): Observable<never> {
+export function refreshAuthenticatedUser(): Observable<never> {
     return queryGraphQL(gql`
         query CurrentAuthState {
             currentUser {
@@ -46,17 +42,10 @@ export function refreshCurrentUser(): Observable<never> {
             }
         }
     `).pipe(
-        tap(({ data, errors }) => {
-            // TODO(Dan): see https://github.com/sourcegraph/sourcegraph/issues/426. We should handle actual errors returned here
-            // more gracefully. If the backend returns partial user data AND an error, some notification of the potential issue should be
-            // provided to users. TBD: should errors be returned if a user doesn't have an email address?
-            if (!data) {
-                throw createAggregateError(errors)
-            }
-            currentUser.next(data.currentUser)
-        }),
-        catchError(error => {
-            currentUser.next(null)
+        map(dataOrThrowErrors),
+        tap(data => authenticatedUser.next(data.currentUser)),
+        catchError(() => {
+            authenticatedUser.next(null)
             return []
         }),
         mergeMap(() => [])
@@ -74,13 +63,13 @@ const initialSiteConfigAuthPublic = window.context.site['auth.public']
  * errors, which mislead the user into thinking there is a problem (and make debugging any actual
  * issue much harder).
  */
-export const authRequired = currentUser.pipe(map(user => user === null && !initialSiteConfigAuthPublic))
+export const authRequired = authenticatedUser.pipe(map(user => user === null && !initialSiteConfigAuthPublic))
 
-// Populate currentUser.
+// Populate authenticatedUser.
 if (window.context.isAuthenticatedUser) {
-    refreshCurrentUser()
+    refreshAuthenticatedUser()
         .toPromise()
         .then(() => void 0, err => console.error(err))
 } else {
-    currentUser.next(null)
+    authenticatedUser.next(null)
 }

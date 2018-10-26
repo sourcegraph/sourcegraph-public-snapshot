@@ -70,14 +70,15 @@ interface UserAreaProps extends RouteComponentProps<{ username: string }>, Exten
      * The currently authenticated user, NOT the user whose username is specified in the URL's "username" route
      * parameter.
      */
-    user: GQL.IUser | null
+    authenticatedUser: GQL.IUser | null
 
     isLightTheme: boolean
 }
 
 interface UserAreaState {
     /**
-     * The fetched user or an error if an error occurred; undefined while loading.
+     * The fetched user (who is the subject of the page), or an error if an error occurred; undefined while
+     * loading.
      */
     userOrError?: GQL.IUser | ErrorLike
 }
@@ -173,7 +174,7 @@ export class UserArea extends React.Component<UserAreaProps, UserAreaState> {
             url: this.props.match.url,
             user: this.state.userOrError,
             onDidUpdateUser: this.onDidUpdateUser,
-            authenticatedUser: this.props.user,
+            authenticatedUser: this.props.authenticatedUser,
             extensions: this.props.extensions,
             isLightTheme: this.props.isLightTheme,
             userAccountAreaRoutes: this.props.userAccountAreaRoutes,

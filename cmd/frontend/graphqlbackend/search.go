@@ -713,7 +713,7 @@ func searchTreeForRepo(ctx context.Context, matcher matcher, repoRevs search.Rep
 		}
 	}
 
-	sort.Sort(searchResultSorter(res))
+	sortSearchSuggestions(res)
 	if len(res) > limit {
 		res = res[:limit]
 	}
@@ -859,26 +859,22 @@ func splitNoEmpty(s, sep string) []string {
 	return res
 }
 
-// searchResultSorter implements the sort.Interface interface to sort a list of
-// searchResultResolvers.
-type searchResultSorter []*searchSuggestionResolver
+func sortSearchSuggestions(s []*searchSuggestionResolver) {
+	sort.Slice(s, func(i, j int) bool {
+		// Sort by score
+		a, b := s[i], s[j]
+		if a.score != b.score {
+			return a.score > b.score
+		}
+		// Prefer shorter strings for the same match score
+		// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
+		if a.length != b.length {
+			return a.length < b.length
+		}
 
-func (s searchResultSorter) Len() int      { return len(s) }
-func (s searchResultSorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
-func (s searchResultSorter) Less(i, j int) bool {
-	// Sort by score
-	a, b := s[i], s[j]
-	if a.score != b.score {
-		return a.score > b.score
-	}
-	// Prefer shorter strings for the same match score
-	// E.g. prefer gorilla/mux over gorilla/muxy, Microsoft/vscode over g3ortega/vscode-crystal
-	if a.length != b.length {
-		return a.length < b.length
-	}
-
-	// All else equal, sort alphabetically.
-	return a.label < b.label
+		// All else equal, sort alphabetically.
+		return a.label < b.label
+	})
 }
 
 // langIncludeExcludePatterns returns regexps for the include/exclude path patterns given the lang:

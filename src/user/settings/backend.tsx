@@ -3,7 +3,7 @@ import { filter, map, mergeMap, take, tap } from 'rxjs/operators'
 import { authRequired } from '../../auth'
 import { gql, queryGraphQL } from '../../backend/graphql'
 import * as GQL from '../../backend/graphqlschema'
-import { gqlConfigurationCascade } from '../../settings/configuration'
+import { configurationCascade } from '../../settings/configuration'
 import { createAggregateError } from '../../util/errors'
 
 /**
@@ -15,7 +15,7 @@ export function refreshConfiguration(): Observable<never> {
         take(1),
         filter(authRequired => !authRequired),
         mergeMap(() => fetchViewerConfiguration()),
-        tap(result => gqlConfigurationCascade.next(result)),
+        tap(result => configurationCascade.next(result)),
         mergeMap(() => [])
     )
 }

@@ -12,7 +12,7 @@
 - Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming
 - Code intelligence for many languages via the [Language Server Protocol](https://langserver.org/)
 - Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://about.sourcegraph.com/docs/features/browser-extension/)
-- Integration with third-party developer tools via the [Sourcegraph Extension API](https://github.com/sourcegraph/sourcegraph-extension-api)
+- Integration with third-party developer tools via the [Sourcegraph extension API](https://github.com/sourcegraph/sourcegraph-extension-api)
 
 ## Try it yourself
 

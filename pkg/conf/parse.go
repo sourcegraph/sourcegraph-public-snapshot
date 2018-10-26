@@ -49,52 +49,41 @@ func parseConfig(data string) (*schema.SiteConfiguration, error) {
 	return tmpConfig, nil
 }
 
-// TODO(slimsag): add back requireRestart and make use of it (it is a list of config properties that
-// require restarting the given services to take effect)
-
-// doNotRequireRestart is a list of options that do not require a service restart.
+// requireRestart describes the list of config properties that require
+// restarting the Sourcegraph Server in order for the change to take effect.
 //
-// TODO(slimsag): eliminate the need for this once all conf.GetTODO are removed.
-var doNotRequireRestart = []string{
-	"auth.allowSignup",
-	"auth.public",
-	"auth.userIdentityHTTPHeader",
-	"github",
-	"gitlab",
-	"phabricator",
-	"awsCodeCommit",
-	"bitbucketServer",
-	"repos.list",
-	"gitMaxConcurrentClones",
-	"repoListUpdateInterval",
-	"gitolite",
-	"gitOriginMap",
-	"githubClientID",
-	"githubClientSecret",
-	"settings",
-	"htmlHeadTop",
-	"htmlHeadBottom",
-	"htmlBodyTop",
-	"htmlBodyBottom",
-	"httpStrictTransportSecurity",
-	"httpToHttpsRedirect",
-	"disableBuiltInSearches",
-	"email.smtp",
-	"email.address",
-	"disableAutoGitUpdates",
-	"corsOrigin",
-	"dontIncludeSymbolResultsByDefault",
-	"langservers",
-	"platform",
-	"log",
-	"experimentalFeatures::jumpToDefOSSIndex",
-	"experimentalFeatures::canonicalURLRedirect",
-	"experimentalFeatures::multipleAuthProviders",
-	"experimentalFeatures::platform",
-	"experimentalFeatures::discussions",
-	"reviewBoard",
-	"parentSourcegraph",
-	"maxReposToSearch",
+// Experimental features are special in that they are denoted individually
+// via e.g. "experimentalFeatures::myFeatureFlag".
+var requireRestart = []string{
+	"siteID",
+	"executeGradleOriginalRootPaths",
+	"lightstepAccessToken",
+	"lightstepProject",
+	"auth.accessTokens",
+	"privateArtifactRepoURL",
+	"auth.userOrgMap",
+	"auth.sessionExpiry",
+	"noGoGetDomains",
+	"auth.disableAccessTokens",
+	"auth.providers",
+	"appURL",
+	"tls.letsencrypt",
+	"git.cloneURLToRepositoryName",
+	"searchScopes",
+	"auth.saml",
+	"extensions",
+	"disableBrowserExtension",
+	"auth.provider",
+	"tlsCert",
+	"auth.openIDConnect",
+	"update.channel",
+	"useJaeger",
+	"privateArtifactRepoPassword",
+	"disablePublicRepoRedirects",
+	"privateArtifactRepoUsername",
+	"blacklistGoGet",
+	"privateArtifactRepoID",
+	"tlsKey",
 }
 
 // merge a map, overwriting keys
@@ -202,10 +191,14 @@ func AppendConfig(dest, src *schema.SiteConfiguration) *schema.SiteConfiguration
 func needRestartToApply(before, after *schema.SiteConfiguration) bool {
 	diff := diff(before, after)
 
-	// Delete fields that do not require a process restart from the diff. Then
-	// len(diff) > 0 tells us if we need to restart or not.
-	for _, option := range doNotRequireRestart {
-		delete(diff, option)
+	// Check every option that changed to determine whether or not a server
+	// restart is required.
+	for option := range diff {
+		for _, requireRestartOption := range requireRestart {
+			if option == requireRestartOption {
+				return true
+			}
+		}
 	}
-	return len(diff) > 0
+	return false
 }

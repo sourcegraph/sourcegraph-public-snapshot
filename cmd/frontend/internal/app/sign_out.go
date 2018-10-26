@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -33,17 +32,13 @@ func serveSignOut(w http.ResponseWriter, r *http.Request) {
 		log15.Error("Error in signout.", "err", err)
 	}
 
-	// TODO(sqs): Show the auth provider name corresponding to each signout URL (helpful when there
-	// are multiple).
 	var signoutURLs []SignOutURL
 	if ssoSignOutHandler != nil {
 		signoutURLs = ssoSignOutHandler(w, r)
 	}
-	if conf.MultipleAuthProvidersEnabled() {
-		if len(signoutURLs) > 0 {
-			renderSignoutPageTemplate(w, r, signoutURLs)
-			return
-		}
+	if len(signoutURLs) > 0 {
+		renderSignoutPageTemplate(w, r, signoutURLs)
+		return
 	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)

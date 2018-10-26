@@ -9,10 +9,10 @@ export const userAccountSideBarItems: UserAccountSidebarItems = {
         },
         {
             label: 'Password',
-            to: `/account`,
+            to: `/password`,
             exact: true,
-            condition: ({ siteAdminViewingOtherUser, externalAuthEnabled }) =>
-                siteAdminViewingOtherUser && !externalAuthEnabled,
+            // Only the builtin auth provider has a password.
+            condition: ({ authProviders }) => authProviders.some(({ isBuiltin }) => isBuiltin),
         },
         {
             label: 'Emails',

@@ -4,12 +4,10 @@ import * as H from 'history'
 import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
-import * as GQL from '../backend/graphqlschema'
 import { ExtensionsEnvironmentProps } from '../extensions/environment/ExtensionsEnvironment'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 
 interface Props extends ExtensionsEnvironmentProps, ExtensionsControllerProps {
-    user: GQL.IUser | null
     location: H.Location
 }
 

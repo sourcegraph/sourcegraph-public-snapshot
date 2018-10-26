@@ -71,6 +71,13 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element | null {
+        // If the default branch is undefined, set to HEAD
+        const defaultBranch =
+            (!isErrorLike(this.props.repo) &&
+                this.props.repo &&
+                this.props.repo.defaultBranch &&
+                this.props.repo.defaultBranch.displayName) ||
+            'HEAD'
         // If neither repo or file can be loaded, return null, which will hide all code host icons
         if (!this.props.repo || isErrorLike(this.state.fileExternalLinksOrError)) {
             return null
@@ -101,18 +108,18 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURL.serviceType)
         const Icon = icon || ExportIcon
 
-        // Special-case for GitHub: add branch and line numbers to URL.
+        // Extract url to add branch, line numbers or commit range.
         let url = externalURL.url
-        if (externalURL.serviceType === 'github') {
-            // If in a branch, add branch path to the GitHub URL.
-            if (this.props.rev && this.props.rev !== 'HEAD' && !this.state.fileExternalLinksOrError) {
+        if (externalURL.serviceType === 'github' || externalURL.serviceType === 'gitlab') {
+            // If in a branch, add branch path to the code host URL.
+            if (this.props.rev && this.props.rev !== defaultBranch && !this.state.fileExternalLinksOrError) {
                 url += `/tree/${this.props.rev}`
             }
-            // If showing a comparison, add comparison specifier to the GitHub URL.
+            // If showing a comparison, add comparison specifier to the code host URL.
             if (this.props.commitRange) {
                 url += `/compare/${this.props.commitRange.replace(/^\.\.\./, 'HEAD...').replace(/\.\.\.$/, '...HEAD')}`
             }
-            // Add range or position path to the GitHub URL.
+            // Add range or position path to the code host URL.
             if (this.props.range) {
                 url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
             } else if (this.props.position) {

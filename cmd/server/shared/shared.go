@@ -2,6 +2,7 @@ package shared
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -14,6 +15,9 @@ import (
 
 // FrontendInternalHost is the value of SRC_FRONTEND_INTERNAL.
 const FrontendInternalHost = "127.0.0.1:3090"
+
+// zoektHost is the address zoekt webserver is listening on.
+const zoektHost = "127.0.0.1:3070"
 
 // defaultEnv is environment variables that will be set if not already set.
 var defaultEnv = map[string]string{
@@ -30,6 +34,7 @@ var defaultEnv = map[string]string{
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
 	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 	"LSP_PROXY":             "127.0.0.1:4388",
+	"ZOEKT_HOST":            zoektHost,
 
 	// Limit our cache size to 100GB, same as prod. We should probably update
 	// searcher/symbols to ensure this value isn't larger than the volume for
@@ -120,6 +125,8 @@ func Main() {
 
 	// TODO validate known_hosts contains all code hosts in config.
 
+	zoektIndexDir := filepath.Join(DataDir, "zoekt/index")
+
 	procfile := []string{
 		`gitserver: gitserver`,
 		`query-runner: query-runner`,
@@ -131,6 +138,8 @@ func Main() {
 		`repo-updater: repo-updater`,
 		`indexer: indexer`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=9238 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
+		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072", FrontendInternalHost, zoektIndexDir),
+		fmt.Sprintf("zoekt-webserver: zoekt-webserver -rpc -pprof -listen %s -index %s", zoektHost, zoektIndexDir),
 	}
 	procfile = append(procfile, ProcfileAdditions...)
 	if line, err := maybeRedisProcFile(); err != nil {
@@ -142,11 +151,6 @@ func Main() {
 		log.Fatal(err)
 	} else if line != "" {
 		procfile = append(procfile, line)
-	}
-	if lines, err := maybeZoektProcfile(DataDir); err != nil {
-		log.Fatal(err)
-	} else if lines != nil {
-		procfile = append(procfile, lines...)
 	}
 
 	const goremanAddr = "127.0.0.1:5005"

@@ -56,6 +56,7 @@ func init() {
 		if err != nil {
 			log.Fatalf("received error when setting up the store for the default client durig test, err :%s", err)
 		}
+
 		return
 	}
 

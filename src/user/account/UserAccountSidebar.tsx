@@ -3,6 +3,7 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import LogoutIcon from 'mdi-react/LogoutIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
+import * as GQL from '../../backend/graphqlschema'
 import {
     SIDEBAR_BUTTON_CLASS,
     SidebarGroup,
@@ -17,9 +18,7 @@ import { NavItemDescriptor } from '../../util/contributions'
 import { UserAreaRouteContext } from '../area/UserArea'
 
 export interface UserAccountSidebarItemConditionContext {
-    /** True if the site admin is viewing another user's account */
-    siteAdminViewingOtherUser: boolean
-    externalAuthEnabled: boolean
+    authProviders: GQL.IAuthProvider[]
 }
 
 export type UserAccountSidebarItems = Record<
@@ -29,8 +28,8 @@ export type UserAccountSidebarItems = Record<
 
 export interface UserAccountSidebarProps extends UserAreaRouteContext, RouteComponentProps<{}> {
     items: UserAccountSidebarItems
+    authProviders: GQL.IAuthProvider[]
     className?: string
-    externalAuthEnabled: boolean
 }
 
 /** Sidebar for user account pages. */
@@ -56,10 +55,7 @@ export const UserAccountSidebar: React.SFC<UserAccountSidebarProps> = props => {
                 <SidebarGroupItems>
                     {props.items.account.map(
                         ({ label, to, exact, condition = () => true }) =>
-                            condition({
-                                siteAdminViewingOtherUser,
-                                externalAuthEnabled: props.externalAuthEnabled,
-                            }) && (
+                            condition({ authProviders: props.authProviders }) && (
                                 <SidebarNavItem key={label} to={props.match.path + to} exact={exact}>
                                     {label}
                                 </SidebarNavItem>

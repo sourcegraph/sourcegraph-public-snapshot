@@ -59,6 +59,9 @@ export const fetchRepository = memoizeObservable(
                         enabled
                         viewerCanAdminister
                         redirectURL
+                        defaultBranch {
+                            displayName
+                        }
                     }
                 }
             `,
