@@ -42,7 +42,7 @@ func init() {
 			fileWrite:      make(chan chan struct{}, 1),
 		}
 
-		go DefaultServerFrontendOnly.Start()
+		go DefaultServerFrontendOnly.watchDisk()
 		defaultClient.fetcher = passthroughFetcherFrontendOnly{}
 	}
 

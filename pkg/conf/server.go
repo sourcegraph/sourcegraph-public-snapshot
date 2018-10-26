@@ -3,6 +3,7 @@ package conf
 import (
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -34,8 +35,6 @@ type server struct {
 	// ready is a barrier to block request handling until the server
 	// has been initialized via server.start().
 	ready chan struct{}
-
-	once sync.Once
 }
 
 // Raw returns the raw text of the configuration file.
@@ -113,47 +112,28 @@ func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 	return nil
 }
 
-// start prepares the server to start handling requests by
-// periodically reloading the configuration file from disk.
-func (s *server) Start() {
-	s.once.Do(func() {
-		for {
-			// TODO@ggilmore: This logic is incorrect. If there is a JSON syntax error when parsing the file,
-			// then the channel will never be closed. (We block writing invalid files to disk with server.Write(), but
-			// it's possible for people to directly edit the file). Maybe check to see if err is specifically
-			// a syntax error, and continue anyway?
-			//
-			// Actualy, I am not sure if this is really a regression? We'd fail completly in the old version if
-			// the site configuration was invalid. Maybe we should do that here too?
-			err := s.updateFromDisk(false)
-			if err == nil {
-				close(s.ready)
-				break
-			}
-
-			log.Printf("received error during initial configuration update, err: %s", err)
-			time.Sleep(1 * time.Second)
-		}
-
-		go s.watchDisk()
-	})
-}
-
 // watchDisk reloads the configuration file from disk at least every five seconds or whenever
 // server.Write() is called.
 func (s *server) watchDisk() {
+	readAtLeastOnce := false
+
 	for {
+		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
+
 		var signalDoneReading chan struct{}
 		select {
 		case signalDoneReading = <-s.fileWrite:
 			// File was changed on FS, so check now.
-		case <-time.After(5 * time.Second):
+		case <-time.After(jitter):
 			// File possibly changed on FS, so check now.
 		}
 
 		err := s.updateFromDisk(true)
 		if err != nil {
 			log.Printf("failed to read configuration file: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err, s.configFilePath)
+		} else if !readAtLeastOnce {
+			readAtLeastOnce = true
+			close(s.ready)
 		}
 
 		if signalDoneReading != nil {
