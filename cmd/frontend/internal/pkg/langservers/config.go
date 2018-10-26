@@ -56,7 +56,7 @@ func SetDisabled(ctx context.Context, language string, disabled bool) error {
 	// Check if the language specified is for a custom language server or not.
 	customLangserver := checkSupported(language) != nil
 
-	return conf.Edit(func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error) {
+	return conf.DefaultServerFrontendOnly.Edit(func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error) {
 		// Copy the langservers slice, since we intend to edit it.
 		newLangservers := make([]*schema.Langservers, 0, len(current.Langservers))
 

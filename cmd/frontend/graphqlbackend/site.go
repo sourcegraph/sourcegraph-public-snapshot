@@ -169,7 +169,7 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (stri
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return "", err
 	}
-	return conf.Raw(), nil
+	return conf.DefaultServerFrontendOnly.Raw(), nil
 }
 
 func (r *siteConfigurationResolver) PendingContents(ctx context.Context) (*string, error) {
@@ -179,11 +179,12 @@ func (r *siteConfigurationResolver) PendingContents(ctx context.Context) (*strin
 		return nil, err
 	}
 
+	// TODO@ggilmore: Why is this here? AFAICT, nobody is really using this?
 	if !conf.IsDirty() {
 		return nil, nil
 	}
 
-	rawContents, err := ioutil.ReadFile(conf.FilePath())
+	rawContents, err := ioutil.ReadFile(conf.DefaultServerFrontendOnly.FilePath())
 	if err != nil {
 		if os.IsNotExist(err) {
 			s := "// The site configuration file does not exist."
@@ -221,11 +222,13 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 func (r *siteConfigurationResolver) CanUpdate() bool {
 	// We assume the is-admin check has already been performed before constructing
 	// our receiver.
+	// TODO@ggilmore: is the isWriteable check still needed
 	return conf.IsWritable() && processrestart.CanRestart()
 }
 
 func (r *siteConfigurationResolver) Source() string {
-	s := conf.FilePath()
+	s := conf.DefaultServerFrontendOnly.FilePath()
+	// TODO@ggilmore: is the isWriteable check still needed
 	if !conf.IsWritable() {
 		s += " (read-only)"
 	}
@@ -240,8 +243,8 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
 	}
-	if err := conf.Write(args.Input); err != nil {
+	if err := conf.DefaultServerFrontendOnly.Write(args.Input); err != nil {
 		return false, err
 	}
-	return conf.NeedServerRestart(), nil
+	return conf.DefaultServerFrontendOnly.NeedServerRestart(), nil
 }

@@ -1,25 +1,37 @@
 package conf
 
 import (
+	"context"
 	"log"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
-	go defaultClient.run()
+	if getMode() == modeServer {
+		defaultClient.fetcher = passthroughFetcherFrontendOnly{}
+	}
+
+	go defaultClient.start()
 }
 
 type client struct {
 	store *configStore
 
+	fetcher fetcher
+
 	watchersMu sync.Mutex
 	watchers   []chan struct{}
 
+	// once protects client.start().
+	once sync.Once
+	
 	// barrier to block handling requests until the
+	// client has been initialized by client.start().
 	ready chan struct{}
 
 	mockMu      sync.RWMutex
@@ -28,20 +40,26 @@ type client struct {
 
 var defaultClient = &client{}
 
-func (c *client) run() {
-	for {
-		err := c.fetchAndUpdate()
-		if err == nil {
-			break
+// start prepares the client to start handling requests by
+// periodically fetching the configuration file from c.fetcher.
+func (c *client) start() {
+	c.once.Do(func() {
+		c.store = &configStore{}
+
+		for {
+			err := c.fetchAndUpdate()
+			if err == nil {
+				break
+			}
+
+			log.Printf("received error during initial configuration update, err: %s", err)
+			time.Sleep(1 * time.Second)
 		}
 
-		log.Printf("received error during initial configuration update, err: %s", err)
-		time.Sleep(1 * time.Second)
-	}
+		go func() { c.continouslyUpdate(5 * time.Second) }()
 
-	go func() { c.continouslyUpdate(5 * time.Second) }()
-
-	close(c.ready)
+		close(c.ready)
+	})
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -194,7 +212,7 @@ func (c *client) continouslyUpdate(interval time.Duration) {
 }
 
 func (c *client) fetchAndUpdate() error {
-	newRawConfig, err := c.fetchConfig()
+	newRawConfig, err := c.fetcher.FetchConfig()
 	if err != nil {
 		return errors.Wrap(err, "unable to fetch new configuration")
 	}
@@ -211,6 +229,27 @@ func (c *client) fetchAndUpdate() error {
 	return nil
 }
 
-func (c *client) fetchConfig() (string, error) {
-	return "TEST", nil
+type fetcher interface {
+	FetchConfig() (rawJSON string, err error)
+}
+
+// Fetch the raw configuration JSON via our internal API.
+type httpFetcher struct{}
+
+func (h httpFetcher) FetchConfig() (string, error) {
+	rawJSON, err := api.InternalClient.ConfigurationRawJSON(context.Background())
+	return rawJSON, err
+}
+
+// Fetch the raw configuration directly via conf.DefaultServerFrontendOnly.
+// This is needed by frontend, otherwise we'll run into a deadlock issue since
+// frontend needs to read the site configuration before it can start serving
+// the internal api.
+//
+// WARNING: Only frontend should use this fetcher! Other services
+// that attempt to use it will panic.
+type passthroughFetcherFrontendOnly struct{}
+
+func (p passthroughFetcherFrontendOnly) FetchConfig() (string, error) {
+	return DefaultServerFrontendOnly.Raw(), nil
 }

@@ -7,7 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// configStore is a threadsafe
+// configStore manages the in-memory storage, access,
+// and updating of the site configuration in a threadsafe manner.
 type configStore struct {
 	configMu sync.RWMutex
 	parsed   *schema.SiteConfiguration

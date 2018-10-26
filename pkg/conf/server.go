@@ -11,7 +11,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// Server
+func init() {
+	if getMode() != modeServer {
+		return
+	}
+
+	DefaultServerFrontendOnly := server{}
+
+	go DefaultServerFrontendOnly.start()
+}
+
+// DefaultServerFrontendOnly is a server that should only ever be used to frontend.
+// TODO@ggilmore: Write better description
+var DefaultServerFrontendOnly *server
+
+// server
 type server struct {
 	configFilePath string
 
@@ -21,14 +35,14 @@ type server struct {
 	needRestart   bool
 
 	// fileWrite signals when our app writes to the configuration file. The
-	// secondary channel is closed when conf.Raw() would return the new
+	// secondary channel is closed when server.Raw() would return the new
 	// configuration that has been written to disk.
 	// TODO@ggilmore: is it important that the channel here is buffered?
 	// var fileWrite = make(chan chan struct{}, 1)
 	fileWrite chan chan struct{}
 
-	// raedy is a barrier to block request handling until the server
-	// has been initialized via server.Start().
+	// ready is a barrier to block request handling until the server
+	// has been initialized via server.start().
 	ready chan struct{}
 }
 
@@ -108,22 +122,27 @@ func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 	return nil
 }
 
-// Start prepares the server to start handling requests by
+// start prepares the server to start handling requests by
 // periodically reloading the configuration file from disk.
-func (s *server) Start() {
+func (s *server) start() {
 	s.store = &configStore{}
+	s.fileWrite = make(chan chan struct{}, 1)
 
 	for {
 		// TODO@ggilmore: This logic is incorrect. If there is a JSON syntax error when parsing the file,
 		// then the channel will never be closed. (We block writing invalid files to disk with server.Write(), but
 		// it's possible for people to directly edit the file). Maybe check to see if err is specifically
 		// a syntax error, and continue anyway?
+		//
+		// Actualy, I am not sure if this is really a regression? We'd fail completly in the old version if
+		// the site configuration was invalid. Maybe we should do that here too?
 		err := s.updateFromDisk(false)
 		if err == nil {
 			close(s.ready)
 			break
 		}
 
+		time.Sleep(1 * time.Second)
 	}
 
 	go s.watchDisk()

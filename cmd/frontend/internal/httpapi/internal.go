@@ -158,6 +158,16 @@ func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func serveConfigurationRawJSON(w http.ResponseWriter, r *http.Request) error {
+	rawJSON := conf.DefaultServer.Raw()
+	err := json.NewEncoder(w).Encode(rawJSON)
+	if err != nil {
+		return errors.Wrap("Encode")
+	}
+
+	return nil
+}
+
 func serveReposList(w http.ResponseWriter, r *http.Request) error {
 	var opt db.ReposListOptions
 	err := json.NewDecoder(r.Body).Decode(&opt)
@@ -502,3 +512,4 @@ func packetWrite(str string) []byte {
 func handlePing(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("pong"))
 }
+
