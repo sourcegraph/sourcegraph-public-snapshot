@@ -176,6 +176,11 @@ export const applyDecoration = (
             const link = document.createElement('a')
             link.className = 'sourcegraph-extension-element'
             link.setAttribute('href', url)
+
+            // External URLs should open in a new tab, whereas relative URLs
+            // should not.
+            link.setAttribute('target', /^https?:\/\//.test(url) ? '_blank' : undefined)
+
             link.style.color = decoration.after!.color || null
             link.appendChild(e)
             return link
