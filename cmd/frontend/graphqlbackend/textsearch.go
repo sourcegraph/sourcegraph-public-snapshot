@@ -545,6 +545,15 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 	return matches, limitHit, reposLimitHit, nil
 }
 
+func noOpAnyChar(re *syntax.Regexp) {
+	if re.Op == syntax.OpAnyChar {
+		re.Op = syntax.OpAnyCharNotNL
+	}
+	for _, s := range re.Sub {
+		noOpAnyChar(s)
+	}
+}
+
 func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
@@ -554,6 +563,7 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 		if err != nil {
 			return nil, err
 		}
+		noOpAnyChar(re)
 		// zoekt decides to use its literal optimization at the query parser
 		// level, so we check if our regex can just be a literal.
 		if re.Op == syntax.OpLiteral {
