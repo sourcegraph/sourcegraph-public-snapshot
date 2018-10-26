@@ -34,7 +34,7 @@ const addGitHubEnterprise: ConfigInsertionFunction = config => {
     const tokenPlaceholder = '<personal access token with repo scope>'
     const value: GitHubConnection = {
         token: tokenPlaceholder,
-        url: 'https://github-enterprise-hostname.example.com',
+        url: 'https://github-enterprise.example.com',
     }
     const edits = setProperty(config, ['github', -1], value, defaultFormattingOptions)
     return { edits, selectText: tokenPlaceholder }

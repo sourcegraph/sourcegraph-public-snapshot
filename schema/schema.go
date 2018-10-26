@@ -148,7 +148,7 @@ type GitHubConnection struct {
 	RepositoryPathPattern       string   `json:"repositoryPathPattern,omitempty"`
 	RepositoryQuery             []string `json:"repositoryQuery,omitempty"`
 	Token                       string   `json:"token"`
-	Url                         string   `json:"url,omitempty"`
+	Url                         string   `json:"url"`
 }
 type GitLabConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
