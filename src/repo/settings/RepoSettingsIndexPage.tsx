@@ -3,6 +3,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import prettyBytes from 'pretty-bytes'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
+import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 import { gql, queryGraphQL } from '../../backend/graphql'
@@ -216,8 +217,8 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
                     ) : (
                         <div className="alert alert-info">
                             This Sourcegraph site has not enabled indexed search. See{' '}
-                            <a href="https://docs.sourcegraph.com/admin/search">Search Documentation</a> for information
-                            on how to enable it.
+                            <Link to="/help/admin/search">search documentation</Link> for information on how to enable
+                            it.
                         </div>
                     ))}
             </div>
