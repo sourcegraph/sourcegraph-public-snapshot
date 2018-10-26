@@ -172,7 +172,8 @@ type ReposListOptions struct {
 	// OnlyArchived excludes non-archived repositories from the list.
 	OnlyArchived bool
 
-	// Index when set will only include repositories which should be
+	// Index when set will only include repositories which should be indexed
+	// if true. If false it will exclude repositories which should be
 	// indexed. An example use case of this is for indexed search only
 	// indexing a subset of repositories.
 	Index *bool
