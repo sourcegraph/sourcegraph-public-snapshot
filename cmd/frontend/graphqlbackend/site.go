@@ -222,7 +222,7 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 func (r *siteConfigurationResolver) CanUpdate() bool {
 	// We assume the is-admin check has already been performed before constructing
 	// our receiver.
-	return  processrestart.CanRestart()
+	return processrestart.CanRestart()
 }
 
 func (r *siteConfigurationResolver) Source() string {

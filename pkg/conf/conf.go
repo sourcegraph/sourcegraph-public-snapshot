@@ -27,7 +27,6 @@ func getMode() configurationMode {
 }
 
 func init() {
-
 	defaultClient = &client{
 		store:   &configStore{},
 		ready:   make(chan struct{}),

@@ -175,7 +175,7 @@ func (c *client) continouslyUpdate() {
 		err := c.fetchAndUpdate()
 		if err != nil {
 			log.Printf("received error during background config update, err: %s", err)
-		} else if !fetchedAtLeastOnce{
+		} else if !fetchedAtLeastOnce {
 			fetchedAtLeastOnce = true
 			close(c.ready)
 		}

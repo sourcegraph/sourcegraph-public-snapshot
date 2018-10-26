@@ -512,4 +512,3 @@ func packetWrite(str string) []byte {
 func handlePing(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("pong"))
 }
-
