@@ -829,9 +829,14 @@ Named groups of repositories that can be referenced in a search query using the 
 
 Properties of the `GitHubConnection` object:
 
-### url (string)
+### url (string, required)
 
-URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com
+URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.
+
+Examples:
+
+- `https://github.com`
+- `https://github-enterprise.example.com`
 
 Additional restrictions:
 
@@ -919,9 +924,12 @@ Properties of the `GitLabConnection` object:
 
 ### url (string, required)
 
-URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com
+URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.
 
-Default: `"https://gitlab.com"`
+Examples:
+
+- `https://gitlab.com`
+- `https://gitlab.example.com`
 
 Additional restrictions:
 
@@ -994,7 +1002,11 @@ Properties of the `BitbucketServerConnection` object:
 
 ### url (string, required)
 
-URL of a Bitbucket Server instance, such as https://bitbucket.example.com
+URL of a Bitbucket Server instance, such as https://bitbucket.example.com.
+
+Examples:
+
+- `https://bitbucket.example.com`
 
 Additional restrictions:
 

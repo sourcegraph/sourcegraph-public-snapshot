@@ -572,14 +572,20 @@ const SiteSchemaJSON = `{
     "GitHubConnection": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["token"],
+      "required": ["url", "token"],
       "properties": {
         "url": {
           "description":
-            "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com",
+            "URL of a GitHub instance, such as https://github.com or https://github-enterprise.example.com.",
           "type": "string",
+          "default": "https://github.com",
+          "not": {
+            "type": "string",
+            "pattern": "example\\.com"
+          },
           "pattern": "^https?://",
-          "format": "uri"
+          "format": "uri",
+          "examples": ["https://github.com", "https://github-enterprise.example.com"]
         },
         "gitURLType": {
           "description":
@@ -634,7 +640,7 @@ const SiteSchemaJSON = `{
       "properties": {
         "url": {
           "description":
-            "URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com",
+            "URL of a GitLab instance, such as https://gitlab.example.com or (for GitLab.com) https://gitlab.com.",
           "type": "string",
           "default": "https://gitlab.com",
           "pattern": "^https?://",
@@ -642,7 +648,8 @@ const SiteSchemaJSON = `{
             "type": "string",
             "pattern": "example\\.com"
           },
-          "format": "uri"
+          "format": "uri",
+          "examples": ["https://gitlab.com", "https://gitlab.example.com"]
         },
         "token": {
           "description": "A GitLab personal access token with \"api\" scope.",
@@ -689,14 +696,15 @@ const SiteSchemaJSON = `{
       "required": ["url"],
       "properties": {
         "url": {
-          "description": "URL of a Bitbucket Server instance, such as https://bitbucket.example.com",
+          "description": "URL of a Bitbucket Server instance, such as https://bitbucket.example.com.",
           "type": "string",
           "pattern": "^https?://",
           "not": {
             "type": "string",
             "pattern": "example\\.com"
           },
-          "format": "uri"
+          "format": "uri",
+          "examples": ["https://bitbucket.example.com"]
         },
         "token": {
           "description":
