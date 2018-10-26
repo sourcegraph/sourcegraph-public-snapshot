@@ -110,7 +110,7 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
 
         // Extract url to add branch, line numbers or commit range.
         let url = externalURL.url
-        if (externalURL.serviceType === 'github' || 'gitlab') {
+        if (externalURL.serviceType === 'github' || externalURL.serviceType === 'gitlab') {
             // If in a branch, add branch path to the code host URL.
             if (this.props.rev && this.props.rev !== defaultBranch && !this.state.fileExternalLinksOrError) {
                 url += `/tree/${this.props.rev}`
