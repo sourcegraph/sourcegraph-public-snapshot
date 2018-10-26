@@ -23,32 +23,20 @@ func TestComputed(t *testing.T) {
 		fun:  SearchIndexEnabled,
 		want: false,
 	}, {
-		name: "SearchIndex auto is false in docker",
-		sc:   &schema.SiteConfiguration{SearchIndex: "auto"},
-		env:  []string{"DEPLOY_TYPE=docker-container"},
-		fun:  SearchIndexEnabled,
-		want: false,
-	}, {
 		name: "SearchIndex defaults to true in k8s",
 		sc:   &schema.SiteConfiguration{},
 		env:  []string{"DEPLOY_TYPE=k8s"},
 		fun:  SearchIndexEnabled,
 		want: true,
 	}, {
-		name: "SearchIndex auto is false in k8s",
-		sc:   &schema.SiteConfiguration{SearchIndex: "auto"},
-		env:  []string{"DEPLOY_TYPE=k8s"},
-		fun:  SearchIndexEnabled,
-		want: true,
-	}, {
 		name: "SearchIndex enabled",
-		sc:   &schema.SiteConfiguration{SearchIndex: "enabled"},
+		sc:   &schema.SiteConfiguration{SearchIndexEnabled: boolPtr(true)},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
 		fun:  SearchIndexEnabled,
 		want: true,
 	}, {
 		name: "SearchIndex disabled",
-		sc:   &schema.SiteConfiguration{SearchIndex: "disabled"},
+		sc:   &schema.SiteConfiguration{SearchIndexEnabled: boolPtr(false)},
 		env:  []string{"DEPLOY_TYPE=docker-container"},
 		fun:  SearchIndexEnabled,
 		want: false,
@@ -103,4 +91,8 @@ func setenv(t *testing.T, keyval string) func() {
 			t.Fatal(err)
 		}
 	}
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }

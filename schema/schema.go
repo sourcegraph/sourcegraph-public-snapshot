@@ -379,7 +379,7 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
 	ReposList                         []*Repository                `json:"repos.list,omitempty"`
 	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
-	SearchIndex                       string                       `json:"search.index,omitempty"`
+	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
 	SearchScopes                      []*SiteConfigSearchScope     `json:"searchScopes,omitempty"`
 	Settings                          *SiteConfigSettings          `json:"settings,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`
