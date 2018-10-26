@@ -10155,10 +10155,10 @@ sourcegraph@^18.0.0:
     minimatch "^3.0.4"
     rxjs "^6.3.2"
 
-sourcegraph@^18.0.1:
-  version "18.0.1"
-  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.0.1.tgz#7e741c1521337cb799fc0f8f1ecc6dd8158aa504"
-  integrity sha512-fhrbx6v0s0sAcdiO5VoxI/es0bhTy5npksT+EHENUj94L2KcRj39qlH4RYwutZgn7K/dirnX7tso/H9K9+c0Lw==
+sourcegraph@^18.0.2:
+  version "18.0.2"
+  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.0.2.tgz#1641b6f0d48a217aaba739652c15e82b94f50058"
+  integrity sha512-jayP9uzQ5xow5F8AlME5TNs9BFwNkGsPtCeAt2126VFi2Pf3rE54xoaM2rA/M5D4zkvhjI/aeGKrLgn3ks+74A==
   dependencies:
     minimatch "^3.0.4"
     rxjs "^6.3.2"
