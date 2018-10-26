@@ -180,7 +180,7 @@ func (r *siteConfigurationResolver) PendingContents(ctx context.Context) (*strin
 	}
 
 	// TODO@ggilmore: Why is this here? AFAICT, nobody is really using this?
-	if !conf.IsDirty() {
+	if !conf.DefaultServerFrontendOnly.IsDirty() {
 		return nil, nil
 	}
 

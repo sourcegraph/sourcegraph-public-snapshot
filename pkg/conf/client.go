@@ -11,14 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func init() {
-	if getMode() == modeServer {
-		defaultClient.fetcher = passthroughFetcherFrontendOnly{}
-	}
-
-	go defaultClient.start()
-}
-
 type client struct {
 	store *configStore
 
@@ -29,7 +21,7 @@ type client struct {
 
 	// once protects client.start().
 	once sync.Once
-	
+
 	// barrier to block handling requests until the
 	// client has been initialized by client.start().
 	ready chan struct{}
@@ -38,14 +30,12 @@ type client struct {
 	mockGetData *schema.SiteConfiguration
 }
 
-var defaultClient = &client{}
+var defaultClient *client
 
 // start prepares the client to start handling requests by
 // periodically fetching the configuration file from c.fetcher.
 func (c *client) start() {
 	c.once.Do(func() {
-		c.store = &configStore{}
-
 		for {
 			err := c.fetchAndUpdate()
 			if err == nil {

@@ -68,7 +68,7 @@ func init() {
 			return nil
 		}
 
-		messages, err := conf.Validate(conf.Raw())
+		messages, err := conf.Validate(conf.DefaultServerFrontendOnly.Raw())
 		if len(messages) > 0 || err != nil {
 			return []*Alert{
 				{

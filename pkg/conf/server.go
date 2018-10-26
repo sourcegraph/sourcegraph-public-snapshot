@@ -11,17 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func init() {
-	if getMode() != modeServer {
-		return
-	}
-
-	DefaultServerFrontendOnly := server{}
-
-	go DefaultServerFrontendOnly.start()
-}
-
-// DefaultServerFrontendOnly is a server that should only ever be used to frontend.
+// DefaultServerFrontendOnly is a server that should only ever be used by frontend.
 // TODO@ggilmore: Write better description
 var DefaultServerFrontendOnly *server
 
@@ -44,6 +34,8 @@ type server struct {
 	// ready is a barrier to block request handling until the server
 	// has been initialized via server.start().
 	ready chan struct{}
+
+	once sync.Once
 }
 
 // Raw returns the raw text of the configuration file.
@@ -51,6 +43,11 @@ func (s *server) Raw() string {
 	<-s.ready
 
 	return s.store.Raw()
+}
+
+// TODO@ggilmore: Investigate if this is needed later.
+func (s *server) IsDirty() bool {
+	return false
 }
 
 // Write writes the JSON config file to the config file's path. If the JSON configuration is
@@ -124,28 +121,28 @@ func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 
 // start prepares the server to start handling requests by
 // periodically reloading the configuration file from disk.
-func (s *server) start() {
-	s.store = &configStore{}
-	s.fileWrite = make(chan chan struct{}, 1)
+func (s *server) Start() {
+	s.once.Do(func() {
+		for {
+			// TODO@ggilmore: This logic is incorrect. If there is a JSON syntax error when parsing the file,
+			// then the channel will never be closed. (We block writing invalid files to disk with server.Write(), but
+			// it's possible for people to directly edit the file). Maybe check to see if err is specifically
+			// a syntax error, and continue anyway?
+			//
+			// Actualy, I am not sure if this is really a regression? We'd fail completly in the old version if
+			// the site configuration was invalid. Maybe we should do that here too?
+			err := s.updateFromDisk(false)
+			if err == nil {
+				close(s.ready)
+				break
+			}
 
-	for {
-		// TODO@ggilmore: This logic is incorrect. If there is a JSON syntax error when parsing the file,
-		// then the channel will never be closed. (We block writing invalid files to disk with server.Write(), but
-		// it's possible for people to directly edit the file). Maybe check to see if err is specifically
-		// a syntax error, and continue anyway?
-		//
-		// Actualy, I am not sure if this is really a regression? We'd fail completly in the old version if
-		// the site configuration was invalid. Maybe we should do that here too?
-		err := s.updateFromDisk(false)
-		if err == nil {
-			close(s.ready)
-			break
+			log.Printf("received error during initial configuration update, err: %s", err)
+			time.Sleep(1 * time.Second)
 		}
 
-		time.Sleep(1 * time.Second)
-	}
-
-	go s.watchDisk()
+		go s.watchDisk()
+	})
 }
 
 // watchDisk reloads the configuration file from disk at least every five seconds or whenever
