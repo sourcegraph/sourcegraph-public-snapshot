@@ -1,4 +1,5 @@
 //docker:user sourcegraph
+//docker:env CONFIGURATION_MODE=client
 
 // Command repo-updater periodically updates repositories configured in site configuration and serves repository
 // metadata from multiple external code hosts.

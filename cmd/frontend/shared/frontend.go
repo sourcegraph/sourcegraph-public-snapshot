@@ -1,5 +1,6 @@
 // Package shared contains the frontend command implementation shared
 //
+//docker:env CONFIGURATION_MODE=server
 package shared
 
 import (

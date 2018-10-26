@@ -8,9 +8,9 @@ symbols: env CONFIGURATION_MODE=client ./dev/delve-hook symbols
 github-proxy: env CONFIGURATION_MODE=client ./dev/delve-hook github-proxy
 lsp-proxy: env CONFIGURATION_MODE=client ./dev/delve-hook lsp-proxy
 frontend: env CONFIGURATION_MODE=server ./dev/delve-hook .bin/frontend
-watch: env CONFIGURATION_MODE=client ./dev/changewatch.sh
-web: env CONFIGURATION_MODE=client ./node_modules/.bin/gulp --color watch
-syntect_server: env CONFIGURATION_MODE=client ./dev/syntect_server
-zoekt-indexserver: env CONFIGURATION_MODE=client ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
-zoekt-webserver: env CONFIGURATION_MODE=client ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc
+watch: ./dev/changewatch.sh
+web: ./node_modules/.bin/gulp --color watch
+syntect_server: ./dev/syntect_server
+zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
+zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc
 # jaeger: docker run --name=jaeger --rm -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest

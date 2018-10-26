@@ -1,4 +1,5 @@
 //docker:user sourcegraph
+//docker:env CONFIGURATION_MODE=client
 
 package main
 
