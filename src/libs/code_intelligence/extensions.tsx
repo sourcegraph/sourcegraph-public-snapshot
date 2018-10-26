@@ -193,6 +193,7 @@ export const applyDecoration = (
         after.className = 'sourcegraph-extension-element'
         after.style.backgroundColor = decoration.after.backgroundColor || null
         after.textContent = decoration.after.contentText || null
+        after.title = decoration.after.hoverMessage || ''
 
         const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
         codeElement.appendChild(annotation)
