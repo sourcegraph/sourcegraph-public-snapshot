@@ -242,3 +242,19 @@ func SupportsManagingLanguageServers() (reason string, ok bool) {
 	}
 	return "", true
 }
+
+// SearchIndexEnabled returns true if sourcegraph should index all
+// repositories for text search. If the configuration is unset, it returns
+// false for the docker server image (due to resource usage) but true
+// elsewhere. Additionally it also checks for the outdated environment
+// variable INDEXED_SEARCH.
+func SearchIndexEnabled() bool {
+	if v := Get().SearchIndexEnabled; v != nil {
+		return *v
+	}
+	if v := os.Getenv("INDEXED_SEARCH"); v != "" {
+		enabled, _ := strconv.ParseBool(v)
+		return enabled
+	}
+	return DeployType() != DeployDocker
+}

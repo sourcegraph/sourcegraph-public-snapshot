@@ -7,6 +7,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- A new site config option `search.index.enabled` allows toggling on indexed search.
+
 ### Changed
 
 - When the `DEPLOY_TYPE` environment variable is incorrectly specified, Sourcegraph now shuts down and logs an error message.

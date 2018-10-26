@@ -133,6 +133,8 @@ For more information, see ["Configuration overview"](index.md).
 
 - [discussions](all.md#discussions-object)
 
+- [search.index.enabled](all.md#search-index-enabled-boolean)
+
 - [settings](all.md#settings-object)
 
 - [GitHubConnection](all.md#githubconnection-object)
@@ -265,6 +267,10 @@ This property must be one of the following enum values:
 Default: `"disabled"`
 
 <br/>
+
+## search.index.enabled (boolean)
+
+Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
 
 ## tls.letsencrypt (string, enum)
 

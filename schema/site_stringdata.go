@@ -59,6 +59,12 @@ const SiteSchemaJSON = `{
       "description": "Whether built-in searches should be hidden on the Searches page.",
       "type": "boolean"
     },
+    "search.index.enabled": {
+      "description":
+        "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
+      "type": "boolean",
+      "!go": { "pointer": true }
+    },
     "experimentalFeatures": {
       "description":
         "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
