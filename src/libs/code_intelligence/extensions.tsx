@@ -179,7 +179,10 @@ export const applyDecoration = (
 
             // External URLs should open in a new tab, whereas relative URLs
             // should not.
-            link.setAttribute('target', /^https?:\/\//.test(url) ? '_blank' : undefined)
+            link.setAttribute('target', /^https?:\/\//.test(url) ? '_blank' : '')
+
+            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+            link.setAttribute('rel', 'noreferrer noopener')
 
             link.style.color = decoration.after!.color || null
             link.appendChild(e)
