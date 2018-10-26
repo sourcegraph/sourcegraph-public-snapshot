@@ -19,13 +19,6 @@ type client struct {
 
 	watchersMu sync.Mutex
 	watchers   []chan struct{}
-
-	// barrier to block handling requests until the
-	// client has been initialized by client.start().
-	ready chan struct{}
-
-	mockMu      sync.RWMutex
-	mockGetData *schema.SiteConfiguration
 }
 
 var defaultClient *client
@@ -65,15 +58,6 @@ func Get() *schema.SiteConfiguration {
 // be done in such a way that it responds to config changes while the process
 // is running.
 func (c *client) Get() *schema.SiteConfiguration {
-	<-c.ready
-
-	c.mockMu.RLock()
-	defer c.mockMu.RUnlock()
-
-	if c.mockGetData != nil {
-		return c.mockGetData
-	}
-
 	return c.store.Parsed()
 }
 
@@ -106,9 +90,7 @@ func Mock(mockery *schema.SiteConfiguration) {
 // Mock sets up mock data for the site configuration. It uses the configuration
 // mutex, to avoid possible races between test code and possible config watchers.
 func (c *client) Mock(mockery *schema.SiteConfiguration) {
-	c.mockMu.Lock()
-	c.mockGetData = mockery
-	c.mockMu.Unlock()
+	c.store.Mock(mockery)
 }
 
 // Watch calls the given function in a separate goroutine whenever the
@@ -128,8 +110,6 @@ func Watch(f func()) {
 //
 // Before Watch returns, it will invoke f to use the current configuration.
 func (c *client) Watch(f func()) {
-	<-c.ready
-
 	// Add the watcher channel now, rather than after invoking f below, in case
 	// an update were to happen while we were invoking f.
 	notify := make(chan struct{}, 1)
@@ -138,7 +118,11 @@ func (c *client) Watch(f func()) {
 	c.watchersMu.Unlock()
 
 	// Call the function now, to use the current configuration.
-	f()
+	// TODO@ggilmore: dirty
+	go func() {
+		c.store.WaitUntilInitialized()
+		f()
+	}()
 
 	go func() {
 		// Invoke f when the configuration has changed.
@@ -169,15 +153,10 @@ func (c *client) notifyWatchers() {
 }
 
 func (c *client) continouslyUpdate() {
-	fetchedAtLeastOnce := false
-
 	for {
 		err := c.fetchAndUpdate()
 		if err != nil {
 			log.Printf("received error during background config update, err: %s", err)
-		} else if !fetchedAtLeastOnce {
-			fetchedAtLeastOnce = true
-			close(c.ready)
 		}
 
 		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))

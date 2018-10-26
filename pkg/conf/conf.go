@@ -13,31 +13,33 @@ const (
 	// This should only ever be used by frontend.
 	modeServer configurationMode = iota
 
-	//Tthe user of pkg/conf only reads the configuration file.
+	// The user of pkg/conf only reads the configuration file.
 	modeClient
 )
 
 func getMode() configurationMode {
 	mode := os.Getenv("CONFIGURATION_MODE")
+
 	if mode == "server" {
 		return modeServer
 	}
 
 	return modeClient
+
 }
 
 func init() {
 	defaultClient = &client{
-		store:   &configStore{},
-		ready:   make(chan struct{}),
+		store:   Store(),
 		fetcher: httpFetcher{},
 	}
 
-	if getMode() == modeServer {
+	mode := getMode()
+
+	if mode == modeServer {
 		DefaultServerFrontendOnly = &server{
 			configFilePath: os.Getenv("SOURCEGRAPH_CONFIG_FILE"),
-			store:          &configStore{},
-			ready:          make(chan struct{}),
+			store:          Store(),
 			fileWrite:      make(chan chan struct{}, 1),
 		}
 

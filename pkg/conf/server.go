@@ -31,16 +31,10 @@ type server struct {
 	// TODO@ggilmore: is it important that the channel here is buffered?
 	// var fileWrite = make(chan chan struct{}, 1)
 	fileWrite chan chan struct{}
-
-	// ready is a barrier to block request handling until the server
-	// has been initialized via server.start().
-	ready chan struct{}
 }
 
 // Raw returns the raw text of the configuration file.
 func (s *server) Raw() string {
-	<-s.ready
-
 	return s.store.Raw()
 }
 
@@ -52,7 +46,6 @@ func (s *server) IsDirty() bool {
 // Write writes the JSON config file to the config file's path. If the JSON configuration is
 // invalid, an error is returned.
 func (s *server) Write(input string) error {
-	<-s.ready
 
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
@@ -81,7 +74,6 @@ func (s *server) Write(input string) error {
 // The computation function is provided the current configuration, which should
 // NEVER be modified in any way. Always copy values.
 func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error)) error {
-	<-s.ready
 
 	// TODO@ggilmore: There is a race condition here (also present in the existing library).
 	// Current and raw could be inconsistent. Another thing to offload to configStore?
@@ -115,8 +107,6 @@ func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 // watchDisk reloads the configuration file from disk at least every five seconds or whenever
 // server.Write() is called.
 func (s *server) watchDisk() {
-	readAtLeastOnce := false
-
 	for {
 		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
 
@@ -131,9 +121,6 @@ func (s *server) watchDisk() {
 		err := s.updateFromDisk(true)
 		if err != nil {
 			log.Printf("failed to read configuration file: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err, s.configFilePath)
-		} else if !readAtLeastOnce {
-			readAtLeastOnce = true
-			close(s.ready)
 		}
 
 		if signalDoneReading != nil {
