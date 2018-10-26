@@ -1,41 +1,72 @@
 #!/usr/bin/env bash
+#
+# Checks that no enterprise/ directory exists at repository root if the remote URL contains
+# "sourcegraph/sourcegraph".
 
-function currentRemote() {
-    currentBranch="$(git rev-parse --abbrev-ref HEAD)"
-    if [ -z "$currentBranch" ]; then
-        return 0
-    fi
-    currentRemote="$(git config --get branch.${currentBranch}.remote)"
-    git config --get "remote.${currentRemote}.url"
+# Constants
+DISALLOW_PATH=":/enterprise"
+CHECK_REMOTE_SUBSTR="sourcegraph/sourcegraph"
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+function usage() {
+    cat <<'EOF'
+Usage: ./check-no-enterprise.sh
+
+The following environment variables must be set:
+    $remote_url
+    $local_sha
+    $local_ref
+EOF
 }
-
-remoteUrl="${2:-$(currentRemote)}"  # if this is invoked as a pre-push hook, the remote URL is the second argument
-
-set -e -o pipefail
-
-case $remoteUrl in
-    *"sourcegraph/sourcegraph"*)
-        # If pushing to *sourcegraph/sourcegraph*, continue with check
-        ;;
-    *)
-        # If not pushing to *sourcegraph/sourcegraph*, don't check
-        exit 0
-esac
 
 function failCheck() {
     cat <<EOF
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! DANGER: There is an enterprise/ directory and you are attempting !!
-!!         to push to the open-source upstream OR committing to a   !!
-!!         branch tracking the open-source upstream.                !!
-!!                                                                  !!
-!! Either push this change to the enterprise upstream or modify the !!
-!! commits to remove the enterprise/ directory                      !!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER DANGER    !!
+!!  ACHTUNG ACHTUNG ACHTUNG ACHTUNG ACHTUNG ACHTUNG ACHTUNG ACHTUNG ACHTUNG !!
+!! PELIGRO PELIGRO PELIGRO PELIGRO PELIGRO PELIGRO PELIGRO PELIGRO PELIGRO  !!
+!!   危险 危险 危险 危险 危险 危险 危险 危险 危险 危险 危险 危险 危险 危险  !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!
+L!=> DANGER: There is a path "${DISALLOW_PATH}" you are attempting to push
+             to the remote "${remote_url}" or committing to
+             a branch tracking that remote.
+
+     Either change the upstream remote or modify the commits to remove the
+     "${DISALLOW_PATH}" path.
+
+     The output of the following commands was non-empty:
+
+        git log ${local_sha} -- ${DISALLOW_PATH}
+        git log ${local_ref} -- ${DISALLOW_PATH}
+!                                                                            !
+!!                                                                          !!
+!!!!                                                                      !!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 EOF
     exit 1
 }
 
-if [ ! -z "$(git log -- :/enterprise)" ]; then
+case "$remote_url" in
+    *"$CHECK_REMOTE_SUBSTR"*)
+        # If pushing to *"$CHECK_REMOTE_SUBSTR"*, continue with check
+        ;;
+    *)
+        # If not pushing there, don't check
+        exit 0
+esac
+
+if [ "$local_sha" = "0000000000000000000000000000000000000000" ]; then
+    exit 0
+fi
+
+if [ ! -z "$(git log ${local_ref} -- ${DISALLOW_PATH})" ]; then
+    failCheck
+fi
+
+if [ ! -z "$(git log ${local_sha} -- ${DISALLOW_PATH})" ]; then
     failCheck
 fi
