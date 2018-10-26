@@ -70,7 +70,7 @@ func init() {
 		defaultClient.fetcher = passthroughFetcherFrontendOnly{}
 	}
 
-	go defaultClient.continouslyUpdate()
+	go defaultClient.continuouslyUpdate()
 }
 
 // FormatOptions is the default format options that should be used for jsonx

@@ -149,7 +149,7 @@ func (c *client) notifyWatchers() {
 	}
 }
 
-func (c *client) continouslyUpdate() {
+func (c *client) continuouslyUpdate() {
 	for {
 		err := c.fetchAndUpdate()
 		if err != nil {
