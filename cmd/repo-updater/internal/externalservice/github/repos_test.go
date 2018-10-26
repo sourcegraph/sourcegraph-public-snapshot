@@ -3,6 +3,7 @@ package github
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -209,5 +210,80 @@ func TestClient_GetRepositoryByNodeID_nonexistent(t *testing.T) {
 	}
 	if repo != nil {
 		t.Error("repo != nil")
+	}
+}
+
+func stringForRepoList(repos []*Repository) string {
+	repoStrings := []string{}
+	for _, repo := range repos {
+		repoStrings = append(repoStrings, fmt.Sprintf("%#v", repo))
+	}
+	return "{\n" + strings.Join(repoStrings, ",\n") + "}\n"
+}
+
+func repoListsAreEqual(a []*Repository, b []*Repository) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := 0; i < len(a); i++ {
+		if *a[i] != *b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func TestClient_ListRepositoriesForSearch(t *testing.T) {
+	mock := mockHTTPResponseBody{
+		responseBody: `
+{
+  "total_count": 2,
+  "incomplete_results": false,
+  "items": [
+    {
+      "node_id": "i",
+      "full_name": "o/r",
+      "description": "d",
+      "html_url": "https://github.example.com/o/r",
+      "fork": true
+    },
+    {
+      "node_id": "j",
+      "full_name": "a/b",
+      "description": "c",
+      "html_url": "https://github.example.com/a/b",
+      "fork": false
+    }
+  ]
+}
+`}
+	c := newTestClient(t)
+	c.httpClient.Transport = &mock
+
+	wantRepos := []*Repository{
+		&Repository{
+			ID:            "i",
+			NameWithOwner: "o/r",
+			Description:   "d",
+			URL:           "https://github.example.com/o/r",
+			IsFork:        true,
+		},
+		&Repository{
+			ID:            "j",
+			NameWithOwner: "a/b",
+			Description:   "c",
+			URL:           "https://github.example.com/a/b",
+			IsFork:        false,
+		},
+	}
+
+	repos, _, _, err :=
+		c.ListRepositoriesForSearch(context.Background(), "org:sourcegraph", 1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !repoListsAreEqual(repos, wantRepos) {
+		t.Errorf("got repositories:\n%s\nwant:\n%s", stringForRepoList(repos), stringForRepoList(wantRepos))
 	}
 }

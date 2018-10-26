@@ -56,22 +56,28 @@ type abuseRateLimit struct {
 
 func urlIsGitHubDotCom(apiURL *url.URL) bool {
 	hostname := strings.ToLower(apiURL.Hostname())
-	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
+	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == githubProxyURL.String()
+}
+
+func canonicalizedURL(apiURL *url.URL) *url.URL {
+	if urlIsGitHubDotCom(apiURL) {
+		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
+		// rate limit).
+		return githubProxyURL
+	}
+	return apiURL
 }
 
 // NewRepoCache creates a new cache for GitHub repository metadata.
 func NewRepoCache(apiURL *url.URL, token string) *rcache.Cache {
+	apiURL = canonicalizedURL(apiURL)
 	var cacheTTL time.Duration
 	if urlIsGitHubDotCom(apiURL) {
 		cacheTTL = 10 * time.Minute
-		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
-		// rate limit).
-		apiURL = githubProxyURL
 	} else {
 		// GitHub Enterprise
 		cacheTTL = 30 * time.Second
 	}
-
 	key := sha256.Sum256([]byte(token + ":" + apiURL.String()))
 	return rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 }
@@ -86,6 +92,7 @@ func NewRepoCache(apiURL *url.URL, token string) *rcache.Cache {
 // host should use the same cache (see repos.githubConnection, which uses
 // multiple clients to track independent rate limits in the same host).
 func NewClient(apiURL *url.URL, token string, transport http.RoundTripper, repoCache *rcache.Cache) *Client {
+	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		transport = disabledTransport{}
 	}
@@ -108,16 +115,9 @@ func NewClient(apiURL *url.URL, token string, transport http.RoundTripper, repoC
 		repoCache = NewRepoCache(apiURL, token)
 	}
 
-	githubDotCom := urlIsGitHubDotCom(apiURL)
-	if githubDotCom {
-		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
-		// rate limit).
-		apiURL = githubProxyURL
-	}
-
 	return &Client{
 		apiURL:       apiURL,
-		githubDotCom: githubDotCom,
+		githubDotCom: urlIsGitHubDotCom(apiURL),
 		token:        token,
 		httpClient:   &http.Client{Transport: transport},
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
