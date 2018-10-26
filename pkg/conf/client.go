@@ -3,6 +3,7 @@ package conf
 import (
 	"context"
 	"log"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -19,9 +20,6 @@ type client struct {
 	watchersMu sync.Mutex
 	watchers   []chan struct{}
 
-	// once protects client.start().
-	once sync.Once
-
 	// barrier to block handling requests until the
 	// client has been initialized by client.start().
 	ready chan struct{}
@@ -31,26 +29,6 @@ type client struct {
 }
 
 var defaultClient *client
-
-// start prepares the client to start handling requests by
-// periodically fetching the configuration file from c.fetcher.
-func (c *client) start() {
-	c.once.Do(func() {
-		for {
-			err := c.fetchAndUpdate()
-			if err == nil {
-				break
-			}
-
-			log.Printf("received error during initial configuration update, err: %s", err)
-			time.Sleep(1 * time.Second)
-		}
-
-		go func() { c.continouslyUpdate(5 * time.Second) }()
-
-		close(c.ready)
-	})
-}
 
 // Get returns a copy of the configuration. The returned value should NEVER be
 // modified.
@@ -190,14 +168,20 @@ func (c *client) notifyWatchers() {
 	}
 }
 
-func (c *client) continouslyUpdate(interval time.Duration) {
+func (c *client) continouslyUpdate() {
+	fetchedAtLeastOnce := false
+
 	for {
 		err := c.fetchAndUpdate()
 		if err != nil {
 			log.Printf("received error during background config update, err: %s", err)
+		} else if !fetchedAtLeastOnce{
+			fetchedAtLeastOnce = true
+			close(c.ready)
 		}
 
-		time.Sleep(interval)
+		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
+		time.Sleep(jitter)
 	}
 }
 
