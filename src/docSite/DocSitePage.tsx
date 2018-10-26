@@ -4,13 +4,15 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { isError } from 'util'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { HeroPage } from '../components/HeroPage'
 import { LinkOrSpan } from '../components/LinkOrSpan'
 import { Markdown } from '../components/Markdown'
 import { PageTitle } from '../components/PageTitle'
+import { eventLogger } from '../tracking/eventLogger'
 import { asError, createAggregateError, ErrorLike, isErrorLike } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
 
@@ -75,6 +77,11 @@ export class DocSitePage extends React.PureComponent<Props, State> {
                             startWith(LOADING)
                         )
                     ),
+                    tap(result => {
+                        if (result !== null && result !== LOADING && !isError(result)) {
+                            eventLogger.logViewEvent('Docs', { docs_title: result.title })
+                        }
+                    }),
                     map(result => ({ pageOrError: result }))
                 )
                 .subscribe(stateUpdate => this.setState(stateUpdate))
