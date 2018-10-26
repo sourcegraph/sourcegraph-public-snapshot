@@ -38,11 +38,6 @@ func (s *server) Raw() string {
 	return s.store.Raw()
 }
 
-// TODO@ggilmore: Investigate if this is needed later.
-func (s *server) IsDirty() bool {
-	return false
-}
-
 // Write writes the JSON config file to the config file's path. If the JSON configuration is
 // invalid, an error is returned.
 func (s *server) Write(input string) error {

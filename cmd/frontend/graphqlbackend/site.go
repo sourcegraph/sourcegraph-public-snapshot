@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -157,47 +155,8 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (stri
 	return conf.DefaultServerFrontendOnly.Raw(), nil
 }
 
-func (r *siteConfigurationResolver) PendingContents(ctx context.Context) (*string, error) {
-	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
-	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	// TODO@ggilmore: Why is this here? AFAICT, nobody is really using this?
-	if !conf.DefaultServerFrontendOnly.IsDirty() {
-		return nil, nil
-	}
-
-	rawContents, err := ioutil.ReadFile(conf.DefaultServerFrontendOnly.FilePath())
-	if err != nil {
-		if os.IsNotExist(err) {
-			s := "// The site configuration file does not exist."
-			return &s, nil
-		}
-		return nil, err
-	}
-
-	s := string(rawContents)
-	return &s, nil
-}
-
-// pendingOrEffectiveContents returns pendingContents if it exists, or else effectiveContents.
-func (r *siteConfigurationResolver) pendingOrEffectiveContents(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Site admin status is checked in both r.PendingContents and r.EffectiveContents,
-	// so we don't need to check it in this method.
-	pendingContents, err := r.PendingContents(ctx)
-	if err != nil {
-		return "", err
-	}
-	if pendingContents != nil {
-		return *pendingContents, nil
-	}
-	return r.EffectiveContents(ctx)
-}
-
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
-	contents, err := r.pendingOrEffectiveContents(ctx)
+	contents, err := r.EffectiveContents(ctx)
 	if err != nil {
 		return nil, err
 	}
