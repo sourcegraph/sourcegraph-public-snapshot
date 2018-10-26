@@ -8,6 +8,7 @@ import { ExtConfiguration } from './api/configuration'
 import { ExtContext } from './api/context'
 import { ExtDocuments } from './api/documents'
 import { ExtLanguageFeatures } from './api/languageFeatures'
+import { ExtSearch } from './api/search'
 import { ExtWindows } from './api/windows'
 import { Location } from './types/location'
 import { Position } from './types/position'
@@ -82,6 +83,9 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
     const languageFeatures = new ExtLanguageFeatures(proxy('languageFeatures'), documents)
     handleRequests(connection, 'languageFeatures', languageFeatures)
 
+    const search = new ExtSearch(proxy('search'))
+    handleRequests(connection, 'search', search)
+
     const commands = new ExtCommands(proxy('commands'))
     handleRequests(connection, 'commands', commands)
 
@@ -127,6 +131,10 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
                 languageFeatures.registerImplementationProvider(selector, provider),
             registerReferenceProvider: (selector, provider) =>
                 languageFeatures.registerReferenceProvider(selector, provider),
+        },
+
+        search: {
+            registerQueryTransformer: provider => search.registerQueryTransformer(provider),
         },
 
         commands: {

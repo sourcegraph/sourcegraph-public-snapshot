@@ -19,6 +19,7 @@ import { ClientConfiguration } from './api/configuration'
 import { ClientContext } from './api/context'
 import { ClientDocuments } from './api/documents'
 import { ClientLanguageFeatures } from './api/languageFeatures'
+import { Search } from './api/search'
 import { ClientWindows } from './api/windows'
 import { applyContextUpdate, EMPTY_CONTEXT } from './context/context'
 import { EMPTY_ENVIRONMENT, Environment } from './environment'
@@ -268,6 +269,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
                 this.registries.textDocumentReferences
             )
         )
+        subscription.add(new Search(client, this.registries.queryTransformer))
         subscription.add(new ClientCommands(client, this.registries.commands))
     }
 
