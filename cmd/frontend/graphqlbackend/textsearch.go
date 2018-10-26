@@ -560,10 +560,10 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	parseRe := func(pattern string, filenameOnly bool) (zoektquery.Q, error) {
 		// these are the flags used by zoekt, which differ to searcher.
 		re, err := syntax.Parse(pattern, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-		noOpAnyChar(re)
 		if err != nil {
 			return nil, err
 		}
+		noOpAnyChar(re)
 		// zoekt decides to use its literal optimization at the query parser
 		// level, so we check if our regex can just be a literal.
 		if re.Op == syntax.OpLiteral {
