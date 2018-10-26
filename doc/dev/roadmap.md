@@ -66,6 +66,7 @@ Sourcegraph extensions usage and authoring experience | [📖](https://github.co
 
 Feature | 🔗 | Themes/products | Team
 ------- | --- | -------- | ----
+Browser extension testing and reliability | [📣](https://github.com/sourcegraph/about/pull/48) | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ijsnow][ijsnow]
 Better config and deployment for code host UI integrations | [📣](https://github.com/sourcegraph/about/pull/38) | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
 More robust code host repository syncing | | Integrations, [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith]
 [Global public search on Sourcegraph.com](https://github.com/sourcegraph/about/pull/8) *(tentative)* | | [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith] [@attfarhan][attfarhan]
