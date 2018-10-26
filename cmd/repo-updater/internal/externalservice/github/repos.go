@@ -328,12 +328,12 @@ type restSearchResponse struct {
 }
 
 func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	var response restSearchResponse
 	urlValues := url.Values{
 		"q":    []string{searchString},
 		"page": []string{strconv.Itoa(page)},
 	}
 	path := "/search/repositories?" + urlValues.Encode()
+	var response restSearchResponse
 	if err := c.requestGet(ctx, path, &response); err != nil {
 		return nil, false, 1, err
 	}
