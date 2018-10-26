@@ -65,7 +65,7 @@ func TestCreateSavedQuery(t *testing.T) {
 	db.Mocks.Settings.GetLatest = func(ctx context.Context, subject api.ConfigurationSubject) (*api.Settings, error) {
 		return &api.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, _ *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, _, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &api.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}
@@ -134,7 +134,7 @@ func TestUpdateSavedQuery(t *testing.T) {
 		}
 		return &api.Settings{ID: lastID, Contents: `{"search.savedQueries":[{"key":"a","description":"d","query":"q"}]}`}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, _ *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, _, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
 		calledSettingsCreateIfUpToDate = true
 		return &api.Settings{ID: lastID + 1, Contents: `not used`}, nil
 	}

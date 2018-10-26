@@ -5,14 +5,12 @@ import * as React from 'react'
 import { matchPath } from 'react-router'
 import { NavLink } from 'react-router-dom'
 import { Subject, Subscription } from 'rxjs'
-import { catchError, distinctUntilChanged, filter, map, mergeMap } from 'rxjs/operators'
-import { authRequired } from '../../auth'
+import { distinctUntilChanged, map } from 'rxjs/operators'
 import * as GQL from '../../backend/graphqlschema'
 import { Tooltip } from '../../components/tooltip/Tooltip'
 import { routes } from '../../routes'
 import { currentConfiguration } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchSearchScopes } from '../backend'
 import { FilterChip } from '../FilterChip'
 import { submitSearch, toggleSearchFilter } from '../helpers'
 
@@ -40,28 +38,10 @@ interface State {
 }
 
 export class SearchFilterChips extends React.PureComponent<Props, State> {
+    public state: State = {}
+
     private componentUpdates = new Subject<Props>()
     private subscriptions = new Subscription()
-
-    constructor(props: Props) {
-        super(props)
-
-        this.state = {}
-
-        this.subscriptions.add(
-            authRequired
-                .pipe(
-                    filter(authRequired => !authRequired),
-                    mergeMap(() => fetchSearchScopes()),
-                    catchError(err => {
-                        console.error(err)
-                        return []
-                    }),
-                    map((remoteScopes: GQL.ISearchScope[]) => ({ remoteScopes }))
-                )
-                .subscribe(newState => this.setState(newState), err => console.error(err))
-        )
-    }
 
     public componentDidMount(): void {
         this.subscriptions.add(

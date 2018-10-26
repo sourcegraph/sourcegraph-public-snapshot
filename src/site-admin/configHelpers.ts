@@ -1,5 +1,5 @@
 import { FormattingOptions } from '@sqs/jsonc-parser'
-import { removeProperty, setProperty } from '@sqs/jsonc-parser/lib/edit'
+import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { SlackNotificationsConfig } from '../schema/settings.schema'
 import {
     AwsCodeCommitConnection,
@@ -34,7 +34,7 @@ const addGitHubEnterprise: ConfigInsertionFunction = config => {
     const tokenPlaceholder = '<personal access token with repo scope>'
     const value: GitHubConnection = {
         token: tokenPlaceholder,
-        url: 'https://github-enterprise-hostname.example.com',
+        url: 'https://github-enterprise.example.com',
     }
     const edits = setProperty(config, ['github', -1], value, defaultFormattingOptions)
     return { edits, selectText: tokenPlaceholder }
@@ -91,10 +91,7 @@ const addGSuiteOIDCAuthProvider: ConfigInsertionFunction = config => {
         requireEmailDomain: "<your company's email domain (example: mycompany.com)>",
     }
     return {
-        edits: [
-            ...removeProperty(config, ['auth.provider'], defaultFormattingOptions),
-            ...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions),
-        ],
+        edits: [...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions)],
     }
 }
 
@@ -104,10 +101,7 @@ const addSAMLAuthProvider: ConfigInsertionFunction = config => {
         identityProviderMetadataURL: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
     }
     return {
-        edits: [
-            ...removeProperty(config, ['auth.provider'], defaultFormattingOptions),
-            ...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions),
-        ],
+        edits: [...setProperty(config, ['auth.providers'], [value], defaultFormattingOptions)],
     }
 }
 

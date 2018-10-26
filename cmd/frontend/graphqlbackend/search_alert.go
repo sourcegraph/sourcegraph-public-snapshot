@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query/syntax"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 type searchAlert struct {
@@ -230,20 +229,6 @@ func (r *searchResolver) alertForOverRepoLimit(ctx context.Context) (*searchAler
 		alert.description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
 	}
 
-	// TODO(sqs): make this use search scopes from global/org/user settings, not just site config.
-	if settings := conf.Get().Settings; settings != nil {
-		for _, scope := range settings.SearchScopes {
-			// Only propose using this scope if it narrows to fewer repos.
-			if !hasRepoOrRepoGroupFilter(scope.Value) {
-				continue
-			}
-			alert.proposedQueries = append(alert.proposedQueries, &searchQueryDescription{
-				query:       scope.Value + " " + r.rawQuery(),
-				description: scope.Name,
-			})
-		}
-	}
-
 	// Try to suggest the most helpful repo: filters to narrow the query.
 	//
 	// For example, suppose the query contains "repo:kubern" and it matches > 30
@@ -424,12 +409,4 @@ func addQueryRegexpField(query *query.Query, field, pattern string) []*syntax.Ex
 		})
 	}
 	return expr
-}
-
-func hasRepoOrRepoGroupFilter(qs string) bool {
-	q, err := query.ParseAndCheck(qs)
-	if err != nil {
-		return false
-	}
-	return len(q.Values(query.FieldRepo)) > 0 || len(q.Values(query.FieldRepoGroup)) > 0
 }

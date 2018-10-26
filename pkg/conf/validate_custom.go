@@ -72,10 +72,6 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 		}
 	}
 
-	if cfg.Settings != nil {
-		invalid(`the "settings" field in site configuration is deprecated; move these settings to the editable site settings (at the URL path /site-admin/global-settings)`)
-	}
-
 	for _, f := range contributedValidators {
 		problems = append(problems, f(cfg)...)
 	}

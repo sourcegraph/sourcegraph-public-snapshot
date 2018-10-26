@@ -440,7 +440,7 @@ Indexes:
  contents       | text                     | 
  created_at     | timestamp with time zone | not null default now()
  user_id        | integer                  | 
- author_user_id | integer                  | not null
+ author_user_id | integer                  | 
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
