@@ -118,11 +118,8 @@ func (c *client) Watch(f func()) {
 	c.watchersMu.Unlock()
 
 	// Call the function now, to use the current configuration.
-	// TODO@ggilmore: dirty
-	go func() {
-		c.store.WaitUntilInitialized()
-		f()
-	}()
+	c.store.WaitUntilInitialized()
+	f()
 
 	go func() {
 		// Invoke f when the configuration has changed.

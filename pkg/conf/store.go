@@ -27,14 +27,20 @@ func Store() *configStore {
 	}
 }
 
+// WaitUntilInitialized blocks and only returns to the caller once the store
+// has initialized with a syntactically valid configuration file (via MaybeUpdate() or Mock()).
 func (c *configStore) WaitUntilInitialized() {
 	<-c.ready
 }
 
 func (c *configStore) initialize() {
-	c.once.Do(func() { close(c.ready) })
+	c.once.Do(func() {
+		close(c.ready)
+	})
 }
 
+// Parsed returns the last valid site configuration that this
+// store was updated with.
 func (c *configStore) Parsed() *schema.SiteConfiguration {
 	c.WaitUntilInitialized()
 
@@ -48,6 +54,7 @@ func (c *configStore) Parsed() *schema.SiteConfiguration {
 	return c.parsed
 }
 
+// Raw returns the raw JSON string that this store was updated with.
 func (c *configStore) Raw() string {
 	c.WaitUntilInitialized()
 

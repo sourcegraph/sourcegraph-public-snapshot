@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"log"
 	"os"
 
 	"github.com/sourcegraph/jsonx"
@@ -31,12 +32,12 @@ func getMode() configurationMode {
 	default:
 		return modeTest
 	}
-
 }
 
 func init() {
+	clientStore := Store()
 	defaultClient = &client{
-		store:   Store(),
+		store:   clientStore,
 		fetcher: httpFetcher{},
 	}
 
@@ -45,6 +46,16 @@ func init() {
 	// Don't kickoff the background updaters for the client/server
 	// when running test cases.
 	if mode == modeTest {
+		// Seed the client store with a dummy configuration for test cases.
+		dummyConfig := `
+		{
+			// This is an empty configuration to run test cases.
+		}`
+
+		_, err := clientStore.MaybeUpdate(dummyConfig)
+		if err != nil {
+			log.Fatalf("received error when setting up the store for the default client durig test, err :%s", err)
+		}
 		return
 	}
 
