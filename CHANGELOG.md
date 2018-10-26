@@ -9,7 +9,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- A new site config option `search.index` allows toggling on indexed search.
+- A new site config option `search.index.enabled` allows toggling on indexed search.
 
 ### Changed
 
