@@ -15,16 +15,22 @@ const (
 
 	// The user of pkg/conf only reads the configuration file.
 	modeClient
+
+	// The user of pkg/conf is a test case.
+	modeTest
 )
 
 func getMode() configurationMode {
 	mode := os.Getenv("CONFIGURATION_MODE")
 
-	if mode == "server" {
+	switch mode {
+	case "server":
 		return modeServer
+	case "client":
+		return modeClient
+	default:
+		return modeTest
 	}
-
-	return modeClient
 
 }
 
@@ -35,6 +41,12 @@ func init() {
 	}
 
 	mode := getMode()
+
+	// Don't kickoff the background updaters for the client/server
+	// when running test cases.
+	if mode == modeTest {
+		return
+	}
 
 	if mode == modeServer {
 		DefaultServerFrontendOnly = &server{
