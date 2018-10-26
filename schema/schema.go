@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
 	"github.com/sourcegraph/go-jsonschema/jsonschema"
 )
 
