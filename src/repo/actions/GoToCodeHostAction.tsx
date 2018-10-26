@@ -108,18 +108,18 @@ export class GoToCodeHostAction extends React.PureComponent<Props, State> {
         const { displayName, icon } = serviceTypeDisplayNameAndIcon(externalURL.serviceType)
         const Icon = icon || ExportIcon
 
-        // Special-case for GitHub: add branch and line numbers to URL.
+        // Extract url to add branch, line numbers or commit range.
         let url = externalURL.url
-        if (externalURL.serviceType === 'github') {
-            // If in a branch, add branch path to the GitHub URL.
+        if (externalURL.serviceType === 'github' || externalURL.serviceType === 'gitlab') {
+            // If in a branch, add branch path to the code host URL.
             if (this.props.rev && this.props.rev !== defaultBranch && !this.state.fileExternalLinksOrError) {
                 url += `/tree/${this.props.rev}`
             }
-            // If showing a comparison, add comparison specifier to the GitHub URL.
+            // If showing a comparison, add comparison specifier to the code host URL.
             if (this.props.commitRange) {
                 url += `/compare/${this.props.commitRange.replace(/^\.\.\./, 'HEAD...').replace(/\.\.\.$/, '...HEAD')}`
             }
-            // Add range or position path to the GitHub URL.
+            // Add range or position path to the code host URL.
             if (this.props.range) {
                 url += `#L${this.props.range.start.line}-L${this.props.range.end.line}`
             } else if (this.props.position) {
