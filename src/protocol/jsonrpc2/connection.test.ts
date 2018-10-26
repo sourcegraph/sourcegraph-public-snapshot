@@ -59,6 +59,46 @@ describe('Connection', () => {
         )
     })
 
+    it('handler throws an Error', () => {
+        const method = 'test/handleSingleRequest'
+        const [serverTransports, clientTransports] = createMessageTransports()
+
+        const server = createConnection(serverTransports)
+        server.onRequest(method, () => {
+            throw new Error('test')
+        })
+        server.listen()
+
+        const client = createConnection(clientTransports)
+        client.listen()
+        return client.sendRequest(method, 'foo').then(
+            _result => assert.fail('want error'),
+            (error: ResponseError<any>) => {
+                assert.strictEqual(error.code, ErrorCodes.InternalError)
+                assert.strictEqual(error.message, 'test')
+            }
+        )
+    })
+
+    it('handler returns a rejected Promise with an Error', () => {
+        const method = 'test/handleSingleRequest'
+        const [serverTransports, clientTransports] = createMessageTransports()
+
+        const server = createConnection(serverTransports)
+        server.onRequest(method, () => Promise.reject(new Error('test')))
+        server.listen()
+
+        const client = createConnection(clientTransports)
+        client.listen()
+        return client.sendRequest(method, 'foo').then(
+            _result => assert.fail('want error'),
+            (error: ResponseError<any>) => {
+                assert.strictEqual(error.code, ErrorCodes.InternalError)
+                assert.strictEqual(error.message, 'test')
+            }
+        )
+    })
+
     it('receives undefined request param as null', () => {
         const method = 'test/handleSingleRequest'
         const [serverTransports, clientTransports] = createMessageTransports()
