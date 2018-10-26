@@ -78,7 +78,7 @@ export class DocSitePage extends React.PureComponent<Props, State> {
                         )
                     ),
                     tap(result => {
-                        if (result !== null && result !== 'loading' && !isError(result)) {
+                        if (result !== null && result !== LOADING && !isError(result)) {
                             eventLogger.logViewEvent('Docs', { docs_title: result.title })
                         }
                     }),
