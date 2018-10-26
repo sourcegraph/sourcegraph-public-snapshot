@@ -1,0 +1,22 @@
+# Note: This file is ran relative to the repo root.
+# delve-hook is for debugging Go processes
+gitserver: ./enterprise/dev/delve-hook gitserver
+indexer: ./enterprise/dev/delve-hook indexer
+query-runner: ./enterprise/dev/delve-hook query-runner
+repo-updater: ./enterprise/dev/delve-hook repo-updater
+searcher: ./enterprise/dev/delve-hook searcher
+symbols: ./enterprise/dev/delve-hook symbols
+github-proxy: ./enterprise/dev/delve-hook github-proxy
+lsp-proxy: ./enterprise/dev/delve-hook lsp-proxy
+xlang-go: ./enterprise/dev/delve-hook xlang-go -mode=tcp -addr=:4389
+frontend: ./enterprise/dev/delve-hook frontend
+watch: ./enterprise/dev/changewatch.sh
+web-enterprise: sh -c "cd enterprise && ./node_modules/.bin/gulp --color watch"
+web-oss: ./node_modules/.bin/gulp --color watchDist
+# Checks that `yarn link`ed repositories are not behind the version in package.json
+yarn-link-check: sh -c "cd enterprise && yarn check-npm-links --watch --color"
+syntect_server: ./enterprise/dev/syntect_server
+zoekt-indexserver: ./dev/zoekt-wrapper zoekt-sourcegraph-indexserver -sourcegraph_url http://localhost:3090 -index $HOME/.sourcegraph/zoekt/index -interval 1m -listen :6072
+zoekt-webserver: ./dev/zoekt-wrapper zoekt-webserver -index $HOME/.sourcegraph/zoekt/index -pprof -rpc
+keycloak: ./enterprise/dev/auth-provider/keycloak.sh
+# jaeger: docker run --name=jaeger --rm -p5775:5775/udp -p6831:6831/udp -p6832:6832/udp -p5778:5778 -p16686:16686 -p14268:14268 jaegertracing/all-in-one:latest

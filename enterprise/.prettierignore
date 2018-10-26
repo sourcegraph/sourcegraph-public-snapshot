@@ -1,0 +1,17 @@
+.bin/
+*.bundle.*
+client/phabricator/scripts/loader.js
+cmd/frontend/internal/db/schema.md
+cmd/xlang-python/python-langserver/
+package-lock.json
+package.json
+ui/assets/
+vendor/
+.nyc_output/
+coverage/
+out/
+src/backend/graphqlschema.ts
+src/schema/
+ts-node-*
+xlang/testdata
+cmd/xlang-go/internal/server/testdata/

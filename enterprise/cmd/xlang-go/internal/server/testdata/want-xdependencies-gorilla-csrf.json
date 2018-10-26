@@ -1,0 +1,249 @@
+[
+  {
+    "attributes": {
+      "absolute": "bytes",
+      "depth": 0,
+      "package": "bytes",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "context",
+      "depth": 0,
+      "package": "context",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "crypto/rand",
+      "depth": 0,
+      "package": "crypto/rand",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "crypto/subtle",
+      "depth": 0,
+      "package": "crypto/subtle",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "encoding/base64",
+      "depth": 0,
+      "package": "encoding/base64",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "fmt",
+      "depth": 0,
+      "package": "fmt",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "github.com/gorilla/securecookie",
+      "depth": 0,
+      "package": "github.com/gorilla/securecookie",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "github.com/pkg/errors",
+      "depth": 0,
+      "package": "github.com/pkg/errors",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "html/template",
+      "depth": 0,
+      "package": "html/template",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "io",
+      "depth": 0,
+      "package": "io",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "mime/multipart",
+      "depth": 0,
+      "package": "mime/multipart",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "net/http",
+      "depth": 0,
+      "package": "net/http",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "net/http/httptest",
+      "depth": 0,
+      "package": "net/http/httptest",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "net/url",
+      "depth": 0,
+      "package": "net/url",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "reflect",
+      "depth": 0,
+      "package": "reflect",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "strings",
+      "depth": 0,
+      "package": "strings",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "testing",
+      "depth": 0,
+      "package": "testing",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "text/template",
+      "depth": 0,
+      "package": "text/template",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "time",
+      "depth": 0,
+      "package": "time",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  }
+]

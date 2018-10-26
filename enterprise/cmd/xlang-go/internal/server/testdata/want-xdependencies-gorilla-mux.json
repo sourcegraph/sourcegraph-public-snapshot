@@ -1,0 +1,184 @@
+[
+  {
+    "attributes": {
+      "absolute": "bufio",
+      "depth": 0,
+      "package": "bufio",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "bytes",
+      "depth": 0,
+      "package": "bytes",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "context",
+      "depth": 0,
+      "package": "context",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "errors",
+      "depth": 0,
+      "package": "errors",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "fmt",
+      "depth": 0,
+      "package": "fmt",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "net/http",
+      "depth": 0,
+      "package": "net/http",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "net/http/httptest",
+      "depth": 0,
+      "package": "net/http/httptest",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "net/url",
+      "depth": 0,
+      "package": "net/url",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "path",
+      "depth": 0,
+      "package": "path",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "regexp",
+      "depth": 0,
+      "package": "regexp",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "strconv",
+      "depth": 0,
+      "package": "strconv",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "strings",
+      "depth": 0,
+      "package": "strings",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "testing",
+      "depth": 0,
+      "package": "testing",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  },
+  {
+    "attributes": {
+      "absolute": "time",
+      "depth": 0,
+      "package": "time",
+      "vendor": false
+    },
+    "hints": {
+      "dirs": [
+        "file:///"
+      ]
+    }
+  }
+]

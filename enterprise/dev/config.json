@@ -1,0 +1,192 @@
+// The Sourcegraph site configuration for development servers.
+{
+  "appURL": "http://localhost:3080",
+  "experimentalFeatures": {
+    "canonicalURLRedirect": "enabled",
+    "discussions": "enabled"
+  },
+  "disablePublicRepoRedirects": true,
+  "phabricator": [
+    {
+      "url": "https://phabricator.sgdev.org",
+      // Uncomment one or the other of these configs depending on your testing needs.
+      // Both "token" and "repos" are optional but you need to have at least one set.
+      "repos": [
+        {
+          "path": "gitolite.sgdev.org/testing",
+          "callsign": "TEST"
+        },
+        {
+          "path": "github.com/sgtest/jump",
+          "callsign": "JUMP"
+        },
+        {
+          "path": "git-codecommit.us-west-1.amazonaws.com/stripe-go",
+          "callsign": "STRIPEGO"
+        }
+      ]
+      // "token": "api-5ngcoazuyugsoiuumxxuhd4g26ac"
+    }
+  ],
+  // To test with Gitolite, set up SSH authentication for gitolite.sgdev.org using
+  // this private key: https://sourcegraph.sgdev.org/github.com/sourcegraph/infrastructure/-/blob/datacenter/dogfood/id_rsa
+  //
+  // "gitolite": [
+  //   {
+  //     "host": "git@gitolite.sgdev.org",
+  //     "prefix": "gitolite.sgdev.org/",
+  //     "blacklist": "blacklist",
+  //     "phabricatorMetadataCommand": "echo $$REPO | tr -cd '[A-Za-z]' | tail -c 4 | tr [a-z] [A-Z]"
+  //   }
+  // ],
+  "github": [
+    {
+      "url": "https://github.com",
+      "token": "e99201f23d4c8d2d7d3df4c0cb23a4804ad5f1b8" // unprivileged sqs-test user
+    },
+    {
+      "url": "http://ghe.sgdev.org",
+      "token": "23993bbf8e0fee068b8f70db05fc445d5a7a83da"
+    }
+  ],
+  "repos.list": [{ "path": "github.com/sgtest/jump", "url": "https://github.com/sgtest/jump" }],
+  "bitbucketServer": [
+    // creds: admin / WhYw6x9GSxmbmg4m
+    {
+      "url": "https://bitbucket.sgdev.org",
+      "token": "NDczNDE0NDg0OTk3OrfPrmh/lmU2c3P7Xat+d/aOoZb/"
+      // You can also specify username/password instead:
+      //
+      // "username": "admin",
+      // "password": "WhYw6x9GSxmbmg4m"
+    }
+  ],
+  "awsCodeCommit": [
+    // arn:aws:iam::185007729374:user/code-commit-reader, which has read-only perms to AWS CodeCommit and no access
+    // to secret repositories.
+    {
+      "region": "us-west-1",
+      "accessKeyID": "AKIAIG7POXJDKGNQXCPA",
+      "secretAccessKey": "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",
+      "repositoryPathPattern": "git-codecommit.us-west-1.amazonaws.com/{name}"
+    }
+  ],
+  "gitlab": [
+    {
+      // This access token belongs to keegan+gitlabbot@sourcegraph.com
+      "url": "https://gitlab.com",
+      "token": "yNoBnyFzP1zMPuLWqYpN"
+    }
+  ],
+  "lightstepProject": "sourcegraph-dev",
+  "lightstepAccessToken": "025f49bbe1eb074930a1de12c90542d5",
+  "repoListUpdateInterval": 1,
+  "email.address": "noreply+${USER}@sourcegraph.com", // ${USER} is interpolated when SOURCEGRAPH_EXPAND_CONFIG_VARS=1
+  "email.smtp": {
+    "host": "smtp.gmail.com",
+    "port": 587,
+    "authentication": "PLAIN",
+    "username": "notifications@sourcegraph.com",
+    "password": "oyytqrfkalikjilf"
+  },
+  "langservers": [
+    {
+      "address": "tcp://localhost:4389",
+      "language": "go"
+    },
+    {
+      "address": "tcp://localhost:2083",
+      "language": "python"
+    }
+  ],
+  "update.channel": "release",
+  "corsOrigin": "https://github.com https://phabricator.sgdev.org https://bitbucket.sgdev.org",
+
+  // Uncomment to enable Sentry (dev project)
+  //
+  // "log": {
+  //   "sentry": {
+  //     "dsn": "https://db92555619b44699bae746b25062d04f:ac28d23769104c86b5418cd60560692e@sentry.io/1243424"
+  //   },
+  // },
+
+  "auth.providers": [
+    // AUTHENTICATION
+    //
+    { "type": "builtin", "allowSignup": true },
+    //
+    //
+    // See dev/auth-provider/README.md for more information on how to use the Keycloak OpenID/SAML
+    // auth provider for local dev.
+    //
+    // Log in via Keycloak with username "alice" or "bob" (password is "q" for both).
+    //
+    {
+      "type": "openidconnect",
+      "displayName": "Keycloak local OpenID Connect #1 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "clientID": "sourcegraph-client-openid",
+      "clientSecret": "3153e9d7-2d06-49d7-be84-cc61c07173a4"
+    },
+    {
+      "type": "openidconnect",
+      "displayName": "Keycloak local OpenID Connect #2 (dev)",
+      "issuer": "http://localhost:3220/auth/realms/master",
+      "clientID": "sourcegraph-client-openid-2",
+      "clientSecret": "0d60ca04-f333-48a4-96a1-aacf5f06b351"
+    },
+    {
+      "type": "saml",
+      "displayName": "Keycloak local SAML #1 (dev)",
+      "identityProviderMetadataURL": "http://localhost:3220/auth/realms/master/protocol/saml/descriptor"
+    },
+    {
+      "type": "saml",
+      "displayName": "Keycloak local SAML #2 (dev)",
+      "serviceProviderIssuer": "http://localhost:3080/.auth/saml/metadata?2",
+      "identityProviderMetadataURL": "http://localhost:3220/auth/realms/master/protocol/saml/descriptor"
+    },
+    {
+      // User login: alice@example.com / Miltonwoof1
+      // Admin login: https://dev-433675-admin.oktapreview.com / beyang@sourcegraph.com / I3muNS06Ide6DjeZrIjC14Ua
+      "type": "saml",
+      "displayName": "Okta SAML (dev)",
+      "identityProviderMetadataURL": "https://dev-433675.oktapreview.com/app/exkcgo5zoe8HqHBdH0h7/sso/saml/metadata"
+    },
+    {
+      // User login: alice@example.com / Miltonwoof1
+      // Admin login: https://dev-433675-admin.oktapreview.com / beyang@sourcegraph.com / I3muNS06Ide6DjeZrIjC14Ua
+      "type": "openidconnect",
+      "displayName": "Okta OpenID Connect (dev)",
+      "issuer": "https://dev-433675.oktapreview.com",
+      "clientID": "0oaevek08cpSUP6iX0h7",
+      "clientSecret": "m7qQ-b0HePaXcj4hFYhTwKspNnyFRNBzTaYMFI7i"
+    },
+    {
+      // User login: alice@example.com / Miltonwoof1
+      // Admin login: https://sourcegraph-dev.onelogin.com / beyang@sourcegraph.com / Mtg&7gZMnirBVsyaeQTAjnzu
+      "type": "saml",
+      "displayName": "OneLogin SAML (dev)",
+      "identityProviderMetadataURL": "https://sourcegraph-dev.onelogin.com/saml/metadata/736334",
+      "serviceProviderCertificate":
+        "-----BEGIN CERTIFICATE-----\nMIICmTCCAYECBgFjcYAQETANBgkqhkiG9w0BAQsFADAQMQ4wDAYDVQQDDAVmZGZzZDAeFw0xODA1MTgwNDI1MDhaFw0yODA1MTgwNDI2NDhaMBAxDjAMBgNVBAMMBWZkZnNkMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmaL6f3AmwbePU6hKCvwJErj+Fjxb7b0BBDReQuz1AFWXbQuCReNGkIzG0Yvimv52EM+3m01O4QKZJ+Ikl2kgHFOA0fQqfqILERIBb2SX6hKF0TyrVcjvr6qt8Nxm+bGoDXxwavQ3PF+zKG/j6hWX/eR+XtxzNryAgs94wDIN2pzz8yse0WZyEQ4+ZSgQwtgETXfy5+JdXuJfUL7vaqkvsKItO/eycbZ9rPYiXPt7Yd7N71fW9yzSrnxBZJhPaDktnGGXmXMM/BYw4/M55upZ0JjcyFoTiPsbmng02xoXwhRGtqwXr0zc/pW8JwyZOXLRhzqltzzox2h8C0rTgACt/QIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQAD+cqRHE70M+3Ixg09CTGN0DwGzwOoxdAEBDLToswpfg5EDrfEiaJYTBT+IuLPh7q9PbTI4VkpGifBv1mByvTiNrbZA9ZFC+VKqreWUSiSIqjL0a002PDzG/jtPgL/dlycIwKhvWhT8PH6uN/WjtrikGeqCHlQ7mATxVBpriEml/MTofSFooIA3VQo2Jw/jmjRdmpwMBrK3mEupleH+r6HSgcUGA/M4HUMWcMQ0nodybRL4BN/AZWqVeVS3/iF8GPEvo50tO/2NhApWPnhGtY6JWltB7sUUkyaKvuOAl6imyi6q8ZsC+2TctOzH+3f745KPxMTp/vWUa6gucPv/wHt\n-----END CERTIFICATE-----",
+      "serviceProviderPrivateKey":
+        "-----BEGIN PRIVATE KEY-----\nMIIEpAIBAAKCAQEAmaL6f3AmwbePU6hKCvwJErj+Fjxb7b0BBDReQuz1AFWXbQuCReNGkIzG0Yvimv52EM+3m01O4QKZJ+Ikl2kgHFOA0fQqfqILERIBb2SX6hKF0TyrVcjvr6qt8Nxm+bGoDXxwavQ3PF+zKG/j6hWX/eR+XtxzNryAgs94wDIN2pzz8yse0WZyEQ4+ZSgQwtgETXfy5+JdXuJfUL7vaqkvsKItO/eycbZ9rPYiXPt7Yd7N71fW9yzSrnxBZJhPaDktnGGXmXMM/BYw4/M55upZ0JjcyFoTiPsbmng02xoXwhRGtqwXr0zc/pW8JwyZOXLRhzqltzzox2h8C0rTgACt/QIDAQABAoIBAD5Gju17Q2qAgmtxqtm7Ad6B+BSBUO4UD8Zph8/vBvyktSWxZZP4pVDQj4K/BhK3lJoJ6K3d71xL1lMRWq25Ihf5TR1NsK/19TBtMQG7L8zkxzNiOT0jnuyA7dLVNDSAa9NTnqnr5jvlutRoTmVDbYGvzf2btGP6ksjzWknlwDHdjWOpRp6Z0FrmemU0gJvVHkrp7O5jM2BzvBc0XZzuMR/VTSdu1Kx4zQdT9xbkEOIpl4cNT2aeczC+6xv/5nMLMk+sHUrZMjPgN1ll9sq97V29QhFtcVRAfono6xBePZvKBiTHsJ4jcnkOuyJtosc36GsjWa/Gd4H6uDhIsG/b880CgYEA3G4QA8yTT1gTpiHm5pFRi1y+N6Qg6iW6X6p3WJt7x6dgBpLBM16lOUssvq0OLcQFCxQvOGa0njCLoxGk6M7aCNH7RLLHUgZskSxm7p1jElYfq+ZdFFmVZmUj1F3VQ2wTQcCyRIrK65s5xtWb+1uRX3Uax9A6IOBDmcJxR564jvcCgYEAsm2xG7uv9kLruPGm0KBZtWQr6zHeXNI5o2XJQ0jpGcQtmwltHcxeJOqyJrUSTQHdo1tldh6fXt9Y11hsouMYm+bpJJZVkVZ9D7qA5Fmzm2/ZAssTqi6yDVeQhSKVjn+KuCrkj/KAfdRAbJwbiqIY6wzMLtwDjJCw0S3oBgLBiasCgYB5R200Seh67UDSVTDPhwDQppRZ1MnvShbC7+1+KP3vmZ1xwGjgNKC/ZycVOe3lLEaCE/bvF0MlDhyl+d074iOAWtfesmaMMNCnB0ES5DFQM2Z1k+d+fNOAZQFTpNTjpaDqunTa1WpUOzGMvpZ1s6nGVY4Ihf6VfA51mM/u0dtFfQKBgQCstgsCikmIOTzM93R+a0iKkV0Fu26/MGrEZElNzOx9mWx/rr8lYeYbG+a4GvuM+OpeLqDmljuz7MOlJx15ChOPDRPN64sGNM63g9MxtjZplflcf9AYIj0NNx5YEKLtnT1ciYBWaejAY8y8lNr/9WnjU67tCOCSlpfg0uvNratDIwKBgQDWhWgZsU2H4qZov9DD68rhtVyb3aK8xoTt6IscNBhaioRb7kSbFj9RFH5PSuBJ2cuZv8uHg0qU2xHUGWfOAyrJG+f1ylgnyDTabfElzj2ghSvy/r3Hv1Qm2+g34NnXtjbX/+Lq9HhDojBfRYx7YL781e000NNKGJPVVFN/LoGlqw==\n-----END PRIVATE KEY-----"
+    }
+    // Uncomment to test ADFS SAML. See ../docs/saml-adfs.md for required configuration steps.
+    //
+    // {
+    //   "type": "saml",
+    //   "displayName": "Windows Server 2012 Datacenter ADFS 2.1 SAML (dev)",
+    //   "identityProviderMetadataURL": "https://adfstest.sgdev.org/federationmetadata/2007-06/federationmetadata.xml"
+    // }
+  ],
+
+  // License key is generated with:
+  //
+  //   go run ./pkg/license/generate-license.go -private-key key.pem -tags=dev -users=10 -expires=8784h
+  //
+  // See the docs in generate-license.go to obtain key.pem.
+  "licenseKey":
+    "eyJzaWciOnsiRm9ybWF0Ijoic3NoLXJzYSIsIkJsb2IiOiJKM1htVmcxZ1hObVpET3piODQ3YW12MWdEanRzZ3l6RXFkY25iR0tnZUxUV2FBMVNlWVRtSm5jWUNJTDJzTHpRSFFrdC9OSXV0QlVPYzgwTllWZ25pZDNGV3VCYUVIZ0xleG9WU0RCTS9XcFRERStZU3ZyWmJ4OTErUWk5RkRmK0tHWHFlaFFSR2JFclYyV3RIYzAra0cyMjFVQnRrREZwMkJ5Sk81Y3dCUGYyUDcreVRkZy9tYlhnSDlYSFcyYm4xckdBa2lMRUxuby9Ta2xpVnA1bHBuVEh3Rk54RDUzQ1pjMzNrQktxaVh5Q1lIY0ozMWo1ZEpOT1p4Q25FZlB2cjNWcE4xeWFXbVJIeUFueTkzWlVLbTlmWC9rT3JUZ0lqL2dPaUxtNFR0MnpyUHFqOTFBYmpjck9ZbHZSci96bmNUaG5UeDhvV0xYSGJsN2hCOG5oOHc9PSJ9LCJpbmZvIjoiZXlKMklqb3hMQ0p1SWpwYk1URXhMRFkyTERjekxEVTNMREU1T1N3eE9UY3NNVE0wTERFMU9WMHNJblFpT2xzaVpHVjJJbDBzSW5VaU9qRXdMQ0psSWpvaU1qQXhPUzB4TUMwd01WUXlNem8wTnpvMU5Gb2lmUT09In0"
+}
