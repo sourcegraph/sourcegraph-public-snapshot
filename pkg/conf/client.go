@@ -58,7 +58,7 @@ func Get() *schema.SiteConfiguration {
 // be done in such a way that it responds to config changes while the process
 // is running.
 func (c *client) Get() *schema.SiteConfiguration {
-	return c.store.Parsed()
+	return c.store.LastValid()
 }
 
 // GetTODO denotes code that may or may not be using configuration correctly.
@@ -79,16 +79,14 @@ func (c *client) GetTODO() *schema.SiteConfiguration {
 	return c.Get()
 }
 
-// Mock sets up mock data for the site configuration. It uses the configuration
-// mutex, to avoid possible races between test code and possible config watchers.
+// Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.
 func Mock(mockery *schema.SiteConfiguration) {
 	defaultClient.Mock(mockery)
 }
 
-// Mock sets up mock data for the site configuration. It uses the configuration
-// mutex, to avoid possible races between test code and possible config watchers.
+// Mock sets up mock data for the site configuration.
 func (c *client) Mock(mockery *schema.SiteConfiguration) {
 	c.store.Mock(mockery)
 }

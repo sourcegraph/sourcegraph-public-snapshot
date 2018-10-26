@@ -73,7 +73,7 @@ func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 	// TODO@ggilmore: There is a race condition here (also present in the existing library).
 	// Current and raw could be inconsistent. Another thing to offload to configStore?
 	// Snapshot method?
-	current := s.store.Parsed()
+	current := s.store.LastValid()
 	raw := s.store.Raw()
 
 	// Compute edits.

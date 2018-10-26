@@ -10,9 +10,9 @@ import (
 // configStore manages the in-memory storage, access,
 // and updating of the site configuration in a threadsafe manner.
 type configStore struct {
-	configMu sync.RWMutex
-	parsed   *schema.SiteConfiguration
-	mock     *schema.SiteConfiguration
+	configMu  sync.RWMutex
+	lastValid *schema.SiteConfiguration
+	mock      *schema.SiteConfiguration
 
 	rawMu sync.RWMutex
 	raw   string
@@ -39,9 +39,9 @@ func (c *configStore) initialize() {
 	})
 }
 
-// Parsed returns the last valid site configuration that this
+// LastValid returns the last valid site configuration that this
 // store was updated with.
-func (c *configStore) Parsed() *schema.SiteConfiguration {
+func (c *configStore) LastValid() *schema.SiteConfiguration {
 	c.WaitUntilInitialized()
 
 	c.configMu.RLock()
@@ -51,7 +51,7 @@ func (c *configStore) Parsed() *schema.SiteConfiguration {
 		return c.mock
 	}
 
-	return c.parsed
+	return c.lastValid
 }
 
 // Raw returns the raw JSON string that this store was updated with.
@@ -63,6 +63,8 @@ func (c *configStore) Raw() string {
 	return c.raw
 }
 
+// Mock sets up mock data for the site configuration. It uses the configuration
+// mutex, to avoid possible races between test code and possible config watchers.
 func (c *configStore) Mock(mockery *schema.SiteConfiguration) {
 	c.configMu.Lock()
 	defer c.configMu.Unlock()
@@ -77,7 +79,10 @@ type configChange struct {
 	New     *schema.SiteConfiguration
 }
 
-// MaybeUpdate updates the store iff the supplied rawConfig differs
+// MaybeUpdate attempts to update the store with the supplied rawConfig.
+//
+// If the rawConfig isn't syntactically valid JSON, the store's LastValid field.
+// won't be updating and a parsing error will be returned
 // from the previous time that this function was called.
 //
 // configChange is defined iff the cache was actually udpated.
@@ -104,11 +109,11 @@ func (c *configStore) MaybeUpdate(rawConfig string) (configChange, error) {
 
 	c.initialize()
 
-	c.parsed = newConfig
+	c.lastValid = newConfig
 
 	return configChange{
 		Changed: true,
-		Old:     c.parsed,
+		Old:     c.lastValid,
 		New:     newConfig,
 	}, nil
 }
