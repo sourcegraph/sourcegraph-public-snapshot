@@ -68,6 +68,7 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                                 />
                             )}
                             <ExtensionConfigurationState
+                                className="ml-2"
                                 isAdded={isExtensionAdded(props.configurationCascade.merged, props.extension.id)}
                                 isEnabled={isExtensionEnabled(props.configurationCascade.merged, props.extension.id)}
                             />

@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 #
-# build commands, optionally with or without race detector.
-# a list of every command we know about, to use by default
-all_commands=" gitserver indexer query-runner github-proxy lsp-proxy searcher frontend repo-updater symbols "
+# Build commands, optionally with or without race detector.  a list of every command we know about,
+# to use by default
+#
+# This will install binaries into the `.bin` directory under the repository root by default or, if
+# $GOMOD_ROOT is set, under that directory.
+
+all_oss_commands=" gitserver indexer query-runner github-proxy lsp-proxy searcher frontend repo-updater symbols "
 
 # GOMOD_ROOT is the directory from which `go install` commands are run. It should contain a go.mod
 # file. The go.mod file may be updated as a side effect of updating the dependencies before the `go
@@ -25,10 +29,10 @@ shift $(expr $OPTIND - 1)
 # check provided commands
 ok=true
 case $# in
-0)	commands=$all_commands;;
+0)	commands=$all_oss_commands;;
 *)	commands=" $* "
 	for cmd in $commands; do
-		case $all_commands in
+		case $all_oss_commands in
 		*" $cmd "*)	;;
 		*)	echo >&2 "unknown command: $cmd"
 			ok=false
@@ -37,6 +41,20 @@ case $# in
 	done
 	;;
 esac
+if [ ! -z "$ENTERPRISE_COMMANDS" ]; then
+    for entCmd in $ENTERPRISE_COMMANDS; do
+        exists=false
+        for cmd in $commands; do
+            if [ "$cmd" = "$entCmd" ]; then
+                exists=true
+                break
+            fi
+        done
+        if [ "$exists" = false ]; then
+            commands="$commands $entCmd "
+        fi
+    done
+fi
 
 $ok || exit 1
 

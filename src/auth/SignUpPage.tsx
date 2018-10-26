@@ -182,7 +182,7 @@ export class SignUpPage extends React.Component<SignUpPageProps> {
                     title="Sign up for Sourcegraph"
                     cta={
                         <div>
-                            <Link className="signin-signup-form__mode" to={`/sign-in?${this.props.location.search}`}>
+                            <Link className="signin-signup-form__mode" to={`/sign-in${this.props.location.search}`}>
                                 Already have an account? Sign in.
                             </Link>
                             <SignUpForm {...this.props} doSignUp={this.doSignUp} />

@@ -6,7 +6,7 @@ export type SiteFlags = Pick<
     | 'noRepositoriesEnabled'
     | 'alerts'
     | 'hasCodeIntelligence'
-    | 'externalAuthEnabled'
+    | 'authProviders'
     | 'disableBuiltInSearches'
     | 'sendsEmailVerificationEmails'
     | 'updateCheck'

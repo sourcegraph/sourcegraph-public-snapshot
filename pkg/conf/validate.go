@@ -77,10 +77,6 @@ func Validate(inputStr string) (problems []string, err error) {
 			continue
 		}
 
-		if !MultipleAuthProvidersEnabled() && keyPath == "(root)" && e.Description() == "Must validate \"else\" as \"if\" was not valid" {
-			continue
-		}
-
 		problems = append(problems, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 
@@ -131,9 +127,9 @@ type jsonLoaderFactory struct{}
 
 func (f jsonLoaderFactory) New(source string) gojsonschema.JSONLoader {
 	switch source {
-	case "https://sourcegraph.com/v1/settings.schema.json":
+	case "settings.schema.json":
 		return gojsonschema.NewStringLoader(schema.SettingsSchemaJSON)
-	case "https://sourcegraph.com/v1/site.schema.json":
+	case "site.schema.json":
 		return gojsonschema.NewStringLoader(schema.SiteSchemaJSON)
 	}
 	return nil

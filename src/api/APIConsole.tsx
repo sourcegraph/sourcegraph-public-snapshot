@@ -63,7 +63,7 @@ export class APIConsole extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        // Parse the location.hash JSON to get URL paramameters.
+        // Parse the location.hash JSON to get URL parameters.
         //
         // Precaution: Use URL fragment (not querystring) to avoid leaking sensitive querystrings in
         // HTTP referer headers.

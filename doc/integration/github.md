@@ -12,7 +12,7 @@ To add repositories associated with a GitHub user:
 2.  Press **Add GitHub.com repositories** or **Add GitHub Enterprise repositories**.
 3.  Fill in the fields in the generated `github` configuration option.
 
-By default, it adds all repositories that are affiliated with the user whose token you provide. To see other optional GitHub configuration settings, view [`github` site config documentation](../admin/site_config/index.md#code-classlanguage-textgithubconnection-object) or press Ctrl+Space in the site configuration editor.
+By default, it adds all repositories that are affiliated with the user whose token you provide. To see other optional GitHub configuration settings, view [`github` site config documentation](../admin/site_config/all.md#githubconnection-object) or press Ctrl+Space in the site configuration editor.
 
 If you don't want to use an access token from your personal GitHub user account, generate a token for a [machine user](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users) affiliated with the organizations whose repositories you wish to make available.
 

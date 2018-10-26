@@ -42,16 +42,6 @@ func JumpToDefOSSIndexEnabled() bool {
 	return p == "enabled"
 }
 
-// MultipleAuthProvidersEnabled reports whether the "multipleAuthProviders" experiment is enabled.
-func MultipleAuthProvidersEnabled() bool { return MultipleAuthProvidersEnabledFromConfig(Get()) }
-
-// MultipleAuthProvidersEnabledFromConfig is like MultipleAuthProvidersEnabled, except it accepts a
-// site configuration input value instead of using the current global value.
-func MultipleAuthProvidersEnabledFromConfig(c *schema.SiteConfiguration) bool {
-	// default is enabled
-	return c.ExperimentalFeatures == nil || c.ExperimentalFeatures.MultipleAuthProviders != "disabled"
-}
-
 type AccessTokAllow string
 
 const (

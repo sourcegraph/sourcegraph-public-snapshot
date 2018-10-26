@@ -11,6 +11,6 @@ When deleting or nuking a user, the following information is removed:
 
 - All user data (access tokens, email addresses, external account info, survey responses, etc)
 - Organization membership information (which organizations the user is a part of, any invitations created by or targeting the user).
-- Sourcegraph Extensions published by the user on the instance the deletion request is sent to.
+- Sourcegraph extensions published by the user on the instance the deletion request is sent to.
 - User, Organization, or Global settings authored or modified by the user.
 - Discussion threads and comments created by the user.

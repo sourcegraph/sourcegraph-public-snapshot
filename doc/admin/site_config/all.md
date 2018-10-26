@@ -253,19 +253,6 @@ This property must be one of the following enum values:
 
 Default: `"enabled"`
 
-### multipleAuthProviders (string, enum)
-
-Enables or disables the use of multiple authentication providers and a publicly accessible web page displaying authentication options for unauthenticated users.
-
-Only applies to Sourcegraph Enterprise Starter and Sourcegraph Enterprise.
-
-This property must be one of the following enum values:
-
-- `enabled`
-- `disabled`
-
-Default: `"enabled"`
-
 ### discussions (string, enum)
 
 Enables the code discussions experiment.

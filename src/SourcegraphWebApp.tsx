@@ -1,8 +1,7 @@
-import { ShortcutProvider } from '@shopify/react-shortcuts'
+import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { Notifications } from '@sourcegraph/extensions-client-common/lib/app/notifications/Notifications'
 import { createController as createExtensionsController } from '@sourcegraph/extensions-client-common/lib/client/controller'
 import { ConfiguredExtension } from '@sourcegraph/extensions-client-common/lib/extensions/extension'
-import { ClientConnection, connectAsPage } from '@sourcegraph/extensions-client-common/lib/messaging'
 import {
     ConfigurationCascadeOrError,
     ConfigurationSubject,
@@ -40,7 +39,7 @@ import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevContainerRoute } from './repo/RepoRevContainer'
-import { clientConfiguration } from './settings/configuration'
+import { LayoutRouteProps } from './routes'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { eventLogger } from './tracking/eventLogger'
@@ -64,6 +63,7 @@ export interface SourcegraphWebAppProps extends KeybindingsProps {
     userAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute>
     repoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute>
     repoHeaderActionButtons: ReadonlyArray<RepoHeaderActionButton>
+    routes: ReadonlyArray<LayoutRouteProps>
 }
 
 interface SourcegraphWebAppState
@@ -92,8 +92,6 @@ interface SourcegraphWebAppState
      * The current search query in the navbar.
      */
     navbarSearchQuery: string
-
-    clientConnection: Promise<ClientConnection>
 }
 
 const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
@@ -110,8 +108,7 @@ const SITE_SUBJECT_NO_ADMIN: Pick<GQL.IConfigurationSubject, 'id' | 'viewerCanAd
 export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     constructor(props: SourcegraphWebAppProps) {
         super(props)
-        const clientConnection = connectAsPage()
-        const extensions = createExtensionsContextController(clientConnection)
+        const extensions = createExtensionsContextController()
         this.state = {
             isLightTheme: localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY) !== 'false',
             navbarSearchQuery: '',
@@ -120,7 +117,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             extensionsEnvironment: EXTENSIONS_EMPTY_ENVIRONMENT,
             extensionsController: createExtensionsController(extensions.context, createMessageTransports),
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
-            clientConnection,
             isMainPage: false,
         }
     }
@@ -138,32 +134,13 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             )
         )
 
-        this.state.clientConnection
-            .then(connection => {
-                connection
-                    .getSettings()
-                    .then(settings => clientConfiguration.next(settings))
-                    .catch(error => console.error(error))
-
-                connection.onSettings(settings => clientConfiguration.next(settings))
-            })
-            .catch(error => console.error(error))
-
         this.subscriptions.add(
             combineLatest(
                 from(this.state.extensions.context.configurationCascade).pipe(startWith(null)),
-                authenticatedUser.pipe(startWith(null)),
-                clientConfiguration
-            ).subscribe(([cascade, authenticatedUser, clientConfiguration]) => {
+                authenticatedUser.pipe(startWith(null))
+            ).subscribe(([cascade, authenticatedUser]) => {
                 this.setState(() => {
-                    if (clientConfiguration !== undefined) {
-                        return {
-                            viewerSubject: {
-                                id: 'Client',
-                                viewerCanAdminister: true,
-                            },
-                        }
-                    } else if (authenticatedUser) {
+                    if (authenticatedUser) {
                         return { viewerSubject: authenticatedUser }
                     } else if (
                         cascade &&
@@ -281,7 +258,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                 extensionsEnvironment={this.state.extensionsEnvironment}
                                 extensionsOnVisibleTextDocumentsChange={this.extensionsOnVisibleTextDocumentsChange}
                                 extensionsController={this.state.extensionsController}
-                                clientConnection={this.state.clientConnection}
                             />
                         )}
                     />

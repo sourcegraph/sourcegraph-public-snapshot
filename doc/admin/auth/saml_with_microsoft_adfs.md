@@ -15,7 +15,7 @@ These instructions guide you through configuring Sourcegraph as a relying party 
 1.  If needed (e.g., when deploying Sourcegraph to a Kubernetes cluster), redeploy to apply the new configuration. (The `sourcegraph/server` Docker container will automatically reload the configuration and apply this change.)
 1.  Confirm there are no error messages in the `sourcegraph/server` Docker container logs (or the `sourcegraph-frontend` pod logs, if Sourcegraph is deployed to a Kubernetes cluster). The most likely error message indicating a problem is `Error prefetching SAML service provider metadata.`.
 
-The example below demonstrates the properties that you must set. See the [SAMLAuthProvider config type](../site_config/index.md#samlauthprovider-object) the full set of properties that the SAML auth provider supports.
+The example below demonstrates the properties that you must set. See the [SAMLAuthProvider config type](../site_config/all.md#samlauthprovider-object) the full set of properties that the SAML auth provider supports.
 
 ```json
 {

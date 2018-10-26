@@ -146,7 +146,7 @@ type ProductSubscriptionConnection interface {
 }
 
 type PreviewProductSubscriptionInvoiceArgs struct {
-	Account              graphql.ID
+	Account              *graphql.ID
 	SubscriptionToUpdate *graphql.ID
 	ProductSubscription  ProductSubscriptionInput
 }

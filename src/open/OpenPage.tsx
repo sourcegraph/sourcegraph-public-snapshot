@@ -69,7 +69,7 @@ export class OpenPage extends React.Component<Props, State> {
                             </span>
                         ))}
                 </p>
-                <iframe className="open-page__iframe" src={`${this.state.scheme}:open?${this.props.location.search}`} />
+                <iframe className="open-page__iframe" src={`${this.state.scheme}:open${this.props.location.search}`} />
             </div>
         )
     }
