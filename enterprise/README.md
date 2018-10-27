@@ -10,6 +10,9 @@ This directory contains all of the Sourcegraph Enterprise code.
 
 ### Build notes
 
+You'l need to clone https://github.com/sourcegraph/dev-private to the same directory that contains
+this repository.
+
 **IMPORTANT:** Commands that build enterprise targets (e.g., `go build`, `yarn`,
 `enterprise/dev/go-install.sh`) should always be run with the `enterprise` directory as the current
 working directory. Otherwise, build tools like `yarn` and `go` may try to update the root
