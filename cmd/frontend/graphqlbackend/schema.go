@@ -3115,7 +3115,7 @@ type ProductSubscriptionStatus {
     # The full name of the product in use, such as "Sourcegraph Enterprise".
     productNameWithBrand: String!
     # The max number of user accounts that have been active on this Sourcegraph site for the current license.
-    # If no license is in use, return zero.
+    # If no license is in use, returns zero.
     actualUserCount: Int!
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo
