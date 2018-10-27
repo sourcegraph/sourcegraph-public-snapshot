@@ -9,6 +9,16 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+### Changed
+
+### Removed
+
+- The **Explore** page was replaced with a **Repositories** search link in the top navigation bar.
+
+## 2.13 (not yet released)
+
+### Added
+
 - A new site config option `search.index.enabled` allows toggling on indexed search.
 
 ### Changed

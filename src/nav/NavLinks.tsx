@@ -13,8 +13,9 @@ import {
     ExtensionsProps,
 } from '../extensions/ExtensionsClientCommonContext'
 import { KeybindingsProps } from '../keybindings'
+import { buildSearchURLQuery } from '../search'
 import { eventLogger } from '../tracking/eventLogger'
-import { canListAllRepositories, showDotComMarketing } from '../util/features'
+import { showDotComMarketing } from '../util/features'
 import { UserNavItem } from './UserNavItem'
 
 interface Props extends ConfigurationCascadeProps, ExtensionsProps, ExtensionsControllerProps, KeybindingsProps {
@@ -59,13 +60,11 @@ export class NavLinks extends React.PureComponent<Props> {
                     extensionsController={this.props.extensionsController}
                     extensions={this.props.extensions}
                 />
-                {canListAllRepositories && (
-                    <li className="nav-item">
-                        <Link to="/explore" className="nav-link">
-                            Repositories
-                        </Link>
-                    </li>
-                )}
+                <li className="nav-item">
+                    <Link to={`/search?${buildSearchURLQuery({ query: 'repo:' })}`} className="nav-link">
+                        Repositories
+                    </Link>
+                </li>
                 {!this.props.authenticatedUser && (
                     <>
                         <li className="nav-item">
