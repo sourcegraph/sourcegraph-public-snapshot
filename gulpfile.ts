@@ -4,6 +4,7 @@ import log from 'fancy-log'
 import globby from 'globby'
 import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'graphql'
 import gulp from 'gulp'
+import $RefParser from 'json-schema-ref-parser'
 import { compile as compileJSONSchema } from 'json-schema-to-typescript'
 // @ts-ignore
 import convert from 'koa-connect'
@@ -17,6 +18,7 @@ import { format, resolveConfig } from 'prettier'
 import tsUnusedExports from 'ts-unused-exports'
 import createWebpackCompiler, { Stats } from 'webpack'
 import WebpackDevServer from 'webpack-dev-server'
+import { draftV7resolver } from './dev/draftV7Resolver'
 import webpackConfig from './webpack.config'
 
 const WEBPACK_STATS_OPTIONS = {
@@ -125,8 +127,17 @@ export async function schema(): Promise<void> {
                 /https:\/\/sourcegraph\.com\/v1\/settings\.schema\.json#\/definitions\//g,
                 '#/definitions/'
             )
+
             const types = await compileJSONSchema(JSON.parse(schema), 'settings.schema', {
                 cwd: __dirname + '/schema',
+                $refOptions: {
+                    resolve: {
+                        draftV7resolver,
+                        // there should be no reason to make network calls during this process,
+                        // and if there are we've broken env for offline devs/increased dev startup time
+                        http: false,
+                    } as $RefParser.Options['resolve'],
+                },
             })
             await Promise.all([
                 writeFile(__dirname + `/src/schema/${file}.schema.d.ts`, types),
