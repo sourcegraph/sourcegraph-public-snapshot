@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
-	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // SplitRepositoryNameWithOwner splits a GitHub repository's "owner/name" string into "owner" and "name", with
@@ -315,33 +313,6 @@ func (c *Client) ListViewerRepositories(ctx context.Context, page int) (repos []
 	}
 	repos = make([]*Repository, 0, len(restRepos))
 	for _, restRepo := range restRepos {
-		repos = append(repos, convertRestRepo(restRepo))
-	}
-	c.addRepositoriesToCache(repos)
-	return repos, len(repos) > 0, 1, nil
-}
-
-type restSearchResponse struct {
-	TotalCount        int              `json:"total_count"`
-	IncompleteResults bool             `json:"incomplete_results"`
-	Items             []restRepository `json:"items"`
-}
-
-func (c *Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	urlValues := url.Values{
-		"q":    []string{searchString},
-		"page": []string{strconv.Itoa(page)},
-	}
-	path := "/search/repositories?" + urlValues.Encode()
-	var response restSearchResponse
-	if err := c.requestGet(ctx, path, &response); err != nil {
-		return nil, false, 1, err
-	}
-	if response.IncompleteResults {
-		log15.Error("GitHub repository search returned incomplete results, some repositories may have been skipped", "searchString", searchString, "page", page, "total repository count", response.TotalCount)
-	}
-	repos = make([]*Repository, 0, len(response.Items))
-	for _, restRepo := range response.Items {
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	c.addRepositoriesToCache(repos)

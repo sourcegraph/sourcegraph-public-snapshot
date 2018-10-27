@@ -1,17 +1,13 @@
 package github
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 )
 
 func TestUnmarshal(t *testing.T) {
@@ -56,37 +52,5 @@ func TestUnmarshal(t *testing.T) {
 		if !strings.HasPrefix(got, errStr) {
 			t.Errorf("Unexpected error message %v\ngot:  %s\nwant: %s", data, got, errStr)
 		}
-	}
-}
-
-func TestNewRepoCache_GitHubDotCom(t *testing.T) {
-	url, _ := url.Parse("https://www.github.com")
-	token := "asdf"
-
-	// github.com caches should:
-	// (1) use githubProxyURL for the prefix hash rather than the given url
-	// (2) have a TTL of 10 minutes
-	key := sha256.Sum256([]byte(token + ":" + githubProxyURL.String()))
-	prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
-	got := NewRepoCache(url, token)
-	want := rcache.NewWithTTL(prefix, 600)
-	if *got != *want {
-		t.Errorf("TestNewRepoCache_GitHubDotCom: got %#v, want %#v", *got, *want)
-	}
-}
-
-func TestNewRepoCache_GitHubEnterprise(t *testing.T) {
-	url, _ := url.Parse("https://www.sourcegraph.com")
-	token := "asdf"
-
-	// GitHub Enterprise caches should:
-	// (1) use the given URL for the prefix hash
-	// (2) have a TTL of 30 seconds
-	key := sha256.Sum256([]byte(token + ":" + url.String()))
-	prefix := "gh_repo:" + base64.URLEncoding.EncodeToString(key[:])
-	got := NewRepoCache(url, token)
-	want := rcache.NewWithTTL(prefix, 30)
-	if *got != *want {
-		t.Errorf("TestNewRepoCache_GitHubEnterprise: got %#v, want %#v", *got, *want)
 	}
 }

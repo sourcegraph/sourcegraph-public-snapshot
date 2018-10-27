@@ -889,11 +889,9 @@ An array of strings specifying which GitHub or GitHub Enterprise repositories to
 
 - `none` mirrors no repositories (except those specified in the `repos` configuration property or added manually)
 
-- All other values are executed as a [GitHub advanced repository search](https://github.com/search/advanced). Example: to sync all repositories from the `sourcegraph` organization including forks the query would be `\"org:sourcegraph fork:true\"`.
-
 If multiple values are provided, their results are unioned.
 
-If you need to narrow the set of mirrored repositories further (and don't want to enumerate it with a list or query set as above), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.
+If you need to narrow the set of mirrored repositories further (and don't want to enumerate the set in the "repos" configuration property), create a new bot/machine user on GitHub or GitHub Enterprise that is only affiliated with the desired repositories.
 
 The object is an array with all elements of the type `string`.
 
