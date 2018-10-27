@@ -54,12 +54,45 @@ type abuseRateLimit struct {
 	DocumentationURL string `json:"documentation_url"`
 }
 
+func urlIsGitHubDotCom(apiURL *url.URL) bool {
+	hostname := strings.ToLower(apiURL.Hostname())
+	return hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com" || apiURL.String() == githubProxyURL.String()
+}
+
+func canonicalizedURL(apiURL *url.URL) *url.URL {
+	if urlIsGitHubDotCom(apiURL) {
+		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
+		// rate limit).
+		return githubProxyURL
+	}
+	return apiURL
+}
+
+// NewRepoCache creates a new cache for GitHub repository metadata.
+func NewRepoCache(apiURL *url.URL, token string) *rcache.Cache {
+	apiURL = canonicalizedURL(apiURL)
+	var cacheTTL time.Duration
+	if urlIsGitHubDotCom(apiURL) {
+		cacheTTL = 10 * time.Minute
+	} else {
+		// GitHub Enterprise
+		cacheTTL = 30 * time.Second
+	}
+	key := sha256.Sum256([]byte(token + ":" + apiURL.String()))
+	return rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
+}
+
 // NewClient creates a new GitHub API client with an optional personal access token to authenticate
 // requests.
 //
 // The API URL must point to the base URL of the GitHub API. This is https://api.github.com for
 // GitHub.com and http[s]://[github-enterprise-hostname]/api for GitHub Enterprise.
-func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Client {
+// repoCache should be an existing repository cache created with
+// NewRepoCache, or nil to create a new one. Clients querying the same
+// host should use the same cache (see repos.githubConnection, which uses
+// multiple clients to track independent rate limits in the same host).
+func NewClient(apiURL *url.URL, token string, transport http.RoundTripper, repoCache *rcache.Cache) *Client {
+	apiURL = canonicalizedURL(apiURL)
 	if gitHubDisable {
 		transport = disabledTransport{}
 	}
@@ -77,26 +110,14 @@ func NewClient(apiURL *url.URL, token string, transport http.RoundTripper) *Clie
 		return category
 	})
 
-	var cacheTTL time.Duration
-	hostname := strings.ToLower(apiURL.Hostname())
-	githubDotCom := hostname == "api.github.com" || hostname == "github.com" || hostname == "www.github.com"
-	if githubDotCom {
-		cacheTTL = 10 * time.Minute
-		// For GitHub.com API requests, use github-proxy (which adds our OAuth2 client ID/secret to get a much higher
-		// rate limit).
-		apiURL = githubProxyURL
-	} else {
-		// GitHub Enterprise
-		cacheTTL = 30 * time.Second
+	if repoCache == nil {
+		// Create a new cache for repository metadata.
+		repoCache = NewRepoCache(apiURL, token)
 	}
-
-	// Cache for repository metadata.
-	key := sha256.Sum256([]byte(token + ":" + apiURL.String()))
-	repoCache := rcache.NewWithTTL("gh_repo:"+base64.URLEncoding.EncodeToString(key[:]), int(cacheTTL/time.Second))
 
 	return &Client{
 		apiURL:       apiURL,
-		githubDotCom: githubDotCom,
+		githubDotCom: urlIsGitHubDotCom(apiURL),
 		token:        token,
 		httpClient:   &http.Client{Transport: transport},
 		RateLimit:    &ratelimit.Monitor{HeaderPrefix: "X-"},
