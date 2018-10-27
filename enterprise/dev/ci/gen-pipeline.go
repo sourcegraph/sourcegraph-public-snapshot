@@ -37,7 +37,7 @@ func main() {
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
-		bk.Cmd("yarn unlink"),
+		bk.Cmd("yarn unlink || true"),
 		bk.Cmd("yarn link"),
 		bk.Cmd("pushd enterprise"),
 		bk.Cmd("yarn link @sourcegraph/webapp"),
