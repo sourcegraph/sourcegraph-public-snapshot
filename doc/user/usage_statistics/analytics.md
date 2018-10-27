@@ -1,6 +1,6 @@
 # Usage analytics
 
-Sourcegraph records basic usage statistics for site admins. Visit the analytics page by clicking **Admin** in the top right of any page, and going to **Analytics** in the left side menu. (The URL is `https://sourcegraph.example.com/site-admin/analytics`.)
+Sourcegraph records basic usage statistics for site admins. To view analytics, visit the **Site admin > Analytics** page. (The URL is `https://sourcegraph.example.com/site-admin/analytics`.)
 
 Here you can see charts with counts of unique users by day, week, or month, split into authenticated and anonymous users.
 
