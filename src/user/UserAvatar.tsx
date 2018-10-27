@@ -1,40 +1,30 @@
-import * as React from 'react'
-
-interface Avatarable {
-    avatarURL: string | null
-}
+import React from 'react'
 
 interface Props {
-    onClick?: () => void
     size?: number
-    user: Avatarable
+    user: {
+        avatarURL: string | null
+    }
     className?: string
-    tooltip?: string
+    ['data-tooltip']?: string
 }
 
 /**
- * UserAvatar displays the avatar of an Avatarable object
+ * UserAvatar displays the avatar of a user.
  */
-export const UserAvatar: React.SFC<Props> = props => {
-    let avatar: JSX.Element | null = null
-    if (props.user && props.user.avatarURL) {
+export const UserAvatar: React.SFC<Props> = ({ size, user, className, ...otherProps }) => {
+    if (user && user.avatarURL) {
+        let url = user.avatarURL
         try {
-            const url = new URL(props.user.avatarURL)
-            if (props.size) {
-                url.searchParams.set('s', props.size + '')
+            const urlObj = new URL(user.avatarURL)
+            if (size) {
+                urlObj.searchParams.set('s', size.toString())
             }
-            avatar = <img className="avatar-icon" src={url.href} data-tooltip={props.tooltip} />
+            url = urlObj.href
         } catch (e) {
             // noop
         }
+        return <img className={`avatar-icon ${className || ''}`} src={url} {...otherProps} />
     }
-    if (!avatar) {
-        return null
-    }
-
-    return (
-        <div onClick={props.onClick} className={`avatar${props.className ? ' ' + props.className : ''}`}>
-            {avatar}
-        </div>
-    )
+    return null
 }
