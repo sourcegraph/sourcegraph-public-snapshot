@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-DEV_PRIVATE_PATH=$PWD/../../dev-private
-
 set -euf -o pipefail
 cd $(dirname "${BASH_SOURCE[0]}")/..
+
+DEV_PRIVATE_PATH=$PWD/../../dev-private
 
 if [ ! -d "$DEV_PRIVATE_PATH" ]; then
     echo "Expected to find sourcegraph-private checked out to $DEV_PRIVATE_PATH, but path wasn't a directory" 1>&2
