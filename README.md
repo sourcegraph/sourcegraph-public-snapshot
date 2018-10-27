@@ -62,7 +62,7 @@ The `docs` folder has additional documentation for developing and understanding 
 - [GraphQL API](./doc/dev/graphql_api.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
 
-### Licensing
+### License
 
 Sourcegraph OSS is available freely under the [Apache 2 license](LICENSE.apache). Sourcegraph OSS
 comprises all files in this repository except those in the `enterprise/` directory.
