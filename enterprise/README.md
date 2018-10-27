@@ -4,17 +4,21 @@
 [![codecov](https://codecov.io/gh/sourcegraph/enterprise/branch/master/graph/badge.svg?token=itk6ydR7l3)](https://codecov.io/gh/sourcegraph/enterprise)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 
-This repository contains all of the Sourcegraph Enterprise code.
-
-## Project layout
-
-- The main Sourcegraph codebase is open source, see [github.com/sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph).
-- This codebase just wraps the open source codebase and links in some private code for enterprise features.
-- Only the enterprise codebase is published to e.g. Docker Hub. Enterprise features are behind paywalls (or good-faith). The open-source codebase is not published on Docker Hub (this avoids confusion and keeps the upgrade/downgrade process from open source <-> enterprise easy).
+This directory contains all of the Sourcegraph Enterprise code.
 
 ## Dev
 
-See [README.dev.md](README.dev.md).
+### Build notes
+
+**IMPORTANT:** Commands that build enterprise targets (e.g., `go build`, `yarn`,
+`enterprise/dev/go-install.sh`) should always be run with the `enterprise` directory as the current
+working directory. Otherwise, build tools like `yarn` and `go` may try to update the root
+`package.json` and `go.mod` files as a side effect, instead of updating `enterprise/package.json`
+and `enterprise/go.mod`.
+
+The OSS web app is `yarn link`ed into `enterprise/node_modules`. It will run both the build of the
+enterprise webapp as well as the part of the build for the OSS repo that generates the distributed
+files for the npm package.
 
 ### Updating dependencies
 
