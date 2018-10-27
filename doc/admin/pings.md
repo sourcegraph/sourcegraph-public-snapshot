@@ -1,6 +1,6 @@
 # Pings
 
-Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, click **Admin** in the top right of any page on your instance, and go to **Pings** in the left side menu. (The URL is `https://sourcegraph.example.com/site-admin/pings`.)
+Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance. (The URL is `https://sourcegraph.example.com/site-admin/pings`.)
 
 - Sourcegraph version string
 - Deployment type (single-node or Kubernetes cluster)

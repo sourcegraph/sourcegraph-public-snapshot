@@ -14,7 +14,7 @@ Instead, if you exceed the number of users on the license, Sourcegraph will true
 
 If you want to prevent the retroactive charge, you can upgrade your license to cover a larger number of users at any time. This will allow you only pay for new users as they start using Sourcegraph, and not for the full previous license term.
 
-See your license status any time by clicking **Admin** in the top right of any page, and going to **License** in the left side menu. (The URL is `https://sourcegraph.example.com/site-admin/license`.)
+See your license status any time on the **Site admin > License** page. (The URL is `https://sourcegraph.example.com/site-admin/license`.)
 
 Example Sourcegraph Enterprise license status:
 ![True up pricing summary example](img/true-up-pricing-summary.png.md)
