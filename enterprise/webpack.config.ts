@@ -10,7 +10,7 @@ import * as webpack from 'webpack'
 
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
-const monacoEditorPaths = [path.resolve(__dirname, 'node_modules', 'monaco-editor')]
+const monacoEditorPaths = [path.resolve(path.dirname(__dirname), 'node_modules', 'monaco-editor')]
 
 // Never timeout idle workers when running with webpack-serve. Ideally this behavior would also
 // apply when running webpack-command with the --watch flag, but there is no general way to
