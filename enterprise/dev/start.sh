@@ -6,7 +6,7 @@ cd $(dirname "${BASH_SOURCE[0]}")/..
 DEV_PRIVATE_PATH=$PWD/../../dev-private
 
 if [ ! -d "$DEV_PRIVATE_PATH" ]; then
-    echo "Expected to find sourcegraph-private checked out to $DEV_PRIVATE_PATH, but path wasn't a directory" 1>&2
+    echo "Expected to find github.com/sourcegraph/dev-private checked out to $DEV_PRIVATE_PATH, but path wasn't a directory" 1>&2
     exit 1
 fi
 
