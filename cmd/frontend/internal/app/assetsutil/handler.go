@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/assets"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assets"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sqs/httpgzip"
 )
