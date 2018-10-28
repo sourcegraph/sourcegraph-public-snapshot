@@ -971,10 +971,10 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/extensions-client-common@^10.4.0":
-  version "10.4.0"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.4.0.tgz#2ac208724a9a18023a595a52f5c25338b75be8e7"
-  integrity sha512-7mIJ81htQKBwDXmlrDxMxGk9JSeD+hWBlf5N0K9TT+0JghsBZfqYhwAJCACVklSRYyzzKLztAzh920B5P8c63A==
+"@sourcegraph/extensions-client-common@^10.4.1":
+  version "10.4.1"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.4.1.tgz#2f40925509e9c6ce2d177e3a329a530290f79a69"
+  integrity sha512-K8T4vfmhV6y/4QVcKyLahuBBOC15/YXzO9y/ggxekw/EDnqF2tXjMxQHg62EM8sM2p+F28pvs2aDZAI0QOMEyw==
   dependencies:
     "@slimsag/react-shortcuts" "^1.2.0"
     bootstrap "^4.1.3"
@@ -984,7 +984,7 @@
     react-router-dom "^4.3.1"
     reactstrap "^6.4.0"
     rxjs "^6.3.2"
-    sourcegraph "^18.0.0"
+    sourcegraph "^18.2.0"
     string-score "^1.0.1"
     ts-key-enum "^2.0.0"
 
@@ -10039,14 +10039,6 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.1:
   version "0.6.1"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.6.1.tgz#74722af32e9614e9c287a8d0bbde48b5e2f1a263"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
-
-sourcegraph@^18.0.0:
-  version "18.0.1"
-  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.0.1.tgz#7e741c1521337cb799fc0f8f1ecc6dd8158aa504"
-  integrity sha512-fhrbx6v0s0sAcdiO5VoxI/es0bhTy5npksT+EHENUj94L2KcRj39qlH4RYwutZgn7K/dirnX7tso/H9K9+c0Lw==
-  dependencies:
-    minimatch "^3.0.4"
-    rxjs "^6.3.2"
 
 sourcegraph@^18.2.0:
   version "18.2.0"
