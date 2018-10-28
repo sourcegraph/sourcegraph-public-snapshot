@@ -5,7 +5,7 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import contributionSchema from 'sourcegraph/lib/protocol/contribution.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
-import jsonSchemaMetaSchema from '../schema/json-schema.schema.json'
+import jsonSchemaMetaSchema from '../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../schema/settings.schema.json'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -32,7 +32,7 @@ export interface Props {
     onDidSave?: () => void
 }
 
-interface State {}
+interface State { }
 
 /**
  * A JSON settings editor using the Monaco editor.
@@ -252,19 +252,19 @@ export function toMonacoEdits(
 export type ConfigInsertionFunction = (
     configJSON: string
 ) => {
-    /** The edits to make to the input configuration to insert the new configuration. */
-    edits: jsonc.Edit[]
+        /** The edits to make to the input configuration to insert the new configuration. */
+        edits: jsonc.Edit[]
 
-    /** Select text in inserted JSON. */
-    selectText?: string
+        /** Select text in inserted JSON. */
+        selectText?: string
 
-    /**
-     * If set, the selection is an empty selection that begins at the left-hand match of selectText plus this
-     * offset. For example, if selectText is "foo" and cursorOffset is 2, then the final selection will be a cursor
-     * "|" positioned as "fo|o".
-     */
-    cursorOffset?: number
-}
+        /**
+         * If set, the selection is an empty selection that begins at the left-hand match of selectText plus this
+         * offset. For example, if selectText is "foo" and cursorOffset is 2, then the final selection will be a cursor
+         * "|" positioned as "fo|o".
+         */
+        cursorOffset?: number
+    }
 
 export function addEditorAction(
     inputEditor: monaco.editor.IStandaloneCodeEditor,

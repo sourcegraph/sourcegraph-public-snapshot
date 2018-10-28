@@ -119,7 +119,7 @@ export async function graphQLTypes(): Promise<void> {
 export async function schema(): Promise<void> {
     await Promise.all([mkdirp(__dirname + '/src/schema'), mkdirp(__dirname + '/dist/schema')])
     await Promise.all(
-        ['json-schema', 'settings', 'site', 'extension'].map(async file => {
+        ['json-schema-draft-07', 'settings', 'site', 'extension'].map(async file => {
             let schema = await readFile(__dirname + `/schema/${file}.schema.json`, 'utf8')
             // HACK: Rewrite absolute $refs to be relative. They need to be absolute for Monaco to resolve them
             // when the schema is in a oneOf (to be merged with extension schemas).
