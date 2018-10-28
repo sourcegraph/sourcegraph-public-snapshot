@@ -1,6 +1,6 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import React from 'react'
 import { Link } from 'react-router-dom'
+import * as GQL from '../../../../src/backend/graphqlschema'
 import { ProductSubscriptionLabel } from '../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 
 export const ProductSubscriptionBilling: React.SFC<{

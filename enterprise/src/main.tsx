@@ -3,14 +3,14 @@
 // Order is important here
 // Don't remove the empty lines between these imports
 
-import '@sourcegraph/webapp/dist/polyfills'
+import '../../src/polyfills'
 
-import '@sourcegraph/webapp/dist/highlight'
+import '../../src/highlight'
 
-import { keybindings } from '@sourcegraph/webapp/dist/keybindings'
-import { SourcegraphWebApp } from '@sourcegraph/webapp/dist/SourcegraphWebApp'
 import React from 'react'
 import { render } from 'react-dom'
+import { keybindings } from '../../src/keybindings'
+import { SourcegraphWebApp } from '../../src/SourcegraphWebApp'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'

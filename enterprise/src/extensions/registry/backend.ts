@@ -1,10 +1,10 @@
-import { queryGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
-import { gql, mutateGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
-import { RegistryPublisher } from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { createAggregateError } from '@sourcegraph/webapp/dist/util/errors'
 import { Observable, of } from 'rxjs'
 import { map, mapTo, switchMap } from 'rxjs/operators'
+import { queryGraphQL } from '../../../../src/backend/graphql'
+import { gql, mutateGraphQL } from '../../../../src/backend/graphql'
+import { RegistryPublisher } from '../../../../src/backend/graphqlschema'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { createAggregateError } from '../../../../src/util/errors'
 
 export function deleteRegistryExtensionWithConfirmation(extension: GQL.ID): Observable<boolean> {
     return of(window.confirm('Really delete this extension from the extension registry?')).pipe(

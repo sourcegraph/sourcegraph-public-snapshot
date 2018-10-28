@@ -1,4 +1,4 @@
-import { LayoutRouteProps, routes } from '@sourcegraph/webapp/dist/routes'
+import { LayoutRouteProps, routes } from '../../src/routes'
 import React from 'react'
 import { NewProductSubscriptionPageOrRedirectUser } from './user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'
 

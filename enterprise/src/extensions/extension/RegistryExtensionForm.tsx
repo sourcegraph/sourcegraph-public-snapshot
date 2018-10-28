@@ -1,12 +1,12 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
+import * as React from 'react'
+import * as GQL from '../../../../src/backend/graphqlschema'
 import {
     EXTENSION_NAME_MAX_LENGTH,
     EXTENSION_NAME_VALID_PATTERN,
     publisherName,
     RegistryPublisher,
-} from '@sourcegraph/webapp/dist/extensions/extension/extension'
-import { ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
-import * as React from 'react'
+} from '../../../../src/extensions/extension/extension'
+import { ErrorLike, isErrorLike } from '../../../../src/util/errors'
 
 export const RegistryPublisherFormGroup: React.SFC<{
     className?: string

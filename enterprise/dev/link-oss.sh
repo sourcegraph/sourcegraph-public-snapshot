@@ -8,12 +8,6 @@ if [ ! -d ../sourcegraph ]; then
     exit 1
 fi
 
-echo "Linking OSS webapp"
-pushd ../sourcegraph
-yarn link
-popd
-yarn link @sourcegraph/webapp
-
 echo "Linking OSS backend"
 go mod edit -replace=github.com/sourcegraph/sourcegraph=../sourcegraph
 

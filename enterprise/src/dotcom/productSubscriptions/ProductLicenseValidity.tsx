@@ -1,6 +1,6 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import format from 'date-fns/format'
 import React from 'react'
+import * as GQL from '../../../../src/backend/graphqlschema'
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../productSubscription/helpers'
 
 /**

@@ -1,6 +1,6 @@
-import { numberWithCommas, pluralize } from '@sourcegraph/webapp/dist/util/strings'
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import isAfter from 'date-fns/isAfter'
+import { numberWithCommas, pluralize } from '../../../src/util/strings'
 
 /**
  * Returns "N users" (properly pluralized and with commas added to N as needed).

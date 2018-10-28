@@ -1,6 +1,6 @@
-import { userAreaRoutes } from '@sourcegraph/webapp/dist/user/area/routes'
-import { UserAreaRoute } from '@sourcegraph/webapp/dist/user/area/UserArea'
 import React from 'react'
+import { userAreaRoutes } from '../../../src/user/area/routes'
+import { UserAreaRoute } from '../../../src/user/area/UserArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { UserSubscriptionsEditProductSubscriptionPage } from './productSubscriptions/UserSubscriptionsEditProductSubscriptionPage'
 import { UserSubscriptionsNewProductSubscriptionPage } from './productSubscriptions/UserSubscriptionsNewProductSubscriptionPage'

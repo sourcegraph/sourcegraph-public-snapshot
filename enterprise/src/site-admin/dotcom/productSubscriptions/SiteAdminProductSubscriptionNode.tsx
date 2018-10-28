@@ -1,7 +1,7 @@
-import { gql } from '@sourcegraph/webapp/dist/backend/graphql'
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { LinkOrSpan } from '@sourcegraph/webapp/dist/components/LinkOrSpan'
 import * as React from 'react'
+import { gql } from '../../../../../src/backend/graphql'
+import * as GQL from '../../../../../src/backend/graphqlschema'
+import { LinkOrSpan } from '../../../../../src/components/LinkOrSpan'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 

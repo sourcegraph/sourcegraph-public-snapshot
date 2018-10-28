@@ -1,6 +1,6 @@
-import { userAccountAreaRoutes } from '@sourcegraph/webapp/dist/user/account/routes'
-import { UserAccountAreaRoute } from '@sourcegraph/webapp/dist/user/account/UserAccountArea'
 import React from 'react'
+import { userAccountAreaRoutes } from '../../../../src/user/account/routes'
+import { UserAccountAreaRoute } from '../../../../src/user/account/UserAccountArea'
 import { UserAccountExternalAccountsPage } from './UserAccountExternalAccountsPage'
 
 export const enterpriseUserAccountAreaRoutes: ReadonlyArray<UserAccountAreaRoute> = [

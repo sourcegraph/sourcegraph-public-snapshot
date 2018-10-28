@@ -1,7 +1,7 @@
-import { ActionItem } from '@sourcegraph/webapp/dist/components/ActionItem'
-import { encodeRepoRev } from '@sourcegraph/webapp/dist/util/url'
 import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
+import { ActionItem } from '../../../../src/components/ActionItem'
+import { encodeRepoRev } from '../../../../src/util/url'
 
 /**
  * A repository header action links to the repository graph area.

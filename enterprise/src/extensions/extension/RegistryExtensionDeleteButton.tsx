@@ -1,11 +1,11 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import { upperFirst } from 'lodash'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { asError, ErrorLike, isErrorLike } from '../../../../src/util/errors'
 import { deleteRegistryExtensionWithConfirmation } from '../registry/backend'
 
 interface RegistryExtensionDeleteButtonProps {

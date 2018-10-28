@@ -1,6 +1,6 @@
-import { withAuthenticatedUser } from '@sourcegraph/webapp/dist/auth/withAuthenticatedUser'
-import { PageTitle } from '@sourcegraph/webapp/dist/components/PageTitle'
 import * as React from 'react'
+import { withAuthenticatedUser } from '../../../../src/auth/withAuthenticatedUser'
+import { PageTitle } from '../../../../src/components/PageTitle'
 
 /** A page for publishing a new release of an extension to the extension registry. */
 export const RegistryExtensionNewReleasePage = withAuthenticatedUser(() => (

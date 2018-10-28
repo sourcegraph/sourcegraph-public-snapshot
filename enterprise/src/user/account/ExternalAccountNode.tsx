@@ -1,13 +1,13 @@
-import { gql, mutateGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { Timestamp } from '@sourcegraph/webapp/dist/components/time/Timestamp'
-import { userURL } from '@sourcegraph/webapp/dist/user'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, filter, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
+import { gql, mutateGraphQL } from '../../../../src/backend/graphql'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { Timestamp } from '../../../../src/components/time/Timestamp'
+import { userURL } from '../../../../src/user'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../src/util/errors'
 
 export const externalAccountFragment = gql`
     fragment ExternalAccountFields on ExternalAccount {

@@ -1,7 +1,7 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { RedirectToUserPage } from '@sourcegraph/webapp/dist/user/account/RedirectToUserPage'
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { RedirectToUserPage } from '../../../../src/user/account/RedirectToUserPage'
 import { UserSubscriptionsNewProductSubscriptionPage } from './UserSubscriptionsNewProductSubscriptionPage'
 
 interface Props extends RouteComponentProps<{}> {
