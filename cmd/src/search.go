@@ -238,13 +238,6 @@ Other tips:
 					searchResults:       result.Search.Results,
 				}
 
-				// HACK: temporary workaround for a bug where ElapsedMilliseconds is nonsensical
-				// when results == 0; Remove this when the bug is fixed and enough time has passed
-				// (internal tracking issue: https://github.com/sourcegraph/sourcegraph/issues/12625)
-				if len(improved.Results) == 0 {
-					improved.ElapsedMilliseconds = 0
-				}
-
 				if *jsonFlag {
 					// Print the formatted JSON.
 					f, err := marshalIndent(improved)
