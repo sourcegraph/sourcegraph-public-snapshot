@@ -116,8 +116,8 @@ func (s *repos) Add(ctx context.Context, uri api.RepoURI) (err error) {
 		// everywhere else, require server admins to explicitly enable repositories.
 		enableAutoAddedRepos := envvar.SourcegraphDotComMode()
 		if err := s.Upsert(ctx, api.InsertRepoOp{
-			URI: result.Repo.URI,
-			// TODO(): what should URL be here?
+			URI:          result.Repo.URI,
+			URL:          result.Repo.VCS.URL,
 			Description:  result.Repo.Description,
 			Fork:         result.Repo.Fork,
 			Archived:     result.Repo.Archived,
