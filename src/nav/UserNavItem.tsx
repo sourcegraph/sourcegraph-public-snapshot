@@ -36,7 +36,11 @@ export class UserNavItem extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <ButtonDropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="nav-link py-0">
-                <DropdownToggle caret={true} className="bg-transparent d-flex align-items-center" nav={true}>
+                <DropdownToggle
+                    caret={true}
+                    className="bg-transparent d-flex align-items-center e2e-user-nav-item-toggle"
+                    nav={true}
+                >
                     {this.props.authenticatedUser.avatarURL ? (
                         <UserAvatar user={this.props.authenticatedUser} size={48} className="icon-inline" />
                     ) : (
@@ -65,7 +69,11 @@ export class UserNavItem extends React.PureComponent<Props, State> {
                     <Link to="/search/searches" className="dropdown-item">
                         Saved searches
                     </Link>
-                    <button type="button" className="dropdown-item" onClick={this.onThemeChange}>
+                    <button
+                        type="button"
+                        className="dropdown-item e2e-user-nav-item__theme"
+                        onClick={this.onThemeChange}
+                    >
                         Use {this.props.isLightTheme ? 'dark' : 'light'} theme
                     </button>
                     <Link to="/help" className="dropdown-item">
