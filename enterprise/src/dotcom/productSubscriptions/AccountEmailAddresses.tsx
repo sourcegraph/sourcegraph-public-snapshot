@@ -1,5 +1,5 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
 import React from 'react'
+import * as GQL from '../../../../src/backend/graphqlschema'
 
 /**
  * Displays an inline list of email addresses for an account.

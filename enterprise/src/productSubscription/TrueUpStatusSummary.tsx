@@ -1,7 +1,7 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { SingleValueCard } from '@sourcegraph/webapp/dist/components/SingleValueCard'
-import { numberWithCommas } from '@sourcegraph/webapp/dist/util/strings'
 import * as React from 'react'
+import * as GQL from '../../../src/backend/graphqlschema'
+import { SingleValueCard } from '../../../src/components/SingleValueCard'
+import { numberWithCommas } from '../../../src/util/strings'
 import { formatUserCount } from '../productSubscription/helpers'
 
 interface Props {

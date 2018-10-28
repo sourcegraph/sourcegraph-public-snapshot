@@ -1,11 +1,11 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { HeroPage } from '@sourcegraph/webapp/dist/components/HeroPage'
-import { ExtensionsAreaRouteContext } from '@sourcegraph/webapp/dist/extensions/ExtensionsArea'
-import { ExtensionsProps } from '@sourcegraph/webapp/dist/extensions/ExtensionsClientCommonContext'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { HeroPage } from '../../../../src/components/HeroPage'
+import { ExtensionsAreaRouteContext } from '../../../../src/extensions/ExtensionsArea'
+import { ExtensionsProps } from '../../../../src/extensions/ExtensionsClientCommonContext'
 import { RegistryNewExtensionPage } from './RegistryNewExtensionPage'
 
 const NotFoundPage = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />

@@ -1,6 +1,6 @@
-import { RepoRevContainerRoute } from '@sourcegraph/webapp/dist/repo/RepoRevContainer'
-import { repoRevContainerRoutes } from '@sourcegraph/webapp/dist/repo/routes'
 import React from 'react'
+import { RepoRevContainerRoute } from '../../../src/repo/RepoRevContainer'
+import { repoRevContainerRoutes } from '../../../src/repo/routes'
 import { RepositoryGraphArea } from './graph/RepositoryGraphArea'
 
 export const enterpriseRepoRevContainerRoutes: ReadonlyArray<RepoRevContainerRoute> = [

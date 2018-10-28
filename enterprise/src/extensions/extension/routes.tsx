@@ -1,6 +1,6 @@
-import { ExtensionAreaRoute } from '@sourcegraph/webapp/dist/extensions/extension/ExtensionArea'
-import { extensionAreaRoutes } from '@sourcegraph/webapp/dist/extensions/extension/routes'
 import React from 'react'
+import { ExtensionAreaRoute } from '../../../../src/extensions/extension/ExtensionArea'
+import { extensionAreaRoutes } from '../../../../src/extensions/extension/routes'
 import { RegistryExtensionOverviewPage } from '../registry/RegistryExtensionOverviewPage'
 import { RegistryExtensionManagePage } from './RegistryExtensionManagePage'
 import { RegistryExtensionNewReleasePage } from './RegistryExtensionNewReleasePage'

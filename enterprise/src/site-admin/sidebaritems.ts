@@ -1,7 +1,7 @@
-import { authGroup, otherGroup, siteAdminSidebarGroups } from '@sourcegraph/webapp/dist/site-admin/sidebaritems'
-import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '@sourcegraph/webapp/dist/site-admin/SiteAdminSidebar'
 import HeartIcon from 'mdi-react/HeartIcon'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
+import { authGroup, otherGroup, siteAdminSidebarGroups } from '../../../src/site-admin/sidebaritems'
+import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../../src/site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
 const registryGroup: SiteAdminSideBarGroup = {

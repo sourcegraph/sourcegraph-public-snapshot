@@ -37,41 +37,42 @@ func main() {
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
-		bk.Cmd("yarn unlink || true"),
-		bk.Cmd("yarn link"),
+		bk.Env("ENTERPRISE", "1"),
 		bk.Cmd("pushd enterprise"),
-		bk.Cmd("yarn link @sourcegraph/webapp"),
 	)
 
 	pipeline.AddStep(":white_check_mark:",
+		bk.Cmd("popd"),
 		bk.Cmd("./dev/check/all.sh"),
+		bk.Cmd("pushd enterprise"),
+		bk.Cmd("./dev/check/all.sh"),
+		bk.Cmd("popd"),
 	)
 
 	pipeline.AddStep(":lipstick:",
+		bk.Cmd("popd"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run prettier"))
 
 	pipeline.AddStep(":typescript:",
+		bk.Cmd("popd"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run tslint"))
 
 	pipeline.AddStep(":stylelint:",
+		bk.Cmd("popd"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run stylelint --quiet"))
 
 	pipeline.AddStep(":webpack:",
+		bk.Cmd("popd"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
-		bk.Cmd("pushd .."),
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("NODE_ENV=production yarn run dist"),
-		bk.Cmd("popd"),
-		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn list --pattern @sourcegraph/webapp"),
 		bk.Cmd("yarn run browserslist"),
 		bk.Cmd("NODE_ENV=production yarn run build --color"),
 		bk.Cmd("GITHUB_TOKEN= yarn run bundlesize"))
@@ -81,7 +82,6 @@ func main() {
 	// 	bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 	// 	bk.Env("FORCE_COLOR", "1"),
 	// 	bk.Cmd("yarn --frozen-lockfile"),
-	//  bk.Cmd("yarn list --pattern @sourcegraph/webapp"),
 	// 	bk.Cmd("yarn run cover"),
 	// 	bk.Cmd("node_modules/.bin/nyc report -r json"),
 	// 	bk.ArtifactPaths("coverage/coverage-final.json"))
@@ -191,12 +191,7 @@ func main() {
 			bk.Concurrency(1),
 			bk.Env("SOURCEGRAPH_BASE_URL", "https://sourcegraph.sgdev.org"),
 			bk.Env("FORCE_COLOR", "1"),
-			bk.Cmd("pushd .."),
-			bk.Cmd("yarn"),
-			bk.Cmd("yarn run dist"),
-			bk.Cmd("popd"),
 			bk.Cmd("yarn --frozen-lockfile"),
-			bk.Cmd("yarn list --pattern @sourcegraph/webapp"),
 			bk.Cmd("yarn run test-e2e-sgdev --retries 5"),
 			bk.ArtifactPaths("./puppeteer/*.png"))
 		pipeline.AddWait()

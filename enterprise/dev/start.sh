@@ -10,12 +10,6 @@ if [ ! -d "$DEV_PRIVATE_PATH" ]; then
     exit 1
 fi
 
-echo "Linking OSS webapp to node_modules"
-pushd ../
-yarn link
-popd
-yarn link @sourcegraph/webapp
-
 echo "Installing enterprise web dependencies..."
 yarn --check-files
 

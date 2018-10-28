@@ -1,6 +1,3 @@
-import { gql, mutateGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React from 'react'
@@ -16,6 +13,9 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
+import { gql, mutateGraphQL } from '../../../../../src/backend/graphql'
+import * as GQL from '../../../../../src/backend/graphqlschema'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../src/util/errors'
 
 interface Props {
     /** The product subscription to show a billing link for. */

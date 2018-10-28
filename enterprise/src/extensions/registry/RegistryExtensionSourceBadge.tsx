@@ -1,8 +1,8 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { LinkOrSpan } from '@sourcegraph/webapp/dist/components/LinkOrSpan'
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { LinkOrSpan } from '../../../../src/components/LinkOrSpan'
 
 export const RegistryExtensionSourceBadge: React.SFC<{
     extension: Pick<GQL.IRegistryExtension, 'remoteURL' | 'registryName' | 'isLocal'>

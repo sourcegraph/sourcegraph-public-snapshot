@@ -1,6 +1,6 @@
-import { ExtensionsAreaHeaderActionButton } from '@sourcegraph/webapp/dist/extensions/ExtensionsAreaHeader'
-import { extensionsAreaHeaderActionButtons } from '@sourcegraph/webapp/dist/extensions/extensionsAreaHeaderActionButtons'
 import AddIcon from 'mdi-react/AddIcon'
+import { ExtensionsAreaHeaderActionButton } from '../../../src/extensions/ExtensionsAreaHeader'
+import { extensionsAreaHeaderActionButtons } from '../../../src/extensions/extensionsAreaHeaderActionButtons'
 
 export const enterpriseExtensionsAreaHeaderActionButtons: ReadonlyArray<ExtensionsAreaHeaderActionButton> = [
     ...extensionsAreaHeaderActionButtons,

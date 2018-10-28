@@ -1,13 +1,13 @@
-import { gql, mutateGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { Form } from '@sourcegraph/webapp/dist/components/Form'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import addDays from 'date-fns/addDays'
 import endOfDay from 'date-fns/endOfDay'
 import { upperFirst } from 'lodash'
 import * as React from 'react'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { gql, mutateGraphQL } from '../../../../../src/backend/graphql'
+import * as GQL from '../../../../../src/backend/graphqlschema'
+import { Form } from '../../../../../src/components/Form'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../../src/util/errors'
 import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 
 interface Props {

@@ -1,7 +1,7 @@
-import { RepoHeaderActionButton } from '@sourcegraph/webapp/dist/repo/RepoHeader'
-import { repoHeaderActionButtons } from '@sourcegraph/webapp/dist/repo/repoHeaderActionButtons'
-import { encodeRepoRev } from '@sourcegraph/webapp/dist/util/url'
 import GlobeIcon from 'mdi-react/GlobeIcon'
+import { RepoHeaderActionButton } from '../../../src/repo/RepoHeader'
+import { repoHeaderActionButtons } from '../../../src/repo/repoHeaderActionButtons'
+import { encodeRepoRev } from '../../../src/util/url'
 
 const enableRepositoryGraph = localStorage.getItem('repositoryGraph') !== null
 

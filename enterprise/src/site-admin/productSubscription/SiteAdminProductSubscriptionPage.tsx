@@ -1,8 +1,8 @@
-import { PageTitle } from '@sourcegraph/webapp/dist/components/PageTitle'
-import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
+import { PageTitle } from '../../../../src/components/PageTitle'
+import { eventLogger } from '../../../../src/tracking/eventLogger'
 import { ProductSubscriptionStatus } from './ProductSubscriptionStatus'
 
 interface Props extends RouteComponentProps<{}> {}

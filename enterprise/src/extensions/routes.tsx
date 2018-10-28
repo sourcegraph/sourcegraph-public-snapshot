@@ -1,6 +1,6 @@
-import { ExtensionsAreaRoute } from '@sourcegraph/webapp/dist/extensions/ExtensionsArea'
-import { extensionsAreaRoutes } from '@sourcegraph/webapp/dist/extensions/routes'
 import React from 'react'
+import { ExtensionsAreaRoute } from '../../../src/extensions/ExtensionsArea'
+import { extensionsAreaRoutes } from '../../../src/extensions/routes'
 import { RegistryArea } from './registry/RegistryArea'
 
 export const enterpriseExtensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute> = [

@@ -1,7 +1,7 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { userURL } from '@sourcegraph/webapp/dist/user'
 import React from 'react'
 import { Link } from 'react-router-dom'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { userURL } from '../../../../src/user'
 
 /**
  * Displays the account name as a link.

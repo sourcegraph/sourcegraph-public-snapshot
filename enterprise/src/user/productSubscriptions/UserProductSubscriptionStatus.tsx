@@ -1,7 +1,7 @@
-import { CopyableText } from '@sourcegraph/webapp/dist/components/CopyableText'
 import InformationIcon from 'mdi-react/InformationIcon'
 import KeyIcon from 'mdi-react/KeyIcon'
 import React from 'react'
+import { CopyableText } from '../../../../src/components/CopyableText'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { formatUserCount, mailtoSales } from '../../productSubscription/helpers'
 import { LicenseGenerationKeyWarning } from '../../productSubscription/LicenseGenerationKeyWarning'

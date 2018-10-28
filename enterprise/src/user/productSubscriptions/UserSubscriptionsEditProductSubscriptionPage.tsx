@@ -1,9 +1,4 @@
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { gql, mutateGraphQL, queryGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { PageTitle } from '@sourcegraph/webapp/dist/components/PageTitle'
-import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
-import { asError, createAggregateError, ErrorLike, isErrorLike } from '@sourcegraph/webapp/dist/util/errors'
 import ArrowLeftIcon from 'mdi-react/ArrowLeftIcon'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -20,6 +15,11 @@ import {
     tap,
     withLatestFrom,
 } from 'rxjs/operators'
+import { gql, mutateGraphQL, queryGraphQL } from '../../../../src/backend/graphql'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { PageTitle } from '../../../../src/components/PageTitle'
+import { eventLogger } from '../../../../src/tracking/eventLogger'
+import { asError, createAggregateError, ErrorLike, isErrorLike } from '../../../../src/util/errors'
 import { ProductSubscriptionForm, ProductSubscriptionFormData } from './ProductSubscriptionForm'
 
 interface Props extends RouteComponentProps<{ subscriptionUUID: string }> {

@@ -1,14 +1,14 @@
-import { gql, queryGraphQL } from '@sourcegraph/webapp/dist/backend/graphql'
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { FilteredConnection } from '@sourcegraph/webapp/dist/components/FilteredConnection'
-import { PageTitle } from '@sourcegraph/webapp/dist/components/PageTitle'
-import { eventLogger } from '@sourcegraph/webapp/dist/tracking/eventLogger'
-import { createAggregateError } from '@sourcegraph/webapp/dist/util/errors'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { gql, queryGraphQL } from '../../../../src/backend/graphql'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { FilteredConnection } from '../../../../src/components/FilteredConnection'
+import { PageTitle } from '../../../../src/components/PageTitle'
+import { eventLogger } from '../../../../src/tracking/eventLogger'
+import { createAggregateError } from '../../../../src/util/errors'
 import {
     productSubscriptionFragment,
     ProductSubscriptionNode,

@@ -1,6 +1,6 @@
-import * as GQL from '@sourcegraph/webapp/dist/backend/graphqlschema'
-import { numberWithCommas } from '@sourcegraph/webapp/dist/util/strings'
 import React from 'react'
+import * as GQL from '../../../../src/backend/graphqlschema'
+import { numberWithCommas } from '../../../../src/util/strings'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 
 /**

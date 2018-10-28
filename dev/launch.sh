@@ -66,10 +66,9 @@ export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
 export ZOEKT_HOST=localhost:6070
 
-# webpack-serve is a proxy running on port 3080 that (1) serves assets, waiting to respond until
-# they are (re)built and (2) otherwise passes through to Sourcegraph running on port 3081. That is
-# why Sourcegraph listens on 3081 despite the appURL having port 3080.
-export WEBPACK_SERVE=1
+# webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
+# until they are (re)built and (2) otherwise passes through to Sourcegraph running on port
+# 3081. That is why Sourcegraph listens on 3081 despite the appURL having port 3080.
 export SRC_HTTP_ADDR=":3081"
 
 # we want to keep config.json, but allow local config.
