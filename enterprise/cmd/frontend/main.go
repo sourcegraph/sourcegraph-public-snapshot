@@ -1,4 +1,5 @@
 //docker:user sourcegraph
+//docker:env CONFIGURATION_MODE=server
 
 // Package frontend contains the enterprise frontend implementation.
 //
