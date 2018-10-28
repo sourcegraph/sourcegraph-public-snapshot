@@ -9,6 +9,7 @@ import { ExtContext } from './api/context'
 import { ExtDocuments } from './api/documents'
 import { ExtLanguageFeatures } from './api/languageFeatures'
 import { ExtSearch } from './api/search'
+import { ExtViews } from './api/views'
 import { ExtWindows } from './api/windows'
 import { Location } from './types/location'
 import { Position } from './types/position'
@@ -77,6 +78,9 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
     const windows = new ExtWindows(proxy('windows'), proxy('codeEditor'), documents)
     handleRequests(connection, 'windows', windows)
 
+    const views = new ExtViews(proxy('views'))
+    handleRequests(connection, 'views', views)
+
     const configuration = new ExtConfiguration<any>(proxy('configuration'))
     handleRequests(connection, 'configuration', configuration)
 
@@ -107,6 +111,7 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
             get windows(): sourcegraph.Window[] {
                 return windows.getAll()
             },
+            createPanelView: id => views.createPanelView(id),
         },
 
         workspace: {

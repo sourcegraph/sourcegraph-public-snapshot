@@ -8,6 +8,7 @@ import { TextDocumentDecorationProviderRegistry } from './providers/decoration'
 import { TextDocumentHoverProviderRegistry } from './providers/hover'
 import { TextDocumentLocationProviderRegistry, TextDocumentReferencesProviderRegistry } from './providers/location'
 import { QueryTransformerRegistry } from './providers/queryTransformer'
+import { ViewProviderRegistry } from './providers/view'
 
 /**
  * Registries is a container for all provider registries.
@@ -27,4 +28,5 @@ export class Registries<X extends Extension, C extends ConfigurationCascade> {
     public readonly textDocumentHover = new TextDocumentHoverProviderRegistry()
     public readonly textDocumentDecoration = new TextDocumentDecorationProviderRegistry()
     public readonly queryTransformer = new QueryTransformerRegistry()
+    public readonly views = new ViewProviderRegistry()
 }

@@ -6,6 +6,10 @@
 declare module 'sourcegraph' {
     // tslint:disable member-access
 
+    export interface Unsubscribable {
+        unsubscribe(): void
+    }
+
     export class URI {
         static parse(value: string): URI
         static file(path: string): URI
@@ -480,6 +484,21 @@ declare module 'sourcegraph' {
     }
 
     /**
+     * A panel view created by {@link app.registerPanelView}.
+     */
+    export interface PanelView extends Unsubscribable {
+        /**
+         * The title of the panel view.
+         */
+        title: string
+
+        /**
+         * The content to show in the panel view. Markdown is supported.
+         */
+        content: string
+    }
+
+    /**
      * The client application that is running the extension.
      */
     export namespace app {
@@ -495,6 +514,18 @@ declare module 'sourcegraph' {
          * @readonly
          */
         export const windows: Window[]
+
+        /**
+         * Create a panel view for the view contribution with the given {@link id}.
+         *
+         * @todo Consider requiring extensions to specify these statically in package.json's contributions section
+         * to improve the activation experience.
+         *
+         * @param id The ID of the view. This may be shown to the user (e.g., in the URL fragment when the panel is
+         * active).
+         * @returns The panel view.
+         */
+        export function createPanelView(id: string): PanelView
     }
 
     /**
@@ -885,9 +916,5 @@ declare module 'sourcegraph' {
          *          the subscription to stop calling {@link next} with values.
          */
         subscribe(next: (value: T) => void): Unsubscribable
-    }
-
-    export interface Unsubscribable {
-        unsubscribe(): void
     }
 }

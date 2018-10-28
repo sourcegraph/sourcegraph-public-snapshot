@@ -20,6 +20,7 @@ import { ClientContext } from './api/context'
 import { ClientDocuments } from './api/documents'
 import { ClientLanguageFeatures } from './api/languageFeatures'
 import { Search } from './api/search'
+import { ClientViews } from './api/views'
 import { ClientWindows } from './api/windows'
 import { applyContextUpdate, EMPTY_CONTEXT } from './context/context'
 import { EMPTY_ENVIRONMENT, Environment } from './environment'
@@ -249,6 +250,7 @@ export class Controller<X extends Extension, C extends ConfigurationCascade> imp
                     })
             )
         )
+        subscription.add(new ClientViews(client, this.registries.views))
         subscription.add(new ClientCodeEditor(client, this.registries.textDocumentDecoration))
         subscription.add(
             new ClientDocuments(

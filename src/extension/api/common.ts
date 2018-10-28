@@ -38,7 +38,7 @@ export class ProviderMap<B> {
      */
     public get<P extends B>(id: number): P {
         const provider = this.map.get(id) as P
-        if (!provider) {
+        if (provider === undefined) {
             throw new Error(`no provider with ID ${id}`)
         }
         return provider

@@ -216,3 +216,14 @@ export interface MenuItemContribution {
      */
     group?: string
 }
+
+/** The containers to which an extension can contribute views. */
+export enum ContributableViewContainer {
+    /**
+     * A view that is displayed in the panel for a window.
+     *
+     * Clients: The client should render this as a resizable panel in a window, with multiple tabs to switch
+     * between different panel views.
+     */
+    Panel = 'window/panel',
+}

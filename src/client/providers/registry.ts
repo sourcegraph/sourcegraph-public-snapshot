@@ -2,7 +2,7 @@ import { BehaviorSubject, Observable, Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 /** A registry entry for a registered provider. */
-interface Entry<O, P> {
+export interface Entry<O, P> {
     registrationOptions: O
     provider: P
 }
