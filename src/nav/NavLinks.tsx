@@ -98,6 +98,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     extensionsController={this.props.extensionsController}
                     extensions={this.props.extensions}
                     toggleVisibilityKeybinding={this.props.keybindings.commandPalette}
+                    location={this.props.location}
                 />
                 {this.props.authenticatedUser && (
                     <li className="nav-item">
