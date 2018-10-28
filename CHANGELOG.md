@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The user account sidebar "Password" link (to the change-password form) is now shown correctly.
 - Fixed an issue where GitHub rate limits were underutilized if the remaining
   rate limit dropped below 150.
+- Fixed an issue where GraphQL field `elapsedMilliseconds` returned invalid value on empty searches
 
 ### Removed
 
