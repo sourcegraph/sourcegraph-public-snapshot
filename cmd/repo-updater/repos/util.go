@@ -50,26 +50,19 @@ func cachedTransportWithCertTrusted(cert string) (http.RoundTripper, error) {
 	}, nil
 }
 
-// A repoCreateOrUpdateRequest is a RepoCreateOrUpdateRequest, from the API,
-// plus a specific URL we'd like to use for it.
-type repoCreateOrUpdateRequest struct {
-	api.RepoCreateOrUpdateRequest
-	URL string // the repository's Git remote URL
-}
-
 // createEnableUpdateRepos receives requests on the provided channel. The
 // source argument should be a distinctive string identifying the configuration
 // being updated, so repo-updater can detect when repositories are dropped from
 // a given source.
-func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan repoCreateOrUpdateRequest) {
+func createEnableUpdateRepos(ctx context.Context, source string, repoChan <-chan api.RepoCreateOrUpdateRequest) {
 	newList := make(sourceRepoList)
 
-	do := func(op repoCreateOrUpdateRequest) {
-		if op.RepoCreateOrUpdateRequest.RepoURI == "" {
-			log15.Warn("ignoring invalid request to create or enable repo with empty name", "source", source, "repo", op.RepoCreateOrUpdateRequest.ExternalRepo)
+	do := func(op api.RepoCreateOrUpdateRequest) {
+		if op.RepoURI == "" {
+			log15.Warn("ignoring invalid request to create or enable repo with empty name", "source", source, "repo", op.ExternalRepo)
 			return
 		}
-		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op.RepoCreateOrUpdateRequest)
+		createdRepo, err := api.InternalClient.ReposCreateIfNotExists(ctx, op)
 		if err != nil {
 			log15.Warn("Error creating or updating repository", "repo", op.RepoURI, "error", err)
 			return

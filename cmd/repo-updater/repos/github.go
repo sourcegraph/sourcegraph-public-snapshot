@@ -288,21 +288,19 @@ func githubRepositoryToRepoPath(conn *githubConnection, repo *github.Repository)
 func updateGitHubRepositories(ctx context.Context, conn *githubConnection) {
 	repos := conn.listAllRepositories(ctx)
 
-	repoChan := make(chan repoCreateOrUpdateRequest)
+	repoChan := make(chan api.RepoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("github:%s", conn.config.Token), repoChan)
 	for repo := range repos {
 		// log15.Debug("github sync: create/enable/update repo", "repo", repo.NameWithOwner)
-		repoChan <- repoCreateOrUpdateRequest{
-			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI:      githubRepositoryToRepoPath(conn, repo),
-				ExternalRepo: GitHubExternalRepoSpec(repo, *conn.baseURL),
-				Description:  repo.Description,
-				Fork:         repo.IsFork,
-				Archived:     repo.IsArchived,
-				Enabled:      conn.config.InitialRepositoryEnablement,
-			},
-			URL: conn.authenticatedRemoteURL(repo),
+		repoChan <- api.RepoCreateOrUpdateRequest{
+			RepoURI:      githubRepositoryToRepoPath(conn, repo),
+			ExternalRepo: GitHubExternalRepoSpec(repo, *conn.baseURL),
+			Description:  repo.Description,
+			Fork:         repo.IsFork,
+			Archived:     repo.IsArchived,
+			Enabled:      conn.config.InitialRepositoryEnablement,
+			URL:          conn.authenticatedRemoteURL(repo),
 		}
 	}
 }

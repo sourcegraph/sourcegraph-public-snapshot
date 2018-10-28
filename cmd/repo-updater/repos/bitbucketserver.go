@@ -237,7 +237,7 @@ func RunBitbucketServerRepositorySyncWorker(ctx context.Context) {
 
 // updateBitbucketServerRepos ensures that all provided repositories exist in the repository table.
 func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnection) {
-	repoChan := make(chan repoCreateOrUpdateRequest)
+	repoChan := make(chan api.RepoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("bitbucket:%s", conn.config.Username), repoChan)
 	for r := range conn.listAllRepos(ctx) {
@@ -250,15 +250,13 @@ func updateBitbucketServerRepos(ctx context.Context, conn *bitbucketServerConnec
 			continue
 		}
 
-		repoChan <- repoCreateOrUpdateRequest{
-			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI:      ri.URI,
-				ExternalRepo: ri.ExternalRepo,
-				Description:  ri.Description,
-				Fork:         ri.Fork,
-				Enabled:      conn.config.InitialRepositoryEnablement,
-			},
-			URL: ri.VCS.URL,
+		repoChan <- api.RepoCreateOrUpdateRequest{
+			RepoURI:      ri.URI,
+			ExternalRepo: ri.ExternalRepo,
+			Description:  ri.Description,
+			Fork:         ri.Fork,
+			Enabled:      conn.config.InitialRepositoryEnablement,
+			URL:          ri.VCS.URL,
 		}
 	}
 }

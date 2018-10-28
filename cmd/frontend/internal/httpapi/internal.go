@@ -44,6 +44,7 @@ func serveReposCreateIfNotExists(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = backend.Repos.Upsert(r.Context(), api.InsertRepoOp{
 		URI:          repo.RepoURI,
+		URL:          repo.URL,
 		Description:  repo.Description,
 		Fork:         repo.Fork,
 		Archived:     repo.Archived,

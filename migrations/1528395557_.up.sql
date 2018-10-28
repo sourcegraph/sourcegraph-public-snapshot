@@ -1,0 +1,1 @@
+ALTER TABLE repo ADD COLUMN url text;

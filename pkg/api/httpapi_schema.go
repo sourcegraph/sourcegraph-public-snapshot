@@ -25,6 +25,9 @@ type RepoCreateOrUpdateRequest struct {
 	// optional during the transition period.
 	ExternalRepo *ExternalRepoSpec
 
+	// URL is the clone url for the repo.
+	URL string
+
 	// RepoURI is the repository's URI.
 	//
 	// TODO(sqs): Add a way for callers to request that this repository's URI be renamed.

@@ -54,6 +54,7 @@ func (Repo) Fork() bool {
 // InsertRepoOp represents an operation to insert a repository.
 type InsertRepoOp struct {
 	URI          RepoURI
+	URL          string
 	Description  string
 	Fork         bool
 	Archived     bool

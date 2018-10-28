@@ -177,7 +177,7 @@ func awsCodeCommitRepositoryToRepoPath(conn *awsCodeCommitConnection, repo *awsc
 func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitConnection) {
 	repos := conn.listAllRepositories(ctx)
 
-	repoChan := make(chan repoCreateOrUpdateRequest)
+	repoChan := make(chan api.RepoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("aws:%s", conn.config.AccessKeyID), repoChan)
 	for repo := range repos {
@@ -187,14 +187,12 @@ func updateAWSCodeCommitRepositories(ctx context.Context, conn *awsCodeCommitCon
 			log15.Error("Error generating remote URL for AWS CodeCommit repository. Skipping.", "repo", repo.ARN, "error", err)
 			continue
 		}
-		repoChan <- repoCreateOrUpdateRequest{
-			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI:      awsCodeCommitRepositoryToRepoPath(conn, repo),
-				ExternalRepo: AWSCodeCommitExternalRepoSpec(repo, createAWSCodeCommitServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)),
-				Description:  repo.Description,
-				Enabled:      conn.config.InitialRepositoryEnablement,
-			},
-			URL: remoteURL,
+		repoChan <- api.RepoCreateOrUpdateRequest{
+			RepoURI:      awsCodeCommitRepositoryToRepoPath(conn, repo),
+			ExternalRepo: AWSCodeCommitExternalRepoSpec(repo, createAWSCodeCommitServiceID(conn.awsPartition, conn.awsRegion, repo.AccountID)),
+			Description:  repo.Description,
+			Enabled:      conn.config.InitialRepositoryEnablement,
+			URL:          remoteURL,
 		}
 	}
 }

@@ -578,11 +578,11 @@ func (s *repos) UpdateRepositoryMetadata(ctx context.Context, uri api.RepoURI, d
 }
 
 const upsertSQL = `WITH UPSERT AS (
-	UPDATE repo SET uri=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7, archived=$9 WHERE uri=$1 RETURNING uri
+	UPDATE repo SET uri=$1, description=$2, fork=$3, enabled=$4, external_id=$5, external_service_type=$6, external_service_id=$7, archived=$9, url=$10 WHERE uri=$1 RETURNING uri
 )
-INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id, archived) (
+INSERT INTO repo(uri, description, fork, language, enabled, external_id, external_service_type, external_service_id, archived, url) (
 	SELECT $1 AS uri, $2 AS description, $3 AS fork, $8 as language, $4 AS enabled,
-	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id, $9 AS archived
+	       $5 AS external_id, $6 AS external_service_type, $7 AS external_service_id, $9 AS archived, $10 AS url
 	WHERE $1 NOT IN (SELECT uri FROM upsert)
 )`
 
@@ -624,7 +624,7 @@ func (s *repos) Upsert(ctx context.Context, op api.InsertRepoOp) error {
 	}
 
 	spec := (&dbExternalRepoSpec{}).fromAPISpec(op.ExternalRepo)
-	_, err = dbconn.Global.ExecContext(ctx, upsertSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived)
+	_, err = dbconn.Global.ExecContext(ctx, upsertSQL, op.URI, op.Description, op.Fork, enabled, spec.id, spec.serviceType, spec.serviceID, language, op.Archived, op.URL)
 	return err
 }
 

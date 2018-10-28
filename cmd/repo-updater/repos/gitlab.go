@@ -206,20 +206,18 @@ func gitlabProjectToRepoPath(conn *gitlabConnection, proj *gitlab.Project) api.R
 func updateGitLabProjects(ctx context.Context, conn *gitlabConnection) {
 	projs := conn.listAllProjects(ctx)
 
-	repoChan := make(chan repoCreateOrUpdateRequest)
+	repoChan := make(chan api.RepoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("gitlab:%s", conn.config.Token), repoChan)
 	for proj := range projs {
-		repoChan <- repoCreateOrUpdateRequest{
-			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI:      gitlabProjectToRepoPath(conn, proj),
-				ExternalRepo: GitLabExternalRepoSpec(proj, *conn.baseURL),
-				Description:  proj.Description,
-				Fork:         proj.ForkedFromProject != nil,
-				Archived:     proj.Archived,
-				Enabled:      conn.config.InitialRepositoryEnablement,
-			},
-			URL: conn.authenticatedRemoteURL(proj),
+		repoChan <- api.RepoCreateOrUpdateRequest{
+			RepoURI:      gitlabProjectToRepoPath(conn, proj),
+			ExternalRepo: GitLabExternalRepoSpec(proj, *conn.baseURL),
+			Description:  proj.Description,
+			Fork:         proj.ForkedFromProject != nil,
+			Archived:     proj.Archived,
+			Enabled:      conn.config.InitialRepositoryEnablement,
+			URL:          conn.authenticatedRemoteURL(proj),
 		}
 	}
 }

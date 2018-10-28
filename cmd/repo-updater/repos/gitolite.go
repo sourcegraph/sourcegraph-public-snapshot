@@ -102,7 +102,7 @@ func gitoliteUpdateRepos(ctx context.Context, gconf *schema.GitoliteConnection, 
 		return err
 	}
 
-	repoChan := make(chan repoCreateOrUpdateRequest)
+	repoChan := make(chan api.RepoCreateOrUpdateRequest)
 	defer close(repoChan)
 	go createEnableUpdateRepos(ctx, fmt.Sprintf("gitolite:%s", gconf.Prefix), repoChan)
 	if doPhabricator && gconf.PhabricatorMetadataCommand != "" {
@@ -111,12 +111,10 @@ func gitoliteUpdateRepos(ctx context.Context, gconf *schema.GitoliteConnection, 
 	for _, entry := range rlist {
 		// We don't have descriptions available for these. The old code didn't do that either.
 		url := strings.Replace(entry, gconf.Prefix, gconf.Host+":", 1)
-		repoChan <- repoCreateOrUpdateRequest{
-			RepoCreateOrUpdateRequest: api.RepoCreateOrUpdateRequest{
-				RepoURI: api.RepoURI(entry),
-				Enabled: true,
-			},
-			URL: url,
+		repoChan <- api.RepoCreateOrUpdateRequest{
+			RepoURI: api.RepoURI(entry),
+			Enabled: true,
+			URL:     url,
 		}
 	}
 	return nil
