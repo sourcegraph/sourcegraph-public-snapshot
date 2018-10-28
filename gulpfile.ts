@@ -50,7 +50,7 @@ export async function webpackDevServer(): Promise<void> {
         publicPath: '/.assets/',
         contentBase: './ui/assets',
         stats: WEBPACK_STATS_OPTIONS,
-        noInfo: true,
+        noInfo: false,
         proxy: {
             '/': {
                 target: 'http://localhost:3081',
