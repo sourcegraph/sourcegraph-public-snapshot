@@ -1,5 +1,3 @@
-//docker:env CONFIGURATION_MODE=client
-
 package main
 
 import (
