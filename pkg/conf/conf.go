@@ -3,6 +3,7 @@ package conf
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/sourcegraph/jsonx"
 )
@@ -30,7 +31,15 @@ func getMode() configurationMode {
 	case "client":
 		return modeClient
 	default:
-		return modeTest
+		// Detect 'go test' and default to test mode in that case.
+		p, err := os.Executable()
+		if err == nil && filepath.Ext(p) == ".test" {
+			return modeTest
+		}
+
+		// Otherwise we default to client mode, so that most services need not
+		// specify CONFIGURATION_MODE=client explicitly.
+		return modeClient
 	}
 }
 
