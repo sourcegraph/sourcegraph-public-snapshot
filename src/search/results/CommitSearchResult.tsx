@@ -77,7 +77,7 @@ export const CommitSearchResult: React.StatelessComponent<Props> = (props: Props
                 onClick={stopPropagationToCollapseOrExpand}
                 onMouseDown={logClickOnPerson}
             >
-                <UserAvatar user={props.result.commit.author.person!} size={32} />{' '}
+                <UserAvatar user={props.result.commit.author.person!} size={32} className="mr-1" />
                 {props.result.commit.author.person!.displayName}
             </Link>
             <Link
