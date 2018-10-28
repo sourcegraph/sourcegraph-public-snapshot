@@ -1,0 +1,57 @@
+.repository-graph-page {
+    &__node {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.25rem 0;
+
+        border: solid 1px $color-border;
+        border-width: 1px 0 0 0;
+        &:last-child {
+            border-bottom-width: 1px;
+        }
+
+        &-title {
+            flex: 1;
+        }
+        &-datum {
+            display: inline-block;
+            padding: 0.125rem 0.325rem;
+            border-radius: 2px;
+            margin: 0.325rem;
+
+            .theme-dark & {
+                background: $color-bg-2;
+                border-color: $color-border;
+                color: $color-text-1;
+            }
+            .theme-light & {
+                color: $color-light-text-1;
+                background: $color-light-bg-2;
+                border-color: $color-light-border-2;
+            }
+
+            &-name {
+                opacity: 0.6;
+            }
+        }
+        &-actions {
+            flex: 0 auto;
+            display: flex;
+            align-items: center;
+        }
+
+        &-dotdotdot {
+            opacity: 0.6;
+            margin-right: 0.25rem;
+        }
+    }
+}
+
+.theme-light {
+    .repository-graph-page {
+        &__node {
+            border-color: $color-light-border;
+        }
+    }
+}

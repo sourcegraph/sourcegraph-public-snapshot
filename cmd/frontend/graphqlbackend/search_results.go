@@ -643,14 +643,14 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 		if err != nil {
 			return nil, err
 		}
-		return &searchResultsResolver{alert: alert}, nil
+		return &searchResultsResolver{alert: alert, start: start}, nil
 	}
 	if overLimit {
 		alert, err := r.alertForOverRepoLimit(ctx)
 		if err != nil {
 			return nil, err
 		}
-		return &searchResultsResolver{alert: alert}, nil
+		return &searchResultsResolver{alert: alert, start: start}, nil
 	}
 
 	p, err := r.getPatternInfo()

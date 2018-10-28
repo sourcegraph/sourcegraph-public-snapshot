@@ -83,7 +83,7 @@ The [site configuration JSON](../../site_config/index.md) is not yet stored in t
 
 **The below sections only pertain to Sourcegraph instances created using this tutorial before July 30, 2018**.
 
-This applies to you if you see the following warning on the **Admin > Code intelligence** page:
+This applies to you if you see the following warning on the **Site admin > Code intelligence** page:
 
 > Language server management capabilities disabled because /var/run/docker.sock was not found.
 
@@ -95,7 +95,7 @@ Just as before July 30, 2018, you can continue manually managing code intelligen
 
 Instead of manually managing code intelligence, you can upgrade to the new automatic code intelligence method.
 
-This allows Sourcegraph to automatically set up language servers for you when new repositories are added with languages we support, in addition to allowing you (the site admin) to manage (or explicitly disable) running language servers, view their health, etc. from within the application UI on the **Admin > Code intelligence** page.
+This allows Sourcegraph to automatically set up language servers for you when new repositories are added with languages we support, in addition to allowing you (the site admin) to manage (or explicitly disable) running language servers, view their health, etc. from within the application UI on the **Site admin > Code intelligence** page.
 
 To upgrade your existing instance to use automatic code intelligence, **SSH into your Sourcegraph instance** and run the following:
 
@@ -108,4 +108,4 @@ To upgrade your existing instance to use automatic code intelligence, **SSH into
 
 These steps only need to be performed once, and they will persist across machine restarts.
 
-After performing these steps, you will now have automatic code intelligence! To verify, go to the **Admin > Code intelligence** page and confirm that you see Enable/Disable/restart buttons next to each language server.
+After performing these steps, you will now have automatic code intelligence! To verify, go to the **Site admin > Code intelligence** page and confirm that you see Enable/Disable/restart buttons next to each language server.

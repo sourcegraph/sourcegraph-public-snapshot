@@ -7,8 +7,15 @@ $dropdown-link-active-color: white;
 $dropdown-link-active-bg: var(--primary);
 $dropdown-link-disabled-color: var(--text-muted);
 $dropdown-header-color: var(--dropdown-header-color);
+$dropdown-item-padding-y: 0.25rem;
+$dropdown-item-padding-x: 0.75rem;
+$dropdown-padding-y: $dropdown-item-padding-y;
 
 @import 'bootstrap/scss/dropdown';
+
+.dropdown-divider {
+    margin: 0.25rem 0;
+}
 
 .theme-dark {
     --dropdown-bg: #{$color-bg-4};

@@ -164,7 +164,7 @@ export class SettingsArea extends React.Component<Props, State> {
     ): Observable<{ $id: string }> {
         return this.props.extensions.withRegistryMetadata(gqlToCascade(cascade)).pipe(
             map(configuredExtensions => ({
-                $id: 'sourcegraph://merged-settings.schema.json',
+                $id: 'settings.schema.json',
                 allOf: [
                     settingsSchemaJSON,
                     ...configuredExtensions

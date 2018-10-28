@@ -1,0 +1,8 @@
+coverage:
+  range: 50...75
+  status:
+    project: off
+    patch: off
+comment:
+  require_changes: yes
+  layout: files
