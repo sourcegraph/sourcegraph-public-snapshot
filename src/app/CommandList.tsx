@@ -1,4 +1,5 @@
 import { ShortcutProps } from '@slimsag/react-shortcuts'
+import H from 'history'
 import { isArray, sortBy, uniq } from 'lodash-es'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
@@ -21,6 +22,8 @@ interface Props<S extends ConfigurationSubject, C extends Settings>
 
     /** Called when the user has selected an item in the list. */
     onSelect?: () => void
+
+    location: H.Location
 }
 
 interface State {
@@ -152,6 +155,7 @@ export class CommandList<S extends ConfigurationSubject, C extends Settings> ext
                             onRun={this.onActionRun}
                             extensionsController={this.props.extensionsController}
                             extensions={this.props.extensions}
+                            location={this.props.location}
                         />
                     ))
                 ) : (

@@ -1,8 +1,10 @@
+import H from 'history'
 import * as React from 'react'
 import { from, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, mergeMap, startWith, tap } from 'rxjs/operators'
 import { ExecuteCommandParams } from 'sourcegraph/module/client/providers/command'
 import { ActionContribution } from 'sourcegraph/module/protocol'
+import { urlForOpenPanel } from '../../client/clientCommands'
 import { ControllerProps } from '../../client/controller'
 import { ExtensionsProps } from '../../context'
 import { asError, ErrorLike } from '../../errors'
@@ -40,7 +42,9 @@ export interface ActionItemProps {
 interface Props<S extends ConfigurationSubject, C extends Settings>
     extends ActionItemProps,
         ControllerProps<S, C>,
-        ExtensionsProps<S, C> {}
+        ExtensionsProps<S, C> {
+    location: H.Location
+}
 
 const LOADING: 'loading' = 'loading'
 
@@ -129,13 +133,12 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
                 data-tooltip={tooltip}
                 disabled={this.props.disabledDuringExecution && this.state.actionOrError === LOADING}
                 className={this.props.className}
-                // If the command is 'open' (a builtin command), render it as a link. Otherwise render it as a button
-                // that executes the command.
+                // If the command is 'open' or 'openXyz' (builtin commands), render it as a link. Otherwise render
+                // it as a button that executes the command.
                 to={
-                    urlForClientCommandOpen(this.props.action) ||
-                    (this.props.altAction && urlForClientCommandOpen(this.props.altAction))
+                    urlForClientCommandOpen(this.props.action, this.props.location) ||
+                    (this.props.altAction && urlForClientCommandOpen(this.props.altAction, this.props.location))
                 }
-                target="_blank"
                 onSelect={this.runAction}
             >
                 {content}
@@ -145,7 +148,7 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
 
     public runAction = (e: React.MouseEvent | React.KeyboardEvent) => {
         const action = (isAltEvent(e) && this.props.altAction) || this.props.action
-        if (urlForClientCommandOpen(action)) {
+        if (urlForClientCommandOpen(action, this.props.location)) {
             if (e.currentTarget.tagName === 'A' && e.currentTarget.hasAttribute('href')) {
                 // Do not execute the command. The <LinkOrButton>'s default event handler will do what we want (which
                 // is to open a URL). The only case where this breaks is if both the action and alt action are "open"
@@ -173,13 +176,16 @@ export class ActionItem<S extends ConfigurationSubject, C extends Settings> exte
     }
 }
 
-function urlForClientCommandOpen(action: ActionContribution): string | undefined {
-    return (
-        action.command === 'open' &&
-        action.commandArguments &&
-        typeof action.commandArguments[0] === 'string' &&
-        action.commandArguments[0]
-    )
+function urlForClientCommandOpen(action: ActionContribution, location: H.Location): string | undefined {
+    if (action.command === 'open' && action.commandArguments && typeof action.commandArguments[0] === 'string') {
+        return action.commandArguments[0]
+    }
+
+    if (action.command === 'openPanel' && action.commandArguments && typeof action.commandArguments[0] === 'string') {
+        return urlForOpenPanel(action.commandArguments[0], location.hash)
+    }
+
+    return undefined
 }
 
 function isAltEvent(e: React.KeyboardEvent | React.MouseEvent): boolean {

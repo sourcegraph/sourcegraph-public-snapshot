@@ -40,6 +40,18 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
 
     subscription.add(
         controller.registries.commands.registerCommand({
+            command: 'openPanel',
+            run: (viewID: string) => {
+                // As above for `open`, the `openPanel` client command is usually implemented by an HTML <a>
+                // element.
+                window.open(urlForOpenPanel(viewID, window.location.hash))
+                return Promise.resolve()
+            },
+        })
+    )
+
+    subscription.add(
+        controller.registries.commands.registerCommand({
             command: 'updateConfiguration',
             run: (...anyArgs: any[]): Promise<void> => {
                 const args = anyArgs as ActionContributionClientCommandUpdateConfiguration['commandArguments']
@@ -77,6 +89,26 @@ export function registerBuiltinClientCommands<S extends ConfigurationSubject, C 
     )
 
     return subscription
+}
+
+/**
+ * Constructs the URL that will result in the panel being opened to the specified view. Other parameters in the URL
+ * hash are preserved.
+ *
+ * @param viewID The ID of the view to open in the panel.
+ * @param urlHash The current URL hash (beginning with '#' if non-empty).
+ */
+export function urlForOpenPanel(viewID: string, urlHash: string): string {
+    // Preserve the existing URL fragment, if any.
+    const params = new URLSearchParams(urlHash.slice('#'.length))
+    params.set('tab', viewID)
+    // In the URL fragment, the 'L1:2-3:4' is treated as a parameter with no value. Undo the escaping of ':'
+    // and the addition of the '=' for the empty value, for aesthetic reasons.
+    const paramsString = params
+        .toString()
+        .replace(/%3A/g, ':')
+        .replace(/=&/g, '&')
+    return `#${paramsString}`
 }
 
 /**

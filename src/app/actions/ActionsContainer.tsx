@@ -76,6 +76,7 @@ export class ActionsContainer<S extends ConfigurationSubject, C extends Settings
                     {...item}
                     extensionsController={this.props.extensionsController}
                     extensions={this.props.extensions}
+                    location={this.props.location}
                 />
             ))}
         </>

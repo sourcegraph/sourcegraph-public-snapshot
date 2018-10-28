@@ -57,6 +57,7 @@ export class ActionsNavItems<S extends ConfigurationSubject, C extends Settings>
                             extensionsController={this.props.extensionsController}
                             extensions={this.props.extensions}
                             className={this.props.actionItemClass}
+                            location={this.props.location}
                         />
                     </li>
                 ))}
