@@ -376,7 +376,7 @@ declare module 'sourcegraph' {
          * Show a notification message to the user that does not require interaction or steal focus.
          *
          * @deprecated This API will change.
-         * @param message The message to show.
+         * @param message The message to show. Markdown is supported.
          * @return A promise that resolves when the user dismisses the message.
          */
         showNotification(message: string): void
