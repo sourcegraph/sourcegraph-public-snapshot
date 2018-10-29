@@ -1,5 +1,8 @@
 //docker:user sourcegraph
 
+// Defaults for cluster deployments.
+//docker:env CACHE_DIR=/mnt/cache/searcher
+
 // searcher is a simple service which exposes an API to text search a repo at
 // a specific commit. See the searcher package for more information.
 package main
