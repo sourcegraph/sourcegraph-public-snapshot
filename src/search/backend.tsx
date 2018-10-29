@@ -14,7 +14,7 @@ export function search(
     { extensionsController }: ExtensionsControllerProps
 ): Observable<GQL.ISearchResults | ErrorLike> {
     /**
-     * Emits whenever a search is executed, and whenever a search extension is registered as a search provider.
+     * Emits whenever a search is executed, and whenever an extension registers a query transformer.
      */
     return extensionsController.registries.queryTransformer.transformQuery(options.query).pipe(
         switchMap(query =>
