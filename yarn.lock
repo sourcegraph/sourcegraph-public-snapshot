@@ -10054,10 +10054,10 @@ sourcegraph@^18.2.0:
     minimatch "^3.0.4"
     rxjs "^6.3.2"
 
-sourcegraph@^18.3.0:
-  version "18.3.0"
-  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.3.0.tgz#d624b042aabf5aa5c90cefad59cc05f697ae448c"
-  integrity sha512-jTbfpcNwfSU63rU6RcpEg8NYGdqR3UyF8SlEnxe6Wg79lUa3Mocq3djTYgnf8SGVovdcHXGZQYWaLGeALgvsxw==
+sourcegraph@^18.4.0:
+  version "18.4.0"
+  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.4.0.tgz#53b8d181c9a45075c5f6e870a3d29d7a239ca39d"
+  integrity sha512-l7sAmHE2I4UaMqZ2SC+YjJ2kqGT4ZdCr29lBbH3KaNANGl+hvI3qpe4UAhBGkjUUANWcBeeL9cDHRvAuf4Ovmg==
   dependencies:
     minimatch "^3.0.4"
     rxjs "^6.3.2"
