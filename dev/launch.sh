@@ -70,6 +70,7 @@ export ZOEKT_HOST=localhost:6070
 # until they are (re)built and (2) otherwise passes through to Sourcegraph running on port
 # 3081. That is why Sourcegraph listens on 3081 despite the appURL having port 3080.
 export SRC_HTTP_ADDR=":3081"
+export WEBPACK_DEV_SERVER=1
 
 # we want to keep config.json, but allow local config.
 export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE:-./dev/config.json}
