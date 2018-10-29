@@ -19,8 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-
-	frontendConf "github.com/sourcegraph/sourcegraph/cmd/frontend/globals/conf"
 )
 
 func serveReposGetByURI(w http.ResponseWriter, r *http.Request) error {
@@ -161,7 +159,7 @@ func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveConfigurationRawJSON(w http.ResponseWriter, r *http.Request) error {
-	rawJSON := frontendConf.DefaultServerFrontendOnly.Raw()
+	rawJSON := globals.ConfigurationServerFrontendOnly.Raw()
 	err := json.NewEncoder(w).Encode(rawJSON)
 	if err != nil {
 		return errors.Wrap(err, "Encode")

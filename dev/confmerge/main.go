@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -31,12 +32,12 @@ func main() {
 			}
 			fmt.Fprintf(os.Stderr, "confmerge or your config may be out of sync with current schema.\n")
 		}
-		cfgData, err := conf.ParseConfigData(string(cfgBuf))
+		cfgData, err := parse.ParseConfigData(string(cfgBuf))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "can't parse '%s': %s\n", path, err)
 			continue
 		}
-		cfg = conf.AppendConfig(cfg, cfgData)
+		cfg = parse.AppendConfig(cfg, cfgData)
 	}
 	j, err := json.Marshal(cfg)
 	if err != nil {

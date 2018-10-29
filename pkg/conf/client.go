@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	frontendConf "github.com/sourcegraph/sourcegraph/cmd/frontend/globals/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -201,5 +201,5 @@ func (h httpFetcher) FetchConfig() (string, error) {
 type passthroughFetcherFrontendOnly struct{}
 
 func (p passthroughFetcherFrontendOnly) FetchConfig() (string, error) {
-	return frontendConf.DefaultServerFrontendOnly.Raw(), nil
+	return globals.ConfigurationServerFrontendOnly.Raw(), nil
 }
