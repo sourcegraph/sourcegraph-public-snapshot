@@ -644,31 +644,6 @@ describe('e2e test suite', () => {
         })
 
         describe('external code host links', () => {
-            // Temporarely skipped because of flakiness. TODO find cause
-            it.skip('on line blame', async () => {
-                await page.goto(
-                    baseURL +
-                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go#L19'
-                )
-                await enableOrAddRepositoryIfNeeded()
-                await page.waitForSelector('.e2e-blob > table > tbody > tr:nth-child(19) .blame')
-                await page.evaluate(() => {
-                    const blame = document.querySelector('.e2e-blob > table > tbody > tr:nth-child(19) .blame')!
-                    const rect = blame.getBoundingClientRect() as DOMRect
-                    const ev = new MouseEvent('click', {
-                        view: window,
-                        bubbles: true,
-                        cancelable: true,
-                        clientX: rect.x + rect.width + 2,
-                        clientY: rect.y + 2,
-                    })
-                    blame.dispatchEvent(ev)
-                })
-                await assertWindowLocation(
-                    '/github.com/sourcegraph/go-diff/-/commit/f93a4e38b36b4003edbfdff66d3b92c6cd977c1c'
-                )
-            })
-
             it('on repo navbar ("View on GitHub")', async () => {
                 await page.goto(
                     baseURL +
