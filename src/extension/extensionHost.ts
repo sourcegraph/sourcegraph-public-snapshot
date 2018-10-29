@@ -38,6 +38,12 @@ const consoleLogger: Logger = {
 export interface InitData {
     /** The URL to the JavaScript source file (that exports an `activate` function) for the extension. */
     bundleURL: string
+
+    /** @see {@link module:sourcegraph.internal.sourcegraphURL} */
+    sourcegraphURL: string
+
+    /** @see {@link module:sourcegraph.internal.clientApplication} */
+    clientApplication: 'sourcegraph' | 'other'
 }
 
 /**
@@ -150,6 +156,8 @@ function createExtensionHandle(initData: InitData, connection: Connection): type
         internal: {
             sync,
             updateContext: updates => context.updateContext(updates),
+            sourcegraphURL: new URI(initData.sourcegraphURL),
+            clientApplication: initData.clientApplication,
         },
     }
 }

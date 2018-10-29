@@ -904,9 +904,9 @@ declare module 'sourcegraph' {
     }
 
     /**
-     * Internal API for Sourcegraph extensions. These will be removed for the beta release of
-     * Sourcegraph extensions. They are necessary now due to limitations in the extension API and
-     * its implementation that will be addressed in the beta release.
+     * Internal API for Sourcegraph extensions. Most of these will be removed for the beta release of Sourcegraph
+     * extensions. They are necessary now due to limitations in the extension API and its implementation that will
+     * be addressed in the beta release.
      *
      * @internal
      */
@@ -925,6 +925,24 @@ declare module 'sourcegraph' {
          * @param updates The updates to apply to the context. If a context property's value is null, it is deleted from the context.
          */
         export function updateContext(updates: ContextValues): void
+
+        /**
+         * The URL to the Sourcegraph site that the user's session is associated with. This refers to
+         * Sourcegraph.com (`https://sourcegraph.com`) by default, or a self-hosted instance of Sourcegraph.
+         *
+         * @todo Consider removing this when https://github.com/sourcegraph/sourcegraph/issues/566 is fixed.
+         *
+         * @example `https://sourcegraph.com`
+         */
+        export const sourcegraphURL: URI
+
+        /**
+         * The client application that is running this extension, either 'sourcegraph' for Sourcegraph or 'other'
+         * for all other applications (such as GitHub, GitLab, etc.).
+         *
+         * @todo Consider removing this when https://github.com/sourcegraph/sourcegraph/issues/566 is fixed.
+         */
+        export const clientApplication: 'sourcegraph' | 'other'
     }
 
     /**

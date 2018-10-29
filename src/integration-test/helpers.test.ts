@@ -44,7 +44,10 @@ export async function integrationTestContext(): Promise<
     // Ack all configuration updates.
     clientController.configurationUpdates.subscribe(({ resolve }) => resolve(Promise.resolve()))
 
-    const extensionHost = createExtensionHost({ bundleURL: '' }, serverTransports)
+    const extensionHost = createExtensionHost(
+        { bundleURL: '', sourcegraphURL: 'https://example.com', clientApplication: 'sourcegraph' },
+        serverTransports
+    )
 
     // Wait for client to be ready.
     await clientController.clientEntries
