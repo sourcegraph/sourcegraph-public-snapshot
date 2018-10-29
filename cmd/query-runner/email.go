@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
+	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -67,7 +68,7 @@ func (n *notifier) emailNotify(ctx context.Context) {
 	}()
 }
 
-var newSearchResultsEmailTemplates = txemail.MustValidate(txemail.Templates{
+var newSearchResultsEmailTemplates = txemail.MustValidate(txtypes.Templates{
 	Subject: `[{{.ApproximateResultCount}} new result{{.PluralResults}}] {{.Description}}`,
 	Text: `
 {{.ApproximateResultCount}} new search result{{.PluralResults}} found for {{.Ownership}} saved search:
@@ -85,7 +86,7 @@ View the new result{{.PluralResults}} on Sourcegraph: {{.URL}}
 `,
 })
 
-func emailNotifySubscribeUnsubscribe(ctx context.Context, recipient *recipient, query api.SavedQuerySpecAndConfig, template txemail.Templates) error {
+func emailNotifySubscribeUnsubscribe(ctx context.Context, recipient *recipient, query api.SavedQuerySpecAndConfig, template txtypes.Templates) error {
 	if !recipient.email {
 		return nil
 	}
@@ -124,7 +125,7 @@ func emailNotifySubscribeUnsubscribe(ctx context.Context, recipient *recipient, 
 	})
 }
 
-func sendEmail(ctx context.Context, userID int32, eventType string, template txemail.Templates, data interface{}) error {
+func sendEmail(ctx context.Context, userID int32, eventType string, template txtypes.Templates, data interface{}) error {
 	email, err := api.InternalClient.UserEmailsGetEmail(ctx, userID)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("InternalClient.UserEmailsGetEmail for userID=%d", userID))
@@ -133,7 +134,7 @@ func sendEmail(ctx context.Context, userID int32, eventType string, template txe
 		return fmt.Errorf("unable to send email to user ID %d with unknown email address", userID)
 	}
 
-	if err := api.InternalClient.SendEmail(ctx, txemail.Message{
+	if err := api.InternalClient.SendEmail(ctx, txtypes.Message{
 		To:       []string{*email},
 		Template: template,
 		Data:     data,
@@ -144,7 +145,7 @@ func sendEmail(ctx context.Context, userID int32, eventType string, template txe
 	return nil
 }
 
-var notifySubscribedTemplate = txemail.MustValidate(txemail.Templates{
+var notifySubscribedTemplate = txemail.MustValidate(txtypes.Templates{
 	Subject: `[Subscribed] {{.Description}}`,
 	Text: `
 You are now receiving notifications for {{.Ownership}} saved search:
@@ -162,7 +163,7 @@ When new search results become available, we will notify you.
 `,
 })
 
-var notifyUnsubscribedTemplate = txemail.MustValidate(txemail.Templates{
+var notifyUnsubscribedTemplate = txemail.MustValidate(txtypes.Templates{
 	Subject: `[Unsubscribed] {{.Description}}`,
 	Text: `
 You will no longer receive notifications for {{.Ownership}} saved search:

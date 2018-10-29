@@ -2744,17 +2744,11 @@ type Site implements ConfigurationSubject {
 
 # The configuration for a site.
 type SiteConfiguration {
-    # The effective configuration JSON. This will lag behind the pendingContents
-    # if the site configuration was updated but the server has not yet restarted.
+    # The effective configuration JSON.
     effectiveContents: String!
-    # The pending configuration JSON, which will become effective after the next
-    # server restart. This is set if the site configuration has been updated since
-    # the server started.
-    pendingContents: String
-    # Messages describing validation problems or usage of deprecated configuration in the configuration JSON
-    # (pendingContents if it exists, otherwise effectiveContents). This includes both JSON Schema validation
-    # problems and other messages that perform more advanced checks on the configuration (that can't be expressed
-    # in the JSON Schema).
+    # Messages describing validation problems or usage of deprecated configuration in the configuration JSON.
+    # This includes both JSON Schema validation problems and other messages that perform more advanced checks
+    # on the configuration (that can't be expressed in the JSON Schema).
     validationMessages: [String!]!
     # Whether the viewer can update the site configuration (using the
     # updateSiteConfiguration mutation).

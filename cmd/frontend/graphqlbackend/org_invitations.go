@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
+	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 )
 
 func getUserToInviteToOrganization(ctx context.Context, username string, orgID int32) (userToInvite *types.User, userEmailAddress string, err error) {
@@ -260,7 +261,7 @@ func sendOrgInvitationNotification(ctx context.Context, org *types.Org, sender *
 }
 
 var (
-	emailTemplates = txemail.MustValidate(txemail.Templates{
+	emailTemplates = txemail.MustValidate(txtypes.Templates{
 		Subject: `{{.FromName}} invited you to join {{.OrgName}} on Sourcegraph`,
 		Text: `
 {{.FromName}} invited you to join the {{.OrgName}} organization on Sourcegraph.

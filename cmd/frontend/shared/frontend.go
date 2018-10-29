@@ -1,5 +1,4 @@
 // Package shared contains the frontend command implementation shared
-//
 package shared
 
 import (

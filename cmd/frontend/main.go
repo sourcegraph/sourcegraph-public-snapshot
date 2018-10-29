@@ -1,4 +1,5 @@
 //docker:user sourcegraph
+//docker:env CONFIGURATION_MODE=server
 
 // Note: All frontend code should be added to shared.Main, not here. See that
 // function for details.

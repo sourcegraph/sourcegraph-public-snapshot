@@ -401,7 +401,6 @@ export function fetchSite(): Observable<GQL.ISite> {
                 id
                 configuration {
                     effectiveContents
-                    pendingContents
                     validationMessages
                     canUpdate
                     source

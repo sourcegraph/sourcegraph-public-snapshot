@@ -42,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `experimentalFeatures.multipleAuthProviders` feature flag was removed because the feature is now always enabled.
 - The following deprecated auth provider configuration properties were removed: `auth.provider`, `auth.saml`, `auth.openIDConnect`, `auth.userIdentityHTTPHeader`, and `auth.allowSignup`. Use `auth.providers` for all auth provider configuration. (If you were still using the deprecated properties and had no `auth.providers` set, all access to your instance will be rejected until you manually set `auth.providers`.)
 - The deprecated site configuration properties `search.scopes` and `settings` were removed. Define search scopes and settings in global settings in the site admin area instead of in site configuration.
+- The `pendingContents` property has been removed from our GraphQL schema.
 
 ## 2.12.3
 

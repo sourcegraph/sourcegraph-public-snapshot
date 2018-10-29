@@ -9,7 +9,7 @@ symbols: ./enterprise/dev/delve-hook symbols
 github-proxy: ./enterprise/dev/delve-hook github-proxy
 lsp-proxy: ./enterprise/dev/delve-hook lsp-proxy
 xlang-go: ./enterprise/dev/delve-hook xlang-go -mode=tcp -addr=:4389
-frontend: ./enterprise/dev/delve-hook frontend
+frontend: env CONFIGURATION_MODE=server ./enterprise/dev/delve-hook frontend
 watch: ./enterprise/dev/changewatch.sh
 web: ENTERPRISE=1 ./node_modules/.bin/gulp --color watch
 syntect_server: ./enterprise/dev/syntect_server
