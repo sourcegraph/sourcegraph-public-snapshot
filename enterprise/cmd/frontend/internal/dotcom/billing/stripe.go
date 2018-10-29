@@ -30,6 +30,10 @@ func init() {
 
 	stripe.Key = stripeSecretKey
 	app.SetBillingPublishableKey(stripePublishableKey)
+
+	if env.InsecureDev && stripe.Key != "" && !isTest() {
+		log.Fatal("Refusing to use Stripe live (non-test) API key in Sourcegraph dev mode. (Sourcegraphers: Update your local dev-private checkout if you're getting this unexpectedly.)")
+	}
 }
 
 func isTest() bool {
