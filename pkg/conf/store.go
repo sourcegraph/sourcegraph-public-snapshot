@@ -102,7 +102,7 @@ func (c *configStore) MaybeUpdate(rawConfig string) (configChange, error) {
 
 	c.raw = rawConfig
 
-	newConfig, err := parseConfig(rawConfig)
+	newConfig, err := ParseConfigEnvironment_DEPRECATED(rawConfig)
 	if err != nil {
 		return configChange{}, errors.Wrap(err, "when parsing rawConfig during update")
 	}

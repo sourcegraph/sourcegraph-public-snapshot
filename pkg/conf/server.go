@@ -44,7 +44,7 @@ func (s *server) Write(input string) error {
 
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := parseConfig(input)
+	_, err := ParseConfigEnvironment_DEPRECATED(input)
 	if err != nil {
 		return err
 	}
