@@ -163,7 +163,11 @@ export function createMessageTransports(
                 )
                 try {
                     const worker = new ExtensionHostWorker()
-                    const initData: InitData = { bundleURL: blobURL }
+                    const initData: InitData = {
+                        bundleURL: blobURL,
+                        sourcegraphURL: window.context.appURL,
+                        clientApplication: 'sourcegraph',
+                    }
                     worker.postMessage(initData)
                     return createWebWorkerMessageTransports(worker)
                 } catch (err) {
