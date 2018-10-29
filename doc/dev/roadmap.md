@@ -66,11 +66,12 @@ Sourcegraph extensions usage and authoring experience | [📽](https://drive.goo
 
 Feature | 🔗 | Themes/products | Team
 ------- | --- | -------- | ----
-Better config and deployment for code host UI integrations | [📣](https://github.com/sourcegraph/about/pull/38) | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
-More robust code host repository syncing | | Integrations, [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith]
-[Global public search on Sourcegraph.com](https://github.com/sourcegraph/about/pull/8) *(tentative)* | | [Sourcegraph][sourcegraph] | [@keegancsmith][keegancsmith] [@attfarhan][attfarhan]
+More robust code host repository syncing | | Integrations, [Sourcegraph][sourcegraph] | [@nicksnyder][nicksnyder]
 Standardized code host UI integration points for Sourcegraph extensions | | Integrations, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@chrismwendt][chrismwendt]
 Doc site integrations | [💡](https://sourcegraph.sgdev.org/github.com/sourcegraph/docs-private/-/blob/201808/docs-code-intel.md) | Integrations, [Sourcegraph][sourcegraph] | [@vanesa][vanesa] [@ijsnow][ijsnow]
+Site admin configuration page for code host UI integrations | [📣](https://github.com/sourcegraph/about/pull/38) | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
+Search results from Sourcegraph extensions | | Search, extensibility, [Sourcegraph][sourcegraph], [extension API][sourcegraph-extension-api] | [@attfarhan][attfarhan] [@keegancsmith][keegancsmith] [@francisschmaltz][francisschmaltz]
+3rd-party dev tool integration extensions | | Integrations, extensibility | T.B.D.
 [Direct UI integration and deployment bundling with GitLab](https://github.com/sourcegraph/about/pull/41) | | Integrations, [Sourcegraph][sourcegraph], [browser extension][browser-extensions] | [@ggilmore][ggilmore] [@ijsnow][ijsnow] [@francisschmaltz][francisschmaltz]
 JavaScript/TypeScript language support improvements | | Code intelligence, sourcegraph-typescript | [@felixfbecker][felixfbecker]
 Go language support improvements | | Code intelligence, sourcegraph-go | T.B.D.
