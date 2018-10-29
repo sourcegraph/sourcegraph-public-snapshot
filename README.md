@@ -9,6 +9,7 @@
 
 **Features**
 
+- hello world
 - Fast global code search with a hybrid backend that combines a trigram index with in-memory streaming
 - Code intelligence for many languages via the [Language Server Protocol](https://langserver.org/)
 - Enhances GitHub, GitLab, Phabricator, and other code hosts and code review tools via the [Sourcegraph browser extension](https://about.sourcegraph.com/docs/features/browser-extension/)
