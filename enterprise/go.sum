@@ -285,6 +285,8 @@ github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18 h1:Owk1nJ1
 github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
 github.com/sourcegraph/godockerize v0.0.0-20181001062649-0f33644f1829 h1:wSrxJbC8KwkaqdjOCy9BUvq2YF2qSy38ljzrS+cBIRA=
 github.com/sourcegraph/godockerize v0.0.0-20181001062649-0f33644f1829/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
+github.com/sourcegraph/godockerize v0.0.0-20181029061954-5cf4e6d81720 h1:OkqHsJCzy3ZorBLAxbmnnx1NTpIG/+prvCZ50CLdgNw=
+github.com/sourcegraph/godockerize v0.0.0-20181029061954-5cf4e6d81720/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
 github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538 h1:K+cXn79iIvSN1c6Sq2hxk7n8T3ax0lII+FkvuOwgmPc=
 github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538/go.mod h1:ZqB/uu1WtCDmlwK8c+TO8+QSfDkJsWx9LYjQBgGxxtk=
 github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10 h1:9XH6ZJgu6KrVimEwZVXfTOvkGU1CHAvdc7mbZrMwA/U=

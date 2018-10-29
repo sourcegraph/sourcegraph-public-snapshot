@@ -37,7 +37,7 @@ require (
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181010102349-2d9d8f4a24da+incompatible
 	github.com/sourcegraph/go-vcsurl v0.0.0-20131114132947-6b12603ea6fd
-	github.com/sourcegraph/godockerize v0.0.0-20181001062649-0f33644f1829
+	github.com/sourcegraph/godockerize v0.0.0-20181029061954-5cf4e6d81720
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
 	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
