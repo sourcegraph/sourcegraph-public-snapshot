@@ -34,6 +34,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where GitHub rate limits were underutilized if the remaining
   rate limit dropped below 150.
 - Fixed an issue where GraphQL field `elapsedMilliseconds` returned invalid value on empty searches
+- Editor extensions now properly search the selection as a literal string, instead of incorrectly using regexp.
 
 ### Removed
 
