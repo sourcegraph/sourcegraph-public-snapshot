@@ -410,10 +410,27 @@ declare module 'sourcegraph' {
     export type ViewComponent = CodeEditor
 
     /**
+     * A style for a {@link TextDocumentDecoration}.
+     */
+    export interface ThemableDecorationStyle {
+        /** The CSS background-color property value for the line. */
+        backgroundColor?: string
+
+        /** The CSS border property value for the line. */
+        border?: string
+
+        /** The CSS border-color property value for the line. */
+        borderColor?: string
+
+        /** The CSS border-width property value for the line. */
+        borderWidth?: string
+    }
+
+    /**
      * A text document decoration changes the appearance of a range in the document and/or adds other content to
      * it.
      */
-    export interface TextDocumentDecoration {
+    export interface TextDocumentDecoration extends ThemableDecorationStyle {
         /**
          * The range that the decoration applies to. Currently, decorations are
          * only applied only on the start line, and the entire line. Multiline
@@ -430,27 +447,26 @@ declare module 'sourcegraph' {
         /** Content to display after the range. */
         after?: DecorationAttachmentRenderOptions
 
-        /** The CSS background-color property value for the line. */
-        backgroundColor?: string
+        /** Overwrite style for light themes. */
+        light?: ThemableDecorationStyle
 
-        /** The CSS border property value for the line. */
-        border?: string
-
-        /** The CSS border-color property value for the line. */
-        borderColor?: string
-
-        /** The CSS border-width property value for the line. */
-        borderWidth?: string
+        /** Overwrite style for dark themes. */
+        dark?: ThemableDecorationStyle
     }
 
-    /** A decoration attachment adds content after a {@link TextDocumentDecoration}. */
-    export interface DecorationAttachmentRenderOptions {
+    /**
+     * A style for {@link DecorationAttachmentRenderOptions}.
+     */
+    export interface ThemableDecorationAttachmentStyle {
         /** The CSS background-color property value for the attachment. */
         backgroundColor?: string
 
         /** The CSS color property value for the attachment. */
         color?: string
+    }
 
+    /** A decoration attachment adds content after a {@link TextDocumentDecoration}. */
+    export interface DecorationAttachmentRenderOptions extends ThemableDecorationAttachmentStyle {
         /** Text to display in the attachment. */
         contentText?: string
 
@@ -459,6 +475,12 @@ declare module 'sourcegraph' {
 
         /** If set, the attachment becomes a link with this destination URL. */
         linkURL?: string
+
+        /** Overwrite style for light themes. */
+        light?: ThemableDecorationAttachmentStyle
+
+        /** Overwrite style for dark themes. */
+        dark?: ThemableDecorationAttachmentStyle
     }
 
     /**
