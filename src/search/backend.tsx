@@ -1,151 +1,163 @@
 import { isEqual } from 'lodash'
 import { Observable } from 'rxjs'
-import { distinctUntilChanged, map, mergeMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, mergeMap, switchMap } from 'rxjs/operators'
 import { SearchOptions } from '.'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { mutateConfigurationGraphQL } from '../configuration/backend'
+import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { currentConfiguration } from '../settings/configuration'
-import { createAggregateError } from '../util/errors'
+import { asError, createAggregateError, ErrorLike } from '../util/errors'
 
-export function search(options: SearchOptions): Observable<GQL.ISearchResults> {
-    return queryGraphQL(
-        gql`
-            query Search($query: String!) {
-                search(query: $query) {
-                    results {
-                        __typename
-                        limitHit
-                        resultCount
-                        approximateResultCount
-                        missing {
-                            name
-                        }
-                        cloning {
-                            name
-                        }
-                        timedout {
-                            name
-                        }
-                        indexUnavailable
-                        dynamicFilters {
-                            value
-                            label
-                            count
-                            limitHit
-                            kind
-                        }
-                        results {
-                            ... on Repository {
+export function search(
+    options: SearchOptions,
+    { extensionsController }: ExtensionsControllerProps
+): Observable<GQL.ISearchResults | ErrorLike> {
+    /**
+     * Emits whenever a search is executed, and whenever an extension registers a query transformer.
+     */
+    return extensionsController.registries.queryTransformer.transformQuery(options.query).pipe(
+        switchMap(query =>
+            queryGraphQL(
+                gql`
+                    query Search($query: String!) {
+                        search(query: $query) {
+                            results {
                                 __typename
-                                id
-                                name
-                                url
-                            }
-                            ... on FileMatch {
-                                __typename
-                                file {
-                                    path
-                                    url
-                                    commit {
-                                        oid
-                                    }
-                                }
-                                repository {
-                                    name
-                                    url
-                                }
                                 limitHit
-                                symbols {
+                                resultCount
+                                approximateResultCount
+                                missing {
                                     name
-                                    containerName
-                                    url
+                                }
+                                cloning {
+                                    name
+                                }
+                                timedout {
+                                    name
+                                }
+                                indexUnavailable
+                                dynamicFilters {
+                                    value
+                                    label
+                                    count
+                                    limitHit
                                     kind
                                 }
-                                lineMatches {
-                                    preview
-                                    lineNumber
-                                    offsetAndLengths
-                                }
-                            }
-                            ... on CommitSearchResult {
-                                __typename
-                                refs {
-                                    name
-                                    displayName
-                                    prefix
-                                    repository {
-                                        name
-                                    }
-                                }
-                                sourceRefs {
-                                    name
-                                    displayName
-                                    prefix
-                                    repository {
-                                        name
-                                    }
-                                }
-                                messagePreview {
-                                    value
-                                    highlights {
-                                        line
-                                        character
-                                        length
-                                    }
-                                }
-                                diffPreview {
-                                    value
-                                    highlights {
-                                        line
-                                        character
-                                        length
-                                    }
-                                }
-                                commit {
-                                    id
-                                    repository {
+                                results {
+                                    ... on Repository {
+                                        __typename
+                                        id
                                         name
                                         url
                                     }
-                                    oid
-                                    abbreviatedOID
-                                    author {
-                                        person {
-                                            displayName
-                                            avatarURL
+                                    ... on FileMatch {
+                                        __typename
+                                        file {
+                                            path
+                                            url
+                                            commit {
+                                                oid
+                                            }
                                         }
-                                        date
+                                        repository {
+                                            name
+                                            url
+                                        }
+                                        limitHit
+                                        symbols {
+                                            name
+                                            containerName
+                                            url
+                                            kind
+                                        }
+                                        lineMatches {
+                                            preview
+                                            lineNumber
+                                            offsetAndLengths
+                                        }
                                     }
-                                    message
-                                    url
-                                    tree(path: "") {
-                                        canonicalURL
+                                    ... on CommitSearchResult {
+                                        __typename
+                                        refs {
+                                            name
+                                            displayName
+                                            prefix
+                                            repository {
+                                                name
+                                            }
+                                        }
+                                        sourceRefs {
+                                            name
+                                            displayName
+                                            prefix
+                                            repository {
+                                                name
+                                            }
+                                        }
+                                        messagePreview {
+                                            value
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
+                                        diffPreview {
+                                            value
+                                            highlights {
+                                                line
+                                                character
+                                                length
+                                            }
+                                        }
+                                        commit {
+                                            id
+                                            repository {
+                                                name
+                                                url
+                                            }
+                                            oid
+                                            abbreviatedOID
+                                            author {
+                                                person {
+                                                    displayName
+                                                    avatarURL
+                                                }
+                                                date
+                                            }
+                                            message
+                                            url
+                                            tree(path: "") {
+                                                canonicalURL
+                                            }
+                                        }
                                     }
                                 }
+                                alert {
+                                    title
+                                    description
+                                    proposedQueries {
+                                        description
+                                        query
+                                    }
+                                }
+                                elapsedMilliseconds
                             }
                         }
-                        alert {
-                            title
-                            description
-                            proposedQueries {
-                                description
-                                query
-                            }
-                        }
-                        elapsedMilliseconds
                     }
-                }
-            }
-        `,
-        { query: options.query }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data || !data.search || !data.search.results) {
-                throw createAggregateError(errors)
-            }
-            return data.search.results
-        })
+                `,
+                { query }
+            ).pipe(
+                map(({ data, errors }) => {
+                    if (!data || !data.search || !data.search.results) {
+                        throw createAggregateError(errors)
+                    }
+                    return data.search.results
+                }),
+                catchError(error => [asError(error)])
+            )
+        )
     )
 }
 

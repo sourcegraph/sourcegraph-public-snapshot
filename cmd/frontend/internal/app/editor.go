@@ -75,7 +75,10 @@ func serveEditor(w http.ResponseWriter, r *http.Request) error {
 		// repo is not actually very useful, since they can usually do that better in their editor.
 		u := &url.URL{Path: "/search"}
 		q := u.Query()
-		q.Add("q", search)
+		// Escape double quotes in search query.
+		search = strings.Replace(search, `"`, `\"`, -1)
+		// Search as a string literal
+		q.Add("q", `"`+search+`"`)
 		q.Add("utm_source", editor+"-"+version)
 		if utmProductName != "" {
 			q.Add("utm_product_name", utmProductName)

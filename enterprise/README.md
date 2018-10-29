@@ -10,7 +10,7 @@ This directory contains all of the Sourcegraph Enterprise code.
 
 ### Build notes
 
-You'l need to clone https://github.com/sourcegraph/dev-private to the same directory that contains
+You'll need to clone https://github.com/sourcegraph/dev-private to the same directory that contains
 this repository.
 
 **IMPORTANT:** Commands that build enterprise targets (e.g., `go build`, `yarn`,

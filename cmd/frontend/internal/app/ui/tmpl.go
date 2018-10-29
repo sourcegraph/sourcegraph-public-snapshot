@@ -24,7 +24,7 @@ var (
 	versionCacheMu sync.RWMutex
 	versionCache   = make(map[string]string)
 
-	_, noAssetVersionString = os.LookupEnv("WEBPACK_SERVE")
+	_, noAssetVersionString = os.LookupEnv("WEBPACK_DEV_SERVER")
 )
 
 // Functions that are exposed to templates.
