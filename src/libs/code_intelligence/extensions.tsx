@@ -23,6 +23,10 @@ import { Disposable } from 'vscode-languageserver'
 
 import { DOMFunctions } from '@sourcegraph/codeintellify'
 import * as H from 'history'
+import {
+    decorationAttachmentStyleForTheme,
+    decorationStyleForTheme,
+} from 'sourcegraph/module/client/providers/decoration'
 import { isErrorLike } from '../../shared/backend/errors'
 import { createExtensionsContextController, createMessageTransports } from '../../shared/backend/extensions'
 import { GlobalDebug } from '../../shared/components/GlobalDebug'
@@ -141,6 +145,8 @@ const mergeDisposables = (...disposables: Disposable[]): Disposable => ({
     },
 })
 
+const IS_LIGHT_THEME = true // assume all code hosts have a light theme (correct for now)
+
 /**
  * Applies a decoration to a code view. This doesn't work with diff views yet.
  */
@@ -162,8 +168,9 @@ export const applyDecoration = (
         throw new Error(`Unable to find code element for line ${lineNumber}`)
     }
 
-    if (decoration.backgroundColor) {
-        codeElement.style.backgroundColor = decoration.backgroundColor
+    const style = decorationStyleForTheme(decoration, IS_LIGHT_THEME)
+    if (style.backgroundColor) {
+        codeElement.style.backgroundColor = style.backgroundColor
         disposables.push({
             dispose: () => {
                 codeElement.style.backgroundColor = null
@@ -172,6 +179,8 @@ export const applyDecoration = (
     }
 
     if (decoration.after) {
+        const style = decorationAttachmentStyleForTheme(decoration.after, IS_LIGHT_THEME)
+
         const linkTo = (url: string) => (e: HTMLElement): HTMLElement => {
             const link = document.createElement('a')
             link.className = 'sourcegraph-extension-element'
@@ -184,14 +193,14 @@ export const applyDecoration = (
             // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
             link.setAttribute('rel', 'noreferrer noopener')
 
-            link.style.color = decoration.after!.color || null
+            link.style.color = style.color || null
             link.appendChild(e)
             return link
         }
 
         const after = document.createElement('span')
         after.className = 'sourcegraph-extension-element'
-        after.style.backgroundColor = decoration.after.backgroundColor || null
+        after.style.backgroundColor = style.backgroundColor || null
         after.textContent = decoration.after.contentText || null
         after.title = decoration.after.hoverMessage || ''
 
