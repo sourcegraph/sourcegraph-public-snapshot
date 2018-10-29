@@ -21,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
+
+	frontendConf "github.com/sourcegraph/sourcegraph/cmd/frontend/globals/conf"
 )
 
 var sentryDSNFrontend = env.Get("SENTRY_DSN_FRONTEND", "", "Sentry/Raven DSN used for tracking of JavaScript errors")
@@ -146,7 +148,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		EmailEnabled:        conf.CanSendEmail(),
 		Site:                publicSiteConfiguration(),
 		LikelyDockerOnMac:   likelyDockerOnMac(),
-		NeedServerRestart:   conf.DefaultServerFrontendOnly.NeedServerRestart(),
+		NeedServerRestart:   frontendConf.DefaultServerFrontendOnly.NeedServerRestart(),
 		IsClusterDeployment: conf.IsDeployTypeKubernetesCluster(conf.DeployType()),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),

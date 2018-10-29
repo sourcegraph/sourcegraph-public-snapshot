@@ -3,12 +3,14 @@ package cli
 import (
 	"log"
 
+	frontendConf "github.com/sourcegraph/sourcegraph/cmd/frontend/globals/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func printConfigValidation() {
-	messages, err := conf.Validate(conf.DefaultServerFrontendOnly.Raw())
+	messages, err := conf.Validate(frontendConf.DefaultServerFrontendOnly.Raw())
 	if err != nil {
 		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
 		return

@@ -6,6 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+
+	frontendConf "github.com/sourcegraph/sourcegraph/cmd/frontend/globals/conf"
 )
 
 // Alert implements the GraphQL type Alert.
@@ -68,7 +70,7 @@ func init() {
 			return nil
 		}
 
-		messages, err := conf.Validate(conf.DefaultServerFrontendOnly.Raw())
+		messages, err := conf.Validate(frontendConf.DefaultServerFrontendOnly.Raw())
 		if len(messages) > 0 || err != nil {
 			return []*Alert{
 				{

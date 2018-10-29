@@ -30,9 +30,18 @@ type server struct {
 	// fileWrite signals when our app writes to the configuration file. The
 	// secondary channel is closed when server.Raw() would return the new
 	// configuration that has been written to disk.
-	// TODO@ggilmore: is it important that the channel here is buffered?
-	// var fileWrite = make(chan chan struct{}, 1)
 	fileWrite chan chan struct{}
+
+	once sync.Once
+}
+
+func Server(configFilePath string) *server {
+	fileWrite := make(chan chan struct{}, 1)
+	return &server{
+		configFilePath: configFilePath,
+		store:          store.New(),
+		fileWrite:      fileWrite,
+	}
 }
 
 // Raw returns the raw text of the configuration file.
@@ -99,6 +108,12 @@ func (s *server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 	}
 
 	return nil
+}
+
+func (s *server) Start() {
+	s.once.Do(func() {
+		go s.watchDisk()
+	})
 }
 
 // watchDisk reloads the configuration file from disk at least every five seconds or whenever
