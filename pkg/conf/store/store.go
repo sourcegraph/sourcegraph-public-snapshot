@@ -22,22 +22,11 @@ type Store struct {
 	once  sync.Once
 }
 
+// New returns a new configuration store.
 func New() *Store {
 	return &Store{
 		ready: make(chan struct{}),
 	}
-}
-
-// WaitUntilInitialized blocks and only returns to the caller once the store
-// has initialized with a syntactically valid configuration file (via MaybeUpdate() or Mock()).
-func (s *Store) WaitUntilInitialized() {
-	<-s.ready
-}
-
-func (s *Store) initialize() {
-	s.once.Do(func() {
-		close(s.ready)
-	})
 }
 
 // LastValid returns the last valid site configuration that this
@@ -55,7 +44,7 @@ func (s *Store) LastValid() *schema.SiteConfiguration {
 	return s.lastValid
 }
 
-// Raw returns the raw JSON string that this store was updated with.
+// Raw returns the last raw JSON string that this store was updated with.
 func (s *Store) Raw() string {
 	s.WaitUntilInitialized()
 
@@ -74,7 +63,7 @@ func (s *Store) Mock(mockery *schema.SiteConfiguration) {
 	s.initialize()
 }
 
-type configChange struct {
+type UpdateResult struct {
 	Changed bool
 	Old     *schema.SiteConfiguration
 	New     *schema.SiteConfiguration
@@ -88,33 +77,47 @@ type configChange struct {
 //
 // configChange is defined iff the cache was actually udpated.
 // TODO@ggilmore: write a less-vague description
-func (s *Store) MaybeUpdate(rawConfig string) (configChange, error) {
+func (s *Store) MaybeUpdate(rawConfig string) (UpdateResult, error) {
 	s.rawMu.Lock()
 	defer s.rawMu.Unlock()
 
 	s.configMu.Lock()
 	defer s.configMu.Unlock()
 
+	result := UpdateResult{
+		Changed: false,
+		Old:     s.lastValid,
+		New:     s.lastValid,
+	}
+
 	if s.raw == rawConfig {
-		return configChange{
-			Changed: false,
-		}, nil
+		return result, nil
 	}
 
 	s.raw = rawConfig
 
 	newConfig, err := parse.ParseConfigEnvironment_DEPRECATED(rawConfig)
 	if err != nil {
-		return configChange{}, errors.Wrap(err, "when parsing rawConfig during update")
+		return result, errors.Wrap(err, "when parsing rawConfig during update")
 	}
+
+	result.Changed = true
+	result.New = newConfig
+	s.lastValid = newConfig
 
 	s.initialize()
 
-	s.lastValid = newConfig
+	return result, nil
+}
 
-	return configChange{
-		Changed: true,
-		Old:     s.lastValid,
-		New:     newConfig,
-	}, nil
+// WaitUntilInitialized blocks and only returns to the caller once the store
+// has initialized with a syntactically valid configuration file (via MaybeUpdate() or Mock()).
+func (s *Store) WaitUntilInitialized() {
+	<-s.ready
+}
+
+func (s *Store) initialize() {
+	s.once.Do(func() {
+		close(s.ready)
+	})
 }
