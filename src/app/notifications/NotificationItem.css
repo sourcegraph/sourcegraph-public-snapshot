@@ -6,7 +6,10 @@
 
 .notification-item__content {
     flex: 1;
-    display: flex;
+}
+
+.notification-item__content > :last-child {
+    margin-bottom: 0;
 }
 
 .notification-item__close {

@@ -1,4 +1,4 @@
-import { upperFirst } from 'lodash-es'
+import marked from 'marked'
 import * as React from 'react'
 import { MessageType } from 'sourcegraph/module/protocol'
 import { isErrorLike } from '../../errors'
@@ -15,18 +15,21 @@ interface Props {
  */
 export class NotificationItem extends React.PureComponent<Props> {
     public render(): JSX.Element | null {
+        const markdownHTML = marked(
+            isErrorLike(this.props.notification.message)
+                ? this.props.notification.message.message
+                : this.props.notification.message,
+            { gfm: true, breaks: true, sanitize: true }
+        )
         return (
             <div
                 className={`notification-item alert alert-${alertClass(this.props.notification.type)} p-0 ${this.props
                     .className || ''}`}
             >
-                <div className="notification-item__content py-2 pl-2 pr-0">
-                    {upperFirst(
-                        isErrorLike(this.props.notification.message)
-                            ? this.props.notification.message.message
-                            : this.props.notification.message
-                    )}
-                </div>
+                <div
+                    className="notification-item__content py-2 pl-2 pr-0"
+                    dangerouslySetInnerHTML={{ __html: markdownHTML }}
+                />
                 <button
                     type="button"
                     className="notification-item__close p-2"
