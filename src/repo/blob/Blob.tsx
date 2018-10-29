@@ -13,6 +13,7 @@ import * as React from 'react'
 import { Link, LinkProps } from 'react-router-dom'
 import { combineLatest, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, filter, map, share, switchMap, withLatestFrom } from 'rxjs/operators'
+import { decorationStyleForTheme } from 'sourcegraph/module/client/providers/decoration'
 import { TextDocumentDecoration } from 'sourcegraph/module/protocol/plainTypes'
 import { AbsoluteRepoFile, RenderMode } from '..'
 import { getDecorations, getHover, getJumpURL, ModeSpec } from '../../backend/features'
@@ -55,6 +56,7 @@ interface BlobProps
     className: string
     wrapCode: boolean
     renderMode: RenderMode
+    isLightTheme: boolean
 }
 
 interface BlobState extends HoverState {
@@ -281,8 +283,6 @@ export class Blob extends React.Component<BlobProps, BlobState> {
             })
         )
 
-        // EXPERIMENTAL: DECORATIONS
-
         /** Emits when the URL's target blob (repository, revision, path, and content) changes. */
         const modelChanges: Observable<
             AbsoluteRepoFile & LSPSelector & Pick<BlobProps, 'content'>
@@ -357,20 +357,21 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         }
                         const row = codeCell.parentElement as HTMLTableRowElement
                         let decorated = false
-                        if (decoration.backgroundColor) {
-                            row.style.backgroundColor = decoration.backgroundColor
+                        const style = decorationStyleForTheme(decoration, this.props.isLightTheme)
+                        if (style.backgroundColor) {
+                            row.style.backgroundColor = style.backgroundColor
                             decorated = true
                         }
-                        if (decoration.border) {
-                            row.style.border = decoration.border
+                        if (style.border) {
+                            row.style.border = style.border
                             decorated = true
                         }
-                        if (decoration.borderColor) {
-                            row.style.borderColor = decoration.borderColor
+                        if (style.borderColor) {
+                            row.style.borderColor = style.borderColor
                             decorated = true
                         }
-                        if (decoration.borderWidth) {
-                            row.style.borderWidth = decoration.borderWidth
+                        if (style.borderWidth) {
+                            row.style.borderWidth = style.borderWidth
                             decorated = true
                         }
                         if (decorated) {
