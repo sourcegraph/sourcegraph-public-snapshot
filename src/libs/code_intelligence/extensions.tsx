@@ -184,7 +184,6 @@ export const applyDecoration = (
 
         const linkTo = (url: string) => (e: HTMLElement): HTMLElement => {
             const link = document.createElement('a')
-            link.className = 'sourcegraph-extension-element'
             link.setAttribute('href', url)
 
             // External URLs should open in a new tab, whereas relative URLs
@@ -200,12 +199,12 @@ export const applyDecoration = (
         }
 
         const after = document.createElement('span')
-        after.className = 'sourcegraph-extension-element'
         after.style.backgroundColor = style.backgroundColor || null
         after.textContent = decoration.after.contentText || null
         after.title = decoration.after.hoverMessage || ''
 
         const annotation = decoration.after.linkURL ? linkTo(decoration.after.linkURL)(after) : after
+        annotation.className = 'sourcegraph-extension-element line-decoration-attachment'
         codeElement.appendChild(annotation)
 
         disposables.push({
