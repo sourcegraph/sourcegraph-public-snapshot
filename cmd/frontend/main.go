@@ -1,5 +1,6 @@
 //docker:user sourcegraph
 //docker:env CONFIGURATION_MODE=server
+//docker:env PUBLIC_REPO_REDIRECTS=true
 
 // Note: All frontend code should be added to shared.Main, not here. See that
 // function for details.

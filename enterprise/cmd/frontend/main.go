@@ -1,5 +1,6 @@
 //docker:user sourcegraph
 //docker:env CONFIGURATION_MODE=server
+//docker:env PUBLIC_REPO_REDIRECTS=true
 
 // Package frontend contains the enterprise frontend implementation.
 //
