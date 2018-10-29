@@ -272,8 +272,6 @@ type Mutation {
     # Updates the site configuration. Returns whether or not a restart is
     # needed for the update to be applied.
     updateSiteConfiguration(input: String!): Boolean!
-    # Manages language servers.
-    langServers: LangServersMutation
     # Manages discussions.
     discussions: DiscussionsMutation
     # Sets whether the user with the specified user ID is a site admin.
@@ -289,29 +287,6 @@ type Mutation {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomMutation!
-}
-
-# Mutations for language servers.
-type LangServersMutation {
-    # Enables the language server for the given language.
-    #
-    # Any user can perform this mutation, unless the language has been
-    # explicitly disabled.
-    enable(language: String!): EmptyResponse
-    # Disables the language server for the given language.
-    #
-    # Only admins can perform this action. After disabling, it is impossible
-    # for plain users to enable the language server for this language (until an
-    # admin re-enables it).
-    disable(language: String!): EmptyResponse
-    # Restarts the language server for the given language.
-    #
-    # Only admins can perform this action.
-    restart(language: String!): EmptyResponse
-    # Updates the language server for the given language.
-    #
-    # Only admins can perform this action.
-    update(language: String!): EmptyResponse
 }
 
 # A selection within a file.
@@ -2323,97 +2298,6 @@ enum OrganizationInvitationResponseType {
     REJECT
 }
 
-# Status about management capabilities for language servers.
-type LanguageServerManagementStatus {
-    # Whether this site can manage (enable/disable/restart/update) language servers on its own.
-    #
-    # Even if this field's value is true, individual language servers may not be manageable. Clients must check the
-    # LangServer.canXyz fields.
-    #
-    # Always false for Sourcegraph cluster deployments.
-    siteCanManage: Boolean!
-    # The reason why the site can't manage language servers, if siteCanManage == false.
-    reason: String
-}
-
-# The possible configuration states of a language server.
-enum LangServerState {
-    # The language server is neither enabled nor disabled. When a repo for this
-    # language is visited by any user, it will be enabled.
-    LANG_SERVER_STATE_NONE
-    # The language server was enabled by a plain user or admin user.
-    LANG_SERVER_STATE_ENABLED
-    # The language server was disabled by an admin user.
-    LANG_SERVER_STATE_DISABLED
-}
-
-# A language server.
-type LangServer {
-    # "go", "java", "typescript", etc.
-    language: String!
-    # "Go", "Java", "TypeScript", "PHP", etc.
-    displayName: String!
-    # Whether or not this language server should be considered experimental.
-    #
-    # Has no effect on behavior, only effects how the language server is presented e.g. in the UI.
-    experimental: Boolean!
-    # URL to the language server's homepage, if available.
-    homepageURL: String
-    # URL to the language server's open/known issues, if available.
-    issuesURL: String
-    # URL to the language server's documentation, if available.
-    docsURL: String
-    # Whether or not the site is a cluster deployment of Sourcegraph (e.g., to Kubernetes).
-    isClusterDeployment: Boolean!
-    # Whether or not this is a custom language server (i.e. one that does not
-    # come built in with Sourcegraph).
-    custom: Boolean!
-    # The current configuration state of the language server.
-    #
-    # For custom language servers, this field is never LANG_SERVER_STATE_NONE.
-    state: LangServerState!
-    # Whether or not the language server is being downloaded, starting, restarting.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    pending: Boolean!
-    # Whether or not the language server is being downloaded.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    downloading: Boolean!
-    # Whether or not the current user can enable the language server or not.
-    #
-    # Always false for Sourcegraph cluster deployments.
-    canEnable: Boolean!
-    # Whether or not the current user can disable the language server or not.
-    #
-    # Always false for Sourcegraph cluster deployments.
-    canDisable: Boolean!
-    # Whether or not the current user can restart the language server or not.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    canRestart: Boolean!
-    # Whether or not the current user can update the language server or not.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    canUpdate: Boolean!
-    # Indicates whether or not the language server is healthy or
-    # unhealthy. Examples include:
-    #
-    #   Healthy:
-    #       - Server is running, experiencing no issues.
-    #       - Server is not running, currently being downloaded.
-    #       - Server is not running, currently starting or restarting.
-    #
-    #   Unhealthy:
-    #       - Server is running, experiencing restarts / OOMs often.
-    #       - Server is not running, an error is preventing startup.
-    #
-    # The value is true ("healthy") if the language server is not enabled.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    healthy: Boolean!
-}
-
 # An object defining a selection range within e.g. a file.
 type DiscussionSelectionRange {
     # The line that the selection started on (zero-based, inclusive).
@@ -2671,14 +2555,6 @@ type Site implements ConfigurationSubject {
     canReloadSite: Boolean!
     # Whether the viewer can modify the subject's configuration.
     viewerCanAdminister: Boolean!
-    # Lists all language servers.
-    langServers: [LangServer!]!
-    # The language server for a given language (if exists, otherwise null)
-    langServer(language: String!): LangServer
-    # The status of language server management capabilities.
-    #
-    # Only site admins may view this field.
-    languageServerManagementStatus: LanguageServerManagementStatus
     # A list of all access tokens on this site.
     accessTokens(
         # Returns the first n access tokens from the list.
@@ -2713,10 +2589,6 @@ type Site implements ConfigurationSubject {
     noRepositoriesEnabled: Boolean!
     # Alerts to display to the viewer.
     alerts: [Alert!]!
-    # Whether the site has code intelligence. This field will be expanded in the future to describe
-    # more about the code intelligence available (languages supported, etc.). It is subject to
-    # change without notice.
-    hasCodeIntelligence: Boolean!
     # Whether we want to show built-in searches on the saved searches page
     disableBuiltInSearches: Boolean!
     # Whether the server sends emails to users to verify email addresses. If false, then site admins must manually

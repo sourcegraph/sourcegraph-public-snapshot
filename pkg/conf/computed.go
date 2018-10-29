@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"fmt"
 	"log"
 	"net/url"
 	"os"
@@ -179,38 +178,6 @@ func IsValidDeployType(deployType string) bool {
 	return IsDeployTypeKubernetesCluster(deployType) || IsDeployTypeDockerContainer(deployType) || IsDev(deployType)
 }
 
-// DebugManageDocker tells if Docker language servers should be managed or not.
-//
-// This only exists for dev mode / debugging purposes, and should never be used
-// in a production setting. It panics if the deploy type is not "dev".
-func DebugManageDocker() bool {
-	if deployType := DeployType(); !IsDev(deployType) {
-		panic(fmt.Sprintf("DebugManageDocker cannot be called except when DEPLOY_TYPE=dev (found %q)", deployType))
-	}
-	v, err := strconv.ParseBool(os.Getenv("DEBUG_MANAGE_DOCKER"))
-	if err != nil {
-		return true // use managed docker by default in dev mode
-	}
-	return v
-}
-
-// DebugNoDockerSocket returns true if the application should pretend that
-// there is no Docker socket present, regardless of what the filesystem says.
-//
-// This is useful for testing that state in a dev instance, which must be
-// supported as users can remove the Docker socket pass-through for e.g.
-// security reasons.
-//
-// This only exists for dev mode / debugging purposes, and should never be used
-// in a production setting. It panics if the deploy type is not "dev".
-func DebugNoDockerSocket() bool {
-	if deployType := DeployType(); !IsDev(deployType) {
-		panic(fmt.Sprintf("DebugManageDocker cannot be called except when DEPLOY_TYPE=dev (found %q)", deployType))
-	}
-	v, _ := strconv.ParseBool(os.Getenv("DEBUG_NO_DOCKER_SOCKET"))
-	return v
-}
-
 // UpdateChannel tells the update channel. Default is "release".
 func UpdateChannel() string {
 	channel := GetTODO().UpdateChannel
@@ -218,29 +185,6 @@ func UpdateChannel() string {
 		return "release"
 	}
 	return channel
-}
-
-// SupportsManagingLanguageServers reports, by consulting *only* the site configuration and deploy
-// type, whether language servers can be managed (enabled/disabled/restarted/updated) from the
-// Sourcegraph API without requiring users to take manual steps.
-//
-// Callers needing to know whether the capability is actually present in the current environment
-// must use langservers.CanManage instead.
-//
-// If no, the boolean is false and the reason (which is always non-empty in this case) describes why
-// not. Otherwise the boolean is true and the reason is empty.
-func SupportsManagingLanguageServers() (reason string, ok bool) {
-	deployType := DeployType()
-	if IsDeployTypeKubernetesCluster(deployType) {
-		// Do not run for clusters, or else we would print log messages below about not finding the
-		// docker socket.
-		return "Managing language servers automatically is not supported for Sourcegraph cluster deployments. See https://github.com/sourcegraph/deploy-sourcegraph/blob/master/docs/install.md#add-language-servers-for-code-intelligence for help.", false
-	}
-	if IsDev(deployType) && !DebugManageDocker() {
-		// Running in dev mode with managed docker disabled.
-		return "Managing language servers automatically is disabled in your local dev instance due to the value of DEBUG_MANAGE_DOCKER.", false
-	}
-	return "", true
 }
 
 // SearchIndexEnabled returns true if sourcegraph should index all
