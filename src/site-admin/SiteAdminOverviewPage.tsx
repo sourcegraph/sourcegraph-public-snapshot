@@ -3,7 +3,6 @@ import AddIcon from 'mdi-react/AddIcon'
 import CityIcon from 'mdi-react/CityIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import UserIcon from 'mdi-react/UserIcon'
-import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, Subscription } from 'rxjs'
@@ -114,19 +113,6 @@ export class SiteAdminOverviewPage extends React.Component<Props, State> {
                             )}
                         </OverviewItem>
                     )}
-                    {this.state.info &&
-                        typeof this.state.info.repositories === 'number' && (
-                            <OverviewItem
-                                icon={WebIcon}
-                                actions={
-                                    <Link to="/site-admin/code-intelligence" className="btn btn-primary btn-sm">
-                                        <SettingsIcon className="icon-inline" /> Manage code intelligence
-                                    </Link>
-                                }
-                            >
-                                Code intelligence is {this.state.info.hasCodeIntelligence ? 'on' : 'off'}
-                            </OverviewItem>
-                        )}
                 </OverviewList>
             </div>
         )
@@ -137,7 +123,6 @@ interface OverviewInfo {
     repositories: number | null
     users: number
     orgs: number
-    hasCodeIntelligence: boolean
 }
 
 function fetchOverview(): Observable<OverviewInfo> {
@@ -152,9 +137,6 @@ function fetchOverview(): Observable<OverviewInfo> {
             organizations {
                 totalCount
             }
-            site {
-                hasCodeIntelligence
-            }
         }
     `).pipe(
         map(({ data, errors }) => {
@@ -165,7 +147,6 @@ function fetchOverview(): Observable<OverviewInfo> {
                 repositories: data.repositories.totalCount,
                 users: data.users.totalCount,
                 orgs: data.organizations.totalCount,
-                hasCodeIntelligence: data.site.hasCodeIntelligence,
             }
         })
     )

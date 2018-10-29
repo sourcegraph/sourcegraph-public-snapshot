@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/langservers"
+
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/registry"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -55,7 +55,7 @@ func init() {
 		defer backcompatLangServerExtensionsMu.Unlock()
 		backcompatLangServerExtensions = make([]*registry.Extension, 0, len(enabledLangServers))
 		for _, ls := range enabledLangServers {
-			info := langservers.StaticInfo[ls.Language]
+			info := backcompatLanguageServers[ls.Language]
 
 			lang := ls.Language
 			if info != nil {
@@ -91,16 +91,6 @@ func init() {
 			if ls.Address != "" {
 				// Address is specified in site config; prefer that.
 				addr = ls.Address
-			} else if info.SiteConfig.Address != "" {
-				// Use the default TCP address. This is necessary to know the address on Data
-				// Center, because it is not necessary to specify the address in site config on Data
-				// Center for builtin lang servers.
-				//
-				// TODO(sqs): The better way to obtain the address on Kubernetes would be to use
-				// the LANGSERVER_xyz vars, which are only set on the lsp-proxy deployment. That
-				// would get the correct address even when it is changed from the default in
-				// deploy-sourcegraph.
-				addr = info.SiteConfig.Address
 			}
 			if addr == "" {
 				title += " (unavailable)"

@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/updatecheck"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/discussions/mailreply"
@@ -148,12 +147,6 @@ func Main() error {
 		return err
 	}
 
-	goroutine.Go(func() {
-		bg.StartLangServers(context.Background())
-	})
-	goroutine.Go(func() {
-		bg.KeepLangServersAndGlobalSettingsInSync(context.Background())
-	})
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
 	if hooks.AfterDBInit != nil {
