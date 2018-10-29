@@ -55,8 +55,6 @@ publish:
       5.  Load Temporary Add-on
       6.  Click "Load Temporary Add-on" and select "build/bundles/firefox-bundle.xpi"
 
-      NOTE: This extension includes an opt-in for event tracking on GitHub.com for the purposes of personalization.
-
       How to use the extension:
       The Sourcegraph developer extension works on GitHub.com. Below you will find a list of Sourcegraph's features with relevant URLs as well as screenshots and videos to help verify the extension.
 
