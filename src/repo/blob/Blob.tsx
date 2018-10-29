@@ -29,14 +29,13 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { asError, ErrorLike, isErrorLike } from '../../util/errors'
 import { isDefined, propertyIsDefined } from '../../util/types'
 import { LineOrPositionOrRange, parseHash, toPositionOrRangeHash } from '../../util/url'
-import { BlameLine } from './blame/BlameLine'
 import { DiscussionsGutterOverlay } from './discussions/DiscussionsGutterOverlay'
 import { LineDecorationAttachment } from './LineDecorationAttachment'
 
 /**
- * toPortalID builds an ID that will be used for the blame portal containers.
+ * toPortalID builds an ID that will be used for the {@link LineDecorationAttachment} portal containers.
  */
-const toPortalID = (line: number) => `blame-portal-${line}`
+const toPortalID = (line: number) => `line-decoration-attachment-${line}`
 
 interface BlobProps
     extends AbsoluteRepoFile,
@@ -64,11 +63,11 @@ interface BlobState extends HoverState {
     discussionsGutterOverlayPosition?: { left: number; top: number }
 
     /**
-     * blameLineIDs is a map from line numbers with portal nodes created to portal IDs.
-     * It's used to render the portals for blames. The line numbers are taken from the blob
-     * so they are 1-indexed.
+     * lineDecorationAttachmentIDs is a map from line numbers with portal nodes created to portal IDs. It's used to
+     * render the portals for {@link LineDecorationAttachment}. The line numbers are taken from the blob so they
+     * are 1-indexed.
      */
-    blameLineIDs: { [key: number]: string }
+    lineDecorationAttachmentIDs: { [key: number]: string }
 
     /** The decorations to display in the blob. */
     decorationsOrError?: TextDocumentDecoration[] | null | ErrorLike
@@ -79,10 +78,8 @@ const LinkComponent = (props: LinkProps) => <Link {...props} />
 
 const domFunctions = {
     getCodeElementFromTarget: (target: HTMLElement): HTMLTableCellElement | null => {
-        // If the target is part of the blame annotation (a.blame or span.blame__contents), return null.
+        // If the target is part of the line decoration attachment, return null.
         if (
-            target.classList.contains('blame') ||
-            target.classList.contains('blame__contents') ||
             target.classList.contains('line-decoration-attachment') ||
             target.classList.contains('line-decoration-attachment__contents')
         ) {
@@ -146,7 +143,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
     constructor(props: BlobProps) {
         super(props)
         this.state = {
-            blameLineIDs: {},
+            lineDecorationAttachmentIDs: {},
         }
 
         /** Emits parsed positions found in the URL */
@@ -265,7 +262,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                     selected.classList.remove('selected')
                 }
                 for (const { line, element } of codeCells) {
-                    this.createBlameDomNode(line, element)
+                    this.createLineDecorationAttachmentDOMNode(line, element)
                     // Highlight row
                     const row = element.parentElement as HTMLTableRowElement
                     row.classList.add('selected')
@@ -380,7 +377,7 @@ export class Blob extends React.Component<BlobProps, BlobState> {
 
                         if (decoration.after) {
                             const codeCell = row.cells[1]!
-                            this.createBlameDomNode(line, codeCell)
+                            this.createLineDecorationAttachmentDOMNode(line, codeCell)
                         }
                     }
                 } else {
@@ -404,26 +401,27 @@ export class Blob extends React.Component<BlobProps, BlobState> {
     }
 
     /**
-     * Appends a blame portal DOM node to the given code cell if it doesn't contain one already.
+     * Appends a {@link LineDecorationAttachment} portal DOM node to the given code cell if it doesn't contain one
+     * already.
      *
      * @param line 1-indexed line number
      * @param codeCell The `<td class="code">` element
      */
-    private createBlameDomNode(line: number, codeCell: HTMLElement): void {
-        if (codeCell.querySelector('.blame-portal')) {
+    private createLineDecorationAttachmentDOMNode(line: number, codeCell: HTMLElement): void {
+        if (codeCell.querySelector('.line-decoration-attachment-portal')) {
             return
         }
         const portalNode = document.createElement('span')
 
         const id = toPortalID(line)
         portalNode.id = id
-        portalNode.classList.add('blame-portal')
+        portalNode.classList.add('line-decoration-attachment-portal')
 
         codeCell.appendChild(portalNode)
 
         this.setState(state => ({
-            blameLineIDs: {
-                ...state.blameLineIDs,
+            lineDecorationAttachmentIDs: {
+                ...state.lineDecorationAttachmentIDs,
                 [line]: id,
             },
         }))
@@ -463,26 +461,16 @@ export class Blob extends React.Component<BlobProps, BlobState> {
                         onCloseButtonClick={this.nextCloseButtonClick}
                     />
                 )}
-                {this.state.selectedPosition &&
-                    this.state.selectedPosition.line !== undefined &&
-                    this.state.blameLineIDs[this.state.selectedPosition.line] && (
-                        <BlameLine
-                            key={this.state.blameLineIDs[this.state.selectedPosition.line]}
-                            portalID={this.state.blameLineIDs[this.state.selectedPosition.line]}
-                            line={this.state.selectedPosition.line}
-                            {...this.props}
-                        />
-                    )}
                 {this.state.decorationsOrError &&
                     !isErrorLike(this.state.decorationsOrError) &&
                     this.state.decorationsOrError
-                        .filter(d => !!d.after && this.state.blameLineIDs[d.range.start.line + 1])
-                        .map((d, i) => {
+                        .filter(d => !!d.after && this.state.lineDecorationAttachmentIDs[d.range.start.line + 1])
+                        .map(d => {
                             const line = d.range.start.line + 1
                             return (
                                 <LineDecorationAttachment
-                                    key={this.state.blameLineIDs[line]}
-                                    portalID={this.state.blameLineIDs[line]}
+                                    key={this.state.lineDecorationAttachmentIDs[line]}
+                                    portalID={this.state.lineDecorationAttachmentIDs[line]}
                                     line={line}
                                     attachment={d.after!}
                                     {...this.props}

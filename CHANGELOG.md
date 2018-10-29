@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
+
 ### Removed
 
 ## 2.13 (not yet released)

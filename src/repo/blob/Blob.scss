@@ -1,5 +1,4 @@
 @import '@sourcegraph/codeintellify/lib/HoverOverlay.scss';
-@import './blame/BlameLine';
 @import './LineDecorationAttachment';
 @import './discussions/DiscussionsGutterOverlay.scss';
 
@@ -59,30 +58,17 @@
             padding-left: 1rem;
             white-space: pre;
 
-            // Possibly not needed but without this, empty lines with blame-portals wrap incorrectly
+            // Possibly not needed. Without this, empty lines with line-decoration-attachment-portals wrap
+            // incorrectly.
             span {
                 display: inline-block;
             }
 
-            .blame-portal {
+            .line-decoration-attachment-portal {
                 display: inline-block;
 
                 span::before {
                     content: attr(data-contents);
-                }
-
-                .blame {
-                    padding-left: 1rem;
-                    display: inline-block;
-                    width: 0;
-                    outline: none;
-
-                    .theme-dark & {
-                        color: $gray-16;
-                    }
-                    .theme-light & {
-                        color: $gray-07;
-                    }
                 }
             }
         }
