@@ -6,6 +6,7 @@ package main
 
 // Defaults for cluster deployments.
 //docker:env CACHE_DIR=/mnt/cache/symbols
+//docker:env SYMBOLS_CACHE_SIZE_MB=100000
 
 import (
 	"context"

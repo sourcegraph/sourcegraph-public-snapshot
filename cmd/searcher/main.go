@@ -2,6 +2,7 @@
 
 // Defaults for cluster deployments.
 //docker:env CACHE_DIR=/mnt/cache/searcher
+//docker:env SEARCHER_CACHE_SIZE_MB=100000
 
 // searcher is a simple service which exposes an API to text search a repo at
 // a specific commit. See the searcher package for more information.
