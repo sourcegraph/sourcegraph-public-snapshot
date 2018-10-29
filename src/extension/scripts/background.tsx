@@ -16,7 +16,7 @@ import * as tabs from '../../browser/tabs'
 import initializeCli from '../../libs/cli'
 import { resolveClientConfiguration } from '../../shared/backend/server'
 import { ExtensionConnectionInfo, onFirstMessage } from '../../shared/messaging'
-import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl } from '../../shared/util/context'
+import { DEFAULT_SOURCEGRAPH_URL, setSourcegraphUrl, sourcegraphUrl } from '../../shared/util/context'
 import { assertEnv } from '../envAssertion'
 
 assertEnv('BACKGROUND')
@@ -391,7 +391,11 @@ function spawnWebWorkerFromURL(url: string): Promise<Worker> {
             const blobURL = window.URL.createObjectURL(response.response)
             try {
                 const worker = new ExtensionHostWorker()
-                const initData: InitData = { bundleURL: blobURL }
+                const initData: InitData = {
+                    bundleURL: blobURL,
+                    sourcegraphURL: sourcegraphUrl,
+                    clientApplication: 'other',
+                }
                 worker.postMessage(initData)
                 return worker
             } catch (err) {
