@@ -32,7 +32,7 @@ var (
 )
 
 func getLatestRelease(deployType string) build {
-	if conf.IsDeployTypeKubernetesCluster(deployType) {
+	if conf.IsDeployTypeCluster(deployType) {
 		return latestReleaseKubernetesBuild
 	}
 	return latestReleaseDockerServerImageBuild
