@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 )
 
 type configurationMode int
@@ -44,7 +45,7 @@ func getMode() configurationMode {
 }
 
 func init() {
-	clientStore := Store()
+	clientStore := store.New()
 	defaultClient = &client{
 		store:   clientStore,
 		fetcher: httpFetcher{},
@@ -74,7 +75,7 @@ func init() {
 	if mode == modeServer {
 		DefaultServerFrontendOnly = &server{
 			configFilePath: os.Getenv("SOURCEGRAPH_CONFIG_FILE"),
-			store:          Store(),
+			store:          store.New(),
 			fileWrite:      make(chan chan struct{}, 1),
 		}
 

@@ -9,11 +9,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type client struct {
-	store *configStore
+	store *store.Store
 
 	fetcher fetcher
 

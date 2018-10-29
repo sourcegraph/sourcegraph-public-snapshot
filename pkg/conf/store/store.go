@@ -1,15 +1,16 @@
-package conf
+package store
 
 import (
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// configStore manages the in-memory storage, access,
+// Store manages the in-memory storage, access,
 // and updating of the site configuration in a threadsafe manner.
-type configStore struct {
+type Store struct {
 	configMu  sync.RWMutex
 	lastValid *schema.SiteConfiguration
 	mock      *schema.SiteConfiguration
@@ -21,56 +22,56 @@ type configStore struct {
 	once  sync.Once
 }
 
-func Store() *configStore {
-	return &configStore{
+func New() *Store {
+	return &Store{
 		ready: make(chan struct{}),
 	}
 }
 
 // WaitUntilInitialized blocks and only returns to the caller once the store
 // has initialized with a syntactically valid configuration file (via MaybeUpdate() or Mock()).
-func (c *configStore) WaitUntilInitialized() {
-	<-c.ready
+func (s *Store) WaitUntilInitialized() {
+	<-s.ready
 }
 
-func (c *configStore) initialize() {
-	c.once.Do(func() {
-		close(c.ready)
+func (s *Store) initialize() {
+	s.once.Do(func() {
+		close(s.ready)
 	})
 }
 
 // LastValid returns the last valid site configuration that this
 // store was updated with.
-func (c *configStore) LastValid() *schema.SiteConfiguration {
-	c.WaitUntilInitialized()
+func (s *Store) LastValid() *schema.SiteConfiguration {
+	s.WaitUntilInitialized()
 
-	c.configMu.RLock()
-	defer c.configMu.RUnlock()
+	s.configMu.RLock()
+	defer s.configMu.RUnlock()
 
-	if c.mock != nil {
-		return c.mock
+	if s.mock != nil {
+		return s.mock
 	}
 
-	return c.lastValid
+	return s.lastValid
 }
 
 // Raw returns the raw JSON string that this store was updated with.
-func (c *configStore) Raw() string {
-	c.WaitUntilInitialized()
+func (s *Store) Raw() string {
+	s.WaitUntilInitialized()
 
-	c.rawMu.RLock()
-	defer c.rawMu.RUnlock()
-	return c.raw
+	s.rawMu.RLock()
+	defer s.rawMu.RUnlock()
+	return s.raw
 }
 
 // Mock sets up mock data for the site configuration. It uses the configuration
 // mutex, to avoid possible races between test code and possible config watchers.
-func (c *configStore) Mock(mockery *schema.SiteConfiguration) {
-	c.configMu.Lock()
-	defer c.configMu.Unlock()
+func (s *Store) Mock(mockery *schema.SiteConfiguration) {
+	s.configMu.Lock()
+	defer s.configMu.Unlock()
 
-	c.mock = mockery
-	c.initialize()
+	s.mock = mockery
+	s.initialize()
 }
 
 type configChange struct {
@@ -87,33 +88,33 @@ type configChange struct {
 //
 // configChange is defined iff the cache was actually udpated.
 // TODO@ggilmore: write a less-vague description
-func (c *configStore) MaybeUpdate(rawConfig string) (configChange, error) {
-	c.rawMu.Lock()
-	defer c.rawMu.Unlock()
+func (s *Store) MaybeUpdate(rawConfig string) (configChange, error) {
+	s.rawMu.Lock()
+	defer s.rawMu.Unlock()
 
-	c.configMu.Lock()
-	defer c.configMu.Unlock()
+	s.configMu.Lock()
+	defer s.configMu.Unlock()
 
-	if c.raw == rawConfig {
+	if s.raw == rawConfig {
 		return configChange{
 			Changed: false,
 		}, nil
 	}
 
-	c.raw = rawConfig
+	s.raw = rawConfig
 
-	newConfig, err := ParseConfigEnvironment_DEPRECATED(rawConfig)
+	newConfig, err := parse.ParseConfigEnvironment_DEPRECATED(rawConfig)
 	if err != nil {
 		return configChange{}, errors.Wrap(err, "when parsing rawConfig during update")
 	}
 
-	c.initialize()
+	s.initialize()
 
-	c.lastValid = newConfig
+	s.lastValid = newConfig
 
 	return configChange{
 		Changed: true,
-		Old:     c.lastValid,
+		Old:     s.lastValid,
 		New:     newConfig,
 	}, nil
 }

@@ -9,6 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -20,7 +22,7 @@ var DefaultServerFrontendOnly *server
 type server struct {
 	configFilePath string
 
-	store *configStore
+	store *store.Store
 
 	needRestartMu sync.RWMutex
 	needRestart   bool
@@ -44,7 +46,7 @@ func (s *server) Write(input string) error {
 
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := ParseConfigEnvironment_DEPRECATED(input)
+	_, err := parse.ParseConfigEnvironment_DEPRECATED(input)
 	if err != nil {
 		return err
 	}
@@ -141,7 +143,7 @@ func (s *server) updateFromDisk(reinitialize bool) error {
 
 	if reinitialize {
 		// Update global "needs restart" state.
-		if needRestartToApply(configChange.Old, configChange.New) {
+		if parse.NeedRestartToApply(configChange.Old, configChange.New) {
 			s.markNeedServerRestart()
 		}
 	}
