@@ -130,7 +130,7 @@ func (s *server) watchDisk() {
 			// File possibly changed on FS, so check now.
 		}
 
-		err := s.updateFromDisk(true)
+		err := s.updateFromDisk()
 		if err != nil {
 			log.Printf("failed to read configuration file: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err, s.configFilePath)
 		}
@@ -141,7 +141,7 @@ func (s *server) watchDisk() {
 	}
 }
 
-func (s *server) updateFromDisk(reinitialize bool) error {
+func (s *server) updateFromDisk() error {
 	rawConfig, err := s.readConfig()
 	if err != nil {
 		return err
@@ -152,15 +152,19 @@ func (s *server) updateFromDisk(reinitialize bool) error {
 		return err
 	}
 
+	// Don't need to restart if the configuration hasn't changed.
 	if !configChange.Changed {
 		return nil
 	}
 
-	if reinitialize {
-		// Update global "needs restart" state.
-		if parse.NeedRestartToApply(configChange.Old, configChange.New) {
-			s.markNeedServerRestart()
-		}
+	// Don't restart if the configuration was empty before (this only occurs during initialization).
+	if configChange.Old == nil {
+		return nil
+	}
+
+	// Update global "needs restart" state.
+	if parse.NeedRestartToApply(configChange.Old, configChange.New) {
+		s.markNeedServerRestart()
 	}
 
 	return nil
