@@ -10048,6 +10048,14 @@ sourcegraph@^18.2.0:
     minimatch "^3.0.4"
     rxjs "^6.3.2"
 
+sourcegraph@^18.3.0:
+  version "18.3.0"
+  resolved "https://registry.yarnpkg.com/sourcegraph/-/sourcegraph-18.3.0.tgz#d624b042aabf5aa5c90cefad59cc05f697ae448c"
+  integrity sha512-jTbfpcNwfSU63rU6RcpEg8NYGdqR3UyF8SlEnxe6Wg79lUa3Mocq3djTYgnf8SGVovdcHXGZQYWaLGeALgvsxw==
+  dependencies:
+    minimatch "^3.0.4"
+    rxjs "^6.3.2"
+
 sparkles@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/sparkles/-/sparkles-1.0.1.tgz#008db65edce6c50eec0c5e228e1945061dd0437c"
