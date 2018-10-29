@@ -31,7 +31,7 @@ If you're just starting out, we recommend [installing Sourcegraph locally](index
   sudo apt-get install -y docker-ce
   mkdir -p /root/.sourcegraph/config
   mkdir -p /root/.sourcegraph/data
-  docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.2
+  docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.3
   ```
 
 - Create your VM, then navigate to its public IP address.
@@ -52,11 +52,21 @@ docker run -d ... sourcegraph/server:X.Y.Z
 
 ---
 
+## Using an external database for persistence
+
+The Docker container has its own internal PostgreSQL and Redis databases. To preserve this data when you kill and recreate the container, you can [use external databases](../../external_database.md) for persistence, such as Google Cloud's [Cloud SQL for PostgreSQL](https://cloud.google.com/sql/docs/postgres/) and [Cloud Memorystore](https://cloud.google.com/memorystore/).
+
+The [site configuration JSON](../../site_config/index.md) is not yet stored in the database, so you must manually back it up. This will no longer be necessary in [Sourcegraph 3.0 preview](https://github.com/sourcegraph/about/pull/36). <!-- TODO: remove this when https://github.com/sourcegraph/about/pull/36 is merged -->
+
+> NOTE: Use of external databases requires [Sourcegraph Enterprise](https://about.sourcegraph.com/pricing).
+
+---
+
 ## Sourcegraph instances created before July 30, 2018
 
 **The below sections only pertain to Sourcegraph instances created using this tutorial before July 30, 2018**.
 
-This applies to you if you see the following warning on the **Admin > Code intelligence** page:
+This applies to you if you see the following warning on the **Site admin > Code intelligence** page:
 
 > Language server management capabilities disabled because /var/run/docker.sock was not found.
 
@@ -68,7 +78,7 @@ Just as before July 30, 2018, you can continue manually managing code intelligen
 
 Instead of manually managing code intelligence, you can upgrade to the new automatic code intelligence method.
 
-This allows Sourcegraph to automatically set up language servers for you when new repositories are added with languages we support, in addition to allowing you (the site admin) to manage (or explicitly disable) running language servers, view their health, etc. from within the application UI on the **Admin > Code intelligence** page.
+This allows Sourcegraph to automatically set up language servers for you when new repositories are added with languages we support, in addition to allowing you (the site admin) to manage (or explicitly disable) running language servers, view their health, etc. from within the application UI on the **Site admin > Code intelligence** page.
 
 To upgrade your existing instance to use automatic code intelligence, **SSH into your Sourcegraph instance** and run the following:
 
@@ -76,9 +86,9 @@ To upgrade your existing instance to use automatic code intelligence, **SSH into
 2.  Start the Docker container again using the new `docker run` command provided in the updated user-data `#cloud-config` script above. i.e.:
 
     ```
-    docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.2
+    docker run -d --publish 80:7080 --publish 443:7443 --restart unless-stopped --volume /root/.sourcegraph/config:/etc/sourcegraph --volume /root/.sourcegraph/data:/var/opt/sourcegraph --volume /var/run/docker.sock:/var/run/docker.sock sourcegraph/server:2.12.3
     ```
 
 These steps only need to be performed once, and they will persist across machine restarts.
 
-After performing these steps, you will now have automatic code intelligence! To verify, go to the **Admin > Code intelligence** page and confirm that you see Enable/Disable/restart buttons next to each language server.
+After performing these steps, you will now have automatic code intelligence! To verify, go to the **Site admin > Code intelligence** page and confirm that you see Enable/Disable/restart buttons next to each language server.

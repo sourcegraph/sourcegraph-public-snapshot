@@ -2,7 +2,6 @@ import React from 'react'
 import { SiteAdminAllUsersPage } from './SiteAdminAllUsersPage'
 import { SiteAdminAnalyticsPage } from './SiteAdminAnalyticsPage'
 import { SiteAdminAreaRoute } from './SiteAdminArea'
-import { SiteAdminCodeIntelligencePage } from './SiteAdminCodeIntelligencePage'
 import { SiteAdminConfigurationPage } from './SiteAdminConfigurationPage'
 import { SiteAdminCreateUserPage } from './SiteAdminCreateUserPage'
 import { SiteAdminOrgsPage } from './SiteAdminOrgsPage'
@@ -34,11 +33,6 @@ export const siteAdminAreaRoutes: ReadonlyArray<SiteAdminAreaRoute> = [
     {
         path: '/repositories',
         render: props => <SiteAdminRepositoriesPage {...props} />,
-        exact: true,
-    },
-    {
-        path: '/code-intelligence',
-        render: props => <SiteAdminCodeIntelligencePage {...props} />,
         exact: true,
     },
     {

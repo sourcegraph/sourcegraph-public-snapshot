@@ -64,13 +64,11 @@ export SRC_PROF_HTTP=
 export SRC_PROF_SERVICES=$(cat dev/src-prof-services.json)
 export OVERRIDE_AUTH_SECRET=sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
 export DEPLOY_TYPE=dev
+export ZOEKT_HOST=localhost:6070
 
-export SOURCEGRAPH_EXPAND_CONFIG_VARS=1 # experiment: interpolate ${var} and $var in site config JSON
-
-# webpack-serve is a proxy running on port 3080 that (1) serves assets, waiting to respond until
-# they are (re)built and (2) otherwise passes through to Sourcegraph running on port 3081. That is
-# why Sourcegraph listens on 3081 despite the appURL having port 3080.
-export WEBPACK_SERVE=1
+# webpack-dev-server is a proxy running on port 3080 that (1) serves assets, waiting to respond
+# until they are (re)built and (2) otherwise passes through to Sourcegraph running on port
+# 3081. That is why Sourcegraph listens on 3081 despite the appURL having port 3080.
 export SRC_HTTP_ADDR=":3081"
 
 # we want to keep config.json, but allow local config.
@@ -102,12 +100,6 @@ if $SOURCEGRAPH_COMBINE_CONFIG && [ -f $confpath/config_local.json ]; then
 		exit 1
 	fi
 	SOURCEGRAPH_CONFIG_FILE=$confpath/config_combined.json
-fi
-
-if ! [ -z "${ZOEKT-}" ]; then
-	export ZOEKT_HOST=localhost:6070
-else
-	export ZOEKT_HOST=
 fi
 
 # WebApp

@@ -835,30 +835,6 @@ func UpdateOnce(ctx context.Context, name api.RepoURI, url string) {
 	repos.update(string(name), url)
 }
 
-// Queue requests periodic automatic updates of the given repository, which
-// will happen only if automatic updates are enabled. It will also perform
-// a one-time fetch/clone.
-//
-// When not using the new scheduler, we just perform an immediate update
-// attempt. This "works" because the code host interfaces will be sending
-// this request to us on their update cycle.
-func Queue(ctx context.Context, name api.RepoURI, url string) {
-	repos.mu.Lock()
-	defer repos.mu.Unlock()
-	repos.queue(string(name), url)
-}
-
-// Dequeue cancels periodic automatic updates of the given repository.
-//
-// When the scheduler isn't running, this does almost nothing, but it
-// could unset the queue flag, which could matter if the configuration
-// later re-enables the scheduler.
-func Dequeue(ctx context.Context, name api.RepoURI, url string) {
-	repos.mu.Lock()
-	defer repos.mu.Unlock()
-	repos.dequeue(string(name), url)
-}
-
 // GetExplicitlyConfiguredRepository reports information about a repository configured explicitly with "repos.list".
 func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
 	if args.Repo == "" {

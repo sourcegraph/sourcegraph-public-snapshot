@@ -223,7 +223,6 @@ hr {
 // Pages
 @import './Layout';
 @import './api/APIConsole';
-@import './explore/ExplorePage';
 @import './discussions/DiscussionsPage';
 @import './extensions/ExtensionsArea';
 @import './extensions/extension/ExtensionArea';
@@ -269,7 +268,6 @@ hr {
 @import './open/OpenPage';
 @import './components/AnimatedAlert';
 @import './components/DismissibleAlert';
-@import './components/ThemeSwitcher';
 @import './extension/Link';
 @import './marketing/SurveyPage';
 @import './components/SingleValueCard';

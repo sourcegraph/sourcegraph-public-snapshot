@@ -2,16 +2,6 @@
 
 set -euf -o pipefail
 
-if [[ -z "${ZOEKT-}" ]]; then
-	echo "Enable zoekt with ZOEKT=1"
-	exit 0
-fi
-
-if ! [ -x "$(command -v $1)" ]; then
-	echo "Please install $1 from https://github.com/sourcegraph/zoekt"
-	exit 1
-fi
-
 # Sleep to allow frontend to start :'(
 [ "$1" != "zoekt-sourcegraph-indexserver" ] || sleep 5
 

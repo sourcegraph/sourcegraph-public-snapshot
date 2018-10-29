@@ -1,12 +1,18 @@
 import * as H from 'history'
+import marked from 'marked'
 import CancelIcon from 'mdi-react/CancelIcon'
 import CloseIcon from 'mdi-react/CloseIcon'
 import * as React from 'react'
 import { ReplaySubject, Subject, Subscription, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged } from 'rxjs/operators'
+import { distinctUntilChanged, map } from 'rxjs/operators'
+import { ContributableViewContainer } from 'sourcegraph/module/protocol/contribution'
+import { PanelView } from 'sourcegraph/module/protocol/plainTypes'
+import { Markdown } from '../components/Markdown'
 import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
+import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../tracking/eventLogger'
+import { isErrorLike } from '../util/errors'
 import { parseHash } from '../util/url'
 
 /**
@@ -23,7 +29,7 @@ export interface PanelItem extends Tab<string> {
     element: React.ReactElement<any>
 }
 
-interface Props {
+interface Props extends ExtensionsControllerProps {
     isLightTheme: boolean
     location: H.Location
     history: H.History
@@ -35,6 +41,9 @@ interface State {
 
     /** Panel items to display. */
     items: PanelItem[]
+
+    /** Panel views contributed by extensions. */
+    panelViews?: (PanelView & { id: string })[] | null
 }
 
 // TODO: Panel should be mounted whenever the blob page is shown.
@@ -126,6 +135,13 @@ export class Panel extends React.PureComponent<Props, State> {
                 }
             })
         )
+
+        this.subscriptions.add(
+            this.props.extensionsController.registries.views
+                .getViews(ContributableViewContainer.Panel)
+                .pipe(map(panelViews => ({ panelViews })))
+                .subscribe(stateUpdate => this.setState(stateUpdate))
+        )
     }
 
     public componentWillUnmount(): void {
@@ -143,7 +159,27 @@ export class Panel extends React.PureComponent<Props, State> {
             </button>
         )
 
-        const hasTabs = this.state.items.length > 0
+        let items = this.state.items
+        if (this.state.panelViews) {
+            items = [
+                ...items,
+                ...this.state.panelViews.map(
+                    panelView =>
+                        ({
+                            label: panelView.title,
+                            id: panelView.id,
+                            priority: 0,
+                            element: (
+                                <div className="p-2">
+                                    <Markdown dangerousInnerHTML={marked(panelView.content)} />
+                                </div>
+                            ),
+                        } as PanelItem)
+                ),
+            ]
+        }
+
+        const hasTabs = items.length > 0
 
         return (
             <div className="panel">
@@ -155,7 +191,7 @@ export class Panel extends React.PureComponent<Props, State> {
                 )}
                 {hasTabs ? (
                     <TabsWithURLViewStatePersistence
-                        tabs={this.state.items || []}
+                        tabs={items || []}
                         tabBarEndFragment={
                             <>
                                 <Spacer />
@@ -167,8 +203,7 @@ export class Panel extends React.PureComponent<Props, State> {
                         onSelectTab={this.onSelectTab}
                         location={this.props.location}
                     >
-                        {this.state.items &&
-                            this.state.items.map(({ id, element }) => React.cloneElement(element, { key: id }))}
+                        {items && items.map(({ id, element }) => React.cloneElement(element, { key: id }))}
                     </TabsWithURLViewStatePersistence>
                 ) : (
                     <div className="panel__empty">

@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
+	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 )
 
 // HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
@@ -71,7 +72,7 @@ func HandleResetPasswordInit(w http.ResponseWriter, r *http.Request) {
 }
 
 var (
-	resetPasswordEmailTemplates = txemail.MustValidate(txemail.Templates{
+	resetPasswordEmailTemplates = txemail.MustValidate(txtypes.Templates{
 		Subject: `Reset your Sourcegraph password`,
 		Text: `
 Somebody (likely you) requested a password reset for the user {{.Username}} on Sourcegraph.

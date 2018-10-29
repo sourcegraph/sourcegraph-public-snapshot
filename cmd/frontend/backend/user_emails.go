@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
+	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 )
 
 // UserEmails contains backend methods related to user email addresses.
@@ -151,7 +152,7 @@ func SendUserEmailVerificationEmail(ctx context.Context, email, code string) err
 }
 
 var (
-	verifyEmailTemplates = txemail.MustValidate(txemail.Templates{
+	verifyEmailTemplates = txemail.MustValidate(txtypes.Templates{
 		Subject: `Verify your email on Sourcegraph`,
 		Text: `
 Verify your email address {{printf "%q" .Email}} on Sourcegraph by following this link:

@@ -148,7 +148,7 @@ type GitHubConnection struct {
 	RepositoryPathPattern       string   `json:"repositoryPathPattern,omitempty"`
 	RepositoryQuery             []string `json:"repositoryQuery,omitempty"`
 	Token                       string   `json:"token"`
-	Url                         string   `json:"url,omitempty"`
+	Url                         string   `json:"url"`
 }
 type GitLabConnection struct {
 	Certificate                 string   `json:"certificate,omitempty"`
@@ -305,34 +305,15 @@ type Settings struct {
 	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
 	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
 }
-type SiteConfigSearchScope struct {
-	Description string `json:"description,omitempty"`
-	Id          string `json:"id,omitempty"`
-	Name        string `json:"name"`
-	Value       string `json:"value"`
-}
-
-// SiteConfigSettings description: Site settings hard-coded in site configuration.
-//
-// DEPRECATED: Specify site settings in the site admin global settings page instead of hard-coding them in the site configuration file. This makes it possible to change site settings without redeploying for cluster deployments.
-type SiteConfigSettings struct {
-	SearchRepositoryGroups map[string][]string      `json:"search.repositoryGroups,omitempty"`
-	SearchScopes           []*SiteConfigSearchScope `json:"search.scopes,omitempty"`
-}
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
 	AppURL                            string                       `json:"appURL,omitempty"`
 	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
-	AuthAllowSignup                   bool                         `json:"auth.allowSignup,omitempty"`
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
-	AuthOpenIDConnect                 *OpenIDConnectAuthProvider   `json:"auth.openIDConnect,omitempty"`
-	AuthProvider                      string                       `json:"auth.provider,omitempty"`
 	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
 	AuthPublic                        bool                         `json:"auth.public,omitempty"`
-	AuthSaml                          *SAMLAuthProvider            `json:"auth.saml,omitempty"`
 	AuthSessionExpiry                 string                       `json:"auth.sessionExpiry,omitempty"`
-	AuthUserIdentityHTTPHeader        string                       `json:"auth.userIdentityHTTPHeader,omitempty"`
 	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
 	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
 	BitbucketServer                   []*BitbucketServerConnection `json:"bitbucketServer,omitempty"`
@@ -379,8 +360,7 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
 	ReposList                         []*Repository                `json:"repos.list,omitempty"`
 	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
-	SearchScopes                      []*SiteConfigSearchScope     `json:"searchScopes,omitempty"`
-	Settings                          *SiteConfigSettings          `json:"settings,omitempty"`
+	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`
 	TlsLetsencrypt                    string                       `json:"tls.letsencrypt,omitempty"`
 	TlsCert                           string                       `json:"tlsCert,omitempty"`

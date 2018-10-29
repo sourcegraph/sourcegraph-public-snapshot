@@ -6,7 +6,7 @@ Sourcegraph extensions are available in alpha on Sourcegraph.com, in Sourcegraph
 
 ### Using Sourcegraph extensions on Sourcegraph
 
-After following the steps above, Sourcegraph extensions are enabled, and a new **Extensions** link is visible in the top navigation bar. On this new extensions page, you can choose which extensions to add. To add an extension, click **Add** and then select your username.
+To view all available extensions, click **User menu > Extensions** in the top navigation bar. To add an extension, visit its page and toggle the slider to on.
 
 In this alpha release, we recommend using the following 2 extensions.
 
@@ -33,7 +33,7 @@ If your Sourcegraph instance is unable to connect to Sourcegraph.com (due to a f
 1.  Clone the repository of the extension you want to publish: [sourcegraph-codecov](https://github.com/sourcegraph/sourcegraph-codecov) or [sourcegraph-basic-code-intel](https://github.com/sourcegraph/sourcegraph-basic-code-intel).
 1.  Run `npm install` in the clone directory to install dependencies.
 1.  Run `src extensions publish -extension-id $USER/$NAME` in the clone directory to publish the extension locally to your Sourcegraph instance. Replace `$USER` with your Sourcegraph username and `$NAME` with with `codecov` or `basic-code-intel`.
-1.  Enable the extension for your Sourcegraph user account by clicking the **Extensions** link in the top navigation, clicking **Add**, and selecting your username.
+1.  Enable the extension for your Sourcegraph user account by clicking on **User menu > Extensions** in the top navigation bar and then toggling the slider to on.
 
 ### Private extension registry
 

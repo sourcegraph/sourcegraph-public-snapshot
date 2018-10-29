@@ -1,5 +1,4 @@
-import ExtractTextPlugin from 'extract-text-webpack-plugin'
-import sassImportOnce from 'node-sass-import-once'
+import MiniCssExtractPlugin from 'mini-css-extract-plugin'
 import * as path from 'path'
 // @ts-ignore
 import rxPaths from 'rxjs/_esm5/path-mapping'
@@ -9,20 +8,6 @@ import * as webpack from 'webpack'
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
 const monacoEditorPaths = [path.resolve(__dirname, 'node_modules', 'monaco-editor')]
-
-// Never timeout idle workers when running with webpack-serve. Ideally this behavior would also
-// apply when running webpack-command with the --watch flag, but there is no general way to
-// determine whether we are in watch mode. This just means that if you use a different tool's watch
-// mode (other than webpack-serve), your workers will be reclaimed frequently and it'll be a bit
-// slower until you add support here.
-const usingWebpackServe = Boolean(process.env.WEBPACK_SERVE)
-const workerPool = {
-    poolTimeout: usingWebpackServe ? Infinity : 2000,
-}
-const workerPoolSCSS = {
-    workerParallelJobs: 2,
-    poolTimeout: usingWebpackServe ? Infinity : 2000,
-}
 
 const babelLoader: webpack.RuleSetUseItem = {
     loader: 'babel-loader',
@@ -44,6 +29,9 @@ const typescriptLoader: webpack.RuleSetUseItem = {
     },
 }
 
+const isEnterpriseBuild = !!process.env.ENTERPRISE
+const sourceRoots = [path.resolve(__dirname, 'src'), path.resolve(__dirname, 'enterprise', 'src')]
+
 const config: webpack.Configuration = {
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     optimization: {
@@ -61,8 +49,17 @@ const config: webpack.Configuration = {
         ],
     },
     entry: {
-        app: path.join(__dirname, 'src/main.tsx'),
-        style: path.join(__dirname, 'src/main.scss'),
+        // Enterprise vs. OSS builds use different entrypoints. For app (TypeScript), a single entrypoint is used
+        // (enterprise or OSS). For style (SCSS), the OSS entrypoint is always used, and the enterprise entrypoint
+        // is appended for enterprise builds.
+        app: isEnterpriseBuild
+            ? path.join(__dirname, 'enterprise', 'src', 'main.tsx')
+            : path.join(__dirname, 'src', 'main.tsx'),
+        style: [
+            path.join(__dirname, 'src', 'main.scss'),
+            isEnterpriseBuild ? path.join(__dirname, 'enterprise', 'src', 'main.scss') : null,
+        ].filter((path): path is string => !!path),
+
         'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
         'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
     },
@@ -83,7 +80,7 @@ const config: webpack.Configuration = {
             },
         }),
         new webpack.ContextReplacementPlugin(/\/node_modules\/@sqs\/jsonc-parser\/lib\/edit\.js$/, /.*/),
-        new ExtractTextPlugin({ filename: 'styles/[name].bundle.css', allChunks: true }),
+        new MiniCssExtractPlugin({ filename: 'styles/[name].bundle.css' }) as any, // @types package is incorrect
         // Don't build the files referenced by dynamic imports for all the basic languages monaco supports.
         // They won't ever be loaded at runtime because we only edit JSON
         new webpack.IgnorePlugin(/^\.\/[^.]+.js$/, /\/node_modules\/monaco-editor\/esm\/vs\/basic-languages\/\w+$/),
@@ -94,33 +91,38 @@ const config: webpack.Configuration = {
     resolve: {
         extensions: ['.mjs', '.ts', '.tsx', '.js'],
         mainFields: ['es2015', 'module', 'browser', 'main'],
-        alias: rxPaths(),
+        alias: {
+            ...rxPaths(),
+
+            // HACK: This is required because the codeintellify package has a hardcoded import that assumes that
+            // ../node_modules/@sourcegraph/react-loading-spinner is a valid path. This is not a correct assumption
+            // in general, and it also breaks in this build because CSS imports URLs are not resolved (we would
+            // need to use resolve-url-loader). There are many possible fixes that are more complex, but this hack
+            // works fine for now.
+            '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css':
+                __dirname + '/node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css',
+        },
     },
     module: {
         rules: [
-            ((): webpack.RuleSetRule => ({
+            {
                 test: /\.tsx?$/,
-                include: path.resolve(__dirname, 'src'),
-                use: [{ loader: 'thread-loader', options: workerPool }, babelLoader, typescriptLoader],
-            }))(),
-            ((): webpack.RuleSetRule => ({
+                include: sourceRoots,
+                use: [babelLoader, typescriptLoader],
+            },
+            {
                 test: /\.m?js$/,
-                use: [{ loader: 'thread-loader', options: workerPool }, babelLoader, typescriptLoader],
-            }))(),
+                use: [babelLoader],
+            },
             {
                 test: /\.mjs$/,
                 include: path.resolve(__dirname, 'node_modules'),
                 type: 'javascript/auto',
             },
-            ((): webpack.RuleSetRule => ({
-                // SCSS rule for our own styles and Bootstrap
-                test: /\.(css|sass|scss)$/,
-                exclude: [...monacoEditorPaths, /graphiql/],
-                use: ExtractTextPlugin.extract([
-                    {
-                        loader: 'thread-loader',
-                        options: workerPoolSCSS,
-                    },
+            {
+                test: /\.(sass|scss)$/,
+                use: [
+                    MiniCssExtractPlugin.loader,
                     {
                         loader: 'css-loader',
                         options: {
@@ -132,20 +134,16 @@ const config: webpack.Configuration = {
                         loader: 'sass-loader',
                         options: {
                             includePaths: [__dirname + '/node_modules'],
-                            importer: sassImportOnce,
-                            importOnce: {
-                                css: true,
-                            },
                         },
                     },
-                ]),
-            }))(),
-            ((): webpack.RuleSetRule => ({
+                ],
+            },
+            {
                 // CSS rule for monaco-editor and other external plain CSS (skip SASS and PostCSS for build perf)
                 test: /\.css$/,
                 include: monacoEditorPaths,
-                use: [{ loader: 'thread-loader', options: workerPool }, 'style-loader', 'css-loader'],
-            }))(),
+                use: ['style-loader', 'css-loader'],
+            },
         ],
     },
 }

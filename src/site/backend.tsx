@@ -29,7 +29,6 @@ export function refreshSiteFlags(): Observable<never> {
                             message
                             isDismissibleWithKey
                         }
-                        hasCodeIntelligence
                         authProviders {
                             nodes {
                                 serviceType

@@ -5,7 +5,7 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 import contributionSchema from 'sourcegraph/lib/protocol/contribution.schema.json'
 import { BuiltinTheme, MonacoEditor } from '../components/MonacoEditor'
-import jsonSchemaMetaSchema from '../schema/json-schema.schema.json'
+import jsonSchemaMetaSchema from '../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../schema/settings.schema.json'
 import { eventLogger } from '../tracking/eventLogger'
 

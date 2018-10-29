@@ -22,11 +22,12 @@ import MenuIcon from 'mdi-react/MenuIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import { concat, Observable } from 'rxjs'
-import { distinctUntilChanged, map, switchMap, take } from 'rxjs/operators'
+import { distinctUntilChanged, map, switchMap, take, withLatestFrom } from 'rxjs/operators'
 import { InitData } from 'sourcegraph/module/extension/extensionHost'
 import { MessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/connection'
 import { createWebWorkerMessageTransports } from 'sourcegraph/module/protocol/jsonrpc2/transports/webWorker'
 import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
+import { authenticatedUser } from '../auth'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
 import { sendLSPHTTPRequests } from '../backend/lsp'
@@ -73,7 +74,8 @@ export function createExtensionsContextController(): ExtensionsContextController
 function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsArgs): Observable<void> {
     return configurationCascade.pipe(
         take(1),
-        switchMap(configurationCascade => {
+        withLatestFrom(authenticatedUser),
+        switchMap(([configurationCascade, authenticatedUser]) => {
             const subjectConfig = configurationCascade.subjects.find(s => s.id === subject)
             if (!subjectConfig) {
                 throw new Error(`no configuration subject: ${subject}`)
@@ -81,15 +83,33 @@ function updateExtensionSettings(subject: string, args: UpdateExtensionSettingsA
             const lastID = subjectConfig.latestSettings ? subjectConfig.latestSettings.id : null
 
             let edit: GQL.IConfigurationEdit
+            let editDescription: string
             if ('edit' in args && args.edit) {
                 edit = { keyPath: toGQLKeyPath(args.edit.path), value: args.edit.value }
+                editDescription = `update user setting ` + '`' + args.edit.path + '`'
             } else if ('extensionID' in args) {
                 edit = {
                     keyPath: toGQLKeyPath(['extensions', args.extensionID]),
                     value: typeof args.enabled === 'boolean' ? args.enabled : null,
                 }
+                editDescription =
+                    `${typeof args.enabled === 'boolean' ? 'enable' : 'disable'} extension ` +
+                    '`' +
+                    args.extensionID +
+                    '`'
             } else {
                 throw new Error('no edit')
+            }
+
+            if (!authenticatedUser) {
+                const u = new URL(window.context.appURL)
+                throw new Error(
+                    `Unable to ${editDescription} because you are not signed in.` +
+                        '\n\n' +
+                        `[**Sign into Sourcegraph ${
+                            u.hostname === 'sourcegraph.com' ? '' : `on ${u.host}`
+                        }**](${`${u.href.replace(/\/$/, '')}/sign-in`})`
+                )
             }
 
             return editConfiguration(subject, lastID, edit)

@@ -1,6 +1,14 @@
 # Site configuration
 
-Sourcegraph is configured by a site configuration JSON file. To view and edit your site configuration on the web-based site admin, go to the configuration page by clicking **Admin** in the top right of any page, and going to **Configuration** in the left side menu. (The URL is `https://sourcegraph.example.com/site-admin/configuration`.)
+Sourcegraph is configured by a site configuration JSON file.
+
+To view and edit your site configuration on your Sourcegraph instance:
+
+1.  Click on the user menu (with your username or avatar) in the top navigation bar.
+1.  Select **Site admin**.
+1.  In the left-hand navigation menu, select **Configuration**.
+
+The URL is `https://sourcegraph.example.com/site-admin/configuration`.
 
 For Kubernetes cluster deployments of Sourcegraph, edit the `config-file.ConfigMap.yaml` file and then use `kubectl apply -f ...` to update the resource.
 

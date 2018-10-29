@@ -28,12 +28,12 @@ const GitCommitNodeByline: React.SFC<{
                 <UserAvatar
                     className="icon-inline"
                     user={author.person}
-                    tooltip={`${author.person.displayName} (author)`}
+                    data-tooltip={`${author.person.displayName} (author)`}
                 />{' '}
                 <UserAvatar
                     className="icon-inline mr-1"
                     user={committer.person}
-                    tooltip={`${committer.person.displayName} (committer)`}
+                    data-tooltip={`${committer.person.displayName} (committer)`}
                 />{' '}
                 <strong>{author.person.displayName}</strong> {!compact && 'authored'} and{' '}
                 <strong>{committer.person.displayName}</strong>{' '}
@@ -48,7 +48,7 @@ const GitCommitNodeByline: React.SFC<{
 
     return (
         <small className={`git-commit-node-byline git-commit-node-byline--no-committer ${className}`}>
-            <UserAvatar className="icon-inline mr-1" user={author.person} tooltip={author.person.displayName} />{' '}
+            <UserAvatar className="icon-inline mr-1" user={author.person} data-tooltip={author.person.displayName} />{' '}
             <strong>{author.person.displayName}</strong>{' '}
             {!compact && (
                 <>

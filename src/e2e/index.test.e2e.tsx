@@ -201,10 +201,8 @@ describe('e2e test suite', () => {
             )
             assert.equal(currentThemes.length, 1, 'Expected 1 theme')
             const expectedTheme = currentThemes[0] === 'theme-dark' ? 'theme-light' : 'theme-dark'
-            await page.evaluate(() => {
-                // await page.click('.theme-switcher__button') does not work/is flaky.
-                ;(document.querySelector('.theme-switcher__button') as HTMLElement).click()
-            })
+            await page.click('.e2e-user-nav-item-toggle')
+            await page.click('.e2e-user-nav-item__theme')
             assert.deepEqual(
                 await page.evaluate(() =>
                     Array.from(document.querySelector('.theme')!.classList).filter(c => c.startsWith('theme-'))

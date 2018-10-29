@@ -2,14 +2,18 @@ package graphqlbackend
 
 import (
 	"context"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 )
 
 // GetProductNameWithBrand is called to obtain the full product name (e.g., "Sourcegraph OSS") from a
 // product license.
 var GetProductNameWithBrand = func(hasLicense bool, licenseTags []string) string {
 	return "Sourcegraph OSS"
+}
+
+// ActualUserCount is called to obtain the actual maximum number of user accounts that have been active
+// on this Sourcegraph instance for the current license.
+var ActualUserCount = func(ctx context.Context) (int32, error) {
+	return 0, nil
 }
 
 // productSubscriptionStatus implements the GraphQL type ProductSubscriptionStatus.
@@ -29,8 +33,7 @@ func (productSubscriptionStatus) ProductNameWithBrand() (string, error) {
 }
 
 func (productSubscriptionStatus) ActualUserCount(ctx context.Context) (int32, error) {
-	count, err := db.Users.Count(ctx, nil)
-	return int32(count), err
+	return ActualUserCount(ctx)
 }
 
 func (r productSubscriptionStatus) License() (*ProductLicenseInfo, error) {

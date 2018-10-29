@@ -1,14 +1,8 @@
 /**
- * Global style for user-defined avatars
- * Used for user, team member, and org avatars.
+ * Global style for user avatars.
  */
-.avatar {
-    .avatar-icon,
-    .icon {
-        height: 100%;
-        fill: currentColor;
-        border-radius: 50%;
-    }
+.avatar-icon {
+    border-radius: 50%;
 }
 
 // Formats an icon so that it appears inline in the text
@@ -23,8 +17,7 @@
 
 svg.icon-inline,
 img.icon-inline,
-.icon-inline svg,
-.icon-inline .avatar-icon {
+.icon-inline svg {
     // TODO find a better way to scale icons that is not proportional to the font size
     // 14px font size -> 20px icon size
     // stylelint-disable-next-line declaration-property-unit-whitelist

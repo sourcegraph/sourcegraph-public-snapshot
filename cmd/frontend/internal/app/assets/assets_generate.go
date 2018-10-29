@@ -14,7 +14,7 @@ func main() {
 	err := vfsgen.Generate(http.Dir(dir), vfsgen.Options{
 		PackageName:  "assets",
 		BuildTags:    "dist",
-		VariableName: "DistAssets",
+		VariableName: "Assets",
 	})
 	if err != nil {
 		log.Fatalln(err)
