@@ -6,8 +6,10 @@ import { catchError, distinctUntilChanged, filter, map, startWith, switchMap, ta
 import { parseSearchURLQuery, SearchOptions } from '..'
 import * as GQL from '../../backend/graphqlschema'
 import { PageTitle } from '../../components/PageTitle'
+import { ExtensionsControllerProps } from '../../extensions/ExtensionsClientCommonContext'
 import { currentConfiguration } from '../../settings/configuration'
 import { eventLogger } from '../../tracking/eventLogger'
+import { isErrorLike } from '../../util/errors'
 import { search } from '../backend'
 import { FilterChip } from '../FilterChip'
 import { isSearchResults, submitSearch, toggleSearchFilter } from '../helpers'
@@ -17,7 +19,7 @@ import { SearchResultsListOld } from './SearchResultsListOld'
 
 const UI_PAGE_SIZE = 75
 
-interface SearchResultsProps {
+interface SearchResultsProps extends ExtensionsControllerProps {
     authenticatedUser: GQL.IUser | null
     location: H.Location
     history: H.History
@@ -87,7 +89,7 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                             // Reset view state
                             [{ resultsOrError: undefined, didSave: false }],
                             // Do async search request
-                            search(searchOptions).pipe(
+                            search(searchOptions, this.props).pipe(
                                 // Log telemetry
                                 tap(
                                     results =>
@@ -95,8 +97,10 @@ export class SearchResults extends React.Component<SearchResultsProps, SearchRes
                                             code_search: {
                                                 // 🚨 PRIVACY: never provide any private data in { code_search: { results } }.
                                                 results: {
-                                                    results_count: results.results.length,
-                                                    any_cloning: results.cloning.length > 0,
+                                                    results_count: isErrorLike(results) ? 0 : results.results.length,
+                                                    any_cloning: isErrorLike(results)
+                                                        ? false
+                                                        : results.cloning.length > 0,
                                                 },
                                             },
                                         }),
