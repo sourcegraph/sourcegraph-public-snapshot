@@ -7,6 +7,7 @@ import {
     ConfigurationSubject,
     Settings,
 } from '@sourcegraph/extensions-client-common/lib/settings'
+import H from 'history'
 import * as React from 'react'
 import { Subscription } from 'rxjs'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
@@ -34,6 +35,7 @@ interface CodeViewToolbarProps
         actionItemClass?: string
     }
     simpleProviderFns: SimpleProviderFns
+    location: H.Location
 }
 
 interface CodeViewToolbarState extends ConfigurationCascadeProps<ConfigurationSubject, Settings> {
@@ -81,6 +83,7 @@ export class CodeViewToolbar extends React.Component<CodeViewToolbarProps, CodeV
                                 extensions={this.props.extensions}
                                 listClass="BtnGroup"
                                 actionItemClass="btn btn-sm tooltipped tooltipped-n BtnGroup-item"
+                                location={this.props.location}
                             />
                         )}
                 </ul>

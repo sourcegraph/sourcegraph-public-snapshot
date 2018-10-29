@@ -44,27 +44,27 @@ export function getGlobalDebugMount(): HTMLElement {
 }
 
 // TODO: remove with old inject
-export function injectExtensionsGlobalComponents({
-    extensionsController,
-    extensionsContextController,
-}: {
-    extensionsController: ClientController<ConfigurationSubject, Settings>
-    extensionsContextController: Controller<ConfigurationSubject, Settings>
-}): void {
+export function injectExtensionsGlobalComponents(
+    {
+        extensionsController,
+        extensionsContextController,
+    }: {
+        extensionsController: ClientController<ConfigurationSubject, Settings>
+        extensionsContextController: Controller<ConfigurationSubject, Settings>
+    },
+    location: H.Location
+): void {
     render(
         <ShortcutProvider>
             <CommandListPopoverButton
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
                 extensions={extensionsContextController}
+                location={location}
             />
         </ShortcutProvider>,
         getCommandPaletteMount()
     )
 
-    const history = H.createBrowserHistory()
-    render(
-        <GlobalDebug extensionsController={extensionsController} location={history.location} />,
-        getGlobalDebugMount()
-    )
+    render(<GlobalDebug extensionsController={extensionsController} location={location} />, getGlobalDebugMount())
 }

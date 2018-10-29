@@ -22,6 +22,7 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import { ConfigurationSubject } from '@sourcegraph/extensions-client-common/lib/settings'
 import { ConfigurationCascade } from '@sourcegraph/extensions-client-common/lib/settings'
+import * as H from 'history'
 
 import mermaid from 'mermaid'
 import * as React from 'react'
@@ -131,10 +132,13 @@ function injectCodeIntelligence(): void {
         const constExtensionsContextController = extensionsContextController!
         const constController = extensionsController!
 
-        injectExtensionsGlobalComponents({
-            extensionsController: constController,
-            extensionsContextController: constExtensionsContextController,
-        })
+        injectExtensionsGlobalComponents(
+            {
+                extensionsController: constController,
+                extensionsContextController: constExtensionsContextController,
+            },
+            H.createLocation(window.location)
+        )
 
         resolveRev({ repoPath, rev: parseURL().rev })
             .pipe(retryWhenCloneInProgressError())
@@ -396,6 +400,8 @@ function injectCodeSnippetAnnotator(
         mount.className = 'sourcegraph-app-annotator'
         filePathContainer.appendChild(mount)
 
+        const location = H.createLocation(window.location)
+
         const renderCodeView = (commitID: string) =>
             render(
                 <CodeViewToolbar
@@ -406,6 +412,7 @@ function injectCodeSnippetAnnotator(
                     buttonProps={buttonProps}
                     simpleProviderFns={lspViaAPIXlang}
                     actionsNavItemClassProps={actionsNavItemClassProps}
+                    location={location}
                 />,
                 mount
             )
@@ -625,6 +632,7 @@ function injectBlobAnnotators(
                         extensionsController={extensionsController}
                         extensions={extensions}
                         actionsNavItemClassProps={actionsNavItemClassProps}
+                        location={H.createLocation(window.location)}
                     />,
                     mount
                 )
@@ -698,6 +706,7 @@ function injectBlobAnnotators(
                             buttonProps={buttonProps}
                             simpleProviderFns={simpleProviderFns}
                             actionsNavItemClassProps={actionsNavItemClassProps}
+                            location={H.createLocation(window.location)}
                         />,
                         mount
                     )

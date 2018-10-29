@@ -13,6 +13,7 @@ import {
 import { propertyIsDefined } from '@sourcegraph/codeintellify/lib/helpers'
 import { HoverMerged } from '@sourcegraph/codeintellify/lib/types'
 import { toPrettyBlobURL } from '@sourcegraph/codeintellify/lib/url'
+import * as H from 'history'
 import * as React from 'react'
 import { render } from 'react-dom'
 import { animationFrameScheduler, BehaviorSubject, Observable, of, Subject, Subscription } from 'rxjs'
@@ -472,6 +473,7 @@ function handleCodeHost(codeHost: CodeHost): Subscription {
                             simpleProviderFns={
                                 extensionsController ? createLSPFromExtensions(extensionsController) : lspViaAPIXlang
                             }
+                            location={H.createLocation(window.location)}
                         />,
                         mount
                     )

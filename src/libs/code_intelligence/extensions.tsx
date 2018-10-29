@@ -115,6 +115,7 @@ export function initializeExtensions(
     documents: Observable<TextDocumentItem[] | null>
 ): Controllers {
     const { extensionsContextController, extensionsController } = createControllers(documents)
+    const history = H.createBrowserHistory()
 
     render(
         <ShortcutProvider>
@@ -122,13 +123,13 @@ export function initializeExtensions(
                 extensionsController={extensionsController}
                 menu={ContributableMenu.CommandPalette}
                 extensions={extensionsContextController}
+                location={history.location}
             />
             <Notifications extensionsController={extensionsController} />
         </ShortcutProvider>,
         getCommandPaletteMount()
     )
 
-    const history = H.createBrowserHistory()
     render(
         <GlobalDebug extensionsController={extensionsController} location={history.location} />,
         getGlobalDebugMount()
