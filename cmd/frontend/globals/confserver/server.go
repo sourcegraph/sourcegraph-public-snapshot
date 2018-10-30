@@ -1,4 +1,4 @@
-package conf
+package confserver
 
 import (
 	"io/ioutil"
