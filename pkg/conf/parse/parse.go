@@ -56,23 +56,45 @@ func tolerantUnmarshal(data string, v interface{}) error {
 	return json.Unmarshal(massagedData, v)
 }
 
-// DeprecatedParseConfigEnvironment reads the provided string, then merges in additional
-// data from the (deprecated) environment.
-func DeprecatedParseConfigEnvironment(data string) (*SiteConfiguration, error) {
-	tmpConfig, err := ParseConfigData(data)
-	if err != nil {
-		return nil, err
+// DeprecatedOverlayConfigFromEnvironment overlays data from the (deprecated) environment onto the suppied
+// SiteConfiguration.
+func DeprecatedOverlayConfigFromEnvironment(config *SiteConfiguration) error {
+	if config == nil {
+		// TODO@ggilmore: Defend against nil pointer exception?
+		// Not sure if this actually works (or if this is a good idea).
+		config = &SiteConfiguration{}
 	}
 
-	// Env var config takes highest precedence but is deprecated.
-	if v, envVarNames, err := configFromEnv(); err != nil {
-		return nil, err
-	} else if len(envVarNames) > 0 {
-		if err := json.Unmarshal(v, tmpConfig); err != nil {
-			return nil, err
-		}
+	baseEnv, coreEnv, envVarNames, err := configFromEnv()
+	if err != nil {
+		return err
 	}
-	return tmpConfig, nil
+
+	if len(envVarNames) == 0 {
+		return nil
+	}
+
+	baseJSON, err := json.Marshal(baseEnv)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(baseJSON, config.Basic)
+	if err != nil {
+		return err
+	}
+
+	coreJSON, err := json.Marshal(coreEnv)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(coreJSON, config.Core)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // requireRestart describes the list of config properties that require
