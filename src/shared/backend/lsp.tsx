@@ -52,7 +52,7 @@ const request = (url: string, method: string, requests: any[]): Observable<AjaxR
                 url: `${url}/.api/xlang/${method || ''}`,
                 headers,
                 crossDomain: true,
-                withCredentials: true,
+                withCredentials: !(headers && headers.authorization),
                 body: JSON.stringify(requests),
                 async: true,
             })

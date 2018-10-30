@@ -68,7 +68,7 @@ function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
                 url: `${url}/.api/graphql` + queryName,
                 headers,
                 crossDomain: true,
-                withCredentials: true,
+                withCredentials: !(headers && headers.authorization),
                 body: JSON.stringify({ query: request, variables }),
                 async: true,
             }).pipe(
