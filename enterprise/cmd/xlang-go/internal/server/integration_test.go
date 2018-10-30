@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/ctxvfs"
-	gobuildserver "github.com/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
+	gobuildserver "github.com/sourcegraph/sourcegraph/enterprise/cmd/xlang-go/internal/server"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"

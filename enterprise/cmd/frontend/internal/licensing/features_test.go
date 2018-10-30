@@ -3,7 +3,7 @@ package licensing
 import (
 	"testing"
 
-	"github.com/sourcegraph/enterprise/pkg/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 )
 
 func TestIsFeatureEnabled(t *testing.T) {

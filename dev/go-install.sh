@@ -111,7 +111,7 @@ do_install() {
 		replaced=false
     		for enterpriseCmd in $ENTERPRISE_COMMANDS; do
 			if [ "$cmd" == "$enterpriseCmd" ]; then
-				cmds="$cmds github.com/sourcegraph/enterprise/cmd/$enterpriseCmd"
+				cmds="$cmds github.com/sourcegraph/sourcegraph/enterprise/cmd/$enterpriseCmd"
 				replaced=true
 			fi
 		done

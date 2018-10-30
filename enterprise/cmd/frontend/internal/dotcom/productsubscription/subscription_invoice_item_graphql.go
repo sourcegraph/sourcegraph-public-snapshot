@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	stripe "github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/sub"
 )

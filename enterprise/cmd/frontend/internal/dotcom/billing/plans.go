@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/enterprise/cmd/frontend/internal/licensing"
-	"github.com/sourcegraph/enterprise/pkg/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	stripe "github.com/stripe/stripe-go"
 	"github.com/stripe/stripe-go/plan"
 )
