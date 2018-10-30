@@ -28,7 +28,7 @@
     "managed_schema": "schema.json"
   },
   "optional_permissions": ["tabs", "http://*/*", "https://*/*"],
-  "content_security_policy": "script-src 'self' 'unsafe-eval' blob:; object-src 'self'",
+  "content_security_policy": "script-src 'self' blob:; object-src 'self'",
   "web_accessible_resources": ["img/*", "js/link.bundle.js", "link.html", "css/style.bundle.css"],
   "omnibox": {
     "keyword": "src"
