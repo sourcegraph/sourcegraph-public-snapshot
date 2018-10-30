@@ -6,6 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals/confserver"
+	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 )
 
 type configurationMode int
@@ -44,7 +47,7 @@ func getMode() configurationMode {
 }
 
 func init() {
-	clientStore := Store()
+	clientStore := store.New()
 	defaultClient = &client{
 		store:   clientStore,
 		fetcher: httpFetcher{},
@@ -72,13 +75,9 @@ func init() {
 	// If the caller of pkg/conf is the frontend service, instantiate the DefaultServerFrontendOnly
 	// and install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
 	if mode == modeServer {
-		DefaultServerFrontendOnly = &server{
-			configFilePath: os.Getenv("SOURCEGRAPH_CONFIG_FILE"),
-			store:          Store(),
-			fileWrite:      make(chan chan struct{}, 1),
-		}
+		globals.ConfigurationServerFrontendOnly = confserver.NewServer(os.Getenv("SOURCEGRAPH_CONFIG_FILE"))
 
-		go DefaultServerFrontendOnly.watchDisk()
+		globals.ConfigurationServerFrontendOnly.Start()
 		defaultClient.fetcher = passthroughFetcherFrontendOnly{}
 	}
 

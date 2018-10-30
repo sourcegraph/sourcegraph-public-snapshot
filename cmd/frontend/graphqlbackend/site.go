@@ -17,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 
 const singletonSiteGQLID = "site"
@@ -152,7 +154,7 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (stri
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return "", err
 	}
-	return conf.DefaultServerFrontendOnly.Raw(), nil
+	return globals.ConfigurationServerFrontendOnly.Raw(), nil
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
@@ -170,7 +172,7 @@ func (r *siteConfigurationResolver) CanUpdate() bool {
 }
 
 func (r *siteConfigurationResolver) Source() string {
-	s := conf.DefaultServerFrontendOnly.FilePath()
+	s := globals.ConfigurationServerFrontendOnly.FilePath()
 	return s
 }
 
@@ -182,8 +184,8 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
 	}
-	if err := conf.DefaultServerFrontendOnly.Write(args.Input); err != nil {
+	if err := globals.ConfigurationServerFrontendOnly.Write(args.Input); err != nil {
 		return false, err
 	}
-	return conf.DefaultServerFrontendOnly.NeedServerRestart(), nil
+	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
 }

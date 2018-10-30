@@ -1,4 +1,4 @@
-package conf
+package parse
 
 import (
 	"encoding/json"
@@ -30,9 +30,9 @@ func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
 	return &tmpConfig, nil
 }
 
-// parseConfig reads the provided string, then merges in additional
+// DeprecatedParseConfigEnvironment reads the provided string, then merges in additional
 // data from the (deprecated) environment.
-func parseConfig(data string) (*schema.SiteConfiguration, error) {
+func DeprecatedParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
 	tmpConfig, err := ParseConfigData(data)
 	if err != nil {
 		return nil, err
@@ -183,9 +183,9 @@ func AppendConfig(dest, src *schema.SiteConfiguration) *schema.SiteConfiguration
 	return dest
 }
 
-// needRestartToApply determines if a restart is needed to apply the changes
+// NeedRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
-func needRestartToApply(before, after *schema.SiteConfiguration) bool {
+func NeedRestartToApply(before, after *schema.SiteConfiguration) bool {
 	diff := diff(before, after)
 
 	// Check every option that changed to determine whether or not a server

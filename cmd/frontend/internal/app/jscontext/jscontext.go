@@ -146,7 +146,7 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 		EmailEnabled:        conf.CanSendEmail(),
 		Site:                publicSiteConfiguration(),
 		LikelyDockerOnMac:   likelyDockerOnMac(),
-		NeedServerRestart:   conf.DefaultServerFrontendOnly.NeedServerRestart(),
+		NeedServerRestart:   globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		IsClusterDeployment: conf.IsDeployTypeKubernetesCluster(conf.DeployType()),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),

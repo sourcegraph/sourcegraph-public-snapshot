@@ -159,7 +159,7 @@ func serveReposInventory(w http.ResponseWriter, r *http.Request) error {
 }
 
 func serveConfigurationRawJSON(w http.ResponseWriter, r *http.Request) error {
-	rawJSON := conf.DefaultServerFrontendOnly.Raw()
+	rawJSON := globals.ConfigurationServerFrontendOnly.Raw()
 	err := json.NewEncoder(w).Encode(rawJSON)
 	if err != nil {
 		return errors.Wrap(err, "Encode")
