@@ -8,7 +8,7 @@ import { ajax, AjaxResponse } from 'rxjs/ajax'
 import { catchError, map, tap } from 'rxjs/operators'
 import { Location } from 'sourcegraph/module/protocol/plainTypes'
 import { MarkupContent } from 'vscode-languageserver-types'
-import { InitializeResult, ServerCapabilities } from 'vscode-languageserver/lib/main'
+import { InitializeResult } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepo, FileSpec, makeRepoURI, PositionSpec } from '../repo'
 import { normalizeAjaxError } from '../util/errors'
 import { memoizeObservable } from '../util/memoize'
@@ -42,9 +42,6 @@ export const isEmptyHover = (hover: HoverMerged | null): boolean =>
         }
         return !c.value
     })
-
-/** LSP proxy error code for unsupported modes */
-export const EMODENOTFOUND = -32000
 
 type ResponseMessages = { 0: { result: InitializeResult } } & any[]
 
@@ -113,15 +110,6 @@ const httpSendLSPRequest = (ctx: LSPSelector, request?: LSPRequest): Observable<
  */
 const sendLSPRequest: (ctx: LSPSelector, request?: LSPRequest) => Observable<any> = (ctx, request) =>
     httpSendLSPRequest(ctx, request).pipe(map(results => results[request ? 1 : 0]))
-
-/**
- * Query the server's capabilities.
- */
-export const fetchServerCapabilities = memoizeObservable(
-    (pos: LSPSelector & { filePath: string }): Observable<ServerCapabilities> =>
-        sendLSPRequest(pos).pipe(map(result => (result as InitializeResult).capabilities)),
-    cacheKey
-)
 
 /** Callers should use features.getXdefinition instead. */
 export const fetchXdefinition = memoizeObservable(
