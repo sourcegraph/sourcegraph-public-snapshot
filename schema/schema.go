@@ -42,6 +42,53 @@ type AuthAccessTokens struct {
 type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
 }
+
+// AuthProviderCommon description: Common properties for authentication providers.
+type AuthProviderCommon struct {
+	DisplayName string `json:"displayName,omitempty"`
+}
+type AuthProviders struct {
+	Builtin       *BuiltinAuthProvider
+	Saml          *SAMLAuthProvider
+	Openidconnect *OpenIDConnectAuthProvider
+	HttpHeader    *HTTPHeaderAuthProvider
+}
+
+func (v AuthProviders) MarshalJSON() ([]byte, error) {
+	if v.Builtin != nil {
+		return json.Marshal(v.Builtin)
+	}
+	if v.Saml != nil {
+		return json.Marshal(v.Saml)
+	}
+	if v.Openidconnect != nil {
+		return json.Marshal(v.Openidconnect)
+	}
+	if v.HttpHeader != nil {
+		return json.Marshal(v.HttpHeader)
+	}
+	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
+}
+func (v *AuthProviders) UnmarshalJSON(data []byte) error {
+	var d struct {
+		DiscriminantProperty string `json:"type"`
+	}
+	if err := json.Unmarshal(data, &d); err != nil {
+		return err
+	}
+	switch d.DiscriminantProperty {
+	case "builtin":
+		return json.Unmarshal(data, &v.Builtin)
+	case "http-header":
+		return json.Unmarshal(data, &v.HttpHeader)
+	case "openidconnect":
+		return json.Unmarshal(data, &v.Openidconnect)
+	case "saml":
+		return json.Unmarshal(data, &v.Saml)
+	}
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header"})
+}
+
 type AuthProviders struct {
 	Builtin       *BuiltinAuthProvider
 	Saml          *SAMLAuthProvider
@@ -102,6 +149,12 @@ type BuiltinAuthProvider struct {
 	Type        string `json:"type"`
 }
 
+// BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
+type BuiltinAuthProvider struct {
+	AllowSignup bool   `json:"allowSignup,omitempty"`
+	Type        string `json:"type"`
+}
+
 // CloneURLToRepositoryName description: Describes a mapping from clone URL to repository name. The `from` field contains a regular expression with named capturing groups. The `to` field contains a template string that references capturing group names. For instance, if `from` is "^../(?P<name>\w+)$" and `to` is "github.com/user/{name}", the clone URL "../myRepository" would be mapped to the repository name "github.com/user/myRepository".
 type CloneURLToRepositoryName struct {
 	From string `json:"from"`
@@ -113,6 +166,23 @@ type Contributions struct {
 	Actions       []*Action          `json:"actions,omitempty"`
 	Configuration *jsonschema.Schema `json:"configuration,omitempty"`
 	Menus         *Menus             `json:"menus,omitempty"`
+}
+
+// CoreSiteConfigurationConfiguration description: Core configuration options for Sourcegraph.
+type CoreSiteConfigurationConfiguration struct {
+	AppURL              string              `json:"appURL,omitempty"`
+	AuthProviders       []AuthProviders     `json:"auth.providers,omitempty"`
+	AuthUserOrgMap      map[string][]string `json:"auth.userOrgMap,omitempty"`
+	HtmlBodyBottom      string              `json:"htmlBodyBottom,omitempty"`
+	HtmlBodyTop         string              `json:"htmlBodyTop,omitempty"`
+	HtmlHeadBottom      string              `json:"htmlHeadBottom,omitempty"`
+	HtmlHeadTop         string              `json:"htmlHeadTop,omitempty"`
+	HttpToHttpsRedirect interface{}         `json:"httpToHttpsRedirect,omitempty"`
+	LicenseKey          string              `json:"licenseKey,omitempty"`
+	Log                 *Log                `json:"log,omitempty"`
+	TlsLetsencrypt      string              `json:"tls.letsencrypt,omitempty"`
+	TlsCert             string              `json:"tlsCert,omitempty"`
+	TlsKey              string              `json:"tlsKey,omitempty"`
 }
 
 // Discussions description: Configures Sourcegraph code discussions.
@@ -172,6 +242,12 @@ type HTTPHeaderAuthProvider struct {
 	UsernameHeader string `json:"usernameHeader"`
 }
 
+// HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
+type HTTPHeaderAuthProvider struct {
+	Type           string `json:"type"`
+	UsernameHeader string `json:"usernameHeader"`
+}
+
 // IMAPServerConfig description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
 type IMAPServerConfig struct {
 	Host     string `json:"host"`
@@ -192,6 +268,11 @@ type Links struct {
 	Repository string `json:"repository,omitempty"`
 	Tree       string `json:"tree,omitempty"`
 }
+
+// Log description: Configuration for logging and alerting, including to external services.
+type Log struct {
+	Sentry *Sentry `json:"sentry,omitempty"`
+}
 type MenuItem struct {
 	Action string `json:"action,omitempty"`
 	Alt    string `json:"alt,omitempty"`
@@ -211,6 +292,16 @@ type Metadata struct {
 	Experimental bool   `json:"experimental,omitempty"`
 	HomepageURL  string `json:"homepageURL,omitempty"`
 	IssuesURL    string `json:"issuesURL,omitempty"`
+}
+
+// OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
+type OpenIDConnectAuthProvider struct {
+	ClientID           string `json:"clientID"`
+	ClientSecret       string `json:"clientSecret"`
+	DisplayName        string `json:"displayName,omitempty"`
+	Issuer             string `json:"issuer"`
+	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
+	Type               string `json:"type"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -262,6 +353,22 @@ type SAMLAuthProvider struct {
 	Type                                     string `json:"type"`
 }
 
+// SAMLAuthProvider description: Configures the SAML authentication provider for SSO.
+//
+// Note: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.
+type SAMLAuthProvider struct {
+	DisplayName                              string `json:"displayName,omitempty"`
+	IdentityProviderMetadata                 string `json:"identityProviderMetadata,omitempty"`
+	IdentityProviderMetadataURL              string `json:"identityProviderMetadataURL,omitempty"`
+	InsecureSkipAssertionSignatureValidation bool   `json:"insecureSkipAssertionSignatureValidation,omitempty"`
+	NameIDFormat                             string `json:"nameIDFormat,omitempty"`
+	ServiceProviderCertificate               string `json:"serviceProviderCertificate,omitempty"`
+	ServiceProviderIssuer                    string `json:"serviceProviderIssuer,omitempty"`
+	ServiceProviderPrivateKey                string `json:"serviceProviderPrivateKey,omitempty"`
+	SignRequests                             *bool  `json:"signRequests,omitempty"`
+	Type                                     string `json:"type"`
+}
+
 // SMTPServerConfig description: The SMTP server used to send transactional emails (such as email verifications, reset-password emails, and notifications).
 type SMTPServerConfig struct {
 	Authentication string `json:"authentication"`
@@ -284,6 +391,11 @@ type SearchScope struct {
 	Id          string `json:"id,omitempty"`
 	Name        string `json:"name"`
 	Value       string `json:"value"`
+}
+
+// Sentry description: Configuration for Sentry
+type Sentry struct {
+	Dsn string `json:"dsn,omitempty"`
 }
 
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
