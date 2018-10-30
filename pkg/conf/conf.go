@@ -75,7 +75,11 @@ func init() {
 	// If the caller of pkg/conf is the frontend service, instantiate the DefaultServerFrontendOnly
 	// and install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
 	if mode == modeServer {
-		globals.ConfigurationServerFrontendOnly = confserver.NewServer(os.Getenv("SOURCEGRAPH_CONFIG_FILE"))
+		configFilePath := os.Getenv("SOURCEGRAPH_CONFIG_FILE")
+		if configFilePath == "" {
+			configFilePath = "/etc/sourcegraph/config.json"
+		}
+		globals.ConfigurationServerFrontendOnly = confserver.NewServer(configFilePath)
 
 		globals.ConfigurationServerFrontendOnly.Start()
 		defaultClient.fetcher = passthroughFetcherFrontendOnly{}

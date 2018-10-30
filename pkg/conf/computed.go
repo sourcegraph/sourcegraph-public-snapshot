@@ -13,7 +13,7 @@ import (
 func init() {
 	deployType := DeployType()
 	if !IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q. Got: %q", DeployKubernetes, DeployDocker, DeployDev, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q. Got: %q", DeployCluster, DeployDocker, DeployDev, deployType)
 	}
 }
 
@@ -140,9 +140,9 @@ func EnabledLangservers() []*schema.Langservers {
 }
 
 const (
-	DeployKubernetes = "k8s"
-	DeployDocker     = "docker-container"
-	DeployDev        = "dev"
+	DeployCluster = "cluster"
+	DeployDocker  = "docker-container"
+	DeployDev     = "dev"
 )
 
 // DeployType tells the deployment type.
@@ -150,15 +150,19 @@ func DeployType() string {
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
-	// Default to Kubernetes (currently the only kind of cluster supported) so that every Kubernetes
-	// deployment doesn't need to be configured with DEPLOY_TYPE.
-	return DeployKubernetes
+	// Default to Cluster so that every Cluster deployment doesn't need to be
+	// configured with DEPLOY_TYPE.
+	return DeployCluster
 }
 
-// IsDeployTypeKubernetesCluster tells if the given deployment type is a Kubernetes cluster (and
+// IsDeployTypeCluster tells if the given deployment type is a cluster (and
 // non-dev, non-single Docker image).
-func IsDeployTypeKubernetesCluster(deployType string) bool {
-	return deployType == DeployKubernetes
+func IsDeployTypeCluster(deployType string) bool {
+	if deployType == "k8s" {
+		// backwards compatibility for older deployments
+		return true
+	}
+	return deployType == DeployCluster
 }
 
 // IsDeployTypeDockerContainer tells if the given deployment type is Docker sourcegraph/server
@@ -175,7 +179,7 @@ func IsDev(deployType string) bool {
 // IsValidDeployType returns true iff the given deployType is a Kubernetes deployment, Docker deployment, or a
 // local development environmnent.
 func IsValidDeployType(deployType string) bool {
-	return IsDeployTypeKubernetesCluster(deployType) || IsDeployTypeDockerContainer(deployType) || IsDev(deployType)
+	return IsDeployTypeCluster(deployType) || IsDeployTypeDockerContainer(deployType) || IsDev(deployType)
 }
 
 // UpdateChannel tells the update channel. Default is "release".

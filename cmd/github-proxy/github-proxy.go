@@ -1,4 +1,5 @@
 //docker:user sourcegraph
+//docker:env LOG_REQUEST=true
 
 package main
 

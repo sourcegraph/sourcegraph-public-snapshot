@@ -274,6 +274,8 @@ github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18 h1:XOwy8S85zGn+
 github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18/go.mod h1:tpps84QRlOVVLYk5QpKYX8Tr289D1v/UTWDLqeguiqM=
 github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18 h1:Owk1nJ1CZIhtKyiVrG65ajT834xuNhtpJWmhnNF2x3A=
 github.com/sourcegraph/godockerize v0.0.0-20180919081208-f4fb18a2ab18/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
+github.com/sourcegraph/godockerize v0.0.0-20181029061954-5cf4e6d81720 h1:OkqHsJCzy3ZorBLAxbmnnx1NTpIG/+prvCZ50CLdgNw=
+github.com/sourcegraph/godockerize v0.0.0-20181029061954-5cf4e6d81720/go.mod h1:EnJwbnfidbH57UXewOZLIrwQVpu/spwbS/BMN0sPfCA=
 github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d h1:FxF0pen6r1WOqbm4kVDR3JV078HfPz65inWcMh1aVQI=
 github.com/sourcegraph/goreman v0.1.2-0.20180928223752-6e9a2beb830d/go.mod h1:8HCyYaC38XwX0AOu0+fuY02Y5Z7CkITW0oVJavbna4Q=
 github.com/sourcegraph/gosyntect v0.0.0-20180604231642-c01be3625b10 h1:9XH6ZJgu6KrVimEwZVXfTOvkGU1CHAvdc7mbZrMwA/U=
