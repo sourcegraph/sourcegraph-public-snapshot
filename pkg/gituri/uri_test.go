@@ -1,4 +1,4 @@
-package uri
+package gituri
 
 import (
 	"net/url"

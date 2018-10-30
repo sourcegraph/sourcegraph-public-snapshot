@@ -9,9 +9,9 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/proxy"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // Notable benchmark results:
@@ -106,7 +106,7 @@ func BenchmarkIntegration(b *testing.B) {
 		},
 	}
 	for rootURI, test := range tests {
-		root, err := uri.Parse(string(rootURI))
+		root, err := gituri.Parse(string(rootURI))
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -247,11 +247,11 @@ func BenchmarkIntegrationShared(b *testing.B) {
 	ctx := context.Background()
 	for label, test := range tests {
 		b.Run(label, func(b *testing.B) {
-			old, err := uri.Parse(test.oldRootURI)
+			old, err := gituri.Parse(test.oldRootURI)
 			if err != nil {
 				b.Fatal(err)
 			}
-			root, err := uri.Parse(test.rootURI)
+			root, err := gituri.Parse(test.rootURI)
 			if err != nil {
 				b.Fatal(err)
 			}

@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 )
 
 // relWorkspaceURI maps absolute URIs like
@@ -21,8 +21,8 @@ import (
 // (e.g., a client performs a cross-workspace go-to-definition and
 // then notifies the server that the client opened the destination
 // resource).
-func relWorkspaceURI(root uri.URI, uriStr string) (*uri.URI, error) {
-	u, err := uri.Parse(uriStr)
+func relWorkspaceURI(root gituri.URI, uriStr string) (*gituri.URI, error) {
+	u, err := gituri.Parse(uriStr)
 	if err != nil {
 		return nil, err
 	}
@@ -45,15 +45,15 @@ func relWorkspaceURI(root uri.URI, uriStr string) (*uri.URI, error) {
 		u = u.WithFilePath(strings.TrimPrefix(u.FilePath(), rootPath+string(os.PathSeparator)))
 	}
 
-	return &uri.URI{URL: url.URL{Scheme: "file", Path: "/" + u.FilePath()}}, nil
+	return &gituri.URI{URL: url.URL{Scheme: "file", Path: "/" + u.FilePath()}}, nil
 }
 
 // absWorkspaceURI is the inverse of relWorkspaceURI. It maps
 // workspace-relative URIs like "file:///dir/file.txt" to their
 // absolute URIs like
 // "git://github.com/facebook/react.git?master#dir/file.txt".
-func absWorkspaceURI(root uri.URI, uriStr string) (*uri.URI, error) {
-	uri, err := uri.Parse(uriStr)
+func absWorkspaceURI(root gituri.URI, uriStr string) (*gituri.URI, error) {
+	uri, err := gituri.Parse(uriStr)
 	if err != nil {
 		return nil, err
 	}

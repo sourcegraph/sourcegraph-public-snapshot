@@ -13,10 +13,10 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/proxy"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -193,7 +193,7 @@ func TestIntegration(t *testing.T) {
 		},
 	}
 	for rootURI, test := range tests {
-		root, err := uri.Parse(string(rootURI))
+		root, err := gituri.Parse(string(rootURI))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -245,7 +245,7 @@ func TestIntegration(t *testing.T) {
 				t.Fatal("initialize:", err)
 			}
 
-			root, err := uri.Parse(string(rootURI))
+			root, err := gituri.Parse(string(rootURI))
 			if err != nil {
 				t.Fatal(err)
 			}

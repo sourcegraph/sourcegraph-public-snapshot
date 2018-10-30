@@ -20,10 +20,10 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/xlang"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/proxy"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 func init() {
@@ -617,7 +617,7 @@ func yza() {}
 			defer done()
 			c := dialProxy(t, addr, nil)
 
-			root, err := uri.Parse(string(test.rootURI))
+			root, err := gituri.Parse(string(test.rootURI))
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -12,9 +12,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // serveGoSymbolURL handles Go symbol URLs (e.g.,
@@ -71,7 +71,7 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 
 	if len(symbols) > 0 {
 		symbol := symbols[0]
-		uri, err := uri.Parse(string(symbol.Location.URI))
+		uri, err := gituri.Parse(string(symbol.Location.URI))
 		if err != nil {
 			return err
 		}

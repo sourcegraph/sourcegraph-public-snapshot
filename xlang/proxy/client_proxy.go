@@ -21,14 +21,14 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/go-lsp"
+	lsp "github.com/sourcegraph/go-lsp"
 	plspext "github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 	"golang.org/x/time/rate"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
@@ -209,8 +209,8 @@ func (p *Proxy) DisconnectIdleClients(maxIdle time.Duration) error {
 // anonymous clients are accessing the same repository at the same
 // commit.
 type contextID struct {
-	rootURI uri.URI // the rootURI in the initialize request (typically the repo clone URL + "?REV")
-	mode    string  // the mode (i.e., "go" or "typescript")
+	rootURI gituri.URI // the rootURI in the initialize request (typically the repo clone URL + "?REV")
+	mode    string     // the mode (i.e., "go" or "typescript")
 
 	// session is the unique ID identifying this session, used when it
 	// shouldn't be shared by all users viewing the same rootURI and
@@ -395,7 +395,7 @@ func (c *clientProxyConn) handle(ctx context.Context, conn *jsonrpc2.Conn, req *
 		// months.
 		params.RootPath = ""
 
-		rootURI, err := uri.Parse(string(params.RootURI))
+		rootURI, err := gituri.Parse(string(params.RootURI))
 		if err != nil {
 			return nil, fmt.Errorf("invalid rootUri %q: %s", params.RootURI, err)
 		}

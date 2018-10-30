@@ -16,9 +16,9 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/proxy"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // BenchmarkStress benchmarks performing "textDocument/definition",
@@ -59,7 +59,7 @@ func BenchmarkStress(b *testing.B) {
 		},
 	}
 	for rootURI, test := range tests {
-		root, err := uri.Parse(rootURI)
+		root, err := gituri.Parse(rootURI)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -164,7 +164,7 @@ func BenchmarkStress(b *testing.B) {
 	}
 }
 
-func doStressTestOpForPosition(ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, path string, line, character int) error {
+func doStressTestOpForPosition(ctx context.Context, c *jsonrpc2.Conn, root *gituri.URI, path string, line, character int) error {
 	params := lsp.TextDocumentPositionParams{
 		TextDocument: lsp.TextDocumentIdentifier{URI: lsp.DocumentURI(root.WithFilePath(path).String())},
 		Position:     lsp.Position{Line: line, Character: character},

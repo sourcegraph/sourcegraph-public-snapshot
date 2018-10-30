@@ -3,11 +3,11 @@ package proxy
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 )
 
 func TestAbsRelWorkspaceURI(t *testing.T) {
-	root, err := uri.Parse("git://a.com/b?rev=c")
+	root, err := gituri.Parse("git://a.com/b?rev=c")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,7 +34,7 @@ func TestAbsRelWorkspaceURI(t *testing.T) {
 }
 
 func TestRelWorkspaceURI_rootIsSubdirectory(t *testing.T) {
-	root, err := uri.Parse("git://a.com/b?rev=c#d")
+	root, err := gituri.Parse("git://a.com/b?rev=c#d")
 	if err != nil {
 		t.Fatal(err)
 	}
