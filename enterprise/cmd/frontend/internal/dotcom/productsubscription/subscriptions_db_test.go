@@ -172,5 +172,3 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		t.Errorf("got %q, want nil", *got.BillingSubscriptionID)
 	}
 }
-
-func strptr(s string) *string { return &s }
