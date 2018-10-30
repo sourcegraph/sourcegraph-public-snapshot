@@ -9,6 +9,7 @@ import './highlight'
 
 import React from 'react'
 import { render } from 'react-dom'
+import { exploreSections } from './explore/exploreSections'
 import { extensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { extensionAreaRoutes } from './extensions/extension/routes'
 import { extensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -29,6 +30,7 @@ import { userAreaRoutes } from './user/area/routes'
 window.addEventListener('DOMContentLoaded', () => {
     render(
         <SourcegraphWebApp
+            exploreSections={exploreSections}
             extensionAreaRoutes={extensionAreaRoutes}
             extensionAreaHeaderNavItems={extensionAreaHeaderNavItems}
             extensionsAreaRoutes={extensionsAreaRoutes}

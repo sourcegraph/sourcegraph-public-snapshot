@@ -11,6 +11,7 @@ import React from 'react'
 import { render } from 'react-dom'
 import { keybindings } from '../../src/keybindings'
 import { SourcegraphWebApp } from '../../src/SourcegraphWebApp'
+import { enterpriseExploreSections } from './explore/exploreSections'
 import { enterpriseExtensionAreaHeaderNavItems } from './extensions/extension/extensionAreaHeaderNavItems'
 import { enterpriseExtensionAreaRoutes } from './extensions/extension/routes'
 import { enterpriseExtensionsAreaHeaderActionButtons } from './extensions/extensionsAreaHeaderActionButtons'
@@ -29,6 +30,7 @@ import { enterpriseUserAreaRoutes } from './user/routes'
 window.addEventListener('DOMContentLoaded', () => {
     render(
         <SourcegraphWebApp
+            exploreSections={enterpriseExploreSections}
             extensionAreaRoutes={enterpriseExtensionAreaRoutes}
             extensionAreaHeaderNavItems={enterpriseExtensionAreaHeaderNavItems}
             extensionsAreaRoutes={enterpriseExtensionsAreaRoutes}

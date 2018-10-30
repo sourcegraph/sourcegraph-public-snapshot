@@ -22,6 +22,7 @@ interface Props {
     location: H.Location
     isLightTheme: boolean
     hideExampleSearches?: boolean
+    hideTitle?: boolean
 }
 
 interface State {
@@ -120,49 +121,50 @@ export class SavedQueries extends React.Component<Props, State> {
 
         return (
             <div className="saved-queries">
-                {!isHomepage && (
-                    <div>
-                        <div className="saved-queries__header">
-                            <h3>{!isPanelOpen && 'Saved searches'}</h3>
-                            <div className="saved-queries__actions">
-                                {!this.state.disableBuiltInSearches && (
+                {!isHomepage &&
+                    !this.props.hideTitle && (
+                        <div>
+                            <div className="saved-queries__header">
+                                <h3>{!isPanelOpen && 'Saved searches'}</h3>
+                                <div className="saved-queries__actions">
+                                    {!this.state.disableBuiltInSearches && (
+                                        <button
+                                            className="btn btn-link"
+                                            onClick={this.toggleExamples}
+                                            disabled={this.state.isViewingExamples}
+                                        >
+                                            <AutoFixIcon className="icon-inline" /> Discover built-in searches
+                                        </button>
+                                    )}
+
                                     <button
                                         className="btn btn-link"
-                                        onClick={this.toggleExamples}
-                                        disabled={this.state.isViewingExamples}
+                                        onClick={this.toggleCreating}
+                                        disabled={this.state.isCreating}
                                     >
-                                        <AutoFixIcon className="icon-inline" /> Discover built-in searches
+                                        <AddIcon className="icon-inline" /> Add new search
                                     </button>
-                                )}
 
-                                <button
-                                    className="btn btn-link"
-                                    onClick={this.toggleCreating}
-                                    disabled={this.state.isCreating}
-                                >
-                                    <AddIcon className="icon-inline" /> Add new search
-                                </button>
-
-                                <a
-                                    href="https://about.sourcegraph.com/docs/search/saved-searches"
-                                    onClick={this.onDidClickQueryHelp}
-                                    className="btn btn-link"
-                                    target="_blank"
-                                >
-                                    <HelpCircleOutlineIcon className="icon-inline" /> Help
-                                </a>
+                                    <a
+                                        href="https://about.sourcegraph.com/docs/search/saved-searches"
+                                        onClick={this.onDidClickQueryHelp}
+                                        className="btn btn-link"
+                                        target="_blank"
+                                    >
+                                        <HelpCircleOutlineIcon className="icon-inline" /> Help
+                                    </a>
+                                </div>
                             </div>
+                            {this.state.isCreating && (
+                                <SavedQueryCreateForm
+                                    authenticatedUser={this.props.authenticatedUser}
+                                    onDidCreate={this.onDidCreateSavedQuery}
+                                    onDidCancel={this.toggleCreating}
+                                    values={this.state.exampleQuery || {}}
+                                />
+                            )}
                         </div>
-                        {this.state.isCreating && (
-                            <SavedQueryCreateForm
-                                authenticatedUser={this.props.authenticatedUser}
-                                onDidCreate={this.onDidCreateSavedQuery}
-                                onDidCancel={this.toggleCreating}
-                                values={this.state.exampleQuery || {}}
-                            />
-                        )}
-                    </div>
-                )}
+                    )}
                 <div>
                     {!this.props.hideExampleSearches &&
                         !this.state.isCreating &&
@@ -175,6 +177,7 @@ export class SavedQueries extends React.Component<Props, State> {
                         )}
                     {!this.state.disableBuiltInSearches &&
                         !this.props.hideExampleSearches &&
+                        !this.props.hideTitle &&
                         isPanelOpen && (
                             <div className="saved-queries__header saved-queries__space">
                                 <h3>Saved searches</h3>
