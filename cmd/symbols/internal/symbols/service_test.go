@@ -31,7 +31,7 @@ func TestService(t *testing.T) {
 			return createTar(files)
 		},
 		NewParser: func() (ctags.Parser, error) {
-			return mockParser{"x"}, nil
+			return mockParser{"x", "y"}, nil
 		},
 		Path: tmpDir,
 	}
@@ -49,7 +49,15 @@ func TestService(t *testing.T) {
 	}{
 		"simple": {
 			args: protocol.SearchArgs{},
+			want: protocol.SearchResult{Symbols: []protocol.Symbol{{Name: "x"}, {Name: "y"}}},
+		},
+		"onematch": {
+			args: protocol.SearchArgs{Query: "x"},
 			want: protocol.SearchResult{Symbols: []protocol.Symbol{{Name: "x"}}},
+		},
+		"nomatches": {
+			args: protocol.SearchArgs{Query: "foo"},
+			want: protocol.SearchResult{},
 		},
 	}
 	for label, test := range tests {
