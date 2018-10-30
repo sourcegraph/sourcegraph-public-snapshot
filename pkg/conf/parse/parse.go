@@ -9,30 +9,56 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// ParseConfigData reads the provided config string, but NOT the environment
-func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
-	var tmpConfig schema.SiteConfiguration
+type SiteConfiguration struct {
+	Basic *schema.BasicSiteConfiguration `json:"basic"`
+	Core  *schema.CoreSiteConfiguration  `json:"core"`
+}
 
-	if data != "" {
-		data, err := jsonc.Parse(data)
-		if err != nil {
-			return nil, err
-		}
-		if err := json.Unmarshal(data, &tmpConfig); err != nil {
-			return nil, err
-		}
+func UnmarshalBasic(data string, config *SiteConfiguration) error {
+	var basic schema.BasicSiteConfiguration
+
+	err := tolerantUnmarshal(data, &basic)
+	if err != nil {
+		return err
 	}
 
 	// For convenience, make sure this is not nil.
-	if tmpConfig.ExperimentalFeatures == nil {
-		tmpConfig.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+	if basic.ExperimentalFeatures == nil {
+		basic.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 	}
-	return &tmpConfig, nil
+
+	AppendConfig(config, &SiteConfiguration{Basic: &basic})
+	return nil
+}
+
+func UnmarshalCore(data string, config *SiteConfiguration) error {
+	var core schema.CoreSiteConfiguration
+
+	err := tolerantUnmarshal(data, &core)
+	if err != nil {
+		return err
+	}
+
+	AppendConfig(config, &SiteConfiguration{Core: &core})
+	return nil
+}
+
+func tolerantUnmarshal(data string, v interface{}) error {
+	if data == "" {
+		return nil
+	}
+
+	massagedData, err := jsonc.Parse(data)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(massagedData, v)
 }
 
 // DeprecatedParseConfigEnvironment reads the provided string, then merges in additional
 // data from the (deprecated) environment.
-func DeprecatedParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
+func DeprecatedParseConfigEnvironment(data string) (*SiteConfiguration, error) {
 	tmpConfig, err := ParseConfigData(data)
 	if err != nil {
 		return nil, err
@@ -172,7 +198,7 @@ func mergeStruct(destInterface, srcInterface interface{}) {
 }
 
 // recursively merge components of site config
-func AppendConfig(dest, src *schema.SiteConfiguration) *schema.SiteConfiguration {
+func AppendConfig(dest, src *SiteConfiguration) *SiteConfiguration {
 	if dest == nil {
 		return src
 	}
@@ -185,7 +211,7 @@ func AppendConfig(dest, src *schema.SiteConfiguration) *schema.SiteConfiguration
 
 // NeedRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
-func NeedRestartToApply(before, after *schema.SiteConfiguration) bool {
+func NeedRestartToApply(before, after *SiteConfiguration) bool {
 	diff := diff(before, after)
 
 	// Check every option that changed to determine whether or not a server

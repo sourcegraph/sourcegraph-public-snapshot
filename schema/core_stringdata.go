@@ -6,7 +6,7 @@ package schema
 const CoreSchemaJSON = `{
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$id": "core.schema.json#",
-	"title": "Core site configuration configuration",
+	"title": "Core site configuration",
 	"description": "Core configuration options for Sourcegraph.",
 	"type": "object",
 	"additionalProperties": false,

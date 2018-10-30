@@ -169,8 +169,8 @@ type Contributions struct {
 	Menus         *Menus             `json:"menus,omitempty"`
 }
 
-// CoreSiteConfigurationConfiguration description: Core configuration options for Sourcegraph.
-type CoreSiteConfigurationConfiguration struct {
+// CoreSiteConfiguration description: Core configuration options for Sourcegraph.
+type CoreSiteConfiguration struct {
 	AppURL              string              `json:"appURL,omitempty"`
 	AuthProviders       []AuthProviders     `json:"auth.providers,omitempty"`
 	AuthUserOrgMap      map[string][]string `json:"auth.userOrgMap,omitempty"`

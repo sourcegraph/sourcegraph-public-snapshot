@@ -17,7 +17,8 @@ import (
 // Server provides access and manages modifications to the site configuration.
 type Server struct {
 	// configFilePath is the path to the site configuration file on disk.
-	configFilePath string
+	basicFilePath string
+	coreFilePath  string
 
 	store *store.Store
 
@@ -55,7 +56,7 @@ func (s *Server) Raw() string {
 func (s *Server) Write(input string) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := parse.ParseConfigEnvironment_DEPRECATED(input)
+	_, err := parse.DEPRECATEDParseConfigEnvironment(input)
 	if err != nil {
 		return err
 	}
