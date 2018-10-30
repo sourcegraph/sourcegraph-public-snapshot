@@ -192,11 +192,6 @@ type Links struct {
 	Repository string `json:"repository,omitempty"`
 	Tree       string `json:"tree,omitempty"`
 }
-
-// Log description: Configuration for logging and alerting, including to external services.
-type Log struct {
-	Sentry *Sentry `json:"sentry,omitempty"`
-}
 type MenuItem struct {
 	Action string `json:"action,omitempty"`
 	Alt    string `json:"alt,omitempty"`
@@ -291,11 +286,6 @@ type SearchScope struct {
 	Value       string `json:"value"`
 }
 
-// Sentry description: Configuration for Sentry
-type Sentry struct {
-	Dsn string `json:"dsn,omitempty"`
-}
-
 // Settings description: Configuration settings for users and organizations on Sourcegraph.
 type Settings struct {
 	Extensions             map[string]bool           `json:"extensions,omitempty"`
@@ -308,7 +298,6 @@ type Settings struct {
 
 // SiteConfiguration description: Configuration for a Sourcegraph site.
 type SiteConfiguration struct {
-	AppURL                            string                       `json:"appURL,omitempty"`
 	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
 	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
 	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
@@ -343,12 +332,10 @@ type SiteConfiguration struct {
 	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
 	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
 	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
-	HttpToHttpsRedirect               interface{}                  `json:"httpToHttpsRedirect,omitempty"`
 	Langservers                       []*Langservers               `json:"langservers,omitempty"`
 	LicenseKey                        string                       `json:"licenseKey,omitempty"`
 	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
 	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
-	Log                               *Log                         `json:"log,omitempty"`
 	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
 	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
 	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
@@ -362,9 +349,6 @@ type SiteConfiguration struct {
 	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
 	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`
-	TlsLetsencrypt                    string                       `json:"tls.letsencrypt,omitempty"`
-	TlsCert                           string                       `json:"tlsCert,omitempty"`
-	TlsKey                            string                       `json:"tlsKey,omitempty"`
 	UpdateChannel                     string                       `json:"update.channel,omitempty"`
 	UseJaeger                         bool                         `json:"useJaeger,omitempty"`
 }
