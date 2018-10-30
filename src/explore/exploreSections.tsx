@@ -2,11 +2,15 @@ import React from 'react'
 import { SiteUsageExploreSection } from '../analytics/explore/SiteUsageExploreSection'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsExploreSection } from '../discussions/explore/DiscussionsExploreSection'
+import { ExtensionViewsExploreSection } from '../extensions/explore/ExtensionViewsExploreSection'
 import { RepositoriesExploreSection } from '../repo/explore/RepositoriesExploreSection'
 import { SavedSearchesExploreSection } from '../search/saved-queries/explore/SavedSearchesExploreSection'
 import { ExploreSectionDescriptor } from './ExploreArea'
 
 export const exploreSections: ReadonlyArray<ExploreSectionDescriptor> = [
+    {
+        render: props => <ExtensionViewsExploreSection {...props} />,
+    },
     {
         render: props => <RepositoriesExploreSection {...props} />,
     },

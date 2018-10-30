@@ -7,6 +7,7 @@ import H from 'history'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
+import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { ComponentDescriptor } from '../util/contributions'
 
 /** Feature flag for showing the explore link. */
@@ -15,7 +16,7 @@ export const SHOW_EXPLORE = localStorage.getItem('explore') !== null
 /**
  * Properties passed to all section components in the explore area.
  */
-export interface ExploreAreaSectionContext {
+export interface ExploreAreaSectionContext extends ExtensionsControllerProps {
     /** The currently authenticated user. */
     authenticatedUser: GQL.IUser | null
 
@@ -27,6 +28,7 @@ export interface ExploreAreaSectionContext {
 
     isLightTheme: boolean
     location: H.Location
+    history: H.History
 }
 
 /** A section shown in the explore area. */
@@ -67,11 +69,13 @@ export class ExploreArea extends React.Component<ExploreAreaProps, ExploreAreaSt
 
     public render(): JSX.Element | null {
         const context: ExploreAreaSectionContext = {
+            extensionsController: this.props.extensionsController,
             authenticatedUser: this.props.authenticatedUser,
             viewerSubject: this.props.viewerSubject,
             configurationCascade: this.props.configurationCascade,
             isLightTheme: this.props.isLightTheme,
             location: this.props.location,
+            history: this.props.history,
         }
 
         return (
