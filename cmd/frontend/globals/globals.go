@@ -2,7 +2,7 @@
 package globals
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals/confserver"
 	"net/url"
 )
 
@@ -14,4 +14,4 @@ var AppURL = &url.URL{Scheme: "http", Host: "example.com"}
 //
 // 🚨 This is instantiated by pkg/conf's init method to avoid deadlock issues. Any another service
 // that attempts to use this variable will panic.
-var ConfigurationServerFrontendOnly *conf.Server
+var ConfigurationServerFrontendOnly *confserver.Server

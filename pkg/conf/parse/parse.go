@@ -30,9 +30,9 @@ func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
 	return &tmpConfig, nil
 }
 
-// ParseConfigEnvironment_DEPRECATED reads the provided string, then merges in additional
+// DeprecatedParseConfigEnvironment reads the provided string, then merges in additional
 // data from the (deprecated) environment.
-func ParseConfigEnvironment_DEPRECATED(data string) (*schema.SiteConfiguration, error) {
+func DeprecatedParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
 	tmpConfig, err := ParseConfigData(data)
 	if err != nil {
 		return nil, err

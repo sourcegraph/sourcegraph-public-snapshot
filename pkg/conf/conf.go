@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	frontendConf "github.com/sourcegraph/sourcegraph/cmd/frontend/globals/conf"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals/confserver"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
 )
 
@@ -75,7 +75,7 @@ func init() {
 	// If the caller of pkg/conf is the frontend service, instantiate the DefaultServerFrontendOnly
 	// and install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
 	if mode == modeServer {
-		globals.ConfigurationServerFrontendOnly = frontendConf.NewServer(os.Getenv("SOURCEGRAPH_CONFIG_FILE"))
+		globals.ConfigurationServerFrontendOnly = confserver.NewServer(os.Getenv("SOURCEGRAPH_CONFIG_FILE"))
 
 		globals.ConfigurationServerFrontendOnly.Start()
 		defaultClient.fetcher = passthroughFetcherFrontendOnly{}

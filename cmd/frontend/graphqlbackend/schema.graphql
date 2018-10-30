@@ -2596,6 +2596,10 @@ type Site implements ConfigurationSubject {
     noRepositoriesEnabled: Boolean!
     # Alerts to display to the viewer.
     alerts: [Alert!]!
+    # Whether the site has code intelligence. This field will be expanded in the future to describe
+    # more about the code intelligence available (languages supported, etc.). It is subject to
+    # change without notice.
+    hasCodeIntelligence: Boolean!
     # Whether we want to show built-in searches on the saved searches page
     disableBuiltInSearches: Boolean!
     # Whether the server sends emails to users to verify email addresses. If false, then site admins must manually
