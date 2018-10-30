@@ -42,11 +42,6 @@ type AuthAccessTokens struct {
 type AuthProviderCommon struct {
 	DisplayName string `json:"displayName,omitempty"`
 }
-
-// AuthProviderCommon description: Common properties for authentication providers.
-type AuthProviderCommon struct {
-	DisplayName string `json:"displayName,omitempty"`
-}
 type AuthProviders struct {
 	Builtin       *BuiltinAuthProvider
 	Saml          *SAMLAuthProvider
@@ -89,48 +84,60 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header"})
 }
 
-type AuthProviders struct {
-	Builtin       *BuiltinAuthProvider
-	Saml          *SAMLAuthProvider
-	Openidconnect *OpenIDConnectAuthProvider
-	HttpHeader    *HTTPHeaderAuthProvider
+// BasicSiteConfiguration description: Basic configuration for a Sourcegraph site.
+type BasicSiteConfiguration struct {
+	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
+	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
+	AuthSessionExpiry                 string                       `json:"auth.sessionExpiry,omitempty"`
+	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
+	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
+	BitbucketServer                   []*BitbucketServerConnection `json:"bitbucketServer,omitempty"`
+	BlacklistGoGet                    []string                     `json:"blacklistGoGet,omitempty"`
+	CorsOrigin                        string                       `json:"corsOrigin,omitempty"`
+	DisableAutoGitUpdates             bool                         `json:"disableAutoGitUpdates,omitempty"`
+	DisableBrowserExtension           bool                         `json:"disableBrowserExtension,omitempty"`
+	DisableBuiltInSearches            bool                         `json:"disableBuiltInSearches,omitempty"`
+	DisablePublicRepoRedirects        bool                         `json:"disablePublicRepoRedirects,omitempty"`
+	Discussions                       *Discussions                 `json:"discussions,omitempty"`
+	DontIncludeSymbolResultsByDefault bool                         `json:"dontIncludeSymbolResultsByDefault,omitempty"`
+	EmailAddress                      string                       `json:"email.address,omitempty"`
+	EmailImap                         *IMAPServerConfig            `json:"email.imap,omitempty"`
+	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`
+	ExecuteGradleOriginalRootPaths    string                       `json:"executeGradleOriginalRootPaths,omitempty"`
+	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
+	Extensions                        *Extensions                  `json:"extensions,omitempty"`
+	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName  `json:"git.cloneURLToRepositoryName,omitempty"`
+	GitMaxConcurrentClones            int                          `json:"gitMaxConcurrentClones,omitempty"`
+	Github                            []*GitHubConnection          `json:"github,omitempty"`
+	GithubClientID                    string                       `json:"githubClientID,omitempty"`
+	GithubClientSecret                string                       `json:"githubClientSecret,omitempty"`
+	Gitlab                            []*GitLabConnection          `json:"gitlab,omitempty"`
+	Gitolite                          []*GitoliteConnection        `json:"gitolite,omitempty"`
+	HtmlBodyBottom                    string                       `json:"htmlBodyBottom,omitempty"`
+	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
+	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
+	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
+	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
+	Langservers                       []*Langservers               `json:"langservers,omitempty"`
+	LicenseKey                        string                       `json:"licenseKey,omitempty"`
+	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
+	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
+	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
+	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
+	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
+	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
+	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
+	PrivateArtifactRepoPassword       string                       `json:"privateArtifactRepoPassword,omitempty"`
+	PrivateArtifactRepoURL            string                       `json:"privateArtifactRepoURL,omitempty"`
+	PrivateArtifactRepoUsername       string                       `json:"privateArtifactRepoUsername,omitempty"`
+	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
+	ReposList                         []*Repository                `json:"repos.list,omitempty"`
+	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
+	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
+	SiteID                            string                       `json:"siteID,omitempty"`
+	UpdateChannel                     string                       `json:"update.channel,omitempty"`
+	UseJaeger                         bool                         `json:"useJaeger,omitempty"`
 }
-
-func (v AuthProviders) MarshalJSON() ([]byte, error) {
-	if v.Builtin != nil {
-		return json.Marshal(v.Builtin)
-	}
-	if v.Saml != nil {
-		return json.Marshal(v.Saml)
-	}
-	if v.Openidconnect != nil {
-		return json.Marshal(v.Openidconnect)
-	}
-	if v.HttpHeader != nil {
-		return json.Marshal(v.HttpHeader)
-	}
-	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
-}
-func (v *AuthProviders) UnmarshalJSON(data []byte) error {
-	var d struct {
-		DiscriminantProperty string `json:"type"`
-	}
-	if err := json.Unmarshal(data, &d); err != nil {
-		return err
-	}
-	switch d.DiscriminantProperty {
-	case "builtin":
-		return json.Unmarshal(data, &v.Builtin)
-	case "http-header":
-		return json.Unmarshal(data, &v.HttpHeader)
-	case "openidconnect":
-		return json.Unmarshal(data, &v.Openidconnect)
-	case "saml":
-		return json.Unmarshal(data, &v.Saml)
-	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"builtin", "saml", "openidconnect", "http-header"})
-}
-
 type BitbucketServerConnection struct {
 	Certificate                 string `json:"certificate,omitempty"`
 	ExcludePersonalRepositories bool   `json:"excludePersonalRepositories,omitempty"`
@@ -141,12 +148,6 @@ type BitbucketServerConnection struct {
 	Token                       string `json:"token,omitempty"`
 	Url                         string `json:"url"`
 	Username                    string `json:"username,omitempty"`
-}
-
-// BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
-type BuiltinAuthProvider struct {
-	AllowSignup bool   `json:"allowSignup,omitempty"`
-	Type        string `json:"type"`
 }
 
 // BuiltinAuthProvider description: Configures the builtin username-password authentication provider.
@@ -242,12 +243,6 @@ type HTTPHeaderAuthProvider struct {
 	UsernameHeader string `json:"usernameHeader"`
 }
 
-// HTTPHeaderAuthProvider description: Configures the HTTP header authentication provider (which authenticates users by consulting an HTTP request header set by an authentication proxy such as https://github.com/bitly/oauth2_proxy).
-type HTTPHeaderAuthProvider struct {
-	Type           string `json:"type"`
-	UsernameHeader string `json:"usernameHeader"`
-}
-
 // IMAPServerConfig description: Optional. The IMAP server used to retrieve emails (such as code discussion reply emails).
 type IMAPServerConfig struct {
 	Host     string `json:"host"`
@@ -304,16 +299,6 @@ type OpenIDConnectAuthProvider struct {
 	Type               string `json:"type"`
 }
 
-// OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
-type OpenIDConnectAuthProvider struct {
-	ClientID           string `json:"clientID"`
-	ClientSecret       string `json:"clientSecret"`
-	DisplayName        string `json:"displayName,omitempty"`
-	Issuer             string `json:"issuer"`
-	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
-	Type               string `json:"type"`
-}
-
 // ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
@@ -335,22 +320,6 @@ type Repository struct {
 }
 type ReviewBoard struct {
 	Url string `json:"url,omitempty"`
-}
-
-// SAMLAuthProvider description: Configures the SAML authentication provider for SSO.
-//
-// Note: if you are using IdP-initiated login, you must have *at most one* SAMLAuthProvider in the `auth.providers` array.
-type SAMLAuthProvider struct {
-	DisplayName                              string `json:"displayName,omitempty"`
-	IdentityProviderMetadata                 string `json:"identityProviderMetadata,omitempty"`
-	IdentityProviderMetadataURL              string `json:"identityProviderMetadataURL,omitempty"`
-	InsecureSkipAssertionSignatureValidation bool   `json:"insecureSkipAssertionSignatureValidation,omitempty"`
-	NameIDFormat                             string `json:"nameIDFormat,omitempty"`
-	ServiceProviderCertificate               string `json:"serviceProviderCertificate,omitempty"`
-	ServiceProviderIssuer                    string `json:"serviceProviderIssuer,omitempty"`
-	ServiceProviderPrivateKey                string `json:"serviceProviderPrivateKey,omitempty"`
-	SignRequests                             *bool  `json:"signRequests,omitempty"`
-	Type                                     string `json:"type"`
 }
 
 // SAMLAuthProvider description: Configures the SAML authentication provider for SSO.
@@ -406,63 +375,6 @@ type Settings struct {
 	SearchRepositoryGroups map[string][]string       `json:"search.repositoryGroups,omitempty"`
 	SearchSavedQueries     []*SearchSavedQueries     `json:"search.savedQueries,omitempty"`
 	SearchScopes           []*SearchScope            `json:"search.scopes,omitempty"`
-}
-
-// SiteConfiguration description: Configuration for a Sourcegraph site.
-type SiteConfiguration struct {
-	AuthAccessTokens                  *AuthAccessTokens            `json:"auth.accessTokens,omitempty"`
-	AuthDisableAccessTokens           bool                         `json:"auth.disableAccessTokens,omitempty"`
-	AuthProviders                     []AuthProviders              `json:"auth.providers,omitempty"`
-	AuthPublic                        bool                         `json:"auth.public,omitempty"`
-	AuthSessionExpiry                 string                       `json:"auth.sessionExpiry,omitempty"`
-	AuthUserOrgMap                    map[string][]string          `json:"auth.userOrgMap,omitempty"`
-	AwsCodeCommit                     []*AWSCodeCommitConnection   `json:"awsCodeCommit,omitempty"`
-	BitbucketServer                   []*BitbucketServerConnection `json:"bitbucketServer,omitempty"`
-	BlacklistGoGet                    []string                     `json:"blacklistGoGet,omitempty"`
-	CorsOrigin                        string                       `json:"corsOrigin,omitempty"`
-	DisableAutoGitUpdates             bool                         `json:"disableAutoGitUpdates,omitempty"`
-	DisableBrowserExtension           bool                         `json:"disableBrowserExtension,omitempty"`
-	DisableBuiltInSearches            bool                         `json:"disableBuiltInSearches,omitempty"`
-	DisablePublicRepoRedirects        bool                         `json:"disablePublicRepoRedirects,omitempty"`
-	Discussions                       *Discussions                 `json:"discussions,omitempty"`
-	DontIncludeSymbolResultsByDefault bool                         `json:"dontIncludeSymbolResultsByDefault,omitempty"`
-	EmailAddress                      string                       `json:"email.address,omitempty"`
-	EmailImap                         *IMAPServerConfig            `json:"email.imap,omitempty"`
-	EmailSmtp                         *SMTPServerConfig            `json:"email.smtp,omitempty"`
-	ExecuteGradleOriginalRootPaths    string                       `json:"executeGradleOriginalRootPaths,omitempty"`
-	ExperimentalFeatures              *ExperimentalFeatures        `json:"experimentalFeatures,omitempty"`
-	Extensions                        *Extensions                  `json:"extensions,omitempty"`
-	GitCloneURLToRepositoryName       []*CloneURLToRepositoryName  `json:"git.cloneURLToRepositoryName,omitempty"`
-	GitMaxConcurrentClones            int                          `json:"gitMaxConcurrentClones,omitempty"`
-	Github                            []*GitHubConnection          `json:"github,omitempty"`
-	GithubClientID                    string                       `json:"githubClientID,omitempty"`
-	GithubClientSecret                string                       `json:"githubClientSecret,omitempty"`
-	Gitlab                            []*GitLabConnection          `json:"gitlab,omitempty"`
-	Gitolite                          []*GitoliteConnection        `json:"gitolite,omitempty"`
-	HtmlBodyBottom                    string                       `json:"htmlBodyBottom,omitempty"`
-	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
-	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
-	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
-	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
-	Langservers                       []*Langservers               `json:"langservers,omitempty"`
-	LicenseKey                        string                       `json:"licenseKey,omitempty"`
-	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
-	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
-	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
-	NoGoGetDomains                    string                       `json:"noGoGetDomains,omitempty"`
-	ParentSourcegraph                 *ParentSourcegraph           `json:"parentSourcegraph,omitempty"`
-	Phabricator                       []*Phabricator               `json:"phabricator,omitempty"`
-	PrivateArtifactRepoID             string                       `json:"privateArtifactRepoID,omitempty"`
-	PrivateArtifactRepoPassword       string                       `json:"privateArtifactRepoPassword,omitempty"`
-	PrivateArtifactRepoURL            string                       `json:"privateArtifactRepoURL,omitempty"`
-	PrivateArtifactRepoUsername       string                       `json:"privateArtifactRepoUsername,omitempty"`
-	RepoListUpdateInterval            int                          `json:"repoListUpdateInterval,omitempty"`
-	ReposList                         []*Repository                `json:"repos.list,omitempty"`
-	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
-	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
-	SiteID                            string                       `json:"siteID,omitempty"`
-	UpdateChannel                     string                       `json:"update.channel,omitempty"`
-	UseJaeger                         bool                         `json:"useJaeger,omitempty"`
 }
 
 // SlackNotificationsConfig description: Configuration for sending notifications to Slack.
