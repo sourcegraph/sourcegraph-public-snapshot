@@ -28,18 +28,26 @@ type Map struct {
 	urls *hashMap
 }
 
-// New creates a new Map for rawurl. We treat schemes prefixed with k8s+
-// specially. The expected format of that is
-// k8s+http://service.namespace:port/path. namespace, port and path is
-// optional. URLs of this form will consistently hash amongst the endpoints
-// for the service. The values returned by Get will look like
-// http://endpoint:port/path.
+// New creates a new Map for the URL specifier.
 //
-// Example: rawurl is k8s+http://searcher
-func New(rawurl string) *Map {
-	if !strings.HasPrefix(rawurl, "k8s+") {
-		// Non-k8s urls we return a static map
-		return &Map{urls: newConsistentHashMap([]string{rawurl})}
+// If the scheme is prefixed with "k8s+", one URL is expected and the format is
+// expected to match e.g. k8s+http://service.namespace:port/path. namespace,
+// port and path are optional. URLs of this form will consistently hash among
+// the endpoints for the Kubernetes service. The values returned by Get will
+// look like http://endpoint:port/path.
+//
+// If the scheme is not prefixed with "k8s+", a space seperated list of URLs is
+// expected. The map will consistently hash against these URLs in this case.
+// This is useful for specifying non-Kubernetes endpoints.
+//
+// Examples URL specifiers:
+//
+// 	"k8s+http://searcher"
+// 	"http://searcher-1 http://searcher-2 http://searcher-3"
+//
+func New(urlspec string) *Map {
+	if !strings.HasPrefix(urlspec, "k8s+") {
+		return &Map{urls: newConsistentHashMap(strings.Split(urlspec, " "))}
 	}
 
 	m := &Map{}
@@ -47,7 +55,7 @@ func New(rawurl string) *Map {
 	// Kick off setting the initial urls or err on first access. We don't rely
 	// just on inform since it may not communicate updates.
 	m.init = func() (*hashMap, error) {
-		u, err := parseURL(rawurl)
+		u, err := parseURL(urlspec)
 		if err != nil {
 			return nil, err
 		}
