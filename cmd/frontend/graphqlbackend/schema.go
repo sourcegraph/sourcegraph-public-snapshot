@@ -1096,8 +1096,6 @@ type Repository implements Node {
         # Return dependencies matching the query.
         query: String
     ): DependencyConnection!
-    # The total ref list.
-    listTotalRefs: TotalRefList!
     # Link to another Sourcegraph instance location where this repository is located.
     redirectURL: String
     # Whether the viewer has admin privileges on this repository.
@@ -1517,14 +1515,6 @@ type PhabricatorRepo {
     callsign: String!
     # The URL to the phabricator instance (e.g. http://phabricator.sgdev.org)
     url: String!
-}
-
-# A total ref list.
-type TotalRefList {
-    # The repositories.
-    repositories: [Repository!]!
-    # The total.
-    total: Int!
 }
 
 # Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
