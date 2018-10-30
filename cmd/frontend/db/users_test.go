@@ -384,6 +384,11 @@ func TestUsers_Delete(t *testing.T) {
 			}
 			ctx := dbtesting.TestContext(t)
 
+			otherUser, err := Users.Create(ctx, NewUser{Username: "other"})
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			user, err := Users.Create(ctx, NewUser{
 				Email:                 "a@a.com",
 				Username:              "u",
@@ -391,6 +396,14 @@ func TestUsers_Delete(t *testing.T) {
 				EmailVerificationCode: "c",
 			})
 			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Create settings for the user, and for another user authored by this user.
+			if _, err := Settings.CreateIfUpToDate(ctx, api.ConfigurationSubject{User: &user.ID}, nil, &user.ID, ""); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Settings.CreateIfUpToDate(ctx, api.ConfigurationSubject{User: &otherUser.ID}, nil, &user.ID, ""); err != nil {
 				t.Fatal(err)
 			}
 
@@ -448,8 +461,22 @@ func TestUsers_Delete(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(users) > 0 {
-				t.Errorf("got %d users, want 0", len(users))
+			if len(users) > 1 {
+				// The otherUser should still exist, which is why we check for 1 not 0.
+				t.Errorf("got %d users, want 1", len(users))
+			}
+
+			// User's settings no longer exist.
+			if settings, err := Settings.GetLatest(ctx, api.ConfigurationSubject{User: &user.ID}); err != nil {
+				t.Error(err)
+			} else if settings != nil {
+				t.Errorf("got settings %+v, want nil", settings)
+			}
+			// Settings authored by user still exist but have nil author.
+			if settings, err := Settings.GetLatest(ctx, api.ConfigurationSubject{User: &otherUser.ID}); err != nil {
+				t.Fatal(err)
+			} else if settings.AuthorUserID != nil {
+				t.Errorf("got author %v, want nil", *settings.AuthorUserID)
 			}
 
 			// Can't delete already-deleted user.

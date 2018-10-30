@@ -12,6 +12,14 @@ func TestValidateCustom(t *testing.T) {
 		input        schema.SiteConfiguration
 		wantProblems []string
 	}{
+		"single": {
+			input: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{
+					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
+				},
+			},
+			wantProblems: nil,
+		},
 		"multiple": {
 			input: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{
@@ -20,10 +28,6 @@ func TestValidateCustom(t *testing.T) {
 				},
 			},
 			wantProblems: []string{"at most 1"},
-		},
-		"auth.allowSignup deprecation": {
-			input:        schema.SiteConfiguration{AuthAllowSignup: true},
-			wantProblems: []string{"auth.allowSignup requires", "auth.allowSignup is deprecated"},
 		},
 	}
 	for name, test := range tests {

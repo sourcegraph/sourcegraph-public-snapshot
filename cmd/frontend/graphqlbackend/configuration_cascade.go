@@ -87,18 +87,6 @@ func (r *configurationCascadeResolver) Merged(ctx context.Context) (*configurati
 		return nil, err
 	}
 	for _, s := range subjects {
-		if s.site != nil {
-			// BACKCOMPAT: Add the site config "settings" field's settings (if any) to the merged
-			// config. They are deprecated but must still be applied.
-			contents, err := s.site.DeprecatedSiteConfigurationSettings()
-			if err != nil {
-				return nil, err
-			}
-			if contents != nil {
-				configs = append(configs, *contents)
-			}
-		}
-
 		settings, err := s.LatestSettings(ctx)
 		if err != nil {
 			return nil, err

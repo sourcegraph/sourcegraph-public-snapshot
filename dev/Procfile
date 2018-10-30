@@ -7,7 +7,7 @@ searcher: ./dev/delve-hook .bin/searcher
 symbols: ./dev/delve-hook symbols
 github-proxy: ./dev/delve-hook github-proxy
 lsp-proxy: ./dev/delve-hook lsp-proxy
-frontend: ./dev/delve-hook .bin/frontend
+frontend: env CONFIGURATION_MODE=server ./dev/delve-hook .bin/frontend
 watch: ./dev/changewatch.sh
 web: ./node_modules/.bin/gulp --color watch
 syntect_server: ./dev/syntect_server

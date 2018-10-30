@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 )
 
@@ -170,6 +171,12 @@ type ReposListOptions struct {
 
 	// OnlyArchived excludes non-archived repositories from the list.
 	OnlyArchived bool
+
+	// Index when set will only include repositories which should be indexed
+	// if true. If false it will exclude repositories which should be
+	// indexed. An example use case of this is for indexed search only
+	// indexing a subset of repositories.
+	Index *bool
 
 	// Filters repositories based on whether they have an IndexedRevision set.
 	HasIndexedRevision *bool
@@ -339,6 +346,16 @@ func (*repos) listSQL(opt ReposListOptions) (conds []*sqlf.Query, err error) {
 	}
 	if opt.OnlyArchived {
 		conds = append(conds, sqlf.Sprintf("archived"))
+	}
+
+	if opt.Index != nil {
+		// We don't currently have an index column, but when we want the
+		// indexable repositories to be a subset it will live in the database
+		// layer. So we do the filtering here.
+		indexAll := conf.SearchIndexEnabled()
+		if indexAll != *opt.Index {
+			conds = append(conds, sqlf.Sprintf("false"))
+		}
 	}
 
 	return conds, nil

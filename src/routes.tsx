@@ -4,10 +4,9 @@ import { APIConsole } from './api/APIConsole'
 import { ResetPasswordPage } from './auth/ResetPasswordPage'
 import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
-import { ErrorNotSupportedPage } from './components/ErrorNotSupportedPage'
 import { DiscussionsPage } from './discussions/DiscussionsPage'
 import { DocSitePage } from './docSite/DocSitePage'
-import { ExplorePage } from './explore/ExplorePage'
+import { ExploreArea } from './explore/ExploreArea'
 import { ExtensionsArea } from './extensions/ExtensionsArea'
 import { LayoutProps } from './Layout'
 import { SurveyPage } from './marketing/SurveyPage'
@@ -25,7 +24,6 @@ import { SiteInitPage } from './site-admin/SiteInitPage'
 import { RedirectToUserPage } from './user/account/RedirectToUserPage'
 import { RedirectToUserSettings } from './user/account/RedirectToUserSettings'
 import { UserArea } from './user/area/UserArea'
-import { canListAllRepositories } from './util/features'
 
 export interface LayoutRouteComponentProps extends RouteComponentProps<any>, LayoutProps {}
 
@@ -138,7 +136,7 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
     },
     {
         path: '/explore',
-        render: props => (canListAllRepositories ? <ExplorePage {...props} /> : <ErrorNotSupportedPage />),
+        render: props => <ExploreArea {...props} />,
         exact: true,
     },
     {

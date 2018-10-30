@@ -8,7 +8,7 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-lsp"
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -92,47 +92,4 @@ func (packages) listForLanguageInRepo(ctx context.Context, language string, repo
 		pks = append(pks, pk)
 	}
 	return pks, nil
-}
-
-// List returns the repository's packages at the given revision (by collecting the
-// workspace/xpackages LSP results from all relevant language servers).
-//
-// To retrieve the cached results from a recent default branch commit of the repository, use
-// db.Pkgs.ListPackages instead.
-func (packages) List(ctx context.Context, repo *types.Repo, rev api.CommitID) ([]*api.PackageInfo, error) {
-	if Mocks.Packages.List != nil {
-		return Mocks.Packages.List(repo, rev)
-	}
-
-	langs, err := languagesForRepo(ctx, repo, rev)
-	if err != nil {
-		return nil, err
-	}
-
-	var allPkgs []*api.PackageInfo
-	for _, lang := range langs {
-		pkgs, err := (packages{}).listForLanguageInRepo(ctx, lang, repo, rev, false)
-		if err != nil {
-			if proxy.IsModeNotFound(err) {
-				log15.Debug("Packages.List skipping language because no language server is registered", "lang", lang, "err", err)
-			} else {
-				return nil, errors.Wrap(err, "listForLanguageInRepo "+lang)
-			}
-		}
-		for _, pkg := range pkgs {
-			allPkgs = append(allPkgs, &api.PackageInfo{
-				Lang:         lang,
-				RepoID:       repo.ID,
-				Pkg:          pkg.Package,
-				Dependencies: pkg.Dependencies,
-			})
-		}
-	}
-	return allPkgs, nil
-}
-
-// MockPackages allows mocking of Packages backend methods (by setting Mocks.Packages's
-// fields).
-type MockPackages struct {
-	List func(repo *types.Repo, rev api.CommitID) ([]*api.PackageInfo, error)
 }

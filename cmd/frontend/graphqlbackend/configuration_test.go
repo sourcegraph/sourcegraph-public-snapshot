@@ -19,7 +19,7 @@ func TestConfigurationMutation_EditConfiguration(t *testing.T) {
 	db.Mocks.Settings.GetLatest = func(context.Context, api.ConfigurationSubject) (*api.Settings, error) {
 		return &api.Settings{ID: 1, Contents: "{}"}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID int32, contents string) (*api.Settings, error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `{
   "p": {
     "x": 123
@@ -67,7 +67,7 @@ func TestConfigurationMutation_OverwriteConfiguration(t *testing.T) {
 	db.Mocks.Settings.GetLatest = func(context.Context, api.ConfigurationSubject) (*api.Settings, error) {
 		return &api.Settings{ID: 1, Contents: "{}"}, nil
 	}
-	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID int32, contents string) (*api.Settings, error) {
+	db.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.ConfigurationSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `x`; contents != want {
 			t.Errorf("got %q, want %q", contents, want)
 		}

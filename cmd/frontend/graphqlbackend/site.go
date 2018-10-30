@@ -2,11 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -20,6 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/processrestart"
 	"github.com/sourcegraph/sourcegraph/pkg/version"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 
 const singletonSiteGQLID = "site"
@@ -82,20 +81,6 @@ func (r *siteResolver) configurationSubject() api.ConfigurationSubject {
 	return api.ConfigurationSubject{Site: true}
 }
 
-func (r *siteResolver) DeprecatedSiteConfigurationSettings() (*string, error) {
-	// The site configuration (which is only visible to admins) contains a field "settings"
-	// that is visible to all users. So, this does not need a permissions check.
-	settings := conf.Get().Settings
-	if settings == nil {
-		return nil, nil
-	}
-	data, err := json.MarshalIndent(settings, "", "  ")
-	if err != nil {
-		return nil, err
-	}
-	return strptr(string(data)), nil
-}
-
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	settings, err := db.Settings.GetLatest(ctx, r.configurationSubject())
 	if err != nil {
@@ -123,7 +108,8 @@ func (r *siteResolver) BuildVersion() string { return env.Version }
 func (r *siteResolver) ProductVersion() string { return version.Version() }
 
 func (r *siteResolver) HasCodeIntelligence() bool {
-	return envvar.HasCodeIntelligence()
+	// BACKCOMPAT: Always return true.
+	return true
 }
 
 func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
@@ -169,49 +155,11 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (stri
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return "", err
 	}
-	return conf.Raw(), nil
-}
-
-func (r *siteConfigurationResolver) PendingContents(ctx context.Context) (*string, error) {
-	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
-	// so only admins may view it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		return nil, err
-	}
-
-	if !conf.IsDirty() {
-		return nil, nil
-	}
-
-	rawContents, err := ioutil.ReadFile(conf.FilePath())
-	if err != nil {
-		if os.IsNotExist(err) {
-			s := "// The site configuration file does not exist."
-			return &s, nil
-		}
-		return nil, err
-	}
-
-	s := string(rawContents)
-	return &s, nil
-}
-
-// pendingOrEffectiveContents returns pendingContents if it exists, or else effectiveContents.
-func (r *siteConfigurationResolver) pendingOrEffectiveContents(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Site admin status is checked in both r.PendingContents and r.EffectiveContents,
-	// so we don't need to check it in this method.
-	pendingContents, err := r.PendingContents(ctx)
-	if err != nil {
-		return "", err
-	}
-	if pendingContents != nil {
-		return *pendingContents, nil
-	}
-	return r.EffectiveContents(ctx)
+	return globals.ConfigurationServerFrontendOnly.Raw(), nil
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
-	contents, err := r.pendingOrEffectiveContents(ctx)
+	contents, err := r.EffectiveContents(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -221,14 +169,11 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 func (r *siteConfigurationResolver) CanUpdate() bool {
 	// We assume the is-admin check has already been performed before constructing
 	// our receiver.
-	return conf.IsWritable() && processrestart.CanRestart()
+	return processrestart.CanRestart()
 }
 
 func (r *siteConfigurationResolver) Source() string {
-	s := conf.FilePath()
-	if !conf.IsWritable() {
-		s += " (read-only)"
-	}
+	s := globals.ConfigurationServerFrontendOnly.FilePath()
 	return s
 }
 
@@ -240,8 +185,8 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
 	}
-	if err := conf.Write(args.Input); err != nil {
+	if err := globals.ConfigurationServerFrontendOnly.Write(args.Input); err != nil {
 		return false, err
 	}
-	return conf.NeedServerRestart(), nil
+	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil
 }

@@ -33,27 +33,29 @@ Generally you do not ever need to perform manual installation of code intelligen
 
     Alternatively, to boot a fresh EC2 instance running Sourcegraph and language servers, simply modify your user data [previously provided here](../../../admin/install/docker/aws.md#deploy-to-ec2) (or cloud-init.txt) to look like the following:
 
-    ```
-    #cloud-config
-    repo_update: true
-    repo_upgrade: all
+<!-- Indenting this causes it to not be rendered as code. -->
 
-    packages:
-    - docker
+```
+#cloud-config
+repo_update: true
+repo_upgrade: all
 
-    runcmd:
-    - mkdir -p /home/ec2-user/.sourcegraph/config
-    - mkdir -p /home/ec2-user/.sourcegraph/data
-    - sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
-    - sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
-    - service docker start
-    - usermod -a -G docker ec2-user
-    - [ sh, -c, 'docker network create --driver bridge lsp' ]
-    - [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --network lsp --name sourcegraph --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:2.12.3' ]
-    - [ sh, -c, 'docker run -d --network=lsp --name=typescript --restart unless-stopped sourcegraph/codeintel-typescript:latest' ]
-    ```
+packages:
+- docker
 
-4.  [update site configuration to point to the language servers](index.md#configure-sourcegraph-to-connect-to-the-language-servers). You can also see a list of all available language servers there.
+runcmd:
+- mkdir -p /home/ec2-user/.sourcegraph/config
+- mkdir -p /home/ec2-user/.sourcegraph/data
+- sed -i -e 's/1024/10240/g' /etc/sysconfig/docker
+- sed -i -e 's/4096/40960/g' /etc/sysconfig/docker
+- service docker start
+- usermod -a -G docker ec2-user
+- [ sh, -c, 'docker network create --driver bridge lsp' ]
+- [ sh, -c, 'docker run -d --publish 80:7080 --publish 443:7443 --network lsp --name sourcegraph --restart unless-stopped --volume /home/ec2-user/.sourcegraph/config:/etc/sourcegraph --volume /home/ec2-user/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:2.12.3' ]
+- [ sh, -c, 'docker run -d --network=lsp --name=typescript --restart unless-stopped sourcegraph/codeintel-typescript:latest' ]
+```
+
+4.  [Update site configuration to point to the language servers](index.md#configure-sourcegraph-to-connect-to-the-language-servers). You can also see a list of all available language servers there.
 
 ---
 

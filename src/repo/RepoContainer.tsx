@@ -260,7 +260,6 @@ export class RepoContainer extends React.Component<RepoContainerProps, RepoRevCo
                             `@${this.state.rawRev}`, // must exactly match how the rev was encoded in the URL
                             '/-/blob',
                             '/-/tree',
-                            '/-/graph',
                             '/-/commits',
                         ].map(routePath => (
                             <Route

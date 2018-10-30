@@ -4,12 +4,6 @@
 // by the server) instead of being computed here. That change can be made gradually.
 
 /**
- * Whether the server can list all of its repositories. False for Sourcegraph.com,
- * which is a mirror of all public GitHub.com repositories.
- */
-export const canListAllRepositories = !window.context.sourcegraphDotComMode
-
-/**
  * Whether the application should show the user marketing elements (links, etc.)
  * that are intended for Sourcegraph.com.
  */

@@ -1,6 +1,0 @@
-{
-  "hooks": {
-    "post-commit": "bash dev/hooks/post-commit-no-enterprise.sh",
-    "pre-push": "bash dev/hooks/util/hook-pre-push-wrapper.sh dev/hooks/check-no-enterprise.sh"
-  }
-}

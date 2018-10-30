@@ -107,14 +107,6 @@ func (fm *fileMatchResolver) LimitHit() bool {
 	return fm.JLimitHit
 }
 
-func fileMatchesToSearchResults(fms []*fileMatchResolver) []*searchResultResolver {
-	results := make([]*searchResultResolver, len(fms))
-	for i, fm := range fms {
-		results[i] = &searchResultResolver{fileMatch: fm}
-	}
-	return results
-}
-
 // LineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
 	JPreview          string     `json:"Preview"`
@@ -545,6 +537,15 @@ func zoektSearchHEAD(ctx context.Context, query *search.PatternInfo, repos []*se
 	return matches, limitHit, reposLimitHit, nil
 }
 
+func noOpAnyChar(re *syntax.Regexp) {
+	if re.Op == syntax.OpAnyChar {
+		re.Op = syntax.OpAnyCharNotNL
+	}
+	for _, s := range re.Sub {
+		noOpAnyChar(s)
+	}
+}
+
 func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 	var and []zoektquery.Q
 
@@ -554,6 +555,7 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 		if err != nil {
 			return nil, err
 		}
+		noOpAnyChar(re)
 		// zoekt decides to use its literal optimization at the query parser
 		// level, so we check if our regex can just be a literal.
 		if re.Op == syntax.OpLiteral {

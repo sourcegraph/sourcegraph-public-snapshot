@@ -272,8 +272,6 @@ type Mutation {
     # Updates the site configuration. Returns whether or not a restart is
     # needed for the update to be applied.
     updateSiteConfiguration(input: String!): Boolean!
-    # Manages language servers.
-    langServers: LangServersMutation
     # Manages discussions.
     discussions: DiscussionsMutation
     # Sets whether the user with the specified user ID is a site admin.
@@ -289,29 +287,6 @@ type Mutation {
     #
     # FOR INTERNAL USE ONLY.
     dotcom: DotcomMutation!
-}
-
-# Mutations for language servers.
-type LangServersMutation {
-    # Enables the language server for the given language.
-    #
-    # Any user can perform this mutation, unless the language has been
-    # explicitly disabled.
-    enable(language: String!): EmptyResponse
-    # Disables the language server for the given language.
-    #
-    # Only admins can perform this action. After disabling, it is impossible
-    # for plain users to enable the language server for this language (until an
-    # admin re-enables it).
-    disable(language: String!): EmptyResponse
-    # Restarts the language server for the given language.
-    #
-    # Only admins can perform this action.
-    restart(language: String!): EmptyResponse
-    # Updates the language server for the given language.
-    #
-    # Only admins can perform this action.
-    update(language: String!): EmptyResponse
 }
 
 # A selection within a file.
@@ -721,8 +696,6 @@ type Query {
         # The search query (such as "foo" or "repo:myrepo foo").
         query: String = ""
     ): Search
-    # The search scopes.
-    searchScopes: [SearchScope!]!
     # All saved queries configured for the current user, merged from all configurations.
     savedQueries: [SavedQuery!]!
     # All repository groups for the current user, merged from all configurations.
@@ -849,19 +822,6 @@ type SearchFilter {
 
 # A search suggestion.
 union SearchSuggestion = Repository | File | Symbol
-
-# A search scope.
-type SearchScope {
-    # A unique identifier for the search scope.
-    # If set, a scoped search page is available at https://[sourcegraph-hostname]/search/scope/ID, where ID is this value.
-    id: String
-    # The name.
-    name: String!
-    # The value.
-    value: String!
-    # A description for this search scope, which will appear on the scoped search page.
-    description: String
-}
 
 # A search-related alert message.
 type SearchAlert {
@@ -1114,40 +1074,6 @@ type Repository implements Node {
         # Returns the first n contributors from the list.
         first: Int
     ): RepositoryContributorConnection!
-    # The repository's symbols (e.g., functions, variables, types, classes, etc.) on the default branch.
-    #
-    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
-    # yet been processed. Use Repository.commit.tree.symbols to retrieve symbols for a specific revision.
-    symbols(
-        # Returns the first n symbols from the list.
-        first: Int
-        # Return symbols matching the query.
-        query: String
-    ): SymbolConnection!
-    # Packages defined in this repository, as returned by LSP workspace/xpackages requests to this repository's
-    # language servers (running against a recent commit on its default branch).
-    #
-    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
-    # yet been processed. Use Repository.commit.packages to retrieve packages for a specific revision.
-    packages(
-        # Returns the first n packages from the list.
-        first: Int
-        # Return packages matching the query.
-        query: String
-    ): PackageConnection!
-    # Dependencies of this repository, as returned by LSP workspace/xreferences requests to this repository's
-    # language servers (running against a recent commit on its default branch).
-    #
-    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
-    # yet been processed. Use Repository.commit.dependencies to retrieve dependencies for a specific revision.
-    dependencies(
-        # Returns the first n dependencies from the list.
-        first: Int
-        # Return dependencies matching the query.
-        query: String
-    ): DependencyConnection!
-    # The total ref list.
-    listTotalRefs: TotalRefList!
     # Link to another Sourcegraph instance location where this repository is located.
     redirectURL: String
     # Whether the viewer has admin privileges on this repository.
@@ -1569,14 +1495,6 @@ type PhabricatorRepo {
     url: String!
 }
 
-# A total ref list.
-type TotalRefList {
-    # The repositories.
-    repositories: [Repository!]!
-    # The total.
-    total: Int!
-}
-
 # Pagination information. See https://facebook.github.io/relay/graphql/connections.htm#sec-undefined.PageInfo.
 type PageInfo {
     # Whether there is a next page of nodes in the connection.
@@ -1655,22 +1573,6 @@ type GitCommit implements Node {
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
-    # Packages defined in this repository as of this commit, as returned by LSP workspace/xpackages
-    # requests to this repository's language servers.
-    packages(
-        # Returns the first n packages from the list.
-        first: Int
-        # Return packages matching the query.
-        query: String
-    ): PackageConnection!
-    # Dependencies of this repository as of this commit, as returned by LSP workspace/xreferences
-    # requests to this repository's language servers.
-    dependencies(
-        # Returns the first n dependencies from the list.
-        first: Int
-        # Return dependencies matching the query.
-        query: String
-    ): DependencyConnection!
 }
 
 # A set of Git behind/ahead counts for one commit relative to another.
@@ -2338,97 +2240,6 @@ enum OrganizationInvitationResponseType {
     REJECT
 }
 
-# Status about management capabilities for language servers.
-type LanguageServerManagementStatus {
-    # Whether this site can manage (enable/disable/restart/update) language servers on its own.
-    #
-    # Even if this field's value is true, individual language servers may not be manageable. Clients must check the
-    # LangServer.canXyz fields.
-    #
-    # Always false for Sourcegraph cluster deployments.
-    siteCanManage: Boolean!
-    # The reason why the site can't manage language servers, if siteCanManage == false.
-    reason: String
-}
-
-# The possible configuration states of a language server.
-enum LangServerState {
-    # The language server is neither enabled nor disabled. When a repo for this
-    # language is visited by any user, it will be enabled.
-    LANG_SERVER_STATE_NONE
-    # The language server was enabled by a plain user or admin user.
-    LANG_SERVER_STATE_ENABLED
-    # The language server was disabled by an admin user.
-    LANG_SERVER_STATE_DISABLED
-}
-
-# A language server.
-type LangServer {
-    # "go", "java", "typescript", etc.
-    language: String!
-    # "Go", "Java", "TypeScript", "PHP", etc.
-    displayName: String!
-    # Whether or not this language server should be considered experimental.
-    #
-    # Has no effect on behavior, only effects how the language server is presented e.g. in the UI.
-    experimental: Boolean!
-    # URL to the language server's homepage, if available.
-    homepageURL: String
-    # URL to the language server's open/known issues, if available.
-    issuesURL: String
-    # URL to the language server's documentation, if available.
-    docsURL: String
-    # Whether or not the site is a cluster deployment of Sourcegraph (e.g., to Kubernetes).
-    isClusterDeployment: Boolean!
-    # Whether or not this is a custom language server (i.e. one that does not
-    # come built in with Sourcegraph).
-    custom: Boolean!
-    # The current configuration state of the language server.
-    #
-    # For custom language servers, this field is never LANG_SERVER_STATE_NONE.
-    state: LangServerState!
-    # Whether or not the language server is being downloaded, starting, restarting.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    pending: Boolean!
-    # Whether or not the language server is being downloaded.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    downloading: Boolean!
-    # Whether or not the current user can enable the language server or not.
-    #
-    # Always false for Sourcegraph cluster deployments.
-    canEnable: Boolean!
-    # Whether or not the current user can disable the language server or not.
-    #
-    # Always false for Sourcegraph cluster deployments.
-    canDisable: Boolean!
-    # Whether or not the current user can restart the language server or not.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    canRestart: Boolean!
-    # Whether or not the current user can update the language server or not.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    canUpdate: Boolean!
-    # Indicates whether or not the language server is healthy or
-    # unhealthy. Examples include:
-    #
-    #   Healthy:
-    #       - Server is running, experiencing no issues.
-    #       - Server is not running, currently being downloaded.
-    #       - Server is not running, currently starting or restarting.
-    #
-    #   Unhealthy:
-    #       - Server is running, experiencing restarts / OOMs often.
-    #       - Server is not running, an error is preventing startup.
-    #
-    # The value is true ("healthy") if the language server is not enabled.
-    #
-    # Always false for Sourcegraph cluster deployments and for custom language servers.
-    healthy: Boolean!
-}
-
 # An object defining a selection range within e.g. a file.
 type DiscussionSelectionRange {
     # The line that the selection started on (zero-based, inclusive).
@@ -2677,9 +2488,6 @@ type Site implements ConfigurationSubject {
     # The site's latest site-wide settings (which are the lowest-precedence
     # in the configuration cascade for a user).
     latestSettings: Settings
-    # Deprecated settings specified in the site configuration "settings" field. These are distinct from a site's
-    # latestSettings (which are stored in the DB) and are applied at the lowest level of precedence.
-    deprecatedSiteConfigurationSettings: String
     # The configuration cascade including this subject and all applicable subjects whose configuration is lower
     # precedence than this subject.
     configurationCascade: ConfigurationCascade!
@@ -2689,14 +2497,6 @@ type Site implements ConfigurationSubject {
     canReloadSite: Boolean!
     # Whether the viewer can modify the subject's configuration.
     viewerCanAdminister: Boolean!
-    # Lists all language servers.
-    langServers: [LangServer!]!
-    # The language server for a given language (if exists, otherwise null)
-    langServer(language: String!): LangServer
-    # The status of language server management capabilities.
-    #
-    # Only site admins may view this field.
-    languageServerManagementStatus: LanguageServerManagementStatus
     # A list of all access tokens on this site.
     accessTokens(
         # Returns the first n access tokens from the list.
@@ -2731,9 +2531,7 @@ type Site implements ConfigurationSubject {
     noRepositoriesEnabled: Boolean!
     # Alerts to display to the viewer.
     alerts: [Alert!]!
-    # Whether the site has code intelligence. This field will be expanded in the future to describe
-    # more about the code intelligence available (languages supported, etc.). It is subject to
-    # change without notice.
+    # BACKCOMPAT: Always returns true.
     hasCodeIntelligence: Boolean!
     # Whether we want to show built-in searches on the saved searches page
     disableBuiltInSearches: Boolean!
@@ -2755,17 +2553,11 @@ type Site implements ConfigurationSubject {
 
 # The configuration for a site.
 type SiteConfiguration {
-    # The effective configuration JSON. This will lag behind the pendingContents
-    # if the site configuration was updated but the server has not yet restarted.
+    # The effective configuration JSON.
     effectiveContents: String!
-    # The pending configuration JSON, which will become effective after the next
-    # server restart. This is set if the site configuration has been updated since
-    # the server started.
-    pendingContents: String
-    # Messages describing validation problems or usage of deprecated configuration in the configuration JSON
-    # (pendingContents if it exists, otherwise effectiveContents). This includes both JSON Schema validation
-    # problems and other messages that perform more advanced checks on the configuration (that can't be expressed
-    # in the JSON Schema).
+    # Messages describing validation problems or usage of deprecated configuration in the configuration JSON.
+    # This includes both JSON Schema validation problems and other messages that perform more advanced checks
+    # on the configuration (that can't be expressed in the JSON Schema).
     validationMessages: [String!]!
     # Whether the viewer can update the site configuration (using the
     # updateSiteConfiguration mutation).
@@ -2841,8 +2633,8 @@ type Settings {
     configuration: Configuration!
     # The subject that these settings are for.
     subject: ConfigurationSubject!
-    # The author.
-    author: User!
+    # The author, or null if there is no author or the authoring user was deleted.
+    author: User
     # The time when this was created.
     createdAt: String!
     # The contents.
@@ -2855,156 +2647,6 @@ type Configuration {
     contents: String!
     # Error and warning messages about the configuration.
     messages: [String!]!
-}
-
-# A list of packages.
-type PackageConnection {
-    # A list of packages.
-    nodes: [Package!]!
-    # The total count of packages in the connection. This total count may be larger
-    # than the number of nodes in this object when the result is paginated.
-    totalCount: Int!
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# A package represents a grouping of code that is returned by a language server in response to a
-# workspace/xpackages request.
-#
-# See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-type Package implements Node {
-    # The ID of the package.
-    id: ID!
-    # The repository commit that defines the package.
-    definingCommit: GitCommit!
-    # The programming language used to define the package.
-    language: String!
-    # The package descriptor, as returned by the language server's workspace/xpackages LSP method. The attribute
-    # names and values are defined by each language server and should generally be considered opaque.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    data: [KeyValue!]!
-    # This package's dependencies, as returned by the language server's workspace/xpackages LSP method.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    dependencies: [Dependency!]!
-    # The list of references (from only this repository at the definingCommit) to definitions in this package.
-    #
-    # If this operation is not supported (by the language server), this field's value will be null.
-    internalReferences: ReferenceConnection
-    # The list of references (from other repositories' packages) to definitions in this package. Currently this
-    # lists packages that refer to this package, NOT individual call/reference sites within those referencing
-    # packages (unlike internalReferences, which does list individual call sites). If this operation is not
-    # supported (by the language server), this field's value will be null.
-    #
-    # EXPERIMENTAL: This field is experimental. It is subject to change. Please report any issues you see, and
-    # contact support for help.
-    externalReferences: ReferenceConnection
-}
-
-# A list of dependencies.
-type DependencyConnection {
-    # A list of dependencies.
-    nodes: [Dependency!]!
-    # The total count of dependencies in the connection. This total count may be larger
-    # than the number of nodes in this object when the result is paginated.
-    totalCount: Int!
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# A dependency represents a dependency relationship between two units of code. It is derived from data returned by
-# a language server in response to a workspace/xreferences request.
-#
-# See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-type Dependency implements Node {
-    # The ID of the dependency.
-    id: ID!
-    # The repository commit that depends on the unit of code described by this resolver's other fields.
-    dependingCommit: GitCommit!
-    # The programming language of the dependency.
-    language: String!
-    # The dependency attributes, as returned by the language server's workspace/xdependencies LSP method. The
-    # attribute names and values are defined by each language server and should generally be considered opaque.
-    # They generally overlap with the package descriptor's fields in the Package type.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    data: [KeyValue!]!
-    # Hints that can be passed to workspace/xreferences to speed up retrieval of references to this dependency.
-    # These hints are returned by the language server's workspace/xdependencies LSP method. The attribute names and
-    # values are defined by each language server and should generally be considered opaque.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    hints: [KeyValue!]!
-    # The list of references (in the depending commit's code files) to definitions in this dependency.
-    #
-    # If this operation is not supported (by the language server), this field's value will be null.
-    #
-    # EXPERIMENTAL: This field is experimental. It is subject to change. Please report any issues you see, and
-    # contact support for help.
-    references: ReferenceConnection
-}
-
-# An opaque value of any type.
-scalar OpaqueValue
-
-# A key-value pair.
-type KeyValue {
-    # The key.
-    key: String!
-    # The value, which can be of any type.
-    value: OpaqueValue!
-}
-
-# A list of code references (e.g., function calls, variable references, package import statements, etc.), as
-# returned by language server(s) over LSP.
-#
-# NOTE: The actual references (which would be expected to be available in the "nodes" field) are not exposed. This
-# is because currently there are no API consumers that need them. In the future, they will be available here, but
-# in the meantime, consumers can provide the searchQuery to the Query.search GraphQL resolver to retrieve
-# references.
-type ReferenceConnection {
-    # The total count of references in this connection. If an exact count is not available, then this field's value
-    # will be null; consult the approximateCount field instead.
-    totalCount: Int
-    # The approximate count of references in this connection. If counting is not supported, then this field's value
-    # will be null.
-    approximateCount: ApproximateCount
-    # The search query (for Sourcegraph search) that matches references in this connection.
-    #
-    # The query string does not include any repo:REPO@REV tokens (even if this connection would seem to warrant
-    # the inclusion of such tokens). Therefore, clients must add those tokens if they wish to constrain the search
-    # to only certain repositories and revisions. (This is so that clients can use the nice revision instead of the
-    # 40-character Git commit SHA if desired.)
-    queryString: String!
-    # The symbol descriptor query to pass to language servers in the LSP workspace/xreferences request to retrieve
-    # all references in this connection. This is derived from the attributes data of this connection's subject
-    # (e.g., Package.data or Dependency.data). The attribute names and values are defined by each language server
-    # and should generally be considered opaque.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    symbolDescriptor: [KeyValue!]!
-}
-
-# An approximate count. To display this to the user, use ApproximateCount.label as the number and use
-# ApproximateCount.count to determine whether to pluralize the noun (if any) adjacent to the label.
-type ApproximateCount {
-    # The count, which may be inexact. This number is always the prefix of the label field.
-    count: Int!
-    # Whether the count finished and is exact.
-    exact: Boolean!
-    # A textual label that approximates the count (e.g., "99+" if the counting is cut off at 99).
-    label: String!
 }
 
 # UserActivity describes a user's activity on the site.
@@ -3114,7 +2756,8 @@ type SurveyResponse {
 type ProductSubscriptionStatus {
     # The full name of the product in use, such as "Sourcegraph Enterprise".
     productNameWithBrand: String!
-    # The actual total number of users on this Sourcegraph site.
+    # The max number of user accounts that have been active on this Sourcegraph site for the current license.
+    # If no license is in use, returns zero.
     actualUserCount: Int!
     # The product license associated with this subscription, if any.
     license: ProductLicenseInfo

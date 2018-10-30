@@ -10,6 +10,15 @@ interface WithIcon {
 }
 
 /**
+ * Configuration for a component.
+ *
+ * @template C Context information that is passed to `render` and `condition`
+ */
+export interface ComponentDescriptor<C extends object = {}> extends Conditional<C> {
+    readonly render: ((props: C) => React.ReactNode)
+}
+
+/**
  * Configuration for a route.
  *
  * @template C Context information that is passed to `render` and `condition`

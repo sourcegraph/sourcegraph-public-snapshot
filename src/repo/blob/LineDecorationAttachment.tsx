@@ -1,6 +1,7 @@
 import * as React from 'react'
 import ReactDOM from 'react-dom'
 import { DecorationAttachmentRenderOptions } from 'sourcegraph'
+import { decorationAttachmentStyleForTheme } from 'sourcegraph/module/client/providers/decoration'
 import { AbsoluteRepoFile } from '..'
 import { LinkOrSpan } from '../../components/LinkOrSpan'
 
@@ -8,6 +9,7 @@ interface LineDecorationAttachmentProps extends AbsoluteRepoFile {
     line: number
     portalID: string
     attachment: DecorationAttachmentRenderOptions
+    isLightTheme: boolean
 }
 
 /** Displays text after a line in Blob. */
@@ -36,6 +38,8 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
             return null
         }
 
+        const style = decorationAttachmentStyleForTheme(this.props.attachment, this.props.isLightTheme)
+
         return ReactDOM.createPortal(
             <LinkOrSpan
                 className="line-decoration-attachment"
@@ -55,8 +59,8 @@ export class LineDecorationAttachment extends React.PureComponent<LineDecoration
                     className="line-decoration-attachment__contents"
                     // tslint:disable-next-line:jsx-ban-props
                     style={{
-                        color: this.props.attachment.color,
-                        backgroundColor: this.props.attachment.backgroundColor,
+                        color: style.color,
+                        backgroundColor: style.backgroundColor,
                     }}
                     data-contents={this.props.attachment.contentText || ''}
                 />

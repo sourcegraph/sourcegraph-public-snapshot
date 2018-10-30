@@ -7,6 +7,22 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- A new Explore area is linked from the top navigation bar (when the `localStorage.explore=true;location.reload()` feature flag is enabled).
+
+### Changed
+
+### Removed
+
+- The **Explore** page was replaced with a **Repositories** search link in the top navigation bar.
+
+## 2.13 (not yet released)
+
+### Added
+
+- A new site config option `search.index.enabled` allows toggling on indexed search.
+
 ### Changed
 
 - When the `DEPLOY_TYPE` environment variable is incorrectly specified, Sourcegraph now shuts down and logs an error message.
@@ -19,12 +35,17 @@ All notable changes to Sourcegraph are documented in this file.
 - The user account sidebar "Password" link (to the change-password form) is now shown correctly.
 - Fixed an issue where GitHub rate limits were underutilized if the remaining
   rate limit dropped below 150.
+- Fixed an issue where GraphQL field `elapsedMilliseconds` returned invalid value on empty searches
+- Editor extensions now properly search the selection as a literal string, instead of incorrectly using regexp.
 
 ### Removed
 
 - The experimental feature flag to disable the new repo update scheduler has been removed.
 - The `experimentalFeatures.configVars` feature flag was removed.
 - The `experimentalFeatures.multipleAuthProviders` feature flag was removed because the feature is now always enabled.
+- The following deprecated auth provider configuration properties were removed: `auth.provider`, `auth.saml`, `auth.openIDConnect`, `auth.userIdentityHTTPHeader`, and `auth.allowSignup`. Use `auth.providers` for all auth provider configuration. (If you were still using the deprecated properties and had no `auth.providers` set, all access to your instance will be rejected until you manually set `auth.providers`.)
+- The deprecated site configuration properties `search.scopes` and `settings` were removed. Define search scopes and settings in global settings in the site admin area instead of in site configuration.
+- The `pendingContents` property has been removed from our GraphQL schema.
 
 ## 2.12.3
 

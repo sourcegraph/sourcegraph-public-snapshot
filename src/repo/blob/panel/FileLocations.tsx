@@ -190,7 +190,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
                         />
                     ))}
                 />
-                {this.state.loading && <LoadingSpinner className="icon-inline p-2" />}
+                {this.state.loading && <LoadingSpinner className="icon-inline m-1" />}
             </div>
         )
     }

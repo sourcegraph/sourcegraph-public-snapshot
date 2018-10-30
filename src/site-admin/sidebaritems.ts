@@ -38,10 +38,6 @@ export const secondaryGroup: SiteAdminSideBarGroup = {
             label: 'Global settings',
             to: '/site-admin/global-settings',
         },
-        {
-            label: 'Code intelligence',
-            to: '/site-admin/code-intelligence',
-        },
     ],
 }
 

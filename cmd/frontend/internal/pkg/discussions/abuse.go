@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
+	"github.com/sourcegraph/sourcegraph/pkg/txemail/txtypes"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -49,7 +50,7 @@ func NotifyCommentReported(reportedBy *types.User, thread *types.DiscussionThrea
 	})
 }
 
-var commentReportedEmailTemplate = txemail.MustValidate(txemail.Templates{
+var commentReportedEmailTemplate = txemail.MustValidate(txtypes.Templates{
 	Subject: "User {{.ReportedBy}} has reported a comment on a discussion thread",
 	Text:    "View the comment and report: {{.URL}}",
 	HTML:    `<a href="{{.URL}}">View the comment and report</a>`,

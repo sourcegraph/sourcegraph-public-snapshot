@@ -88,7 +88,7 @@ func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*stri
 	if err != nil {
 		return nil, err
 	}
-	return nullString(info.CloneProgress), nil
+	return strptr(info.CloneProgress), nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*string, error) {

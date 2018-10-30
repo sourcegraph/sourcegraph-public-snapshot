@@ -15,7 +15,7 @@ import (
 
 type settings struct{}
 
-func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID int32, contents string) (latestSetting *api.Settings, err error) {
+func (o *settings) CreateIfUpToDate(ctx context.Context, subject api.ConfigurationSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
 	if Mocks.Settings.CreateIfUpToDate != nil {
 		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
 	}
@@ -86,11 +86,17 @@ func (o *settings) ListAll(ctx context.Context) (_ []*api.Settings, err error) {
 	}()
 
 	q := sqlf.Sprintf(`
-		SELECT DISTINCT
-			ON (org_id, user_id, author_user_id)
-			id, org_id, user_id, author_user_id, contents, created_at
-			FROM settings
-			ORDER BY org_id, user_id, author_user_id, id DESC
+		WITH q AS (
+			SELECT DISTINCT
+				ON (org_id, user_id, author_user_id)
+				id, org_id, user_id, author_user_id, contents, created_at
+				FROM settings
+				ORDER BY org_id, user_id, author_user_id, id DESC
+		)
+		SELECT q.id, q.org_id, q.user_id, CASE WHEN users.deleted_at IS NULL THEN q.author_user_id ELSE NULL END, q.contents, q.created_at
+		FROM q
+		LEFT JOIN users ON users.id=q.author_user_id
+		ORDER BY q.org_id, q.user_id, q.author_user_id, q.id DESC
 	`)
 	rows, err := dbconn.Global.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
@@ -105,14 +111,15 @@ func (o *settings) getLatest(ctx context.Context, queryTarget queryable, subject
 	case subject.Org != nil:
 		cond = sqlf.Sprintf("org_id=%d", *subject.Org)
 	case subject.User != nil:
-		cond = sqlf.Sprintf("user_id=%d", *subject.User)
+		cond = sqlf.Sprintf("user_id=%d AND EXISTS (SELECT NULL FROM users WHERE id=%d AND deleted_at IS NULL)", *subject.User, *subject.User)
 	default:
 		// No org and no user represents global site settings.
 		cond = sqlf.Sprintf("user_id IS NULL AND org_id IS NULL")
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, org_id, user_id, author_user_id, contents, created_at FROM settings
+		SELECT s.id, s.org_id, s.user_id, CASE WHEN users.deleted_at IS NULL THEN s.author_user_id ELSE NULL END, s.contents, s.created_at FROM settings s
+		LEFT JOIN users ON users.id=s.author_user_id
 		WHERE %s
 		ORDER BY id DESC LIMIT 1`, cond)
 	rows, err := queryTarget.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)

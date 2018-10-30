@@ -22,6 +22,7 @@ import * as GQL from './backend/graphqlschema'
 import { FeedbackText } from './components/FeedbackText'
 import { HeroPage } from './components/HeroPage'
 import { Tooltip } from './components/tooltip/Tooltip'
+import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
@@ -50,6 +51,7 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { isErrorLike } from './util/errors'
 
 export interface SourcegraphWebAppProps extends KeybindingsProps {
+    exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
     extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>

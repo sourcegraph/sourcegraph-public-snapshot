@@ -4,11 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 )
 
 // index updates the cross-repo code intelligence indexes for the given repository at the given revision and enqueues
@@ -25,7 +21,6 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 
 	// Check if index is already up-to-date
 	if repo.IndexedRevision != nil && (repo.FreezeIndexedRevision || *repo.IndexedRevision == commit) {
-		w.handleLangServersMigration(repo, commit)
 		return nil
 	}
 
@@ -35,10 +30,6 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 		return fmt.Errorf("Repos.GetInventory failed: %s", err)
 	}
 	lang := inv.PrimaryProgrammingLanguage()
-
-	// Automatically enable the language server for each language detected in
-	// the repository.
-	w.enableLangservers(inv)
 
 	// Update global refs & packages index
 	if !repo.Fork() {
@@ -61,63 +52,6 @@ func (w *Worker) index(repoName api.RepoURI, rev string, isPrimary bool) (err er
 		return err
 	}
 	return nil
-}
-
-// enableLangservers enables language servers for the given repo inventory.
-func (w *Worker) enableLangservers(inv *inventory.Inventory) {
-	if conf.IsDeployTypeKubernetesCluster(conf.DeployType()) {
-		// Deployed to a cluster, do not auto-enable language servers.
-		return
-	}
-	if conf.IsDev(conf.DeployType()) && !conf.DebugManageDocker() {
-		// Running in dev mode with managed docker disabled.
-		return
-	}
-
-	// Enable the language server for each language detected in the repository.
-	for _, language := range inv.Languages {
-		err := langServersEnableLanguage(w.Ctx, language.ConfigName())
-
-		// Note: We ignore "not authenticated" errors here as they would just
-		// indicate one of three things:
-		//
-		// 1. The language is a built-in one, but an admin user has explicitly
-		//    disabled it. We do not want to act as an admin and explicitly
-		//    override their disable action.
-		// 2. The language is built-in and experimental. Only admins can do
-		//    this.
-		// 3. The language is not a built-in one, and by 'enabling' it we would
-		//    actually just be modifying an entry to the site config. Only
-		//    admins can do this, and this is not an action we want to perform
-		//    here.
-		//
-		if err != nil && !strings.Contains(err.Error(), "not authenticated") {
-			// Failure here should never be fatal to the rest of the
-			// indexing operations.
-			log15.Error("failed to automatically enable language server", "language", language.ConfigName(), "error", err)
-		}
-	}
-}
-
-// handleLangServersMigration handles a migration path: The repository is
-// already indexed. But it is still useful to enable language servers
-// automatically at this point for users who've already added all of their
-// repositories before we supported automatic language server management.
-//
-// TODO(slimsag): remove this code after May 3, 2018. Also remove
-// api.InternalClient.ReposGetInventory since this is the only user of it.
-func (w *Worker) handleLangServersMigration(repo *api.Repo, commit api.CommitID) {
-	// Note: we use ReposGetInventory not the uncached variant because this
-	// runs on every refresh operation and it needs to be performant.
-	inv, err := api.InternalClient.ReposGetInventory(w.Ctx, repo.ID, commit)
-	if err != nil {
-		log15.Error("failed to automatically enable language servers, Repos.GetInventory failed", "error", err)
-		return
-	}
-
-	// Automatically enable the language server for each language detected in
-	// the repository.
-	w.enableLangservers(inv)
 }
 
 type multiError []error

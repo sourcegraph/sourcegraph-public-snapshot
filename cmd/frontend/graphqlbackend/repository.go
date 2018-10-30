@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
-	"sort"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,7 +12,6 @@ import (
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/neelance/parallel"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -199,76 +195,6 @@ func (r *repositoryResolver) URL() string { return "/" + string(r.repo.URI) }
 
 func (r *repositoryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
 	return externallink.Repository(ctx, r.repo)
-}
-
-func (r *repositoryResolver) ListTotalRefs(ctx context.Context) (*totalRefListResolver, error) {
-	totalRefs, err := backend.Defs.ListTotalRefs(ctx, r.repo.URI)
-	if err != nil {
-		return nil, err
-	}
-	originalLength := len(totalRefs)
-
-	// Limit total references to 250 to prevent the many db.Repos.Get
-	// operations from taking too long.
-	sort.Slice(totalRefs, func(i, j int) bool {
-		return totalRefs[i] < totalRefs[j]
-	})
-	if limit := 250; len(totalRefs) > limit {
-		totalRefs = totalRefs[:limit]
-	}
-
-	// Transform repo IDs into repository resolvers.
-	var (
-		par         = 8
-		resolversMu sync.Mutex
-		resolvers   = make([]*repositoryResolver, 0, len(totalRefs))
-		run         = parallel.NewRun(par)
-	)
-	for _, refRepo := range totalRefs {
-		run.Acquire()
-		go func(refRepo api.RepoID) {
-			defer func() {
-				if r := recover(); r != nil {
-					run.Error(fmt.Errorf("recover: %v", r))
-				}
-				run.Release()
-			}()
-			resolver, err := repositoryByIDInt32(ctx, refRepo)
-			if err != nil {
-				run.Error(err)
-				return
-			}
-			resolversMu.Lock()
-			resolvers = append(resolvers, resolver)
-			resolversMu.Unlock()
-		}(refRepo)
-	}
-	if err := run.Wait(); err != nil {
-		// Log the error if we still have good results; otherwise return just
-		// the error.
-		if len(resolvers) > 5 {
-			log.Println("ListTotalRefs:", r.repo.URI, err)
-		} else {
-			return nil, err
-		}
-	}
-	return &totalRefListResolver{
-		repositories: resolvers,
-		total:        int32(originalLength),
-	}, nil
-}
-
-type totalRefListResolver struct {
-	repositories []*repositoryResolver
-	total        int32
-}
-
-func (t *totalRefListResolver) Repositories() []*repositoryResolver {
-	return t.repositories
-}
-
-func (t *totalRefListResolver) Total() int32 {
-	return t.total
 }
 
 func (*schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
