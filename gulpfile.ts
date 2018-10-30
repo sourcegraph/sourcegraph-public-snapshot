@@ -1,5 +1,6 @@
 import { generateNamespace } from '@gql2ts/from-schema'
 import { DEFAULT_OPTIONS, DEFAULT_TYPE_MAP } from '@gql2ts/language-typescript'
+import { ChildProcess, spawn } from 'child_process'
 import log from 'fancy-log'
 import globby from 'globby'
 import { buildSchema, graphql, introspectionQuery, IntrospectionQuery } from 'graphql'
@@ -188,6 +189,16 @@ export async function unusedExports(): Promise<void> {
     }
 }
 
+/**
+ * Typechecks the TypeScript code.
+ */
+export function typescript(): ChildProcess {
+    return spawn(__dirname + '/node_modules/.bin/tsc', ['-p', __dirname + '/tsconfig.json', '--pretty'], {
+        stdio: 'inherit',
+        shell: true,
+    })
+}
+
 const PHABRICATOR_EXTENSION_FILES = './node_modules/@sourcegraph/phabricator-extension/dist/**'
 
 /**
@@ -209,7 +220,7 @@ export const watchPhabricator = gulp.series(phabricator, async function watchPha
  * Builds everything.
  */
 export const build = gulp.parallel(
-    gulp.series(gulp.parallel(schema, graphQLTypes), gulp.parallel(webpack, phabricator))
+    gulp.series(gulp.parallel(schema, graphQLTypes), typescript, gulp.parallel(webpack, phabricator))
 )
 
 /**
