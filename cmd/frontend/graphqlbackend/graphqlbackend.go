@@ -79,11 +79,6 @@ func (r *nodeResolver) ToAccessToken() (*accessTokenResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToDependency() (*dependencyResolver, bool) {
-	n, ok := r.node.(*dependencyResolver)
-	return n, ok
-}
-
 func (r *nodeResolver) ToProductLicense() (ProductLicense, bool) {
 	n, ok := r.node.(ProductLicense)
 	return n, ok
@@ -129,11 +124,6 @@ func (r *nodeResolver) ToGitCommit() (*gitCommitResolver, bool) {
 	return n, ok
 }
 
-func (r *nodeResolver) ToPackage() (*packageResolver, bool) {
-	n, ok := r.node.(*packageResolver)
-	return n, ok
-}
-
 func (r *nodeResolver) ToRegistryExtension() (RegistryExtension, bool) {
 	return NodeToRegistryExtension(r.node)
 }
@@ -176,8 +166,6 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return externalAccountByID(ctx, id)
 	case "GitRef":
 		return gitRefByID(ctx, id)
-	case "Dependency":
-		return dependencyByID(ctx, id)
 	case "Repository":
 		return repositoryByID(ctx, id)
 	case "User":
@@ -188,8 +176,6 @@ func nodeByID(ctx context.Context, id graphql.ID) (node, error) {
 		return orgInvitationByID(ctx, id)
 	case "GitCommit":
 		return gitCommitByID(ctx, id)
-	case "Package":
-		return packageByID(ctx, id)
 	case "RegistryExtension":
 		return RegistryExtensionByID(ctx, id)
 	case "SavedQuery":

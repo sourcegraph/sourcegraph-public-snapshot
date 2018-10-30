@@ -1081,28 +1081,6 @@ type Repository implements Node {
         # Returns the first n contributors from the list.
         first: Int
     ): RepositoryContributorConnection!
-    # Packages defined in this repository, as returned by LSP workspace/xpackages requests to this repository's
-    # language servers (running against a recent commit on its default branch).
-    #
-    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
-    # yet been processed. Use Repository.commit.packages to retrieve packages for a specific revision.
-    packages(
-        # Returns the first n packages from the list.
-        first: Int
-        # Return packages matching the query.
-        query: String
-    ): PackageConnection!
-    # Dependencies of this repository, as returned by LSP workspace/xreferences requests to this repository's
-    # language servers (running against a recent commit on its default branch).
-    #
-    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
-    # yet been processed. Use Repository.commit.dependencies to retrieve dependencies for a specific revision.
-    dependencies(
-        # Returns the first n dependencies from the list.
-        first: Int
-        # Return dependencies matching the query.
-        query: String
-    ): DependencyConnection!
     # Link to another Sourcegraph instance location where this repository is located.
     redirectURL: String
     # Whether the viewer has admin privileges on this repository.
@@ -1602,22 +1580,6 @@ type GitCommit implements Node {
         # Return symbols matching the query.
         query: String
     ): SymbolConnection!
-    # Packages defined in this repository as of this commit, as returned by LSP workspace/xpackages
-    # requests to this repository's language servers.
-    packages(
-        # Returns the first n packages from the list.
-        first: Int
-        # Return packages matching the query.
-        query: String
-    ): PackageConnection!
-    # Dependencies of this repository as of this commit, as returned by LSP workspace/xreferences
-    # requests to this repository's language servers.
-    dependencies(
-        # Returns the first n dependencies from the list.
-        first: Int
-        # Return dependencies matching the query.
-        query: String
-    ): DependencyConnection!
 }
 
 # A set of Git behind/ahead counts for one commit relative to another.
@@ -2692,149 +2654,6 @@ type Configuration {
     contents: String!
     # Error and warning messages about the configuration.
     messages: [String!]!
-}
-
-# A list of packages.
-type PackageConnection {
-    # A list of packages.
-    nodes: [Package!]!
-    # The total count of packages in the connection. This total count may be larger
-    # than the number of nodes in this object when the result is paginated.
-    totalCount: Int!
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# A package represents a grouping of code that is returned by a language server in response to a
-# workspace/xpackages request.
-#
-# See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-type Package implements Node {
-    # The ID of the package.
-    id: ID!
-    # The repository commit that defines the package.
-    definingCommit: GitCommit!
-    # The programming language used to define the package.
-    language: String!
-    # The package descriptor, as returned by the language server's workspace/xpackages LSP method. The attribute
-    # names and values are defined by each language server and should generally be considered opaque.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    data: [KeyValue!]!
-    # This package's dependencies, as returned by the language server's workspace/xpackages LSP method.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    dependencies: [Dependency!]!
-    # The list of references (from only this repository at the definingCommit) to definitions in this package.
-    #
-    # If this operation is not supported (by the language server), this field's value will be null.
-    internalReferences: ReferenceConnection
-    # The list of references (from other repositories' packages) to definitions in this package. Currently this
-    # lists packages that refer to this package, NOT individual call/reference sites within those referencing
-    # packages (unlike internalReferences, which does list individual call sites). If this operation is not
-    # supported (by the language server), this field's value will be null.
-    #
-    # EXPERIMENTAL: This field is experimental. It is subject to change. Please report any issues you see, and
-    # contact support for help.
-    externalReferences: ReferenceConnection
-}
-
-# A list of dependencies.
-type DependencyConnection {
-    # A list of dependencies.
-    nodes: [Dependency!]!
-    # The total count of dependencies in the connection. This total count may be larger
-    # than the number of nodes in this object when the result is paginated.
-    totalCount: Int!
-    # Pagination information.
-    pageInfo: PageInfo!
-}
-
-# A dependency represents a dependency relationship between two units of code. It is derived from data returned by
-# a language server in response to a workspace/xreferences request.
-#
-# See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-type Dependency implements Node {
-    # The ID of the dependency.
-    id: ID!
-    # The repository commit that depends on the unit of code described by this resolver's other fields.
-    dependingCommit: GitCommit!
-    # The programming language of the dependency.
-    language: String!
-    # The dependency attributes, as returned by the language server's workspace/xdependencies LSP method. The
-    # attribute names and values are defined by each language server and should generally be considered opaque.
-    # They generally overlap with the package descriptor's fields in the Package type.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    data: [KeyValue!]!
-    # Hints that can be passed to workspace/xreferences to speed up retrieval of references to this dependency.
-    # These hints are returned by the language server's workspace/xdependencies LSP method. The attribute names and
-    # values are defined by each language server and should generally be considered opaque.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    hints: [KeyValue!]!
-    # The list of references (in the depending commit's code files) to definitions in this dependency.
-    #
-    # If this operation is not supported (by the language server), this field's value will be null.
-    #
-    # EXPERIMENTAL: This field is experimental. It is subject to change. Please report any issues you see, and
-    # contact support for help.
-    references: ReferenceConnection
-}
-
-# An opaque value of any type.
-scalar OpaqueValue
-
-# A key-value pair.
-type KeyValue {
-    # The key.
-    key: String!
-    # The value, which can be of any type.
-    value: OpaqueValue!
-}
-
-# A list of code references (e.g., function calls, variable references, package import statements, etc.), as
-# returned by language server(s) over LSP.
-#
-# NOTE: The actual references (which would be expected to be available in the "nodes" field) are not exposed. This
-# is because currently there are no API consumers that need them. In the future, they will be available here, but
-# in the meantime, consumers can provide the searchQuery to the Query.search GraphQL resolver to retrieve
-# references.
-type ReferenceConnection {
-    # The total count of references in this connection. If an exact count is not available, then this field's value
-    # will be null; consult the approximateCount field instead.
-    totalCount: Int
-    # The approximate count of references in this connection. If counting is not supported, then this field's value
-    # will be null.
-    approximateCount: ApproximateCount
-    # The symbol descriptor query to pass to language servers in the LSP workspace/xreferences request to retrieve
-    # all references in this connection. This is derived from the attributes data of this connection's subject
-    # (e.g., Package.data or Dependency.data). The attribute names and values are defined by each language server
-    # and should generally be considered opaque.
-    #
-    # The ordering is not meaningful.
-    #
-    # See https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md.
-    symbolDescriptor: [KeyValue!]!
-}
-
-# An approximate count. To display this to the user, use ApproximateCount.label as the number and use
-# ApproximateCount.count to determine whether to pluralize the noun (if any) adjacent to the label.
-type ApproximateCount {
-    # The count, which may be inexact. This number is always the prefix of the label field.
-    count: Int!
-    # Whether the count finished and is exact.
-    exact: Boolean!
-    # A textual label that approximates the count (e.g., "99+" if the counting is cut off at 99).
-    label: String!
 }
 
 # UserActivity describes a user's activity on the site.

@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-lsp"
 
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -45,13 +45,6 @@ func cachedUnsafeXLangCall_(ctx context.Context, mode string, rootURI lsp.Docume
 		xlangCache.Set(key, b)
 	}
 	return nil
-}
-
-func mockXLang(fn func(ctx context.Context, mode string, rootURI lsp.DocumentURI, method string, params, results interface{}) error) (done func()) {
-	cachedUnsafeXLangCall = fn
-	return func() {
-		cachedUnsafeXLangCall = cachedUnsafeXLangCall_
-	}
 }
 
 var xlangSupportedLanguages = map[string]struct{}{
