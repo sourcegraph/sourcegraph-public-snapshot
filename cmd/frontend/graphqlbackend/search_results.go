@@ -818,33 +818,6 @@ func (r *searchResolver) doResults(ctx context.Context, forceOnlyResultType stri
 					commonMu.Unlock()
 				}
 			})
-		case "ref":
-			refValues, _ := r.query.StringValues(query.FieldRef)
-			if len(refValues) == 0 {
-				continue
-			}
-			wg := waitGroup(len(resultTypes) == 1)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-				refResults, refCommon, err := searchReferencesInRepos(ctx, &args)
-				// Timeouts are reported through searchResultsCommon so don't report an error for them
-				if err != nil && !isContextError(ctx, err) {
-					multiErrMu.Lock()
-					multiErr = multierror.Append(multiErr, errors.Wrap(err, "ref search failed"))
-					multiErrMu.Unlock()
-				}
-				if refResults != nil {
-					resultsMu.Lock()
-					results = append(results, refResults...)
-					resultsMu.Unlock()
-				}
-				if refCommon != nil {
-					commonMu.Lock()
-					common.update(*refCommon)
-					commonMu.Unlock()
-				}
-			})
 		case "diff":
 			wg := waitGroup(len(resultTypes) == 1)
 			wg.Add(1)

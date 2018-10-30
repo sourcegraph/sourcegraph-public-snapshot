@@ -19,10 +19,6 @@ const (
 	FieldLang      = "lang"
 	FieldType      = "type"
 
-	// For graph search only:
-	FieldRef   = "ref"
-	FieldHints = "hints"
-
 	// For diff and commit search only:
 	FieldBefore    = "before"
 	FieldAfter     = "after"
@@ -52,9 +48,6 @@ var (
 			FieldArchived:  {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 			FieldLang:      types.FieldType{Literal: types.StringType, Quoted: types.StringType, Negatable: true},
 			FieldType:      stringFieldType,
-
-			FieldRef:   {Literal: types.StringType, Quoted: types.StringType, Singular: true},
-			FieldHints: {Literal: types.StringType, Quoted: types.StringType, Singular: true},
 
 			FieldBefore:    stringFieldType,
 			FieldAfter:     stringFieldType,
