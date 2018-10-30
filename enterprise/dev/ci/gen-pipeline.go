@@ -12,7 +12,7 @@ import (
 
 func init() {
 	bk.Plugins["gopath-checkout#v1.0.1"] = map[string]string{
-		"import": "github.com/sourcegraph/sourcegraph/enterprise",
+		"import": "github.com/sourcegraph/sourcegraph",
 	}
 }
 
