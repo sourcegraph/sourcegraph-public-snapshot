@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"golang.org/x/net/context/ctxhttp"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -140,8 +141,9 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	c.RateLimit.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
 		var err githubAPIError
-		// ignore error since we don't need to set Message.
-		_ = json.NewDecoder(resp.Body).Decode(&err)
+		if decErr := json.NewDecoder(resp.Body).Decode(&err); decErr != nil {
+			log15.Warn("Failed to decode error response from github API", "error", decErr)
+		}
 		err.URL = req.URL.String()
 		err.Code = resp.StatusCode
 		return &err
@@ -215,6 +217,7 @@ func unmarshal(data []byte, v interface{}) error {
 	}
 	return err
 }
+
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
