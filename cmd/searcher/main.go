@@ -2,7 +2,6 @@
 
 // Defaults for cluster deployments.
 //docker:env CACHE_DIR=/mnt/cache/searcher
-//docker:env SEARCHER_CACHE_SIZE_MB=100000
 
 // searcher is a simple service which exposes an API to text search a repo at
 // a specific commit. See the searcher package for more information.
@@ -34,7 +33,7 @@ import (
 )
 
 var cacheDir = env.Get("CACHE_DIR", "/tmp", "directory to store cached archives.")
-var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "0", "maximum size of the on disk cache in megabytes")
+var cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
 
 const port = "3181"
 

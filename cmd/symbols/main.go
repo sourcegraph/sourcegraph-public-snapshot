@@ -7,7 +7,6 @@ package main
 
 // Defaults for cluster deployments.
 //docker:env CACHE_DIR=/mnt/cache/symbols
-//docker:env SYMBOLS_CACHE_SIZE_MB=100000
 
 import (
 	"context"
@@ -39,7 +38,7 @@ import (
 
 var (
 	cacheDir       = env.Get("CACHE_DIR", "/tmp/symbols-cache", "directory to store cached symbols")
-	cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "0", "maximum size of the disk cache in megabytes")
+	cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache in megabytes")
 	ctagsProcesses = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.NumCPU()), "number of ctags child processes to run")
 	ctagsCommand   = env.Get("CTAGS_COMMAND", "universal-ctags", "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)")
 )
