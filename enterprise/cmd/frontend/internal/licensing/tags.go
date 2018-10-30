@@ -20,6 +20,10 @@ const (
 	// TrueUpUserCountTag is the license tag that indicates that the licensed user count can be
 	// exceeded and will be charged later.
 	TrueUpUserCountTag = "true-up"
+
+	// DevModeTag is the license tag that indicates that the license is in use for Sourcegraph
+	// internal development only.
+	DevModeTag = "dev"
 )
 
 var (
@@ -56,7 +60,7 @@ func productNameWithBrand(hasLicense bool, licenseTags []string) string {
 	if hasTag("trial") {
 		misc = append(misc, "trial")
 	}
-	if hasTag("dev") {
+	if hasTag(DevModeTag) {
 		misc = append(misc, "dev use only")
 	}
 	if len(misc) > 0 {
