@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/xlang/vfsutil"
 )
 
@@ -28,7 +28,7 @@ func remoteFS(ctx context.Context, conn *jsonrpc2.Conn, workspaceURI lsp.Documen
 	if workspaceURI == "" || UseRemoteFS {
 		return vfsutil.RemoteFS(conn), nil
 	}
-	u, err := uri.Parse(string(workspaceURI))
+	u, err := gituri.Parse(string(workspaceURI))
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse workspace URI for remotefs")
 	}

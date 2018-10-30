@@ -13,17 +13,17 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-lsp"
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/trace"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs/git"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 var mockSearchSymbols func(ctx context.Context, args *search.Args, limit int) (res []*fileMatchResolver, common *searchResultsCommon, err error)
@@ -121,7 +121,7 @@ func searchSymbolsInRepo(ctx context.Context, repoRevs *search.RepositoryRevisio
 		return nil, err
 	}
 	span.SetTag("commit", string(commitID))
-	baseURI, err := uri.Parse("git://" + string(repoRevs.Repo.URI) + "?" + url.QueryEscape(inputRev))
+	baseURI, err := gituri.Parse("git://" + string(repoRevs.Repo.URI) + "?" + url.QueryEscape(inputRev))
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +178,7 @@ func makeFileMatchURIFromSymbol(symbolResolver *symbolResolver, inputRev string)
 
 // symbolToLSPSymbolInformation converts a symbols service Symbol struct to an LSP SymbolInformation
 // baseURI is the git://repo?rev base URI for the symbol that is extended with the file path
-func symbolToLSPSymbolInformation(s protocol.Symbol, baseURI *uri.URI) lsp.SymbolInformation {
+func symbolToLSPSymbolInformation(s protocol.Symbol, baseURI *gituri.URI) lsp.SymbolInformation {
 	ch := ctagsSymbolCharacter(s)
 	return lsp.SymbolInformation{
 		Name:          s.Name + s.Signature,

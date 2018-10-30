@@ -6,12 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/go-lsp"
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/symbols/protocol"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -65,7 +65,7 @@ func computeSymbols(ctx context.Context, commit *gitCommitResolver, query *strin
 	if query != nil {
 		searchArgs.Query = *query
 	}
-	baseURI, err := uri.Parse("git://" + string(commit.repo.repo.URI) + "?" + string(commit.oid))
+	baseURI, err := gituri.Parse("git://" + string(commit.repo.repo.URI) + "?" + string(commit.oid))
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func toSymbolResolver(symbol lsp.SymbolInformation, lang string, commitResolver 
 		symbol:   symbol,
 		language: lang,
 	}
-	uri, err := uri.Parse(string(symbol.Location.URI))
+	uri, err := gituri.Parse(string(symbol.Location.URI))
 	if err != nil {
 		log15.Warn("Omitting symbol with invalid URI from results.", "uri", symbol.Location.URI, "error", err)
 		return nil

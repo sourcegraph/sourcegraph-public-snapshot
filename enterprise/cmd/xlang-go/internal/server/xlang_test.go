@@ -25,9 +25,9 @@ import (
 	lsext "github.com/sourcegraph/go-langserver/pkg/lspext"
 	"github.com/sourcegraph/jsonrpc2"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/proxy"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 func init() {
@@ -37,7 +37,7 @@ func init() {
 var update = flag.Bool("update", false, "update golden files on disk")
 
 // lspTests runs all test suites for LSP functionality.
-func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string, wantXDependencies string, wantXReferences map[*lsext.WorkspaceReferencesParams][]string, wantXPackages []string) {
+func lspTests(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *gituri.URI, wantHover, wantDefinition, wantXDefinition map[string]string, wantReferences, wantSymbols map[string][]string, wantXDependencies string, wantXReferences map[*lsext.WorkspaceReferencesParams][]string, wantXPackages []string) {
 	for pos, want := range wantHover {
 		tbRun(t, fmt.Sprintf("hover-%s", strings.Replace(pos, "/", "-", -1)), func(t testing.TB) {
 			hoverTest(t, ctx, c, root, pos, want)
@@ -103,7 +103,7 @@ func tbRun(t testing.TB, name string, f func(testing.TB)) bool {
 	}
 }
 
-func hoverTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, pos, want string) {
+func hoverTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *gituri.URI, pos, want string) {
 	file, line, char, err := parsePos(pos)
 	if err != nil {
 		t.Fatal(err)
@@ -124,7 +124,7 @@ func hoverTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.UR
 	}
 }
 
-func definitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, pos, want string) {
+func definitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *gituri.URI, pos, want string) {
 	file, line, char, err := parsePos(pos)
 	if err != nil {
 		t.Fatal(err)
@@ -139,7 +139,7 @@ func definitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *u
 	}
 }
 
-func xdefinitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, pos, want string) {
+func xdefinitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *gituri.URI, pos, want string) {
 	file, line, char, err := parsePos(pos)
 	if err != nil {
 		t.Fatal(err)
@@ -154,7 +154,7 @@ func xdefinitionTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *
 	}
 }
 
-func referencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, pos string, want []string) {
+func referencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *gituri.URI, pos string, want []string) {
 	file, line, char, err := parsePos(pos)
 	if err != nil {
 		t.Fatal(err)
@@ -173,7 +173,7 @@ func referencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *u
 	}
 }
 
-func symbolsTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *uri.URI, query string, want []string) {
+func symbolsTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, root *gituri.URI, query string, want []string) {
 	wg := sync.WaitGroup{}
 	for i := 0; i < len(query)-1; i++ {
 		wg.Add(1)
@@ -231,7 +231,7 @@ func jsonTest(t testing.TB, gotData interface{}, testName string) {
 	}
 }
 
-func workspaceReferencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootURI *uri.URI, params lsext.WorkspaceReferencesParams, want []string) {
+func workspaceReferencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootURI *gituri.URI, params lsext.WorkspaceReferencesParams, want []string) {
 	references, err := callWorkspaceReferences(ctx, c, params)
 	if err != nil {
 		t.Fatal(err)
@@ -241,7 +241,7 @@ func workspaceReferencesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn
 	}
 }
 
-func workspacePackagesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootURI *uri.URI, want []string) {
+func workspacePackagesTest(t testing.TB, ctx context.Context, c *jsonrpc2.Conn, rootURI *gituri.URI, want []string) {
 	packages, err := callWorkspacePackages(ctx, c)
 	if err != nil {
 		t.Fatal(err)

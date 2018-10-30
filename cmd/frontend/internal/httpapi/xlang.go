@@ -23,9 +23,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/httpapi"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/honey"
 	xlang_lspext "github.com/sourcegraph/sourcegraph/xlang/lspext"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 // We need to multiplex an entire xlang connection pool on an HTTP
@@ -159,7 +159,7 @@ func serveXLang(w http.ResponseWriter, r *http.Request) (err error) {
 	if initParams.RootURI == "" {
 		return errors.New("invalid empty LSP root URI in initialize request")
 	}
-	rootURI, err := uri.Parse(string(initParams.RootURI))
+	rootURI, err := gituri.Parse(string(initParams.RootURI))
 	if err != nil {
 		return fmt.Errorf("invalid LSP root URI %q: %s", initParams.RootURI, err)
 	}
@@ -298,7 +298,7 @@ func isEmpty(v interface{}) bool {
 	}
 }
 
-func addRootURIFields(ev *libhoney.Event, u *uri.URI) {
+func addRootURIFields(ev *libhoney.Event, u *gituri.URI) {
 	// u usually looks something like git://github.com/foo/bar?commithash
 	ev.AddField("repo", u.Host+u.Path)
 	ev.AddField("commit", u.RawQuery)

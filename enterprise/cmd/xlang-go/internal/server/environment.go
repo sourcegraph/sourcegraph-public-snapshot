@@ -21,8 +21,8 @@ import (
 	"github.com/sourcegraph/go-langserver/langserver"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/jsonx"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/xlang/lspext"
-	"github.com/sourcegraph/sourcegraph/xlang/uri"
 )
 
 const (
@@ -317,7 +317,7 @@ func determineRootImportPath(ctx context.Context, originalRootURI lsp.DocumentUR
 	if originalRootURI == "" {
 		return "", errors.New("unable to determine Go workspace root import path without due to empty root path")
 	}
-	u, err := uri.Parse(string(originalRootURI))
+	u, err := gituri.Parse(string(originalRootURI))
 	if err != nil {
 		return "", err
 	}

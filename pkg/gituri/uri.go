@@ -1,4 +1,4 @@
-package uri
+package gituri
 
 import (
 	"errors"
@@ -40,7 +40,7 @@ func Parse(uriStr string) (*URI, error) {
 		return nil, err
 	}
 	if !u.IsAbs() {
-		return nil, &url.Error{Op: "uri.Parse", URL: uriStr, Err: errors.New("sourcegraph URI must be absolute")}
+		return nil, &url.Error{Op: "gituri.Parse", URL: uriStr, Err: errors.New("sourcegraph URI must be absolute")}
 	}
 	return &URI{*u}, nil
 }
