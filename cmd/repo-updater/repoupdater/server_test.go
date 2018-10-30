@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repos"
 
@@ -184,6 +185,15 @@ func TestRepoLookup(t *testing.T) {
 				},
 			}
 
+			metadataUpdate := make(chan *api.ReposUpdateMetadataRequest, 1)
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				var params api.ReposUpdateMetadataRequest
+				json.NewDecoder(r.Body).Decode(&params)
+				metadataUpdate <- &params
+			}))
+			defer ts.Close()
+			api.InternalClient.URL = ts.URL
+
 			orig := repos.GetGitHubRepositoryMock
 			repos.GetGitHubRepositoryMock = func(args protocol.RepoLookupArgs) (repo *protocol.RepoInfo, authoritative bool, err error) {
 				return want.Repo, true, nil
@@ -196,6 +206,21 @@ func TestRepoLookup(t *testing.T) {
 			}
 			if !reflect.DeepEqual(result, want) {
 				t.Errorf("got %+v, want %+v", result, want)
+			}
+
+			select {
+			case got := <-metadataUpdate:
+				want2 := &api.ReposUpdateMetadataRequest{
+					RepoURI:     want.Repo.URI,
+					Description: want.Repo.Description,
+					Fork:        want.Repo.Fork,
+					Archived:    want.Repo.Archived,
+				}
+				if !reflect.DeepEqual(got, want2) {
+					t.Errorf("got %+v, want %+v", got, want2)
+				}
+			case <-time.After(5 * time.Second):
+				t.Error("ReposUpdateMetadata was not called")
 			}
 		})
 	})
