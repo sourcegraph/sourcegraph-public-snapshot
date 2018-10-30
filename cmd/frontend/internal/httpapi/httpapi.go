@@ -39,8 +39,6 @@ func NewHandler(m *mux.Router) http.Handler {
 
 	m.Get(apirouter.Telemetry).Handler(trace.TraceRoute(telemetryHandler))
 
-	m.Get(apirouter.XLang).Handler(trace.TraceRoute(handler(serveXLang)))
-
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/updates").Methods("GET").Name("updatecheck").Handler(trace.TraceRoute(http.HandlerFunc(updatecheck.Handler)))
 	}
@@ -72,7 +70,6 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.TraceRoute(handler(servePhabricatorRepoCreate)))
 	m.Get(apirouter.ReposCreateIfNotExists).Handler(trace.TraceRoute(handler(serveReposCreateIfNotExists)))
 	m.Get(apirouter.ReposUpdateMetadata).Handler(trace.TraceRoute(handler(serveReposUpdateMetadata)))
-	m.Get(apirouter.ReposUpdateIndex).Handler(trace.TraceRoute(handler(serveReposUpdateIndex)))
 	m.Get(apirouter.ReposInventory).Handler(trace.TraceRoute(handler(serveReposInventory)))
 	m.Get(apirouter.ReposInventoryUncached).Handler(trace.TraceRoute(handler(serveReposInventoryUncached)))
 	m.Get(apirouter.ReposList).Handler(trace.TraceRoute(handler(serveReposList)))
@@ -91,8 +88,6 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.GitServerAddrs).Handler(trace.TraceRoute(handler(serveGitServerAddrs)))
 	m.Get(apirouter.CanSendEmail).Handler(trace.TraceRoute(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
-	m.Get(apirouter.DefsRefreshIndex).Handler(trace.TraceRoute(handler(serveDefsRefreshIndex)))
-	m.Get(apirouter.PkgsRefreshIndex).Handler(trace.TraceRoute(handler(servePkgsRefreshIndex)))
 	m.Get(apirouter.GitInfoRefs).Handler(trace.TraceRoute(handler(serveGitInfoRefs)))
 	m.Get(apirouter.GitResolveRevision).Handler(trace.TraceRoute(handler(serveGitResolveRevision)))
 	m.Get(apirouter.GitTar).Handler(trace.TraceRoute(handler(serveGitTar)))

@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/ctxvfs"
+	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/vfsutil"
 	"golang.org/x/tools/go/buildutil"
 
@@ -24,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/pkg/golangserverutil"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 )
@@ -85,14 +85,12 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := backend.Repos.RefreshIndex(ctx, repo); err != nil {
-		return err
-	}
 
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return err
 	}
+	_ = commitID
 
 	vfs, err := repoVFS(r.Context(), repoName, commitID)
 	if err != nil {

@@ -79,21 +79,6 @@ func serveReposUpdateMetadata(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposUpdateIndex(w http.ResponseWriter, r *http.Request) error {
-	var repo api.RepoUpdateIndexRequest
-	err := json.NewDecoder(r.Body).Decode(&repo)
-	if err != nil {
-		return err
-	}
-	if err := db.Repos.UpdateIndexedRevision(r.Context(), repo.RepoID, repo.CommitID); err != nil {
-		return errors.Wrap(err, "Repos.UpdateIndexedRevision failed")
-	}
-	if err := db.Repos.UpdateLanguage(r.Context(), repo.RepoID, repo.Language); err != nil {
-		return fmt.Errorf("Repos.UpdateLanguage failed: %s", err)
-	}
-	return nil
-}
-
 func servePhabricatorRepoCreate(w http.ResponseWriter, r *http.Request) error {
 	var repo api.PhabricatorRepoCreateRequest
 	err := json.NewDecoder(r.Body).Decode(&repo)
@@ -400,44 +385,6 @@ func serveSendEmail(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return txemail.Send(r.Context(), msg)
-}
-
-func serveDefsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
-	var args api.DefsRefreshIndexRequest
-	err := json.NewDecoder(r.Body).Decode(&args)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.GetByName(r.Context(), args.RepoName)
-	if err != nil {
-		return err
-	}
-	err = backend.Dependencies.RefreshIndex(r.Context(), repo, args.CommitID)
-	if err != nil {
-		return nil
-	}
-	w.WriteHeader(http.StatusNoContent)
-	w.Write([]byte("OK"))
-	return nil
-}
-
-func servePkgsRefreshIndex(w http.ResponseWriter, r *http.Request) error {
-	var args api.PkgsRefreshIndexRequest
-	err := json.NewDecoder(r.Body).Decode(&args)
-	if err != nil {
-		return err
-	}
-	repo, err := backend.Repos.GetByName(r.Context(), args.RepoName)
-	if err != nil {
-		return err
-	}
-	err = backend.Packages.RefreshIndex(r.Context(), repo, args.CommitID)
-	if err != nil {
-		return nil
-	}
-	w.WriteHeader(http.StatusNoContent)
-	w.Write([]byte("OK"))
-	return nil
 }
 
 func serveGitResolveRevision(w http.ResponseWriter, r *http.Request) error {

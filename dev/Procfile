@@ -1,12 +1,10 @@
 # delve-hook is for debugging Go processes
 gitserver: ./dev/delve-hook gitserver
-indexer: ./dev/delve-hook indexer
 query-runner: ./dev/delve-hook query-runner
 repo-updater: ./dev/delve-hook repo-updater
 searcher: ./dev/delve-hook .bin/searcher
 symbols: ./dev/delve-hook symbols
 github-proxy: ./dev/delve-hook github-proxy
-lsp-proxy: ./dev/delve-hook lsp-proxy
 frontend: env CONFIGURATION_MODE=server ./dev/delve-hook .bin/frontend
 watch: ./dev/changewatch.sh
 web: ./node_modules/.bin/gulp --color watch

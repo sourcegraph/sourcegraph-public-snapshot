@@ -2,7 +2,7 @@ import * as H from 'history'
 import { isEqual } from 'lodash'
 import * as React from 'react'
 import { from, Observable, Subject, Subscription } from 'rxjs'
-import { bufferTime, distinctUntilChanged, map, scan, skip, startWith } from 'rxjs/operators'
+import { distinctUntilChanged, map, skip, startWith } from 'rxjs/operators'
 import { TextDocumentLocationProviderRegistry } from '../../../../../shared/src/api/client/services/location'
 import { Entry } from '../../../../../shared/src/api/client/services/registry'
 import {
@@ -11,21 +11,16 @@ import {
     ViewProviderRegistrationOptions,
 } from '../../../../../shared/src/api/client/services/view'
 import { ContributableViewContainer, TextDocumentPositionParams } from '../../../../../shared/src/api/protocol'
-import { Location } from '../../../../../shared/src/api/protocol/plainTypes'
 import { ExtensionsControllerProps } from '../../../../../shared/src/extensions/controller'
 import * as GQL from '../../../../../shared/src/graphql/schema'
-import { HierarchicalLocationsView } from '../../../../../shared/src/panel/views/HierarchicalLocationsView'
 import { PlatformContextProps } from '../../../../../shared/src/platform/context'
 import { SettingsCascadeProps } from '../../../../../shared/src/settings/settings'
 import { AbsoluteRepoFile, parseHash, PositionSpec } from '../../../../../shared/src/util/url'
 import { ModeSpec } from '../../../backend/features'
-import { LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
-import { fetchHighlightedFileLines } from '../../backend'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
-import { fetchExternalReferences } from '../references/backend'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -43,8 +38,6 @@ interface Props
     isLightTheme: boolean
     authenticatedUser: GQL.IUser | null
 }
-
-const showExternalReferences = localStorage.getItem('hideExternalReferencesPanel') === null
 
 export type BlobPanelTabID =
     | 'info'
@@ -155,42 +148,6 @@ export class BlobPanel extends React.PureComponent<Props> {
                         150,
                         this.props.extensionsController.services.textDocumentTypeDefinition
                     ),
-
-                    showExternalReferences
-                        ? {
-                              // External references panel view.
-                              registrationOptions: {
-                                  id: 'references:external',
-                                  container: ContributableViewContainer.Panel,
-                              },
-                              provider: subjectChanges.pipe(
-                                  map(() => ({
-                                      title: 'External references',
-                                      content: '',
-                                      priority: 170,
-                                      locationProvider: null,
-                                      reactElement: (
-                                          <HierarchicalLocationsView
-                                              className="panel__tabs-content"
-                                              locations={fetchExternalReferences(this
-                                                  .props as LSPTextDocumentPositionParams).pipe(
-                                                  bufferTime(500), // reduce UI jitter
-                                                  scan<Location[][], Location[]>(
-                                                      (cur, locs) => cur.concat(...locs.map(locations => locations)),
-                                                      []
-                                                  )
-                                              )}
-                                              defaultGroup={'git://' + this.props.repoPath}
-                                              isLightTheme={this.props.isLightTheme}
-                                              fetchHighlightedFileLines={fetchHighlightedFileLines}
-                                              settingsCascade={this.props.settingsCascade}
-                                              extensionsController={this.props.extensionsController}
-                                          />
-                                      ),
-                                  }))
-                              ),
-                          }
-                        : null,
 
                     {
                         // File history view.
