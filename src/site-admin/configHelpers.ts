@@ -2,13 +2,13 @@ import { FormattingOptions } from '@sqs/jsonc-parser'
 import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import { SlackNotificationsConfig } from '../schema/settings.schema'
 import {
-    AwsCodeCommitConnection,
+    AWSCodeCommitConnection,
     BitbucketServerConnection,
     GitHubConnection,
     GitLabConnection,
-    OpenIdConnectAuthProvider,
+    OpenIDConnectAuthProvider,
     Repository,
-    SamlAuthProvider,
+    SAMLAuthProvider,
     SiteConfiguration,
 } from '../schema/site.schema'
 import { parseJSON } from '../settings/configuration'
@@ -63,7 +63,7 @@ const addBitbucketServer: ConfigInsertionFunction = config => {
 }
 
 const addAWSCodeCommit: ConfigInsertionFunction = config => {
-    const value: AwsCodeCommitConnection = {
+    const value: AWSCodeCommitConnection = {
         region: '' as any,
         accessKeyID: '',
         secretAccessKey: '',
@@ -83,7 +83,7 @@ const addOtherRepository: ConfigInsertionFunction = config => {
 }
 
 const addGSuiteOIDCAuthProvider: ConfigInsertionFunction = config => {
-    const value: OpenIdConnectAuthProvider = {
+    const value: OpenIDConnectAuthProvider = {
         type: 'openidconnect',
         issuer: 'https://accounts.google.com',
         clientID: '<see documentation: https://developers.google.com/identity/protocols/OpenIDConnect#getcredentials>',
@@ -96,7 +96,7 @@ const addGSuiteOIDCAuthProvider: ConfigInsertionFunction = config => {
 }
 
 const addSAMLAuthProvider: ConfigInsertionFunction = config => {
-    const value: SamlAuthProvider = {
+    const value: SAMLAuthProvider = {
         type: 'saml',
         identityProviderMetadataURL: '<see https://about.sourcegraph.com/docs/server/config/authentication#saml>',
     }

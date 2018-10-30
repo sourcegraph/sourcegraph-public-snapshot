@@ -34,7 +34,9 @@ export class GoToPermalinkAction extends React.PureComponent<{
                     filter(
                         event =>
                             // 'y' shortcut (if no input element is focused)
-                            event.key === 'y' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
+                            event.key === 'y' &&
+                            !!document.activeElement &&
+                            !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)
                     )
                 )
                 .subscribe(event => {
