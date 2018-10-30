@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"html/template"
 	"net/http"
@@ -12,8 +11,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/highlight"
 	"github.com/sourcegraph/sourcegraph/pkg/markdown"
@@ -112,80 +109,4 @@ func (r *gitTreeEntryResolver) Highlight(ctx context.Context, args *struct {
 	}
 	result.html = string(html)
 	return result, nil
-}
-
-func (r *gitTreeEntryResolver) DependencyReferences(ctx context.Context, args *struct {
-	Language  string
-	Line      int32
-	Character int32
-}) (*dependencyReferencesResolver, error) {
-	depRefs, err := backend.Defs.DependencyReferences(ctx, types.DependencyReferencesOptions{
-		RepoID:    r.commit.repo.repo.ID,
-		CommitID:  api.CommitID(r.commit.oid),
-		Language:  args.Language,
-		File:      r.path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
-		Limit:     500,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	var referenceResolver []*dependencyReferenceResolver
-	var repos []*repositoryResolver
-	var repoIDs []api.RepoID
-	for _, ref := range depRefs.References {
-		if ref.RepoID == r.commit.repo.repo.ID {
-			continue
-		}
-
-		repo, err := db.Repos.Get(ctx, ref.RepoID)
-		if err != nil {
-			return nil, err
-		}
-
-		repos = append(repos, &repositoryResolver{repo: repo})
-		repoIDs = append(repoIDs, repo.ID)
-
-		depData, err := json.Marshal(ref.DepData)
-		if err != nil {
-			return nil, err
-		}
-
-		hints, err := json.Marshal(ref.Hints)
-		if err != nil {
-			return nil, err
-		}
-
-		referenceResolver = append(referenceResolver, &dependencyReferenceResolver{
-			dependencyData: string(depData[:]),
-			repo:           ref.RepoID,
-			hints:          string(hints)[:],
-		})
-	}
-
-	loc, err := json.Marshal(depRefs.Location.Location)
-	if err != nil {
-		return nil, err
-	}
-
-	symbol, err := json.Marshal(depRefs.Location.Symbol)
-	if err != nil {
-		return nil, err
-	}
-
-	return &dependencyReferencesResolver{
-		dependencyReferenceData: &dependencyReferencesDataResolver{
-			references: referenceResolver,
-			location: &dependencyLocationResolver{
-				location: string(loc[:]),
-				symbol:   string(symbol[:]),
-			},
-		},
-		repoData: &repoDataMapResolver{
-			repos:   repos,
-			repoIDs: repoIDs,
-		},
-	}, nil
 }

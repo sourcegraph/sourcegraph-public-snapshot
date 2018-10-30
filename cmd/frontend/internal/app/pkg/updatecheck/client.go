@@ -110,7 +110,6 @@ func updateURL(ctx context.Context) string {
 		logFunc("db.UserEmails.GetInitialSiteAdminEmail failed", "error", err)
 	}
 	q.Set("initAdmin", initAdminEmail)
-	q.Set("codeintel", strconv.FormatBool(envvar.HasCodeIntelligence()))
 	return baseURL.ResolveReference(&url.URL{RawQuery: q.Encode()}).String()
 }
 

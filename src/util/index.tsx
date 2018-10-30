@@ -39,11 +39,11 @@ export function scrollIntoView(listElement?: HTMLElement, selectedElement?: HTML
     }
 }
 
-/** The LSP mode used for plain text files and all other unrecognized files. */
+/** The language mode used for plain text files and all other unrecognized files. */
 export const PLAINTEXT_MODE = 'plaintext'
 
 /**
- * getModeFromPath returns the LSP mode for the provided file path. If the file path does not correspond to any
+ * getModeFromPath returns the language mode for the provided file path. If the file path does not correspond to any
  * known mode, 'plaintext' is returned.
  */
 export function getModeFromPath(path: string): string {
@@ -54,7 +54,7 @@ export function getModeFromPath(path: string): string {
 }
 
 /**
- * getModeFromExactFilename returns the LSP mode for the
+ * getModeFromExactFilename returns the language mode for the
  * provided file name (e.g. "dockerfile")
  *
  * Cherry picked from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
@@ -70,7 +70,7 @@ function getModeFromExactFilename(fileName: string): string | undefined {
 }
 
 /**
- * getModeFromExtension returns the LSP mode for the
+ * getModeFromExtension returns the language mode for the
  * provided file extension (e.g. "jsx")
  *
  * Cherry picked from https://github.com/isagalaev/highlight.js/tree/master/src/languages

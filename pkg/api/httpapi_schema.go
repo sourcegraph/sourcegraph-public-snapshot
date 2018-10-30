@@ -1,15 +1,5 @@
 package api
 
-type DefsRefreshIndexRequest struct {
-	RepoURI  `json:"uri"`
-	CommitID `json:"revision"`
-}
-
-type PkgsRefreshIndexRequest struct {
-	RepoURI  `json:"uri"`
-	CommitID `json:"revision"`
-}
-
 // RepoCreateOrUpdateRequest is a request to create or update a repository.
 //
 // The request handler determines if the request refers to an existing repository (and should therefore update
@@ -44,17 +34,6 @@ type RepoCreateOrUpdateRequest struct {
 
 	// Archived is whether this repository is archived (according to its external origin).
 	Archived bool `json:"archived"`
-}
-
-type RepoUpdateIndexRequest struct {
-	RepoID   `json:"repoID"`
-	CommitID `json:"revision"`
-	Language string `json:"language"`
-}
-
-type RepoUnindexedDependenciesRequest struct {
-	RepoID   `json:"repoID"`
-	Language string `json:"language"`
 }
 
 type ReposGetInventoryUncachedRequest struct {

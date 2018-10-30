@@ -113,9 +113,3 @@ git push --tags
 `sourcegraph/server` version `VERSION` has been released!
 
 You should also [release the new version for Sourcegraph cluster deployment](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/README.dev.md#cutting-a-release).
-
-## Publishing new code intelligence images
-
-1.  Ensure that the latest version of the language server is uploaded
-    to `us.gcr.io/sourcegraph-dev/xlang-$LANG:$VERSION`.
-1.  `./cmd/server/release-codeintel.sh $LANG $VERSION` e.g. `./cmd/server/release-codeintel.sh go 16903_2018-06-13_060942e`

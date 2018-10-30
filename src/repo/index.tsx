@@ -1,4 +1,4 @@
-import { Position, Range } from 'vscode-languageserver-types'
+import { Position, Range } from 'sourcegraph/module/protocol/plainTypes'
 import * as url from '../util/url'
 
 /**

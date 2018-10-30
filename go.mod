@@ -51,7 +51,6 @@ require (
 	github.com/gorilla/schema v1.0.2
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/sessions v1.1.4-0.20181015005113-68d1edeb366b
-	github.com/gorilla/websocket v1.4.0
 	github.com/graph-gophers/graphql-go v0.0.0-20180806175703-94da0f0031f9
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7
 	github.com/hashicorp/go-multierror v1.0.0
@@ -73,7 +72,6 @@ require (
 	github.com/microcosm-cc/bluemonday v1.0.1
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/opentracing-contrib/go-stdlib v0.0.0-20180702182724-07a764486eb1
-	github.com/opentracing/basictracer-go v1.0.0
 	github.com/opentracing/opentracing-go v1.0.2
 	github.com/pelletier/go-toml v1.2.0
 	github.com/peterhellberg/link v1.0.0
@@ -94,6 +92,7 @@ require (
 	github.com/sloonz/go-qprintable v0.0.0-20160203160305-775b3a4592d5 // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/docsite v0.0.0-20181017065628-43f33608b38d
+	github.com/sourcegraph/enterprise v2.11.3+incompatible
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
 	github.com/sourcegraph/go-langserver v2.0.1-0.20181010102349-2d9d8f4a24da+incompatible
 	github.com/sourcegraph/go-lsp v0.0.0-20181009131510-4631ffd93a18

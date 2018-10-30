@@ -8,7 +8,6 @@ import (
 
 const (
 	GraphQL = "graphql"
-	XLang   = "xlang"
 
 	Registry = "registry"
 
@@ -30,8 +29,6 @@ const (
 	CanSendEmail           = "internal.can-send-email"
 	SendEmail              = "internal.send-email"
 	Extension              = "internal.extension"
-	DefsRefreshIndex       = "internal.defs.refresh-index"
-	PkgsRefreshIndex       = "internal.pkgs.refresh-index"
 	GitInfoRefs            = "internal.git.info-refs"
 	GitResolveRevision     = "internal.git.resolve-revision"
 	GitTar                 = "internal.git.tar"
@@ -43,7 +40,6 @@ const (
 	ReposInventory         = "internal.repos.inventory"
 	ReposList              = "internal.repos.list"
 	ReposListEnabled       = "internal.repos.list-enabled"
-	ReposUpdateIndex       = "internal.repos.update-index"
 	ReposUpdateMetadata    = "internal.repos.update-metadata"
 	ConfigurationRawJSON   = "internal.configuration.raw-json"
 )
@@ -57,7 +53,6 @@ func New(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 
-	base.Path("/xlang/{LSPMethod:.*}").Methods("POST").Name(XLang)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)
@@ -96,8 +91,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)
-	base.Path("/defs/refresh-index").Methods("POST").Name(DefsRefreshIndex)
-	base.Path("/pkgs/refresh-index").Methods("POST").Name(PkgsRefreshIndex)
 	base.Path("/git/{RepoURI:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoURI:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
 	base.Path("/git/{RepoURI:.*}/tar/{Commit}").Methods("GET").Name(GitTar)
@@ -108,7 +101,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
 	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/list-enabled").Methods("POST").Name(ReposListEnabled)
-	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
 	base.Path("/repos/{RepoURI:.*}").Methods("POST").Name(ReposGetByURI)
 	base.Path("/configuration/raw-json").Methods("POST").Name(ConfigurationRawJSON)

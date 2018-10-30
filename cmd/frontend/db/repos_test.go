@@ -1,14 +1,12 @@
 package db
 
 import (
-	"context"
 	"reflect"
 	"testing"
 
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/xlang/lspext"
 )
 
 func TestParseIncludePattern(t *testing.T) {
@@ -73,12 +71,6 @@ func TestRepos_Delete(t *testing.T) {
 	}
 	ctx := dbtesting.TestContext(t)
 
-	pkgsDeletedCalls := make(map[api.RepoID]struct{})
-	Mocks.Pkgs.Delete = func(ctx context.Context, repo api.RepoID) error {
-		pkgsDeletedCalls[repo] = struct{}{}
-		return nil
-	}
-
 	if err := Repos.Upsert(ctx, api.InsertRepoOp{URI: "myrepo", Description: "", Fork: false, Enabled: true}); err != nil {
 		t.Fatal(err)
 	}
@@ -88,41 +80,8 @@ func TestRepos_Delete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pks := []lspext.PackageInformation{{
-		Package: map[string]interface{}{"name": "pkg"},
-		Dependencies: []lspext.DependencyReference{{
-			Attributes: map[string]interface{}{"name": "dep1"},
-		}},
-	}}
-	if err := Pkgs.UpdateIndexForLanguage(ctx, "go", rp.ID, pks); err != nil {
-		t.Fatal(err)
-	}
-
-	inputRefs := []lspext.DependencyReference{{
-		Attributes: map[string]interface{}{"name": "dep1", "vendor": true},
-	}}
-	if err := GlobalDeps.UpdateIndexForLanguage(ctx, "go", rp.ID, inputRefs); err != nil {
-		t.Fatal(err)
-	}
-
 	if err := Repos.Delete(ctx, rp.ID); err != nil {
 		t.Fatal(err)
-	}
-
-	if _, wasDeleted := pkgsDeletedCalls[rp.ID]; !wasDeleted {
-		t.Error("expected Pkgs.Delete to be called, but it wasn't")
-	}
-
-	gotRefs, err := GlobalDeps.Dependencies(ctx, DependenciesOptions{
-		Language: "go",
-		DepData:  map[string]interface{}{"name": "dep1"},
-		Limit:    20,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(gotRefs) > 0 {
-		t.Errorf("expected no more refs after delete, but got %+v", gotRefs)
 	}
 
 	rp2, err := Repos.Get(ctx, rp.ID)

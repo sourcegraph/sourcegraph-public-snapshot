@@ -32,25 +32,6 @@ type Repo struct {
 	CreatedAt time.Time
 	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
 	UpdatedAt *time.Time
-	// IndexedRevision is the revision that the global index is currently based on. It is only used by the indexer
-	// to determine if reindexing is necessary. Setting it to nil/null will cause the indexer to reindex the next
-	// time it gets triggered for this repository.
-	IndexedRevision *api.CommitID
-	// FreezeIndexedRevision, when true, tells the indexer not to update the indexed revision if it is already set.
-	// This is a kludge that lets us freeze the indexed repository revision for specific deployments
-	FreezeIndexedRevision bool
-}
-
-// DependencyReferencesOptions specifies options for querying dependency references.
-type DependencyReferencesOptions struct {
-	Language   string // e.g. "go"
-	api.RepoID        // repository whose file:line:character describe the symbol of interest
-	api.CommitID
-	File            string
-	Line, Character int
-
-	// Limit specifies the number of dependency references to return.
-	Limit int // e.g. 20
 }
 
 type SiteConfig struct {

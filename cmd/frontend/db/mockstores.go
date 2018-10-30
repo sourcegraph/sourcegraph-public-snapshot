@@ -10,8 +10,6 @@ type MockStores struct {
 	DiscussionComments        MockDiscussionComments
 	DiscussionMailReplyTokens MockDiscussionMailReplyTokens
 
-	GlobalDeps MockGlobalDeps
-	Pkgs       MockPkgs
 	Repos      MockRepos
 	Orgs       MockOrgs
 	OrgMembers MockOrgMembers

@@ -10,7 +10,7 @@ import (
 
 	"github.com/neelance/parallel"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-lsp"
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -244,11 +244,10 @@ func (r *searchResolver) Suggestions(ctx context.Context, args *searchSuggestion
 		case *gitTreeEntryResolver:
 			k.repoURI = s.commit.repo.repo.URI
 			k.repoRev = string(s.commit.oid)
-			// Zoekt only searches the default branch and sets commit ID to an empty string.
-			// Set repoRev to the latest indexed revision so we can properly ensure deduplication.
-			if k.repoRev == "" && s.commit != nil && s.commit.repo != nil && s.commit.repo.repo != nil && s.commit.repo.repo.IndexedRevision != nil {
-				k.repoRev = string(*s.commit.repo.repo.IndexedRevision)
-			}
+			// Zoekt only searches the default branch and sets commit ID to an empty string. This
+			// may cause duplicate suggestions when merging results from Zoekt and non-Zoekt sources
+			// (that do specify a commit ID), because their key k (i.e., k in seen[k]) will not
+			// equal.
 			k.file = s.path
 		case *symbolResolver:
 			k.repoURI = s.location.resource.commit.repo.repo.URI

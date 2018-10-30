@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 //go:generate env GO111MODULE=on go run gen/generate.go
@@ -70,10 +70,7 @@ func (l *Language) primaryMatchFilename(name string) bool {
 	return false
 }
 
-// The ConfigName()s of these must match the keys of `StaticInfo` in
-// cmd/frontend/internal/pkg/langservers/langservers.go
-// TODO see about adding a test for this
-var builtInLanguages = map[string]struct{}{
+var somewhatPopularLanguages = map[string]struct{}{
 	"Shell":      struct{}{},
 	"Clojure":    struct{}{},
 	"C++":        struct{}{},
@@ -96,11 +93,9 @@ var builtInLanguages = map[string]struct{}{
 	"Haskell":    struct{}{},
 }
 
-// IsBuiltIn means the language is statically known to have a
-// sourcegraph/codeintel-* language server. Currently, this is only used to
-// favor languages with language servers during language detection.
+// IsBuiltIn means the language is statically known to be somewhat popular.
 func (l *Language) IsBuiltIn() bool {
-	_, ok := builtInLanguages[l.Name]
+	_, ok := somewhatPopularLanguages[l.Name]
 	return ok
 }
 
@@ -209,11 +204,11 @@ type sortByPrimaryMatch struct {
 func (v *sortByPrimaryMatch) Len() int { return len(v.langs) }
 
 func (v *sortByPrimaryMatch) Less(i, j int) bool {
-	if _, ok := builtInLanguages[v.langs[i].Name]; ok {
+	if _, ok := somewhatPopularLanguages[v.langs[i].Name]; ok {
 		return true
 	}
 
-	if _, ok := builtInLanguages[v.langs[j].Name]; ok {
+	if _, ok := somewhatPopularLanguages[v.langs[j].Name]; ok {
 		return false
 	}
 

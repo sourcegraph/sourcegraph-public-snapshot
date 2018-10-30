@@ -30,7 +30,6 @@ import ExtensionHostWorker from 'worker-loader!./extensionHost.worker'
 import { authenticatedUser } from '../auth'
 import { gql, queryGraphQL } from '../backend/graphql'
 import * as GQL from '../backend/graphqlschema'
-import { sendLSPHTTPRequests } from '../backend/lsp'
 import { Tooltip } from '../components/tooltip/Tooltip'
 import { editConfiguration } from '../configuration/backend'
 import { configurationCascade, toGQLKeyPath } from '../settings/configuration'
@@ -57,7 +56,9 @@ export function createExtensionsContextController(): ExtensionsContextController
                 `,
                 variables
             ) as Observable<QueryResult<Pick<ECCGQL.IQuery, 'extensionRegistry'>>>,
-        queryLSP: requests => sendLSPHTTPRequests(requests),
+        queryLSP: () => {
+            throw new Error('TODO(!sqs): not implemented')
+        },
         icons: {
             Loader: LoadingSpinner as React.ComponentType<{ className: string; onClick?: () => void }>,
             Warning: WarningIcon as React.ComponentType<{ className: string; onClick?: () => void }>,

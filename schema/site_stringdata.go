@@ -71,13 +71,6 @@ const SiteSchemaJSON = `{
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "jumpToDefOSSIndex": {
-          "description":
-            "Enables or disables consulting the OSS package index on Sourcegraph.com for cross repository jump to definition. When enabled Sourcegraph.com will receive Code Intelligence requests when they fail to resolve locally. NOTE: disablePublicRepoRedirects must not be set, or should be set to false.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "disabled"
-        },
         "canonicalURLRedirect": {
           "description":
             "Enables or disables enforcing that HTTP requests use the appURL as a prefix, by redirecting other requests to the same request URI on the appURL. For example, if the appURL is https://sourcegraph.example.com and the site is also available under the DNS name http://foo, then a request to http://foo/bar would be redirected to https://sourcegraph.example.com/bar. Enabled by default.",
@@ -272,17 +265,6 @@ const SiteSchemaJSON = `{
         "Use local Jaeger instance for tracing. Kubernetes cluster deployments only.\n\nAfter enabling Jaeger and updating your Kubernetes cluster, ` + "`" + `kubectl get pods` + "`" + `\nshould display pods prefixed with ` + "`" + `jaeger-cassandra` + "`" + `,\n` + "`" + `jaeger-collector` + "`" + `, and ` + "`" + `jaeger-query` + "`" + `. ` + "`" + `jaeger-collector` + "`" + ` will start\ncrashing until you initialize the Cassandra DB. To do so, do the\nfollowing:\n\n1. Install [` + "`" + `cqlsh` + "`" + `](https://pypi.python.org/pypi/cqlsh).\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-cassandra | awk '{ print $1 }') 9042` + "`" + `\n1. ` + "`" + `git clone https://github.com/uber/jaeger && cd jaeger && MODE=test ./plugin/storage/cassandra/schema/create.sh | cqlsh` + "`" + `\n1. ` + "`" + `kubectl port-forward $(kubectl get pods | grep jaeger-query | awk '{ print $1 }') 16686` + "`" + `\n1. Go to http://localhost:16686 to view the Jaeger dashboard.",
       "type": "boolean"
     },
-    "noGoGetDomains": {
-      "description":
-        "List of domains in import paths to NOT perform ` + "`" + `go get` + "`" + ` on, but instead treat as standard Git repositories. Separated by ','.\n\nFor example, if your code imports non-go-gettable packages like ` + "`" + `\"mygitolite.aws.me.org/mux.git/subpkg\"` + "`" + ` you may set this option to ` + "`" + `\"mygitolite.aws.me.org\"` + "`" + ` and Sourcegraph will effectively run ` + "`" + `git clone mygitolite.aws.me.org/mux.git` + "`" + ` instead of performing the usual ` + "`" + `go get` + "`" + ` dependency resolution behavior.",
-      "type": "string"
-    },
-    "blacklistGoGet": {
-      "description":
-        "List of domains to blacklist dependency fetching from. Separated by ','.\n\nUnlike ` + "`" + `noGoGetDomains` + "`" + ` (which tries to use a hueristic to determine where to clone the dependencies from), this option outright prevents fetching of dependencies with the given domain name. This will prevent code intelligence from working on these dependencies, so most users should not use this option.",
-      "type": "array",
-      "items": { "type": "string" }
-    },
     "repoListUpdateInterval": {
       "description":
         "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
@@ -315,29 +297,6 @@ const SiteSchemaJSON = `{
         "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
       "type": "integer",
       "default": 500
-    },
-    "executeGradleOriginalRootPaths": {
-      "description":
-        "Java: A comma-delimited list of patterns that selects repository revisions for which to execute Gradle scripts, rather than extracting Gradle metadata statically. **Security note:** these should be restricted to repositories within your own organization. A percent sign ('%') can be used to prefix-match. For example, ` + "`" + `git://my.internal.host/org1/%,git://my.internal.host/org2/repoA?%` + "`" + ` would select all revisions of all repositories in org1 and all revisions of repoA in org2.\nNote: this field is misnamed, as it matches against the originalRootURI LSP initialize parameter, rather than the no-longer-used originalRootPath parameter.",
-      "type": "string"
-    },
-    "privateArtifactRepoID": {
-      "description":
-        "Java: Private artifact repository ID in your build files. If you do not explicitly include the private artifact repository, then set this to some unique string (e.g,. \"my-repository\").",
-      "type": "string"
-    },
-    "privateArtifactRepoURL": {
-      "description":
-        "Java: The URL that corresponds to privateArtifactRepoID (e.g., http://my.artifactory.local/artifactory/root).",
-      "type": "string"
-    },
-    "privateArtifactRepoUsername": {
-      "description": "Java: The username to authenticate to the private Artifactory.",
-      "type": "string"
-    },
-    "privateArtifactRepoPassword": {
-      "description": "Java: The password to authenticate to the private Artifactory.",
-      "type": "string"
     },
     "parentSourcegraph": {
       "description": "URL to fetch unreachable repository details from. Defaults to \"https://sourcegraph.com\"",
@@ -422,106 +381,6 @@ const SiteSchemaJSON = `{
       "type": ["string"],
       "enum": ["release", "none"],
       "default": "release"
-    },
-    "langservers": {
-      "description": "Language server configuration.",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "language": {
-            "description": "Name of the language mode for the language server (e.g. go, java)",
-            "type": "string",
-            "examples": [
-              "go",
-              "java",
-              "javascript",
-              "typescript",
-              "php",
-              "python",
-              "bash",
-              "clojure",
-              "cpp",
-              "cs",
-              "css",
-              "dockerfile",
-              "elixir",
-              "html",
-              "lua",
-              "ocaml",
-              "r",
-              "ruby",
-              "rust"
-            ]
-          },
-          "address": {
-            "description": "TCP address of the language server. Required (except for Sourcegraph cluster deployments).",
-            "type": "string",
-            "pattern": "^tcp://",
-            "format": "uri"
-          },
-          "initializationOptions": {
-            "description":
-              "LSP initialization options. This object will be set as the ` + "`" + `initializationOptions` + "`" + ` field in LSP initialize requests (https://microsoft.github.io/language-server-protocol/specification#initialize).",
-            "type": "object",
-            "additionalProperties": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "object"
-                },
-                {
-                  "type": "array"
-                },
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                },
-                {
-                  "type": "number"
-                }
-              ]
-            }
-          },
-          "disabled": {
-            "description": "Whether or not this language server is disabled.",
-            "type": "boolean",
-            "default": false
-          },
-          "metadata": {
-            "description": "Language server metadata. Used to populate various UI elements.",
-            "type": "object",
-            "properties": {
-              "experimental": {
-                "description":
-                  "Whether or not this language server should be considered experimental. Has no effect on behavior, only effects how the language server is presented e.g. in the UI.",
-                "type": "boolean"
-              },
-              "homepageURL": {
-                "description": "URL to the language server's homepage, if available.",
-                "type": "string"
-              },
-              "issuesURL": {
-                "description": "URL to the language server's open/known issues, if available.",
-                "type": "string"
-              },
-              "docsURL": {
-                "description": "URL to the language server's documentation, if available.",
-                "type": "string"
-              }
-            }
-          }
-        },
-        "required": ["language"]
-      }
     },
     "extensions": {
       "description": "Configures Sourcegraph extensions.",

@@ -217,14 +217,11 @@ func main() {
 			"frontend",
 			"github-proxy",
 			"gitserver",
-			"indexer",
-			"lsp-proxy",
 			"query-runner",
 			"repo-updater",
 			"searcher",
 			"server",
 			"symbols",
-			"xlang-go",
 		}
 
 		for _, dockerImage := range allDockerImages {

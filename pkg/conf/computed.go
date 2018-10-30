@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/pkg/env"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
@@ -34,13 +33,6 @@ func HTTPStrictTransportSecurity() string {
 	default:
 		return defaultHTTPStrictTransportSecurity
 	}
-}
-
-// JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
-func JumpToDefOSSIndexEnabled() bool {
-	p := Get().ExperimentalFeatures.JumpToDefOSSIndex
-	// default is disabled
-	return p == "enabled"
 }
 
 type AccessTokAllow string
@@ -126,19 +118,6 @@ func HasGitLabDotComToken() bool {
 		}
 	}
 	return false
-}
-
-// EnabledLangservers returns the langservers that are not disabled.
-func EnabledLangservers() []*schema.Langservers {
-	all := Get().Langservers
-	results := make([]*schema.Langservers, 0, len(all))
-	for _, langserver := range all {
-		if langserver.Disabled {
-			continue
-		}
-		results = append(results, langserver)
-	}
-	return results
 }
 
 const (

@@ -22,7 +22,7 @@ func badgeValue(r *http.Request) (int, error) {
 	if err != nil {
 		return 0, errors.Wrap(err, "GetRepo")
 	}
-	totalRefs, err := backend.Defs.TotalRefs(r.Context(), repo.URI)
+	totalRefs, err := backend.BackcompatBackendDefsTotalRefs(r.Context(), repo.URI)
 	if err != nil {
 		return 0, errors.Wrap(err, "Defs.TotalRefs")
 	}

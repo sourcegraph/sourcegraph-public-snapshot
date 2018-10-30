@@ -7,7 +7,6 @@
 monolith/ @keegancsmith
 search @keegancsmith
 /src/ @felixfbecker
-/xlang/ @keegancsmith @beyang
 /schema/ @sqs
 /src/site-admin/ @sqs
 /src/settings/ @sqs
@@ -20,8 +19,6 @@ conf/ @sqs
 /enterprise/ @beyang
 /cmd/frontend/ @beyang
 /cmd/gitserver/ @beyang
-/cmd/indexer/ @beyang
-/cmd/lsp-proxy/ @beyang
 /cmd/repo-updater/ @beyang
 /cmd/searcher/ @beyang
 /cmd/server/ @beyang

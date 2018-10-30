@@ -610,10 +610,6 @@ type Query {
         indexed: Boolean = true
         # Include repositories that do not have a text search index.
         notIndexed: Boolean = true
-        # Filter for repositories that have been indexed for cross-repository code intelligence.
-        ciIndexed: Boolean = false
-        # Filter for repositories that have not been indexed for cross-repository code intelligence.
-        notCIIndexed: Boolean = false
         # Sort field.
         orderBy: RepoOrderBy = REPO_URI
         # Sort direction.
@@ -922,40 +918,6 @@ type Highlight {
     length: Int!
 }
 
-# Ref fields.
-type RefFields {
-    # The ref location.
-    refLocation: RefLocation
-    # The URI.
-    uri: URI
-}
-
-# A URI.
-type URI {
-    # The host.
-    host: String!
-    # The fragment.
-    fragment: String!
-    # The path.
-    path: String!
-    # The query.
-    query: String!
-    # The scheme.
-    scheme: String!
-}
-
-# A ref location.
-type RefLocation {
-    # The starting line number.
-    startLineNumber: Int!
-    # The starting column.
-    startColumn: Int!
-    # The ending line number.
-    endLineNumber: Int!
-    # The ending column.
-    endColumn: Int!
-}
-
 # A list of repositories.
 type RepositoryConnection {
     # A list of repositories.
@@ -1016,8 +978,6 @@ type Repository implements Node {
     externalRepository: ExternalRepository
     # Whether the repository is currently being cloned.
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")
-    # The commit that was last indexed for cross-references, if any.
-    lastIndexedRevOrLatest: GitCommit
     # Information about the text search index for this repository, or null if text search indexing
     # is not enabled or supported for this repository.
     textSearchIndex: RepositoryTextSearchIndex
@@ -1746,8 +1706,6 @@ interface File2 {
     externalURLs: [ExternalLink!]!
     # Highlight the file.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Returns dependency references for the file.
-    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     # Symbols defined in this file.
     symbols(
         # Returns the first n symbols from the list.
@@ -1802,8 +1760,6 @@ type GitBlob implements TreeEntry & File2 {
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     # Highlight the blob contents.
     highlight(disableTimeout: Boolean!, isLightTheme: Boolean!): HighlightedFile!
-    # Returns dependency references for the blob.
-    dependencyReferences(Language: String!, Line: Int!, Character: Int!): DependencyReferences!
     # Submodule metadata if this tree points to a submodule
     submodule: Submodule
     # Symbols defined in this blob.
@@ -1862,48 +1818,6 @@ type LineMatch {
     offsetAndLengths: [[Int!]!]!
     # Whether or not the limit was hit.
     limitHit: Boolean!
-}
-
-# Dependency references.
-type DependencyReferences {
-    # The dependency reference data.
-    dependencyReferenceData: DependencyReferencesData!
-    # The repository data.
-    repoData: RepoDataMap!
-}
-
-# A repository data map.
-type RepoDataMap {
-    # The repositories.
-    repos: [Repository!]!
-    # The repository IDs.
-    repoIds: [Int!]!
-}
-
-# Dependency references data.
-type DependencyReferencesData {
-    # The references.
-    references: [DependencyReference!]!
-    # The location.
-    location: DepLocation!
-}
-
-# A dependency reference.
-type DependencyReference {
-    # The dependency data.
-    dependencyData: String!
-    # The repository ID.
-    repoId: Int!
-    # The hints.
-    hints: String!
-}
-
-# A dependency location.
-type DepLocation {
-    # The location.
-    location: String!
-    # The symbol.
-    symbol: String!
 }
 
 # A hunk.

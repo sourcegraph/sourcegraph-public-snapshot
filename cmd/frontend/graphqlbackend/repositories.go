@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 	"sync"
@@ -33,8 +32,6 @@ func (r *schemaResolver) Repositories(args *struct {
 	NotIndexed      bool
 	OrderBy         string
 	Descending      bool
-	CIIndexed       bool
-	NotCIIndexed    bool
 }) (*repositoryConnectionResolver, error) {
 	opt := db.ReposListOptions{
 		Enabled:  args.Enabled,
@@ -51,16 +48,6 @@ func (r *schemaResolver) Repositories(args *struct {
 			patterns[i] = regexp.QuoteMeta(name)
 		}
 		opt.IncludePatterns = []string{"^(" + strings.Join(patterns, "|") + ")$"}
-	}
-	if args.CIIndexed && args.NotCIIndexed {
-		return nil, fmt.Errorf("cannot set both ciIndexed and notCIIndexed")
-	}
-	if args.CIIndexed {
-		t := true
-		opt.HasIndexedRevision = &t
-	} else if args.NotCIIndexed {
-		f := false
-		opt.HasIndexedRevision = &f
 	}
 	if args.Query != nil {
 		opt.Query = *args.Query
@@ -295,9 +282,6 @@ func (r *schemaResolver) SetRepositoryEnabled(ctx context.Context, args *struct 
 		if err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, gitserverRepo); err != nil {
 			return nil, err
 		}
-		if err := backend.Repos.RefreshIndex(ctx, repo.repo); err != nil {
-			return nil, err
-		}
 	}
 
 	return &EmptyResponse{}, nil
@@ -352,14 +336,6 @@ func (r *schemaResolver) DeleteRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
-}
-
-func repoIDsToInt32s(repoIDs []api.RepoID) []int32 {
-	int32s := make([]int32, len(repoIDs))
-	for i, repoID := range repoIDs {
-		int32s[i] = int32(repoID)
-	}
-	return int32s
 }
 
 func repoURIsToStrings(repoURIs []api.RepoURI) []string {

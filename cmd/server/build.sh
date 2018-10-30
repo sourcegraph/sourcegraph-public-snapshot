@@ -23,8 +23,6 @@ server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/cmd/server}
     github.com/sourcegraph/sourcegraph/cmd/symbols \
     github.com/sourcegraph/sourcegraph/cmd/repo-updater \
     github.com/sourcegraph/sourcegraph/cmd/searcher \
-    github.com/sourcegraph/sourcegraph/cmd/indexer \
     github.com/google/zoekt/cmd/zoekt-archive-index \
     github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver \
-    github.com/google/zoekt/cmd/zoekt-webserver \
-    github.com/sourcegraph/sourcegraph/cmd/lsp-proxy $additional_images
+    github.com/google/zoekt/cmd/zoekt-webserver $additional_images

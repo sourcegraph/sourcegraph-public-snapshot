@@ -5,21 +5,8 @@ import { castArray, isEqual } from 'lodash'
 import marked from 'marked'
 import * as React from 'react'
 import { merge, Observable, of, Subject, Subscription } from 'rxjs'
-import {
-    bufferTime,
-    catchError,
-    concat,
-    delay,
-    distinctUntilChanged,
-    map,
-    scan,
-    skip,
-    startWith,
-    switchMap,
-    takeUntil,
-} from 'rxjs/operators'
+import { catchError, delay, distinctUntilChanged, map, skip, startWith, switchMap, takeUntil } from 'rxjs/operators'
 import { Location, Position } from 'sourcegraph/module/protocol/plainTypes'
-import { MarkupContent } from 'vscode-languageserver-types'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import {
     getDefinition,
@@ -46,9 +33,7 @@ import { parseHash } from '../../../util/url'
 import { RepoHeaderContributionsLifecycleProps } from '../../RepoHeader'
 import { RepoRevSidebarCommits } from '../../RepoRevSidebarCommits'
 import { DiscussionsTree } from '../discussions/DiscussionsTree'
-import { fetchExternalReferences } from '../references/backend'
 import { FileLocations } from './FileLocations'
-import { FileLocationsTree } from './FileLocationsTree'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -263,26 +248,6 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         }
                     />
                 )}
-                {(isValidToken || viewState === 'references:external') && (
-                    <PanelItemPortal
-                        id="references:external"
-                        label="External references"
-                        priority={-2}
-                        element={
-                            <FileLocationsTree
-                                className="panel__tabs-content"
-                                query={this.queryReferencesExternal}
-                                updates={this.locationsUpdates}
-                                // tslint:disable-next-line:jsx-no-lambda
-                                onSelectLocation={() => this.onSelectLocation('references:external')}
-                                icon={RepositoryIcon}
-                                pluralNoun="external references"
-                                isLightTheme={this.props.isLightTheme}
-                                location={this.props.location}
-                            />
-                        }
-                    />
-                )}
                 {(isValidToken || viewState === 'impl') && (
                     <PanelItemPortal
                         id="impl"
@@ -355,20 +320,6 @@ export class BlobPanel extends React.PureComponent<Props, State> {
             map(c => ({ loading: false, locations: c }))
         )
 
-    private queryReferencesExternal = (): Observable<{ loading: boolean; locations: Location[] }> =>
-        fetchExternalReferences(this.props as LSPTextDocumentPositionParams).pipe(
-            map(c => ({ loading: true, locations: c })),
-            concat([{ loading: false, locations: [] }]),
-            bufferTime(500), // reduce UI jitter
-            scan<{ loading: boolean; locations: Location[] }[], { loading: boolean; locations: Location[] }>(
-                (cur, locs) => ({
-                    loading: cur.loading && locs.every(({ loading }) => loading),
-                    locations: cur.locations.concat(...locs.map(({ locations }) => locations)),
-                }),
-                { loading: true, locations: [] }
-            )
-        )
-
     private queryImplementation = (): Observable<{ loading: boolean; locations: Location[] }> =>
         getImplementations(this.props as LSPTextDocumentPositionParams, this.props).pipe(
             map(c => ({ loading: false, locations: c }))
@@ -378,7 +329,11 @@ export class BlobPanel extends React.PureComponent<Props, State> {
 function renderHoverContents(contents: HoverMerged['contents'][0]): React.ReactFragment {
     const value = typeof contents === 'string' ? contents : contents.value
     const language =
-        typeof contents === 'string' ? 'markdown' : MarkupContent.is(contents) ? contents.kind : contents.language
+        typeof contents === 'string'
+            ? 'markdown'
+            : typeof contents === 'object' && 'kind' in contents && 'value' in contents
+                ? contents.kind
+                : contents.language
     try {
         if (language === 'markdown') {
             return (

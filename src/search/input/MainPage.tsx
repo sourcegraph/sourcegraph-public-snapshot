@@ -368,8 +368,8 @@ export class MainPage extends React.Component<Props, State> {
                                     <p>
                                         Solve problems before they exist, commit by commit. Code intelligence makes
                                         browsing code easier, with IDE-like hovers, go-to-definition, and
-                                        find-references on your code, powered by language servers based on the
-                                        open-source Language Server Protocol.
+                                        find-references on your code, powered by Sourcegraph extensions and language
+                                        servers based on the open-source Language Server Protocol.
                                     </p>
                                     <p>
                                         It even works in code review diffs on GitHub and GitLab with our browser

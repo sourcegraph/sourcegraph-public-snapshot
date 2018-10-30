@@ -4,15 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"path"
 	"strings"
 
-	"github.com/sourcegraph/go-lsp/lspext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
-	"github.com/sourcegraph/sourcegraph/pkg/gituri"
 	"github.com/sourcegraph/sourcegraph/pkg/gosrc"
 	"github.com/sourcegraph/sourcegraph/pkg/httputil"
 )
@@ -53,39 +49,39 @@ func serveGoSymbolURL(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	if err := backend.Repos.RefreshIndex(ctx, repo); err != nil {
-		return err
-	}
 
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return err
 	}
+	_ = commitID
 
-	symbols, err := backend.Symbols.List(r.Context(), repo.URI, commitID, mode, lspext.WorkspaceSymbolParams{
-		Symbol: lspext.SymbolDescriptor{"id": symbolID},
-	})
-	if err != nil {
-		return err
-	}
+	// TODO!(sqs): implement this
+	panic("TODO!(sqs)")
+	// symbols, err := backend.Symbols.List(r.Context(), repo.URI, commitID, mode, lspext.WorkspaceSymbolParams{
+	// 	Symbol: lspext.SymbolDescriptor{"id": symbolID},
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
-	if len(symbols) > 0 {
-		symbol := symbols[0]
-		uri, err := gituri.Parse(string(symbol.Location.URI))
-		if err != nil {
-			return err
-		}
-		filePath := uri.Fragment
-		dest := &url.URL{
-			Path:     "/" + path.Join(string(repo.URI), "-/blob", filePath),
-			Fragment: fmt.Sprintf("L%d:%d$references", symbol.Location.Range.Start.Line+1, symbol.Location.Range.Start.Character+1),
-		}
-		http.Redirect(w, r, dest.String(), http.StatusFound)
-		return nil
-	}
+	// if len(symbols) > 0 {
+	// 	symbol := symbols[0]
+	// 	uri, err := gituri.Parse(string(symbol.Location.URI))
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	filePath := uri.Fragment
+	// 	dest := &url.URL{
+	// 		Path:     "/" + path.Join(string(repo.URI), "-/blob", filePath),
+	// 		Fragment: fmt.Sprintf("L%d:%d$references", symbol.Location.Range.Start.Line+1, symbol.Location.Range.Start.Character+1),
+	// 	}
+	// 	http.Redirect(w, r, dest.String(), http.StatusFound)
+	// 	return nil
+	// }
 
-	return &errcode.HTTPErr{
-		Status: http.StatusNotFound,
-		Err:    errors.New("symbol not found"),
-	}
+	// return &errcode.HTTPErr{
+	// 	Status: http.StatusNotFound,
+	// 	Err:    errors.New("symbol not found"),
+	// }
 }

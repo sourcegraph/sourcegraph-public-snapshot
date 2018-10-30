@@ -21,10 +21,8 @@ type MockRepos struct {
 	List                 func(v0 context.Context, v1 db.ReposListOptions) ([]*types.Repo, error)
 	GetCommit            func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error)
 	ResolveRev           func(v0 context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-	ListDeps             func(v0 context.Context, v1 []api.RepoURI) ([]api.RepoURI, error)
 	GetInventory         func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
 	GetInventoryUncached func(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*inventory.Inventory, error)
-	RefreshIndex         func(ctx context.Context, repo *types.Repo) (err error)
 }
 
 var errRepoNotFound = &errcode.Mock{

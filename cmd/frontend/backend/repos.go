@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/inventory"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
@@ -207,35 +205,4 @@ func (s *repos) GetInventoryUncached(ctx context.Context, repo *types.Repo, comm
 		return nil, err
 	}
 	return inventory.Get(ctx, files)
-}
-
-var indexerAddr = env.Get("SRC_INDEXER", "indexer:3179", "The address of the indexer service.")
-
-func (s *repos) RefreshIndex(ctx context.Context, repo *types.Repo) (err error) {
-	if Mocks.Repos.RefreshIndex != nil {
-		return Mocks.Repos.RefreshIndex(ctx, repo)
-	}
-
-	if !repo.Enabled {
-		return nil
-	}
-
-	ctx, done := trace(ctx, "Repos", "RefreshIndex", map[string]interface{}{"repo": repo.URI}, &err)
-	defer done()
-
-	// make staticcheck happy about "this value of ctx is never used (SA4006)". Not
-	// using _ in the actual assignment above in case someone forgets to use it
-	// when ctx is used below.
-	_ = ctx
-
-	go func() {
-		resp, err := http.Get("http://" + indexerAddr + "/refresh?repo=" + string(repo.URI))
-		if err != nil {
-			log15.Error("RefreshIndex failed", "error", err)
-			return
-		}
-		resp.Body.Close()
-	}()
-
-	return nil
 }
