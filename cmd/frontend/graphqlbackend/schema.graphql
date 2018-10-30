@@ -1081,16 +1081,6 @@ type Repository implements Node {
         # Returns the first n contributors from the list.
         first: Int
     ): RepositoryContributorConnection!
-    # The repository's symbols (e.g., functions, variables, types, classes, etc.) on the default branch.
-    #
-    # The result may be stale if a new commit was just pushed to this repository's default branch and it has not
-    # yet been processed. Use Repository.commit.tree.symbols to retrieve symbols for a specific revision.
-    symbols(
-        # Returns the first n symbols from the list.
-        first: Int
-        # Return symbols matching the query.
-        query: String
-    ): SymbolConnection!
     # Packages defined in this repository, as returned by LSP workspace/xpackages requests to this repository's
     # language servers (running against a recent commit on its default branch).
     #

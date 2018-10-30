@@ -20,22 +20,6 @@ type symbolsArgs struct {
 	Query *string
 }
 
-func (r *repositoryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	var rev string
-	if r.repo.IndexedRevision != nil {
-		rev = string(*r.repo.IndexedRevision)
-	}
-	commit, err := r.Commit(ctx, &repositoryCommitArgs{Rev: rev})
-	if err != nil {
-		return nil, err
-	}
-	symbols, err := computeSymbols(ctx, commit, args.Query, args.First)
-	if err != nil && len(symbols) == 0 {
-		return nil, err
-	}
-	return &symbolConnectionResolver{symbols: symbols, first: args.First}, nil
-}
-
 func (r *gitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
 	symbols, err := computeSymbols(ctx, r.commit, args.Query, args.First)
 	if err != nil && len(symbols) == 0 {
