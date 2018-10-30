@@ -12,7 +12,7 @@ import { Resizable } from '../components/Resizable'
 import { Spacer, Tab, TabsWithURLViewStatePersistence } from '../components/Tabs'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { eventLogger } from '../tracking/eventLogger'
-import { isErrorLike } from '../util/errors'
+import { createLinkClickHandler } from '../util/linkClickHandler'
 import { parseHash } from '../util/url'
 
 /**
@@ -170,7 +170,7 @@ export class Panel extends React.PureComponent<Props, State> {
                             id: panelView.id,
                             priority: 0,
                             element: (
-                                <div className="p-2">
+                                <div className="p-2" onClick={createLinkClickHandler(this.props.history)}>
                                     <Markdown dangerousInnerHTML={marked(panelView.content)} />
                                 </div>
                             ),
