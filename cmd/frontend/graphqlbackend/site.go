@@ -108,7 +108,8 @@ func (r *siteResolver) BuildVersion() string { return env.Version }
 func (r *siteResolver) ProductVersion() string { return version.Version() }
 
 func (r *siteResolver) HasCodeIntelligence() bool {
-	return envvar.HasCodeIntelligence()
+	// BACKCOMPAT: Always return true.
+	return true
 }
 
 func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
