@@ -33,7 +33,7 @@ func TestService(t *testing.T) {
 		NewParser: func() (ctags.Parser, error) {
 			return mockParser{"x"}, nil
 		},
-		Path: "/tmp/symbols-cache",
+		Path: tmpDir,
 	}
 
 	if err := service.Start(); err != nil {
