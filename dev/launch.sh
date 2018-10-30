@@ -75,34 +75,6 @@ export WEBPACK_DEV_SERVER=1
 # we want to keep config.json, but allow local config.
 export SOURCEGRAPH_CONFIG_FILE=${SOURCEGRAPH_CONFIG_FILE:-./dev/config.json}
 
-confpath="./dev"
-
-fancyconfig() {
-	if ! ( cd dev/confmerge; go build ); then
-		echo >&2 "WARNING: Can't build confmerge in dev/confmerge, can't merge config files."
-		return 1
-	fi
-	if [ -f "$confpath/config_combined.json" ]; then
-		echo >&2 "Note: Moving existing config_combined.json to $confpath/config_backup.json."
-		mv $confpath/config_combined.json $confpath/config_backup.json
-	fi
-	if dev/confmerge/confmerge $confpath/config.json $confpath/config_local.json > $confpath/config_combined.json; then
-		echo >&2 "Successfully regenerated config_combined.json."
-	else
-		echo >&2 "FATAL: failed to generate config_combined.json."
-		rm $confpath/config_combined.json
-		return 1
-	fi
-}
-
-if $SOURCEGRAPH_COMBINE_CONFIG && [ -f $confpath/config_local.json ]; then
-	if ! fancyconfig; then
-		echo >&2 "WARNING: fancyconfig failed. Giving up. Use SOURCEGRAPH_COMBINE_CONFIG=false to bypass."
-		exit 1
-	fi
-	SOURCEGRAPH_CONFIG_FILE=$confpath/config_combined.json
-fi
-
 # WebApp
 export NODE_ENV=development
 export NODE_OPTIONS="--max_old_space_size=4096"

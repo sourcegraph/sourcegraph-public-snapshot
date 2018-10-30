@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// ParseConfigData reads the provided config string, but NOT the environment
-func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
+// parseConfigData reads the provided config string, but NOT the environment
+func parseConfigData(data string) (*schema.SiteConfiguration, error) {
 	var tmpConfig schema.SiteConfiguration
 
 	if data != "" {
@@ -30,10 +30,10 @@ func ParseConfigData(data string) (*schema.SiteConfiguration, error) {
 	return &tmpConfig, nil
 }
 
-// DeprecatedParseConfigEnvironment reads the provided string, then merges in additional
+// ParseConfigEnvironment reads the provided string, then merges in additional
 // data from the (deprecated) environment.
-func DeprecatedParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
-	tmpConfig, err := ParseConfigData(data)
+func ParseConfigEnvironment(data string) (*schema.SiteConfiguration, error) {
+	tmpConfig, err := parseConfigData(data)
 	if err != nil {
 		return nil, err
 	}
@@ -169,18 +169,6 @@ func mergeStruct(destInterface, srcInterface interface{}) {
 			}
 		}
 	}
-}
-
-// recursively merge components of site config
-func AppendConfig(dest, src *schema.SiteConfiguration) *schema.SiteConfiguration {
-	if dest == nil {
-		return src
-	}
-	if src == nil {
-		return dest
-	}
-	mergeStruct(dest, src)
-	return dest
 }
 
 // NeedRestartToApply determines if a restart is needed to apply the changes
