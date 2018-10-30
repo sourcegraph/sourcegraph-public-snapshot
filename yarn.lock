@@ -971,14 +971,15 @@
     rxjs "^6.3.2"
     vscode-languageserver-types "^3.8.2"
 
-"@sourcegraph/extensions-client-common@^10.4.2":
-  version "10.4.2"
-  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.4.2.tgz#f964076bf460ca1b697ebe48e9a51a5d4c3f7fa7"
-  integrity sha512-UPgOXGrDkoiOm7nPM2mdK68f1+qFEjUTAeBgDH8f5A2seMIvXVaoNAdregC7m4V/K1PTnAHort4X8j4Bpj+ZRw==
+"@sourcegraph/extensions-client-common@^10.5.0":
+  version "10.5.0"
+  resolved "https://registry.yarnpkg.com/@sourcegraph/extensions-client-common/-/extensions-client-common-10.5.0.tgz#c78c57ab005622b53fe7678afe2d11fc05c1d541"
+  integrity sha512-1ZWWLGjGKovV3N78AUvyaPiG+eCG8awiXNcKaDxPAgizM7iCjZrQUjdfhCCMR8nvTDY/d5EI76LlAU1hbuBVJw==
   dependencies:
     "@slimsag/react-shortcuts" "^1.2.0"
     bootstrap "^4.1.3"
     lodash-es "^4.17.10"
+    marked "^0.5.1"
     react "^16.4.2"
     react-router "^4.3.1"
     react-router-dom "^4.3.1"
@@ -7094,6 +7095,11 @@ marked@^0.5.0:
   version "0.5.0"
   resolved "https://registry.yarnpkg.com/marked/-/marked-0.5.0.tgz#9e590bad31584a48ff405b33ab1c0dd25172288e"
   integrity sha512-UhjmkCWKu1SS/BIePL2a59BMJ7V42EYtTfksodPRXzPEGEph3Inp5dylseqt+KbU9Jglsx8xcMKmlumfJMBXAA==
+
+marked@^0.5.1:
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/marked/-/marked-0.5.1.tgz#062f43b88b02ee80901e8e8d8e6a620ddb3aa752"
+  integrity sha512-iUkBZegCZou4AdwbKTwSW/lNDcz5OuRSl3qdcl31Ia0B2QPG0Jn+tKblh/9/eP9/6+4h27vpoh8wel/vQOV0vw==
 
 matchdep@^2.0.0:
   version "2.0.0"

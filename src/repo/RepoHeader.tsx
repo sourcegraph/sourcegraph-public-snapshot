@@ -240,6 +240,7 @@ export class RepoHeader extends React.PureComponent<Props, State> {
                         menu={ContributableMenu.EditorTitle}
                         extensionsController={this.props.extensionsController}
                         extensions={this.props.extensions}
+                        location={this.props.location}
                     />
                     {this.props.actionButtons.map(
                         ({ condition = () => true, label, tooltip, icon: Icon, to }) =>

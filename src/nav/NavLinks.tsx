@@ -60,6 +60,7 @@ export class NavLinks extends React.PureComponent<Props> {
                     menu={ContributableMenu.GlobalNav}
                     extensionsController={this.props.extensionsController}
                     extensions={this.props.extensions}
+                    location={this.props.location}
                 />
                 <li className="nav-item">
                     {SHOW_EXPLORE ? (
