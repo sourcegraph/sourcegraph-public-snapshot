@@ -13,10 +13,11 @@ import (
 type Store struct {
 	configMu  sync.RWMutex
 	lastValid *schema.SiteConfiguration
+	lastValidCore *schema.
 	mock      *schema.SiteConfiguration
 
 	rawMu sync.RWMutex
-	raw   string
+	rawSite   string
 
 	ready chan struct{}
 	once  sync.Once
