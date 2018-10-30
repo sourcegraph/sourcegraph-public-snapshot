@@ -1,11 +1,7 @@
 package graphqlbackend
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -16,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/xlang"
 )
@@ -191,35 +186,7 @@ func (r *dependencyReferencesConnectionResolver) count(ctx context.Context, limi
 	return int32(len(refs)), err
 }
 
-func (r *dependencyReferencesConnectionResolver) QueryString() (string, error) {
-	q, _ := xlang.DependencySymbolQuery(r.dr.dep.DepData, r.dr.dep.Language)
-	b, err := json.Marshal(q)
-	if err != nil {
-		return "", err
-	}
-
-	qs := fmt.Sprintf("%s:%s %s:%s", query.FieldLang, r.dr.dep.Language, query.FieldRef, quoteIfNeeded(b))
-
-	// Add hints.
-	if len(r.dr.dep.Hints) > 0 {
-		b, err := json.Marshal(r.dr.dep.Hints)
-		if err != nil {
-			return "", err
-		}
-		qs += fmt.Sprintf(" %s:%s", query.FieldHints, quoteIfNeeded(b))
-	}
-
-	return qs, nil
-}
-
 func (r *dependencyReferencesConnectionResolver) SymbolDescriptor() []keyValue {
 	query, _ := xlang.DependencySymbolQuery(r.dr.dep.DepData, r.dr.dep.Language)
 	return toKeyValueList(query)
-}
-
-func quoteIfNeeded(b []byte) string {
-	if bytes.ContainsAny(b, " \t\n") || bytes.HasPrefix(b, []byte(`"`)) || bytes.HasPrefix(b, []byte(`'`)) {
-		return strconv.Quote(string(b))
-	}
-	return string(b)
 }

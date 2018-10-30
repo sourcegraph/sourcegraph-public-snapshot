@@ -107,14 +107,6 @@ func (fm *fileMatchResolver) LimitHit() bool {
 	return fm.JLimitHit
 }
 
-func fileMatchesToSearchResults(fms []*fileMatchResolver) []*searchResultResolver {
-	results := make([]*searchResultResolver, len(fms))
-	for i, fm := range fms {
-		results[i] = &searchResultResolver{fileMatch: fm}
-	}
-	return results
-}
-
 // LineMatch is the struct used by vscode to receive search results for a line
 type lineMatch struct {
 	JPreview          string     `json:"Preview"`

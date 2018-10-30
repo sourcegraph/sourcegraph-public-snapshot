@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 
 	"fmt"
 	"strings"
@@ -16,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/xlang"
 )
@@ -229,15 +227,6 @@ func (r *packageReferencesConnectionResolver) count(ctx context.Context, limit i
 		Limit: int(limit),
 	})
 	return int32(len(refs)), err
-}
-
-func (r *packageReferencesConnectionResolver) QueryString() (string, error) {
-	q, _ := xlang.SymbolsInPackage(r.pr.pkg.Pkg, r.pr.pkg.Lang)
-	b, err := json.Marshal(q)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s:%s %s:%s", query.FieldLang, r.pr.pkg.Lang, query.FieldRef, quoteIfNeeded(b)), nil
 }
 
 func (r *packageReferencesConnectionResolver) SymbolDescriptor() []keyValue {

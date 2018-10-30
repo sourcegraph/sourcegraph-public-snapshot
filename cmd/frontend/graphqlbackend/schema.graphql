@@ -2825,13 +2825,6 @@ type ReferenceConnection {
     # The approximate count of references in this connection. If counting is not supported, then this field's value
     # will be null.
     approximateCount: ApproximateCount
-    # The search query (for Sourcegraph search) that matches references in this connection.
-    #
-    # The query string does not include any repo:REPO@REV tokens (even if this connection would seem to warrant
-    # the inclusion of such tokens). Therefore, clients must add those tokens if they wish to constrain the search
-    # to only certain repositories and revisions. (This is so that clients can use the nice revision instead of the
-    # 40-character Git commit SHA if desired.)
-    queryString: String!
     # The symbol descriptor query to pass to language servers in the LSP workspace/xreferences request to retrieve
     # all references in this connection. This is derived from the attributes data of this connection's subject
     # (e.g., Package.data or Dependency.data). The attribute names and values are defined by each language server
