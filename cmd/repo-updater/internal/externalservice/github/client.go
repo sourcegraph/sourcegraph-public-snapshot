@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/ratelimit"
 	"github.com/sourcegraph/sourcegraph/pkg/rcache"
 	"golang.org/x/net/context/ctxhttp"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -49,9 +50,15 @@ type Client struct {
 	RateLimit *ratelimit.Monitor // the API rate limit monitor
 }
 
-type abuseRateLimit struct {
+type githubAPIError struct {
+	URL              string
+	Code             int
 	Message          string
 	DocumentationURL string `json:"documentation_url"`
+}
+
+func (e *githubAPIError) Error() string {
+	return fmt.Sprintf("request to %s returned status %d: %s", e.URL, e.Code, e.Message)
 }
 
 // NewClient creates a new GitHub API client with an optional personal access token to authenticate
@@ -133,21 +140,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result interface{}) 
 	defer resp.Body.Close()
 	c.RateLimit.Update(resp.Header)
 	if resp.StatusCode != http.StatusOK {
-		var status string
-		// Special case handling to try to diagnose github rate limiting.
-		if resp.StatusCode == 403 {
-			var a abuseRateLimit
-			err := json.NewDecoder(resp.Body).Decode(&a)
-			if err != nil {
-				if a.Message != "" {
-					status = fmt.Sprintf("possible rate-limit: %s", a.Message)
-				}
-			}
+		var err githubAPIError
+		if decErr := json.NewDecoder(resp.Body).Decode(&err); decErr != nil {
+			log15.Warn("Failed to decode error response from github API", "error", decErr)
 		}
-		if status == "" {
-			status = fmt.Sprintf("unexpected response from GitHub API (%s)", req.URL)
-		}
-		return errors.Wrap(httpError(resp.StatusCode), status)
+		err.URL = req.URL.String()
+		err.Code = resp.StatusCode
+		return &err
 	}
 	return json.NewDecoder(resp.Body).Decode(result)
 }
@@ -219,23 +218,11 @@ func unmarshal(data []byte, v interface{}) error {
 	return err
 }
 
-type httpError int
-
-func (err httpError) Error() string {
-	return fmt.Sprintf("HTTP error status %d", err)
-}
-
 // HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
 // this package. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
-	e, ok := err.(httpError)
-	if !ok {
-		// Try one level deeper.
-		err = errors.Cause(err)
-		e, ok = err.(httpError)
-	}
-	if ok {
-		return int(e)
+	if e, ok := errors.Cause(err).(*githubAPIError); ok {
+		return e.Code
 	}
 	return 0
 }
@@ -267,6 +254,10 @@ func IsNotFound(err error) bool {
 // IsRateLimitExceeded reports whether err is a GitHub API error reporting that the GitHub API rate
 // limit was exceeded.
 func IsRateLimitExceeded(err error) bool {
+	if e, ok := errors.Cause(err).(*githubAPIError); ok {
+		return strings.Contains(e.Message, "API rate limit exceeded") || strings.Contains(e.DocumentationURL, "#rate-limiting")
+	}
+
 	errs, ok := err.(graphqlErrors)
 	if !ok {
 		return false
