@@ -20,7 +20,6 @@ import {
 } from 'rxjs/operators'
 import { Location, Position } from 'sourcegraph/module/protocol/plainTypes'
 import { MarkupContent } from 'vscode-languageserver-types'
-import { ServerCapabilities } from 'vscode-languageserver/lib/main'
 import { AbsoluteRepoFile, PositionSpec } from '../..'
 import {
     getDefinition,
@@ -31,7 +30,7 @@ import {
     ModeSpec,
 } from '../../../backend/features'
 import * as GQL from '../../../backend/graphqlschema'
-import { fetchServerCapabilities, isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
+import { isEmptyHover, LSPTextDocumentPositionParams } from '../../../backend/lsp'
 import { isDiscussionsEnabled } from '../../../discussions'
 import {
     ConfigurationCascadeProps,
@@ -109,9 +108,6 @@ function subjectIsEqual(a: ContextSubject, b: ContextSubject & { line?: number; 
 const LOADING: 'loading' = 'loading'
 
 interface State {
-    /** The language server capabilities information. */
-    serverCapabilitiesOrError?: ServerCapabilities | ErrorLike
-
     /** The hover information for the subject. */
     hoverOrError?: HoverMerged | ErrorLike | typeof LOADING
 }
@@ -132,37 +128,6 @@ export class BlobPanel extends React.PureComponent<Props, State> {
         // Changes to the context subject, including upon the initial mount.
         const subjectChanges = componentUpdates.pipe(
             distinctUntilChanged<Props>((a, b) => subjectIsEqual(toSubject(a), toSubject(b)))
-        )
-
-        // Update server capabilities.
-        this.subscriptions.add(
-            subjectChanges
-                .pipe(
-                    // This remains the same for all positions/ranges in the file.
-                    distinctUntilChanged(
-                        (a, b) =>
-                            a.repoPath === b.repoPath &&
-                            a.commitID === b.commitID &&
-                            a.filePath === b.filePath &&
-                            a.mode === b.mode
-                    ),
-                    switchMap(subject =>
-                        fetchServerCapabilities({
-                            repoPath: subject.repoPath,
-                            rev: subject.rev,
-                            commitID: subject.commitID,
-                            filePath: subject.filePath,
-                            mode: subject.mode,
-                        }).pipe(
-                            catchError(error => [asError(error)]),
-                            map(c => ({ serverCapabilitiesOrError: c })),
-                            startWith<Pick<State, 'serverCapabilitiesOrError'>>({
-                                serverCapabilitiesOrError: undefined,
-                            })
-                        )
-                    )
-                )
-                .subscribe(stateUpdate => this.setState(stateUpdate), error => console.error(error))
         )
 
         // Update hover.
@@ -323,11 +288,6 @@ export class BlobPanel extends React.PureComponent<Props, State> {
                         id="impl"
                         label="Implementation"
                         priority={-3}
-                        hidden={
-                            !this.state.serverCapabilitiesOrError ||
-                            isErrorLike(this.state.serverCapabilitiesOrError) ||
-                            !this.state.serverCapabilitiesOrError.implementationProvider
-                        }
                         element={
                             <FileLocations
                                 className="panel__tabs-content"
