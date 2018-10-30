@@ -6,6 +6,7 @@ import { SignInPage } from './auth/SignInPage'
 import { SignUpPage } from './auth/SignUpPage'
 import { DiscussionsPage } from './discussions/DiscussionsPage'
 import { DocSitePage } from './docSite/DocSitePage'
+import { ExploreArea } from './explore/ExploreArea'
 import { ExtensionsArea } from './extensions/ExtensionsArea'
 import { LayoutProps } from './Layout'
 import { SurveyPage } from './marketing/SurveyPage'
@@ -132,6 +133,11 @@ export const routes: ReadonlyArray<LayoutRouteProps> = [
         render: props => <ResetPasswordPage {...props} />,
         exact: true,
         forceNarrowWidth: true,
+    },
+    {
+        path: '/explore',
+        render: props => <ExploreArea {...props} />,
+        exact: true,
     },
     {
         path: '/discussions',

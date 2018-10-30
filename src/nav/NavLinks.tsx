@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 import * as GQL from '../backend/graphqlschema'
 import { isDiscussionsEnabled } from '../discussions'
+import { SHOW_EXPLORE } from '../explore/ExploreArea'
 import {
     ConfigurationCascadeProps,
     ExtensionsControllerProps,
@@ -61,9 +62,15 @@ export class NavLinks extends React.PureComponent<Props> {
                     extensions={this.props.extensions}
                 />
                 <li className="nav-item">
-                    <Link to={`/search?${buildSearchURLQuery({ query: 'repo:' })}`} className="nav-link">
-                        Repositories
-                    </Link>
+                    {SHOW_EXPLORE ? (
+                        <Link to="/explore" className="nav-link">
+                            Explore
+                        </Link>
+                    ) : (
+                        <Link to={`/search?${buildSearchURLQuery({ query: 'repo:' })}`} className="nav-link">
+                            Repositories
+                        </Link>
+                    )}
                 </li>
                 {!this.props.authenticatedUser && (
                     <>

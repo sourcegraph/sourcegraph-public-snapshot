@@ -1,6 +1,7 @@
 import React from 'react'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 import * as GQL from './backend/graphqlschema'
+import { ExploreSectionDescriptor } from './explore/ExploreArea'
 import { LinkExtension } from './extension/Link'
 import { ExtensionsDocumentsProps, ExtensionsEnvironmentProps } from './extensions/environment/ExtensionsEnvironment'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
@@ -36,6 +37,7 @@ export interface LayoutProps
         ExtensionsControllerProps,
         ExtensionsDocumentsProps,
         KeybindingsProps {
+    exploreSections: ReadonlyArray<ExploreSectionDescriptor>
     extensionAreaRoutes: ReadonlyArray<ExtensionAreaRoute>
     extensionAreaHeaderNavItems: ReadonlyArray<ExtensionAreaHeaderNavItem>
     extensionsAreaRoutes: ReadonlyArray<ExtensionsAreaRoute>
