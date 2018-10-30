@@ -15,8 +15,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
-- The **Explore** page was replaced with a **Repositories** search link in the top navigation bar.
-
 ## 2.13 (not yet released)
 
 ### Added
@@ -29,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The `experimentalFeatures.canonicalURLRedirect` site config property now defaults to `enabled`. Set it to `disabled` to disable redirection to the `appURL` from other hosts.
 - Updating `maxReposToSearch` site config no longer requires a server restart to take effect.
 - The update check page no longer shows an error if you are using an insiders build. Insiders builds will now notify site administrators that updates are available 40 days after the release date of the installed build.
+- The `github.repositoryQuery` site config property now accepts arbitrary GitHub repository searches.
 
 ### Fixed
 
@@ -46,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The following deprecated auth provider configuration properties were removed: `auth.provider`, `auth.saml`, `auth.openIDConnect`, `auth.userIdentityHTTPHeader`, and `auth.allowSignup`. Use `auth.providers` for all auth provider configuration. (If you were still using the deprecated properties and had no `auth.providers` set, all access to your instance will be rejected until you manually set `auth.providers`.)
 - The deprecated site configuration properties `search.scopes` and `settings` were removed. Define search scopes and settings in global settings in the site admin area instead of in site configuration.
 - The `pendingContents` property has been removed from our GraphQL schema.
+- The **Explore** page was replaced with a **Repositories** search link in the top navigation bar.
 
 ## 2.12.3
 

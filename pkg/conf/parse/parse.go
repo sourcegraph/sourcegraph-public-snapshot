@@ -81,7 +81,6 @@ var requireRestart = []string{
 	"tlsKey",
 }
 
-// merge a struct. recurse on structs, append arrays,
 // NeedRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
 func NeedRestartToApply(before, after *schema.SiteConfiguration) bool {
