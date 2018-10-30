@@ -7,6 +7,7 @@ import H from 'history'
  * This is useful on Markdown elements where all links are rendered with <a>, not react-router-dom's <Link>.
  */
 export function createLinkClickHandler(history: H.History): React.MouseEventHandler<HTMLElement> {
+    history.foo(123)
     return (event: React.MouseEvent<HTMLElement>) => {
         // Capture clicks on relative links and use pushState for them instead of incurring a full
         // page reload.

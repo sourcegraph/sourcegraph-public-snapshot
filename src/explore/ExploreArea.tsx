@@ -5,7 +5,7 @@ import {
 } from '@sourcegraph/extensions-client-common/lib/settings'
 import H from 'history'
 import * as React from 'react'
-import { Subject, Subscription } from 'rxjs'
+import { AsyncSubject, Subject, Subscription } from 'rxjs'
 import * as GQL from '../backend/graphqlschema'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { ComponentDescriptor } from '../util/contributions'
