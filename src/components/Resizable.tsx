@@ -42,7 +42,6 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
     private subscriptions = new Subscription()
 
     private containerRef: HTMLElement | null = null
-    private ghostRef: HTMLElement | null = null
 
     constructor(props: Props<C>) {
         super(props)
@@ -93,7 +92,6 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
             >
                 <div
                     className={`resizable__ghost ${this.state.resizing ? 'resizable__ghost--resizing' : ''}`}
-                    ref={this.setGhostRef}
                     onMouseMove={this.onMouseMove}
                     onMouseUp={this.onMouseUp}
                 />
@@ -109,7 +107,6 @@ export class Resizable<C extends React.ReactElement<any>> extends React.PureComp
     }
 
     private setContainerRef = (e: HTMLElement | null) => (this.containerRef = e)
-    private setGhostRef = (e: HTMLElement | null) => (this.ghostRef = e)
 
     private onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
         e.preventDefault()

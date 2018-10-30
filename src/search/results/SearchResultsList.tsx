@@ -189,7 +189,8 @@ export class SearchResultsList extends React.PureComponent<SearchResultsListProp
 
                     const scrollable = this.scrollableElementRef
 
-                    const scrollTo = itemToScrollTo.getBoundingClientRect().top - scrollable.getBoundingClientRect().top
+                    const scrollTo =
+                        itemToScrollTo!.getBoundingClientRect().top - scrollable.getBoundingClientRect().top
 
                     scrollable.scrollTop = scrollTo
 

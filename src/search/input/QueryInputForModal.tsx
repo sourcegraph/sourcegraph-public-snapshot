@@ -196,6 +196,7 @@ export class QueryInputForModal extends React.Component<Props, State> {
                             event =>
                                 // Slash shortcut (if no input element is focused)
                                 (event.key === '/' &&
+                                    !!document.activeElement &&
                                     !['INPUT', 'TEXTAREA'].includes(document.activeElement.nodeName)) ||
                                 // Cmd/Ctrl+P shortcut
                                 ((event.metaKey || event.ctrlKey) && event.key === 'p') ||
