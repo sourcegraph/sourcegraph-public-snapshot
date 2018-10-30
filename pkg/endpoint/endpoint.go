@@ -43,7 +43,7 @@ type Map struct {
 // Examples URL specifiers:
 //
 // 	"k8s+http://searcher"
-//  "http://searcher-1 http://searcher-2 http://searcher-3"
+// 	"http://searcher-1 http://searcher-2 http://searcher-3"
 //
 func New(urlspec string) *Map {
 	if !strings.HasPrefix(urlspec, "k8s+") {
