@@ -8,12 +8,10 @@ import (
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/go-lsp"
-	"github.com/sourcegraph/go-lsp/lspext"
+	lsp "github.com/sourcegraph/go-lsp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
-	"github.com/sourcegraph/sourcegraph/xlang"
 	xlang_lspext "github.com/sourcegraph/sourcegraph/xlang/lspext"
 	"github.com/sourcegraph/sourcegraph/xlang/proxy"
 	log15 "gopkg.in/inconshreveable/log15.v2"
@@ -76,61 +74,4 @@ func (dependencies) listForLanguageInRepo(ctx context.Context, language string, 
 		return nil, errors.Wrap(err, "LSP Call workspace/xdependencies")
 	}
 	return deps, nil
-}
-
-// List returns the repository's dependencies at the given revision (by collecting the
-// workspace/xdependencies LSP results from all relevant language servers).
-//
-// To retrieve the cached results from a recent default branch commit of the repository, use
-// db.GlobalDeps.Dependencies instead.
-func (dependencies) List(ctx context.Context, repo *types.Repo, rev api.CommitID, background bool) ([]*api.DependencyReference, error) {
-	if Mocks.Dependencies.List != nil {
-		return Mocks.Dependencies.List(repo, rev, background)
-	}
-
-	langs, err := languagesForRepo(ctx, repo, rev)
-	if err != nil {
-		return nil, err
-	}
-
-	var allDeps []*api.DependencyReference
-	for _, lang := range langs {
-		deps, err := (dependencies{}).listForLanguageInRepo(ctx, lang, repo, rev, background)
-		if err != nil {
-			if proxy.IsModeNotFound(err) {
-				log15.Debug("Dependencies.List skipping language because no language server is registered", "lang", lang, "err", err)
-			} else {
-				return nil, errors.Wrap(err, "listForLanguageInRepo "+lang)
-			}
-		}
-		for _, dep := range deps {
-			allDeps = append(allDeps, &api.DependencyReference{
-				Language: lang,
-				RepoID:   repo.ID,
-				DepData:  dep.Attributes,
-				Hints:    dep.Hints,
-			})
-		}
-	}
-	return allDeps, nil
-}
-
-// ListReferences lists all references in the depending repository to definitions in the dependency.
-func (dependencies) ListReferences(ctx context.Context, dep api.DependencyReference, repo *types.Repo, commitID api.CommitID, limit int) ([]*lspext.ReferenceInformation, error) {
-	query, ok := xlang.DependencySymbolQuery(dep.DepData, dep.Language)
-	if !ok {
-		return nil, fmt.Errorf("listing references by dependency not supported for language %q", dep.Language)
-	}
-	return LangServer.WorkspaceXReferences(ctx, repo, commitID, dep.Language, lspext.WorkspaceReferencesParams{
-		Query: query,
-		Hints: dep.Hints,
-		Limit: limit,
-	})
-}
-
-// MockDependencies allows mocking of Dependencies backend methods (by setting Mocks.Dependencies's
-// fields).
-type MockDependencies struct {
-	List           func(repo *types.Repo, rev api.CommitID, background bool) ([]*api.DependencyReference, error)
-	ListReferences func(dep api.DependencyReference, repo *types.Repo, commitID api.CommitID) ([]*lspext.ReferenceInformation, error)
 }
