@@ -2,6 +2,7 @@ package endpoint
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -12,7 +13,7 @@ func TestStatic(t *testing.T) {
 
 func TestExclude(t *testing.T) {
 	endpoints := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
-	m := &Map{urls: newConsistentHashMap(endpoints)}
+	m := New(strings.Join(endpoints, " "))
 
 	exclude := map[string]bool{}
 	for len(endpoints) > 0 {
