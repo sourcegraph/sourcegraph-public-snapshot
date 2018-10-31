@@ -61,64 +61,11 @@ var legacyEnvToFieldName = map[string]string{
 func basicConfigFromEnv() (configJSON []byte, envVarNames []string, err error) {
 	var cfg schema.BasicSiteConfiguration
 
-	configType := reflect.TypeOf(cfg)
-	configVal := reflect.ValueOf(&cfg)
-
-	for i := 0; i < configType.NumField(); i++ {
-		typeField := configType.Field(i)
-
-		var envVal string
-		// Read from environment variable with the same name as the JSON tag
-		jsonName := typeField.Tag.Get("json")
-		jsonName = strings.TrimSuffix(jsonName, ",omitempty")
-		envName := strings.Replace(jsonName, ".", "__", -1)
-		if envName == "" && typeField.Name != "PublicRepoRedirects" {
-			return nil, nil, fmt.Errorf("missing JSON struct tag for config field %s", typeField.Name)
-		}
-
-		envVal = os.Getenv(envName)
-		if envVal != "" {
-			envVarNames = append(envVarNames, envName)
-		}
-
-		if envVal == "" {
-			// Fall back to reading from legacy environment variable
-			if legacyEnvName := legacyEnvToFieldName[typeField.Name]; legacyEnvName != "" {
-				envVal = os.Getenv(legacyEnvName)
-				if envVal != "" {
-					envVarNames = append(envVarNames, legacyEnvName)
-				}
-			}
-		}
-
-		// Set config value
-		if envVal != "" {
-			valField := configVal.Elem().FieldByName(typeField.Name)
-			switch valField.Kind() {
-			case reflect.String:
-				valField.SetString(envVal)
-			case reflect.Bool:
-				valBool, err := strconv.ParseBool(envVal)
-				if err != nil {
-					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
-				}
-				valField.SetBool(valBool)
-			case reflect.Int:
-				valInt, err := strconv.Atoi(envVal)
-				if err != nil {
-					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
-				}
-				valField.SetInt(int64(valInt))
-			case reflect.Ptr, reflect.Slice, reflect.Struct:
-				if err := json.Unmarshal([]byte(envVal), valField.Addr().Interface()); err != nil {
-					return nil, nil, fmt.Errorf("could not parse value for field %s: %s", typeField.Name, err)
-				}
-			default:
-				return nil, nil, fmt.Errorf("unhandled config field type: %s (field: %s)", valField.Kind(), typeField.Name)
-			}
-		}
-
+	_, envVarNames, err = configFromEnv(&cfg)
+	if err != nil {
+		return nil, nil, err
 	}
+
 	// Special case for PUBLIC_REPO_REDIRECTS
 	if prd := os.Getenv("PUBLIC_REPO_REDIRECTS"); prd != "" {
 		if publicRepoRedirects, err := strconv.ParseBool(prd); err == nil {
@@ -132,9 +79,12 @@ func basicConfigFromEnv() (configJSON []byte, envVarNames []string, err error) {
 
 func coreConfigFromEnv() (configJSON []byte, envVarNames []string, err error) {
 	var cfg schema.CoreSiteConfiguration
+	return configFromEnv(&cfg)
+}
 
-	configType := reflect.TypeOf(cfg)
-	configVal := reflect.ValueOf(&cfg)
+func configFromEnv(cfg interface{}) (configJSON []byte, envVarNames []string, err error) {
+	configType := reflect.Indirect(reflect.ValueOf(cfg)).Type()
+	configVal := reflect.ValueOf(cfg)
 
 	for i := 0; i < configType.NumField(); i++ {
 		typeField := configType.Field(i)
@@ -192,6 +142,6 @@ func coreConfigFromEnv() (configJSON []byte, envVarNames []string, err error) {
 
 	}
 
-	configJSON, err = json.Marshal(cfg)
+	configJSON, err = json.Marshal(configVal.Interface())
 	return configJSON, envVarNames, err
 }

@@ -2,8 +2,8 @@
 
 package schema
 
-// SiteSchemaJSON is the content of the file "basic.schema.json".
-const SiteSchemaJSON = `{
+// BasicSchemaJSON is the content of the file "basic.schema.json".
+const BasicSchemaJSON = `{
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$id": "basic.schema.json#",
 	"title": "Basic site configuration",
@@ -225,26 +225,6 @@ const SiteSchemaJSON = `{
 			"type": "integer",
 			"default": 1
 		},
-		"htmlHeadTop": {
-			"description": "HTML to inject at the top of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
-			"type": "string"
-		},
-		"htmlHeadBottom": {
-			"description": "HTML to inject at the bottom of the ` + "`" + `<head>` + "`" + ` element on each page, for analytics scripts",
-			"type": "string"
-		},
-		"htmlBodyTop": {
-			"description": "HTML to inject at the top of the ` + "`" + `<body>` + "`" + ` element on each page, for analytics scripts",
-			"type": "string"
-		},
-		"htmlBodyBottom": {
-			"description": "HTML to inject at the bottom of the ` + "`" + `<body>` + "`" + ` element on each page, for analytics scripts",
-			"type": "string"
-		},
-		"licenseKey": {
-			"description": "The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription.",
-			"type": "string"
-		},
 		"maxReposToSearch": {
 			"description": "The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. The value -1 means unlimited.",
 			"type": "integer",
@@ -315,12 +295,6 @@ const SiteSchemaJSON = `{
 			"type": "string",
 			"format": "email",
 			"default": "noreply@sourcegraph.com"
-		},
-		"update.channel": {
-			"description": "The channel on which to automatically check for Sourcegraph updates.",
-			"type": [ "string" ],
-			"enum": [ "release", "none" ],
-			"default": "release"
 		},
 		"langservers": {
 			"description": "Language server configuration.",

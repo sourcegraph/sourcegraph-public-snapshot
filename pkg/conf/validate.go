@@ -44,12 +44,12 @@ var ignoreLegacyKubernetesFields = map[string]struct{}{
 	"useAlertManager":       struct{}{},
 }
 
-// Validate validates the site configuration the JSON Schema and other custom validation
+// ValidateBasic validates the basic site configuration the basic JSON Schema and other custom validation
 // checks.
-func Validate(inputStr string) (problems []string, err error) {
+func ValidateBasic(inputStr string) (problems []string, err error) {
 	input := []byte(jsonc.Normalize(inputStr))
 
-	res, err := validate([]byte(schema.SiteSchemaJSON), input)
+	res, err := validate([]byte(schema.BasicSchemaJSON), input)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,41 @@ func Validate(inputStr string) (problems []string, err error) {
 		problems = append(problems, fmt.Sprintf("%s: %s", keyPath, e.Description()))
 	}
 
-	problems2, err := validateCustomRaw(input)
+	problems2, err := validateCustomBasicRaw(input)
+	if err != nil {
+		return nil, err
+	}
+	problems = append(problems, problems2...)
+
+	return problems, nil
+}
+
+// ValidateBasic validates the core site configuration the core JSON Schema and other custom validation
+// checks.
+func ValidateCore(inputStr string) (problems []string, err error) {
+	input := []byte(jsonc.Normalize(inputStr))
+
+	res, err := validate([]byte(schema.CoreSchemaJSON), input)
+	if err != nil {
+		return nil, err
+	}
+	problems = make([]string, 0, len(res.Errors()))
+	for _, e := range res.Errors() {
+		if _, ok := ignoreLegacyKubernetesFields[e.Field()]; ok {
+			continue
+		}
+
+		var keyPath string
+		if c := e.Context(); c != nil {
+			keyPath = strings.TrimPrefix(e.Context().String("."), "(root).")
+		} else {
+			keyPath = e.Field()
+		}
+
+		problems = append(problems, fmt.Sprintf("%s: %s", keyPath, e.Description()))
+	}
+
+	problems2, err := validateCustomCoreRaw(input)
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +152,10 @@ func (f jsonLoaderFactory) New(source string) gojsonschema.JSONLoader {
 	switch source {
 	case "settings.schema.json":
 		return gojsonschema.NewStringLoader(schema.SettingsSchemaJSON)
-	case "site.schema.json":
-		return gojsonschema.NewStringLoader(schema.SiteSchemaJSON)
+	case "basic.schema.json":
+		return gojsonschema.NewStringLoader(schema.BasicSchemaJSON)
+	case "core.schema.json":
+		return gojsonschema.NewStringLoader(schema.CoreSchemaJSON)
 	}
 	return nil
 }

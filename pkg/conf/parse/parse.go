@@ -225,7 +225,7 @@ func AppendConfig(dest, src *SiteConfiguration) *SiteConfiguration {
 // NeedRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
 func NeedRestartToApplyBasic(before, after *schema.BasicSiteConfiguration) bool {
-	diff := diffBasic(before, after)
+	diff := diff(before, after)
 
 	// Check every option that changed to determine whether or not a server
 	// restart is required.
@@ -242,7 +242,7 @@ func NeedRestartToApplyBasic(before, after *schema.BasicSiteConfiguration) bool 
 // NeedRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
 func NeedRestartToApplyCore(before, after *schema.CoreSiteConfiguration) bool {
-	diff := diffCore(before, after)
+	diff := diff(before, after)
 
 	// Check every option that changed to determine whether or not a server
 	// restart is required.

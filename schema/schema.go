@@ -113,13 +113,8 @@ type BasicSiteConfiguration struct {
 	GithubClientSecret                string                       `json:"githubClientSecret,omitempty"`
 	Gitlab                            []*GitLabConnection          `json:"gitlab,omitempty"`
 	Gitolite                          []*GitoliteConnection        `json:"gitolite,omitempty"`
-	HtmlBodyBottom                    string                       `json:"htmlBodyBottom,omitempty"`
-	HtmlBodyTop                       string                       `json:"htmlBodyTop,omitempty"`
-	HtmlHeadBottom                    string                       `json:"htmlHeadBottom,omitempty"`
-	HtmlHeadTop                       string                       `json:"htmlHeadTop,omitempty"`
 	HttpStrictTransportSecurity       interface{}                  `json:"httpStrictTransportSecurity,omitempty"`
 	Langservers                       []*Langservers               `json:"langservers,omitempty"`
-	LicenseKey                        string                       `json:"licenseKey,omitempty"`
 	LightstepAccessToken              string                       `json:"lightstepAccessToken,omitempty"`
 	LightstepProject                  string                       `json:"lightstepProject,omitempty"`
 	MaxReposToSearch                  int                          `json:"maxReposToSearch,omitempty"`
@@ -135,7 +130,6 @@ type BasicSiteConfiguration struct {
 	ReviewBoard                       []*ReviewBoard               `json:"reviewBoard,omitempty"`
 	SearchIndexEnabled                *bool                        `json:"search.index.enabled,omitempty"`
 	SiteID                            string                       `json:"siteID,omitempty"`
-	UpdateChannel                     string                       `json:"update.channel,omitempty"`
 	UseJaeger                         bool                         `json:"useJaeger,omitempty"`
 }
 type BitbucketServerConnection struct {
@@ -171,19 +165,20 @@ type Contributions struct {
 
 // CoreSiteConfiguration description: Core configuration options for Sourcegraph.
 type CoreSiteConfiguration struct {
-	AppURL              string              `json:"appURL,omitempty"`
-	AuthProviders       []AuthProviders     `json:"auth.providers,omitempty"`
-	AuthUserOrgMap      map[string][]string `json:"auth.userOrgMap,omitempty"`
-	HtmlBodyBottom      string              `json:"htmlBodyBottom,omitempty"`
-	HtmlBodyTop         string              `json:"htmlBodyTop,omitempty"`
-	HtmlHeadBottom      string              `json:"htmlHeadBottom,omitempty"`
-	HtmlHeadTop         string              `json:"htmlHeadTop,omitempty"`
-	HttpToHttpsRedirect interface{}         `json:"httpToHttpsRedirect,omitempty"`
-	LicenseKey          string              `json:"licenseKey,omitempty"`
-	Log                 *Log                `json:"log,omitempty"`
-	TlsLetsencrypt      string              `json:"tls.letsencrypt,omitempty"`
-	TlsCert             string              `json:"tlsCert,omitempty"`
-	TlsKey              string              `json:"tlsKey,omitempty"`
+	AppURL              string          `json:"appURL,omitempty"`
+	AuthProviders       []AuthProviders `json:"auth.providers,omitempty"`
+	AuthPublic          bool            `json:"auth.public,omitempty"`
+	HtmlBodyBottom      string          `json:"htmlBodyBottom,omitempty"`
+	HtmlBodyTop         string          `json:"htmlBodyTop,omitempty"`
+	HtmlHeadBottom      string          `json:"htmlHeadBottom,omitempty"`
+	HtmlHeadTop         string          `json:"htmlHeadTop,omitempty"`
+	HttpToHttpsRedirect interface{}     `json:"httpToHttpsRedirect,omitempty"`
+	LicenseKey          string          `json:"licenseKey,omitempty"`
+	Log                 *Log            `json:"log,omitempty"`
+	TlsLetsencrypt      string          `json:"tls.letsencrypt,omitempty"`
+	TlsCert             string          `json:"tlsCert,omitempty"`
+	TlsKey              string          `json:"tlsKey,omitempty"`
+	UpdateChannel       string          `json:"update.channel,omitempty"`
 }
 
 // Discussions description: Configures Sourcegraph code discussions.

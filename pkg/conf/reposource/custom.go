@@ -9,14 +9,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived from the site config
 var cloneURLResolvers []*cloneURLResolver
 
 func init() {
-	conf.ContributeValidator(func(c schema.SiteConfiguration) (problems []string) {
+	conf.ContributeValidator(func(c conf.SiteConfiguration) (problems []string) {
 		for _, c := range conf.Get().GitCloneURLToRepositoryName {
 			if _, err := regexp.Compile(c.From); err != nil {
 				problems = append(problems, fmt.Sprintf("Not a valid regexp: %s. See the valid syntax: https://golang.org/pkg/regexp/", c.From))

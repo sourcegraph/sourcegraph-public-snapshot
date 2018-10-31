@@ -271,9 +271,15 @@ func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoURI, error
 	return names, err
 }
 
-func (c *internalClient) ConfigurationRawJSON(ctx context.Context) (string, error) {
+func (c *internalClient) ConfigurationBasicRawJSON(ctx context.Context) (string, error) {
 	var rawJSON string
-	err := c.postInternal(ctx, "configuration/raw-json", nil, &rawJSON)
+	err := c.postInternal(ctx, "configuration/basic-raw-json", nil, &rawJSON)
+	return rawJSON, err
+}
+
+func (c *internalClient) ConfigurationCoreRawJSON(ctx context.Context) (string, error) {
+	var rawJSON string
+	err := c.postInternal(ctx, "configuration/core-raw-json", nil, &rawJSON)
 	return rawJSON, err
 }
 

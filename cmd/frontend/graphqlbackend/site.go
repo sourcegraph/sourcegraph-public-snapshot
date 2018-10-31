@@ -154,7 +154,7 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (stri
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return "", err
 	}
-	return globals.ConfigurationServerFrontendOnly.Raw(), nil
+	return globals.ConfigurationServerFrontendOnly.RawBasic(), nil
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
@@ -162,7 +162,7 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	if err != nil {
 		return nil, err
 	}
-	return conf.Validate(contents)
+	return conf.ValidateBasic(contents)
 }
 
 func (r *siteConfigurationResolver) CanUpdate() bool {
@@ -172,7 +172,7 @@ func (r *siteConfigurationResolver) CanUpdate() bool {
 }
 
 func (r *siteConfigurationResolver) Source() string {
-	s := globals.ConfigurationServerFrontendOnly.FilePath()
+	s := globals.ConfigurationServerFrontendOnly.FilePathBasic()
 	return s
 }
 
@@ -184,7 +184,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return false, err
 	}
-	if err := globals.ConfigurationServerFrontendOnly.Write(args.Input); err != nil {
+	if err := globals.ConfigurationServerFrontendOnly.WriteBasic(args.Input); err != nil {
 		return false, err
 	}
 	return globals.ConfigurationServerFrontendOnly.NeedServerRestart(), nil

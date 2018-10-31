@@ -6,16 +6,6 @@
 	"type": "object",
 	"additionalProperties": false,
 	"properties": {
-		"auth.userOrgMap": {
-			"description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{\"*\": [\"org1\", \"org2\"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `\"*\"`.",
-			"type": "object",
-			"additionalProperties": {
-				"type": "array",
-				"items": {
-					"type": "string"
-				}
-			}
-		},
 		"appURL": {
 			"description": "Publicly accessible URL to web app (e.g., what you type into your browser).",
 			"type": "string"
@@ -101,31 +91,18 @@
 					"taggedUnionType": true
 				}
 			}
+		},
+		"auth.public": {
+			"description": "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires usage of the builtin authentication provider.",
+			"type": "boolean",
+			"default": false
+		},
+		"update.channel": {
+			"description": "The channel on which to automatically check for Sourcegraph updates.",
+			"type": [ "string" ],
+			"enum": [ "release", "none" ],
+			"default": "release"
 		}
-	},
-	"auth.public": {
-		"description": "Allows anonymous visitors full read access to repositories, code files, search, and other data (except site configuration).\n\nSECURITY WARNING: If you enable this, you must ensure that only authorized users can access the server (using firewall rules or an external proxy, for example).\n\nRequires usage of the builtin authentication provider.",
-		"type": "boolean",
-		"default": false
-	},
-	"auth.accessTokens": {
-		"description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
-		"type": "object",
-		"additionalProperties": false,
-		"properties": {
-			"allow": {
-				"description": "Allow or restrict the use of access tokens. The default is \"all-users-create\", which enables all users to create access tokens. Use \"none\" to disable access tokens entirely. Use \"site-admin-create\" to restrict creation of new tokens to admin users (existing tokens will still work until revoked).",
-				"type": "string",
-				"enum": [ "all-users-create", "site-admin-create", "none" ],
-				"default": "all-users-create"
-			}
-		}
-	},
-	"update.channel": {
-		"description": "The channel on which to automatically check for Sourcegraph updates.",
-		"type": [ "string" ],
-		"enum": [ "release", "none" ],
-		"default": "release"
 	},
 	"definitions": {
 		"BuiltinAuthProvider": {

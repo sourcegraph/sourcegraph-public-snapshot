@@ -16,35 +16,36 @@ const (
 	RepoRefresh = "repo.refresh"
 	Telemetry   = "telemetry"
 
-	SavedQueriesListAll    = "internal.saved-queries.list-all"
-	SavedQueriesGetInfo    = "internal.saved-queries.get-info"
-	SavedQueriesSetInfo    = "internal.saved-queries.set-info"
-	SavedQueriesDeleteInfo = "internal.saved-queries.delete-info"
-	SettingsGetForSubject  = "internal.settings.get-for-subject"
-	OrgsListUsers          = "internal.orgs.list-users"
-	OrgsGetByName          = "internal.orgs.get-by-name"
-	UsersGetByUsername     = "internal.users.get-by-username"
-	UserEmailsGetEmail     = "internal.user-emails.get-email"
-	AppURL                 = "internal.app-url"
-	CanSendEmail           = "internal.can-send-email"
-	SendEmail              = "internal.send-email"
-	Extension              = "internal.extension"
-	DefsRefreshIndex       = "internal.defs.refresh-index"
-	PkgsRefreshIndex       = "internal.pkgs.refresh-index"
-	GitInfoRefs            = "internal.git.info-refs"
-	GitResolveRevision     = "internal.git.resolve-revision"
-	GitTar                 = "internal.git.tar"
-	GitUploadPack          = "internal.git.upload-pack"
-	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
-	ReposCreateIfNotExists = "internal.repos.create-if-not-exists"
-	ReposGetByURI          = "internal.repos.get-by-uri"
-	ReposInventoryUncached = "internal.repos.inventory-uncached"
-	ReposInventory         = "internal.repos.inventory"
-	ReposList              = "internal.repos.list"
-	ReposListEnabled       = "internal.repos.list-enabled"
-	ReposUpdateIndex       = "internal.repos.update-index"
-	ReposUpdateMetadata    = "internal.repos.update-metadata"
-	ConfigurationRawJSON   = "internal.configuration.raw-json"
+	SavedQueriesListAll       = "internal.saved-queries.list-all"
+	SavedQueriesGetInfo       = "internal.saved-queries.get-info"
+	SavedQueriesSetInfo       = "internal.saved-queries.set-info"
+	SavedQueriesDeleteInfo    = "internal.saved-queries.delete-info"
+	SettingsGetForSubject     = "internal.settings.get-for-subject"
+	OrgsListUsers             = "internal.orgs.list-users"
+	OrgsGetByName             = "internal.orgs.get-by-name"
+	UsersGetByUsername        = "internal.users.get-by-username"
+	UserEmailsGetEmail        = "internal.user-emails.get-email"
+	AppURL                    = "internal.app-url"
+	CanSendEmail              = "internal.can-send-email"
+	SendEmail                 = "internal.send-email"
+	Extension                 = "internal.extension"
+	DefsRefreshIndex          = "internal.defs.refresh-index"
+	PkgsRefreshIndex          = "internal.pkgs.refresh-index"
+	GitInfoRefs               = "internal.git.info-refs"
+	GitResolveRevision        = "internal.git.resolve-revision"
+	GitTar                    = "internal.git.tar"
+	GitUploadPack             = "internal.git.upload-pack"
+	PhabricatorRepoCreate     = "internal.phabricator.repo.create"
+	ReposCreateIfNotExists    = "internal.repos.create-if-not-exists"
+	ReposGetByURI             = "internal.repos.get-by-uri"
+	ReposInventoryUncached    = "internal.repos.inventory-uncached"
+	ReposInventory            = "internal.repos.inventory"
+	ReposList                 = "internal.repos.list"
+	ReposListEnabled          = "internal.repos.list-enabled"
+	ReposUpdateIndex          = "internal.repos.update-index"
+	ReposUpdateMetadata       = "internal.repos.update-metadata"
+	ConfigurationBasicRawJSON = "internal.configuration.basic-raw-json"
+	ConfigurationCoreRawJSON  = "internal.configuration.core-raw-json"
 )
 
 // New creates a new API router with route URL pattern definitions but
@@ -109,7 +110,8 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/repos/update-index").Methods("POST").Name(ReposUpdateIndex)
 	base.Path("/repos/update-metadata").Methods("POST").Name(ReposUpdateMetadata)
 	base.Path("/repos/{RepoURI:.*}").Methods("POST").Name(ReposGetByURI)
-	base.Path("/configuration/raw-json").Methods("POST").Name(ConfigurationRawJSON)
+	base.Path("/configuration/basic-raw-json").Methods("POST").Name(ConfigurationBasicRawJSON)
+	base.Path("/configuration/core-raw-json").Methods("POST").Name(ConfigurationCoreRawJSON)
 	addRegistryRoute(base)
 	addGraphQLRoute(base)
 	addTelemetryRoute(base)

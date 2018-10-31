@@ -13,23 +13,31 @@ import (
 // problems.
 //
 // It may only be called at init time.
-func ContributeValidator(f func(schema.SiteConfiguration) (problems []string)) {
+func ContributeValidator(f func(SiteConfiguration) (problems []string)) {
 	contributedValidators = append(contributedValidators, f)
 }
 
-var contributedValidators []func(schema.SiteConfiguration) []string
+var contributedValidators []func(SiteConfiguration) []string
 
-func validateCustomRaw(normalizedInput []byte) (problems []string, err error) {
-	var cfg schema.SiteConfiguration
-	if err := json.Unmarshal(normalizedInput, &cfg); err != nil {
+func validateCustomBasicRaw(normalizedInput []byte) (problems []string, err error) {
+	var basic schema.BasicSiteConfiguration
+	if err := json.Unmarshal(normalizedInput, &basic); err != nil {
 		return nil, err
 	}
-	return validateCustom(cfg), nil
+	return validateCustom(SiteConfiguration{&basic, nil}), nil
+}
+
+func validateCustomCoreRaw(normalizedInput []byte) (problems []string, err error) {
+	var core schema.CoreSiteConfiguration
+	if err := json.Unmarshal(normalizedInput, &core); err != nil {
+		return nil, err
+	}
+	return validateCustom(SiteConfiguration{nil, &core}), nil
 }
 
 // validateCustom validates the site config using custom validation steps that are not
 // able to be expressed in the JSON Schema.
-func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
+func validateCustom(cfg SiteConfiguration) (problems []string) {
 
 	invalid := func(msg string) {
 		problems = append(problems, msg)
@@ -84,7 +92,7 @@ func validateCustom(cfg schema.SiteConfiguration) (problems []string) {
 func TestValidator(t interface {
 	Errorf(format string, args ...interface{})
 	Helper()
-}, c schema.SiteConfiguration, f func(schema.SiteConfiguration) []string, wantProblems []string) {
+}, c SiteConfiguration, f func(SiteConfiguration) []string, wantProblems []string) {
 	t.Helper()
 	problems := f(c)
 	wantSet := make(map[string]struct{}, len(wantProblems))

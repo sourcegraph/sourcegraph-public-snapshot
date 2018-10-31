@@ -60,7 +60,7 @@ type JSContext struct {
 	ShowOnboarding bool   `json:"showOnboarding"`
 	EmailEnabled   bool   `json:"emailEnabled"`
 
-	Site                schema.SiteConfiguration `json:"site"` // public subset of site configuration
+	Site                schema.CoreSiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac   bool                     `json:"likelyDockerOnMac"`
 	NeedServerRestart   bool                     `json:"needServerRestart"`
 	IsClusterDeployment bool                     `json:"isClusterDeployment"`
@@ -167,9 +167,9 @@ func NewJSContextFromRequest(req *http.Request) JSContext {
 
 // publicSiteConfiguration is the subset of the site.schema.json site configuration
 // that is necessary for the web app and is not sensitive/secret.
-func publicSiteConfiguration() schema.SiteConfiguration {
+func publicSiteConfiguration() schema.CoreSiteConfiguration {
 	c := conf.Get()
-	return schema.SiteConfiguration{
+	return schema.CoreSiteConfiguration{
 		AuthPublic: c.AuthPublic,
 	}
 }

@@ -8,26 +8,30 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sourcegraph/jsonx"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/parse"
 	"github.com/sourcegraph/sourcegraph/pkg/conf/store"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // Server provides access and manages modifications to the site configuration.
 type Server struct {
 	// configFilePath is the path to the site configuration file on disk.
-	configFilePath string
+	basicFilePath string
+	coreFilePath  string
 
-	store *store.Store
+	basicStore *store.BasicStore
+	coreStore  *store.CoreStore
+
+	// fileWriteBasic signals when our app writes to the configuration file. The
+	// secondary channel is closed when server.RawBasic() would return the new
+	// configuration that has been written to disk.
+	fileWriteBasic chan chan struct{}
+	// fileWriteCore signals when our app writes to the configuration file. The
+	// secondary channel is closed when server.RawCore() would return the new
+	// configuration that has been written to disk.
+	fileWriteCore chan chan struct{}
 
 	needRestartMu sync.RWMutex
 	needRestart   bool
-
-	// fileWrite signals when our app writes to the configuration file. The
-	// secondary channel is closed when server.Raw() would return the new
-	// configuration that has been written to disk.
-	fileWrite chan chan struct{}
 
 	once sync.Once
 }
@@ -36,31 +40,38 @@ type Server struct {
 // that is stored at "configFilePath".
 //
 // The server must be started with Start() before it can handle requests.
-func NewServer(configFilePath string) *Server {
-	fileWrite := make(chan chan struct{}, 1)
+func NewServer(basicFilePath, coreFilePath string) *Server {
 	return &Server{
-		configFilePath: configFilePath,
-		store:          store.New(),
-		fileWrite:      fileWrite,
+		basicFilePath:  basicFilePath,
+		coreFilePath:   coreFilePath,
+		basicStore:     store.NewBasicStore(),
+		coreStore:      store.NewCoreStore(),
+		fileWriteBasic: make(chan chan struct{}, 1),
+		fileWriteCore:  make(chan chan struct{}, 1),
 	}
 }
 
 // Raw returns the raw text of the configuration file.
-func (s *Server) Raw() string {
-	return s.store.Raw()
+func (s *Server) RawBasic() string {
+	return s.basicStore.Raw()
+}
+
+// RawCor
+func (s *Server) RawCore() string {
+	return s.coreStore.Raw()
 }
 
 // Write writes the JSON config file to the config file's path. If the JSON configuration is
 // invalid, an error is returned.
-func (s *Server) Write(input string) error {
+func (s *Server) WriteBasic(input string) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := parse.DeprecatedParseConfigEnvironment(input)
+	_, err := parse.DeprecatedParseBasicConfigFromEnvironment(input)
 	if err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(s.configFilePath, []byte(input), 0600); err != nil {
+	if err := ioutil.WriteFile(s.basicFilePath, []byte(input), 0600); err != nil {
 		return err
 	}
 
@@ -68,44 +79,30 @@ func (s *Server) Write(input string) error {
 	// we would return to the caller earlier than server.Raw() would return the
 	// new configuration.
 	doneReading := make(chan struct{}, 1)
-	s.fileWrite <- doneReading
+	s.fileWriteBasic <- doneReading
 	<-doneReading
 
 	return nil
 }
 
-// Edit invokes the provided function to compute edits to the site
-// configuration. It then applies and writes them.
-//
-// The computation function is provided the current configuration, which should
-// NEVER be modified in any way. Always copy values.
-func (s *Server) Edit(computeEdits func(current *schema.SiteConfiguration, raw string) ([]jsonx.Edit, error)) error {
-
-	// TODO@ggilmore: There is a race condition here (also present in the existing library).
-	// Current and raw could be inconsistent. Another thing to offload to configStore?
-	// Snapshot method?
-	current := s.store.LastValid()
-	raw := s.store.Raw()
-
-	// Compute edits.
-	edits, err := computeEdits(current, raw)
+func (s *Server) WriteCore(input string) error {
+	// Parse the configuration so that we can diff it (this also validates it
+	// is proper JSON).
+	_, err := parse.DeprecatedParseCoreConfigFromEnvironment(input)
 	if err != nil {
-		return errors.Wrap(err, "computeEdits")
+		return err
 	}
 
-	// Apply edits and write out new configuration.
-	newConfig, err := jsonx.ApplyEdits(raw, edits...)
-	if err != nil {
-		return errors.Wrap(err, "jsonx.ApplyEdits")
+	if err := ioutil.WriteFile(s.coreFilePath, []byte(input), 0600); err != nil {
+		return err
 	}
 
-	// TODO@ggilmore: Another race condition (also present in the existing library). Locks
-	// aren't held between applying the edits and writing the config file,
-	// so the newConfig could be outdated.
-	err = s.Write(newConfig)
-	if err != nil {
-		return errors.Wrap(err, "conf.Write")
-	}
+	// Wait for the change to the configuration file to be detected. Otherwise
+	// we would return to the caller earlier than server.Raw() would return the
+	// new configuration.
+	doneReading := make(chan struct{}, 1)
+	s.fileWriteCore <- doneReading
+	<-doneReading
 
 	return nil
 }
@@ -113,27 +110,38 @@ func (s *Server) Edit(computeEdits func(current *schema.SiteConfiguration, raw s
 // Start initalizes the server instance.
 func (s *Server) Start() {
 	s.once.Do(func() {
-		go s.watchDisk()
+		go s.watchDiskBasic()
+		go s.watchDiskCore()
 	})
 }
 
-// watchDisk reloads the configuration file from disk at least every five seconds or whenever
-// server.Write() is called.
-func (s *Server) watchDisk() {
+// watchDiskBasic reloads the basic configuration file from disk at least
+// every five seconds or whenever server.WriteBasic() is called.
+func (s *Server) watchDiskBasic() {
+	s.watchDisk(s.fileWriteBasic, s.basicFilePath, s.updateBasicFromDisk)
+}
+
+// watchDiskCore reloads the core configuration file from disk at least
+// every five seconds or whenever server.WriteCore() is called.
+func (s *Server) watchDiskCore() {
+	s.watchDisk(s.fileWriteCore, s.coreFilePath, s.updateCoreFromDisk)
+}
+
+func (s *Server) watchDisk(fileWrite chan chan struct{}, configFilePath string, updateConfig func() error) {
 	for {
 		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
 
 		var signalDoneReading chan struct{}
 		select {
-		case signalDoneReading = <-s.fileWrite:
+		case signalDoneReading = <-fileWrite:
 			// File was changed on FS, so check now.
 		case <-time.After(jitter):
 			// File possibly changed on FS, so check now.
 		}
 
-		err := s.updateFromDisk()
+		err := updateConfig()
 		if err != nil {
-			log.Printf("failed to read configuration file: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err, s.configFilePath)
+			log.Printf("failed to read configuration file: %s. Fix your Sourcegraph configuration (%s) to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err, configFilePath)
 		}
 
 		if signalDoneReading != nil {
@@ -142,13 +150,13 @@ func (s *Server) watchDisk() {
 	}
 }
 
-func (s *Server) updateFromDisk() error {
-	rawConfig, err := s.readConfig()
+func (s *Server) updateCoreFromDisk() error {
+	rawConfig, err := s.readConfig(s.coreFilePath)
 	if err != nil {
 		return err
 	}
 
-	configChange, err := s.store.MaybeUpdate(rawConfig)
+	configChange, err := s.coreStore.MaybeUpdate(rawConfig)
 	if err != nil {
 		return err
 	}
@@ -164,7 +172,36 @@ func (s *Server) updateFromDisk() error {
 	}
 
 	// Update global "needs restart" state.
-	if parse.NeedRestartToApply(configChange.Old, configChange.New) {
+	if parse.NeedRestartToApplyCore(configChange.Old, configChange.New) {
+		s.markNeedServerRestart()
+	}
+
+	return nil
+}
+
+func (s *Server) updateBasicFromDisk() error {
+	rawConfig, err := s.readConfig(s.basicFilePath)
+	if err != nil {
+		return err
+	}
+
+	configChange, err := s.basicStore.MaybeUpdate(rawConfig)
+	if err != nil {
+		return err
+	}
+
+	// Don't need to restart if the configuration hasn't changed.
+	if !configChange.Changed {
+		return nil
+	}
+
+	// Don't restart if the configuration was empty before (this only occurs during initialization).
+	if configChange.Old == nil {
+		return nil
+	}
+
+	// Update global "needs restart" state.
+	if parse.NeedRestartToApplyBasic(configChange.Old, configChange.New) {
 		s.markNeedServerRestart()
 	}
 
@@ -173,10 +210,10 @@ func (s *Server) updateFromDisk() error {
 
 // readConfig reads the raw configuration that's currently saved to the disk
 // (bypasses the configStore).
-func (s *Server) readConfig() (string, error) {
-	data, err := ioutil.ReadFile(s.configFilePath)
+func (s *Server) readConfig(path string) (string, error) {
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return "", errors.Wrapf(err, "unable to read config file from %q", s.configFilePath)
+		return "", errors.Wrapf(err, "unable to read config file from %q", path)
 	}
 
 	return string(data), nil
@@ -200,6 +237,10 @@ func (s *Server) markNeedServerRestart() {
 
 // FilePath is the path to the configuration file, if any.
 // TODO@ggilmore: re-evaluate whether or not we need this
-func (s *Server) FilePath() string {
-	return s.configFilePath
+func (s *Server) FilePathBasic() string {
+	return s.basicFilePath
+}
+
+func (s *Server) FilePathCore() string {
+	return s.coreFilePath
 }

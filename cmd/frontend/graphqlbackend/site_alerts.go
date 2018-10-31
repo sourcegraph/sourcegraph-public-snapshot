@@ -70,8 +70,13 @@ func init() {
 			return nil
 		}
 
-		messages, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
-		if len(messages) > 0 || err != nil {
+		basicMessages, errBasic := conf.ValidateBasic(globals.ConfigurationServerFrontendOnly.RawBasic())
+		coreMessages, errCore := conf.ValidateBasic(globals.ConfigurationServerFrontendOnly.RawCore())
+
+		var messages []string
+		messages = append(messages, basicMessages...)
+		messages = append(messages, coreMessages...)
+		if len(messages) > 0 || errBasic != nil || errCore != nil {
 			return []*Alert{
 				{
 					TypeValue:    AlertTypeWarning,

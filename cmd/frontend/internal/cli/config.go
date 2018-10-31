@@ -6,15 +6,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
 
+	multierror "github.com/hashicorp/go-multierror"
+
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 func printConfigValidation() {
-	messages, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
+	var errs *multierror.Error
+	basicMessages, err := conf.ValidateBasic(globals.ConfigurationServerFrontendOnly.RawBasic())
 	if err != nil {
-		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
+		errs = multierror.Append(errs, errs)
+	}
+
+	coreMessages, err := conf.ValidateBasic(globals.ConfigurationServerFrontendOnly.RawCore())
+	if err != nil {
+		errs = multierror.Append(errs, errs)
+	}
+
+	if errs.ErrorOrNil() != nil {
+		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", errs.ErrorOrNil())
 		return
 	}
+
+	var messages []string
+	messages = append(messages, basicMessages...)
+	messages = append(messages, coreMessages...)
 
 	if len(messages) > 0 {
 		log15.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")

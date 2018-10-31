@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
@@ -15,16 +16,22 @@ import (
 )
 
 type client struct {
-	basicStore *store.BasicStore
-	coreStore  *store.CoreStore
+	basicStore   *store.BasicStore
+	basicFetcher basicFetcher
 
-	fetcher fetcher
+	coreStore   *store.CoreStore
+	coreFetcher coreFetcher
 
 	watchersMu sync.Mutex
 	watchers   []chan struct{}
 }
 
 var defaultClient *client
+
+type SiteConfiguration struct {
+	*schema.BasicSiteConfiguration
+	*schema.CoreSiteConfiguration
+}
 
 // Get returns a copy of the configuration. The returned value should NEVER be
 // modified.
@@ -42,7 +49,7 @@ var defaultClient *client
 // is running.
 //
 // Get is a wrapper around client.Get.
-func Get() *schema.SiteConfiguration {
+func Get() *SiteConfiguration {
 	return defaultClient.Get()
 }
 
@@ -60,8 +67,11 @@ func Get() *schema.SiteConfiguration {
 // exception rather than the rule. In general, ANY use of configuration should
 // be done in such a way that it responds to config changes while the process
 // is running.
-func (c *client) Get() (*schema.BasicSiteConfiguration, *schema.CoreSiteConfiguration) {
-	c.store.LastValid()
+func (c *client) Get() *SiteConfiguration {
+	return &SiteConfiguration{
+		BasicSiteConfiguration: c.basicStore.LastValid(),
+		CoreSiteConfiguration:  c.coreStore.LastValid(),
+	}
 }
 
 // GetTODO denotes code that may or may not be using configuration correctly.
@@ -70,7 +80,7 @@ func (c *client) Get() (*schema.BasicSiteConfiguration, *schema.CoreSiteConfigur
 // use conf.Watch). See Get documentation for more details.
 //
 // GetTODO is a wrapper around client.GetTODO.
-func GetTODO() (*schema.BasicSiteConfiguration, *schema.CoreSiteConfiguration) {
+func GetTODO() *SiteConfiguration {
 	return defaultClient.GetTODO()
 }
 
@@ -78,21 +88,21 @@ func GetTODO() (*schema.BasicSiteConfiguration, *schema.CoreSiteConfiguration) {
 // The code may need to be updated to use conf.Watch, or it may already be e.g.
 // invoked only in response to a user action (in which case it does not need to
 // use conf.Watch). See Get documentation for more details.
-func (c *client) GetTODO() (*schema.BasicSiteConfiguration, *schema.CoreSiteConfiguration) {
+func (c *client) GetTODO() *SiteConfiguration {
 	return c.Get()
 }
 
 // Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.
-func MockBasic(mockery *schema.SiteConfiguration) {
+func MockBasic(mockery *schema.BasicSiteConfiguration) {
 	defaultClient.MockBasic(mockery)
 }
 
 // Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.
-func MockCore(mockery *schema.SiteConfiguration) {
+func MockCore(mockery *schema.CoreSiteConfiguration) {
 	defaultClient.MockCore(mockery)
 }
 
@@ -165,9 +175,13 @@ func (c *client) notifyWatchers() {
 
 func (c *client) continuouslyUpdate() {
 	for {
-		err := c.fetchAndUpdate()
-		if err != nil {
-			log.Printf("received error during background config update, err: %s", err)
+		var errs *multierror.Error
+
+		errs = multierror.Append(errs, c.fetchAndUpdateBasic())
+		errs = multierror.Append(errs, c.fetchAndUpdateCore())
+
+		if errs.ErrorOrNil() != nil {
+			log.Printf("received errors during background config updates, errs: %s", errs.ErrorOrNil())
 		}
 
 		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
@@ -175,26 +189,38 @@ func (c *client) continuouslyUpdate() {
 	}
 }
 
-func (c *client) fetchAndUpdate() error {
-	newRawConfig, err := c.fetcher.FetchConfig()
+func (c *client) fetchAndUpdateBasic() error {
+	newRawConfig, err := c.basicFetcher.FetchBasicConfig()
 	if err != nil {
-		return errors.Wrap(err, "unable to fetch new configuration")
+		return errors.Wrap(err, "unable to fetch new basic configuration")
 	}
 
-	configChange, err := c.store.MaybeUpdate(newRawConfig)
+	configChange, err := c.basicStore.MaybeUpdate(newRawConfig)
 	if err != nil {
-		return errors.Wrap(err, "unable to update new configuration")
+		return errors.Wrap(err, "unable to update new basic configuration")
 	}
 
 	if configChange.Changed {
 		c.notifyWatchers()
 	}
-
 	return nil
 }
 
-type fetcher interface {
-	FetchConfig() (rawJSON string, err error)
+func (c *client) fetchAndUpdateCore() error {
+	newRawConfig, err := c.coreFetcher.FetchCoreConfig()
+	if err != nil {
+		return errors.Wrap(err, "unable to fetch new core configuration")
+	}
+
+	configChange, err := c.coreStore.MaybeUpdate(newRawConfig)
+	if err != nil {
+		return errors.Wrap(err, "unable to update new core configuration")
+	}
+
+	if configChange.Changed {
+		c.notifyWatchers()
+	}
+	return nil
 }
 
 type basicFetcher interface {
@@ -205,19 +231,7 @@ type basicFetcher interface {
 type httpBasicFetcher struct{}
 
 func (h httpBasicFetcher) FetchBasicConfig() (string, error) {
-	rawJSON, err := api.InternalClient.ConfigurationRawJSON(context.Background())
-	return rawJSON, err
-}
-
-type coreFetcher interface {
-	FetchCoreConfig() (rawJSON string, err error)
-}
-
-// Fetch the raw configuration JSON via our internal API.
-type httpBasicFetcher struct{}
-
-func (h httpFetcher) FetchConfig() (string, error) {
-	rawJSON, err := api.InternalClient.ConfigurationRawJSON(context.Background())
+	rawJSON, err := api.InternalClient.ConfigurationBasicRawJSON(context.Background())
 	return rawJSON, err
 }
 
@@ -228,8 +242,33 @@ func (h httpFetcher) FetchConfig() (string, error) {
 //
 // WARNING: Only frontend should use this fetcher! Other services
 // that attempt to use it will panic.
-type passthroughFetcherFrontendOnly struct{}
+type passthroughBasicFetcherFrontendOnly struct{}
 
-func (p passthroughFetcherFrontendOnly) FetchConfig() (string, error) {
-	return globals.ConfigurationServerFrontendOnly.Raw(), nil
+func (p passthroughBasicFetcherFrontendOnly) FetchBasicConfig() (string, error) {
+	return globals.ConfigurationServerFrontendOnly.RawBasic(), nil
+}
+
+type coreFetcher interface {
+	FetchCoreConfig() (rawJSON string, err error)
+}
+
+// Fetch the raw configuration JSON via our internal API.
+type httpCoreFetcher struct{}
+
+func (h httpCoreFetcher) FetchCoreConfig() (string, error) {
+	rawJSON, err := api.InternalClient.ConfigurationCoreRawJSON(context.Background())
+	return rawJSON, err
+}
+
+// Fetch the raw configuration directly via conf.DefaultServerFrontendOnly.
+// This is needed by frontend, otherwise we'll run into a deadlock issue since
+// frontend needs to read the site configuration before it can start serving
+// the internal api.
+//
+// WARNING: Only frontend should use this fetcher! Other services
+// that attempt to use it will panic.
+type passthroughCoreFetcherFrontendOnly struct{}
+
+func (p passthroughCoreFetcherFrontendOnly) FetchCoreConfig() (string, error) {
+	return globals.ConfigurationServerFrontendOnly.RawCore(), nil
 }

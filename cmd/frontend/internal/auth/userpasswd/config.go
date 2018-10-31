@@ -47,7 +47,7 @@ func init() {
 	conf.ContributeValidator(validateConfig)
 }
 
-func validateConfig(c schema.SiteConfiguration) (problems []string) {
+func validateConfig(c conf.SiteConfiguration) (problems []string) {
 	var builtinAuthProviders int
 	for _, p := range c.AuthProviders {
 		if p.Builtin != nil {

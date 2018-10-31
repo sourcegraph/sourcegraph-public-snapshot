@@ -51,9 +51,10 @@ func init() {
 	clientCoreStore := store.NewCoreStore()
 
 	defaultClient = &client{
-		basicStore:  clientBasicStore,
-		clientStore: clientCoreStore,
-		fetcher:     httpFetcher{},
+		basicStore:   clientBasicStore,
+		coreStore:    clientCoreStore,
+		basicFetcher: httpBasicFetcher{},
+		coreFetcher:  httpCoreFetcher{},
 	}
 
 	mode := getMode()
@@ -73,7 +74,7 @@ func init() {
 			log.Fatalf("received error when setting up the basic store for the default client during test, err :%s", err)
 		}
 
-		_, err := clientCoreStore.MaybeUpdate(dummyConfig)
+		_, err = clientCoreStore.MaybeUpdate(dummyConfig)
 
 		if err != nil {
 			log.Fatalf("received error when setting up the basic store for the default client during test, err :%s", err)
@@ -85,10 +86,11 @@ func init() {
 	// If the caller of pkg/conf is the frontend service, instantiate the DefaultServerFrontendOnly
 	// and install the passthrough fetcher for defaultClient in order to avoid deadlock issues.
 	if mode == modeServer {
-		globals.ConfigurationServerFrontendOnly = confserver.NewServer(os.Getenv("SOURCEGRAPH_CONFIG_FILE"))
+		globals.ConfigurationServerFrontendOnly = confserver.NewServer(os.Getenv("SOURCEGRAPH_CONFIG_FILE"), os.Getenv("SOURCEGRAPH_CONFIG_CORE_FILE"))
 
 		globals.ConfigurationServerFrontendOnly.Start()
-		defaultClient.fetcher = passthroughFetcherFrontendOnly{}
+		defaultClient.basicFetcher = passthroughBasicFetcherFrontendOnly{}
+		defaultClient.coreFetcher = passthroughCoreFetcherFrontendOnly{}
 	}
 
 	go defaultClient.continuouslyUpdate()

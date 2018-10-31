@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
 	"github.com/sourcegraph/sourcegraph/pkg/redispool"
-	"github.com/sourcegraph/sourcegraph/schema"
 
 	log15 "gopkg.in/inconshreveable/log15.v2"
 
@@ -34,7 +33,7 @@ const defaultExpiryPeriod = 90 * 24 * time.Hour
 const cookieName = "sgs"
 
 func init() {
-	conf.ContributeValidator(func(c schema.SiteConfiguration) (problems []string) {
+	conf.ContributeValidator(func(c conf.SiteConfiguration) (problems []string) {
 		if c.AuthSessionExpiry == "" {
 			return nil
 		}

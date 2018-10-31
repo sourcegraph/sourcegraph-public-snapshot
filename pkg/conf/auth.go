@@ -23,8 +23,11 @@ func AuthProviderType(p schema.AuthProviders) string {
 // AuthPublic reports whether the site is public. Currently only the builtin auth provider allows
 // sites to be public. AuthPublic only returns true if auth.public (in site config) is true *and*
 // there is a builtin auth provider.
-func AuthPublic() bool { return authPublic(Get()) }
-func authPublic(c *schema.SiteConfiguration) bool {
+func AuthPublic() bool {
+	return authPublic(Get())
+}
+
+func authPublic(c *SiteConfiguration) bool {
 	for _, p := range c.AuthProviders {
 		if p.Builtin != nil && c.AuthPublic {
 			return true
@@ -36,8 +39,10 @@ func authPublic(c *schema.SiteConfiguration) bool {
 // AuthAllowSignup reports whether the site allows signup. Currently only the builtin auth provider
 // allows signup. AuthAllowSignup returns true if auth.providers' builtin provider has allowSignup
 // true (in site config).
-func AuthAllowSignup() bool { return authAllowSignup(Get()) }
-func authAllowSignup(c *schema.SiteConfiguration) bool {
+func AuthAllowSignup() bool {
+	return authAllowSignup(Get())
+}
+func authAllowSignup(c *SiteConfiguration) bool {
 	for _, p := range c.AuthProviders {
 		if p.Builtin != nil && p.Builtin.AllowSignup {
 			return true
