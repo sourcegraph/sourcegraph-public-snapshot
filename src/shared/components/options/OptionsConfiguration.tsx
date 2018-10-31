@@ -74,7 +74,7 @@ export class OptionsConfiguration extends React.Component<Props, State> {
             return null
         }
         return (
-            <div className="options-configuation-page">
+            <div className="options-configuration-page">
                 <ConnectionCard permissionOrigins={permissionOrigins} storage={storage} currentUser={currentUser} />
                 <FeatureFlagCard storage={storage} />
             </div>
