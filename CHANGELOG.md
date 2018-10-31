@@ -23,6 +23,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 - A new site config option `search.index.enabled` allows toggling on indexed search.
 - Search now uses [Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph-extension-api) that register `queryTransformer`s.
+- GitLab repository permissions are now supported. To enable this, you will need to set the `authz`
+  field in the `GitLabConnection` configuration object and ensure that the access token set in the
+  `token` field has both `sudo` and `api` scope.
 
 ### Changed
 
