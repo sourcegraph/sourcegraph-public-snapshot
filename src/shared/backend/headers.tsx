@@ -2,7 +2,7 @@ import { Observable, of } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { getAccessToken } from '../auth/access_token'
-import { isContent, isInPage, isPhabricator } from '../context'
+import { isInPage, isPhabricator } from '../context'
 import { getExtensionVersionSync, getPlatformName, isSourcegraphDotCom } from '../util/context'
 
 /**
@@ -24,7 +24,7 @@ export function getHeaders(
     }
 
     return of(url).pipe(
-        switchMap(url => (isContent && useToken && !isSourcegraphDotCom(url) ? getAccessToken(url) : of(undefined))),
+        switchMap(url => (useToken && !isSourcegraphDotCom(url) ? getAccessToken(url) : of(undefined))),
         map(accessToken => {
             const headers = new Headers()
             if (accessToken) {
