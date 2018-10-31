@@ -9,6 +9,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db/dbconn"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
@@ -135,7 +136,8 @@ func (s *repos) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types
 		return nil, err
 	}
 
-	return repos, nil
+	// 🚨 SECURITY: This enforces repository permissions
+	return authzFilter(ctx, repos, authz.Read)
 }
 
 // ReposListOptions specifies the options for listing repositories.

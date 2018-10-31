@@ -1,12 +1,11 @@
 package db
 
 import (
+	"context"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
-
-	"context"
 
 	dbtesting "github.com/sourcegraph/sourcegraph/cmd/frontend/db/testing"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
