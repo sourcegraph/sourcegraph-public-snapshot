@@ -4,11 +4,9 @@ import { parseSearchURLQuery } from '..'
 import * as GQL from '../../backend/graphqlschema'
 import { Form } from '../../components/Form'
 import { PageTitle } from '../../components/PageTitle'
-import { SHOW_EXPLORE } from '../../explore/ExploreArea'
 import { eventLogger } from '../../tracking/eventLogger'
 import { limitString } from '../../util'
 import { queryIndexOfScope, submitSearch } from '../helpers'
-import { SavedQueries } from '../saved-queries/SavedQueries'
 import { QueryInput } from './QueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchFilterChips } from './SearchFilterChips'
@@ -84,11 +82,6 @@ export class SearchPage extends React.Component<Props, State> {
                         />
                     </div>
                 </Form>
-                {!SHOW_EXPLORE && (
-                    <div className="search search-page__query-container">
-                        <SavedQueries {...this.props} hideExampleSearches={true} />
-                    </div>
-                )}
             </div>
         )
     }

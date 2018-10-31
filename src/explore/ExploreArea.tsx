@@ -10,9 +10,6 @@ import * as GQL from '../backend/graphqlschema'
 import { ExtensionsControllerProps } from '../extensions/ExtensionsClientCommonContext'
 import { ComponentDescriptor } from '../util/contributions'
 
-/** Feature flag for showing the explore link. */
-export const SHOW_EXPLORE = localStorage.getItem('explore') !== null
-
 /**
  * Properties passed to all section components in the explore area.
  */
