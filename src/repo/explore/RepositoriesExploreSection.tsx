@@ -22,7 +22,18 @@ interface State {
  * An explore section that shows a few repositories and a link to all.
  */
 export class RepositoriesExploreSection extends React.PureComponent<Props, State> {
-    private static QUERY_REPOSITORIES_ARG_FIRST = 4
+    private static QUERY_REPOSITORIES_ARGS: { first: number } & Pick<GQL.IRepositoriesOnQueryArguments, 'names'> = {
+        // Show sample repositories on Sourcegraph.com.
+        names: window.context.sourcegraphDotComMode
+            ? [
+                  'github.com/sourcegraph/sourcegraph',
+                  'github.com/theupdateframework/notary',
+                  'github.com/pallets/flask',
+                  'github.com/ReactiveX/rxjs',
+              ]
+            : null,
+        first: 4,
+    }
 
     public state: State = { repositoriesOrError: LOADING }
 
@@ -30,7 +41,7 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
 
     public componentDidMount(): void {
         this.subscriptions.add(
-            queryRepositories({ first: RepositoriesExploreSection.QUERY_REPOSITORIES_ARG_FIRST })
+            queryRepositories(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS)
                 .pipe(catchError(err => [asError(err)]))
                 .subscribe(repositoriesOrError => this.setState({ repositoriesOrError }))
         )
@@ -43,23 +54,25 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
     public render(): JSX.Element | null {
         const repositoriesOrError: (typeof LOADING | GQL.IRepository)[] | ErrorLike =
             this.state.repositoriesOrError === LOADING
-                ? Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARG_FIRST).fill(LOADING)
+                ? Array(RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.first).fill(LOADING)
                 : isErrorLike(this.state.repositoriesOrError)
                     ? this.state.repositoriesOrError
                     : this.state.repositoriesOrError.nodes
 
         const itemClass = 'py-2 border-white'
 
+        // Only show total count if it is counting *all* repositories (i.e., no filter args are specified).
+        const queryingAllRepositories = RepositoriesExploreSection.QUERY_REPOSITORIES_ARGS.names === null
+        const totalCount = queryingAllRepositories &&
+            this.state.repositoriesOrError !== LOADING &&
+            !isErrorLike(this.state.repositoriesOrError) &&
+            typeof this.state.repositoriesOrError.totalCount === 'number' && (
+                <span className="text-muted">{this.state.repositoriesOrError.totalCount}</span>
+            )
+
         return (
             <div className="repositories-explore-section">
-                <h2>
-                    Repositories{' '}
-                    {this.state.repositoriesOrError !== LOADING &&
-                        !isErrorLike(this.state.repositoriesOrError) &&
-                        typeof this.state.repositoriesOrError.totalCount === 'number' && (
-                            <span className="text-muted">{this.state.repositoriesOrError.totalCount}</span>
-                        )}
-                </h2>
+                <h2>Repositories {totalCount}</h2>
                 {isErrorLike(repositoriesOrError) ? (
                     <div className="alert alert-danger">Error: {repositoriesOrError.message}</div>
                 ) : repositoriesOrError.length === 0 ? (
@@ -100,12 +113,12 @@ export class RepositoriesExploreSection extends React.PureComponent<Props, State
 }
 
 function queryRepositories(
-    args: Pick<GQL.IRepositoriesOnQueryArguments, 'first'>
+    args: Pick<GQL.IRepositoriesOnQueryArguments, 'first' | 'names'>
 ): Observable<GQL.IRepositoryConnection> {
     return queryGraphQL(
         gql`
-            query ExploreRepositories($first: Int) {
-                repositories(first: $first) {
+            query ExploreRepositories($first: Int, $names: [String!]) {
+                repositories(first: $first, names: $names) {
                     nodes {
                         name
                         description
