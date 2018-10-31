@@ -1,4 +1,5 @@
 import React from 'react'
+import { IntegrationsExploreSection } from '../integrations/explore/IntegrationsExploreSection'
 import { SiteUsageExploreSection } from '../analytics/explore/SiteUsageExploreSection'
 import { isDiscussionsEnabled } from '../discussions'
 import { DiscussionsExploreSection } from '../discussions/explore/DiscussionsExploreSection'
@@ -11,6 +12,7 @@ export const exploreSections: ReadonlyArray<ExploreSectionDescriptor> = [
     {
         render: props => <ExtensionViewsExploreSection {...props} />,
     },
+    { render: props => <IntegrationsExploreSection {...props} /> },
     {
         render: props => <RepositoriesExploreSection {...props} />,
     },
