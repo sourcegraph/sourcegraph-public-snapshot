@@ -1,24 +1,27 @@
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React from 'react'
 
-const DATA: { title: string; description: string; url: string; className: string }[] = [
+const DATA: { title: string; description: string; url: string; backgroundImage: string }[] = [
     {
         title: 'Browser extension',
         description: 'Go-to-definition and hovers in your code host and reviews.',
         url: 'https://docs.sourcegraph.com/integration/browser_extension',
-        className: 'bg-primary',
+        backgroundImage:
+            'linear-gradient(96deg, #397b9c, #b553af 46%, #bb5525), linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1))',
     },
     {
         title: 'src CLI',
         description: 'Search code from your terminal.',
         url: 'https://github.com/sourcegraph/src-cli',
-        className: 'bg-warning',
+        backgroundImage:
+            'linear-gradient(100deg, #1b82e8, #023dc9), linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1))',
     },
     {
         title: 'Editor extensions',
         description: 'Jump to Sourcegraph from your editor.',
         url: 'https://docs.sourcegraph.com/integration/editor',
-        className: 'bg-info',
+        backgroundImage:
+            'linear-gradient(100deg, #36334c, #2b5897), linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1))',
     },
 ]
 
@@ -31,15 +34,17 @@ export class IntegrationsExploreSection extends React.PureComponent {
             <div className="integrations-explore-section">
                 <h2>Popular integrations</h2>
                 <div className="card-deck">
-                    {DATA.map(({ title, description, url, className }, i) => (
+                    {DATA.map(({ title, description, url, backgroundImage }, i) => (
                         <a
                             key={i}
                             href={url}
                             target="_blank"
-                            className={`card border-white card-link text-white ${className}`}
+                            className="card rounded border-white card-link text-white"
+                            // tslint:disable-next-line:jsx-ban-props
+                            style={{ backgroundImage }}
                         >
                             <div className="card-body">
-                                <h2 className="card-title h6 font-weight-bold">{title}</h2>
+                                <h2 className="card-title h6 font-weight-bold mb-0">{title}</h2>
                                 <p className="card-text">{description}</p>
                             </div>
                         </a>
