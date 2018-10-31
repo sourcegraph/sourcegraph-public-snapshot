@@ -599,51 +599,7 @@ export function getlineNumberForCell(cell: Element): number | undefined {
     return parseInt(lineString as string, 10)
 }
 
-/**
- * This injects code as a script tag into a web page body.
- * Needed to defeat the Phabricator Javelin library.
- */
-export function javelinPierce(code: () => void, node: string): void {
-    const th = document.getElementsByTagName(node)[0]
-    const s = document.createElement('script')
-    s.setAttribute('type', 'text/javascript')
-    s.textContent = code.toString() + ';' + code.name + '();'
-    th.appendChild(s)
-}
-
 export const PHAB_PAGE_LOAD_EVENT_NAME = 'phabPageLoaded'
-
-/**
- * This hooks into the Javelin event queue by adding an additional onload function.
- * Needed to successfully detect when a Phabricator page has loaded.
- * Fires a new event type not caught by Javelin that we can listen to, phabPageLoaded.
- */
-export function setupPageLoadListener(): void {
-    const JX = (window as any).JX
-    JX.onload(() => document.dispatchEvent(new Event('phabPageLoaded', {})))
-}
-
-/**
- * This hacks javelin Stratcom to allow for the detection of blob expansion. Normally,
- * javelin Stratcom kills the mouse click event before it can propogate to detection code.
- * Instead, we check every event that passes by Stratcom and if we see a show-more event,
- * propogate it onwards.
- */
-export function expanderListen(): void {
-    const JX = (window as any).JX
-    if (JX.Stratcom._dispatchProxyPreExpander) {
-        return
-    }
-    JX.Stratcom._dispatchProxyPreExpander = JX.Stratcom._dispatchProxy
-    JX.Stratcom._dispatchProxy = proxyEvent => {
-        if (proxyEvent.isNormalClick() && proxyEvent.getNodes()['show-more']) {
-            proxyEvent.__auto__target.parentElement.parentElement.parentElement.parentElement.dispatchEvent(
-                new Event('expandClicked', {})
-            )
-        }
-        return JX.Stratcom._dispatchProxyPreExpander(proxyEvent)
-    }
-}
 
 /**
  * This hacks javelin Stratcom to ignore command + click actions on sg-clickable tokens.

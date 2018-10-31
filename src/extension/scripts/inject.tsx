@@ -20,7 +20,6 @@ import { injectBitbucketServer } from '../../libs/bitbucket/inject'
 import { injectCodeIntelligence } from '../../libs/code_intelligence'
 import { injectGitHubApplication } from '../../libs/github/inject'
 import { checkIsGitlab } from '../../libs/gitlab/code_intelligence'
-import { injectPhabricatorApplication } from '../../libs/phabricator/app'
 import { injectSourcegraphApp } from '../../libs/sourcegraph/inject'
 import { assertEnv } from '../envAssertion'
 
@@ -94,7 +93,6 @@ function injectApplication(): void {
         } else if (isPhabricator) {
             window.SOURCEGRAPH_PHABRICATOR_EXTENSION = true
             setSourcegraphUrl(sourcegraphServerUrl)
-            injectPhabricatorApplication()
         } else if (
             document.querySelector('.bitbucket-header-logo') ||
             document.querySelector('.aui-header-logo.aui-header-logo-bitbucket')
