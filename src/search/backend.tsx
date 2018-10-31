@@ -267,9 +267,11 @@ const savedQueryFragment = gql`
             }
             ... on Org {
                 id
+                viewerCanAdminister
             }
             ... on User {
                 id
+                viewerCanAdminister
             }
         }
         index
