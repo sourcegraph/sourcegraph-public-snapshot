@@ -61,9 +61,9 @@ type JSContext struct {
 	EmailEnabled   bool   `json:"emailEnabled"`
 
 	Site                schema.CoreSiteConfiguration `json:"site"` // public subset of site configuration
-	LikelyDockerOnMac   bool                     `json:"likelyDockerOnMac"`
-	NeedServerRestart   bool                     `json:"needServerRestart"`
-	IsClusterDeployment bool                     `json:"isClusterDeployment"`
+	LikelyDockerOnMac   bool                         `json:"likelyDockerOnMac"`
+	NeedServerRestart   bool                         `json:"needServerRestart"`
+	IsClusterDeployment bool                         `json:"isClusterDeployment"`
 
 	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
 

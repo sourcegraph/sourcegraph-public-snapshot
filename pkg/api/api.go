@@ -184,4 +184,3 @@ type Settings struct {
 	Contents     string               // the raw JSON (with comments and trailing commas allowed)
 	CreatedAt    time.Time            // the date when this settings value was created
 }
-
