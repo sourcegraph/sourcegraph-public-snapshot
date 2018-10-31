@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -22,6 +23,7 @@ import (
 func (r *schemaResolver) Repositories(args *struct {
 	graphqlutil.ConnectionArgs
 	Query           *string
+	Names           *[]string
 	Enabled         bool
 	Disabled        bool
 	Cloned          bool
@@ -41,6 +43,14 @@ func (r *schemaResolver) Repositories(args *struct {
 			Field:      toDBRepoListColumn(args.OrderBy),
 			Descending: args.Descending,
 		}},
+	}
+	if args.Names != nil {
+		// Make an exact-match regexp for each name.
+		patterns := make([]string, len(*args.Names))
+		for i, name := range *args.Names {
+			patterns[i] = regexp.QuoteMeta(name)
+		}
+		opt.IncludePatterns = []string{"^(" + strings.Join(patterns, "|") + ")$"}
 	}
 	if args.CIIndexed && args.NotCIIndexed {
 		return nil, fmt.Errorf("cannot set both ciIndexed and notCIIndexed")

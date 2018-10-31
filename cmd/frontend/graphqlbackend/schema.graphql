@@ -601,6 +601,8 @@ type Query {
         first: Int
         # Return repositories whose names match the query.
         query: String
+        # Return repositories whose names are in the list.
+        names: [String!]
         # Include enabled repositories.
         enabled: Boolean = true
         # Include disabled repositories.
