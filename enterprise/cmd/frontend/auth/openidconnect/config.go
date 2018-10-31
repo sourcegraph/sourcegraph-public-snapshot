@@ -85,6 +85,9 @@ func validateConfig(c schema.SiteConfiguration) (problems []string) {
 // object. It is used to distinguish between multiple auth providers of the same type when in
 // multi-step auth flows. Its value is never persisted, and it must be deterministic.
 func providerConfigID(pc *schema.OpenIDConnectAuthProvider) string {
+	if pc.ConfigID != "" {
+		return pc.ConfigID
+	}
 	data, err := json.Marshal(pc)
 	if err != nil {
 		panic(err)

@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
 // getOrCreateUser gets or creates a user account based on the OpenID Connect token. It returns the
@@ -47,7 +48,7 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://about.sourcegraph.com/docs/config/authentication#username-normalization.", login), err
 	}
 
-	var data db.ExternalAccountData
+	var data extsvc.ExternalAccountData
 	auth.SetExternalAccountData(&data.AccountData, struct {
 		IDToken    *oidc.IDToken  `json:"idToken"`
 		UserInfo   *oidc.UserInfo `json:"userInfo"`
@@ -60,7 +61,7 @@ func getOrCreateUser(ctx context.Context, p *provider, idToken *oidc.IDToken, us
 		EmailIsVerified: email != "", // TODO(sqs): https://github.com/sourcegraph/sourcegraph/issues/10118
 		DisplayName:     displayName,
 		AvatarURL:       claims.Picture,
-	}, db.ExternalAccountSpec{
+	}, extsvc.ExternalAccountSpec{
 		ServiceType: providerType,
 		ServiceID:   pi.ServiceID,
 		ClientID:    pi.ClientID,
