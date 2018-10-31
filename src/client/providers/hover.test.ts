@@ -1,5 +1,5 @@
 import * as assert from 'assert'
-import { of } from 'rxjs'
+import { of, throwError } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
 import { Hover, MarkupKind } from 'sourcegraph'
 import { HoverMerged } from '../../client/types/hover'
@@ -75,6 +75,20 @@ describe('getHover', () => {
                     getHover(
                         cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
                             a: [() => of(FIXTURE_RESULT), () => of(null)],
+                        }),
+                        FIXTURE.TextDocumentPositionParams
+                    )
+                ).toBe('-a-|', {
+                    a: FIXTURE_RESULT_MERGED,
+                })
+            ))
+
+        it('omits error result from 1 provider', () =>
+            scheduler().run(({ cold, expectObservable }) =>
+                expectObservable(
+                    getHover(
+                        cold<ProvideTextDocumentHoverSignature[]>('-a-|', {
+                            a: [() => throwError('err'), () => of(FIXTURE_RESULT)],
                         }),
                         FIXTURE.TextDocumentPositionParams
                     )

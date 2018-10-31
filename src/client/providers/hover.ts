@@ -1,5 +1,5 @@
 import { combineLatest, from, Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { catchError, map, switchMap } from 'rxjs/operators'
 import { HoverMerged } from '../../client/types/hover'
 import { TextDocumentPositionParams, TextDocumentRegistrationOptions } from '../../protocol'
 import { Hover } from '../../protocol/plainTypes'
@@ -14,6 +14,11 @@ export class TextDocumentHoverProviderRegistry extends FeatureProviderRegistry<
     TextDocumentRegistrationOptions,
     ProvideTextDocumentHoverSignature
 > {
+    /**
+     * Returns an observable that emits all providers' hovers whenever any of the last-emitted set of providers emits
+     * hovers. If any provider emits an error, the error is logged and the provider is omitted from the emission of
+     * the observable (the observable does not emit the error).
+     */
     public getHover(params: TextDocumentPositionParams): Observable<HoverMerged | null> {
         return getHover(this.providers, params)
     }
@@ -21,7 +26,8 @@ export class TextDocumentHoverProviderRegistry extends FeatureProviderRegistry<
 
 /**
  * Returns an observable that emits all providers' hovers whenever any of the last-emitted set of providers emits
- * hovers.
+ * hovers. If any provider emits an error, the error is logged and the provider is omitted from the emission of
+ * the observable (the observable does not emit the error).
  *
  * Most callers should use TextDocumentHoverProviderRegistry's getHover method, which uses the registered hover
  * providers.
@@ -36,7 +42,18 @@ export function getHover(
                 if (providers.length === 0) {
                     return [[null]]
                 }
-                return combineLatest(providers.map(provider => from(provider(params))))
+                return combineLatest(
+                    providers.map(provider =>
+                        from(
+                            provider(params).pipe(
+                                catchError(err => {
+                                    console.error(err)
+                                    return [null]
+                                })
+                            )
+                        )
+                    )
+                )
             })
         )
         .pipe(map(HoverMerged.from))
