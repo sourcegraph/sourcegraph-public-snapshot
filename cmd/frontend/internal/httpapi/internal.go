@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
 	"github.com/sourcegraph/sourcegraph/pkg/jsonc"
 	"github.com/sourcegraph/sourcegraph/pkg/txemail"
@@ -359,6 +360,15 @@ func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
 
 func serveAppURL(w http.ResponseWriter, r *http.Request) error {
 	if err := json.NewEncoder(w).Encode(globals.AppURL.String()); err != nil {
+		return errors.Wrap(err, "Encode")
+	}
+	return nil
+}
+
+var gitservers = strings.Fields(env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the remote gitservers"))
+
+func serveGitServerAddrs(w http.ResponseWriter, r *http.Request) error {
+	if err := json.NewEncoder(w).Encode(gitservers); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil

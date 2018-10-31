@@ -34,7 +34,7 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the remote gitservers")
+var gitservers = env.Get("SRC_GIT_SERVERS_TODO_DUPLICATE", "gitserver:3178", "addresses of the remote gitservers")
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = &Client{

@@ -227,6 +227,15 @@ func (c *internalClient) AppURL(ctx context.Context) (string, error) {
 	return appURL, nil
 }
 
+func (c *internalClient) GitServerAddrs(ctx context.Context) ([]string, error) {
+	var gitServerAddrs []string
+	err := c.postInternal(ctx, "git-server-addrs", nil, &gitServerAddrs)
+	if err != nil {
+		return nil, err
+	}
+	return gitServerAddrs, nil
+}
+
 // TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
 func (c *internalClient) CanSendEmail(ctx context.Context) (canSendEmail bool, err error) {
 	err = c.postInternal(ctx, "can-send-email", nil, &canSendEmail)
