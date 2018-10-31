@@ -14,12 +14,12 @@ type SiteConfiguration struct {
 	Core  *schema.CoreSiteConfiguration  `json:"core"`
 }
 
-func UnmarshalBasic(data string, config *SiteConfiguration) error {
+func ParseBasic(data string) (*schema.BasicSiteConfiguration, error) {
 	var basic schema.BasicSiteConfiguration
 
 	err := tolerantUnmarshal(data, &basic)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// For convenience, make sure this is not nil.
@@ -27,20 +27,52 @@ func UnmarshalBasic(data string, config *SiteConfiguration) error {
 		basic.ExperimentalFeatures = &schema.ExperimentalFeatures{}
 	}
 
-	AppendConfig(config, &SiteConfiguration{Basic: &basic})
-	return nil
+	return &basic, nil
 }
 
-func UnmarshalCore(data string, config *SiteConfiguration) error {
+func DeprecatedParseBasicConfigFromEnvironment(data string) (*schema.BasicSiteConfiguration, error) {
+	var tmpConfig, err = ParseBasic(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Env var config takes highest precedence but is deprecated.
+	if v, envVarNames, err := basicConfigFromEnv(); err != nil {
+		return nil, err
+	} else if len(envVarNames) > 0 {
+		if err := json.Unmarshal(v, tmpConfig); err != nil {
+			return nil, err
+		}
+	}
+	return tmpConfig, nil
+}
+
+func ParseCore(data string) (*schema.CoreSiteConfiguration, error) {
 	var core schema.CoreSiteConfiguration
 
 	err := tolerantUnmarshal(data, &core)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	AppendConfig(config, &SiteConfiguration{Core: &core})
-	return nil
+	return &core, nil
+}
+
+func DeprecatedParseCoreConfigFromEnvironment(data string) (*schema.CoreSiteConfiguration, error) {
+	var tmpConfig, err = ParseCore(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Env var config takes highest precedence but is deprecated.
+	if v, envVarNames, err := coreConfigFromEnv(); err != nil {
+		return nil, err
+	} else if len(envVarNames) > 0 {
+		if err := json.Unmarshal(v, tmpConfig); err != nil {
+			return nil, err
+		}
+	}
+	return tmpConfig, nil
 }
 
 func tolerantUnmarshal(data string, v interface{}) error {
@@ -54,47 +86,6 @@ func tolerantUnmarshal(data string, v interface{}) error {
 	}
 
 	return json.Unmarshal(massagedData, v)
-}
-
-// DeprecatedOverlayConfigFromEnvironment overlays data from the (deprecated) environment onto the suppied
-// SiteConfiguration.
-func DeprecatedOverlayConfigFromEnvironment(config *SiteConfiguration) error {
-	if config == nil {
-		// TODO@ggilmore: Defend against nil pointer exception?
-		// Not sure if this actually works (or if this is a good idea).
-		config = &SiteConfiguration{}
-	}
-
-	baseEnv, coreEnv, envVarNames, err := configFromEnv()
-	if err != nil {
-		return err
-	}
-
-	if len(envVarNames) == 0 {
-		return nil
-	}
-
-	baseJSON, err := json.Marshal(baseEnv)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(baseJSON, config.Basic)
-	if err != nil {
-		return err
-	}
-
-	coreJSON, err := json.Marshal(coreEnv)
-	if err != nil {
-		return err
-	}
-
-	err = json.Unmarshal(coreJSON, config.Core)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // requireRestart describes the list of config properties that require
@@ -233,8 +224,25 @@ func AppendConfig(dest, src *SiteConfiguration) *SiteConfiguration {
 
 // NeedRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
-func NeedRestartToApply(before, after *SiteConfiguration) bool {
-	diff := diff(before, after)
+func NeedRestartToApplyBasic(before, after *schema.BasicSiteConfiguration) bool {
+	diff := diffBasic(before, after)
+
+	// Check every option that changed to determine whether or not a server
+	// restart is required.
+	for option := range diff {
+		for _, requireRestartOption := range requireRestart {
+			if option == requireRestartOption {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// NeedRestartToApply determines if a restart is needed to apply the changes
+// between the two configurations.
+func NeedRestartToApplyCore(before, after *schema.CoreSiteConfiguration) bool {
+	diff := diffCore(before, after)
 
 	// Check every option that changed to determine whether or not a server
 	// restart is required.

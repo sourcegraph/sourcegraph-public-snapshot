@@ -15,7 +15,8 @@ import (
 )
 
 type client struct {
-	store *store.Store
+	basicStore *store.BasicStore
+	coreStore  *store.CoreStore
 
 	fetcher fetcher
 
@@ -59,8 +60,8 @@ func Get() *schema.SiteConfiguration {
 // exception rather than the rule. In general, ANY use of configuration should
 // be done in such a way that it responds to config changes while the process
 // is running.
-func (c *client) Get() *schema.SiteConfiguration {
-	return c.store.LastValid()
+func (c *client) Get() (*schema.BasicSiteConfiguration, *schema.CoreSiteConfiguration) {
+	c.store.LastValid()
 }
 
 // GetTODO denotes code that may or may not be using configuration correctly.
@@ -69,7 +70,7 @@ func (c *client) Get() *schema.SiteConfiguration {
 // use conf.Watch). See Get documentation for more details.
 //
 // GetTODO is a wrapper around client.GetTODO.
-func GetTODO() *schema.SiteConfiguration {
+func GetTODO() (*schema.BasicSiteConfiguration, *schema.CoreSiteConfiguration) {
 	return defaultClient.GetTODO()
 }
 
@@ -77,20 +78,32 @@ func GetTODO() *schema.SiteConfiguration {
 // The code may need to be updated to use conf.Watch, or it may already be e.g.
 // invoked only in response to a user action (in which case it does not need to
 // use conf.Watch). See Get documentation for more details.
-func (c *client) GetTODO() *schema.SiteConfiguration {
+func (c *client) GetTODO() (*schema.BasicSiteConfiguration, *schema.CoreSiteConfiguration) {
 	return c.Get()
 }
 
 // Mock sets up mock data for the site configuration.
 //
 // Mock is a wrapper around client.Mock.
-func Mock(mockery *schema.SiteConfiguration) {
-	defaultClient.Mock(mockery)
+func MockBasic(mockery *schema.SiteConfiguration) {
+	defaultClient.MockBasic(mockery)
 }
 
 // Mock sets up mock data for the site configuration.
-func (c *client) Mock(mockery *schema.SiteConfiguration) {
-	c.store.Mock(mockery)
+//
+// Mock is a wrapper around client.Mock.
+func MockCore(mockery *schema.SiteConfiguration) {
+	defaultClient.MockCore(mockery)
+}
+
+// Mock sets up mock data for the site configuration.
+func (c *client) MockBasic(mockery *schema.BasicSiteConfiguration) {
+	c.basicStore.Mock(mockery)
+}
+
+// Mock sets up mock data for the site configuration.
+func (c *client) MockCore(mockery *schema.CoreSiteConfiguration) {
+	c.coreStore.Mock(mockery)
 }
 
 // Watch calls the given function in a separate goroutine whenever the
@@ -118,7 +131,8 @@ func (c *client) Watch(f func()) {
 	c.watchersMu.Unlock()
 
 	// Call the function now, to use the current configuration.
-	c.store.WaitUntilInitialized()
+	c.basicStore.WaitUntilInitialized()
+	c.coreStore.WaitUntilInitialized()
 	f()
 
 	go func() {
@@ -183,8 +197,24 @@ type fetcher interface {
 	FetchConfig() (rawJSON string, err error)
 }
 
+type basicFetcher interface {
+	FetchBasicConfig() (rawJSON string, err error)
+}
+
 // Fetch the raw configuration JSON via our internal API.
-type httpFetcher struct{}
+type httpBasicFetcher struct{}
+
+func (h httpBasicFetcher) FetchBasicConfig() (string, error) {
+	rawJSON, err := api.InternalClient.ConfigurationRawJSON(context.Background())
+	return rawJSON, err
+}
+
+type coreFetcher interface {
+	FetchCoreConfig() (rawJSON string, err error)
+}
+
+// Fetch the raw configuration JSON via our internal API.
+type httpBasicFetcher struct{}
 
 func (h httpFetcher) FetchConfig() (string, error) {
 	rawJSON, err := api.InternalClient.ConfigurationRawJSON(context.Background())

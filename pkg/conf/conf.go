@@ -47,10 +47,13 @@ func getMode() configurationMode {
 }
 
 func init() {
-	clientStore := store.New()
+	clientBasicStore := store.NewBasicStore()
+	clientCoreStore := store.NewCoreStore()
+
 	defaultClient = &client{
-		store:   clientStore,
-		fetcher: httpFetcher{},
+		basicStore:  clientBasicStore,
+		clientStore: clientCoreStore,
+		fetcher:     httpFetcher{},
 	}
 
 	mode := getMode()
@@ -64,9 +67,16 @@ func init() {
 			// This is an empty configuration to run test cases.
 		}`
 
-		_, err := clientStore.MaybeUpdate(dummyConfig)
+		_, err := clientBasicStore.MaybeUpdate(dummyConfig)
+
 		if err != nil {
-			log.Fatalf("received error when setting up the store for the default client durig test, err :%s", err)
+			log.Fatalf("received error when setting up the basic store for the default client during test, err :%s", err)
+		}
+
+		_, err := clientCoreStore.MaybeUpdate(dummyConfig)
+
+		if err != nil {
+			log.Fatalf("received error when setting up the basic store for the default client during test, err :%s", err)
 		}
 
 		return
