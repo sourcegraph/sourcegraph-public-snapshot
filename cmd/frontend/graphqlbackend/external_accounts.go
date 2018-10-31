@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
 func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
@@ -67,11 +68,11 @@ type externalAccountConnectionResolver struct {
 
 	// cache results because they are used by multiple fields
 	once             sync.Once
-	externalAccounts []*db.ExternalAccount
+	externalAccounts []*extsvc.ExternalAccount
 	err              error
 }
 
-func (r *externalAccountConnectionResolver) compute(ctx context.Context) ([]*db.ExternalAccount, error) {
+func (r *externalAccountConnectionResolver) compute(ctx context.Context) ([]*extsvc.ExternalAccount, error) {
 	r.once.Do(func() {
 		opt2 := r.opt
 		if opt2.LimitOffset != nil {
