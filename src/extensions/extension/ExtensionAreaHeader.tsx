@@ -58,22 +58,23 @@ export const ExtensionAreaHeader: React.SFC<ExtensionAreaHeaderProps> = (props: 
                         </div>
                         <div className="d-flex align-items-center mt-3 mb-2">
                             {props.authenticatedUser && (
-                                <ExtensionToggle
-                                    extension={props.extension}
-                                    configurationCascade={props.configurationCascade}
-                                    onUpdate={props.onDidUpdateExtension}
-                                    className="mr-2"
-                                    addClassName="btn-primary"
-                                    extensions={props.extensions}
-                                />
+                                <div className="mr-2">
+                                    <ExtensionToggle
+                                        extension={props.extension}
+                                        configurationCascade={props.configurationCascade}
+                                        onUpdate={props.onDidUpdateExtension}
+                                        addClassName="btn-primary"
+                                        extensions={props.extensions}
+                                    />
+                                </div>
                             )}
                             <ExtensionConfigurationState
-                                className="ml-2"
+                                className="mr-2"
                                 isAdded={isExtensionAdded(props.configurationCascade.merged, props.extension.id)}
                                 isEnabled={isExtensionEnabled(props.configurationCascade.merged, props.extension.id)}
                             />
                             {!props.authenticatedUser && (
-                                <div className="d-flex align-items-center mt-3 mb-2">
+                                <div className="d-flex align-items-center">
                                     <Link to="/sign-in" className="btn btn-primary mr-2">
                                         Sign in to{' '}
                                         {isExtensionEnabled(props.configurationCascade.merged, props.extension.id)
