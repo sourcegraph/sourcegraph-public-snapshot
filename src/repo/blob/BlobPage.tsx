@@ -188,15 +188,16 @@ export class BlobPage extends React.PureComponent<Props, State> {
             )
         }
 
-        const renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
-        // If url explicitly asks for a certain renderMode, renderAs is set to that renderMode, else it checks:
+        let renderMode = ToggleRenderedFileMode.getModeFromURL(this.props.location)
+        // If url explicitly asks for a certain rendering mode, renderMode is set to that mode, else it checks:
         // - If file contains richHTML and url does not include a line number: We render in richHTML.
         // - If file does not contain richHTML or the url includes a line number: We render in code view.
-        const renderAs =
-            renderMode ||
-            (this.state.blobOrError && this.state.blobOrError.richHTML && !parseHash(this.props.location.hash).line
-                ? 'rendered'
-                : 'code')
+        if (!renderMode) {
+            renderMode =
+                this.state.blobOrError && this.state.blobOrError.richHTML && !parseHash(this.props.location.hash).line
+                    ? 'rendered'
+                    : 'code'
+        }
 
         // Always render these to avoid UI jitter during loading when switching to a new file.
         const alwaysRender = (
@@ -214,7 +215,7 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     }
                     repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
                 />
-                {renderAs === 'code' && (
+                {renderMode === 'code' && (
                     <RepoHeaderContributionPortal
                         position="right"
                         priority={99}
@@ -262,13 +263,13 @@ export class BlobPage extends React.PureComponent<Props, State> {
                     />
                 )}
                 {this.state.blobOrError.richHTML &&
-                    renderAs === 'rendered' && (
+                    renderMode === 'rendered' && (
                         <RenderedFile
                             dangerousInnerHTML={this.state.blobOrError.richHTML}
                             location={this.props.location}
                         />
                     )}
-                {renderAs === 'code' &&
+                {renderMode === 'code' &&
                     !this.state.blobOrError.highlight.aborted && (
                         <Blob
                             className="blob-page__blob"
