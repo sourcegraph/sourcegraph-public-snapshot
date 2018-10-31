@@ -14,15 +14,15 @@ import (
 	"testing"
 	"time"
 
+	oidc "github.com/coreos/go-oidc"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
-
-	oidc "github.com/coreos/go-oidc"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 )
 
 // providerJSON is the JSON structure the OIDC provider returns at its discovery endpoing
@@ -103,7 +103,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 
 	srv := httptest.NewServer(s)
 
-	auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+	auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
 		if a.ServiceType == "openidconnect" && a.ServiceID == oidcProvider.Issuer && a.ClientID == testClientID && a.AccountID == testOIDCUser {
 			return 123, nil
 		}

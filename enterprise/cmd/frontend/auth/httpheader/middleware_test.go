@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/pkg/license"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/conf"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -61,7 +62,7 @@ func TestMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(headerName, "alice")
 		var calledMock bool
-		auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+		auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
 			calledMock = true
 			if a.ServiceType == "http-header" && a.ServiceID == "" && a.ClientID == "" && a.AccountID == "alice" {
 				return 1, nil
@@ -95,7 +96,7 @@ func TestMiddleware(t *testing.T) {
 		req.Header.Set(headerName, "alice.zhao")
 		const wantNormalizedUsername = "alice-zhao"
 		var calledMock bool
-		auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a db.ExternalAccountSpec) (userID int32, err error) {
+		auth.SetMockCreateOrUpdateUser(func(u db.NewUser, a extsvc.ExternalAccountSpec) (userID int32, err error) {
 			calledMock = true
 			if u.Username != wantNormalizedUsername {
 				t.Errorf("got %q, want %q", u.Username, wantNormalizedUsername)
