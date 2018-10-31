@@ -67,6 +67,10 @@ export interface StorageItems {
      */
     featureFlags: FeatureFlags
     clientConfiguration: ClientConfigurationDetails
+    /**
+     * Overrides settings from Sourcegraph.
+     */
+    clientSettings: string
 }
 
 interface ClientConfigurationDetails {
@@ -106,6 +110,7 @@ export const defaultStorageItems: StorageItems = {
             url: 'https://sourcegraph.com',
         },
     },
+    clientSettings: '',
 }
 
 export type StorageChange = { [key in keyof StorageItems]: chrome.storage.StorageChange }

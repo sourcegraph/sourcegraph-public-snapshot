@@ -41,6 +41,7 @@ export const fetchCurrentUser = (useAccessToken = true): Observable<GQL.IUser | 
                 username
                 avatarURL
                 url
+                settingsURL
                 emails {
                     email
                 }

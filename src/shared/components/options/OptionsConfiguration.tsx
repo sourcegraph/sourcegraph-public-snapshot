@@ -7,6 +7,7 @@ import { GQL } from '../../../types/gqlschema'
 import { fetchCurrentUser } from '../../backend/server'
 import { ConnectionCard } from './ConnectionCard'
 import { FeatureFlagCard } from './FeatureFlagCard'
+import { SettingsCard } from './SettingsCard'
 
 interface Props {}
 interface State {
@@ -31,7 +32,7 @@ export class OptionsConfiguration extends React.Component<Props, State> {
     }
 
     public componentDidMount(): void {
-        fetchCurrentUser().subscribe(user => {
+        fetchCurrentUser(true).subscribe(user => {
             this.setState(() => ({ currentUser: user }))
         })
         storage.onChanged(() => {
@@ -77,6 +78,7 @@ export class OptionsConfiguration extends React.Component<Props, State> {
             <div className="options-configuration-page">
                 <ConnectionCard permissionOrigins={permissionOrigins} storage={storage} currentUser={currentUser} />
                 <FeatureFlagCard storage={storage} />
+                {storage.useExtensions && <SettingsCard currentUser={currentUser} />}
             </div>
         )
     }
