@@ -25,4 +25,6 @@ Site administrators are the admins responsible for deploying, managing, and conf
   - [AWS CodeCommit](../integration/aws_codecommit.md)
   - [Phabricator](../integration/phabricator.md)
   - [All integrations](../integration.md)
+- Migration guides:
+  - [From OpenGrok to Sourcegraph](migration/opengrok.md)
 - [FAQ](faq.md)
