@@ -33,21 +33,22 @@ export class IntegrationsExploreSection extends React.PureComponent {
         return (
             <div className="integrations-explore-section">
                 <h2>Popular integrations</h2>
-                <div className="card-deck">
+                <div className="row">
                     {DATA.map(({ title, description, url, backgroundImage }, i) => (
-                        <a
-                            key={i}
-                            href={url}
-                            target="_blank"
-                            className="card rounded border-white card-link text-white"
-                            // tslint:disable-next-line:jsx-ban-props
-                            style={{ backgroundImage }}
-                        >
-                            <div className="card-body">
-                                <h2 className="card-title h6 font-weight-bold mb-0">{title}</h2>
-                                <p className="card-text">{description}</p>
-                            </div>
-                        </a>
+                        <div key={i} className="col-md-4 mb-2 mb-md-0">
+                            <a
+                                href={url}
+                                target="_blank"
+                                className="card rounded border-white card-link text-white"
+                                // tslint:disable-next-line:jsx-ban-props
+                                style={{ backgroundImage }}
+                            >
+                                <div className="card-body">
+                                    <h2 className="card-title h6 font-weight-bold mb-0">{title}</h2>
+                                    <p className="card-text">{description}</p>
+                                </div>
+                            </a>
+                        </div>
                     ))}
                 </div>
                 <div className="text-right mt-3">

@@ -70,10 +70,13 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                     <p>No extensions are available.</p>
                 ) : (
                     <>
-                        <div className="card-deck">
-                            {extensionsOrError.slice(0, ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).map(
-                                (extension /* or loading */, i) =>
-                                    extension === LOADING ? (
+                        <div className="row">
+                            {extensionsOrError.slice(0, ExtensionsExploreSection.QUERY_EXTENSIONS_ARG_FIRST).map((
+                                extension /* or loading */,
+                                i
+                            ) => (
+                                <div key={i} className="col-md-6 col-lg-3 mb-2">
+                                    {extension === LOADING ? (
                                         <ExtensionsExploreSectionExtensionCard
                                             title="⋯"
                                             // Spacer to reduce loading jitter.
@@ -81,15 +84,11 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                                                 <>
                                                     <br />
                                                     <br />
-                                                    <br />
-                                                    <br />
                                                 </>
                                             }
-                                            key={i}
                                         />
                                     ) : (
                                         <ExtensionsExploreSectionExtensionCard
-                                            key={i}
                                             title={
                                                 (extension.manifest && extension.manifest.title) ||
                                                 extension.extensionIDWithoutRegistry
@@ -99,10 +98,11 @@ export class ExtensionsExploreSection extends React.PureComponent<Props, State> 
                                             }
                                             url={extension.url}
                                         />
-                                    )
-                            )}
+                                    )}
+                                </div>
+                            ))}
                         </div>
-                        <div className="text-right mt-3">
+                        <div className="text-right mt-1">
                             <Link to="/extensions">
                                 View all extensions<ChevronRightIcon className="icon-inline" />
                             </Link>
