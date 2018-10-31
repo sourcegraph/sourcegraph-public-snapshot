@@ -1,4 +1,5 @@
 @import '../gitlab/style.scss';
+@import '../../global-styles/variables.scss';
 
 .hover-overlay-mount__phabricator {
     .hover-overlay {
@@ -17,4 +18,8 @@
             }
         }
     }
+}
+
+.hover-overlay {
+    z-index: $default-z-index;
 }
