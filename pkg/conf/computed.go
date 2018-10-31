@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -206,3 +207,8 @@ func SearchIndexEnabled() bool {
 	}
 	return DeployType() != DeployDocker
 }
+
+// SrcGitServers represents the SRC_GIT_SERVERS environment variable.
+//
+// Non-frontend callers should go through api.InternalClient.GitServerAddrs() instead.
+var SrcGitServers = strings.Fields(env.Get("SRC_GIT_SERVERS", "", "addresses of the remote gitservers"))

@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -34,12 +35,17 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var gitservers = env.Get("SRC_GIT_SERVERS_TODO_DUPLICATE", "gitserver:3178", "addresses of the remote gitservers")
+// AddrsReady indicates when the DefaultClient's addresses are ready for use.
+var AddrsReady = make(chan struct{})
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = &Client{
 	Addrs: func(ctx context.Context) []string {
-		return strings.Fields(gitservers)
+		<-AddrsReady
+		gitserverListCache.RLock()
+		addrs := gitserverListCache.addrs
+		gitserverListCache.RUnlock()
+		return addrs
 	},
 	HTTPClient: &http.Client{
 		// nethttp.Transport will propagate opentracing spans
@@ -56,6 +62,50 @@ var DefaultClient = &Client{
 	// frontend internal API)
 	UserAgent: filepath.Base(os.Args[0]),
 }
+
+func init() {
+	go func() {
+		if len(conf.SrcGitServers) > 0 {
+			// SRC_GIT_SERVERS is set in the environment and as such takes
+			// precedence (only if it is not set do we fallback to the
+			// frontend). Generally only the frontend takes this codepath,
+			// but this codepath also applies to services that have not had
+			// their env updated yet.
+			gitserverListCache.Lock()
+			gitserverListCache.addrs = conf.SrcGitServers
+			if gitserverListCache.addrs == nil {
+				close(AddrsReady)
+			}
+			gitserverListCache.Unlock()
+			return
+		}
+
+		// SRC_GIT_SERVERS is not configured in the environment, so we instead
+		// ask the frontend for this information. This is generally the code
+		// path that all non-frontend services take.
+		ctx := context.Background()
+		api.WaitForFrontend(ctx)
+		for {
+			addrs, err := api.InternalClient.GitServerAddrs(ctx)
+			if err != nil {
+				log15.Error("failed to discover gitserver instances via frontend internal API", "error", err)
+			} else {
+				gitserverListCache.Lock()
+				gitserverListCache.addrs = addrs
+				if gitserverListCache.addrs == nil {
+					close(AddrsReady)
+				}
+				gitserverListCache.Unlock()
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
+}
+
+var gitserverListCache = &struct {
+	sync.RWMutex
+	addrs []string
+}{}
 
 // Client is a gitserver client.
 type Client struct {
