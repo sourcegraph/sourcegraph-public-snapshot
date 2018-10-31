@@ -105,24 +105,26 @@ export class SavedQuery extends React.PureComponent<Props, State> {
                 eventName="SavedQueryClick"
                 isLightTheme={this.props.isLightTheme}
                 actions={
-                    <div className="saved-query-row__actions">
-                        {!this.state.isEditing && (
-                            <button className="btn btn-icon action" onClick={this.toggleEditing}>
-                                <PencilIcon className="icon-inline" />
-                                Edit
+                    this.props.savedQuery.subject.viewerCanAdminister && (
+                        <div className="saved-query-row__actions">
+                            {!this.state.isEditing && (
+                                <button className="btn btn-icon action" onClick={this.toggleEditing}>
+                                    <PencilIcon className="icon-inline" />
+                                    Edit
+                                </button>
+                            )}
+                            {!this.state.isEditing && (
+                                <button className="btn btn-icon action" onClick={this.duplicate}>
+                                    <ContentCopyIcon className="icon-inline" />
+                                    Duplicate
+                                </button>
+                            )}
+                            <button className="btn btn-icon action" onClick={this.confirmDelete}>
+                                <DeleteIcon className="icon-inline" />
+                                Delete
                             </button>
-                        )}
-                        {!this.state.isEditing && (
-                            <button className="btn btn-icon action" onClick={this.duplicate}>
-                                <ContentCopyIcon className="icon-inline" />
-                                Duplicate
-                            </button>
-                        )}
-                        <button className="btn btn-icon action" onClick={this.confirmDelete}>
-                            <DeleteIcon className="icon-inline" />
-                            Delete
-                        </button>
-                    </div>
+                        </div>
+                    )
                 }
                 form={
                     this.state.isEditing && (

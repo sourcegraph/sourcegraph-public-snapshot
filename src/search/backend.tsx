@@ -261,11 +261,17 @@ const savedQueryFragment = gql`
     fragment SavedQueryFields on SavedQuery {
         id
         subject {
+            ... on Site {
+                id
+                viewerCanAdminister
+            }
             ... on Org {
                 id
+                viewerCanAdminister
             }
             ... on User {
                 id
+                viewerCanAdminister
             }
         }
         index

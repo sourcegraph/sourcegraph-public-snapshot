@@ -37,6 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
   rate limit dropped below 150.
 - Fixed an issue where GraphQL field `elapsedMilliseconds` returned invalid value on empty searches
 - Editor extensions now properly search the selection as a literal string, instead of incorrectly using regexp.
+- Fixed a bug where editing and deleting global saved searches was not possible.
 
 ### Removed
 
