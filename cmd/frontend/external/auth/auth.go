@@ -3,6 +3,7 @@ package auth
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 )
 
 type (
@@ -31,6 +32,6 @@ func SetMockProviders(mockProviders []auth.Provider) {
 	auth.MockProviders = mockProviders
 }
 
-func SetMockCreateOrUpdateUser(f func(db.NewUser, db.ExternalAccountSpec) (int32, error)) {
+func SetMockCreateOrUpdateUser(f func(db.NewUser, extsvc.ExternalAccountSpec) (int32, error)) {
 	auth.MockCreateOrUpdateUser = f
 }

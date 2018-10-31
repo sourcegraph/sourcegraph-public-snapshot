@@ -1,14 +1,13 @@
 package gitlab
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-
-	"context"
 
 	"github.com/peterhellberg/link"
 	"github.com/prometheus/client_golang/prometheus"
@@ -176,6 +175,10 @@ func (c *Client) getProjectFromAPI(ctx context.Context, id int, pathWithNamespac
 
 // ListProjects lists GitLab projects.
 func (c *Client) ListProjects(ctx context.Context, urlStr string) (projs []*Project, nextPageURL *string, err error) {
+	if MockListProjects != nil {
+		return MockListProjects(ctx, urlStr)
+	}
+
 	req, err := http.NewRequest("GET", urlStr, nil)
 	if err != nil {
 		return nil, nil, err

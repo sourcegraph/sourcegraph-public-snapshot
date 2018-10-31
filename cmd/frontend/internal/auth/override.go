@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
@@ -37,7 +38,7 @@ func OverrideAuthMiddleware(next http.Handler) http.Handler {
 				Username:        username,
 				Email:           username + "+override@example.com",
 				EmailIsVerified: true,
-			}, db.ExternalAccountSpec{ServiceType: "override", AccountID: username}, db.ExternalAccountData{})
+			}, extsvc.ExternalAccountSpec{ServiceType: "override", AccountID: username}, extsvc.ExternalAccountData{})
 			if err != nil {
 				log15.Error("Error getting/creating auth-override user.", "error", err, "userErr", safeErrMsg)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)

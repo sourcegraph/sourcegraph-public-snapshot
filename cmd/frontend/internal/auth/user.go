@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	log15 "gopkg.in/inconshreveable/log15.v2"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/db"
 	"github.com/sourcegraph/sourcegraph/pkg/actor"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
+	"github.com/sourcegraph/sourcegraph/pkg/extsvc"
+	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
 // MockCreateOrUpdateUser is used in tests to mock CreateOrUpdateUser.
-var MockCreateOrUpdateUser func(db.NewUser, db.ExternalAccountSpec) (int32, error)
+var MockCreateOrUpdateUser func(db.NewUser, extsvc.ExternalAccountSpec) (int32, error)
 
 // CreateOrUpdateUser creates or updates a user using the provided information, looking up a user by
 // the external account provided.
@@ -20,7 +20,7 @@ var MockCreateOrUpdateUser func(db.NewUser, db.ExternalAccountSpec) (int32, erro
 // 🚨 SECURITY: The safeErrMsg is an error message that can be shown to unauthenticated users to
 // describe the problem. The err may contain sensitive information and should only be written to the
 // server error logs, not to the HTTP response to shown to unauthenticated users.
-func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, externalAccount db.ExternalAccountSpec, data db.ExternalAccountData) (userID int32, safeErrMsg string, err error) {
+func CreateOrUpdateUser(ctx context.Context, newOrUpdatedUser db.NewUser, externalAccount extsvc.ExternalAccountSpec, data extsvc.ExternalAccountData) (userID int32, safeErrMsg string, err error) {
 	if MockCreateOrUpdateUser != nil {
 		userID, err = MockCreateOrUpdateUser(newOrUpdatedUser, externalAccount)
 		return userID, "", err
