@@ -116,7 +116,12 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             navbarSearchQuery: '',
             configurationCascade: { subjects: null, merged: null },
             extensions,
-            extensionsEnvironment: EXTENSIONS_EMPTY_ENVIRONMENT,
+            extensionsEnvironment: {
+                ...EXTENSIONS_EMPTY_ENVIRONMENT,
+                context: {
+                    'clientApplication.isSourcegraph': true,
+                },
+            },
             extensionsController: createExtensionsController(extensions.context, createMessageTransports),
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             isMainPage: false,
