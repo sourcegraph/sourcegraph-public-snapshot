@@ -287,7 +287,7 @@ export class ConnectionCard extends React.Component<Props, State> {
                         <CardHeader>Sourcegraph Configuration</CardHeader>
                         <CardBody>
                             <Col className="px-0">
-                                <ListGroupItemHeading>Server Connection</ListGroupItemHeading>
+                                <ListGroupItemHeading>Sourcegraph URL</ListGroupItemHeading>
                                 <FormGroup>
                                     <InputGroup>
                                         <Input
@@ -339,7 +339,7 @@ export class ConnectionCard extends React.Component<Props, State> {
                                         color="secondary"
                                         className="float-right"
                                     >
-                                        Check Connection
+                                        Check connectivity
                                     </Button>
                                 </ListGroupItemHeading>
                                 {this.sourcegraphServerAlert()}

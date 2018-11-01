@@ -42,7 +42,7 @@ publish:
     asset: *chromeAssetPath
     distFolder: *chromeDistFolder
     extensionId: dgjhfomjieaadpoljlnidmbgkdffpack
-  # Publish Phabricator bundle to npm so it can be bundled with Sourcegraph Server
+  # Publish Phabricator bundle to npm so it can be bundled with Sourcegraph
   - path: '@semantic-release/npm'
     pkgRoot: *phabricatorPkgRoot
   # Create release on GitHub

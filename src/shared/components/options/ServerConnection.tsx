@@ -71,7 +71,7 @@ export class ServerConnection extends React.Component<{}, State> {
     public render(): JSX.Element | null {
         return (
             <div className="options__section">
-                <div className="options__section-header">Sourcegraph Server URLs</div>
+                <div className="options__section-header">Sourcegraph URLs</div>
                 <div className="options__section-contents">
                     <div className="options__input-container">
                         <InputGroup>

@@ -44,7 +44,7 @@ export class NeedsRepositoryConfigurationAlert extends React.Component<Props, {}
                     </span>{' '}
                     <span className="underline">Configure repositories and code hosts</span>
                 </a>
-                &nbsp;to add to Sourcegraph Server.
+                &nbsp;to add to Sourcegraph.
                 <div
                     style={{
                         display: 'inline-flex',

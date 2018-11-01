@@ -138,8 +138,8 @@ function requestGraphQL<T extends GQL.IGraphQLResponseRoot>({
 
 /**
  * Checks the GraphQL response to determine if the response should trigger a retry.
- * The browser extension can have multiple Sourcegraph Server URLs and it is not always known which URL will return
- * a repository or if any of the Server URLs have a repository. This means in some cases we need to check if we should trigger
+ * The browser extension can have multiple Sourcegraph URLs and it is not always known which URL will return
+ * a repository or if any of the Sourcegraph URLs have a repository. This means in some cases we need to check if we should trigger
  * the retry block by throwing an error.
  *
  * Conditions:

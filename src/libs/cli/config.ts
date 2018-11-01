@@ -21,7 +21,7 @@ const upserUrl = (command: string) => ([url]: string[]) => {
 const addUrlCommand: OmniCLI.Command = {
     name: 'add-url',
     action: upserUrl('add-url'),
-    description: 'Add a Sourcegraph Server URL',
+    description: 'Add a Sourcegraph URL',
 }
 
 function getSetURLSuggestions([cmd, ...args]: string[]): Promise<OmniCLI.Suggestion[]> {
@@ -41,7 +41,7 @@ const setUrlCommand: OmniCLI.Command = {
     name: 'set-url',
     action: upserUrl('set-url'),
     getSuggestions: getSetURLSuggestions,
-    description: 'Set your primary Sourcegraph Server URL',
+    description: 'Set your primary Sourcegraph URL',
 }
 
 function setFileTree([to]: string[]): void {

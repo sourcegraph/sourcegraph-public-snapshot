@@ -9,7 +9,7 @@ interface Props {
 }
 
 /**
- * A global alert telling the user that they need to configure Sourcegraph Server
+ * A global alert telling the user that they need to configure Sourcegraph
  * to get code intelligence and search on private code.
  */
 export class NeedsServerConfigurationAlert extends React.Component<Props, {}> {
@@ -33,13 +33,13 @@ export class NeedsServerConfigurationAlert extends React.Component<Props, {}> {
                 <a
                     onClick={this.onClicked}
                     className="site-alert__link"
-                    href="https://about.sourcegraph.com/docs/server"
+                    href="https://docs.sourcegraph.com"
                     target="_blank"
                 >
                     <span className="icon-inline site-alert__link-icon">
                         <WarningIcon size={17} />
                     </span>{' '}
-                    <span className="underline">Configure Sourcegraph Server</span>
+                    <span className="underline">Configure Sourcegraph</span>
                 </a>
                 &nbsp;for code intelligence on private repositories.
                 <div
