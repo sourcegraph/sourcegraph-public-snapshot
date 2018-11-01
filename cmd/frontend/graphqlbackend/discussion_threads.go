@@ -229,7 +229,7 @@ func (r *discussionsMutationResolver) CreateThread(ctx context.Context, args *st
 	if currentUser == nil {
 		return nil, errors.New("no current user")
 	}
-	if dc := conf.Get().Discussions; dc != nil && dc.AbuseProtection {
+	if dc := conf.Get().Basic.Discussions; dc != nil && dc.AbuseProtection {
 		if mustWait := ratelimit.TimeUntilUserCanCreateThread(ctx, currentUser.user.ID, *args.Input.Title, args.Input.Contents); mustWait != 0 {
 			return nil, fmt.Errorf("You are creating threads too quickly. You may create a new one after %v", mustWait.Round(time.Second))
 		}

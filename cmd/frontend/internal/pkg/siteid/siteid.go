@@ -31,7 +31,7 @@ func Init() {
 		panic("siteid: already initialized")
 	}
 
-	if v := conf.GetTODO().SiteID; v != "" {
+	if v := conf.GetTODO().Basic.SiteID; v != "" {
 		// Site ID is specified in the JSON site config.
 		siteID = v
 	} else {

@@ -21,7 +21,7 @@ const defaultHTTPStrictTransportSecurity = "max-age=31536000" // 1 year
 
 // HTTPStrictTransportSecurity returns the value of the Strict-Transport-Security HTTP header to set.
 func HTTPStrictTransportSecurity() string {
-	switch v := Get().HttpStrictTransportSecurity.(type) {
+	switch v := Get().Basic.HttpStrictTransportSecurity.(type) {
 	case string:
 		return v
 	case bool:
@@ -36,7 +36,7 @@ func HTTPStrictTransportSecurity() string {
 
 // JumpToDefOSSIndexEnabled returns true if JumpToDefOSSIndex experiment is enabled.
 func JumpToDefOSSIndexEnabled() bool {
-	p := Get().ExperimentalFeatures.JumpToDefOSSIndex
+	p := Get().Basic.ExperimentalFeatures.JumpToDefOSSIndex
 	// default is disabled
 	return p == "enabled"
 }
@@ -51,11 +51,11 @@ const (
 
 // AccessTokensAllow returns whether access tokens are enabled, disabled, or restricted to creation by admin users.
 func AccessTokensAllow() AccessTokAllow {
-	if Get().AuthDisableAccessTokens {
+	if Get().Basic.AuthDisableAccessTokens {
 		return AccessTokensNone
 	}
 
-	cfg := Get().AuthAccessTokens
+	cfg := Get().Basic.AuthAccessTokens
 	if cfg == nil {
 		return AccessTokensAll
 	}
@@ -78,7 +78,7 @@ func AccessTokensAllow() AccessTokAllow {
 //
 // It's false for sites that do not have an email sending API key set up.
 func EmailVerificationRequired() bool {
-	return Get().EmailSmtp != nil
+	return Get().Basic.EmailSmtp != nil
 }
 
 // CanSendEmail returns whether the site can send emails (e.g., to reset a password or
@@ -86,18 +86,18 @@ func EmailVerificationRequired() bool {
 //
 // It's false for sites that do not have an email sending API key set up.
 func CanSendEmail() bool {
-	return Get().EmailSmtp != nil
+	return Get().Basic.EmailSmtp != nil
 }
 
 // CanReadEmail tells if an IMAP server is configured and reading email is possible.
 func CanReadEmail() bool {
-	return Get().EmailImap != nil
+	return Get().Basic.EmailImap != nil
 }
 
 // HasGitHubDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func HasGitHubDotComToken() bool {
-	for _, c := range Get().Github {
+	for _, c := range Get().Basic.Github {
 		u, err := url.Parse(c.Url)
 		if err != nil {
 			continue
@@ -113,7 +113,7 @@ func HasGitHubDotComToken() bool {
 // HasGitLabDotComToken reports whether there are any personal access tokens configured for
 // github.com.
 func HasGitLabDotComToken() bool {
-	for _, c := range Get().Gitlab {
+	for _, c := range Get().Basic.Gitlab {
 		u, err := url.Parse(c.Url)
 		if err != nil {
 			continue
@@ -128,7 +128,7 @@ func HasGitLabDotComToken() bool {
 
 // EnabledLangservers returns the langservers that are not disabled.
 func EnabledLangservers() []*schema.Langservers {
-	all := Get().Langservers
+	all := Get().Basic.Langservers
 	results := make([]*schema.Langservers, 0, len(all))
 	for _, langserver := range all {
 		if langserver.Disabled {
@@ -180,7 +180,7 @@ func IsValidDeployType(deployType string) bool {
 
 // UpdateChannel tells the update channel. Default is "release".
 func UpdateChannel() string {
-	channel := GetTODO().UpdateChannel
+	channel := GetTODO().Core.UpdateChannel
 	if channel == "" {
 		return "release"
 	}
@@ -193,7 +193,7 @@ func UpdateChannel() string {
 // elsewhere. Additionally it also checks for the outdated environment
 // variable INDEXED_SEARCH.
 func SearchIndexEnabled() bool {
-	if v := Get().SearchIndexEnabled; v != nil {
+	if v := Get().Basic.SearchIndexEnabled; v != nil {
 		return *v
 	}
 	if v := os.Getenv("INDEXED_SEARCH"); v != "" {

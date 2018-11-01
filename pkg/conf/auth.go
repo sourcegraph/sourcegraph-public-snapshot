@@ -28,8 +28,8 @@ func AuthPublic() bool {
 }
 
 func authPublic(c *SiteConfiguration) bool {
-	for _, p := range c.AuthProviders {
-		if p.Builtin != nil && c.AuthPublic {
+	for _, p := range c.Core.AuthProviders {
+		if p.Builtin != nil && c.Core.AuthPublic {
 			return true
 		}
 	}
@@ -43,7 +43,7 @@ func AuthAllowSignup() bool {
 	return authAllowSignup(Get())
 }
 func authAllowSignup(c *SiteConfiguration) bool {
-	for _, p := range c.AuthProviders {
+	for _, p := range c.Core.AuthProviders {
 		if p.Builtin != nil && p.Builtin.AllowSignup {
 			return true
 		}

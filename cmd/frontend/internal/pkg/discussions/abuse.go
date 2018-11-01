@@ -15,8 +15,8 @@ import (
 // NotifyCommentReported should be invoked after a user has reported a comment.
 func NotifyCommentReported(reportedBy *types.User, thread *types.DiscussionThread, comment *types.DiscussionComment) {
 	goroutine.Go(func() {
-		conf := conf.Get()
-		if conf.Discussions == nil || len(conf.Discussions.AbuseEmails) == 0 {
+		config := conf.Get().Basic
+		if config.Discussions == nil || len(config.Discussions.AbuseEmails) == 0 {
 			return
 		}
 
@@ -35,7 +35,7 @@ func NotifyCommentReported(reportedBy *types.User, thread *types.DiscussionThrea
 		url.RawQuery = q.Encode()
 
 		if err := txemail.Send(ctx, txemail.Message{
-			To:       conf.Discussions.AbuseEmails,
+			To:       config.Discussions.AbuseEmails,
 			Template: commentReportedEmailTemplate,
 			Data: struct {
 				ReportedBy string

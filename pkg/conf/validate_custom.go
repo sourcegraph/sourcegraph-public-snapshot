@@ -48,25 +48,25 @@ func validateCustom(cfg SiteConfiguration) (problems []string) {
 	// ContributeValidator).
 
 	{
-		hasSMTP := cfg.EmailSmtp != nil
-		hasSMTPAuth := cfg.EmailSmtp != nil && cfg.EmailSmtp.Authentication != "none"
-		if hasSMTP && cfg.EmailAddress == "" {
+		hasSMTP := cfg.Basic.EmailSmtp != nil
+		hasSMTPAuth := cfg.Basic.EmailSmtp != nil && cfg.Basic.EmailSmtp.Authentication != "none"
+		if hasSMTP && cfg.Basic.EmailAddress == "" {
 			invalid(`should set email.address because email.smtp is set`)
 		}
-		if hasSMTPAuth && (cfg.EmailSmtp.Username == "" && cfg.EmailSmtp.Password == "") {
+		if hasSMTPAuth && (cfg.Basic.EmailSmtp.Username == "" && cfg.Basic.EmailSmtp.Password == "") {
 			invalid(`must set email.smtp username and password for email.smtp authentication`)
 		}
 	}
 
 	{
-		for _, phabCfg := range cfg.Phabricator {
+		for _, phabCfg := range cfg.Basic.Phabricator {
 			if len(phabCfg.Repos) == 0 && phabCfg.Token == "" {
 				invalid(`each phabricator instance must have either "token" or "repos" set`)
 			}
 		}
 	}
 
-	for _, bbsCfg := range cfg.BitbucketServer {
+	for _, bbsCfg := range cfg.Basic.BitbucketServer {
 		if bbsCfg.Token != "" && bbsCfg.Password != "" {
 			invalid("for Bitbucket Server, specify either a token or a username/password, not both")
 		} else if bbsCfg.Token == "" && bbsCfg.Username == "" && bbsCfg.Password == "" {
@@ -74,7 +74,7 @@ func validateCustom(cfg SiteConfiguration) (problems []string) {
 		}
 	}
 
-	for _, c := range cfg.Gitlab {
+	for _, c := range cfg.Basic.Gitlab {
 		if strings.Contains(c.Url, "example.com") {
 			invalid(fmt.Sprintf(`invalid GitLab URL detected: %s (did you forget to remove "example.com"?)`, c.Url))
 		}

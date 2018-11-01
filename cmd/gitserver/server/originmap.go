@@ -87,7 +87,9 @@ func (o *originMapsT) setup() error {
 	o.gitoliteHostMap = nil
 	o.reposListOriginMap = make(map[string]string)
 
-	for _, gitoliteConf := range conf.Get().Gitolite {
+	config := conf.Get().Basic
+
+	for _, gitoliteConf := range config.Gitolite {
 		o.gitoliteHostMap = append(o.gitoliteHostMap, prefixAndOrgin{
 			Prefix: gitoliteConf.Prefix,
 			Origin: gitoliteConf.Host,
@@ -99,12 +101,12 @@ func (o *originMapsT) setup() error {
 	}
 
 	// Add origin map for repos.list configuration.
-	for _, c := range conf.Get().ReposList {
+	for _, c := range config.ReposList {
 		o.reposListOriginMap[c.Path] = c.Url
 	}
 
 	// Add origin map for GitHub Enterprise instances of the form "${HOSTNAME}/!git@${HOSTNAME}:%.git"
-	for _, c := range conf.Get().Github {
+	for _, c := range config.Github {
 		ghURL, err := url.Parse(c.Url)
 		if err != nil {
 			return err

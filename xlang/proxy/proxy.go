@@ -123,12 +123,12 @@ func (p *Proxy) Serve(ctx context.Context, lis net.Listener) error {
 
 	// Watch for language server conf changes and restart if anything changes
 	var lsConfMu sync.Mutex
-	lsConf, err := json.Marshal(conf.Get().Langservers)
+	lsConf, err := json.Marshal(conf.Get().Basic.Langservers)
 	if err != nil {
 		return err
 	}
 	conf.Watch(func() {
-		newLSConf, err := json.Marshal(conf.Get().Langservers)
+		newLSConf, err := json.Marshal(conf.Get().Basic.Langservers)
 		if err != nil {
 			log15.Error("Error marshaling new langserver config", "error", err)
 			return

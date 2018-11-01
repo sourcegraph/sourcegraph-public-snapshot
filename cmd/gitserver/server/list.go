@@ -26,7 +26,7 @@ var (
 func init() {
 	conf.Watch(func() {
 		newBlacklists := make(map[string]*regexp.Regexp)
-		for _, gconf := range conf.Get().Gitolite {
+		for _, gconf := range conf.Get().Basic.Gitolite {
 			if gconf.Blacklist == "" {
 				continue
 			}
@@ -56,7 +56,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 		fallthrough // treat same as if the URL query was "gitolite" for backcompat
 	case query("gitolite"):
 		gitoliteHost := q.Get("gitolite")
-		for _, gconf := range conf.Get().Gitolite {
+		for _, gconf := range conf.Get().Basic.Gitolite {
 			if gconf.Host != gitoliteHost {
 				continue
 			}

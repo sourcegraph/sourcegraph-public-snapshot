@@ -35,7 +35,7 @@ import (
 )
 
 func maxReposToSearch() int {
-	switch max := conf.Get().MaxReposToSearch; max {
+	switch max := conf.Get().Basic.MaxReposToSearch; max {
 	case 0:
 		// Not specified OR specified as literal zero. Use our default value.
 		return 500

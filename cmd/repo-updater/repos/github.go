@@ -40,10 +40,10 @@ var githubConnections = atomicvalue.New()
 func init() {
 	conf.Watch(func() {
 		githubConnections.Set(func() interface{} {
-			githubConf := conf.Get().Github
+			githubConfig := conf.Get().Basic.Github
 
 			var hasGitHubDotComConnection bool
-			for _, c := range githubConf {
+			for _, c := range githubConfig {
 				u, _ := url.Parse(c.Url)
 				if u != nil && (u.Hostname() == "github.com" || u.Hostname() == "www.github.com" || u.Hostname() == "api.github.com") {
 					hasGitHubDotComConnection = true
@@ -53,7 +53,7 @@ func init() {
 			if !hasGitHubDotComConnection {
 				// Add a GitHub.com entry by default, to support navigating to URL paths like
 				// /github.com/foo/bar to auto-add that repository.
-				githubConf = append(githubConf, &schema.GitHubConnection{
+				githubConfig = append(githubConfig, &schema.GitHubConnection{
 					RepositoryQuery:             []string{"none"}, // don't try to list all repositories during syncs
 					Url:                         "https://github.com",
 					InitialRepositoryEnablement: true,
@@ -61,7 +61,7 @@ func init() {
 			}
 
 			var conns []*githubConnection
-			for _, c := range githubConf {
+			for _, c := range githubConfig {
 				conn, err := newGitHubConnection(c)
 				if err != nil {
 					log15.Error("Error processing configured GitHub connection. Skipping it.", "url", c.Url, "error", err)

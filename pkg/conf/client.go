@@ -29,8 +29,8 @@ type client struct {
 var defaultClient *client
 
 type SiteConfiguration struct {
-	*schema.BasicSiteConfiguration
-	*schema.CoreSiteConfiguration
+	Basic *schema.BasicSiteConfiguration
+	Core  *schema.CoreSiteConfiguration
 }
 
 // Get returns a copy of the configuration. The returned value should NEVER be
@@ -69,8 +69,8 @@ func Get() *SiteConfiguration {
 // is running.
 func (c *client) Get() *SiteConfiguration {
 	return &SiteConfiguration{
-		BasicSiteConfiguration: c.basicStore.LastValid(),
-		CoreSiteConfiguration:  c.coreStore.LastValid(),
+		Basic: c.basicStore.LastValid(),
+		Core:  c.coreStore.LastValid(),
 	}
 }
 

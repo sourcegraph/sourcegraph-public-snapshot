@@ -157,8 +157,8 @@ func (n *notifier) notifyUsername(ctx context.Context, username string) error {
 			return errors.Wrap(err, "DiscussionMailReplyTokens.Generate")
 		}
 
-		conf := conf.Get()
-		emailParts := strings.Split(conf.EmailImap.Username, "@")
+		config := conf.Get().Basic
+		emailParts := strings.Split(config.EmailImap.Username, "@")
 		secureReplyTo := fmt.Sprintf("%s+%s@%s", emailParts[0], secureToken, emailParts[1])
 		replyTo = &secureReplyTo
 

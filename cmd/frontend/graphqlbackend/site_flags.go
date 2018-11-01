@@ -25,8 +25,8 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 }
 
 func needsRepositoryConfiguration() bool {
-	cfg := conf.Get()
-	return len(cfg.Github) == 0 && len(cfg.Gitlab) == 0 && len(cfg.ReposList) == 0 && len(cfg.AwsCodeCommit) == 0 && len(cfg.Gitolite) == 0 && len(cfg.BitbucketServer) == 0
+	c := conf.Get().Basic
+	return len(c.Github) == 0 && len(c.Gitlab) == 0 && len(c.ReposList) == 0 && len(c.AwsCodeCommit) == 0 && len(c.Gitolite) == 0 && len(c.BitbucketServer) == 0
 }
 
 func (r *siteResolver) NoRepositoriesEnabled(ctx context.Context) (bool, error) {
@@ -57,7 +57,7 @@ func noRepositoriesEnabled(ctx context.Context) (bool, error) {
 }
 
 func (*siteResolver) DisableBuiltInSearches() bool {
-	return conf.Get().DisableBuiltInSearches
+	return conf.Get().Basic.DisableBuiltInSearches
 }
 
 func (*siteResolver) SendsEmailVerificationEmails() bool { return conf.EmailVerificationRequired() }

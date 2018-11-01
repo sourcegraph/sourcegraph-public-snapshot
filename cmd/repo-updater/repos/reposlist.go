@@ -721,14 +721,15 @@ func (r *repoList) updateSource(source string, newList sourceRepoList) (enqueued
 // RunRepositorySyncWorker runs the worker that syncs repositories from external code hosts to Sourcegraph
 func RunRepositorySyncWorker(ctx context.Context) {
 	conf.Watch(func() {
-		c := conf.Get()
+		config := conf.Get().Basic
 
 		repos.mu.Lock()
-		repos.autoUpdatesDisabled = c.DisableAutoGitUpdates
+		repos.autoUpdatesDisabled = config.DisableAutoGitUpdates
 		repos.mu.Unlock()
 
-		repos.updateConfig(ctx, c.ReposList)
+		repos.updateConfig(ctx, config.ReposList)
 	})
+
 	go repos.updateLoop(ctx)
 }
 
@@ -842,7 +843,7 @@ func GetExplicitlyConfiguredRepository(ctx context.Context, args protocol.RepoLo
 	}
 
 	repoNameLower := api.RepoURI(strings.ToLower(string(args.Repo)))
-	for _, repo := range conf.Get().ReposList {
+	for _, repo := range conf.Get().Basic.ReposList {
 		if api.RepoURI(strings.ToLower(string(repo.Path))) == repoNameLower {
 			repoInfo := &protocol.RepoInfo{
 				URI:          api.RepoURI(repo.Path),

@@ -97,12 +97,14 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, serveError 
 		injectTelligentTracker = true
 	}
 
+	config := conf.Get().Core
+
 	common := &Common{
 		Injected: InjectedHTML{
-			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
-			HeadBottom: template.HTML(conf.Get().HtmlHeadBottom),
-			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
-			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
+			HeadTop:    template.HTML(config.HtmlHeadTop),
+			HeadBottom: template.HTML(config.HtmlHeadBottom),
+			BodyTop:    template.HTML(config.HtmlBodyTop),
+			BodyBottom: template.HTML(config.HtmlBodyBottom),
 		},
 		Context:  jscontext.NewJSContextFromRequest(r),
 		AssetURL: assetsutil.URL("").String(),

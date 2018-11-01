@@ -15,8 +15,9 @@ import (
 var cloneURLResolvers []*cloneURLResolver
 
 func init() {
-	conf.ContributeValidator(func(c conf.SiteConfiguration) (problems []string) {
-		for _, c := range conf.Get().GitCloneURLToRepositoryName {
+	conf.ContributeValidator(func(config conf.SiteConfiguration) (problems []string) {
+		// TODO@ggilmore: Why was conf.Get() called here? isn't the parameter enough?
+		for _, c := range config.Basic.GitCloneURLToRepositoryName {
 			if _, err := regexp.Compile(c.From); err != nil {
 				problems = append(problems, fmt.Sprintf("Not a valid regexp: %s. See the valid syntax: https://golang.org/pkg/regexp/", c.From))
 			}
@@ -25,7 +26,7 @@ func init() {
 	})
 
 	conf.Watch(func() {
-		cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
+		cloneURLConfig := conf.Get().Basic.GitCloneURLToRepositoryName
 		newCloneURLResolvers := make([]*cloneURLResolver, len(cloneURLConfig))
 		for i, c := range cloneURLConfig {
 			from, err := regexp.Compile(c.From)

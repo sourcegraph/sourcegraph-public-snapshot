@@ -37,10 +37,10 @@ var gitlabConnections = atomicvalue.New()
 func init() {
 	conf.Watch(func() {
 		gitlabConnections.Set(func() interface{} {
-			gitlabConf := conf.Get().Gitlab
+			gitlabConfig := conf.Get().Basic.Gitlab
 
 			var hasGitLabDotComConnection bool
-			for _, c := range gitlabConf {
+			for _, c := range gitlabConfig {
 				u, _ := url.Parse(c.Url)
 				if u != nil && (u.Hostname() == "gitlab.com" || u.Hostname() == "www.gitlab.com") {
 					hasGitLabDotComConnection = true
@@ -50,7 +50,7 @@ func init() {
 			if !hasGitLabDotComConnection {
 				// Add a GitLab.com entry by default, to support navigating to URL paths like
 				// /gitlab.com/foo/bar to auto-add that project.
-				gitlabConf = append(gitlabConf, &schema.GitLabConnection{
+				gitlabConfig = append(gitlabConfig, &schema.GitLabConnection{
 					ProjectQuery:                []string{"none"}, // don't try to list all repositories during syncs
 					Url:                         "https://gitlab.com",
 					InitialRepositoryEnablement: true,
@@ -58,7 +58,7 @@ func init() {
 			}
 
 			var conns []*gitlabConnection
-			for _, c := range gitlabConf {
+			for _, c := range gitlabConfig {
 				conn, err := newGitLabConnection(c)
 				if err != nil {
 					log15.Error("Error processing configured GitLab connection. Skipping it.", "url", c.Url, "error", err)

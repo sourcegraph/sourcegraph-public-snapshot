@@ -25,10 +25,10 @@ import (
 // Note: these configuration options require service restarts to take effect.
 // Keep in sync with the pkg/conf.requireRestart list.
 var (
-	lightstepAccessToken         = conf.Get().LightstepAccessToken
-	lightstepProject             = conf.Get().LightstepProject
+	lightstepAccessToken         = conf.Get().Basic.LightstepAccessToken
+	lightstepProject             = conf.Get().Basic.LightstepProject
 	lightstepIncludeSensitive, _ = strconv.ParseBool(env.Get("LIGHTSTEP_INCLUDE_SENSITIVE", "", "send span logs to LightStep"))
-	useJaeger                    = conf.Get().UseJaeger
+	useJaeger                    = conf.Get().Basic.UseJaeger
 	logColors                    = map[log15.Lvl]color.Attribute{
 		log15.LvlCrit:  color.FgRed,
 		log15.LvlError: color.FgRed,
