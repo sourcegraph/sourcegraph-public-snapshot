@@ -8,6 +8,7 @@ export const PasswordInput: React.SFC<
     const { inputRef, ...other } = props
     return (
         <input
+            name="password"
             {...other}
             className={`form-control ${props.className || ''}`}
             type="password"
@@ -20,6 +21,7 @@ export const PasswordInput: React.SFC<
 
 export const EmailInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
     <input
+        name="email"
         {...props}
         className={`form-control ${props.className || ''}`}
         type="email"
@@ -31,6 +33,7 @@ export const EmailInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> 
 
 export const UsernameInput: React.SFC<React.InputHTMLAttributes<HTMLInputElement>> = props => (
     <input
+        name="username"
         {...props}
         className={`form-control ${props.className || ''}`}
         type="text"
