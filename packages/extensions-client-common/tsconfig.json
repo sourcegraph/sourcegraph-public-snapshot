@@ -1,5 +1,5 @@
 {
-  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "extends": "../../node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
     "target": "es2018",
     "module": "es6",
@@ -15,6 +15,7 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "typeRoots": ["node_modules/@types", "src/types"],
+    "types": ["mocha"],
     "plugins": [
       {
         "name": "tslint-language-service"

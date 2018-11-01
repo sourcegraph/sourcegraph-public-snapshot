@@ -80,6 +80,7 @@
     "babel-core": "^6.26.3",
     "babel-loader": "^8.0.2",
     "babel-runtime": "^6.26.0",
+    "browserslist": "^4.3.4",
     "chai": "^4.2.0",
     "css-loader": "^1.0.0",
     "cypress": "^3.1.0",

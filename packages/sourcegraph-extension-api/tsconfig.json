@@ -1,5 +1,5 @@
 {
-  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "extends": "../../node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
     "target": "es2018",
     "module": "es6",
@@ -8,6 +8,7 @@
     "noEmit": true,
     "lib": ["es2018"],
     "sourceRoot": "src",
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": { "sourcegraph": ["./src/sourcegraph"] },
     "inlineSources": true,

@@ -47,36 +47,42 @@ func main() {
 		bk.Cmd("yarn run prettier"))
 
 	pipeline.AddStep(":typescript:",
-		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+		bk.Env("CYPRESS_INSTALL_BINARY", "0"),              // for speed
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"), // for speed
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn run tslint"))
+		bk.Cmd("yarn workspace webapp run tslint"))
 
 	pipeline.AddStep(":stylelint:",
+		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn run stylelint --quiet"))
+		bk.Cmd("yarn workspace webapp run stylelint --quiet"))
 
 	pipeline.AddStep(":graphql:",
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn run graphql-lint"))
 
 	pipeline.AddStep(":webpack:",
+		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn run browserslist"),
-		bk.Cmd("NODE_ENV=production yarn run build --color"),
-		bk.Cmd("GITHUB_TOKEN= yarn run bundlesize"))
+		bk.Cmd("yarn workspace webapp run browserslist"),
+		bk.Cmd("NODE_ENV=production yarn workspace webapp run build --color"),
+		bk.Cmd("GITHUB_TOKEN= yarn workspace webapp run bundlesize"))
 
 	pipeline.AddStep(":mocha:",
+		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn run cover"),
+		bk.Cmd("yarn workspace webapp run cover"),
+		bk.Cmd("pushd packages/webapp"),
 		bk.Cmd("node_modules/.bin/nyc report -r json"),
-		bk.ArtifactPaths("coverage/coverage-final.json"))
+		bk.Cmd("popd"),
+		bk.ArtifactPaths("packages/webapp/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":docker:",
 		bk.Cmd("curl -sL -o hadolint \"https://github.com/hadolint/hadolint/releases/download/v1.6.5/hadolint-$(uname -s)-$(uname -m)\" && chmod 700 hadolint"),
@@ -90,8 +96,42 @@ func main() {
 		bk.Cmd("go test -coverprofile=coverage.txt -covermode=atomic -race ./..."),
 		bk.ArtifactPaths("coverage.txt"))
 
+	pipeline.AddStep(":typescript:",
+		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn workspace sourcegraph run prettier"),
+		bk.Cmd("yarn workspace sourcegraph run tslint"),
+		bk.Cmd("yarn workspace sourcegraph run build"),
+		bk.Cmd("yarn workspace sourcegraph run typecheck"),
+		bk.Cmd("yarn workspace sourcegraph run cover"),
+		bk.Cmd("yarn workspace sourcegraph run nyc report --reporter json"),
+		bk.Cmd("cd packages/sourcegraph-extension-api && bash <(curl -s https://codecov.io/bash)"))
+
+	pipeline.AddStep(":typescript:",
+		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
+		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
+		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run prettier"),
+		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run tslint"),
+		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
+		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run typecheck"),
+		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run cover"),
+		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run nyc report --reporter json"),
+		bk.Cmd("cd packages/extensions-client-common && bash <(curl -s https://codecov.io/bash)"))
+
+	pipeline.AddStep(":typescript:",
+		bk.Cmd("yarn --frozen-lockfile"),
+		bk.Cmd("yarn workspace browser-extensions run prettier"),
+		bk.Cmd("yarn workspace browser-extensions run tslint"),
+		bk.Cmd("yarn workspace browser-extensions run browserslist"),
+		bk.Cmd("yarn workspace browser-extensions run build"),
+		bk.Cmd("yarn workspace browser-extensions run test:ci"),
+		bk.Cmd("yarn workspace browser-extensions run test:e2e"))
+
 	pipeline.AddWait()
 
+	// Does this still work after moving the webapp to packages/webapp?
 	pipeline.AddStep(":codecov:",
 		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
 		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),

@@ -5,14 +5,29 @@ import rxPaths from 'rxjs/_esm5/path-mapping'
 import UglifyJsPlugin from 'uglifyjs-webpack-plugin'
 import * as webpack from 'webpack'
 
+const rootDir = path.resolve(__dirname, '..', '..')
+
 const devtool = process.env.NODE_ENV === 'production' ? undefined : 'cheap-module-eval-source-map'
 
-const monacoEditorPaths = [path.resolve(__dirname, 'node_modules', 'monaco-editor')]
+const monacoEditorPaths = [
+    path.resolve(rootDir, 'node_modules'),
+    path.resolve(__dirname, 'node_modules', 'monaco-editor'),
+]
 
 const babelLoader: webpack.RuleSetUseItem = {
     loader: 'babel-loader',
     options: {
         cacheDirectory: true,
+        plugins: ['@babel/plugin-syntax-dynamic-import', 'babel-plugin-lodash'],
+        presets: [
+            [
+                '@babel/preset-env',
+                {
+                    useBuiltIns: 'entry',
+                    modules: false,
+                },
+            ],
+        ],
     },
 }
 
@@ -30,7 +45,8 @@ const typescriptLoader: webpack.RuleSetUseItem = {
 }
 
 const isEnterpriseBuild = !!process.env.ENTERPRISE
-const sourceRoots = [path.resolve(__dirname, 'src'), path.resolve(__dirname, 'enterprise', 'src')]
+const enterpriseDir = path.resolve(rootDir, 'enterprise', 'src')
+const sourceRoots = [path.resolve(__dirname, 'src'), enterpriseDir]
 
 const config: webpack.Configuration = {
     mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
@@ -52,19 +68,17 @@ const config: webpack.Configuration = {
         // Enterprise vs. OSS builds use different entrypoints. For app (TypeScript), a single entrypoint is used
         // (enterprise or OSS). For style (SCSS), the OSS entrypoint is always used, and the enterprise entrypoint
         // is appended for enterprise builds.
-        app: isEnterpriseBuild
-            ? path.join(__dirname, 'enterprise', 'src', 'main.tsx')
-            : path.join(__dirname, 'src', 'main.tsx'),
+        app: isEnterpriseBuild ? path.join(enterpriseDir, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
         style: [
             path.join(__dirname, 'src', 'main.scss'),
-            isEnterpriseBuild ? path.join(__dirname, 'enterprise', 'src', 'main.scss') : null,
+            isEnterpriseBuild ? path.join(enterpriseDir, 'main.scss') : null,
         ].filter((path): path is string => !!path),
 
         'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
         'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
     },
     output: {
-        path: path.join(__dirname, 'ui', 'assets'),
+        path: path.join(rootDir, 'ui', 'assets'),
         filename: 'scripts/[name].bundle.js',
         chunkFilename: 'scripts/[id]-[chunkhash].chunk.js',
         publicPath: '/.assets/',
@@ -99,8 +113,9 @@ const config: webpack.Configuration = {
             // in general, and it also breaks in this build because CSS imports URLs are not resolved (we would
             // need to use resolve-url-loader). There are many possible fixes that are more complex, but this hack
             // works fine for now.
-            '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css':
-                __dirname + '/node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css',
+            '../node_modules/@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css': require.resolve(
+                '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css'
+            ),
         },
     },
     module: {
@@ -133,7 +148,7 @@ const config: webpack.Configuration = {
                     {
                         loader: 'sass-loader',
                         options: {
-                            includePaths: [__dirname + '/node_modules'],
+                            includePaths: [__dirname + '/node_modules', rootDir + '/node_modules'],
                         },
                     },
                 ],

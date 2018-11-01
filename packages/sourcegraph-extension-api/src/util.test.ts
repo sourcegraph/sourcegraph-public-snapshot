@@ -53,9 +53,8 @@ describe('tryCatchPromise', () => {
         const p = tryCatchPromise(() => {
             throw ERROR
         })
-        let resolved: any
         let rejected: any
-        return p.then(v => (resolved = v), v => (rejected = v)).then(() => {
+        return p.then(undefined, v => (rejected = v)).then(() => {
             assert.strictEqual(rejected, ERROR)
         })
     })
@@ -64,9 +63,8 @@ describe('tryCatchPromise', () => {
         const p = tryCatchPromise(
             () => Promise.reject(ERROR) // tslint:disable-line:no-floating-promises
         )
-        let resolved: any
         let rejected: any
-        return p.then(v => (resolved = v), v => (rejected = v)).then(() => {
+        return p.then(undefined, v => (rejected = v)).then(() => {
             assert.strictEqual(rejected, ERROR)
         })
     })

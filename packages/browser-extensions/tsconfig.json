@@ -7,6 +7,7 @@
     "esModuleInterop": true,
     "moduleResolution": "node",
     "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["mocha"],
     "lib": ["es2017", "dom", "dom.iterable", "es2017.object"],
     "jsx": "react",
     "allowJs": true,

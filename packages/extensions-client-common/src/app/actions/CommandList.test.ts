@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from 'chai'
 import { filterAndRankItems } from '../CommandList'
 import { ActionItemProps } from './ActionItem'
 
@@ -8,7 +8,7 @@ describe('filterAndRankItems', () => {
     }
 
     it('no query, no recentActions', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             actionIDs(
                 filterAndRankItems(
                     [{ action: { id: 'a', command: 'a' } }, { action: { id: 'b', command: 'b' } }],
@@ -20,7 +20,7 @@ describe('filterAndRankItems', () => {
         ))
 
     it('query, no recentActions', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             actionIDs(
                 filterAndRankItems(
                     [
@@ -36,7 +36,7 @@ describe('filterAndRankItems', () => {
         ))
 
     it('no query, recentActions', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             actionIDs(
                 filterAndRankItems([{ action: { id: 'a', command: 'a' } }, { action: { id: 'b', command: 'b' } }], '', [
                     'b',
@@ -46,7 +46,7 @@ describe('filterAndRankItems', () => {
         ))
 
     it('query, recentActions', () =>
-        assert.deepStrictEqual(
+        assert.deepEqual(
             actionIDs(
                 filterAndRankItems(
                     [

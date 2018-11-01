@@ -663,7 +663,14 @@ function _createConnection(transports: MessageTransports, logger: Logger, strate
 /** Support browser and node environments without needing a transpiler. */
 function setImmediateCompat(f: () => void): NodeJS.Timer {
     if (typeof setImmediate !== 'undefined') {
-        return setImmediate(f)
+        const immediate = setImmediate(f)
+        return {
+            ref: () => immediate.ref(),
+            unref: () => immediate.ref(),
+            refresh: () => {
+                // noop
+            },
+        }
     }
     return setTimeout(f, 0)
 }

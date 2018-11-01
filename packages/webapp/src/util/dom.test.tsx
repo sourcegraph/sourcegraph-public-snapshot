@@ -1,4 +1,4 @@
-import * as assert from 'assert'
+import { assert } from 'chai'
 import * as _dom from './dom'
 import { createTestBundle, TestBundle } from './unit-test-utils'
 

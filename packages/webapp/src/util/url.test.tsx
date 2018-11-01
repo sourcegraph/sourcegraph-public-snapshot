@@ -1,9 +1,11 @@
 // Polyfill URLSearchParams because we still use node 8 on CI where
 // URLSearchParams is not a global.
+// @ts-ignore
 import { URLSearchParams } from 'whatwg-url'
+// @ts-ignore
 Object.assign(global, { URLSearchParams })
 
-import * as assert from 'assert'
+import { assert } from 'chai'
 import { parseHash, toPrettyBlobURL, toTreeURL } from './url'
 
 describe('util/url', () => {

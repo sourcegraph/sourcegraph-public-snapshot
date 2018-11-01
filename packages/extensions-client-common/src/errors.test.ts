@@ -1,4 +1,4 @@
-import assert from 'assert'
+import { assert } from 'chai'
 import { asError, isErrorLike } from './errors'
 
 describe('isErrorLike', () => {

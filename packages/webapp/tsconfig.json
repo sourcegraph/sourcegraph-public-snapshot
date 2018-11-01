@@ -1,13 +1,14 @@
 {
-  "extends": "./node_modules/@sourcegraph/tsconfig/tsconfig.json",
+  "extends": "../../node_modules/@sourcegraph/tsconfig/tsconfig.json",
   "compilerOptions": {
     "target": "es2017",
     "module": "commonjs",
     "moduleResolution": "node",
-    "typeRoots": ["./node_modules/@types"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "lib": ["es2017", "es2017.object", "dom", "dom.iterable"],
+    "types": ["mocha"],
     "jsx": "react",
     "sourceMap": true,
     "noEmit": true,
@@ -21,6 +22,6 @@
       }
     ]
   },
-  "include": ["gulpfile.ts", "enterprise/src/**/*"],
+  "include": ["src/**/*", "*.ts"],
   "exclude": ["node_modules"]
 }
