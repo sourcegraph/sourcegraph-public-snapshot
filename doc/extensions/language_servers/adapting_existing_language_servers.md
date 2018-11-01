@@ -1,75 +1,65 @@
-# Adapting an existing language server for use with Sourcegraph'
+# Adapting a language server for use with Sourcegraph'
 
-This documentation page is intended for language server developers who are adapting an existing language server (or building a new language server) to provide code intelligence on Sourcegraph.
+Sourcegraph provides [code intelligence](index.md) through extensions. One way for extensions to provide code intelligence is to connect to a language server that speaks the Language Server Protocol (LSP) standard. However, there are a few assumptions that a language server targeting editor clients may make that are not true in a distributed service environment like Sourcegraph. This documentation page is intended for language server developers who are adapting an existing language server (or building a new language server) to provide code intelligence on Sourcegraph.
 
-Sourcegraph provides [code intelligence](index.md) by communicating with language servers that adhere to the Language Server Protocol standard, plus a few additional protocol extensions and requirements. These additional requirements are necessary because unlike in the common case where language servers are used for local code editing, language servers running inside Sourcegraph don't have access to the developer's existing repository checkout on their machine.
+## Connection protocol
 
-## Implementation requirements
+The easiest way for an extension to talk from the browser to a language server is through WebSockets.
 
-With [lsp-adapter](https://github.com/sourcegraph/lsp-adapter), there are no Sourcegraph-specific requirements. Just pass the command to run your language server to `lsp-adapter`:
+## File system access
+
+LSP uses URIs to identify text documents. In an editor environment, these are usually `file:` URLs that the language server parses to read file and directory contents from disk.
+When deploying a language server for a Sourcegraph extension, the language server does not have all the files of the repository on the local file system by default.
+The extension has multiple options to access the file contents through the Sourcegraph API and can choose whatever is the most suitable for the language server.
+
+### Using the raw archive API
+
+The TypeScript extension for example sends a `rootUri` pointing to the HTTP archive endpoint of the Sourcegraph raw API, with the session token encoded in the auth section of the URL:
+
+```url
+https://sessiontoken:sourcegraph.com/.api/raw/github.com/ReactiveX/rxjs.tar
+```
+
+The TypeScript server is able to fetch this archive and extract it to disk on initialization.
+In further requests, the files are then identified as contents of the archive:
+
+```url
+https://sessiontoken:sourcegraph.com/.api/raw/github.com/ReactiveX/rxjs.tar#src/Observable.ts
+```
+
+This method is easy to implement and compatible with many language servers.
+
+### Using the raw contents API
+
+The xxx extension sends URLs pointing to the Sourcegraph raw API for individual files:
+
+```url
+https://sessiontoken:sourcegraph.com/.api/raw/github.com/ReactiveX/rxjs/-/src/Observable.ts
+```
+
+The server can retrieve the contents of the file with a simple HTTP GET.
+
+A `GET` on a directory returns the entries in that directory separated by newlines (LF):
 
 ```
-lsp-adapter -proxyAddresss=0.0.0.0:1234 mylang-exe
+GET https://sessiontoken:sourcegraph.com/.api/raw/github.com/ReactiveX/rxjs/-/src
 ```
 
-This will forward communication on port 1234 to the stdio of `mylang-exe`. Jump to the next section to [configure Sourcegraph](#Configuring-Sourcegraph-to-use-a-new-language-server).
+```
+Content-Type: text/plain
 
-Without lsp-adapter, a language server must support the following:
+https://sessiontoken:sourcegraph.com/.api/raw/github.com/ReactiveX/rxjs/-/src/operators
+https://sessiontoken:sourcegraph.com/.api/raw/github.com/ReactiveX/rxjs/-/src/Observable.ts
+```
 
-- [extension-files](https://github.com/sourcegraph/language-server-protocol/blob/master/extension-files.md): LSP extension for listing and retrieving files from the target repository.
+### Authentication
 
-- Non-`file:` root URIs: the language server must accept `initialize` requests with root URIs of any scheme (it lists and fetches the files using the extension-files LSP extension for non-`file:` URIs). As a convention, Sourcegraph uses `git://NAME?REV` as the root URI for a repository with the given name (e.g., `example.com/foo`) at the given revision (the 40-character Git commit SHA).
+To make sure the language server is authenticated when fetching URIs, the extension can authenticate the URL by embedding the users session token into the userinfo section of the URI:
 
-- Multiple independent sessions: the language server must support multiple independent and simultaneous LSP/JSON-RPC2 connections (instead of only supporting a single global session).
-
-The following are optional:
-
-- Automatic build system handling: the language server can process a repository's build system configuration (npm/Maven/Gradle/Bazel/Pants/etc.) and perform build tasks, such as fetching dependency files and running codegen. If this is not fully implemented, the language coverage (of hovers, definitions, references, etc.) will be incomplete.
-
-- [extension-workspace-references](https://github.com/sourcegraph/language-server-protocol/blob/master/extension-workspace-references.md): LSP extension to enable cross-repository references.
-
-- [extension-cache](https://github.com/sourcegraph/language-server-protocol/blob/master/extension-cache.md): LSP extension that provides the language server with a simple cache interface for implementation-specific caching.
-
-## Configuring Sourcegraph to use a new language server
-
-Sourcegraph communicates with language servers over TCP.
-
-1.  Start your new language server and ensure it's listening for TCP connections on an address and port that is accessible to Sourcegraph. (We assume it's listening on `tcp://mylang:1234`.)
-
-2.  Modify the Sourcegraph site configuration's "langservers" property as described in the [code intelligence documentation](install/index.md) to add a new entry for your language:
-
-    ```json
-    "langservers": [
-      ...,
-      {
-        "language": "mylang",
-        "address": "tcp://mylang:1234"
-      },
-      ...
-    ]
-    ```
-
-    The name "mylang" should be the lowercase name of the language used by [Linguist](https://github.com/github/linguist/tree/master/samples), the language detection library that Sourcegraph uses.
-
-3.  Start or restart Sourcegraph with the new site configuration.
-4.  Browse to a file (written in the new language) inside a repository on Sourcegraph.
-5.  Hover over a token to test that it's working. Also try clicking on the token and then going to its definition or finding references.
-
-### Troubleshooting
-
-- First, ensure that the language server works well on the same repository with a local editor, such as Visual Studio Code. To do so, you may need to create a shim editor extension.
-
-  This is the best way to ensure that the language server is functioning correctly and to isolate the problem.
-
-- Set the following environment variables in the `sourcegraph/server` Docker container (or the `lsp-proxy` deployment, for Sourcegraph cluster deployments to Kubernetes):
-
-  ```
-  LSP_PROXY_TRACE_FS_REQUESTS=1
-  SRC_LOG_LEVEL=dbug
-  ```
-
-  Try hovering over tokens again and inspect the log output.
-
-- To simplify testing, you can write tests that send a known-good sequence of LSP messages to Sourcegraph's `/.api/xlang` HTTP URL path and assert that the output matches an expected value.
-
-  Tip: Perform a hover in your browser with devtools open and look for the `/.api/xlang/textDocument/hover` HTTP request. Right-click and choose "Copy as cURL" (in Chrome) to get a `curl` shell command that will perform the same request.
+```
+          userinfo        host
+          ┌─┴────────┐ ┌────┴────────┐
+  https://sessiontoken:sourcegraph.com/.api/raw/github.com/ReactiveX/rxjs.tar#src/Observable.ts
+  └─┬─┘ └───────┬────────────────────┘└─┬───────────────────────────────────┘└──┬─────────────┘
+  scheme     authority                 path                                    fragment
+```
