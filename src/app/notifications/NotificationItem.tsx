@@ -23,16 +23,17 @@ export class NotificationItem extends React.PureComponent<Props> {
         )
         return (
             <div
-                className={`notification-item alert alert-${alertClass(this.props.notification.type)} p-0 ${this.props
-                    .className || ''}`}
+                className={`sourcegraph-notification-item alert alert-${alertClass(
+                    this.props.notification.type
+                )} p-0 ${this.props.className || ''}`}
             >
                 <div
-                    className="notification-item__content py-2 pl-2 pr-0"
+                    className="sourcegraph-notification-item__content py-2 pl-2 pr-0"
                     dangerouslySetInnerHTML={{ __html: markdownHTML }}
                 />
                 <button
                     type="button"
-                    className="notification-item__close p-2"
+                    className="sourcegraph-notification-item__close p-2"
                     onClick={this.onDismiss}
                     aria-label="Close"
                 >
