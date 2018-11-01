@@ -1,5 +1,4 @@
 import { first } from 'lodash'
-import * as OmniCLI from 'omnicli'
 
 import storage from '../../browser/storage'
 import * as tabs from '../../browser/tabs'
@@ -10,18 +9,15 @@ import { buildSearchURLQuery } from '../../shared/util/url'
 
 const isURL = /^https?:\/\//
 
-class SearchCommand implements OmniCLI.Command {
-    public name = OmniCLI.DEFAULT_NAME
+class SearchCommand {
     public description = 'Enter a search query'
 
     private suggestionFetcher = createSuggestionFetcher(20)
 
-    private prev: { query: string; suggestions: OmniCLI.Suggestion[] } = { query: '', suggestions: [] }
+    private prev: { query: string; suggestions: chrome.omnibox.Suggestion[] } = { query: '', suggestions: [] }
 
-    public getSuggestions = (args: string[]): Promise<OmniCLI.Suggestion[]> => {
-        const query = args.join(' ')
-
-        return new Promise(resolve => {
+    public getSuggestions = (query: string): Promise<chrome.omnibox.Suggestion[]> =>
+        new Promise(resolve => {
             if (this.prev.query === query) {
                 resolve(this.prev.suggestions)
                 return
@@ -44,11 +40,8 @@ class SearchCommand implements OmniCLI.Command {
                 },
             })
         })
-    }
 
-    public action = (args: string[], disposition?: string): void => {
-        const query = args.join(' ')
-
+    public action = (query: string, disposition?: string): void => {
         storage.getSync(({ serverUrls, sourcegraphURL }) => {
             const url = sourcegraphURL || first(serverUrls)
             const props = {

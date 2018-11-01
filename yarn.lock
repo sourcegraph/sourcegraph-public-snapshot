@@ -1737,11 +1737,6 @@
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.87.tgz#55f92183b048c2c64402afe472f8333f4e319a6b"
   integrity sha512-AqRC+aEF4N0LuNHtcjKtvF9OTfqZI0iaBoe3dA6m/W+/YZJBZjBmW/QIZ8fBeXC6cnytSY9tBoFBqZ9uSCeVsw==
 
-"@types/lodash@^4.14.106":
-  version "4.14.115"
-  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.115.tgz#54d171b2ce12c058742443b5f6754760f701b8f9"
-  integrity sha512-9K/P4XMQxk61omAzQh3bbbFiqnG17eLcFysjlAYz0aPcYrVo8T+ujaCeIeY0Gpzux7x1YbxtEtLKB7ZWf79qdg==
-
 "@types/marked@0.4.0":
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/@types/marked/-/marked-0.4.0.tgz#057a6165703e7419217f8ffc6887747f980b6315"
@@ -10969,14 +10964,6 @@ object.values@^1.0.4:
     es-abstract "^1.6.1"
     function-bind "^1.1.0"
     has "^1.0.1"
-
-omnicli@0.1.13:
-  version "0.1.13"
-  resolved "https://registry.yarnpkg.com/omnicli/-/omnicli-0.1.13.tgz#a3605f3ad9506f13a9121c5c323e0c509dbf4c0d"
-  integrity sha1-o2BfOtlQbxOpEhxcMj4MUJ2/TA0=
-  dependencies:
-    "@types/lodash" "^4.14.106"
-    lodash "^4.17.5"
 
 on-finished@~2.3.0:
   version "2.3.0"
