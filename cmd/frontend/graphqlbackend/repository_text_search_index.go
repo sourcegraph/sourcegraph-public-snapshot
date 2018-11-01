@@ -8,11 +8,10 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/sourcegraph/sourcegraph/pkg/conf"
 )
 
 func (r *repositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if zoektCl == nil || !conf.SearchIndexEnabled() {
+	if !searchIndexEnabled() {
 		return nil
 	}
 	return &repositoryTextSearchIndexResolver{repo: r}
