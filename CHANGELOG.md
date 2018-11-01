@@ -38,6 +38,11 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where GraphQL field `elapsedMilliseconds` returned invalid value on empty searches
 - Editor extensions now properly search the selection as a literal string, instead of incorrectly using regexp.
 - Fixed a bug where editing and deleting global saved searches was not possible.
+- In index search, if the search regex produces multiline matches, search results are still processed per line and highlighted correctly.
+- Go-To-GitHub and Go-To-GitLab buttons now link to the right branch, line and commit range.
+- Go-to-GitHub button links to default branch when no rev is given.
+- The close button in the panel header stays located on the top.
+- The Phabricator icon is now displayed correctly.
 
 ### Removed
 
