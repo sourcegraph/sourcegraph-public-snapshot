@@ -120,7 +120,7 @@ require (
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20181026104717-57597f1626fc
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20181101150719-c7fac35362e5
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538
 )
 

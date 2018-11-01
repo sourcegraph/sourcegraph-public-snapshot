@@ -18,7 +18,6 @@ require (
 	github.com/keegancsmith/sqlf v1.1.0
 	github.com/keegancsmith/tmpfriend v0.0.0-20180423180255-86e88902a513
 	github.com/kevinburke/go-bindata v3.11.1-0.20180909202705-9b44e0539c2a+incompatible
-	github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
@@ -31,7 +30,7 @@ require (
 	github.com/prometheus/client_golang v0.8.0
 	github.com/russellhaering/gosaml2 v0.3.1
 	github.com/russellhaering/goxmldsig v0.0.0-20180430223755-7acd5e4a6ef7
-	github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f
+	github.com/shurcooL/vfsgen v0.0.0-20180915214035-33ae1944be3f // indirect
 	github.com/slimsag/godocmd v0.0.0-20161025000126-a1005ad29fe3 // indirect
 	github.com/sourcegraph/ctxvfs v0.0.0-20180418081416-2b65f1b1ea81
 	github.com/sourcegraph/go-jsonschema v0.0.0-20180805125535-0e659b54484d
@@ -40,9 +39,7 @@ require (
 	github.com/sourcegraph/godockerize v0.0.0-20181001062649-0f33644f1829
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20180831160525-549eb959f029
 	github.com/sourcegraph/jsonx v0.0.0-20180801091521-5a4ae5eb18cd
-	github.com/sourcegraph/rpc v0.0.0-20180329203801-5eaf49b36f85 // indirect
 	github.com/sourcegraph/sourcegraph v0.0.0-20181015141638-6a69e6bebaf9
-	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stripe/stripe-go v0.0.0-20181003141555-9e2a36d584c4
 	github.com/zenazn/goji v0.9.0 // indirect
 	go4.org v0.0.0-20180809161055-417644f6feb5
@@ -55,13 +52,12 @@ require (
 	gopkg.in/inconshreveable/log15.v2 v2.0.0-20180818164646-67afb5ed74ec
 	gopkg.in/square/go-jose.v2 v2.1.9 // indirect
 	gopkg.in/src-d/go-git.v4 v4.7.0 // indirect
-	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.2.1
 	honnef.co/go/tools v0.0.0-20180910201051-f1b53a58b022
 )
 
 replace (
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20181026104717-57597f1626fc
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20181101150719-c7fac35362e5
 	github.com/russellhaering/gosaml2 => github.com/sourcegraph/gosaml2 v0.0.0-20180820053343-1b78a6b41538
 )
 
