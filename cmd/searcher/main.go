@@ -59,11 +59,9 @@ func main() {
 			},
 			Path:              filepath.Join(cacheDir, "searcher-archives"),
 			MaxCacheSizeBytes: cacheSizeBytes,
-
-			// Allow roughly 10 fetches per gitserver
-			MaxConcurrentFetchTar: 10 * len(gitserver.DefaultClient.Addrs),
 		},
 	}
+	service.Store.SetMaxConcurrentFetchTar(10)
 	service.Store.Start()
 	handler := nethttp.Middleware(opentracing.GlobalTracer(), service)
 

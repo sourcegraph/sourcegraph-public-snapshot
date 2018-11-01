@@ -4,9 +4,11 @@ import (
 	"log"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -205,4 +207,21 @@ func SearchIndexEnabled() bool {
 		return enabled
 	}
 	return DeployType() != DeployDocker
+}
+
+// SrcGitServers represents the SRC_GIT_SERVERS environment variable.
+//
+// Non-frontend callers should go through api.InternalClient.GitServerAddrs() instead.
+var SrcGitServers = readSrcGitServers()
+
+func readSrcGitServers() []string {
+	v := env.Get("SRC_GIT_SERVERS", "", "addresses of the remote gitservers")
+	if v == "" {
+		// Detect 'go test' and setup default addresses in that case.
+		p, err := os.Executable()
+		if err == nil && filepath.Ext(p) == ".test" {
+			v = "gitserver:3178"
+		}
+	}
+	return strings.Fields(v)
 }

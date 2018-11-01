@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/pkg/api"
 	"github.com/sourcegraph/sourcegraph/pkg/diskcache"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver"
+	"github.com/sourcegraph/sourcegraph/pkg/mutablelimiter"
 
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
@@ -53,22 +54,30 @@ type Store struct {
 	// MaxCacheSizeBytes.
 	MaxCacheSizeBytes int64
 
-	// MaxConcurrentFetchTar is the maximum number of concurrent calls allowed
-	// to FetchTar. It defaults to 15.
-	MaxConcurrentFetchTar int
-
 	// once protects Start
 	once sync.Once
 
 	// cache is the disk backed cache.
 	cache *diskcache.Store
 
-	// fetchSem is a semaphore to limit concurrent calls to FetchTar. The
-	// semaphore size is controlled by MaxConcurrentFetchTar
-	fetchSem chan int
+	// fetchLimiter limits concurrent calls to FetchTar.
+	fetchLimiter *mutablelimiter.Limiter
 
 	// zipCache provides efficient access to repo zip files.
 	zipCache zipCache
+}
+
+// SetMaxConcurrentFetchTar sets the maximum number of concurrent calls allowed
+// to FetchTar. It defaults to 15.
+func (s *Store) SetMaxConcurrentFetchTar(limit int) {
+	if limit == 0 {
+		limit = 15
+	}
+	if s.fetchLimiter == nil {
+		s.fetchLimiter = mutablelimiter.New(limit)
+	} else {
+		s.fetchLimiter.SetLimit(limit)
+	}
 }
 
 // Start initializes state and starts background goroutines. It can be called
@@ -76,11 +85,9 @@ type Store struct {
 // search request paying the cost of initializing.
 func (s *Store) Start() {
 	s.once.Do(func() {
-		if s.MaxConcurrentFetchTar == 0 {
-			s.MaxConcurrentFetchTar = 15
+		if s.fetchLimiter == nil {
+			s.SetMaxConcurrentFetchTar(0)
 		}
-		s.fetchSem = make(chan int, s.MaxConcurrentFetchTar)
-
 		s.cache = &diskcache.Store{
 			Dir:               s.Path,
 			Component:         "store",
@@ -159,7 +166,10 @@ func (s *Store) prepareZip(ctx context.Context, repo gitserver.Repo, commit api.
 // prepareZip.
 func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.CommitID) (rc io.ReadCloser, err error) {
 	fetchQueueSize.Inc()
-	s.fetchSem <- 1 // Acquire concurrent fetches semaphore
+	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
+	if err != nil {
+		return nil, err // err will be a context error
+	}
 	fetchQueueSize.Dec()
 
 	// We expect git archive, even for large repos, to finish relatively
@@ -182,8 +192,8 @@ func (s *Store) fetch(ctx context.Context, repo gitserver.Repo, commit api.Commi
 		}
 		doneCalled = true
 
-		<-s.fetchSem // Release concurrent fetches semaphore
-		cancel()     // Release context resources
+		releaseFetchLimiter() // Release concurrent fetches semaphore
+		cancel()              // Release context resources
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
@@ -301,8 +311,17 @@ func (s *Store) watchAndEvict() {
 		return
 	}
 
+	prevAddrs := len(gitserver.DefaultClient.Addrs(context.TODO()))
 	for {
 		time.Sleep(10 * time.Second)
+
+		// Allow roughly 10 fetches per gitserver
+		addrs := len(gitserver.DefaultClient.Addrs(context.TODO()))
+		if addrs != prevAddrs {
+			prevAddrs = addrs
+			s.SetMaxConcurrentFetchTar(10 * addrs)
+		}
+
 		stats, err := s.cache.Evict(s.MaxCacheSizeBytes)
 		if err != nil {
 			log.Printf("failed to Evict: %s", err)
