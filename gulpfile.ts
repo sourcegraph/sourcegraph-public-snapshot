@@ -193,9 +193,41 @@ export async function unusedExports(): Promise<void> {
  * Typechecks the TypeScript code.
  */
 export function typescript(): ChildProcess {
-    return spawn('yarn', ['run', 'tsc', '-p', 'tsconfig.json', '--pretty'], {
+    return spawn('yarn', ['-s', 'run', 'tsc', '-p', 'tsconfig.json', '--pretty'], {
         stdio: 'inherit',
         cwd: 'packages/webapp',
+        shell: true,
+    })
+}
+
+export function buildSourcegraphExtensionAPI(): ChildProcess {
+    return spawn('yarn', ['-s', 'run', 'build'], {
+        stdio: 'inherit',
+        cwd: 'packages/sourcegraph-extension-api',
+        shell: true,
+    })
+}
+
+export function buildExtensionsClientCommon(): ChildProcess {
+    return spawn('yarn', ['-s', 'run', 'build'], {
+        stdio: 'inherit',
+        cwd: 'packages/extensions-client-common',
+        shell: true,
+    })
+}
+
+export function watchSourcegraphExtensionAPI(): ChildProcess {
+    return spawn('yarn', ['-s', 'run', 'watch:build'], {
+        stdio: 'inherit',
+        cwd: 'packages/sourcegraph-extension-api',
+        shell: true,
+    })
+}
+
+export function watchExtensionsClientCommon(): ChildProcess {
+    return spawn('yarn', ['-s', 'run', 'watch:build'], {
+        stdio: 'inherit',
+        cwd: 'packages/extensions-client-common',
         shell: true,
     })
 }
@@ -230,5 +262,14 @@ export const build = gulp.parallel(
 export const watch = gulp.series(
     // Ensure the typings that TypeScript depends on are build to avoid first-time-run errors
     gulp.parallel(schema, graphQLTypes),
-    gulp.parallel(watchSchema, watchGraphQLTypes, webpackDevServer, watchPhabricator)
+    buildSourcegraphExtensionAPI,
+    buildExtensionsClientCommon,
+    gulp.parallel(
+        watchSchema,
+        watchGraphQLTypes,
+        webpackDevServer,
+        watchPhabricator,
+        watchSourcegraphExtensionAPI,
+        watchExtensionsClientCommon
+    )
 )

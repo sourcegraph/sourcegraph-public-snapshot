@@ -1,10 +1,12 @@
 {
   "private": true,
+  "name": "browser-extensions",
+  "version": "1.0.0",
   "engines": {
     "yarn": ">1.10.0"
   },
   "scripts": {
-    "dev": "NODE_ENV=development ts-node scripts/dev",
+    "dev": "NODE_ENV=development node --max_old_space_size=8192 -r ts-node/register scripts/dev",
     "dev:no-reload": "AUTO_RELOAD=false yarn run dev",
     "dev:firefox": "web-ext run --source-dir ./build/firefox",
     "build": "NODE_ENV=production ts-node scripts/build",
@@ -14,7 +16,7 @@
     "stylelint": "stylelint 'app/**/*.scss'",
     "clean": "rm -rf build/ dist/ *.zip *.xpi .checksum",
     "cypress:open": "yarn run build && cypress open",
-    "test:e2e": "yarn run build && cypress run --browser chrome",
+    "test:e2e": "cypress run --browser chrome",
     "prettier": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --write --list-different --config prettier.config.js",
     "storybook": "start-storybook -c ./config/storybook -p 6006",
     "build-storybook": "build-storybook -c ./config/storybook",
@@ -138,7 +140,7 @@
     "reactstrap": "^5.0.0-beta.2",
     "rxjs": "^6.3.2",
     "socket.io-client": "^2.1.1",
-    "sourcegraph": "^18.4.0",
+    "sourcegraph": "18.4.1",
     "string-score": "^1.0.1",
     "textarea-caret": "^3.1.0",
     "ts-key-enum": "^2.0.0",

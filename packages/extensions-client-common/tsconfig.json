@@ -14,8 +14,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": ["node_modules/@types", "src/types"],
-    "types": ["mocha"],
+    "typeRoots": ["node_modules/@types", "../../node_modules/@types", "src/types"],
     "plugins": [
       {
         "name": "tslint-language-service"

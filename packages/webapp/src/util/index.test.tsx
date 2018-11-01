@@ -1,4 +1,4 @@
-import { assert } from 'chai'
+import * as assert from 'assert'
 import { getPathExtension } from '.'
 
 describe('util/index', () => {

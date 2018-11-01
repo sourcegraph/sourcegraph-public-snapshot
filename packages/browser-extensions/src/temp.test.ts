@@ -1,6 +1,5 @@
 import { expect } from 'chai'
-import { test } from 'mocha'
 
-test('basic', () => {
+it('basic', () => {
     expect(true).to.equal(true)
 })

@@ -8,7 +8,10 @@ export const buildStylesLoaders = (baseLoader: webpack.Loader): webpack.Loader[]
     {
         loader: 'sass-loader',
         options: {
-            includePaths: [path.resolve(__dirname, '../..', 'node_modules')],
+            includePaths: [
+                path.resolve(__dirname, '../..', 'node_modules'),
+                path.resolve(__dirname, '../../../..', 'node_modules'),
+            ],
             importer: sassImportOnce,
             importOnce: {
                 css: true,

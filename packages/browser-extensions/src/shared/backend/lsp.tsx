@@ -354,6 +354,8 @@ export const createLSPFromExtensions = (
             map(hover => (hover === null ? HoverMerged.from([]) : hover))
         ),
     fetchDefinition: pos =>
-        from(extensionsController.registries.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos))),
+        from(
+            extensionsController.registries.textDocumentDefinition.getLocation(toTextDocumentPositionParams(pos))
+        ) as Observable<Definition>,
     fetchServerCapabilities,
 })

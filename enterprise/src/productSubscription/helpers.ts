@@ -1,6 +1,6 @@
 import formatDistanceStrict from 'date-fns/formatDistanceStrict'
 import isAfter from 'date-fns/isAfter'
-import { numberWithCommas, pluralize } from '../../../src/util/strings'
+import { numberWithCommas, pluralize } from '../../../packages/webapp/src/util/strings'
 
 /**
  * Returns "N users" (properly pluralized and with commas added to N as needed).

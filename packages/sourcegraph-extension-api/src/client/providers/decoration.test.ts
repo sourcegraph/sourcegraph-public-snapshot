@@ -1,6 +1,7 @@
 import * as assert from 'assert'
 import { of } from 'rxjs'
 import { TestScheduler } from 'rxjs/testing'
+import { ThemableDecorationStyle } from 'sourcegraph'
 import { TextDocumentIdentifier } from '../../client/types/textDocument'
 import { TextDocumentDecoration } from '../../protocol/plainTypes'
 import {
@@ -138,7 +139,7 @@ describe('decorationStyleForTheme', () => {
         assert.deepStrictEqual(decorationStyleForTheme({ range: FIXTURE_RANGE, backgroundColor: 'red' }, true), {
             range: FIXTURE_RANGE, // it's not necessary that range is included, but it saves an object allocation
             backgroundColor: 'red',
-        }))
+        } as ThemableDecorationStyle))
 
     it('applies light theme overrides', () =>
         assert.deepStrictEqual(

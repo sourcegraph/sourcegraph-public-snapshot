@@ -1,4 +1,4 @@
-import { assert } from 'chai'
+import * as assert from 'assert'
 import { pickBy } from 'lodash'
 import * as _repo from '.'
 import { createTestBundle } from '../util/unit-test-utils'

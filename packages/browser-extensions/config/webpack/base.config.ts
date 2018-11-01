@@ -21,7 +21,7 @@ export default {
         inject: buildEntry(extEntry, contentEntry, '../../src/extension/scripts/inject.tsx'),
         phabricator: buildEntry(pageEntry, '../../src/libs/phabricator/extension.tsx'),
 
-        bootstrap: path.join(__dirname, '../../node_modules/bootstrap/dist/css/bootstrap.css'),
+        bootstrap: path.join(__dirname, '../../../../node_modules/bootstrap/dist/css/bootstrap.css'),
         style: path.join(__dirname, '../../src/shared/app.scss'),
     },
     output: {

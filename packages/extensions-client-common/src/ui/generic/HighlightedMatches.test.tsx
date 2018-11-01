@@ -1,5 +1,4 @@
-import { assert } from 'chai'
-import { describe } from 'mocha'
+import * as assert from 'assert'
 import { fuzzyMatches, Span } from './HighlightedMatches'
 
 describe('fuzzyMatches', () => {
@@ -59,7 +58,7 @@ describe('fuzzyMatches', () => {
     ] as { text: string; pattern: string; want: Span[] }[]
     for (const { text, pattern, want } of TESTS) {
         it(`matches ${JSON.stringify(pattern)} in ${JSON.stringify(text)}`, () => {
-            assert.deepEqual(fuzzyMatches(text, pattern), want)
+            assert.deepStrictEqual(fuzzyMatches(text, pattern), want)
         })
     }
 })

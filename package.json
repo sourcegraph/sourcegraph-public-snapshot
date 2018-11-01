@@ -7,7 +7,8 @@
     "url": "https://github.com/sourcegraph/sourcegraph"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "enterprise"
   ],
   "engines": {
     "node": ">=8.0.0 <11.0.0",
@@ -20,6 +21,7 @@
     "graphql-lint": "graphql-schema-linter --old-implements-syntax --comment-descriptions cmd/frontend/graphqlbackend/schema.graphql"
   },
   "devDependencies": {
+    "@babel/plugin-syntax-dynamic-import": "^7.0.0",
     "@gql2ts/from-schema": "^1.10.1",
     "@gql2ts/language-typescript": "^1.9.0",
     "@sourcegraph/prettierrc": "^2.2.0",
@@ -43,5 +45,9 @@
     "ts-unused-exports": "^2.0.11",
     "webpack": "^4.23.1",
     "webpack-dev-server": "^3.1.10"
+  },
+  "resolutions": {
+    "@types/react": "16.4.13",
+    "typescript": "3.0.1"
   }
 }

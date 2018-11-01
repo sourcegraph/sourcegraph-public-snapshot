@@ -1,16 +1,7 @@
 {
   "name": "@sourcegraph/extensions-client-common",
-  "version": "0.0.0-development",
+  "version": "11.0.0",
   "description": "Common TypeScript/React client application code for Sourcegraph extension configuration and management, used in Sourcegraph and \"Sourcegraph for X\" products",
-  "author": "Sourcegraph",
-  "license": "Apache-2.0",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sourcegraph/extensions-client-common.git"
-  },
-  "bugs": {
-    "url": "https://github.com/sourcegraph/extensions-client-common/issues"
-  },
   "main": "lib/index.js",
   "module": "lib/index.js",
   "files": [
@@ -24,16 +15,16 @@
     "schema:graphql": "cp ../sourcegraph/src/backend/graphqlschema.ts src/schema/graphqlschema.ts",
     "clean": "del-cli 'lib/**/*'",
     "typecheck": "tsc -p tsconfig.json",
-    "build": "yarn run clean && yarn run build:assets && yarn run build:typescript",
+    "build": "yarn -s run clean && yarn -s run build:assets && yarn -s run build:typescript",
     "build:assets": "cpy --parents --cwd=src '**/*.{css,d.ts,json}' '../lib/'",
     "build:typescript": "tsc -p tsconfig.dist.json",
     "test": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --require ts-node/register --require source-map-support/register --require esm --opts mocha.opts",
     "cover": "TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' nyc --require ts-node/register --require source-map-support/register  --require esm --all mocha --opts mocha.opts --timeout 10000",
     "watch:typecheck": "tsc -p tsconfig.json -w",
-    "watch:build:typescript": "tsc -p tsconfig.dist.json -w",
-    "watch:build:assets": "nodemon --watch src/ --ext css,d.ts,json --exec 'yarn run build:assets || exit 1'",
-    "watch:build": "yarn run clean && concurrently --kill-others 'npm:watch:build:*'",
-    "watch:test": "yarn run test -- -w"
+    "watch:build:typescript": "tsc -p tsconfig.dist.json -w --preserveWatchOutput",
+    "watch:build:assets": "nodemon -q --watch src/ --ext css,d.ts,json --exec 'yarn -s run build:assets || exit 1'",
+    "watch:build": "concurrently --kill-others 'yarn -s run watch:build:typescript' 'yarn -s run watch:build:assets'",
+    "watch:test": "yarn -s run test -- -w"
   },
   "nyc": {
     "extension": [
@@ -68,7 +59,7 @@
     "react-router-dom": "^4.3.1",
     "reactstrap": "^6.4.0",
     "rxjs": "^6.3.2",
-    "sourcegraph": "^18.2.0",
+    "sourcegraph": "18.4.1",
     "string-score": "^1.0.1",
     "ts-key-enum": "^2.0.0"
   },
@@ -79,7 +70,6 @@
     "@sourcegraph/tsconfig": "^3.0.0",
     "@sourcegraph/tslint-config": "^12.0.0",
     "@sqs/jsonc-parser": "^1.0.3",
-    "@types/chai": "^4.1.7",
     "@types/lodash-es": "^4.17.1",
     "@types/marked": "^0.4.2",
     "@types/mocha": "^5.2.5",
@@ -89,7 +79,6 @@
     "@types/react-router": "^4.0.30",
     "@types/react-router-dom": "^4.3.0",
     "@types/reactstrap": "^6.0.2",
-    "chai": "^4.2.0",
     "concurrently": "^4.0.1",
     "cpy-cli": "^2.0.0",
     "del-cli": "^1.1.0",

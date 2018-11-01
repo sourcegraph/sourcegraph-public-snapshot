@@ -1,7 +1,7 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
-import * as GQL from '../../../../src/backend/graphqlschema'
-import { RedirectToUserPage } from '../../../../src/user/account/RedirectToUserPage'
+import * as GQL from '../../../../packages/webapp/src/backend/graphqlschema'
+import { RedirectToUserPage } from '../../../../packages/webapp/src/user/account/RedirectToUserPage'
 import { UserSubscriptionsNewProductSubscriptionPage } from './UserSubscriptionsNewProductSubscriptionPage'
 
 interface Props extends RouteComponentProps<{}> {

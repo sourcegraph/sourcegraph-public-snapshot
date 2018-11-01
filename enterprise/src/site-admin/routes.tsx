@@ -1,6 +1,6 @@
 import React from 'react'
-import { siteAdminAreaRoutes } from '../../../src/site-admin/routes'
-import { SiteAdminAreaRoute } from '../../../src/site-admin/SiteAdminArea'
+import { siteAdminAreaRoutes } from '../../../packages/webapp/src/site-admin/routes'
+import { SiteAdminAreaRoute } from '../../../packages/webapp/src/site-admin/SiteAdminArea'
 import { SiteAdminProductCustomersPage } from './dotcom/customers/SiteAdminCustomersPage'
 import { SiteAdminCreateProductSubscriptionPage } from './dotcom/productSubscriptions/SiteAdminCreateProductSubscriptionPage'
 import { SiteAdminProductLicensesPage } from './dotcom/productSubscriptions/SiteAdminProductLicensesPage'

@@ -70,6 +70,8 @@ func main() {
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn workspace webapp run browserslist"),
+		bk.Cmd("yarn workspace sourcegraph run build"),
+		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
 		bk.Cmd("NODE_ENV=production yarn workspace webapp run build --color"),
 		bk.Cmd("GITHUB_TOKEN= yarn workspace webapp run bundlesize"))
 
@@ -79,9 +81,7 @@ func main() {
 		bk.Env("FORCE_COLOR", "1"),
 		bk.Cmd("yarn --frozen-lockfile"),
 		bk.Cmd("yarn workspace webapp run cover"),
-		bk.Cmd("pushd packages/webapp"),
-		bk.Cmd("node_modules/.bin/nyc report -r json"),
-		bk.Cmd("popd"),
+		bk.Cmd("yarn workspace webapp run nyc report -r json --report-dir coverage"),
 		bk.ArtifactPaths("packages/webapp/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":docker:",
@@ -100,29 +100,29 @@ func main() {
 		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn workspace sourcegraph run prettier"),
 		bk.Cmd("yarn workspace sourcegraph run tslint"),
 		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace sourcegraph run typecheck"),
 		bk.Cmd("yarn workspace sourcegraph run cover"),
-		bk.Cmd("yarn workspace sourcegraph run nyc report --reporter json"),
-		bk.Cmd("cd packages/sourcegraph-extension-api && bash <(curl -s https://codecov.io/bash)"))
+		bk.Cmd("yarn workspace sourcegraph run nyc report -r json --report-dir coverage"),
+		bk.ArtifactPaths("packages/sourcegraph-extension-api/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":typescript:",
 		bk.Env("CYPRESS_INSTALL_BINARY", "0"),
 		bk.Env("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true"),
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run prettier"),
+		bk.Cmd("yarn workspace sourcegraph run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run tslint"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run typecheck"),
 		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run cover"),
-		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run nyc report --reporter json"),
-		bk.Cmd("cd packages/extensions-client-common && bash <(curl -s https://codecov.io/bash)"))
+		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run nyc report -r json --report-dir coverage"),
+		bk.ArtifactPaths("packages/extensions-client-common/coverage/coverage-final.json"))
 
 	pipeline.AddStep(":typescript:",
 		bk.Cmd("yarn --frozen-lockfile"),
-		bk.Cmd("yarn workspace browser-extensions run prettier"),
+		bk.Cmd("yarn workspace sourcegraph run build"),
+		bk.Cmd("yarn workspace @sourcegraph/extensions-client-common run build"),
 		bk.Cmd("yarn workspace browser-extensions run tslint"),
 		bk.Cmd("yarn workspace browser-extensions run browserslist"),
 		bk.Cmd("yarn workspace browser-extensions run build"),
@@ -131,11 +131,15 @@ func main() {
 
 	pipeline.AddWait()
 
-	// Does this still work after moving the webapp to packages/webapp?
 	pipeline.AddStep(":codecov:",
-		bk.Cmd("buildkite-agent artifact download 'coverage.txt' . || true"), // ignore error when no report exists
-		bk.Cmd("buildkite-agent artifact download '*/coverage-final.json' . || true"),
-		bk.Cmd("bash <(curl -s https://codecov.io/bash) -X gcov -X coveragepy -X xcode"))
+		bk.Cmd("buildkite-agent artifact download 'packages/webapp/coverage/coverage-final.json' . || true"), // ignore error when no report exists
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
+		bk.Cmd("buildkite-agent artifact download 'packages/sourcegraph-extension-api/coverage/coverage-final.json' . || true"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
+		bk.Cmd("buildkite-agent artifact download 'packages/extensions-client-common/coverage/coverage-final.json' . || true"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage-final.json"),
+		bk.Cmd("buildkite-agent artifact download 'coverage.txt' coverage.txt || true"),
+		bk.Cmd("bash <(curl -s https://codecov.io/bash) -f coverage.txt"))
 
 	pipeline.AddWait()
 

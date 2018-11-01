@@ -1,11 +1,11 @@
-import { assert } from 'chai'
+import assert from 'assert'
 import { ContributableMenu } from 'sourcegraph/module/protocol'
 import { ActionItemProps } from './ActionItem'
 import { getContributedActionItems } from './contributions'
 
 describe('getContributedActionItems', () => {
     it('gets action items', () =>
-        assert.deepEqual(
+        assert.deepStrictEqual(
             getContributedActionItems(
                 {
                     actions: [

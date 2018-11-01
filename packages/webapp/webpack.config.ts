@@ -18,16 +18,6 @@ const babelLoader: webpack.RuleSetUseItem = {
     loader: 'babel-loader',
     options: {
         cacheDirectory: true,
-        plugins: ['@babel/plugin-syntax-dynamic-import', 'babel-plugin-lodash'],
-        presets: [
-            [
-                '@babel/preset-env',
-                {
-                    useBuiltIns: 'entry',
-                    modules: false,
-                },
-            ],
-        ],
     },
 }
 

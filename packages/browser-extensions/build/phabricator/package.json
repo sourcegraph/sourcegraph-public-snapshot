@@ -1,9 +1,5 @@
 {
   "name": "@sourcegraph/phabricator-extension",
   "description": "The Sourcegraph Phabricator extension bundle",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sourcegraph/browser-extensions"
-  }
+  "license": "MIT"
 }
