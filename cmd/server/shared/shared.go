@@ -126,6 +126,10 @@ func Main() {
 	// TODO validate known_hosts contains all code hosts in config.
 
 	zoektIndexDir := filepath.Join(DataDir, "zoekt/index")
+	debugFlag := ""
+	if verbose {
+		debugFlag = "-debug"
+	}
 
 	procfile := []string{
 		`gitserver: gitserver`,
@@ -138,7 +142,7 @@ func Main() {
 		`repo-updater: repo-updater`,
 		`indexer: indexer`,
 		`syntect_server: sh -c 'env QUIET=true ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_PORT=9238 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' ROCKET_ENV=production syntect_server | grep -v "Rocket has launched" | grep -v "Warning: environment is"'`,
-		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072", FrontendInternalHost, zoektIndexDir),
+		fmt.Sprintf("zoekt-indexserver: zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072 %s", FrontendInternalHost, zoektIndexDir, debugFlag),
 		fmt.Sprintf("zoekt-webserver: zoekt-webserver -rpc -pprof -listen %s -index %s", zoektHost, zoektIndexDir),
 	}
 	procfile = append(procfile, ProcfileAdditions...)
