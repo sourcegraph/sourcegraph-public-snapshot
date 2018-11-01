@@ -150,7 +150,12 @@ func Main() error {
 
 	// We are the frontend, so there is no need to go over the network for
 	// internal API requests.
-	api.InternalClient.URL = "http://127.0.0.1"
+	u, err := url.Parse(api.InternalClient.URL)
+	if err != nil {
+		return err
+	}
+	u.Host = "127.0.0.1"
+	api.InternalClient.URL = u.String()
 
 	goroutine.Go(mailreply.StartWorker)
 	go updatecheck.Start()
