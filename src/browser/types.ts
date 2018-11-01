@@ -46,7 +46,6 @@ export interface StorageItems {
     renderMermaidGraphsEnabled: boolean
     executeSearchEnabled: boolean
     sourcegraphRepoSearchToggled: boolean
-    openEditorEnabled: boolean
     identity: string
     serverUrls: string[]
     enterpriseUrls: string[]
@@ -90,7 +89,6 @@ export const defaultStorageItems: StorageItems = {
     renderMermaidGraphsEnabled: false,
     executeSearchEnabled: false,
     sourcegraphRepoSearchToggled: true,
-    openEditorEnabled: false,
     identity: '',
     enterpriseUrls: [],
     serverUserId: '',
