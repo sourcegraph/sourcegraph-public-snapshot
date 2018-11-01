@@ -6,9 +6,7 @@ Sourcegraph development is open source at [github.com/sourcegraph/sourcegraph](h
 
 ## Quickstart
 
-Set up a private Sourcegraph instance for your team in seconds with the command below. Visit the [site administrator documentation](admin/index.md) to learn more about installation options, or start [adding repositories](admin/repo/add.md) and searching!
-
-**Prerequisites:** [Docker](https://docs.docker.com/engine/installation/) is required.
+Run a self-hosted Sourcegraph instance for your team:
 
 ```
 docker run \
@@ -19,16 +17,7 @@ docker run \
   sourcegraph/server:2.12.3
 ```
 
-When Sourcegraph is ready, continue at http://localhost:7080.
-
-### Next steps
-
-- [Add repositories](admin/repo/add.md)
-- [Configure your Sourcegraph instance](admin/site_config/index.md)
-- [Configure code intelligence](extensions/language_servers/index.md)
-- [Deploy Sourcegraph on AWS](admin/install/docker/aws.md)
-- [Deploy Sourcegraph on Google Cloud Platform](admin/install/docker/google_cloud.md)
-- [Deploy Sourcegraph on Digital Ocean](admin/install/docker/digitalocean.md)
+When Sourcegraph is ready, continue at http://localhost:7080. See [site administration documentation](admin/index.md) for next steps.
 
 ## For users
 
