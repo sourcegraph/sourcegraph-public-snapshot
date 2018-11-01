@@ -494,6 +494,85 @@ func ExpandFileContent(q Q) Q {
 	return q
 }
 
+// ExpandRepo expands all Repo Q in q with listFn. An error is returned if
+// listFn returns an error.
+//
+// listFn is a function which takes a list of repo patterns and returns all
+// repository names that satisfies the patterns. A name satisfies the pattern
+// if all include match, and no exclude match.
+func ExpandRepo(q Q, listFn func(include, exclude []string) (map[string]bool, error)) (Q, error) {
+	// TODO(keegancsmith) listFn in Sourcegraph will talk to a DB. So it would
+	// be better to adjust this function to create arbitrary expressions
+	// containing only AND, OR, NOT, and REPO. Those expressions can then be
+	// translated into a SQL WHERE query. This can then reduce the amount of
+	// queries we run against the DB.
+
+	// We want nested ors/ands to be flattened
+	q = Simplify(q)
+
+	var retErr error
+	list := func(inc, exc []string) Q {
+		if retErr != nil {
+			return &Const{Value: false}
+		}
+		q, err := listFn(inc, exc)
+		if err != nil {
+			retErr = err
+			return &Const{Value: false}
+		}
+		if len(q) == 0 {
+			return &Const{Value: false}
+		}
+		return &RepoSet{Set: q}
+	}
+	q = Map(q, func(q Q) Q {
+		and, ok := q.(*And)
+		if !ok {
+			return q
+		}
+		// Children have already been mapped, so safe to modify slice (it
+		// should be a copy)
+		var inc, exc []string
+		children := and.Children[:0]
+		for _, cs := range and.Children {
+			switch c := cs.(type) {
+			case *Repo:
+				inc = append(inc, c.Pattern)
+			case *Not:
+				if r, ok := c.Child.(*Repo); ok {
+					exc = append(exc, r.Pattern)
+				} else {
+					children = append(children, c)
+				}
+			default:
+				children = append(children, c)
+			}
+		}
+		if len(inc) > 0 || len(exc) > 0 {
+			children = append(children, list(inc, exc))
+		}
+		return NewAnd(children...)
+	})
+	// We may still have Repo queries which are not a child of an And. So we
+	// need to naively translate those. First Not then Repo (since Repo can be
+	// a child of Not).
+	q = Map(q, func(q Q) Q {
+		if not, ok := q.(*Not); ok {
+			if r, ok := not.Child.(*Repo); ok {
+				return list(nil, []string{r.Pattern})
+			}
+		}
+		return q
+	})
+	q = Map(q, func(q Q) Q {
+		if r, ok := q.(*Repo); ok {
+			return list([]string{r.Pattern}, nil)
+		}
+		return q
+	})
+	return Simplify(q), retErr
+}
+
 // VisitAtoms runs `v` on all atom queries within `q`.
 func VisitAtoms(q Q, v func(q Q)) {
 	Map(q, func(iQ Q) Q {
