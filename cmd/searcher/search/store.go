@@ -311,12 +311,13 @@ func (s *Store) watchAndEvict() {
 		return
 	}
 
-	prevAddrs := len(gitserver.DefaultClient.Addrs(context.TODO()))
+	ctx := context.Background()
+	prevAddrs := len(gitserver.DefaultClient.Addrs(ctx))
 	for {
 		time.Sleep(10 * time.Second)
 
 		// Allow roughly 10 fetches per gitserver
-		addrs := len(gitserver.DefaultClient.Addrs(context.TODO()))
+		addrs := len(gitserver.DefaultClient.Addrs(ctx))
 		if addrs != prevAddrs {
 			prevAddrs = addrs
 			s.SetMaxConcurrentFetchTar(10 * addrs)
