@@ -205,14 +205,6 @@ export const createSuggestionFetcher = (first = 5) => {
             distinctUntilChanged(),
             debounceTime(200),
             switchMap(({ query, handler }) => {
-                if (query.length < 2) {
-                    return [
-                        {
-                            suggestions: [],
-                            suggestHandler: handler,
-                        },
-                    ]
-                }
                 const options: SearchOptions = {
                     query,
                 }
