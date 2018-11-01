@@ -44,37 +44,3 @@ export function makeCloseIcon(): HTMLElement {
     render(<CloseIcon size={17} />, el)
     return el
 }
-
-export class ShowFileTree extends React.Component<any, {}> {
-    public render(): JSX.Element {
-        return (
-            <IconBase viewBox="0 0 12 10" {...this.props}>
-                <g id="Page-1" stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-                    <g id="Vector" fillRule="nonzero" fill="#FFFFFF">
-                        <path
-                            d="M11,10 L1,10 C0.45,10 0,9.55 0,9 L0,1 C0,0.45 0.45,0 1,0 L11,0 C11.55,0 12,0.45 12,1 L12,9 C12,9.55 11.55,10 11,10 Z M3.5,1.25 C3.5,1.1 3.4,1 3.25,1 L1.25,1 C1.1,1 1,1.1 1,1.25 L1,8.75 C1,8.9 1.1,9 1.25,9 L3.25,9 C3.4,9 3.5,8.9 3.5,8.75 L3.5,1.25 Z M9.4,4.8 L6.9,3.05 C6.775,2.975 6.625,3 6.55,3.1 C6.525,3.15 6.5,3.2 6.5,3.25 L6.5,6.75 C6.5,6.9 6.625,7 6.75,7 C6.8,7 6.85,6.975 6.9,6.95 L9.4,5.2 C9.525,5.125 9.55,4.975 9.475,4.85 C9.45,4.825 9.425,4.8 9.4,4.8 Z"
-                            id="path0_fill"
-                        />
-                    </g>
-                </g>
-            </IconBase>
-        )
-    }
-}
-
-export class ToggleFileTree extends React.Component<any, {}> {
-    public render(): JSX.Element {
-        return (
-            <IconBase viewBox="0 0 12 10" {...this.props}>
-                <g id="Page-1" stroke="none" strokeWidth="1" fill="none" fillRule="evenodd">
-                    <g id="ToggleFileTree" fillRule="nonzero" fill="#FFFFFF">
-                        <path
-                            d="M11,10 L1,10 C0.45,10 0,9.55 0,9 L0,1 C0,0.45 0.45,0 1,0 L11,0 C11.55,0 12,0.45 12,1 L12,9 C12,9.55 11.55,10 11,10 Z M3.5,1.25 C3.5,1.1 3.4,1 3.25,1 L1.25,1 C1.1,1 1,1.1 1,1.25 L1,8.75 C1,8.9 1.1,9 1.25,9 L3.25,9 C3.4,9 3.5,8.9 3.5,8.75 L3.5,1.25 Z M9,3.25 C9,3.1 8.875,3 8.75,3 C8.7,3 8.65,3.025 8.6,3.05 L6.125,4.8 C6,4.875 5.975,5.025 6.05,5.15 C6.075,5.175 6.1,5.2 6.125,5.225 L8.6,6.975 C8.725,7.05 8.875,7.025 8.95,6.925 C8.975,6.875 9,6.825 9,6.775 L9,3.25 Z"
-                            id="path0_fill"
-                        />
-                    </g>
-                </g>
-            </IconBase>
-        )
-    }
-}

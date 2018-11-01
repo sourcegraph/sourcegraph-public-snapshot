@@ -31,7 +31,6 @@ import { combineLatest, forkJoin, from, of, Subject } from 'rxjs'
 import { filter, map, take, withLatestFrom } from 'rxjs/operators'
 import { Disposable } from 'vscode-languageserver'
 import { GitHubBlobUrl } from '.'
-import storage from '../../browser/storage'
 import { applyDecoration, createMessageTransports } from '../../shared/backend/extensions'
 import { createExtensionsContextController } from '../../shared/backend/extensions'
 import {
@@ -52,13 +51,11 @@ import { WithResolvedRev } from '../../shared/components/WithResolvedRev'
 import { AbsoluteRepoFile, DiffResolvedRevSpec } from '../../shared/repo'
 import { resolveRev, retryWhenCloneInProgressError } from '../../shared/repo/backend'
 import { hideTooltip } from '../../shared/repo/tooltips'
-import { RepoRevSidebar } from '../../shared/tree/RepoRevSidebar'
 import {
     eventLogger,
     getModeFromPath,
     inlineSymbolSearchEnabled,
     renderMermaidGraphsEnabled,
-    repositoryFileTreeEnabled,
     sourcegraphUrl,
     useExtensions,
 } from '../../shared/util/context'
@@ -288,77 +285,10 @@ function inject(): void {
     injectServerBanner()
     injectOpenOnSourcegraphButton()
 
-    injectFileTree()
     injectMermaid()
 
     initSearch()
     injectInlineSearch()
-}
-
-function hideFileTree(): void {
-    const tree = document.getElementById('sourcegraph-file-tree')
-    document.body.style.marginLeft = '0px'
-    if (!tree || !tree.parentNode) {
-        return
-    }
-    tree.parentNode.removeChild(tree)
-}
-
-const specChanges = new Subject<{ repoPath: string; commitID: string }>()
-
-function injectFileTree(): void {
-    if (!repositoryFileTreeEnabled) {
-        return
-    }
-    const { repoPath } = parseURL()
-
-    if (!repoPath) {
-        return
-    }
-    const pjaxContainer = document.getElementById('js-repo-pjax-container')
-    if (!pjaxContainer) {
-        return
-    }
-
-    let container = document.getElementById('sourcegraph-file-tree-container') as HTMLElement
-    let mount = document.getElementById('sourcegraph-file-tree') as HTMLElement
-    if (!mount) {
-        mount = document.createElement('div')
-        mount.id = 'sourcegraph-file-tree'
-        mount.className = 'tree-mount'
-        mount.setAttribute('data-pjax', 'true')
-        container = document.createElement('div')
-        container.id = 'sourcegraph-file-tree-container'
-        container.className = 'repo-rev-container'
-        mount.appendChild(container)
-        pjaxContainer.insertBefore(mount, pjaxContainer.firstElementChild!)
-    }
-
-    const gitHubState = getGitHubState(window.location.href)
-    if (!gitHubState) {
-        return
-    }
-    if (document.querySelector('.octotree')) {
-        storage.setSync({ repositoryFileTreeEnabled: false })
-        hideFileTree()
-        return
-    }
-    render(
-        <WithResolvedRev
-            component={RepoRevSidebar}
-            className="repo-rev-container__sidebar"
-            repoPath={repoPath}
-            rev={gitHubState.rev}
-            history={history}
-            scrollRootSelector="#explorer"
-            selectedPath={gitHubState.filePath}
-            filePath={gitHubState.filePath}
-            location={window.location}
-            defaultBranch={'HEAD'}
-        />,
-        container
-    )
-    specChanges.next({ repoPath, commitID: gitHubState.rev || '' })
 }
 
 /**

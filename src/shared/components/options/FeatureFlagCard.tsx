@@ -13,10 +13,6 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
         storage.setSync({ executeSearchEnabled: !this.props.storage.executeSearchEnabled })
     }
 
-    private onFileTreeToggled = () => {
-        storage.setSync({ repositoryFileTreeEnabled: !this.props.storage.repositoryFileTreeEnabled })
-    }
-
     private onMermaidToggled = () => {
         const renderMermaidGraphsEnabled = !this.props.storage.renderMermaidGraphsEnabled
         storage.setSync({ renderMermaidGraphsEnabled })
@@ -34,7 +30,6 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
         const {
             inlineSymbolSearchEnabled,
             renderMermaidGraphsEnabled,
-            repositoryFileTreeEnabled,
             executeSearchEnabled,
             useExtensions,
         } = this.props.storage
@@ -54,16 +49,6 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
                                         />{' '}
                                         Open a new window with Sourcegraph search results when you perform a search on
                                         your code host.
-                                    </Label>
-                                </FormGroup>
-                                <FormGroup check={true}>
-                                    <Label check={true}>
-                                        <Input
-                                            onClick={this.onFileTreeToggled}
-                                            defaultChecked={repositoryFileTreeEnabled}
-                                            type="checkbox"
-                                        />{' '}
-                                        GitHub file tree navigation.
                                     </Label>
                                 </FormGroup>
                                 <FormGroup check={true}>

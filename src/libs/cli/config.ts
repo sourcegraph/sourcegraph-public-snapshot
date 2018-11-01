@@ -44,39 +44,6 @@ const setUrlCommand: OmniCLI.Command = {
     description: 'Set your primary Sourcegraph URL',
 }
 
-function setFileTree([to]: string[]): void {
-    if ((to && to === 'true') || to === 'false') {
-        storage.setSync({
-            repositoryFileTreeEnabled: to === 'true',
-        })
-        return
-    }
-
-    storage.getSync(({ repositoryFileTreeEnabled }) =>
-        storage.setSync({ repositoryFileTreeEnabled: !repositoryFileTreeEnabled })
-    )
-}
-
-function getSetFileTreeSuggestions(): Promise<OmniCLI.Suggestion[]> {
-    return new Promise(resolve => {
-        storage.getSync(({ repositoryFileTreeEnabled }) =>
-            resolve([
-                {
-                    content: repositoryFileTreeEnabled ? 'false' : 'true',
-                    description: `${repositoryFileTreeEnabled ? 'Disable' : 'Enable'} File Tree`,
-                },
-            ])
-        )
-    })
-}
-
-const setFileTreeCommand: OmniCLI.Command = {
-    name: 'set-tree',
-    action: setFileTree,
-    getSuggestions: getSetFileTreeSuggestions,
-    description: 'Set or toggle the File Tree',
-}
-
 function setOpenFileOn([to]: string[]): void {
     if ((to && to === 'true') || to === 'false') {
         storage.setSync({
@@ -111,4 +78,4 @@ const setOpenFileOnCommand: OmniCLI.Command = {
     description: `Set whether you would like files to open on Sourcegraph of the given repo's code host`,
 }
 
-export default [addUrlCommand, setUrlCommand, setFileTreeCommand, setOpenFileOnCommand]
+export default [addUrlCommand, setUrlCommand, setOpenFileOnCommand]

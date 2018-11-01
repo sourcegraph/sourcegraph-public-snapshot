@@ -77,12 +77,6 @@ export function toAbsoluteBlobURL(ctx: AbsoluteRepoFile & Partial<PositionSpec> 
     )}${toReferencesHash(ctx.referencesMode)}`
 }
 
-export function toTreeURL(ctx: RepoFile): string {
-    const url = repoUrlCache[ctx.repoPath] || sourcegraphUrl
-    const rev = ctx.commitID || ctx.rev || ''
-    return `${url}/${ctx.repoPath}${rev ? '@' + rev : ''}/-/tree/${ctx.filePath}`
-}
-
 /**
  * Correctly handle use of meta/ctrl/alt keys during onClick events that open new pages
  */

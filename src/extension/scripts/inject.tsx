@@ -10,7 +10,6 @@ import {
     setExecuteSearchEnabled,
     setInlineSymbolSearchEnabled,
     setRenderMermaidGraphsEnabled,
-    setRepositoryFileTreeEnabled,
     setSourcegraphUrl,
     setUseExtensions,
 } from '../../shared/util/context'
@@ -81,9 +80,6 @@ function injectApplication(): void {
             )
             setInlineSymbolSearchEnabled(
                 items.inlineSymbolSearchEnabled === undefined ? false : items.inlineSymbolSearchEnabled
-            )
-            setRepositoryFileTreeEnabled(
-                items.repositoryFileTreeEnabled === undefined ? true : items.repositoryFileTreeEnabled
             )
             setExecuteSearchEnabled(items.executeSearchEnabled === undefined ? true : items.executeSearchEnabled)
             injectGitHubApplication(extensionMarker)

@@ -54,12 +54,7 @@ class FileCommand implements OmniCLI.Command {
 
     public getSuggestions = ([queryPath]: string[]): OmniCLI.Suggestion[] => {
         if (this.repos.size === 0) {
-            return [
-                {
-                    content: 'set-tree true',
-                    description: 'Open a tab to a GitHub repo and enable the file tree to use the fuzzy file finder',
-                },
-            ]
+            return []
         }
 
         const suggestions: FileSuggestion[] = []

@@ -15,8 +15,6 @@ export let executeSearchEnabled = false
 
 export let renderMermaidGraphsEnabled = false
 
-export let repositoryFileTreeEnabled = false
-
 export let inlineSymbolSearchEnabled = false
 
 export let useExtensions = false
@@ -34,8 +32,6 @@ if (window.SG_ENV === 'EXTENSION') {
         executeSearchEnabled = items.executeSearchEnabled
 
         renderMermaidGraphsEnabled = items.renderMermaidGraphsEnabled
-
-        repositoryFileTreeEnabled = items.repositoryFileTreeEnabled
 
         inlineSymbolSearchEnabled = items.inlineSymbolSearchEnabled
         useExtensions = items.useExtensions
@@ -68,10 +64,6 @@ export function setExecuteSearchEnabled(enabled: boolean): void {
 
 export function setRenderMermaidGraphsEnabled(enabled: boolean): void {
     renderMermaidGraphsEnabled = enabled
-}
-
-export function setRepositoryFileTreeEnabled(enabled: boolean): void {
-    repositoryFileTreeEnabled = enabled
 }
 
 export function setInlineSymbolSearchEnabled(enabled: boolean): void {

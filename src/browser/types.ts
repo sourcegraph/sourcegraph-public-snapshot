@@ -44,7 +44,6 @@ export interface StorageItems {
     phabricatorURL: string
     inlineSymbolSearchEnabled: boolean
     renderMermaidGraphsEnabled: boolean
-    repositoryFileTreeEnabled: boolean
     executeSearchEnabled: boolean
     sourcegraphRepoSearchToggled: boolean
     openEditorEnabled: boolean
@@ -89,7 +88,6 @@ export const defaultStorageItems: StorageItems = {
     phabricatorURL: '',
     inlineSymbolSearchEnabled: true,
     renderMermaidGraphsEnabled: false,
-    repositoryFileTreeEnabled: true,
     executeSearchEnabled: false,
     sourcegraphRepoSearchToggled: true,
     openEditorEnabled: false,

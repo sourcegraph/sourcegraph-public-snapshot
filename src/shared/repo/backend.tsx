@@ -187,41 +187,6 @@ export function retryWhenCloneInProgressError<T>(): (v: Observable<T>) => Observ
         )
 }
 
-export const fetchTree = memoizeObservable(
-    (args: { repoPath: string; commitID: string }): Observable<string[]> =>
-        queryGraphQL({
-            ctx: getContext({ repoKey: args.repoPath }),
-            request: `
-                query FileTree($repoPath: String!, $commitID: String!) {
-                    repository(uri: $repoPath) {
-                        commit(rev: $commitID) {
-                            tree(recursive: true) {
-                                files {
-                                    name
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            variables: args,
-        }).pipe(
-            map(({ data, errors }) => {
-                if (
-                    !data ||
-                    !data.repository ||
-                    !data.repository.commit ||
-                    !data.repository.commit.tree ||
-                    !data.repository.commit.tree.files
-                ) {
-                    throw Object.assign(new Error((errors || []).map(e => e.message).join('\n')), { errors })
-                }
-                return data.repository.commit.tree.files.map(file => file.name)
-            })
-        ),
-    makeRepoURI
-)
-
 export const listAllSearchResults = memoizeAsync(
     (ctx: { query: string }): Promise<number> =>
         queryGraphQL({
