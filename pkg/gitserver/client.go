@@ -39,9 +39,7 @@ import (
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = &Client{
 	Addrs: func(ctx context.Context) []string {
-		updateGitServerAddrListOnce.Do(func() {
-			go updateGitServerAddrList()
-		})
+		updateGitServerAddrList()
 		return gitserverAddrList.Load().([]string)
 	},
 	HTTPClient: &http.Client{
@@ -60,33 +58,6 @@ var DefaultClient = &Client{
 	UserAgent: filepath.Base(os.Args[0]),
 }
 
-func updateGitServerAddrList() {
-	if len(conf.SrcGitServers) > 0 {
-		// SRC_GIT_SERVERS is set in the environment and as such takes
-		// precedence (only if it is not set do we fallback to the
-		// frontend). Generally only the frontend takes this codepath,
-		// but this codepath also applies to services that have not had
-		// their env updated yet.
-		gitserverAddrList.Store(conf.SrcGitServers)
-		return
-	}
-
-	// SRC_GIT_SERVERS is not configured in the environment, so we instead
-	// ask the frontend for this information. This is generally the code
-	// path that all non-frontend services take.
-	ctx := context.Background()
-	api.WaitForFrontend(ctx)
-	for {
-		addrs, err := api.InternalClient.GitServerAddrs(ctx)
-		if err != nil {
-			log15.Error("failed to discover gitserver instances via frontend internal API", "error", err)
-		} else {
-			gitserverAddrList.Store(addrs)
-		}
-		time.Sleep(5 * time.Second)
-	}
-}
-
 func init() {
 	gitserverAddrList.Store([]string{})
 }
@@ -95,6 +66,46 @@ var (
 	updateGitServerAddrListOnce sync.Once
 	gitserverAddrList           atomic.Value
 )
+
+func updateGitServerAddrList() {
+	updateGitServerAddrListOnce.Do(func() {
+		if len(conf.SrcGitServers) > 0 {
+			// SRC_GIT_SERVERS is set in the environment and as such takes
+			// precedence (only if it is not set do we fallback to the
+			// frontend). Generally only the frontend takes this codepath,
+			// but this codepath also applies to services that have not had
+			// their env updated yet.
+			gitserverAddrList.Store(conf.SrcGitServers)
+			return
+		}
+
+		// SRC_GIT_SERVERS is not configured in the environment, so we instead
+		// ask the frontend for this information. This is generally the code
+		// path that all non-frontend services take.
+		ctx := context.Background()
+		api.WaitForFrontend(ctx)
+
+		fetchAddrsOnce := func() {
+			for {
+				addrs, err := api.InternalClient.GitServerAddrs(ctx)
+				if err != nil {
+					log15.Error("failed to discover gitserver instances via frontend internal API", "error", err)
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				gitserverAddrList.Store(addrs)
+				break
+			}
+		}
+		fetchAddrsOnce()
+		go func() {
+			for {
+				fetchAddrsOnce()
+				time.Sleep(5 * time.Second)
+			}
+		}()
+	})
+}
 
 // Client is a gitserver client.
 type Client struct {
