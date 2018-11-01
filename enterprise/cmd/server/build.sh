@@ -8,11 +8,11 @@ GO111MODULE=on GOBIN=$PWD/.bin go install github.com/sourcegraph/godockerize
 
 # Additional images passed in here when this script is called externally by our
 # enterprise build scripts.
-additional_images=${@:-github.com/sourcegraph/enterprise/cmd/frontend}
+additional_images=${@:-github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend}
 
 # Overridable server package path for when this script is called externally by
 # our enterprise build scripts.
-server_pkg=${SERVER_PKG:-github.com/sourcegraph/enterprise/cmd/server}
+server_pkg=${SERVER_PKG:-github.com/sourcegraph/sourcegraph/enterprise/cmd/server}
 
 GO111MODULE=on ./.bin/godockerize build --base 'alpine:3.8' -t ${IMAGE} --go-build-flags="-ldflags" --go-build-flags="-X github.com/sourcegraph/sourcegraph/pkg/version.version=${VERSION}" --env VERSION=${VERSION} \
     $server_pkg \
