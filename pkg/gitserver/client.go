@@ -87,6 +87,10 @@ func updateGitServerAddrList() {
 	}
 }
 
+func init() {
+	gitserverAddrList.Store([]string{})
+}
+
 var (
 	updateGitServerAddrListOnce sync.Once
 	gitserverAddrList           atomic.Value
