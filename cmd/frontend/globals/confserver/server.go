@@ -66,7 +66,7 @@ func (s *Server) RawCore() string {
 func (s *Server) WriteBasic(input string) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := parse.DeprecatedParseBasicConfigFromEnvironment(input)
+	_, err := parse.ParseBasic(input)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (s *Server) WriteBasic(input string) error {
 func (s *Server) WriteCore(input string) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
-	_, err := parse.DeprecatedParseCoreConfigFromEnvironment(input)
+	_, err := parse.ParseCore(input)
 	if err != nil {
 		return err
 	}

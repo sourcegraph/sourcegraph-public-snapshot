@@ -96,7 +96,7 @@ func (c *CoreStore) MaybeUpdate(rawConfig string) (CoreUpdateResult, error) {
 
 	c.raw = rawConfig
 
-	newConfig, err := parse.DeprecatedParseCoreConfigFromEnvironment(rawConfig)
+	newConfig, err := parse.ParseCore(rawConfig)
 	if err != nil {
 		return result, errors.Wrap(err, "when parsing rawConfig during update")
 	}

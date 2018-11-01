@@ -14,6 +14,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - The **Explore** page was replaced with a **Repositories** search link in the top navigation bar.
+- The ability to specify site configuration options via environment variables has been removed. If you used to specify environment variables like `TLS_KEY`, etc. to configure your instance, see [the configuration documentation](doc/admin/site_config/all.md) to learn how to set the equivalent option in your site configuration.
 
 ## 2.13 (not yet released)
 

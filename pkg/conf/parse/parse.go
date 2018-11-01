@@ -30,23 +30,6 @@ func ParseBasic(data string) (*schema.BasicSiteConfiguration, error) {
 	return &basic, nil
 }
 
-func DeprecatedParseBasicConfigFromEnvironment(data string) (*schema.BasicSiteConfiguration, error) {
-	var tmpConfig, err = ParseBasic(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Env var config takes highest precedence but is deprecated.
-	if v, envVarNames, err := basicConfigFromEnv(); err != nil {
-		return nil, err
-	} else if len(envVarNames) > 0 {
-		if err := json.Unmarshal(v, tmpConfig); err != nil {
-			return nil, err
-		}
-	}
-	return tmpConfig, nil
-}
-
 func ParseCore(data string) (*schema.CoreSiteConfiguration, error) {
 	var core schema.CoreSiteConfiguration
 
@@ -56,23 +39,6 @@ func ParseCore(data string) (*schema.CoreSiteConfiguration, error) {
 	}
 
 	return &core, nil
-}
-
-func DeprecatedParseCoreConfigFromEnvironment(data string) (*schema.CoreSiteConfiguration, error) {
-	var tmpConfig, err = ParseCore(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Env var config takes highest precedence but is deprecated.
-	if v, envVarNames, err := coreConfigFromEnv(); err != nil {
-		return nil, err
-	} else if len(envVarNames) > 0 {
-		if err := json.Unmarshal(v, tmpConfig); err != nil {
-			return nil, err
-		}
-	}
-	return tmpConfig, nil
 }
 
 func tolerantUnmarshal(data string, v interface{}) error {
