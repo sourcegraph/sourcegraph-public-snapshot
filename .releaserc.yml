@@ -1,5 +1,6 @@
 branch: release
 verifyConditions:
+  - semantic-release-firefox
   - semantic-release-chrome
   - '@semantic-release/github'
   - '@semantic-release/npm'
