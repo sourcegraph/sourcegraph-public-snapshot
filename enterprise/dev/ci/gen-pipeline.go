@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -31,9 +32,10 @@ func main() {
 		buildNum, _ := strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 		version = fmt.Sprintf("%05d_%s_%.7s", buildNum, time.Now().Format("2006-01-02"), commit)
 	} else {
-		// The Git branch "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
+		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
 		version = strings.TrimPrefix(version, "v")
 	}
+	releaseBranch := regexp.MustCompile(`^[0-9]+\.[0-9]+$`).MatchString(branch)
 
 	bk.OnEveryStepOpts = append(bk.OnEveryStepOpts,
 		bk.Env("GO111MODULE", "on"),
@@ -125,6 +127,13 @@ func main() {
 		if app != "server" || taggedRelease {
 			cmds = append(cmds,
 				bk.Cmd(fmt.Sprintf("docker push %s:%s", image, version)),
+			)
+		}
+
+		if app == "server" && releaseBranch {
+			cmds = append(cmds,
+				bk.Cmd(fmt.Sprintf("docker tag %s:%s %s:%s-insiders", image, version, image, branch)),
+				bk.Cmd(fmt.Sprintf("docker push %s:%s-insiders", image, branch)),
 			)
 		}
 
@@ -221,6 +230,10 @@ func main() {
 		for _, dockerImage := range allDockerImages {
 			addDockerImageStep(dockerImage, false)
 		}
+		pipeline.AddWait()
+
+	case releaseBranch:
+		addDockerImageStep("server", false)
 		pipeline.AddWait()
 
 	case branch == "master":

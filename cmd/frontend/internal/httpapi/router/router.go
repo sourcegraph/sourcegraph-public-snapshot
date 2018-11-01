@@ -26,6 +26,7 @@ const (
 	UsersGetByUsername     = "internal.users.get-by-username"
 	UserEmailsGetEmail     = "internal.user-emails.get-email"
 	AppURL                 = "internal.app-url"
+	GitServerAddrs         = "internal.git-server-addrs"
 	CanSendEmail           = "internal.can-send-email"
 	SendEmail              = "internal.send-email"
 	Extension              = "internal.extension"
@@ -91,6 +92,7 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/users/get-by-username").Methods("POST").Name(UsersGetByUsername)
 	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
 	base.Path("/app-url").Methods("POST").Name(AppURL)
+	base.Path("/git-server-addrs").Methods("POST").Name(GitServerAddrs)
 	base.Path("/can-send-email").Methods("POST").Name(CanSendEmail)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/extension").Methods("POST").Name(Extension)

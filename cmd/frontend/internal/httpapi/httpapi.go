@@ -88,6 +88,7 @@ func NewInternalHandler(m *mux.Router) http.Handler {
 	m.Get(apirouter.UsersGetByUsername).Handler(trace.TraceRoute(handler(serveUsersGetByUsername)))
 	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.TraceRoute(handler(serveUserEmailsGetEmail)))
 	m.Get(apirouter.AppURL).Handler(trace.TraceRoute(handler(serveAppURL)))
+	m.Get(apirouter.GitServerAddrs).Handler(trace.TraceRoute(handler(serveGitServerAddrs)))
 	m.Get(apirouter.CanSendEmail).Handler(trace.TraceRoute(handler(serveCanSendEmail)))
 	m.Get(apirouter.SendEmail).Handler(trace.TraceRoute(handler(serveSendEmail)))
 	m.Get(apirouter.DefsRefreshIndex).Handler(trace.TraceRoute(handler(serveDefsRefreshIndex)))

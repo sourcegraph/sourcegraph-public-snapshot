@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/neelance/parallel"
@@ -27,6 +28,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/pkg/vcs"
@@ -34,11 +36,12 @@ import (
 	log15 "gopkg.in/inconshreveable/log15.v2"
 )
 
-var gitservers = env.Get("SRC_GIT_SERVERS", "gitserver:3178", "addresses of the remote gitservers")
-
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = &Client{
-	Addrs: strings.Fields(gitservers),
+	Addrs: func(ctx context.Context) []string {
+		updateGitServerAddrList()
+		return gitserverAddrList.Load().([]string)
+	},
 	HTTPClient: &http.Client{
 		// nethttp.Transport will propagate opentracing spans
 		Transport: &nethttp.Transport{
@@ -55,6 +58,55 @@ var DefaultClient = &Client{
 	UserAgent: filepath.Base(os.Args[0]),
 }
 
+func init() {
+	gitserverAddrList.Store([]string{})
+}
+
+var (
+	updateGitServerAddrListOnce sync.Once
+	gitserverAddrList           atomic.Value
+)
+
+func updateGitServerAddrList() {
+	updateGitServerAddrListOnce.Do(func() {
+		if len(conf.SrcGitServers) > 0 {
+			// SRC_GIT_SERVERS is set in the environment and as such takes
+			// precedence (only if it is not set do we fallback to the
+			// frontend). Generally only the frontend takes this codepath,
+			// but this codepath also applies to services that have not had
+			// their env updated yet.
+			gitserverAddrList.Store(conf.SrcGitServers)
+			return
+		}
+
+		// SRC_GIT_SERVERS is not configured in the environment, so we instead
+		// ask the frontend for this information. This is generally the code
+		// path that all non-frontend services take.
+		ctx := context.Background()
+		api.WaitForFrontend(ctx)
+
+		fetchAddrsOnce := func() {
+			for {
+				addrs, err := api.InternalClient.GitServerAddrs(ctx)
+				if err != nil {
+					log15.Error("failed to discover gitserver instances via frontend internal API", "error", err)
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				gitserverAddrList.Store(addrs)
+				break
+			}
+		}
+		fetchAddrsOnce()
+		go func() {
+			for {
+				fetchAddrsOnce()
+				time.Sleep(5 * time.Second)
+			}
+		}()
+	})
+}
+
 // Client is a gitserver client.
 type Client struct {
 	// HTTP client to use
@@ -63,7 +115,10 @@ type Client struct {
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
 
-	Addrs []string
+	// Addrs is a function which should return the addresses for gitservers. It
+	// is called each time a request is made. The function must be safe for
+	// concurrent use. It may return different results at different times.
+	Addrs func(ctx context.Context) []string
 
 	// UserAgent is a string identifing who the client is. It will be logged in
 	// the telemetry in gitserver.
@@ -71,11 +126,21 @@ type Client struct {
 }
 
 // addrForRepo returns the gitserver address to use for the given repo URI.
-func (c *Client) addrForRepo(repo api.RepoURI) string {
+func (c *Client) addrForRepo(ctx context.Context, repo api.RepoURI) string {
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	sum := md5.Sum([]byte(repo))
-	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(c.Addrs))
-	return c.Addrs[serverIndex]
+	return c.addrForKey(ctx, string(repo))
+}
+
+// addrForKey returns the gitserver address to use for the given string key,
+// which is hashed for sharding purposes.
+func (c *Client) addrForKey(ctx context.Context, key string) string {
+	addrs := c.Addrs(ctx)
+	if len(addrs) == 0 {
+		panic("unexpected state: no gitserver addresses")
+	}
+	sum := md5.Sum([]byte(key))
+	serverIndex := binary.BigEndian.Uint64(sum[:]) % uint64(len(addrs))
+	return addrs[serverIndex]
 }
 
 func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, errRes error) {
@@ -265,7 +330,7 @@ func (c *cmdReader) Close() error {
 func (c *Client) ListGitolite(ctx context.Context, gitoliteHost string) ([]string, error) {
 	// The gitserver calls the shared Gitolite server in response to this request, so
 	// we need to only call a single gitserver (or else we'd get duplicate results).
-	return doListOne(ctx, "?gitolite="+url.QueryEscape(gitoliteHost), c.Addrs[0])
+	return doListOne(ctx, "?gitolite="+url.QueryEscape(gitoliteHost), c.addrForKey(ctx, gitoliteHost))
 }
 
 // ListCloned lists all cloned repositories
@@ -276,7 +341,7 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 		err   error
 		repos []string
 	)
-	for _, addr := range c.Addrs {
+	for _, addr := range c.Addrs(ctx) {
 		wg.Add(1)
 		go func(addr string) {
 			defer wg.Done()
@@ -296,7 +361,7 @@ func (c *Client) ListCloned(ctx context.Context) ([]string, error) {
 // GetGitolitePhabricatorMetadata returns Phabricator metadata for a
 // Gitolite repository fetched via a user-provided command.
 func (c *Client) GetGitolitePhabricatorMetadata(ctx context.Context, gitoliteHost string, repo string) (*protocol.GitolitePhabricatorMetadataResponse, error) {
-	u := "http://" + c.Addrs[0] + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(repo)
+	u := "http://" + c.addrForKey(ctx, gitoliteHost) + "/getGitolitePhabricatorMetadata?gitolite=" + url.QueryEscape(gitoliteHost) + "&repo=" + url.QueryEscape(repo)
 	resp, err := ctxhttp.Get(ctx, nil, u)
 	if err != nil {
 		return nil, err
@@ -486,7 +551,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoURI, method string, 
 		return nil, err
 	}
 
-	addr := c.addrForRepo(repo)
+	addr := c.addrForRepo(ctx, repo)
 	req, err := http.NewRequest("POST", "http://"+addr+"/"+method, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
@@ -513,7 +578,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoURI, method string, 
 
 func (c *Client) UploadPack(repoURI api.RepoURI, w http.ResponseWriter, r *http.Request) {
 	repoURI = protocol.NormalizeRepo(repoURI)
-	addr := c.addrForRepo(repoURI)
+	addr := c.addrForRepo(r.Context(), repoURI)
 
 	u, err := url.Parse("http://" + addr + "/upload-pack?repo=" + url.QueryEscape(string(repoURI)))
 	if err != nil {

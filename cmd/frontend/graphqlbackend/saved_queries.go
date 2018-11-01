@@ -58,6 +58,8 @@ func (r savedQueryResolver) ID() graphql.ID {
 		subject.User = &r.subject.user.user.ID
 	case r.subject.org != nil:
 		subject.Org = &r.subject.org.org.ID
+	case r.subject.site != nil:
+		subject.Site = true
 	}
 	return marshalSavedQueryID(api.SavedQueryIDSpec{
 		Subject: subject,

@@ -13,6 +13,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
+- The Git blame information shown at the end of a line is now provided by the [Git extras extension](https://sourcegraph.com/extensions/sourcegraph/git-extras). You must add that extension to continue using this feature.
+
 ### Removed
 
 ## 2.13 (not yet released)
@@ -20,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - A new site config option `search.index.enabled` allows toggling on indexed search.
+- Search now uses [Sourcegraph extensions](https://github.com/sourcegraph/sourcegraph-extension-api) that register `queryTransformer`s.
 
 ### Changed
 
@@ -36,6 +39,12 @@ All notable changes to Sourcegraph are documented in this file.
   rate limit dropped below 150.
 - Fixed an issue where GraphQL field `elapsedMilliseconds` returned invalid value on empty searches
 - Editor extensions now properly search the selection as a literal string, instead of incorrectly using regexp.
+- Fixed a bug where editing and deleting global saved searches was not possible.
+- In index search, if the search regex produces multiline matches, search results are still processed per line and highlighted correctly.
+- Go-To-GitHub and Go-To-GitLab buttons now link to the right branch, line and commit range.
+- Go-to-GitHub button links to default branch when no rev is given.
+- The close button in the panel header stays located on the top.
+- The Phabricator icon is now displayed correctly.
 
 ### Removed
 

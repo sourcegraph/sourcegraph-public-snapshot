@@ -13,7 +13,7 @@ interface Props {
     query: string
     description: string
 
-    actions: React.ReactNode
+    actions?: React.ReactNode
     form?: React.ReactNode
 
     className?: string
