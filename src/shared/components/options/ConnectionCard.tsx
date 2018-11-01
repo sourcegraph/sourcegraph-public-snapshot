@@ -284,7 +284,7 @@ export class ConnectionCard extends React.Component<Props, State> {
             <Row className="pb-3">
                 <Col>
                     <Card>
-                        <CardHeader>Sourcegraph Configuration</CardHeader>
+                        <CardHeader>Sourcegraph configuration</CardHeader>
                         <CardBody>
                             <Col className="px-0">
                                 <ListGroupItemHeading>Sourcegraph URL</ListGroupItemHeading>
@@ -307,7 +307,7 @@ export class ConnectionCard extends React.Component<Props, State> {
                                                 className="btn btn-secondary btn-sm"
                                                 size="sm"
                                             >
-                                                Update
+                                                Change URL
                                             </Button>
                                         )}
                                         {isUpdatingURL && (
