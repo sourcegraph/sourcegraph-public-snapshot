@@ -11,8 +11,6 @@ export let eventLogger = new EventLogger()
 export let sourcegraphUrl =
     window.localStorage.getItem('SOURCEGRAPH_URL') || window.SOURCEGRAPH_URL || DEFAULT_SOURCEGRAPH_URL
 
-export let executeSearchEnabled = false
-
 export let renderMermaidGraphsEnabled = false
 
 export let inlineSymbolSearchEnabled = false
@@ -28,8 +26,6 @@ export const repoUrlCache: UrlCache = {}
 if (window.SG_ENV === 'EXTENSION') {
     storage.getSync(items => {
         sourcegraphUrl = items.sourcegraphURL
-
-        executeSearchEnabled = items.executeSearchEnabled
 
         renderMermaidGraphsEnabled = items.renderMermaidGraphsEnabled
 
@@ -56,10 +52,6 @@ export function checkIsOnlySourcegraphDotCom(handler: (res: boolean) => void): v
     } else {
         handler(false)
     }
-}
-
-export function setExecuteSearchEnabled(enabled: boolean): void {
-    executeSearchEnabled = enabled
 }
 
 export function setRenderMermaidGraphsEnabled(enabled: boolean): void {

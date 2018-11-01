@@ -62,7 +62,6 @@ import {
 import { featureFlags } from '../../shared/util/featureFlags'
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './dom_functions'
 import { injectExtensionsGlobalComponents } from './extensions'
-import { initSearch } from './search'
 import {
     createBlobAnnotatorMount,
     getCodeCommentContainers,
@@ -287,7 +286,6 @@ function inject(): void {
 
     injectMermaid()
 
-    initSearch()
     injectInlineSearch()
 }
 

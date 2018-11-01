@@ -21,7 +21,6 @@ The tooltips include features like:
 - symbol type information & documentation
 - go to definition & find references (currently for Go, Java, TypeScript, JavaScript, Python)
 - find references
-- improved search functionality
 
 #### 🚀 Install: [**Sourcegraph for Chrome**](https://chrome.google.com/webstore/detail/sourcegraph/dgjhfomjieaadpoljlnidmbgkdffpack) — [**Sourcegraph for Firefox**](https://addons.mozilla.org/en-US/firefox/addon/sourcegraph/)
 

@@ -44,7 +44,6 @@ export interface StorageItems {
     phabricatorURL: string
     inlineSymbolSearchEnabled: boolean
     renderMermaidGraphsEnabled: boolean
-    executeSearchEnabled: boolean
     identity: string
     serverUrls: string[]
     enterpriseUrls: string[]
@@ -86,7 +85,6 @@ export const defaultStorageItems: StorageItems = {
     phabricatorURL: '',
     inlineSymbolSearchEnabled: true,
     renderMermaidGraphsEnabled: false,
-    executeSearchEnabled: false,
     identity: '',
     enterpriseUrls: [],
     serverUserId: '',

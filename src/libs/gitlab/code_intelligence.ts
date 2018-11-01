@@ -8,7 +8,6 @@ import {
 import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './file_info'
 import { getPageInfo, GitLabPageKind } from './scrape'
-import { search } from './search'
 
 const toolbarButtonProps = {
     className: 'btn btn-default btn-sm',
@@ -95,6 +94,5 @@ export const gitlabCodeHost: CodeHost = {
     check: checkIsGitlab,
     codeViewResolver,
     adjustOverlayPosition,
-    search,
     getCommandPaletteMount,
 }

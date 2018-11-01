@@ -7,7 +7,6 @@ import * as runtime from '../../browser/runtime'
 import storage from '../../browser/storage'
 import { StorageItems } from '../../browser/types'
 import {
-    setExecuteSearchEnabled,
     setInlineSymbolSearchEnabled,
     setRenderMermaidGraphsEnabled,
     setSourcegraphUrl,
@@ -81,7 +80,6 @@ function injectApplication(): void {
             setInlineSymbolSearchEnabled(
                 items.inlineSymbolSearchEnabled === undefined ? false : items.inlineSymbolSearchEnabled
             )
-            setExecuteSearchEnabled(items.executeSearchEnabled === undefined ? true : items.executeSearchEnabled)
             injectGitHubApplication(extensionMarker)
         } else if (isSourcegraphServer || /^https?:\/\/(www.)?sourcegraph.com/.test(href)) {
             setSourcegraphUrl(sourcegraphServerUrl)

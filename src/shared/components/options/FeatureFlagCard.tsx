@@ -9,10 +9,6 @@ interface Props {
 }
 
 export class FeatureFlagCard extends React.Component<Props, {}> {
-    private onExecuteSearchToggled = () => {
-        storage.setSync({ executeSearchEnabled: !this.props.storage.executeSearchEnabled })
-    }
-
     private onMermaidToggled = () => {
         const renderMermaidGraphsEnabled = !this.props.storage.renderMermaidGraphsEnabled
         storage.setSync({ renderMermaidGraphsEnabled })
@@ -27,12 +23,7 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
     }
 
     public render(): JSX.Element | null {
-        const {
-            inlineSymbolSearchEnabled,
-            renderMermaidGraphsEnabled,
-            executeSearchEnabled,
-            useExtensions,
-        } = this.props.storage
+        const { inlineSymbolSearchEnabled, renderMermaidGraphsEnabled, useExtensions } = this.props.storage
         return (
             <Row className="pb-3">
                 <Col>
@@ -40,17 +31,6 @@ export class FeatureFlagCard extends React.Component<Props, {}> {
                         <CardHeader>Feature flags</CardHeader>
                         <CardBody>
                             <Form>
-                                <FormGroup check={true}>
-                                    <Label check={true}>
-                                        <Input
-                                            onClick={this.onExecuteSearchToggled}
-                                            defaultChecked={executeSearchEnabled}
-                                            type="checkbox"
-                                        />{' '}
-                                        Open a new window with Sourcegraph search results when you perform a search on
-                                        your code host.
-                                    </Label>
-                                </FormGroup>
                                 <FormGroup check={true}>
                                     <Label check={true}>
                                         <Input

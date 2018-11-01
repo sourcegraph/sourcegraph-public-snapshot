@@ -31,7 +31,6 @@ import { gitlabCodeHost } from '../gitlab/code_intelligence'
 import { phabricatorCodeHost } from '../phabricator/code_intelligence'
 import { findCodeViews, getContentOfCodeView } from './code_views'
 import { applyDecoration, Controllers, initializeExtensions } from './extensions'
-import { initSearch, SearchFeature } from './search'
 
 /**
  * Defines a type of code view a given code host can have. It tells us how to
@@ -124,11 +123,6 @@ export interface CodeHost {
      * element.
      */
     adjustOverlayPosition?: (position: OverlayPosition) => OverlayPosition
-
-    /**
-     * Implementation of the search feature for a code host.
-     */
-    search?: SearchFeature
 
     // Extensions related input
 
@@ -326,10 +320,6 @@ export interface ResolvedCodeView extends CodeViewWithOutSelector {
 }
 
 function handleCodeHost(codeHost: CodeHost): Subscription {
-    if (codeHost.search) {
-        initSearch(codeHost.search)
-    }
-
     const documentsSubject = new BehaviorSubject<TextDocumentItem[] | null>([])
     const {
         hoverifier,
