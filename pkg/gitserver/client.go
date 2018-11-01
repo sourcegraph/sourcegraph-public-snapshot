@@ -72,10 +72,10 @@ func init() {
 			// but this codepath also applies to services that have not had
 			// their env updated yet.
 			gitserverListCache.Lock()
-			gitserverListCache.addrs = conf.SrcGitServers
 			if gitserverListCache.addrs == nil {
 				close(AddrsReady)
 			}
+			gitserverListCache.addrs = conf.SrcGitServers
 			gitserverListCache.Unlock()
 			return
 		}
@@ -91,10 +91,10 @@ func init() {
 				log15.Error("failed to discover gitserver instances via frontend internal API", "error", err)
 			} else {
 				gitserverListCache.Lock()
-				gitserverListCache.addrs = addrs
 				if gitserverListCache.addrs == nil {
 					close(AddrsReady)
 				}
+				gitserverListCache.addrs = addrs
 				gitserverListCache.Unlock()
 			}
 			time.Sleep(5 * time.Second)
