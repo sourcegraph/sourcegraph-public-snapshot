@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/neelance/parallel"
@@ -42,10 +43,7 @@ var AddrsReady = make(chan struct{})
 var DefaultClient = &Client{
 	Addrs: func(ctx context.Context) []string {
 		<-AddrsReady
-		gitserverListCache.RLock()
-		addrs := gitserverListCache.addrs
-		gitserverListCache.RUnlock()
-		return addrs
+		return gitserverAddrList.Load().([]string)
 	},
 	HTTPClient: &http.Client{
 		// nethttp.Transport will propagate opentracing spans
@@ -71,12 +69,10 @@ func init() {
 			// frontend). Generally only the frontend takes this codepath,
 			// but this codepath also applies to services that have not had
 			// their env updated yet.
-			gitserverListCache.Lock()
-			if gitserverListCache.addrs == nil {
+			if gitserverAddrList.Load() == nil {
 				close(AddrsReady)
 			}
-			gitserverListCache.addrs = conf.SrcGitServers
-			gitserverListCache.Unlock()
+			gitserverAddrList.Store(conf.SrcGitServers)
 			return
 		}
 
@@ -90,22 +86,17 @@ func init() {
 			if err != nil {
 				log15.Error("failed to discover gitserver instances via frontend internal API", "error", err)
 			} else {
-				gitserverListCache.Lock()
-				if gitserverListCache.addrs == nil {
+				if gitserverAddrList.Load() == nil {
 					close(AddrsReady)
 				}
-				gitserverListCache.addrs = addrs
-				gitserverListCache.Unlock()
+				gitserverAddrList.Store(addrs)
 			}
 			time.Sleep(5 * time.Second)
 		}
 	}()
 }
 
-var gitserverListCache = &struct {
-	sync.RWMutex
-	addrs []string
-}{}
+var gitserverAddrList atomic.Value
 
 // Client is a gitserver client.
 type Client struct {
