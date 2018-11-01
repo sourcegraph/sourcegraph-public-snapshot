@@ -45,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Go-to-GitHub button links to default branch when no rev is given.
 - The close button in the panel header stays located on the top.
 - The Phabricator icon is now displayed correctly.
+- The view mode button in the BlobPage now shows the correct view mode to switch to.
 
 ### Removed
 
