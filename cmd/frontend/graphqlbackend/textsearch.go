@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/pkg/search/query"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/types"
 	"github.com/sourcegraph/sourcegraph/pkg/api"
+	"github.com/sourcegraph/sourcegraph/pkg/conf"
 	"github.com/sourcegraph/sourcegraph/pkg/endpoint"
 	"github.com/sourcegraph/sourcegraph/pkg/env"
 	"github.com/sourcegraph/sourcegraph/pkg/errcode"
@@ -618,7 +619,7 @@ func queryToZoektQuery(query *search.PatternInfo) (zoektquery.Q, error) {
 }
 
 func zoektIndexedRepos(ctx context.Context, repos []*search.RepositoryRevisions) (indexed, unindexed []*search.RepositoryRevisions, err error) {
-	if zoektCache == nil {
+	if !searchIndexEnabled() {
 		return nil, repos, nil
 	}
 	for _, repoRev := range repos {
@@ -708,11 +709,11 @@ func searchFilesInRepos(ctx context.Context, args *search.Args) (res []*fileMatc
 		switch parseYesNoOnly(index) {
 		case Yes, True:
 			// default
-			if zoektCache != nil {
+			if searchIndexEnabled() {
 				tr.LazyPrintf("%d indexed repos, %d unindexed repos", len(zoektRepos), len(searcherRepos))
 			}
 		case Only:
-			if zoektCache == nil {
+			if !searchIndexEnabled() {
 				return nil, common, fmt.Errorf("invalid index:%q (indexed search is not enabled)", index)
 			}
 			common.missing = make([]*types.Repo, len(searcherRepos))
@@ -940,4 +941,10 @@ func init() {
 		zoektCl = zoektrpc.Client(zoektHost)
 		zoektCache = &zoektpkg.Cache{Client: zoektCl}
 	}
+}
+
+// searchIndexEnabled returns true if there is a zoekt client
+// and if the search index is enabled.
+func searchIndexEnabled() bool {
+	return zoektCl != nil && conf.SearchIndexEnabled()
 }

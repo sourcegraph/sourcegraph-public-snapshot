@@ -111,12 +111,12 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 		var indexed map[api.RepoURI]bool
 		isIndexed := func(repo api.RepoURI) bool {
-			if zoektCache == nil {
+			if !searchIndexEnabled() {
 				return true // do not need index
 			}
 			return indexed[api.RepoURI(strings.ToLower(string(repo)))]
 		}
-		if zoektCache != nil && (!r.indexed || !r.notIndexed) {
+		if searchIndexEnabled() && (!r.indexed || !r.notIndexed) {
 			listCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 			defer cancel()
 			indexedRepos, err := zoektCache.ListAll(listCtx)
