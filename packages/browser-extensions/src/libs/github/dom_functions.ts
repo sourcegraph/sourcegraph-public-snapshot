@@ -197,7 +197,7 @@ export const getDiffLineRanges: CodeView['getLineRanges'] = (codeView, part) => 
 
     for (const row of codeView.querySelectorAll<HTMLTableRowElement>('tr')) {
         const isCode =
-            !row.classList.contains('js-expandable-line') && !row.classList.contains('js-inline-comments-container')
+            !row.classList.contains('js-expandable-line') && !row.classList.contains('js-inline-comments-container') && !row.querySelector('[data-line-number="..."]')
 
         if (isCode) {
             const line = row.querySelector<HTMLElement>(
