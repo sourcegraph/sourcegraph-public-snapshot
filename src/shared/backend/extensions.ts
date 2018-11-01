@@ -319,9 +319,6 @@ export function createExtensionsContextController(
         forceUpdateTooltip: () => {
             // TODO(sqs): implement tooltips on the browser extension
         },
-        experimentalClientCapabilities: {
-            sourcegraphLanguageServerURL: sourcegraphLanguageServerURL.href,
-        },
     })
 }
 
